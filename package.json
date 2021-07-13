@@ -1,0 +1,18 @@
+{
+  "name": "paraswap-dex-lib",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "https://github.com/paraswap/paraswap-dex-lib",
+  "author": "dev@paraswap.io",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "husky": "7.0.1",
+    "typescript": "4.3.5"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  }
+}
