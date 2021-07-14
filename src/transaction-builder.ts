@@ -1,27 +1,23 @@
-import { IDex } from './dex/idex';
-import { IRouter } from './router/irouter';
-import { OptimalRate, Address, DexMap } from './types';
+import { IDex, DexMap } from './dex/idex';
+import { IRouter, RouterMap } from './router/irouter';
+import { OptimalRate, Address } from './types';
+import { getRouterMap } from './router';
+import { getDexMap } from './dex';
 
 export class TransactionBuilder { 
-  routerMap: {[contractMethod: string]: IRouter<any>};
+  routerMap: RouterMap
   dexMap: DexMap;
 
   constructor() {
-    this.routerMap = {
-      // TODO: initialize all the router
-    };
-
-    this.dexMap = {
-      // TODO: initialize all the dexs
-    }
+    this.routerMap = getRouterMap();
+    this.dexMap = getDexMap();
   }
   
-  build(
+  public build(
     priceRoute: OptimalRate,
     minMaxAmount: BigInt,
     userAddress: Address,
-    referrer: string,
-    referrerIndex: number,
+    partner: Address,
     gasPrice: BigInt,
     receiver?: Address,
     onlyParams: boolean = false,
@@ -32,8 +28,7 @@ export class TransactionBuilder {
       priceRoute,
       minMaxAmount,
       userAddress,
-      referrer,
-      referrerIndex,
+      partner,
       _receiver,
       this.dexMap
     );
@@ -42,3 +37,4 @@ export class TransactionBuilder {
     // TODO: contractMethod pass routerParams and encodeABI
   }
 }
+

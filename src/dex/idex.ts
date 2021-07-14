@@ -1,4 +1,5 @@
-import { Address, SwapSide, EncodeContractMethod } from '../types';
+import { Address, EncodeContractMethod } from '../types';
+import { SwapSide } from '../constants';
 
 type AdapterExchangeParam = {
   index: number;
@@ -12,7 +13,6 @@ type SimpleExchangeParam = {
   calldata: string[];
   values: string[];
 };
-
 
 export interface IDex<ExchangeData, DirectParam = null> {
   
@@ -44,3 +44,5 @@ export interface IDex<ExchangeData, DirectParam = null> {
     side: SwapSide
   ): [EncodeContractMethod, DirectParam];
 }
+
+export type DexMap = {[identifier: string]: IDex<any, any>};

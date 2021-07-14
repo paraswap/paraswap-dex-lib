@@ -4,7 +4,7 @@
     "lib": ["es2019"],
     "module": "commonjs",
     "noImplicitAny": true,
-    "outDir": "./dist/",
+    "outDir": "./build/",
     "preserveConstEnums": true,
     "removeComments": true,
     "strictNullChecks": true,
