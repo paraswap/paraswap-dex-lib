@@ -1,15 +1,16 @@
-import { EncodeContractMethod, OptimalRate, Address } from '../types';
-import { DexMap } from '../dex/idex';
+import { ContractMethodEncoder, OptimalRate, Address, TxInfo } from '../types';
 
 export interface IRouter<RouterParam> {
-   build(
+  build(
     priceRoute: OptimalRate,
-    minMaxAmount: BigInt,
+    minMaxAmount: string,
     userAddress: Address,
     partner: Address,
-    receiver: Address,
-    dexMap: DexMap
-   ): [EncodeContractMethod, RouterParam];
+    feePercent: string,
+    beneficiary: Address,
+    permit: string,
+    deadline: string,
+  ): TxInfo<RouterParam>;
 }
 
-export type RouterMap = {[contractMethod: string]: IRouter<any>};
+export type RouterMap = { [contractMethod: string]: IRouter<any> };

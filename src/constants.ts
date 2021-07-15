@@ -14,3 +14,5 @@ export enum ContractMethod {
   buy = 'buy',
   megaSwap = 'megaSwap',
 }
+
+export const ETHER_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';

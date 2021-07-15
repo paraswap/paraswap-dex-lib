@@ -4,37 +4,50 @@ import { OptimalRate, Address } from './types';
 import { getRouterMap } from './router';
 import { getDexMap } from './dex';
 
-export class TransactionBuilder { 
-  routerMap: RouterMap
+export class TransactionBuilder {
+  routerMap: RouterMap;
   dexMap: DexMap;
 
-  constructor() {
-    this.routerMap = getRouterMap();
-    this.dexMap = getDexMap();
+  constructor(augustusAddress: Address) {
+    this.dexMap = getDexMap(augustusAddress);
+    this.routerMap = getRouterMap(this.dexMap);
   }
-  
+
   public build(
     priceRoute: OptimalRate,
-    minMaxAmount: BigInt,
+    minMaxAmount: string,
     userAddress: Address,
     partner: Address,
-    gasPrice: BigInt,
-    receiver?: Address,
+    feePercent: string,
+    gasPrice: string,
+    permit: string,
+    deadline: string,
+    beneficiary?: Address,
     onlyParams: boolean = false,
     ignoreGas: boolean = false,
   ) {
-    const _receiver = receiver || userAddress;
-    const [contractMethod, routerParams] = this.routerMap[priceRoute.contractMethod.toLowerCase()].build(
+    const _beneficiary = beneficiary || userAddress;
+    const { encoder, params, networkFee } = this.routerMap[
+      priceRoute.contractMethod.toLowerCase()
+    ].build(
       priceRoute,
       minMaxAmount,
       userAddress,
       partner,
-      _receiver,
-      this.dexMap
+      feePercent,
+      _beneficiary,
+      permit,
+      deadline,
     );
-    if (onlyParams)
-      return routerParams;
-    // TODO: contractMethod pass routerParams and encodeABI
+
+    if (onlyParams) return params;
+
+    return {
+      from: userAddress,
+      to: priceRoute.contractAddress,
+      chainId: priceRoute.network,
+      networkFee,
+      data: encoder.apply(null, params),
+    };
   }
 }
-

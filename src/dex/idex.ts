@@ -1,48 +1,49 @@
-import { Address, EncodeContractMethod } from '../types';
+import {
+  Address,
+  SimpleExchangeParam,
+  AdapterExchangeParam,
+  TxInfo,
+  NumberAsString,
+} from '../types';
 import { SwapSide } from '../constants';
 
-type AdapterExchangeParam = {
-  index: number;
-  targetExchange: Address;
-  payload: string;
-  networkFee: string;
-}
-
-type SimpleExchangeParam = {
-  callees: string[];
-  calldata: string[];
-  values: string[];
-};
-
 export interface IDex<ExchangeData, DirectParam = null> {
-  
+  getNetworkFee?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+  ): NumberAsString;
+
   // Used for multiSwap, buy & megaSwap
   getAdapterParam(
-    fromToken: Address,
-    toToken: Address,
-    fromAmount: BigInt,
-    toAmount: BigInt, // required for buy case
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString, // required for buy case
     data: ExchangeData,
-    side: SwapSide
+    side: SwapSide,
   ): AdapterExchangeParam;
-  // Used for simpleSwap & simpleBuy 
+  // Used for simpleSwap & simpleBuy
   getSimpleParam(
-    fromToken: Address,
-    toToken: Address,
-    fromAmount: BigInt,
-    toAmount: BigInt,
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
     data: ExchangeData,
-    side: SwapSide
+    side: SwapSide,
   ): SimpleExchangeParam;
   // Used if there is a possibility for direct swap (Eg. UniswapV2, 0xV2/V4, etc)
   getDirectParam?(
-    fromToken: Address,
-    toToken: Address,
-    fromAmount: BigInt,
-    toAmount: BigInt,
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
     data: ExchangeData,
-    side: SwapSide
-  ): [EncodeContractMethod, DirectParam];
+    side: SwapSide,
+  ): TxInfo<DirectParam>;
 }
 
-export type DexMap = {[identifier: string]: IDex<any, any>};
+export type DexMap = { [identifier: string]: IDex<any, any> };

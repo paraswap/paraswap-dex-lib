@@ -1,16 +1,11 @@
-export {
-  TransactionBuilder
-} from './transaction-builder';
+export { TransactionBuilder } from './transaction-builder';
 
 export {
   OptimalRoute,
   OptimalSwap,
   OptimalRate,
   OptimalSwapExchange,
-  OptionalRate
+  OptionalRate,
 } from './types';
 
-export {
-  SwapSide,
-  ContractMethod
-} from './constants';
+export { SwapSide, ContractMethod } from './constants';

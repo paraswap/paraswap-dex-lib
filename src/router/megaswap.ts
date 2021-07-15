@@ -1,16 +1,18 @@
 import { IRouter } from './irouter';
 import { DexMap } from '../dex/idex';
 import { PayloadEncoder } from './payload-encoder';
-import { Address, OptimalRate, ContractSellData, TxInfo } from '../types';
+import {
+  Address,
+  OptimalRate,
+  ContractMegaSwapSellData,
+  TxInfo,
+} from '../types';
 import * as IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 
-type MultiSwapParam = [ContractSellData];
+type MegaSwapParam = [ContractMegaSwapSellData];
 
-export class MultiSwap
-  extends PayloadEncoder
-  implements IRouter<MultiSwapParam>
-{
+export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
   paraswapInterface: Interface;
 
   constructor(dexMap: DexMap) {
@@ -27,26 +29,21 @@ export class MultiSwap
     beneficiary: Address,
     permit: string,
     deadline: string,
-  ): TxInfo<MultiSwapParam> {
-    if (
-      priceRoute.bestRoute.length !== 1 ||
-      priceRoute.bestRoute[0].percent !== 100
-    )
-      throw new Error(`Multiswap invalid bestRoute`);
-    const sellData: ContractSellData = {
+  ): TxInfo<MegaSwapParam> {
+    const sellData: ContractMegaSwapSellData = {
       fromToken: priceRoute.src,
       fromAmount: priceRoute.srcAmount,
       toAmount: minMaxAmount,
       expectedAmount: priceRoute.destAmount,
       beneficiary,
-      path: this.getContractPaths(priceRoute.bestRoute[0].swaps),
+      path: this.getMegaSwapPaths(priceRoute.bestRoute),
       partner,
       feePercent,
       permit,
       deadline,
     };
     const encoder = (...params: any[]) =>
-      this.paraswapInterface.encodeFunctionData('multiSwap', params);
+      this.paraswapInterface.encodeFunctionData('megaSwap', params);
     // TODO: fix network fee
     return {
       encoder,
