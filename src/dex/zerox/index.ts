@@ -2,14 +2,15 @@ const web3Coder = require('web3-eth-abi');
 import { Interface } from '@ethersproject/abi';
 import { AbiEncoder } from '@0x/utils';
 
-import ZRX_V2_ABI = require('../abi/zrx.v2.json');
-import ZRX_V3_ABI = require('../abi/zrx.v3.json');
-import ZRX_V4_ABI = require('../abi/zrx.v4.json');
+import ZRX_V2_ABI = require('../../abi/zrx.v2.json');
+import ZRX_V3_ABI = require('../../abi/zrx.v3.json');
+import ZRX_V4_ABI = require('../../abi/zrx.v4.json');
 
-import { SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam, TxInfo } from '../types';
-import { IDex } from './idex';
-import { SimpleExchange } from './simple-exchange';
+import { SwapSide } from '../../constants';
+import { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam, TxInfo } from '../../types';
+import { IDex } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import { ZeroXOrder } from './order';
 
 const ZRX_EXCHANGE: any = {
   1: {
@@ -51,124 +52,6 @@ type ZeroXData = {
   router: string;
 }
 type ZeroXParam = {}
-
-enum OrderStatus {
-  INVALID, // Default value
-  INVALID_MAKER_ASSET_AMOUNT, // Order does not have a valid maker asset amount
-  INVALID_TAKER_ASSET_AMOUNT, // Order does not have a valid taker asset amount
-  FILLABLE, // Order is fillable
-  EXPIRED, // Order has already expired
-  FULLY_FILLED, // Order is fully filled
-  CANCELLED, // Order has been cancelled
-}
-
-export interface ZeroXSignedOrder {
-  senderAddress: string;
-  makerAddress: string;
-  takerAddress: string;
-  makerFee: BigInt;
-  takerFee: BigInt;
-  makerAssetAmount: BigInt;
-  takerAssetAmount: BigInt;
-  makerAssetData: string;
-  takerAssetData: string;
-  salt: BigInt;
-  exchangeAddress: string;
-  feeRecipientAddress: string;
-  expirationTimeSeconds: BigInt;
-  makerFeeAssetData: string;
-  takerFeeAssetData: string;
-  signature: string;
-}
-
-export interface ZeroXSignedOrderV4 {
-  makerToken: string;
-  takerToken: string;
-  makerAmount: BigInt;
-  takerAmount: BigInt;
-  maker: string;
-  taker: string;
-  txOrigin: string;
-  pool: string;
-  expiry: BigInt;
-  salt: BigInt;
-}
-
-export interface IzXSignedOrderV3 {
-  exchangeAddress: string;
-  makerAddress: string;
-  takerAddress: string;
-  feeRecipientAddress: string;
-  senderAddress: string;
-  makerAssetAmount: BigInt;
-  takerAssetAmount: BigInt;
-  makerFee: BigInt;
-  takerFee: BigInt;
-  expirationTimeSeconds: BigInt;
-  salt: BigInt;
-  makerAssetData: string;
-  takerAssetData: string;
-  signature: string;
-  chainId: number;
-  makerFeeAssetData: string;
-  takerFeeAssetData: string;
-}
-
-export class ZeroXOrder  {
-  static formatOrderV4(order: ZeroXSignedOrderV4, version: number) {
-    return {
-      makerToken: order.makerToken,
-      takerToken: order.takerToken,
-      makerAmount: order.makerAmount,
-      takerAmount: order.takerAmount,
-      maker: order.maker,
-      taker: order.taker,
-      txOrigin: order.txOrigin,
-      pool: order.pool,
-      expiry: order.expiry,
-      salt: order.salt,
-    };
-  }
-
-  static formatOrderV23(order: ZeroXSignedOrder, version: number) {
-    const feeAssetData =
-      version === 3
-        ? {
-          makerFeeAssetData: order.makerFeeAssetData,
-          takerFeeAssetData: order.takerFeeAssetData,
-        }
-        : {};
-
-    return {
-      makerAddress: order.makerAddress,
-      takerAddress: order.takerAddress,
-      feeRecipientAddress: order.feeRecipientAddress,
-      senderAddress: order.senderAddress,
-      makerAssetAmount: order.makerAssetAmount,
-      takerAssetAmount: order.takerAssetAmount,
-      makerFee: order.makerFee,
-      takerFee: order.takerFee,
-      expirationTimeSeconds: order.expirationTimeSeconds,
-      salt: order.salt,
-      makerAssetData: order.makerAssetData,
-      takerAssetData: order.takerAssetData,
-      ...feeAssetData,
-    };
-  }
-
-  static formatOrders(
-    orders: (ZeroXSignedOrder | ZeroXSignedOrderV4)[],
-    version: number = 2,
-  ) {
-    return version === 4
-      ? orders.map(o =>
-        ZeroXOrder.formatOrderV4(o as ZeroXSignedOrderV4, version),
-      )
-      : orders.map(o =>
-        ZeroXOrder.formatOrderV23(o as ZeroXSignedOrder, version),
-      );
-  }
-}
 
 export class ZeroX
   extends SimpleExchange
@@ -357,18 +240,18 @@ export class ZeroX
     data: ZeroXData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    const swapData = this.routerInterface.encodeFunctionData(
-      side === SwapSide.SELL ? 'swap' : 'buy',
-      [srcAmount, destAmount, path],
-    );
-    return this.buildSimpleParamWithoutWETHConversion(
-      src,
-      srcAmount,
-      dest,
-      destAmount,
-      swapData,
-      data.router,
-    );
+    // const swapData = this.routerInterface.encodeFunctionData(
+    //   side === SwapSide.SELL ? 'swap' : 'buy',
+    //   [srcAmount, destAmount, path],
+    // );
+    // return this.buildSimpleParamWithoutWETHConversion(
+    //   src,
+    //   srcAmount,
+    //   dest,
+    //   destAmount,
+    //   swapData,
+    //   data.router,
+    // );
   }
 
   getDirectParam(
@@ -379,16 +262,16 @@ export class ZeroX
     data: ZeroXData,
     side: SwapSide,
   ): TxInfo<ZeroXParam> {
-    const path = this.fixPath(data.path, srcToken, destToken);
-    const encoder = (...params: ZeroXParam) =>
-      this.routerInterface.encodeFunctionData(
-        side === SwapSide.SELL ? 'swapOnUniswap' : 'buyOnUniswap',
-        params,
-      );
-    return {
-      params: [srcAmount, destAmount, path],
-      encoder,
-      networkFee: '0',
-    };
+    // const path = this.fixPath(data.path, srcToken, destToken);
+    // const encoder = (...params: ZeroXParam) =>
+    //   this.routerInterface.encodeFunctionData(
+    //     side === SwapSide.SELL ? 'swapOnUniswap' : 'buyOnUniswap',
+    //     params,
+    //   );
+    // return {
+    //   params: [srcAmount, destAmount, path],
+    //   encoder,
+    //   networkFee: '0',
+    // };
   }
 }
