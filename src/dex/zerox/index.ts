@@ -1,15 +1,15 @@
 const web3Coder = require('web3-eth-abi');
-import { Interface } from '@ethersproject/abi';
 import { AbiEncoder } from '@0x/utils';
 
 import ZRX_V2_ABI = require('../../abi/zrx.v2.json');
 import ZRX_V3_ABI = require('../../abi/zrx.v3.json');
 import ZRX_V4_ABI = require('../../abi/zrx.v4.json');
 
-import { SwapSide } from '../../constants';
+import { ETHER_ADDRESS, SwapSide } from '../../constants';
 import { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam, TxInfo } from '../../types';
 import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
+import { Weth } from '../weth';
 import { ZeroXOrder } from './order';
 
 const ZRX_EXCHANGE: any = {
@@ -61,11 +61,11 @@ export class ZeroX
     super(augustusAddress);
   }
 
-  getExchange(data: ZeroXData) {
+  private getExchange(data: ZeroXData) {
     return ZRX_EXCHANGE[data.network][data.version];
   }
 
-  buildSwapData(data: ZeroXData, srcAmount: NumberAsString) {
+  protected buildSwapData(data: ZeroXData, srcAmount: NumberAsString) {
     const zrxABI = ZRX_ABI[data.version];
     const orders = ZeroXOrder.formatOrders(data.orders, data.version);
     const signatures = data.signatures;
@@ -85,61 +85,55 @@ export class ZeroX
     );
   }
 
-  private async getTokenToTokenSwapData(srcToken: Address, srcAmount: NumberAsString, data: ZeroXData) {
-    const approveCallData = await this.getApproveSimpleParam(
+  protected getTokenToTokenSwapData(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: ZeroXData
+  ) {
+    const approveCall = this.getApproveSimpleParam(
       srcToken,
       ZRX_EXCHANGE_ERC20PROXY[data.network][data.version],
       srcAmount,
     );
-
     const assetSwapperData = this.buildSwapData(data, srcAmount);
-
     const networkFees = data.networkFees || '0';
 
-    const callees = approveCallData
-      ? [this.augustusAddress, this.getExchange(data)]
-      : [this.getExchange(data)];
-    const calldata = approveCallData
-      ? [...approveCallData.calldata, assetSwapperData]
-      : [assetSwapperData];
-    const values = approveCallData ? ['0', networkFees] : [networkFees];
-
     return {
-      callees,
-      calldata,
-      values,
+      callees: [...approveCall.callees, this.getExchange(data)],
+      calldata: [...approveCall.calldata, assetSwapperData],
+      values: [...approveCall.values, networkFees],
     };
   }
 
-  protected async ethToTokenSwap(
+  protected ethToTokenSwap(
     srcToken: Address,
     destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-  ): Promise<SimpleExchangeParam> {
+  ): SimpleExchangeParam {
     const wethToken = Weth.getAddress(data.network);
-    const wethContract = new this.web3Provider.eth.Contract(
-      ERC20_ABI,
-      wethToken,
-    );
-    const depositWethData = wethContract.methods.deposit().encodeABI();
-
-    const wethToTokenData = await this.getTokenToTokenSwapData(wethToken, data);
+    const depositWethData = this.simpleSwapHelper.encodeFunctionData('deposit')
+    const wethToTokenData = this.getTokenToTokenSwapData(wethToken, srcAmount, destToken, destAmount, data);
 
     return {
       callees: [wethToken, ...wethToTokenData.callees],
       calldata: [depositWethData, ...wethToTokenData.calldata],
-      values: [data.srcAmount, ...wethToTokenData.values],
+      values: [srcAmount, ...wethToTokenData.values],
     };
   }
 
-  protected async tokenToEthSwap(
+  protected tokenToEthSwap(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
+    destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-  ): Promise<SimpleExchangeParam> {
+  ): SimpleExchangeParam {
     const wethToken = Weth.getAddress(data.network);
-    const wethToTokenData = await this.getTokenToTokenSwapData(srcToken, srcAmount, data);
+    const wethToTokenData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
     const withdrawWethData = this.simpleSwapHelper.encodeFunctionData('withdrawAllWETH', [wethToken])
 
     return {
@@ -149,12 +143,14 @@ export class ZeroX
     };
   }
 
-  protected async tokenToTokenSwap(
+  protected tokenToTokenSwap(
     srcToken: Address,
     destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-  ): Promise<SimpleExchangeParam> {
-    const swapData = await this.getTokenToTokenSwapData(srcToken, data);
+  ): SimpleExchangeParam {
+    const swapData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
 
     return {
       callees: [...swapData.callees],
@@ -240,18 +236,17 @@ export class ZeroX
     data: ZeroXData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    // const swapData = this.routerInterface.encodeFunctionData(
-    //   side === SwapSide.SELL ? 'swap' : 'buy',
-    //   [srcAmount, destAmount, path],
-    // );
-    // return this.buildSimpleParamWithoutWETHConversion(
-    //   src,
-    //   srcAmount,
-    //   dest,
-    //   destAmount,
-    //   swapData,
-    //   data.router,
-    // );
+    try {
+      if (src === ETHER_ADDRESS) {
+        return this.ethToTokenSwap(src, dest, srcAmount, destAmount, data);
+      } else if (dest === ETHER_ADDRESS) {
+        return this.tokenToEthSwap(src, dest, srcAmount, destAmount, data);
+      } else {
+        return this.tokenToTokenSwap(src, dest, srcAmount, destAmount, data);
+      }
+    } catch (e) {
+      throw new Error(e.message);
+    }
   }
 
   getDirectParam(
