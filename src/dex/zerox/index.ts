@@ -1,16 +1,22 @@
 const web3Coder = require('web3-eth-abi');
 import { AbiEncoder } from '@0x/utils';
+import { Interface } from '@ethersproject/abi';
 
-import ZRX_V2_ABI = require('../../abi/zrx.v2.json');
-import ZRX_V3_ABI = require('../../abi/zrx.v3.json');
-import ZRX_V4_ABI = require('../../abi/zrx.v4.json');
+import * as ERC20ABI from '../../abi/erc20.json';
+import * as ZeroXv2RouterABI from '../../abi/UniswapV2ExchangeRouter.json'; // TODO add ABI
+import * as ZeroXv4RouterABI from '../../abi/UniswapV2ExchangeRouter.json'; // TODO add ABI
+import * as ZRX_V2_ABI from '../../abi/zrx.v2.json';
+import * as ZRX_V3_ABI from '../../abi/zrx.v3.json';
+import * as ZRX_V4_ABI from '../../abi/zrx.v4.json';
 
 import { ETHER_ADDRESS, SwapSide } from '../../constants';
-import { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam, TxInfo } from '../../types';
-import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
 import { Weth } from '../weth';
 import { ZeroXOrder } from './order';
+
+import type { IDex } from '../idex';
+import type { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam, TxInfo } from '../../types';
+import type { ZeroXSignedOrder, ZeroXSignedOrderV2, ZeroXSignedOrderV4 } from './types';
 
 const ZRX_EXCHANGE: any = {
   1: {
@@ -44,29 +50,56 @@ const ZRX_EXCHANGE_ERC20PROXY: any = {
 
 type ZeroXData = {
   minConversionRate: string;
-  orders: any[];
+  order: ZeroXSignedOrder;
   signatures: any[];
   networkFees?: string;
   version: number;
   router: string;
 }
-type ZeroXParam = {}
+
+type SwapOnZeroXParam = [
+  Address, // srcToken
+  Address, // destToken
+  NumberAsString, // srcAmount
+  NumberAsString, // destAmount
+  Address, // exchange
+  ZeroXSignedOrder // payload
+];
+
+type BuyOnZeroXParam = [
+  Address, // srcToken
+  Address, // destToken
+  NumberAsString, // srcAmount
+  NumberAsString, // destAmount
+  Address, // exchange
+  ZeroXSignedOrder // payload
+];
+
+type ZeroXParam = SwapOnZeroXParam | BuyOnZeroXParam;
+
 
 export class ZeroX
   extends SimpleExchange
   implements IDex<ZeroXData, ZeroXParam>
 {
+  routerV2Interface: Interface;
+  routerV4Interface: Interface;
+  erc20Interface: Interface;
+
   constructor(augustusAddress: Address) {
     super(augustusAddress);
+    this.routerV2Interface = new Interface(ZeroXv2RouterABI);
+    this.routerV4Interface = new Interface(ZeroXv4RouterABI);
+    this.erc20Interface = new Interface(ERC20ABI);
   }
 
-  private getExchange(network: number, data: ZeroXData) {
-    return ZRX_EXCHANGE[network][data.version];
+  private getExchange(data: ZeroXData) {
+    return ZRX_EXCHANGE[this.network][data.version];
   }
 
   protected buildSwapData(data: ZeroXData, srcAmount: NumberAsString) {
     const zrxABI = ZRX_ABI[data.version];
-    const orders = ZeroXOrder.formatOrders(data.orders, data.version);
+    const orders = ZeroXOrder.formatOrders(data.order, data.version);
     const signatures = data.signatures;
 
     const methodAbi = zrxABI.find(
@@ -79,7 +112,7 @@ export class ZeroX
     // TODO: fillLimitOrder only accepts one order, find something that can accept multiple orders
     return abiEncoder.encode(
       data.version === 4
-        ? [orders[0], signatures[0], srcAmount]
+        ? [orders, signatures[0], srcAmount]
         : [orders, srcAmount, signatures],
     );
   }
@@ -90,18 +123,17 @@ export class ZeroX
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     data: ZeroXData,
-    network: number
   ) {
     const approveCall = this.getApproveSimpleParam(
       srcToken,
-      ZRX_EXCHANGE_ERC20PROXY[network][data.version],
+      ZRX_EXCHANGE_ERC20PROXY[this.network][data.version],
       srcAmount,
     );
     const assetSwapperData = this.buildSwapData(data, srcAmount);
     const networkFees = data.networkFees || '0';
 
     return {
-      callees: [...approveCall.callees, this.getExchange(network, data)],
+      callees: [...approveCall.callees, this.getExchange(data)],
       calldata: [...approveCall.calldata, assetSwapperData],
       values: [...approveCall.values, networkFees],
     };
@@ -113,11 +145,10 @@ export class ZeroX
     srcAmount: NumberAsString,
     destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-    network: number
   ): SimpleExchangeParam {
-    const wethToken = Weth.getAddress(network);
-    const depositWethData = this.simpleSwapHelper.encodeFunctionData('deposit')
-    const wethToTokenData = this.getTokenToTokenSwapData(wethToken, srcAmount, destToken, destAmount, data, network);
+    const wethToken = Weth.getAddress(this.network);
+    const depositWethData = this.erc20Interface.encodeFunctionData('deposit')
+    const wethToTokenData = this.getTokenToTokenSwapData(wethToken, srcAmount, destToken, destAmount, data);
 
     return {
       callees: [wethToken, ...wethToTokenData.callees],
@@ -132,10 +163,9 @@ export class ZeroX
     srcAmount: NumberAsString,
     destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-    network: number
   ): SimpleExchangeParam {
-    const wethToken = Weth.getAddress(network);
-    const wethToTokenData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data, network);
+    const wethToken = Weth.getAddress(this.network);
+    const wethToTokenData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
     const withdrawWethData = this.simpleSwapHelper.encodeFunctionData('withdrawAllWETH', [wethToken])
 
     return {
@@ -151,9 +181,8 @@ export class ZeroX
     srcAmount: NumberAsString,
     destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-    network: number
   ): SimpleExchangeParam {
-    const swapData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data, network);
+    const swapData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
 
     return {
       callees: [...swapData.callees],
@@ -195,8 +224,8 @@ export class ZeroX
           },
         },
         {
-          order: ZeroXOrder.formatOrders(data.orders, 4)[0],
-          signature: data.orders[0].signature,
+          order: ZeroXOrder.formatOrders(data.order, 4),
+          signature: data.signatures[0], //TODO check this one
         },
       )
       : web3Coder.encodeParameter(
@@ -220,8 +249,8 @@ export class ZeroX
           },
         },
         {
-          orders: ZeroXOrder.formatOrders(data.orders),
-          signatures: data.orders.map((o: any) => o.signature),
+          orders: ZeroXOrder.formatOrders(data.order, 2),
+          signatures: (data.order as ZeroXSignedOrderV2).signature,
         },
       );
     return {
@@ -238,15 +267,14 @@ export class ZeroX
     destAmount: NumberAsString,
     data: ZeroXData,
     side: SwapSide,
-    meta: { network: number }
   ): SimpleExchangeParam {
     try {
       if (src === ETHER_ADDRESS) {
-        return this.ethToTokenSwap(src, dest, srcAmount, destAmount, data, meta.network);
+        return this.ethToTokenSwap(src, dest, srcAmount, destAmount, data);
       } else if (dest === ETHER_ADDRESS) {
-        return this.tokenToEthSwap(src, dest, srcAmount, destAmount, data, meta.network);
+        return this.tokenToEthSwap(src, dest, srcAmount, destAmount, data);
       } else {
-        return this.tokenToTokenSwap(src, dest, srcAmount, destAmount, data, meta.network);
+        return this.tokenToTokenSwap(src, dest, srcAmount, destAmount, data);
       }
     } catch (e) {
       throw new Error(e.message);
@@ -260,18 +288,27 @@ export class ZeroX
     destAmount: NumberAsString,
     data: ZeroXData,
     side: SwapSide,
-    meta: { network: number }
   ): TxInfo<ZeroXParam> {
-    // const path = this.fixPath(data.path, srcToken, destToken);
-    // const encoder = (...params: ZeroXParam) =>
-    //   this.routerInterface.encodeFunctionData(
-    //     side === SwapSide.SELL ? 'swapOnUniswap' : 'buyOnUniswap',
-    //     params,
-    //   );
-    // return {
-    //   params: [srcAmount, destAmount, path],
-    //   encoder,
-    //   networkFee: '0',
-    // };
+    const encoder = (...params: ZeroXParam) => {
+      switch (data.version) {
+        case 2:
+          return this.routerV2Interface.encodeFunctionData(
+            'swapOnZeroXv2', // TODO Buy case
+            params,
+          );
+        case 4:
+          return this.routerV4Interface.encodeFunctionData(
+            'swapOnZeroXV4', // TODO Buy case
+            params,
+          );
+        default:
+          throw new Error(`ZeroX version ${data.version} is not supported!`);
+      }
+    }
+    return {
+      params: [srcToken, destToken, srcAmount, destAmount, this.getExchange(data), data.order], // TODO wait for adjustment in SC
+      encoder,
+      networkFee: '0',
+    };
   }
 }

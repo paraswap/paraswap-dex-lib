@@ -21,15 +21,15 @@ type UniswapData = {
 };
 
 type SwapOnUniswapParam = [
-  amountIn: NumberAsString,
-  amountOutMin: NumberAsString,
-  path: Address[],
+  NumberAsString,
+  NumberAsString,
+  Address[],
 ];
 
 type BuyOnUniswapParam = [
-  amountInMax: NumberAsString,
-  amountOut: NumberAsString,
-  path: Address[],
+  NumberAsString,
+  NumberAsString,
+  Address[],
 ];
 
 type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;

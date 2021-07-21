@@ -1,4 +1,4 @@
-import { ZeroXSignedOrder, ZeroXSignedOrderV4 } from './types';
+import { ZeroXSignedOrder, ZeroXSignedOrderV2, ZeroXSignedOrderV4 } from './types';
 
 export class ZeroXOrder  {
   static formatOrderV4(order: ZeroXSignedOrderV4, version: number) {
@@ -16,7 +16,7 @@ export class ZeroXOrder  {
     };
   }
 
-  static formatOrderV23(order: ZeroXSignedOrder, version: number) {
+  static formatOrderV23(order: ZeroXSignedOrderV2, version: number) {
     const feeAssetData =
       version === 3
         ? {
@@ -43,15 +43,11 @@ export class ZeroXOrder  {
   }
 
   static formatOrders(
-    orders: (ZeroXSignedOrder | ZeroXSignedOrderV4)[],
+    order: ZeroXSignedOrder,
     version: number = 2,
   ) {
     return version === 4
-      ? orders.map(o =>
-        ZeroXOrder.formatOrderV4(o as ZeroXSignedOrderV4, version),
-      )
-      : orders.map(o =>
-        ZeroXOrder.formatOrderV23(o as ZeroXSignedOrder, version),
-      );
+      ? ZeroXOrder.formatOrderV4(order as ZeroXSignedOrderV4, version)
+      : ZeroXOrder.formatOrderV23(order as ZeroXSignedOrderV2, version);
   }
 }

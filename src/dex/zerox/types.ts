@@ -8,7 +8,7 @@ export enum OrderStatus {
   CANCELLED, // Order has been cancelled
 }
 
-export interface ZeroXSignedOrder {
+export interface ZeroXSignedOrderV2 {
   senderAddress: string;
   makerAddress: string;
   takerAddress: string;
@@ -40,22 +40,4 @@ export interface ZeroXSignedOrderV4 {
   salt: BigInt;
 }
 
-export interface IzXSignedOrderV3 {
-  exchangeAddress: string;
-  makerAddress: string;
-  takerAddress: string;
-  feeRecipientAddress: string;
-  senderAddress: string;
-  makerAssetAmount: BigInt;
-  takerAssetAmount: BigInt;
-  makerFee: BigInt;
-  takerFee: BigInt;
-  expirationTimeSeconds: BigInt;
-  salt: BigInt;
-  makerAssetData: string;
-  takerAssetData: string;
-  signature: string;
-  chainId: number;
-  makerFeeAssetData: string;
-  takerFeeAssetData: string;
-}
+export type ZeroXSignedOrder = ZeroXSignedOrderV2 | ZeroXSignedOrderV4

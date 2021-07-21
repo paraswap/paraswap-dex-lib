@@ -77,8 +77,7 @@ export class SimpleSwap
         se.srcAmount,
         se.destAmount,
         se.data,
-        SwapSide.SELL,
-        { network: priceRoute.network }
+        SwapSide.SELL
       ),
     );
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(

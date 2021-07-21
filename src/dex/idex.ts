@@ -25,7 +25,6 @@ export interface IDex<ExchangeData, DirectParam = null> {
     destAmount: NumberAsString, // required for buy case
     data: ExchangeData,
     side: SwapSide,
-    meta?: { network?: number }
   ): AdapterExchangeParam;
   // Used for simpleSwap & simpleBuy
   getSimpleParam(
@@ -35,7 +34,6 @@ export interface IDex<ExchangeData, DirectParam = null> {
     destAmount: NumberAsString,
     data: ExchangeData,
     side: SwapSide,
-    meta?: { network?: number }
   ): SimpleExchangeParam;
   // Used if there is a possibility for direct swap (Eg. UniswapV2, 0xV2/V4, etc)
   getDirectParam?(
@@ -45,7 +43,6 @@ export interface IDex<ExchangeData, DirectParam = null> {
     destAmount: NumberAsString,
     data: ExchangeData,
     side: SwapSide,
-    meta?: { network?: number }
   ): TxInfo<DirectParam>;
 }
 
