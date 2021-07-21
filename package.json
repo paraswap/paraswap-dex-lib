@@ -28,7 +28,9 @@
   },
   "dependencies": {
     "@ethersproject/abi": "5.4.0",
+    "@ethersproject/providers": "5.4.1",
     "@types/web3-eth-abi": "1.2.2",
     "web3-eth-abi": "1.4.0"
-  }
+  },
+  "sideEffects": false
 }

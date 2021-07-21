@@ -1,4 +1,5 @@
 import { AbiCoder } from 'web3-eth-abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
 import { IDex } from './idex';
 import {
@@ -42,7 +43,7 @@ export class UniswapV2
   adapterInterface: Interface;
   abiCoder: AbiCoder;
 
-  constructor(augustusAddress: Address, protected dexKey = 'uniswapv2') {
+  constructor(augustusAddress: Address, network: number, provider: JsonRpcProvider, protected dexKey = 'uniswapv2') {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
     this.adapterInterface = new Interface(UniswapV2AdapterABI);

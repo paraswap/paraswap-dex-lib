@@ -1,16 +1,20 @@
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { IDex, DexMap } from './dex/idex';
 import { IRouter, RouterMap } from './router/irouter';
-import { OptimalRate, Address } from './types';
+import { OptimalRate, Address, Adapters } from './types';
 import { getRouterMap } from './router';
 import { getDexMap } from './dex';
+
 
 export class TransactionBuilder {
   routerMap: RouterMap;
   dexMap: DexMap;
+  provider: JsonRpcProvider;
 
-  constructor(augustusAddress: Address) {
-    this.dexMap = getDexMap(augustusAddress);
-    this.routerMap = getRouterMap(this.dexMap);
+  constructor(augustusAddress: Address, protected network: number, providerURL: string, adapters: Adapters) {
+    this.provider = new JsonRpcProvider(providerURL);
+    this.dexMap = getDexMap(augustusAddress, network, this.provider);
+    this.routerMap = getRouterMap(this.dexMap, adapters);
   }
 
   public build(
