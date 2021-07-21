@@ -47,7 +47,6 @@ type ZeroXData = {
   orders: any[];
   signatures: any[];
   networkFees?: string;
-  network: number;
   version: number;
   router: string;
 }
@@ -61,8 +60,8 @@ export class ZeroX
     super(augustusAddress);
   }
 
-  private getExchange(data: ZeroXData) {
-    return ZRX_EXCHANGE[data.network][data.version];
+  private getExchange(network: number, data: ZeroXData) {
+    return ZRX_EXCHANGE[network][data.version];
   }
 
   protected buildSwapData(data: ZeroXData, srcAmount: NumberAsString) {
@@ -90,18 +89,19 @@ export class ZeroX
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: ZeroXData
+    data: ZeroXData,
+    network: number
   ) {
     const approveCall = this.getApproveSimpleParam(
       srcToken,
-      ZRX_EXCHANGE_ERC20PROXY[data.network][data.version],
+      ZRX_EXCHANGE_ERC20PROXY[network][data.version],
       srcAmount,
     );
     const assetSwapperData = this.buildSwapData(data, srcAmount);
     const networkFees = data.networkFees || '0';
 
     return {
-      callees: [...approveCall.callees, this.getExchange(data)],
+      callees: [...approveCall.callees, this.getExchange(network, data)],
       calldata: [...approveCall.calldata, assetSwapperData],
       values: [...approveCall.values, networkFees],
     };
@@ -113,10 +113,11 @@ export class ZeroX
     srcAmount: NumberAsString,
     destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
+    network: number
   ): SimpleExchangeParam {
-    const wethToken = Weth.getAddress(data.network);
+    const wethToken = Weth.getAddress(network);
     const depositWethData = this.simpleSwapHelper.encodeFunctionData('deposit')
-    const wethToTokenData = this.getTokenToTokenSwapData(wethToken, srcAmount, destToken, destAmount, data);
+    const wethToTokenData = this.getTokenToTokenSwapData(wethToken, srcAmount, destToken, destAmount, data, network);
 
     return {
       callees: [wethToken, ...wethToTokenData.callees],
@@ -131,9 +132,10 @@ export class ZeroX
     srcAmount: NumberAsString,
     destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
+    network: number
   ): SimpleExchangeParam {
-    const wethToken = Weth.getAddress(data.network);
-    const wethToTokenData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
+    const wethToken = Weth.getAddress(network);
+    const wethToTokenData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data, network);
     const withdrawWethData = this.simpleSwapHelper.encodeFunctionData('withdrawAllWETH', [wethToken])
 
     return {
@@ -149,8 +151,9 @@ export class ZeroX
     srcAmount: NumberAsString,
     destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
+    network: number
   ): SimpleExchangeParam {
-    const swapData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
+    const swapData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data, network);
 
     return {
       callees: [...swapData.callees],
@@ -165,7 +168,7 @@ export class ZeroX
     srcAmount: NumberAsString,
     toAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-    side: SwapSide,
+    side: SwapSide
   ): AdapterExchangeParam {
     const payload = data.version === 4
       ? web3Coder.encodeParameter(
@@ -235,14 +238,15 @@ export class ZeroX
     destAmount: NumberAsString,
     data: ZeroXData,
     side: SwapSide,
+    meta: { network: number }
   ): SimpleExchangeParam {
     try {
       if (src === ETHER_ADDRESS) {
-        return this.ethToTokenSwap(src, dest, srcAmount, destAmount, data);
+        return this.ethToTokenSwap(src, dest, srcAmount, destAmount, data, meta.network);
       } else if (dest === ETHER_ADDRESS) {
-        return this.tokenToEthSwap(src, dest, srcAmount, destAmount, data);
+        return this.tokenToEthSwap(src, dest, srcAmount, destAmount, data, meta.network);
       } else {
-        return this.tokenToTokenSwap(src, dest, srcAmount, destAmount, data);
+        return this.tokenToTokenSwap(src, dest, srcAmount, destAmount, data, meta.network);
       }
     } catch (e) {
       throw new Error(e.message);
@@ -256,6 +260,7 @@ export class ZeroX
     destAmount: NumberAsString,
     data: ZeroXData,
     side: SwapSide,
+    meta: { network: number }
   ): TxInfo<ZeroXParam> {
     // const path = this.fixPath(data.path, srcToken, destToken);
     // const encoder = (...params: ZeroXParam) =>
