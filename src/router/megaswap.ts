@@ -7,7 +7,7 @@ import {
   ContractMegaSwapSellData,
   TxInfo,
 } from '../types';
-import * as IParaswapABI from '../abi/IParaswap.json';
+import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 
 type MegaSwapParam = [ContractMegaSwapSellData];
@@ -17,7 +17,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
 
   constructor(dexMap: DexMap) {
     super(dexMap);
-    this.paraswapInterface = new Interface(IParaswapABI as any);
+    this.paraswapInterface = new Interface(IParaswapABI);
   }
 
   build(

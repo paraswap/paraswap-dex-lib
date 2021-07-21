@@ -44,6 +44,8 @@ export interface IDex<ExchangeData, DirectParam = null> {
     data: ExchangeData,
     side: SwapSide,
   ): TxInfo<DirectParam>;
+
+  getDEXKey(): string;
 }
 
 export type DexMap = { [identifier: string]: IDex<any, any> };

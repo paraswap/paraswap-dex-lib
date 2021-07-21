@@ -2,7 +2,7 @@ import { IRouter } from './irouter';
 import { DexMap } from '../dex/idex';
 import { PayloadEncoder } from './payload-encoder';
 import { Address, OptimalRate, ContractSellData, TxInfo } from '../types';
-import * as IParaswapABI from '../abi/IParaswap.json';
+import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 
 type MultiSwapParam = [ContractSellData];
