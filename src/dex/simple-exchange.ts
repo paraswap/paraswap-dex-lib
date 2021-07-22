@@ -4,7 +4,6 @@ import { ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 
 export class SimpleExchange {
-  network: number;
   simpleSwapHelper: Interface;
   constructor(protected augustusAddress: Address) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);

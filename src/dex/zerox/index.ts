@@ -1,10 +1,11 @@
-const web3Coder = require('web3-eth-abi');
 import { AbiEncoder } from '@0x/utils';
 import { Interface } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { AbiCoder } from 'web3-eth-abi';
 
 import * as ERC20ABI from '../../abi/erc20.json';
-import * as ZeroXv2RouterABI from '../../abi/UniswapV2ExchangeRouter.json'; // TODO add ABI
-import * as ZeroXv4RouterABI from '../../abi/UniswapV2ExchangeRouter.json'; // TODO add ABI
+import * as ZeroXv2RouterABI from '../../abi/ZeroxV2Router.json'; // TODO add ABI
+import * as ZeroXv4RouterABI from '../../abi/ZeroxV4Router.json'; // TODO add ABI
 import * as ZRX_V2_ABI from '../../abi/zrx.v2.json';
 import * as ZRX_V3_ABI from '../../abi/zrx.v3.json';
 import * as ZRX_V4_ABI from '../../abi/zrx.v4.json';
@@ -16,7 +17,7 @@ import { ZeroXOrder } from './order';
 
 import type { IDex } from '../idex';
 import type { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam, TxInfo } from '../../types';
-import type { ZeroXSignedOrder, ZeroXSignedOrderV2, ZeroXSignedOrderV4 } from './types';
+import type { ZeroXSignedOrder, ZeroXSignedOrderV2 } from './types';
 
 const ZRX_EXCHANGE: any = {
   1: {
@@ -85,12 +86,14 @@ export class ZeroX
   routerV2Interface: Interface;
   routerV4Interface: Interface;
   erc20Interface: Interface;
+  abiCoder: AbiCoder;
 
-  constructor(augustusAddress: Address) {
+  constructor(augustusAddress: Address, public network: number, provider: JsonRpcProvider, protected dexKey = 'zerox') {
     super(augustusAddress);
     this.routerV2Interface = new Interface(ZeroXv2RouterABI);
     this.routerV4Interface = new Interface(ZeroXv4RouterABI);
     this.erc20Interface = new Interface(ERC20ABI);
+    this.abiCoder = new AbiCoder();
   }
 
   private getExchange(data: ZeroXData) {
@@ -200,7 +203,7 @@ export class ZeroX
     side: SwapSide
   ): AdapterExchangeParam {
     const payload = data.version === 4
-      ? web3Coder.encodeParameter(
+      ? this.abiCoder.encodeParameter(
         {
           ParentStruct: {
             order: {
@@ -228,7 +231,7 @@ export class ZeroX
           signature: data.signatures[0], //TODO check this one
         },
       )
-      : web3Coder.encodeParameter(
+      : this.abiCoder.encodeParameter(
         {
           ParentStruct: {
             'orders[]': {
@@ -310,5 +313,9 @@ export class ZeroX
       encoder,
       networkFee: '0',
     };
+  }
+
+  getDEXKey(): string {
+    return this.dexKey;
   }
 }
