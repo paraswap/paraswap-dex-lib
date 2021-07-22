@@ -14,7 +14,6 @@ import { SimpleExchange } from './simple-exchange';
 import UniswapV2RouterABI from '../abi/UniswapV2Router.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
 
-
 type UniswapData = {
   router: Address;
   path: Address[];
@@ -36,7 +35,10 @@ type BuyOnUniswapParam = [
 
 type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;
 
-const directUniswapFunctionName = {sell: 'swapOnUniswap', buy: 'buyOnUniswap'};
+const directUniswapFunctionName = {
+  sell: 'swapOnUniswap',
+  buy: 'buyOnUniswap',
+};
 
 export class UniswapV2
   extends SimpleExchange
@@ -48,14 +50,15 @@ export class UniswapV2
 
   constructor(
     augustusAddress: Address,
-    network: number, 
+    network: number,
     provider: JsonRpcProvider,
     protected dexKey = 'uniswapv2',
-    protected directFunctionName = directUniswapFunctionName) {
+    protected directFunctionName = directUniswapFunctionName,
+  ) {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
-    this.abiCoder = (Web3Abi as unknown) as AbiCoder;
+    this.abiCoder = Web3Abi as unknown as AbiCoder;
   }
 
   protected fixPath(path: Address[], srcToken: Address, destToken: Address) {
@@ -142,7 +145,7 @@ export class UniswapV2
     return this.dexKey;
   }
 
-  getDirectFuctionName(): {sell?: string, buy?: string} {
+  getDirectFuctionName(): { sell?: string; buy?: string } {
     return this.directFunctionName;
   }
 }

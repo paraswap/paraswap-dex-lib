@@ -3,7 +3,9 @@ import { SwapSide } from './constants';
 export type Address = string;
 export type NumberAsString = string;
 
-export type Adapters = {[exchangeKey: string]: {adapter: Address, index: number}[]};
+export type Adapters = {
+  [exchangeKey: string]: { adapter: Address; index: number }[];
+};
 
 export type OptimalRoute = {
   percent: number;

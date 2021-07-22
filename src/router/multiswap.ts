@@ -1,7 +1,13 @@
 import { IRouter } from './irouter';
 import { DexMap } from '../dex/idex';
 import { PayloadEncoder } from './payload-encoder';
-import { Address, OptimalRate, ContractSellData, TxInfo, Adapters } from '../types';
+import {
+  Address,
+  OptimalRate,
+  ContractSellData,
+  TxInfo,
+  Adapters,
+} from '../types';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 

@@ -45,7 +45,7 @@ export interface IDex<ExchangeData, DirectParam> {
     side: SwapSide,
   ): TxInfo<DirectParam>;
 
-  getDirectFuctionName?(): {sell?: string, buy?: string};
+  getDirectFuctionName?(): { sell?: string; buy?: string };
 
   getDEXKey(): string;
 }

@@ -19,9 +19,7 @@ type PartialContractSimpleData = Pick<
   'callees' | 'exchangeData' | 'values' | 'startIndexes'
 >;
 
-export class SimpleSwap
-  implements IRouter<SimpleSwapParam>
-{
+export class SimpleSwap implements IRouter<SimpleSwapParam> {
   paraswapInterface: Interface;
   contractMethodName: string;
 

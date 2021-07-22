@@ -6,7 +6,7 @@ import {
   OptimalRate,
   ContractMegaSwapSellData,
   TxInfo,
-  Adapters
+  Adapters,
 } from '../types';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
