@@ -1,11 +1,11 @@
 import { TransactionBuilder } from '../src/transaction-builder';
-import { SwapSide, ContractMethod } from '../src/constants';
+import { SwapSide } from '../src/constants';
 
 const AugustusAddress = '0x1bD435F3C054b6e901B7b108a0ab7617C808677b';
 
 describe('Transaction Builder', function () {
   it('multiSwap', function () {
-    const txBuilder = new TransactionBuilder(AugustusAddress);
+    const txBuilder = new TransactionBuilder(AugustusAddress, 1, "", {"uniswapv2": [{adapter: "0x0000000000000000000000000000000000000000", index: 1}]});
     const priceRoute = {
       blockNumber: 0,
       network: 1,
@@ -51,7 +51,7 @@ describe('Transaction Builder', function () {
       gasCostUSD: '0',
       gasCost: '0',
       side: SwapSide.SELL,
-      contractMethod: ContractMethod.multiSwap,
+      contractMethod: 'swapOnUniswap',
       tokenTransferProxy: '0xb70Bc06D2c9Bf03b3373799606dc7d39346c06B3',
       contractAddress: '0xb70Bc06D2c9Bf03b3373799606dc7d39346c06B3',
       partner: 'dummy',

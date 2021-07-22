@@ -8,4 +8,4 @@ export {
   OptionalRate,
 } from './types';
 
-export { SwapSide, ContractMethod } from './constants';
+export { SwapSide } from './constants';

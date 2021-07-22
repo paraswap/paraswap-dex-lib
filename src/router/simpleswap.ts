@@ -1,8 +1,8 @@
 import { IRouter } from './irouter';
 import { DexMap } from '../dex/idex';
-import { PayloadEncoder } from './payload-encoder';
 import {
   Address,
+  Adapters,
   OptimalRate,
   ConstractSimpleData,
   TxInfo,
@@ -20,14 +20,18 @@ type PartialContractSimpleData = Pick<
 >;
 
 export class SimpleSwap
-  extends PayloadEncoder
   implements IRouter<SimpleSwapParam>
 {
   paraswapInterface: Interface;
+  contractMethodName: string;
 
-  constructor(dexMap: DexMap) {
-    super(dexMap);
-    this.paraswapInterface = new Interface(IParaswapABI as any);
+  constructor(protected dexMap: DexMap, adapters: Adapters) {
+    this.paraswapInterface = new Interface(IParaswapABI);
+    this.contractMethodName = 'simpleSwap';
+  }
+
+  getContractMethodName(): string {
+    return this.contractMethodName;
   }
 
   private buildPartialContractSimpleData(

@@ -11,6 +11,8 @@ export interface IRouter<RouterParam> {
     permit: string,
     deadline: string,
   ): TxInfo<RouterParam>;
+
+  getContractMethodName(): string;
 }
 
 export type RouterMap = { [contractMethod: string]: IRouter<any> };

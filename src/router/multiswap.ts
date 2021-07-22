@@ -12,10 +12,16 @@ export class MultiSwap
   implements IRouter<MultiSwapParam>
 {
   paraswapInterface: Interface;
+  contractMethodName: string;
 
   constructor(dexMap: DexMap, adapters: Adapters) {
     super(dexMap, adapters);
-    this.paraswapInterface = new Interface(IParaswapABI as any);
+    this.paraswapInterface = new Interface(IParaswapABI);
+    this.contractMethodName = 'multiSwap';
+  }
+
+  getContractMethodName(): string {
+    return this.contractMethodName;
   }
 
   build(

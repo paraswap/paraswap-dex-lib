@@ -842,13 +842,6 @@
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-2.0.1.tgz#20f18294f797f2209b5f65c8e3b5c8e8261d127c"
   integrity sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==
 
-"@types/web3-eth-abi@1.2.2":
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/@types/web3-eth-abi/-/web3-eth-abi-1.2.2.tgz#97ae0f71860b7cd27d8cc2390d7a2099897dce1c"
-  integrity sha512-wrPCS44bReIfLVGG9RHvK0+v0W3YST1NuX3jQbe92pAyI+6y37Uvcp8HqUzxmzzhgiRLSwzQ42IlWiPrI66ynA==
-  dependencies:
-    web3-eth-abi "*"
-
 "@types/yargs-parser@*":
   version "20.2.1"
   resolved "https://registry.yarnpkg.com/@types/yargs-parser/-/yargs-parser-20.2.1.tgz#3b9ce2489919d9e4fea439b76916abc34b2df129"
@@ -3878,7 +3871,7 @@ walker@^1.0.7, walker@~1.0.5:
   dependencies:
     makeerror "1.0.x"
 
-web3-eth-abi@*, web3-eth-abi@1.4.0:
+web3-eth-abi@1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/web3-eth-abi/-/web3-eth-abi-1.4.0.tgz#83f9f0ce48fd6d6b233a30a33bd674b3518e472b"
   integrity sha512-FtmWipG/dSSkTGFb72JCwky7Jd0PIvd0kGTInWQwIEZlw5qMOYl61WZ9gwfojFHvHF6q1eKncerQr+MRXHO6zg==
