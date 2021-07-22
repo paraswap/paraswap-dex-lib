@@ -3,6 +3,8 @@ import { SwapSide, ContractMethod } from './constants';
 export type Address = string;
 export type NumberAsString = string;
 
+export type Adapters = {address: Address, exchanges: {exchangeKey: string, index: number}[]}[];
+
 export type OptimalRoute = {
   percent: number;
   swaps: OptimalSwap[];

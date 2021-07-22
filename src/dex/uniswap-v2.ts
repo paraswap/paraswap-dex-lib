@@ -1,4 +1,5 @@
-const web3Coder = require('web3-eth-abi');
+import { AbiCoder } from 'web3-eth-abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
 import { IDex } from './idex';
 import {
@@ -10,8 +11,8 @@ import {
 } from '../types';
 import { SwapSide, ETHER_ADDRESS } from '../constants';
 import { SimpleExchange } from './simple-exchange';
-import * as UniswapV2AdapterABI from '../abi/UniswapV2Adapter.json';
-import * as UniswapV2RouterABI from '../abi/UniswapV2ExchangeRouter.json';
+import UniswapV2AdapterABI from '../abi/UniswapV2Adapter.json';
+import UniswapV2RouterABI from '../abi/UniswapV2ExchangeRouter.json';
 
 type UniswapData = {
   router: Address;
@@ -40,10 +41,13 @@ export class UniswapV2
 {
   routerInterface: Interface;
   adapterInterface: Interface;
-  constructor(augustusAddress: Address) {
+  abiCoder: AbiCoder;
+
+  constructor(augustusAddress: Address, network: number, provider: JsonRpcProvider, protected dexKey = 'uniswapv2') {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
     this.adapterInterface = new Interface(UniswapV2AdapterABI);
+    this.abiCoder = new AbiCoder();
   }
 
   protected fixPath(path: Address[], srcToken: Address, destToken: Address) {
@@ -67,7 +71,7 @@ export class UniswapV2
     side: SwapSide,
   ): AdapterExchangeParam {
     const path = this.fixPath(data.path, srcToken, destToken);
-    const payload = web3Coder.encodeParameter(
+    const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           path: 'address[]',
@@ -124,5 +128,9 @@ export class UniswapV2
       encoder,
       networkFee: '0',
     };
+  }
+
+  getDEXKey(): string {
+    return this.dexKey;
   }
 }

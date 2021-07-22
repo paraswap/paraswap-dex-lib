@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { ETHER_ADDRESS } from '../constants';
-import * as SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
+import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 
 export class SimpleExchange {
   network: number;

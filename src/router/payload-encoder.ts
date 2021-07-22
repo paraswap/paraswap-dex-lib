@@ -7,6 +7,7 @@ import {
   OptimalSwapExchange,
   Address,
   NumberAsString,
+  Adapters
 } from '../types';
 import { SwapSide } from '../constants';
 import { DexMap } from '../dex/idex';
@@ -14,7 +15,7 @@ import { DexMap } from '../dex/idex';
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
-  constructor(protected dexMap: DexMap) {}
+  constructor(protected dexMap: DexMap, protected adapters: Adapters) {}
   // Should have function for optimally choosing the Adapters
   getContractPaths(swaps: OptimalSwap[]): ContractPath[] {
     return swaps.map(s => {
@@ -89,8 +90,12 @@ export class PayloadEncoder {
     [exchange: string]: [Address, number];
   } {
     // TODO: implement the logic properly
-    return {
-      uniswapv2: ['0x0000000000000000000000000000000000000000', 0],
-    };
+    let optimalAdapters: {
+      [exchange: string]: [Address, number];
+    } = {};
+    for (let [key, value] of Object.entries(this.adapters)) {
+      optimalAdapters[key] = [value[0].adapter, value[0].index];
+    }
+    return optimalAdapters;
   }
 }

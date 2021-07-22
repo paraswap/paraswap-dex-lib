@@ -9,7 +9,7 @@ import {
   SimpleExchangeParam,
 } from '../types';
 import { SwapSide } from '../constants';
-import * as IParaswapABI from '../abi/IParaswap.json';
+import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 
 type SimpleSwapParam = [ConstractSimpleData];
