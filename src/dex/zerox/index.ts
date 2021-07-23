@@ -4,8 +4,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { AbiCoder } from 'web3-eth-abi';
 
 import * as ERC20ABI from '../../abi/erc20.json';
-import * as ZeroXv2RouterABI from '../../abi/ZeroxV2Router.json'; // TODO add ABI
-import * as ZeroXv4RouterABI from '../../abi/ZeroxV4Router.json'; // TODO add ABI
+import * as IParaswapAbi from '../../abi/IParaswap.json'; // TODO regenerate ABI with new methods swapOn0x
 import * as ZRX_V2_ABI from '../../abi/zrx.v2.json';
 import * as ZRX_V3_ABI from '../../abi/zrx.v3.json';
 import * as ZRX_V4_ABI from '../../abi/zrx.v4.json';
@@ -83,15 +82,13 @@ export class ZeroX
   extends SimpleExchange
   implements IDex<ZeroXData, ZeroXParam>
 {
-  routerV2Interface: Interface;
-  routerV4Interface: Interface;
+  routerInterface: Interface;
   erc20Interface: Interface;
   abiCoder: AbiCoder;
 
   constructor(augustusAddress: Address, public network: number, provider: JsonRpcProvider, protected dexKey = 'zerox') {
     super(augustusAddress);
-    this.routerV2Interface = new Interface(ZeroXv2RouterABI);
-    this.routerV4Interface = new Interface(ZeroXv4RouterABI);
+    this.routerInterface = new Interface(IParaswapAbi);
     this.erc20Interface = new Interface(ERC20ABI);
     this.abiCoder = new AbiCoder();
   }
@@ -295,12 +292,12 @@ export class ZeroX
     const encoder = (...params: ZeroXParam) => {
       switch (data.version) {
         case 2:
-          return this.routerV2Interface.encodeFunctionData(
+          return this.routerInterface.encodeFunctionData(
             'swapOnZeroXv2', // TODO Buy case
             params,
           );
         case 4:
-          return this.routerV4Interface.encodeFunctionData(
+          return this.routerInterface.encodeFunctionData(
             'swapOnZeroXV4', // TODO Buy case
             params,
           );
