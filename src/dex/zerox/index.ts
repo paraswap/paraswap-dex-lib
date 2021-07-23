@@ -4,7 +4,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { AbiCoder } from 'web3-eth-abi';
 
 import * as ERC20ABI from '../../abi/erc20.json';
-import * as IParaswapAbi from '../../abi/IParaswap.json'; // TODO regenerate ABI with new methods swapOn0x
+import * as IParaswapAbi from '../../abi/IParaswap.json';
 import * as ZRX_V2_ABI from '../../abi/zrx.v2.json';
 import * as ZRX_V3_ABI from '../../abi/zrx.v3.json';
 import * as ZRX_V4_ABI from '../../abi/zrx.v4.json';
@@ -298,7 +298,7 @@ export class ZeroX
           );
         case 4:
           return this.routerInterface.encodeFunctionData(
-            'swapOnZeroXV4', // TODO Buy case
+            'swapOnZeroXv4', // TODO Buy case
             params,
           );
         default:
