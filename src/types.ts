@@ -1,9 +1,11 @@
-import { SwapSide, ContractMethod } from './constants';
+import { SwapSide } from './constants';
 
 export type Address = string;
 export type NumberAsString = string;
 
-export type Adapters = {address: Address, exchanges: {exchangeKey: string, index: number}[]}[];
+export type Adapters = {
+  [exchangeKey: string]: { adapter: Address; index: number }[];
+};
 
 export type OptimalRoute = {
   percent: number;
@@ -50,7 +52,7 @@ export type OptimalRate = {
   gasCost: NumberAsString;
   others?: OptionalRate[];
   side: SwapSide;
-  contractMethod: ContractMethod;
+  contractMethod: string;
   tokenTransferProxy: Address;
   contractAddress: Address;
   maxImpact?: number;

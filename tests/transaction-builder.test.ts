@@ -1,11 +1,15 @@
 import { TransactionBuilder } from '../src/transaction-builder';
-import { SwapSide, ContractMethod } from '../src/constants';
+import { SwapSide } from '../src/constants';
 
 const AugustusAddress = '0x1bD435F3C054b6e901B7b108a0ab7617C808677b';
 
 describe('Transaction Builder', function () {
   it('multiSwap', function () {
-    const txBuilder = new TransactionBuilder(AugustusAddress);
+    const txBuilder = new TransactionBuilder(AugustusAddress, 1, '', {
+      uniswapv2: [
+        { adapter: '0x0000000000000000000000000000000000000000', index: 1 },
+      ],
+    });
     const priceRoute = {
       blockNumber: 0,
       network: 1,
@@ -51,7 +55,7 @@ describe('Transaction Builder', function () {
       gasCostUSD: '0',
       gasCost: '0',
       side: SwapSide.SELL,
-      contractMethod: ContractMethod.multiSwap,
+      contractMethod: 'swapOnUniswap',
       tokenTransferProxy: '0xb70Bc06D2c9Bf03b3373799606dc7d39346c06B3',
       contractAddress: '0xb70Bc06D2c9Bf03b3373799606dc7d39346c06B3',
       partner: 'dummy',
@@ -71,18 +75,16 @@ describe('Transaction Builder', function () {
         deadline: '0',
       },
     ];
-    const params = txBuilder.build(
+    const params = txBuilder.build({
       priceRoute,
-      '2636005530238615700000000',
-      '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
-      '0xba12222222228d8ba445958a75a0704d566bf2c8',
-      '30',
-      '10000000000',
-      '0x',
-      '0',
-      undefined,
-      true,
-    );
+      minMaxAmount: '2636005530238615700000000',
+      userAddress: '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
+      partner: '0xba12222222228d8ba445958a75a0704d566bf2c8',
+      feePercent: '30',
+      gasPrice: '10000000000',
+      deadline: '0',
+      onlyParams: true,
+    });
     // console.log(JSON.stringify(params, null, 2));
     expect(params).toEqual(expectedParams);
   });

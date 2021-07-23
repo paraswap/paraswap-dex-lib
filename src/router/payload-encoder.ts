@@ -7,7 +7,7 @@ import {
   OptimalSwapExchange,
   Address,
   NumberAsString,
-  Adapters
+  Adapters,
 } from '../types';
 import { SwapSide } from '../constants';
 import { DexMap } from '../dex/idex';

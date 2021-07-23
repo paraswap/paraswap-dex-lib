@@ -7,7 +7,7 @@ import {
 } from '../types';
 import { SwapSide } from '../constants';
 
-export interface IDex<ExchangeData, DirectParam = null> {
+export interface IDex<ExchangeData, DirectParam> {
   getNetworkFee?(
     srcToken: Address,
     destToken: Address,
@@ -44,6 +44,8 @@ export interface IDex<ExchangeData, DirectParam = null> {
     data: ExchangeData,
     side: SwapSide,
   ): TxInfo<DirectParam>;
+
+  getDirectFuctionName?(): { sell?: string; buy?: string };
 
   getDEXKey(): string;
 }
