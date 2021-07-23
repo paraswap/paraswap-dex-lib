@@ -46,8 +46,13 @@ export class ZeroXOrder  {
     order: ZeroXSignedOrder,
     version: number = 2,
   ) {
-    return version === 4
-      ? ZeroXOrder.formatOrderV4(order as ZeroXSignedOrderV4, version)
-      : ZeroXOrder.formatOrderV23(order as ZeroXSignedOrderV2, version);
+    if (isV4Order(order, version)) {
+      return ZeroXOrder.formatOrderV4(order, version)
+    }
+    return ZeroXOrder.formatOrderV23(order, version);
   }
+}
+
+function isV4Order(order: ZeroXSignedOrder, version: number = 2): order is ZeroXSignedOrderV4 {
+  return version === 4;
 }
