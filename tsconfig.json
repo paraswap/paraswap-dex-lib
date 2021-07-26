@@ -9,6 +9,7 @@
     "removeComments": true,
     "strictNullChecks": true,
     "sourceMap": true,
+    "declaration": true,
     "target": "es2019",
     "skipLibCheck": true,
     "resolveJsonModule": true,
