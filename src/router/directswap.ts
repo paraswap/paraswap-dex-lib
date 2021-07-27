@@ -8,12 +8,10 @@ import {
   Adapters,
 } from '../types';
 import { SwapSide } from '../constants';
-import { Interface } from '@ethersproject/abi';
 
 type MultiSwapParam = [ContractSellData];
 
 export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
-  paraswapInterface: Interface;
   contractMethodName: string;
 
   constructor(

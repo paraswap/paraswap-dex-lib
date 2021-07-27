@@ -2,6 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { IDex, DexMap } from './dex/idex';
 import { IRouter, RouterMap } from './router/irouter';
 import { OptimalRate, Address, Adapters } from './types';
+import { ETHER_ADDRESS } from './constants';
 import { getRouterMap } from './router';
 import { getDexMap } from './dex';
 
@@ -62,11 +63,13 @@ export class TransactionBuilder {
 
     if (onlyParams) return params;
 
+    const value = (priceRoute.src.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? BigInt(priceRoute.srcAmount) + BigInt(networkFee) : BigInt(networkFee)).toString();
+
     return {
       from: userAddress,
       to: priceRoute.contractAddress,
       chainId: priceRoute.network,
-      networkFee,
+      value,
       data: encoder.apply(null, params),
     };
   }
