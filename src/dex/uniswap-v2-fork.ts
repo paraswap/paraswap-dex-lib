@@ -20,7 +20,7 @@ type UniswapData = {
   factory: Address;
   initCode: string;
   fee: NumberAsString[];
-  feeFactor: NumberAsString[];
+  feeFactor: NumberAsString;
 };
 
 type SwapOnUniswapParam = [
@@ -54,7 +54,7 @@ export class UniswapV2Fork
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKey = 'uniswapv2',
+    protected dexKey: string,
     protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
@@ -92,7 +92,7 @@ export class UniswapV2Fork
           initCode: 'bytes32',
           factory: 'address',
           fee: 'uint256[]',
-          feeFactor: 'uint256[]',
+          feeFactor: 'uint256',
         },
       },
       { path, initCode, factory, fee, feeFactor },
