@@ -176,6 +176,7 @@ export type SimpleExchangeParam = {
   callees: string[];
   calldata: string[];
   values: string[];
+  networkFee: string;
 };
 
 // TODO: fix the type

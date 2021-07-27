@@ -20,6 +20,7 @@ export class SimpleExchange {
         callees: [],
         calldata: [],
         values: [],
+        networkFee: '0'
       };
     }
 
@@ -32,6 +33,7 @@ export class SimpleExchange {
       callees: [this.augustusAddress],
       calldata: [approveCalldata],
       values: ['0'],
+      networkFee: '0'
     };
   }
 
@@ -56,6 +58,7 @@ export class SimpleExchange {
       callees: [...approveParam.callees, swapCallee],
       calldata: [...approveParam.calldata, swapCallData],
       values: [...approveParam.values, swapValue],
+      networkFee,
     };
   }
 }

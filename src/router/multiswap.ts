@@ -45,13 +45,14 @@ export class MultiSwap
       priceRoute.bestRoute[0].percent !== 100
     )
       throw new Error(`Multiswap invalid bestRoute`);
+    const { paths, networkFee } = this.getContractPathsWithNetworkFee(priceRoute.bestRoute[0].swaps)
     const sellData: ContractSellData = {
       fromToken: priceRoute.src,
       fromAmount: priceRoute.srcAmount,
       toAmount: minMaxAmount,
       expectedAmount: priceRoute.destAmount,
       beneficiary,
-      path: this.getContractPaths(priceRoute.bestRoute[0].swaps),
+      path: paths,
       partner,
       feePercent,
       permit,
@@ -59,11 +60,11 @@ export class MultiSwap
     };
     const encoder = (...params: any[]) =>
       this.paraswapInterface.encodeFunctionData('multiSwap', params);
-    // TODO: fix network fee
+
     return {
       encoder,
       params: [sellData],
-      networkFee: '0',
+      networkFee: networkFee.toString(),
     };
   }
 }
