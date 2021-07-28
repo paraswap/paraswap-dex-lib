@@ -68,7 +68,7 @@ export class PayloadEncoder {
         };
       }
       const adapterParam = this.dexMap[
-        se.exchange.toLowerCase()
+        se.exchange.toLowerCase() // Proposal: use findByKey() allows us to whitelist multiple exchanges
       ].getAdapterParam(
         src,
         dest,
