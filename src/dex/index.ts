@@ -1,12 +1,14 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Address } from '../types';
 import { Curve } from './curve';
+import { CurveV2 } from './curve-v2';
 import { DexMap, IDex } from './idex';
 import { UniswapV2 } from './uniswap-v2';
 
 const dexes = [
   UniswapV2, 
-  Curve
+  Curve,
+  CurveV2
 ];
 
 export function getDexMap(

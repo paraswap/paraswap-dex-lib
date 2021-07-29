@@ -3,71 +3,60 @@ import { SwapSide } from "..";
 import { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam } from "../types";
 import { IDex } from "./idex";
 import { SimpleExchange } from "./simple-exchange";
-import CurveABI from '../abi/Curve.json';
+import CurveV2ABI from '../abi/CurveV2.json';
 import { BUY_NOT_SUPPORTED_ERRROR } from "../constants";
+import { isETHAddress } from "../utils";
+import type {CurveData}  from './curve'
 
-export type CurveData = {
-  exchange: string;
-  i: string;
-  j: string;
-  deadline: string;
-  underlyingSwap: boolean;
-  v3: boolean;
-};
+type CurveV2Data = Omit<CurveData, 'deadline' | 'v3'>;
 
-type CurveParam = [
+type CurveV2Param = [
   i: NumberAsString,
   j: NumberAsString,
   dx: NumberAsString,
-  min_dy: NumberAsString
-];
+  min_dy: NumberAsString,
+  ethDeposit?: boolean
+]
 
-export enum CurveSwapFunctions {
+enum CurveSwapFunctions {
   exchange= 'exchange',
   exchange_underlying = 'exchange_underlying'
 }
 
-export class Curve extends SimpleExchange
-  implements IDex<CurveData, CurveParam> {
+export class CurveV2 extends SimpleExchange
+  implements IDex<CurveV2Data, CurveV2Param> {
     protected dexKey = [
-      'curve', 
-      'curve3', 
-      'swerve', 
-      'acryptos', 
-      'beltfi', 
-      'ellipsis'
+      'curvev2'
     ];
     exchangeRouterInterface: Interface;
     minConversionRate = '1';
 
     constructor(augustusAddress: Address){
         super(augustusAddress);
-        this.exchangeRouterInterface = new Interface(CurveABI);
+        this.exchangeRouterInterface = new Interface(CurveV2ABI);
     }  
 
-    getAdapterParam(srcToken: string, destToken: string, srcAmount: string, destAmount: string, data: CurveData, side: SwapSide): AdapterExchangeParam {
+    getAdapterParam(srcToken: string, destToken: string, srcAmount: string, destAmount: string, data: CurveV2Data, side: SwapSide): AdapterExchangeParam {
       if(side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR
 
       let payload
-      
+        
       try {
-          const { i, j, deadline, underlyingSwap, v3 } = data;
+          const { i, j, underlyingSwap } = data;
           payload = this.abiCoder.encodeParameter(
             {
               ParentStruct: {
-                i: 'int128',
-                j: 'int128',
-                deadline: 'uint256',
+                i: 'uint256',
+                j: 'uint256',
                 underlyingSwap: 'bool',
-                v3: 'bool',
               },
             },
-            { i, j, deadline, underlyingSwap, v3 },
+            { i, j, underlyingSwap },
           );
         } catch (e) {
           console.error('Curve Error', e);
           payload = '0x';
-        }
+        }      
 
       return {
         targetExchange: data.exchange,
@@ -76,11 +65,13 @@ export class Curve extends SimpleExchange
       };
     }
 
-    getSimpleParam(srcToken: string, destToken: string, srcAmount: string, destAmount: string, data: CurveData, side: SwapSide): SimpleExchangeParam {
+    getSimpleParam(srcToken: string, destToken: string, srcAmount: string, destAmount: string, data: CurveV2Data, side: SwapSide): SimpleExchangeParam {
       if(side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR
 
       const { exchange, i, j, underlyingSwap } = data;
-      const defaultArgs = [i, j, srcAmount, this.minConversionRate];
+      const defaultArgs: CurveV2Param = [i, j, srcAmount, this.minConversionRate];
+      // Only non underlyingSwaps in mainnet have an option to directly deposit ETH
+      if (!underlyingSwap && isETHAddress(srcToken)) defaultArgs.push(true);
       const swapMethod = underlyingSwap ? CurveSwapFunctions.exchange_underlying : CurveSwapFunctions.exchange;
       const swapData = this.exchangeRouterInterface.encodeFunctionData(swapMethod, defaultArgs);
 
