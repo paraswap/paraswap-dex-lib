@@ -6,6 +6,7 @@ export {
   OptimalRate,
   OptimalSwapExchange,
   OptionalRate,
+  Adapters
 } from './types';
 
 export { SwapSide } from './constants';

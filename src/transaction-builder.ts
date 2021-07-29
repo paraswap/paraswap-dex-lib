@@ -33,7 +33,6 @@ export class TransactionBuilder {
     deadline,
     beneficiary,
     onlyParams = false,
-    ignoreGas = false,
   }: {
     priceRoute: OptimalRate;
     minMaxAmount: string;
@@ -45,7 +44,6 @@ export class TransactionBuilder {
     deadline: string;
     beneficiary?: Address;
     onlyParams?: boolean;
-    ignoreGas?: boolean;
   }) {
     const _beneficiary = beneficiary || userAddress;
     const { encoder, params, networkFee } = this.routerMap[

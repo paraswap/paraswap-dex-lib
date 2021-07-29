@@ -17,15 +17,15 @@ export type OptimalSwap = {
   srcDecimals: number;
   dest: Address;
   destDecimals: number;
-  swapExchanges: OptimalSwapExchange[];
+  swapExchanges: OptimalSwapExchange<any>[];
 };
 
-export type OptimalSwapExchange = {
+export type OptimalSwapExchange<T> = {
   exchange: string;
   srcAmount: NumberAsString;
   destAmount: NumberAsString;
   percent: number;
-  data?: any;
+  data?: T;
 };
 
 export type OptionalRate = {

@@ -52,11 +52,11 @@ export class PayloadEncoder {
   getAdapters(
     src: Address,
     dest: Address,
-    swapExchanges: OptimalSwapExchange[],
+    swapExchanges: OptimalSwapExchange<any>[],
   ): ContractAdapter[] {
     const exchangeAdapterMap = this.getOptimalExchangeAdapterMap(swapExchanges);
     let adaptersMap: { [adapter: string]: ContractAdapter } = {};
-    swapExchanges.forEach((se: OptimalSwapExchange) => {
+    swapExchanges.forEach((se: OptimalSwapExchange<any>) => {
       const [adapterAddress, index] =
         exchangeAdapterMap[se.exchange.toLowerCase()];
       if (!(adapterAddress in adaptersMap)) {
@@ -97,7 +97,7 @@ export class PayloadEncoder {
   // Find the best adapter, assign exhanges that use best adapter, filter out the   
   // exchanges that were not assigned with the best adapter, recursively call 
   // getOptimalExchangeAdapterMap until swapExchanges is empty
-  getOptimalExchangeAdapterMap(swapExchanges: OptimalSwapExchange[]): {
+  getOptimalExchangeAdapterMap(swapExchanges: OptimalSwapExchange<any>[]): {
     [exchange: string]: [Address, number];
   } {
     if (!swapExchanges.length) return {};
@@ -120,7 +120,7 @@ export class PayloadEncoder {
     let optimalAdapters: {
       [exchange: string]: [Address, number];
     } = {};
-    const leftSwapExchange: OptimalSwapExchange[] = []; 
+    const leftSwapExchange: OptimalSwapExchange<any>[] = []; 
     
     swapExchanges.forEach(se => {
       const exchangeKey = se.exchange.toLowerCase();
