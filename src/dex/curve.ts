@@ -1,4 +1,4 @@
-import { Interface } from "@ethersproject/abi";
+import { Interface, JsonFragment } from "@ethersproject/abi";
 import { SwapSide } from "..";
 import { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam } from "../types";
 import { IDex } from "./idex";
@@ -42,7 +42,7 @@ export class Curve extends SimpleExchange
 
     constructor(augustusAddress: Address){
         super(augustusAddress);
-        this.exchangeRouterInterface = new Interface(CurveABI);
+        this.exchangeRouterInterface = new Interface(CurveABI as JsonFragment[]);
     }  
 
     getAdapterParam(srcToken: string, destToken: string, srcAmount: string, destAmount: string, data: CurveData, side: SwapSide): AdapterExchangeParam {

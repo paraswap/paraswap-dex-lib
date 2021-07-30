@@ -23,7 +23,7 @@
     "constant": false,
     "payable": false,
     "type": "function",
-    "gas": 5200817
+    "gas": "5200817"
   },
   {
     "name": "exchange",
@@ -49,6 +49,6 @@
     "constant": false,
     "payable": false,
     "type": "function",
-    "gas": 5184573
+    "gas": "5184573"
   }
 ]
