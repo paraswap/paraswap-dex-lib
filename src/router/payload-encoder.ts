@@ -17,15 +17,17 @@ import { DexMap } from '../dex/idex';
 export class PayloadEncoder {
   constructor(protected dexMap: DexMap, protected adapters: Adapters) {}
   // Should have function for optimally choosing the Adapters
-  getContractPathsWithNetworkFee(swaps: OptimalSwap[]): { paths: ContractPath[], networkFee: bigint } {
+  getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
+    paths: ContractPath[];
+    networkFee: bigint;
+  } {
     let totalNetworkFee = BigInt(0);
     const paths = swaps.map(s => {
       const adapters = this.getAdapters(s.src, s.dest, s.swapExchanges);
-      const totalPathNetworkFee = adapters
-        .reduce(
-          (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
-          BigInt(0),
-        )
+      const totalPathNetworkFee = adapters.reduce(
+        (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
+        BigInt(0),
+      );
       totalNetworkFee += totalPathNetworkFee;
       return {
         to: s.dest,
@@ -33,20 +35,25 @@ export class PayloadEncoder {
         adapters,
       };
     });
-    return { paths, networkFee: totalNetworkFee};
+    return { paths, networkFee: totalNetworkFee };
   }
 
-  getMegaSwapPathsWithNetworkFee(routes: OptimalRoute[]): { megaSwapPaths: ContractMegaSwapPath[], networkFee: bigint } {
+  getMegaSwapPathsWithNetworkFee(routes: OptimalRoute[]): {
+    megaSwapPaths: ContractMegaSwapPath[];
+    networkFee: bigint;
+  } {
     let totalNetworkFee = BigInt(0);
     const megaSwapPaths = routes.map(r => {
-      const { paths, networkFee } = this.getContractPathsWithNetworkFee(r.swaps);
+      const { paths, networkFee } = this.getContractPathsWithNetworkFee(
+        r.swaps,
+      );
       totalNetworkFee += networkFee;
       return {
         fromAmountPercent: (r.percent * 100).toFixed(0),
         path: paths,
       };
     });
-    return { megaSwapPaths, networkFee: totalNetworkFee};
+    return { megaSwapPaths, networkFee: totalNetworkFee };
   }
 
   getAdapters(
@@ -94,43 +101,49 @@ export class PayloadEncoder {
     return Object.values(adaptersMap);
   }
 
-  // Find the best adapter, assign exhanges that use best adapter, filter out the   
-  // exchanges that were not assigned with the best adapter, recursively call 
+  // Find the best adapter, assign exhanges that use best adapter, filter out the
+  // exchanges that were not assigned with the best adapter, recursively call
   // getOptimalExchangeAdapterMap until swapExchanges is empty
   getOptimalExchangeAdapterMap(swapExchanges: OptimalSwapExchange<any>[]): {
     [exchange: string]: [Address, number];
   } {
     if (!swapExchanges.length) return {};
 
-    const adapterPoints: {[adapter: string]: number} = {};
-    swapExchanges.forEach(
-      se => 
-        this.adapters[se.exchange.toLowerCase()].forEach(
-          a => {
-            const adapter = a.adapter.toLowerCase();
-            if (!(adapter in adapterPoints))
-              adapterPoints[adapter] = 0;
-            adapterPoints[adapter] += 1;
-          }
-         )
+    const adapterPoints: { [adapter: string]: number } = {};
+    swapExchanges.forEach(se =>
+      this.adapters[se.exchange.toLowerCase()].forEach(a => {
+        const adapter = a.adapter.toLowerCase();
+        if (!(adapter in adapterPoints)) adapterPoints[adapter] = 0;
+        adapterPoints[adapter] += 1;
+      }),
     );
 
-    const bestAdapter = Object.keys(adapterPoints).reduce((a, b) => adapterPoints[a] > adapterPoints[b] ? a : b);
+    const bestAdapter = Object.keys(adapterPoints).reduce((a, b) =>
+      adapterPoints[a] > adapterPoints[b] ? a : b,
+    );
     // TODO: implement the logic properly
     let optimalAdapters: {
       [exchange: string]: [Address, number];
     } = {};
-    const leftSwapExchange: OptimalSwapExchange<any>[] = []; 
-    
+    const leftSwapExchange: OptimalSwapExchange<any>[] = [];
+
     swapExchanges.forEach(se => {
       const exchangeKey = se.exchange.toLowerCase();
-      const adapterConfig = this.adapters[exchangeKey].find(({adapter}) => adapter.toLowerCase() === bestAdapter);
+      const adapterConfig = this.adapters[exchangeKey].find(
+        ({ adapter }) => adapter.toLowerCase() === bestAdapter,
+      );
       if (adapterConfig) {
-        optimalAdapters[exchangeKey] = [adapterConfig.adapter, adapterConfig.index];
+        optimalAdapters[exchangeKey] = [
+          adapterConfig.adapter,
+          adapterConfig.index,
+        ];
       } else {
         leftSwapExchange.push(se);
       }
     });
-    return {...optimalAdapters, ...this.getOptimalExchangeAdapterMap(leftSwapExchange)};
+    return {
+      ...optimalAdapters,
+      ...this.getOptimalExchangeAdapterMap(leftSwapExchange),
+    };
   }
 }

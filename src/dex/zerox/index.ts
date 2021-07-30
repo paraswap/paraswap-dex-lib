@@ -14,7 +14,13 @@ import { Weth } from '../weth';
 import { ZeroXOrder } from './order';
 
 import type { IDex } from '../idex';
-import type { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam, TxInfo } from '../../types';
+import type {
+  AdapterExchangeParam,
+  Address,
+  NumberAsString,
+  SimpleExchangeParam,
+  TxInfo,
+} from '../../types';
 import type { ZeroXSignedOrder, ZeroXSignedOrderV2 } from './types';
 
 const ZRX_EXCHANGE: any = {
@@ -54,7 +60,7 @@ type ZeroXData = {
   networkFees?: string;
   version: number;
   router: string;
-}
+};
 
 type SwapOnZeroXParam = [
   Address, // srcToken
@@ -62,7 +68,7 @@ type SwapOnZeroXParam = [
   NumberAsString, // srcAmount
   NumberAsString, // destAmount
   Address, // exchange
-  ZeroXSignedOrder // payload
+  ZeroXSignedOrder, // payload
 ];
 
 type BuyOnZeroXParam = [
@@ -71,11 +77,10 @@ type BuyOnZeroXParam = [
   NumberAsString, // srcAmount
   NumberAsString, // destAmount
   Address, // exchange
-  ZeroXSignedOrder // payload
+  ZeroXSignedOrder, // payload
 ];
 
 type ZeroXParam = SwapOnZeroXParam | BuyOnZeroXParam;
-
 
 export class ZeroX
   extends SimpleExchange
@@ -85,7 +90,11 @@ export class ZeroX
   erc20Interface: Interface;
   dexKey = ['zerox'];
 
-  constructor(augustusAddress: Address, public network: number, provider: JsonRpcProvider) {
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
     super(augustusAddress);
     this.routerInterface = new Interface(IParaswapAbi);
     this.erc20Interface = new Interface(ERC20ABI);
@@ -145,14 +154,20 @@ export class ZeroX
     data: ZeroXData,
   ): SimpleExchangeParam {
     const wethToken = Weth.getAddress(this.network);
-    const depositWethData = this.erc20Interface.encodeFunctionData('deposit')
-    const wethToTokenData = this.getTokenToTokenSwapData(wethToken, srcAmount, destToken, destAmount, data);
+    const depositWethData = this.erc20Interface.encodeFunctionData('deposit');
+    const wethToTokenData = this.getTokenToTokenSwapData(
+      wethToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      data,
+    );
 
     return {
       callees: [wethToken, ...wethToTokenData.callees],
       calldata: [depositWethData, ...wethToTokenData.calldata],
       values: [srcAmount, ...wethToTokenData.values],
-      networkFee: '0'
+      networkFee: '0',
     };
   }
 
@@ -164,14 +179,23 @@ export class ZeroX
     data: ZeroXData,
   ): SimpleExchangeParam {
     const wethToken = Weth.getAddress(this.network);
-    const wethToTokenData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
-    const withdrawWethData = this.simpleSwapHelper.encodeFunctionData('withdrawAllWETH', [wethToken])
+    const wethToTokenData = this.getTokenToTokenSwapData(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+    );
+    const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
+      'withdrawAllWETH',
+      [wethToken],
+    );
 
     return {
       callees: [...wethToTokenData.callees, this.augustusAddress],
       calldata: [...wethToTokenData.calldata, withdrawWethData],
       values: [...wethToTokenData.values, '0'],
-      networkFee: '0'
+      networkFee: '0',
     };
   }
 
@@ -182,13 +206,19 @@ export class ZeroX
     destAmount: NumberAsString, // required for buy case
     data: ZeroXData,
   ): SimpleExchangeParam {
-    const swapData = this.getTokenToTokenSwapData(srcToken, destToken, srcAmount, destAmount, data);
+    const swapData = this.getTokenToTokenSwapData(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+    );
 
     return {
       callees: [...swapData.callees],
       calldata: [...swapData.calldata],
       values: [...swapData.values],
-      networkFee: '0'
+      networkFee: '0',
     };
   }
 
@@ -198,62 +228,63 @@ export class ZeroX
     srcAmount: NumberAsString,
     toAmount: NumberAsString, // required for buy case
     data: ZeroXData,
-    side: SwapSide
+    side: SwapSide,
   ): AdapterExchangeParam {
-    const payload = data.version === 4
-      ? this.abiCoder.encodeParameter(
-        {
-          ParentStruct: {
-            order: {
-              makerToken: 'address',
-              takerToken: 'address',
-              makerAmount: 'uint128',
-              takerAmount: 'uint128',
-              maker: 'address',
-              taker: 'address',
-              txOrigin: 'address',
-              pool: 'bytes32',
-              expiry: 'uint64',
-              salt: 'uint256',
+    const payload =
+      data.version === 4
+        ? this.abiCoder.encodeParameter(
+            {
+              ParentStruct: {
+                order: {
+                  makerToken: 'address',
+                  takerToken: 'address',
+                  makerAmount: 'uint128',
+                  takerAmount: 'uint128',
+                  maker: 'address',
+                  taker: 'address',
+                  txOrigin: 'address',
+                  pool: 'bytes32',
+                  expiry: 'uint64',
+                  salt: 'uint256',
+                },
+                signature: {
+                  signatureType: 'uint8',
+                  v: 'uint8',
+                  r: 'bytes32',
+                  s: 'bytes32',
+                },
+              },
             },
-            signature: {
-              signatureType: 'uint8',
-              v: 'uint8',
-              r: 'bytes32',
-              s: 'bytes32',
+            {
+              order: ZeroXOrder.formatOrders(data.order, 4),
+              signature: data.signatures[0], //TODO check this one
             },
-          },
-        },
-        {
-          order: ZeroXOrder.formatOrders(data.order, 4),
-          signature: data.signatures[0], //TODO check this one
-        },
-      )
-      : this.abiCoder.encodeParameter(
-        {
-          ParentStruct: {
-            'orders[]': {
-              makerAddress: 'address', // Address that created the order.
-              takerAddress: 'address', // Address that is allowed to fill the order. If set to 0, any address is allowed to fill the order.
-              feeRecipientAddress: 'address', // Address that will recieve fees when order is filled.
-              senderAddress: 'address', // Address that is allowed to call Exchange contract methods that affect this order. If set to 0, any address is allowed to call these methods.
-              makerAssetAmount: 'uint256', // Amount of makerAsset being offered by maker. Must be greater than 0.
-              takerAssetAmount: 'uint256', // Amount of takerAsset being bid on by maker. Must be greater than 0.
-              makerFee: 'uint256', // Fee paid to feeRecipient by maker when order is filled.
-              takerFee: 'uint256', // Fee paid to feeRecipient by taker when order is filled.
-              expirationTimeSeconds: 'uint256', // Timestamp in seconds at which order expires.
-              salt: 'uint256', // Arbitrary number to facilitate uniqueness of the order's hash.
-              makerAssetData: 'bytes', // Encoded data that can be decoded by a specified proxy contract when transferring makerAsset. The leading bytes4 references the id of the asset proxy.
-              takerAssetData: 'bytes',
+          )
+        : this.abiCoder.encodeParameter(
+            {
+              ParentStruct: {
+                'orders[]': {
+                  makerAddress: 'address', // Address that created the order.
+                  takerAddress: 'address', // Address that is allowed to fill the order. If set to 0, any address is allowed to fill the order.
+                  feeRecipientAddress: 'address', // Address that will recieve fees when order is filled.
+                  senderAddress: 'address', // Address that is allowed to call Exchange contract methods that affect this order. If set to 0, any address is allowed to call these methods.
+                  makerAssetAmount: 'uint256', // Amount of makerAsset being offered by maker. Must be greater than 0.
+                  takerAssetAmount: 'uint256', // Amount of takerAsset being bid on by maker. Must be greater than 0.
+                  makerFee: 'uint256', // Fee paid to feeRecipient by maker when order is filled.
+                  takerFee: 'uint256', // Fee paid to feeRecipient by taker when order is filled.
+                  expirationTimeSeconds: 'uint256', // Timestamp in seconds at which order expires.
+                  salt: 'uint256', // Arbitrary number to facilitate uniqueness of the order's hash.
+                  makerAssetData: 'bytes', // Encoded data that can be decoded by a specified proxy contract when transferring makerAsset. The leading bytes4 references the id of the asset proxy.
+                  takerAssetData: 'bytes',
+                },
+                signatures: 'bytes[]',
+              },
             },
-            signatures: 'bytes[]',
-          },
-        },
-        {
-          orders: ZeroXOrder.formatOrders(data.order, 2),
-          signatures: (data.order as ZeroXSignedOrderV2).signature,
-        },
-      );
+            {
+              orders: ZeroXOrder.formatOrders(data.order, 2),
+              signatures: (data.order as ZeroXSignedOrderV2).signature,
+            },
+          );
     return {
       targetExchange: data.router,
       payload,
@@ -305,9 +336,16 @@ export class ZeroX
         default:
           throw new Error(`ZeroX version ${data.version} is not supported!`);
       }
-    }
+    };
     return {
-      params: [srcToken, destToken, srcAmount, destAmount, this.getExchange(data), data.order], // TODO wait for adjustment in SC
+      params: [
+        srcToken,
+        destToken,
+        srcAmount,
+        destAmount,
+        this.getExchange(data),
+        data.order,
+      ], // TODO wait for adjustment in SC
       encoder,
       networkFee: '0',
     };

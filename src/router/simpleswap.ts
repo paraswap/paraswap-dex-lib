@@ -79,7 +79,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         se.srcAmount,
         se.destAmount,
         se.data,
-        SwapSide.SELL
+        SwapSide.SELL,
       ),
     );
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(
@@ -87,7 +87,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         callees: acc.callees.concat(se.callees),
         calldata: acc.callees.concat(se.calldata),
         values: acc.callees.concat(se.values),
-        networkFee: (BigInt(acc.networkFee) + BigInt(se.networkFee)).toString()
+        networkFee: (BigInt(acc.networkFee) + BigInt(se.networkFee)).toString(),
       }),
       { callees: [], values: [], calldata: [], networkFee: '0' },
     );

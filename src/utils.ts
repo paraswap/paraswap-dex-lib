@@ -1,4 +1,4 @@
-import { ETHER_ADDRESS } from "./constants";
+import { ETHER_ADDRESS } from './constants';
 
 export const isETHAddress = (address: string) =>
-    address.toLowerCase() === ETHER_ADDRESS.toLowerCase()
+  address.toLowerCase() === ETHER_ADDRESS.toLowerCase();

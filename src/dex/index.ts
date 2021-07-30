@@ -7,13 +7,7 @@ import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { ZeroX } from './zerox';
 
-const dexes = [
-  UniswapV2, 
-  Curve,
-  CurveV2,
-  StablePool,
-  ZeroX
-];
+const dexes = [UniswapV2, Curve, CurveV2, StablePool, ZeroX];
 
 export function getDexMap(
   augustusAddress: Address,
@@ -30,9 +24,10 @@ export function getDexMap(
       ) => IDex<any, any>,
     ) => {
       const dexObj = new dex(augustusAddress, network, provider);
-      dexObj.getDEXKey().forEach(dexKey => { // temp: move to findDexByKey instead
+      dexObj.getDEXKey().forEach(dexKey => {
+        // temp: move to findDexByKey instead
         acc[dexKey] = dexObj;
-      })
+      });
       return acc;
     },
     {},

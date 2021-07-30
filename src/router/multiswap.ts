@@ -45,7 +45,9 @@ export class MultiSwap
       priceRoute.bestRoute[0].percent !== 100
     )
       throw new Error(`Multiswap invalid bestRoute`);
-    const { paths, networkFee } = this.getContractPathsWithNetworkFee(priceRoute.bestRoute[0].swaps)
+    const { paths, networkFee } = this.getContractPathsWithNetworkFee(
+      priceRoute.bestRoute[0].swaps,
+    );
     const sellData: ContractSellData = {
       fromToken: priceRoute.src,
       fromAmount: priceRoute.srcAmount,

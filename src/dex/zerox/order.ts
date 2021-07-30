@@ -1,6 +1,10 @@
-import { ZeroXSignedOrder, ZeroXSignedOrderV2, ZeroXSignedOrderV4 } from './types';
+import {
+  ZeroXSignedOrder,
+  ZeroXSignedOrderV2,
+  ZeroXSignedOrderV4,
+} from './types';
 
-export class ZeroXOrder  {
+export class ZeroXOrder {
   static formatOrderV4(order: ZeroXSignedOrderV4, version: number) {
     return {
       makerToken: order.makerToken,
@@ -20,9 +24,9 @@ export class ZeroXOrder  {
     const feeAssetData =
       version === 3
         ? {
-          makerFeeAssetData: order.makerFeeAssetData,
-          takerFeeAssetData: order.takerFeeAssetData,
-        }
+            makerFeeAssetData: order.makerFeeAssetData,
+            takerFeeAssetData: order.takerFeeAssetData,
+          }
         : {};
 
     return {
@@ -42,17 +46,17 @@ export class ZeroXOrder  {
     };
   }
 
-  static formatOrders(
-    order: ZeroXSignedOrder,
-    version: number = 2,
-  ) {
+  static formatOrders(order: ZeroXSignedOrder, version: number = 2) {
     if (isV4Order(order, version)) {
-      return ZeroXOrder.formatOrderV4(order, version)
+      return ZeroXOrder.formatOrderV4(order, version);
     }
     return ZeroXOrder.formatOrderV23(order, version);
   }
 }
 
-function isV4Order(order: ZeroXSignedOrder, version: number = 2): order is ZeroXSignedOrderV4 {
+function isV4Order(
+  order: ZeroXSignedOrder,
+  version: number = 2,
+): order is ZeroXSignedOrderV4 {
   return version === 4;
 }

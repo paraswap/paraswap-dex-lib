@@ -9,7 +9,7 @@ export {
   OptimalSwap,
   OptimalSwapExchange,
   OptionalRate,
-  OptimalRate
+  OptimalRate,
 } from 'paraswap-core';
 
 export type ContractSellData = {

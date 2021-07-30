@@ -20,17 +20,9 @@ type UniswapData = {
   initCode: string;
 };
 
-type SwapOnUniswapParam = [
-  NumberAsString,
-  NumberAsString,
-  Address[],
-];
+type SwapOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
 
-type BuyOnUniswapParam = [
-  NumberAsString,
-  NumberAsString,
-  Address[],
-];
+type BuyOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
 
 type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;
 

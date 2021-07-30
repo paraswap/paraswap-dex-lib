@@ -40,4 +40,4 @@ export interface ZeroXSignedOrderV4 {
   salt: BigInt;
 }
 
-export type ZeroXSignedOrder = ZeroXSignedOrderV2 | ZeroXSignedOrderV4
+export type ZeroXSignedOrder = ZeroXSignedOrderV2 | ZeroXSignedOrderV4;
