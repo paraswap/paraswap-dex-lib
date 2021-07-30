@@ -1,12 +1,17 @@
 import { Interface } from '@ethersproject/abi';
+import { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
+  protected dexKey: string[] = [];
+  protected abiCoder: AbiCoder;
+
   constructor(protected augustusAddress: Address) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
+    this.abiCoder = new AbiCoder();
   }
 
   protected getApproveSimpleParam(
@@ -60,5 +65,9 @@ export class SimpleExchange {
       values: [...approveParam.values, swapValue],
       networkFee,
     };
+  }
+  
+  getDEXKey(): string[] {
+    return this.dexKey.map(d => d.toLowerCase());
   }
 }

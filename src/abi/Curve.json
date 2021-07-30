@@ -1,0 +1,54 @@
+[
+  {
+    "name": "exchange_underlying",
+    "outputs": [],
+    "inputs": [
+      {
+        "type": "int128",
+        "name": "i"
+      },
+      {
+        "type": "int128",
+        "name": "j"
+      },
+      {
+        "type": "uint256",
+        "name": "dx"
+      },
+      {
+        "type": "uint256",
+        "name": "min_dy"
+      }
+    ],
+    "constant": false,
+    "payable": false,
+    "type": "function",
+    "gas": "5200817"
+  },
+  {
+    "name": "exchange",
+    "outputs": [],
+    "inputs": [
+      {
+        "type": "int128",
+        "name": "i"
+      },
+      {
+        "type": "int128",
+        "name": "j"
+      },
+      {
+        "type": "uint256",
+        "name": "dx"
+      },
+      {
+        "type": "uint256",
+        "name": "min_dy"
+      }
+    ],
+    "constant": false,
+    "payable": false,
+    "type": "function",
+    "gas": "5184573"
+  }
+]
