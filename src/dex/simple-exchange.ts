@@ -6,7 +6,7 @@ import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
-  protected dexKey: string[] = [];
+  protected dexKeys: string[] = [];
   protected abiCoder: AbiCoder;
 
   constructor(protected augustusAddress: Address) {
@@ -67,7 +67,7 @@ export class SimpleExchange {
     };
   }
 
-  getDEXKey(): string[] {
-    return this.dexKey.map(d => d.toLowerCase());
+  getDEXKeys(): string[] {
+    return this.dexKeys.map(d => d.toLowerCase());
   }
 }

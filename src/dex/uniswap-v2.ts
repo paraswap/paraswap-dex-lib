@@ -42,7 +42,7 @@ export class UniswapV2
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKey = ['uniswapv2'],
+    protected dexKeys = ['uniswapv2'],
     protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);

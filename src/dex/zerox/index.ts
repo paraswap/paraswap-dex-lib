@@ -88,7 +88,7 @@ export class ZeroX
 {
   routerInterface: Interface;
   erc20Interface: Interface;
-  dexKey = ['zerox'];
+  dexKeys = ['zerox'];
 
   constructor(
     augustusAddress: Address,

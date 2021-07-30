@@ -24,9 +24,9 @@ export function getDexMap(
       ) => IDex<any, any>,
     ) => {
       const dexObj = new dex(augustusAddress, network, provider);
-      dexObj.getDEXKey().forEach(dexKey => {
+      dexObj.getDEXKeys().forEach(dexKeys => {
         // temp: move to findDexByKey instead
-        acc[dexKey] = dexObj;
+        acc[dexKeys] = dexObj;
       });
       return acc;
     },
