@@ -17,15 +17,10 @@
     "typescript": "4.3.5",
     "paraswap-core": "https://github.com/paraswap/paraswap-core#master"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pretty-quick --staged"
-    }
-  },
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "prepare": "npm run build"
+    "prepare": "husky install && yarn build"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
