@@ -87,8 +87,9 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         callees: acc.callees.concat(se.callees),
         calldata: acc.callees.concat(se.calldata),
         values: acc.callees.concat(se.values),
+        networkFee: (BigInt(acc.networkFee) + BigInt(se.networkFee)).toString()
       }),
-      { callees: [], values: [], calldata: [] },
+      { callees: [], values: [], calldata: [], networkFee: '0' },
     );
 
     const partialContractSimpleData = this.buildPartialContractSimpleData(
@@ -115,7 +116,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     return {
       encoder,
       params: [sellData],
-      networkFee: '0',
+      networkFee: simpleExchangeDataFlat.networkFee,
     };
   }
 }

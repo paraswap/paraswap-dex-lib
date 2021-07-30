@@ -8,12 +8,10 @@ import {
   Adapters,
 } from '../types';
 import { SwapSide } from '../constants';
-import { Interface } from '@ethersproject/abi';
 
 type MultiSwapParam = [ContractSellData];
 
 export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
-  paraswapInterface: Interface;
   contractMethodName: string;
 
   constructor(
@@ -57,8 +55,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.bestRoute[0].swaps.length !== 1 ||
       priceRoute.bestRoute[0].swaps[0].swapExchanges.length !== 1 ||
       priceRoute.bestRoute[0].swaps[0].swapExchanges[0].percent !== 100 ||
-      priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange.toLowerCase() !==
-        this.dex.getDEXKey().toLowerCase()
+      !this.dex.getDEXKey().includes(priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange.toLowerCase())
     )
       throw new Error(`DirectSwap invalid bestRoute`);
 

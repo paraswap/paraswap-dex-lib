@@ -2,6 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { IDex, DexMap } from './dex/idex';
 import { IRouter, RouterMap } from './router/irouter';
 import { OptimalRate, Address, Adapters } from './types';
+import { ETHER_ADDRESS } from './constants';
 import { getRouterMap } from './router';
 import { getDexMap } from './dex';
 
@@ -32,7 +33,6 @@ export class TransactionBuilder {
     deadline,
     beneficiary,
     onlyParams = false,
-    ignoreGas = false,
   }: {
     priceRoute: OptimalRate;
     minMaxAmount: string;
@@ -44,7 +44,6 @@ export class TransactionBuilder {
     deadline: string;
     beneficiary?: Address;
     onlyParams?: boolean;
-    ignoreGas?: boolean;
   }) {
     const _beneficiary = beneficiary || userAddress;
     const { encoder, params, networkFee } = this.routerMap[
@@ -62,11 +61,13 @@ export class TransactionBuilder {
 
     if (onlyParams) return params;
 
+    const value = (priceRoute.src.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? BigInt(priceRoute.srcAmount) + BigInt(networkFee) : BigInt(networkFee)).toString();
+
     return {
       from: userAddress,
       to: priceRoute.contractAddress,
       chainId: priceRoute.network,
-      networkFee,
+      value,
       data: encoder.apply(null, params),
     };
   }

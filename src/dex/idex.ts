@@ -47,7 +47,7 @@ export interface IDex<ExchangeData, DirectParam> {
 
   getDirectFuctionName?(): { sell?: string; buy?: string };
 
-  getDEXKey(): string;
+  getDEXKey(): string[];
 }
 
 export type DexMap = { [identifier: string]: IDex<any, any> };

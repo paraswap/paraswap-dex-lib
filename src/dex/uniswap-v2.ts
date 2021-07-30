@@ -1,4 +1,3 @@
-import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
 import { IDex } from './idex';
@@ -46,19 +45,17 @@ export class UniswapV2
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
-  abiCoder: AbiCoder;
 
   constructor(
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKey = 'uniswapv2',
+    protected dexKey = ['uniswapv2'],
     protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
-    this.abiCoder = Web3Abi as unknown as AbiCoder;
   }
 
   protected fixPath(path: Address[], srcToken: Address, destToken: Address) {
@@ -139,10 +136,6 @@ export class UniswapV2
       encoder,
       networkFee: '0',
     };
-  }
-
-  getDEXKey(): string {
-    return this.dexKey;
   }
 
   getDirectFuctionName(): { sell?: string; buy?: string } {

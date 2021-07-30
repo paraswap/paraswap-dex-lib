@@ -1,7 +1,6 @@
 import { AbiEncoder } from '@0x/utils';
 import { Interface } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { AbiCoder } from 'web3-eth-abi';
 
 import * as ERC20ABI from '../../abi/erc20.json';
 import * as IParaswapAbi from '../../abi/IParaswap.json';
@@ -84,13 +83,12 @@ export class ZeroX
 {
   routerInterface: Interface;
   erc20Interface: Interface;
-  abiCoder: AbiCoder;
+  dexKey = ['zerox'];
 
-  constructor(augustusAddress: Address, public network: number, provider: JsonRpcProvider, protected dexKey = 'zerox') {
+  constructor(augustusAddress: Address, public network: number, provider: JsonRpcProvider) {
     super(augustusAddress);
     this.routerInterface = new Interface(IParaswapAbi);
     this.erc20Interface = new Interface(ERC20ABI);
-    this.abiCoder = new AbiCoder();
   }
 
   private getExchange(data: ZeroXData) {
@@ -154,6 +152,7 @@ export class ZeroX
       callees: [wethToken, ...wethToTokenData.callees],
       calldata: [depositWethData, ...wethToTokenData.calldata],
       values: [srcAmount, ...wethToTokenData.values],
+      networkFee: '0'
     };
   }
 
@@ -172,6 +171,7 @@ export class ZeroX
       callees: [...wethToTokenData.callees, this.augustusAddress],
       calldata: [...wethToTokenData.calldata, withdrawWethData],
       values: [...wethToTokenData.values, '0'],
+      networkFee: '0'
     };
   }
 
@@ -188,6 +188,7 @@ export class ZeroX
       callees: [...swapData.callees],
       calldata: [...swapData.calldata],
       values: [...swapData.values],
+      networkFee: '0'
     };
   }
 
@@ -310,9 +311,5 @@ export class ZeroX
       encoder,
       networkFee: '0',
     };
-  }
-
-  getDEXKey(): string {
-    return this.dexKey;
   }
 }
