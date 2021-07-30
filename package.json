@@ -28,6 +28,7 @@
     "prepare": "npm run build"
   },
   "dependencies": {
+    "@0x/utils": "^4.5.2",
     "@ethersproject/abi": "5.4.0",
     "@ethersproject/providers": "5.4.1",
     "web3-eth-abi": "1.4.0"

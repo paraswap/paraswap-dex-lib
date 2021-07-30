@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from "@ethersproject/abi";
-import { SwapSide } from "..";
+import { SwapSide } from "../constants";
 import { AdapterExchangeParam, Address, NumberAsString, SimpleExchangeParam } from "../types";
 import { IDex } from "./idex";
 import { SimpleExchange } from "./simple-exchange";

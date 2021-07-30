@@ -79,7 +79,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         se.srcAmount,
         se.destAmount,
         se.data,
-        SwapSide.SELL,
+        SwapSide.SELL
       ),
     );
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(
