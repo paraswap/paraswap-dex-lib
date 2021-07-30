@@ -41,7 +41,7 @@ export class CurveV2 extends SimpleExchange
 
       let payload
         
-      try {
+
           const { i, j, underlyingSwap } = data;
           payload = this.abiCoder.encodeParameter(
             {
@@ -52,11 +52,7 @@ export class CurveV2 extends SimpleExchange
               },
             },
             { i, j, underlyingSwap },
-          );
-        } catch (e) {
-          console.error('Curve Error', e);
-          payload = '0x';
-        }      
+          );     
 
       return {
         targetExchange: data.exchange,
