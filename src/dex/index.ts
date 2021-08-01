@@ -6,8 +6,9 @@ import { DexMap, IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { ZeroX } from './zerox';
+import { Balancer } from './balancer';
 
-const dexes = [UniswapV2, Curve, CurveV2, StablePool, ZeroX];
+const dexes = [UniswapV2, Curve, CurveV2, StablePool, ZeroX, Balancer];
 
 export function getDexMap(
   augustusAddress: Address,
