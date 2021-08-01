@@ -12,6 +12,7 @@ import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
 import { Shell } from './shell';
 import { Onebit } from './onebit';
+import { Compound } from './compound';
 
 const dexes = [
   UniswapV2,
@@ -25,6 +26,7 @@ const dexes = [
   MStable,
   Shell,
   Onebit,
+  Compound,
 ];
 
 export function getDexMap(
