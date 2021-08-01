@@ -7,8 +7,9 @@ import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { ZeroX } from './zerox';
 import { Balancer } from './balancer';
+import { Bancor } from './bancor';
 
-const dexes = [UniswapV2, Curve, CurveV2, StablePool, ZeroX, Balancer];
+const dexes = [UniswapV2, Curve, CurveV2, StablePool, ZeroX, Balancer, Bancor];
 
 export function getDexMap(
   augustusAddress: Address,
