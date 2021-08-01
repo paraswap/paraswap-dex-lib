@@ -42,7 +42,7 @@ export class _TemplateDex_
     data: _TemplateDex_Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR; // _DOUBLE_CHECK_
 
     const { /** _DESTRUCTURE_PARAMS_IF_NEEDED_ */} = data;
     const payload = this.abiCoder.encodeParameter(
@@ -67,7 +67,7 @@ export class _TemplateDex_
     data: _TemplateDex_Data,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR; // _DOUBLE_CHECK_
 
     const swapFunction = '_TO_FILL_UP_';
     const swapFunctionParams: _TemplateDex_Param = [/* _TO_FILL_UP_ */];
