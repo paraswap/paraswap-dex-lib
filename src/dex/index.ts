@@ -11,6 +11,7 @@ import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
 import { Shell } from './shell';
+import { Onebit } from './onebit';
 
 const dexes = [
   UniswapV2,
@@ -23,6 +24,7 @@ const dexes = [
   BProtocol,
   MStable,
   Shell,
+  Onebit,
 ];
 
 export function getDexMap(
