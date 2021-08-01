@@ -13,6 +13,7 @@ import { MStable } from './mStable';
 import { Shell } from './shell';
 import { Onebit } from './onebit';
 import { Compound } from './compound';
+import { AaveV1 } from './aave-v1';
 
 const dexes = [
   UniswapV2,
@@ -27,6 +28,7 @@ const dexes = [
   Shell,
   Onebit,
   Compound,
+  AaveV1,
 ];
 
 export function getDexMap(
