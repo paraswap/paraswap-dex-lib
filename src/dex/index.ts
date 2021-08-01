@@ -9,6 +9,7 @@ import { ZeroX } from './zerox';
 import { Balancer } from './balancer';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
+import { MStable } from './mStable';
 
 const dexes = [
   UniswapV2,
@@ -19,6 +20,7 @@ const dexes = [
   Balancer,
   Bancor,
   BProtocol,
+  MStable,
 ];
 
 export function getDexMap(
