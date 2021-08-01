@@ -1,0 +1,88 @@
+import { Interface, JsonFragment } from '@ethersproject/abi';
+import { SwapSide } from '../constants';
+import {
+  AdapterExchangeParam,
+  Address,
+  SimpleExchangeParam,
+} from '../types';
+import { IDex } from './idex';
+import { SimpleExchange } from './simple-exchange';
+import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
+import _TemplateDex_ABI from '../abi/_TemplateDex_.json';
+
+export type _TemplateDex_Data = {
+    exchange: string; // _DOUBLE_CHECK_
+};
+type _TemplateDex_Param = [
+
+];
+enum _TemplateDex_Functions {
+
+}
+
+export class _TemplateDex_
+  extends SimpleExchange
+  implements IDex<_TemplateDex_Data, _TemplateDex_Param>
+{
+  protected dexKeys = [
+    // _TO_FILL_UP_
+  ];
+  exchangeRouterInterface: Interface;
+
+  constructor(augustusAddress: Address, private network: number) {
+    super(augustusAddress);
+    this.exchangeRouterInterface = new Interface(_TemplateDex_ABI as JsonFragment[]);
+  }
+
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: _TemplateDex_Data,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+
+    const { /** _DESTRUCTURE_PARAMS_IF_NEEDED_ */} = data;
+    const payload = this.abiCoder.encodeParameter(
+      {
+       // _TO_FILL_UP_
+      },
+      data, // _DOUBLE_CHECK_
+    );
+
+    return {
+      targetExchange: data.exchange,
+      payload,
+      networkFee: '0', // _TO_SET_
+    };
+  }
+
+  getSimpleParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: _TemplateDex_Data,
+    side: SwapSide,
+  ): SimpleExchangeParam {
+    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+
+    const swapFunction = '_TO_FILL_UP_';
+    const swapFunctionParams: _TemplateDex_Param = [/* _TO_FILL_UP_ */];
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      data.exchange, // _DOUBLE_CHECK_ 
+    );
+  }
+}
