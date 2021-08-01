@@ -10,6 +10,7 @@ import { Balancer } from './balancer';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
+import { Shell } from './shell';
 
 const dexes = [
   UniswapV2,
@@ -21,6 +22,7 @@ const dexes = [
   Bancor,
   BProtocol,
   MStable,
+  Shell,
 ];
 
 export function getDexMap(
