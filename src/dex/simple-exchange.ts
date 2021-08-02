@@ -70,6 +70,10 @@ export class SimpleExchange {
     };
   }
 
+  getDeadline() {
+    return Math.floor(new Date().getTime() / 1000) + 60 * 60;
+  }
+
   getDEXKeys(): string[] {
     return this.dexKeys.map(d => d.toLowerCase());
   }

@@ -62,7 +62,7 @@ export class Shell
       destToken,
       srcAmount,
       destAmount,
-      data.deadline,
+      data.deadline || this.getDeadline(),
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,

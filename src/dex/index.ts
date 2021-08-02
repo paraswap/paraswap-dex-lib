@@ -5,6 +5,7 @@ import { CurveV2 } from './curve-v2';
 import { DexMap, IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
+import { UniswapV3 } from './uniswap-v3';
 import { ZeroX } from './zerox';
 import { Balancer } from './balancer';
 import { Bancor } from './bancor';
@@ -37,6 +38,7 @@ const dexes = [
   OneInchLp,
   DodoV1,
   DodoV2,
+  UniswapV3,
 ];
 
 export function getDexMap(
