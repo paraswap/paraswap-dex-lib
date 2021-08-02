@@ -10,7 +10,7 @@ const writeFileAsync = promisify(fs.writeFile);
 
 interface Options {
   name: string;
-  address: string;
+  address?: string;
 }
 
 const argv = yargs
@@ -25,10 +25,7 @@ const argv = yargs
       type: 'string',
     },
   })
-  .demandOption(
-    ['name', 'address'],
-    'Please provide both "name" and "address" arguments',
-  )
+  .demandOption(['name'], 'Please provide at least "name" arguments')
   .help()
   .alias('help', 'h').argv;
 
@@ -39,6 +36,8 @@ interface EtherscanABIResponse {
 }
 
 const fetchAndStoreAbi = async ({ name, address }: Options): Promise<void> => {
+  if (!address) return;
+
   const abi = (
     await axios.get<EtherscanABIResponse>(
       `https://api.etherscan.io/api?module=contract&action=getabi&address=${address}`,
