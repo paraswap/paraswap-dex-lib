@@ -15,6 +15,7 @@ import { Onebit } from './onebit';
 import { Compound } from './compound';
 import { AaveV1 } from './aave-v1';
 import { AaveV2 } from './aave-v2';
+import { OneInchLp } from './OneInchLp';
 
 const dexes = [
   UniswapV2,
@@ -31,6 +32,7 @@ const dexes = [
   Compound,
   AaveV1,
   AaveV2,
+  OneInchLp,
 ];
 
 export function getDexMap(
