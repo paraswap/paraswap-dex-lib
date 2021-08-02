@@ -3,7 +3,7 @@ import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import AaveV1ABI from '../abi/AaveV1_lending_pool.json';
+import AAVE_LENDING_POOL_ABI_V1 from '../abi/AaveV1_lending_pool.json';
 import ERC20 from '../abi/erc20.json';
 
 export type AaveV1Data = {
@@ -29,7 +29,7 @@ export class AaveV1
 
   constructor(augustusAddress: Address, private network: number) {
     super(augustusAddress);
-    this.aavePool = new Interface(AaveV1ABI as JsonFragment[]);
+    this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V1 as JsonFragment[]);
     this.aContract = new Interface(ERC20 as JsonFragment[]);
   }
 
@@ -41,9 +41,9 @@ export class AaveV1
     data: AaveV1Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (data.isV2) return;
+    if (data.isV2) return; // FIXME: better handling
 
-    const aToken = data.fromAToken ? destToken : srcToken;
+    const aToken = data.fromAToken ? srcToken : destToken; // Warning
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -68,7 +68,7 @@ export class AaveV1
     data: AaveV1Data,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (data.isV2) return;
+    if (data.isV2) return; // FIXME: better handling
 
     if (data.fromAToken) {
       const swapData = this.aContract.encodeFunctionData('redeem', [srcAmount]);
