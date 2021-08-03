@@ -70,9 +70,9 @@ export class TransactionBuilder {
     return {
       from: userAddress,
       to: priceRoute.contractAddress,
-      chainId: priceRoute.network,
       value,
       data: encoder.apply(null, params),
+      gasPrice
     };
   }
 }
