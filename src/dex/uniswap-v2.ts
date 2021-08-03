@@ -13,11 +13,13 @@ import { SimpleExchange } from './simple-exchange';
 import UniswapV2RouterABI from '../abi/UniswapV2Router.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
 
-type UniswapData = {
+export type UniswapData = {
   router: Address;
   path: Address[];
   factory: Address;
   initCode: string;
+  fee: number[];
+  feeFactor: number;
 };
 
 type SwapOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
@@ -31,6 +33,8 @@ const directUniswapFunctionName = {
   buy: 'buyOnUniswap',
 };
 
+const UniswapV2AliasKeys = ['uniswapv2', 'quickswap'];
+
 export class UniswapV2
   extends SimpleExchange
   implements IDex<UniswapData, UniswapParam>
@@ -42,7 +46,7 @@ export class UniswapV2
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKeys = ['uniswapv2'],
+    protected dexKeys = UniswapV2AliasKeys,
     protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);

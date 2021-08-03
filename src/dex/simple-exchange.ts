@@ -1,5 +1,5 @@
 import { Interface } from '@ethersproject/abi';
-import { AbiCoder } from 'web3-eth-abi';
+import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
@@ -11,7 +11,7 @@ export class SimpleExchange {
 
   constructor(protected augustusAddress: Address) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
-    this.abiCoder = new AbiCoder();
+    this.abiCoder = Web3Abi as unknown as AbiCoder;
   }
 
   protected getApproveSimpleParam(
