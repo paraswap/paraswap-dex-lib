@@ -5,8 +5,9 @@ import { CurveV2 } from './curve-v2';
 import { DexMap, IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
+import { UniswapV2Fork } from './uniswap-v2-fork';
 import { UniswapV3 } from './uniswap-v3';
-import { ZeroX } from './zerox';
+// import { ZeroX } from './zerox';
 import { Balancer } from './balancer';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
@@ -22,10 +23,11 @@ import { DodoV2 } from './dodo-v2';
 
 const dexes = [
   UniswapV2,
+  UniswapV2Fork,
   Curve,
   CurveV2,
   StablePool,
-  ZeroX,
+  // ZeroX,
   Balancer,
   Bancor,
   BProtocol,
