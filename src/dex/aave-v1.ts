@@ -41,7 +41,7 @@ export class AaveV1
     data: AaveV1Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (data.isV2) return; // FIXME: better handling
+    //  if (data.isV2) return; // FIXME: better handling
 
     const aToken = data.fromAToken ? srcToken : destToken; // Warning
     const payload = this.abiCoder.encodeParameter(
@@ -68,7 +68,7 @@ export class AaveV1
     data: AaveV1Data,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (data.isV2) return; // FIXME: better handling
+    //   if (data.isV2) return; // FIXME: better handling
 
     if (data.fromAToken) {
       const swapData = this.aContract.encodeFunctionData('redeem', [srcAmount]);
