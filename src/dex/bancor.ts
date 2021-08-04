@@ -48,7 +48,7 @@ export class Bancor
     data: BancorData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
     const { path } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -75,7 +75,7 @@ export class Bancor
     data: BancorData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
     const defaultArgs = [
       data.path,
