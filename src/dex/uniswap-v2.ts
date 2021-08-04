@@ -33,7 +33,7 @@ const directUniswapFunctionName = {
   buy: 'buyOnUniswap',
 };
 
-const UniswapV2AliasKeys = ['uniswapv2', 'quickswap'];
+const UniswapV2AliasKeys = ['uniswapv2', 'quickswap', 'pancakeswap'];
 
 export class UniswapV2
   extends SimpleExchange

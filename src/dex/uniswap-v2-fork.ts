@@ -14,7 +14,26 @@ import UniswapV2RouterABI from '../abi/UniswapV2Router.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
 import { UniswapData } from './uniswap-v2';
 
-const UniswapV2ForkExchangeKeys = ['dfyn', 'cometh'];
+const UniswapV2ForkExchangeKeys = [
+  'sushiswap',
+  'defiswap',
+  'linkswap',
+  'pancakeswapv2',
+  'apeswap',
+  'bakeryswap',
+  'julswap',
+  'streetswap',
+  'cometh',
+  'dfyn',
+  'mdex',
+  'biswap',
+  'waultfinance',
+  'shibaswap',
+  'coinswap',
+  'sakeswap',
+  'jetswap',
+  'pantherswap',
+];
 
 type SwapOnUniswapForkParam = [
   factory: Address,
@@ -85,14 +104,15 @@ export class UniswapV2Fork
       {
         ParentStruct: {
           path: 'address[]',
-          initCode: 'bytes32',
-          factory: 'address',
           fee: 'uint256',
           feeFactor: 'uint256',
+          factory: 'address',
+          initCode: 'bytes32',
         },
       },
       { path, initCode, factory, fee: fee[0], feeFactor },
     );
+
     return {
       targetExchange: data.router,
       payload,
