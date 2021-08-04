@@ -1,5 +1,5 @@
 {
-  "name": "paraswap-dex-lib",
+  "name": "@paraswap/dex-lib",
   "version": "0.0.1",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -7,6 +7,9 @@
   "author": "dev@paraswap.io",
   "license": "MIT",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/jest": "26.0.24",
     "husky": "7.0.1",
