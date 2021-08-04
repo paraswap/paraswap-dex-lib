@@ -101,7 +101,6 @@ export class Balancer
   ): SimpleExchangeParam {
     const { swaps } = data;
 
-    // TODO: extract for direct swap
     const [swapFunction, swapFunctionParam] = ((): [
       swapFunction: string,
       swapFunctionParam: BalancerParam,
