@@ -10,9 +10,16 @@ export type AaveV1Data = {
   fromAToken: boolean;
   isV2: boolean;
 };
-type AaveV1Param = [_reserve: string, _amount: string, _referralCode: number];
+type AaveV1RedeemParams = [
+  _reserve: string,
+  _amount: string,
+  _referralCode: number,
+];
+type AaveV1DepositParams = [token: string];
+type AaveV1Param = AaveV1RedeemParams | AaveV1DepositParams;
 enum AaveV1Functions {
   deposit = 'deposit',
+  redeem = 'redeem',
 }
 
 const AAVE_LENDING_POOL = '0x398eC7346DcD622eDc5ae82352F02bE94C62d119';
@@ -70,22 +77,27 @@ export class AaveV1
   ): SimpleExchangeParam {
     //   if (data.isV2) return; // FIXME: better handling
 
-    if (data.fromAToken) {
-      const swapData = this.aContract.encodeFunctionData('redeem', [srcAmount]);
+    const [Interface, swapFunction, swapFunctionParams, swapCallee, spender] =
+      ((): [Interface, AaveV1Functions, AaveV1Param, Address, Address?] => {
+        if (data.fromAToken) {
+          return [
+            this.aContract,
+            AaveV1Functions.redeem,
+            [srcAmount],
+            srcToken,
+          ];
+        }
 
-      return this.buildSimpleParamWithoutWETHConversion(
-        srcToken,
-        srcAmount,
-        destToken,
-        destAmount,
-        swapData,
-        srcToken,
-      );
-    }
+        return [
+          this.aavePool,
+          AaveV1Functions.deposit,
+          [srcToken, srcAmount, REF_CODE],
+          AAVE_LENDING_POOL,
+          AAVE_PROXY, // warning
+        ];
+      })();
 
-    const swapFunction = AaveV1Functions.deposit;
-    const swapFunctionParams: AaveV1Param = [srcToken, srcAmount, REF_CODE];
-    const swapData = this.aavePool.encodeFunctionData(
+    const swapData = Interface.encodeFunctionData(
       swapFunction,
       swapFunctionParams,
     );
@@ -96,8 +108,8 @@ export class AaveV1
       destToken,
       destAmount,
       swapData,
-      AAVE_LENDING_POOL,
-      AAVE_PROXY, // Warning
+      swapCallee,
+      spender,
     );
   }
 }
