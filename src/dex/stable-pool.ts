@@ -50,24 +50,17 @@ export class StablePool
   ): AdapterExchangeParam {
     if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
-    let payload;
-
-    try {
-      const { i, j, deadline } = data;
-      payload = this.abiCoder.encodeParameter(
-        {
-          ParentStruct: {
-            i: 'int128',
-            j: 'int128',
-            deadline: 'uint256',
-          },
+    const { i, j, deadline } = data;
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          i: 'int128',
+          j: 'int128',
+          deadline: 'uint256',
         },
-        { i, j, deadline },
-      );
-    } catch (e) {
-      console.error('Stable Pool Error', e);
-      payload = '0x';
-    }
+      },
+      { i, j, deadline },
+    );
 
     return {
       targetExchange: data.exchange,

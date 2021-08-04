@@ -12,32 +12,36 @@ import { SwapSide, ETHER_ADDRESS } from '../constants';
 import { SimpleExchange } from './simple-exchange';
 import UniswapV2RouterABI from '../abi/UniswapV2Router.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
+import { UniswapData } from './uniswap-v2';
 
-export type UniswapData = {
-  router: Address;
-  path: Address[];
-  factory: Address;
-  initCode: string;
-  fee: number[];
-  feeFactor: number;
-};
+const UniswapV2ForkExchangeKeys = ['dfyn', 'cometh'];
 
-type SwapOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
+type SwapOnUniswapForkParam = [
+  factory: Address,
+  initCode: string,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  path: Address[],
+];
 
-type BuyOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
+type BuyOnUniswapForkParam = [
+  factory: Address,
+  initCode: string,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  path: Address[],
+];
 
-type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;
+type UniswapForkParam = SwapOnUniswapForkParam | BuyOnUniswapForkParam;
 
 const directUniswapFunctionName = {
-  sell: 'swapOnUniswap',
-  buy: 'buyOnUniswap',
+  sell: 'swapOnUniswapFork',
+  buy: 'buyOnUniswapFork',
 };
 
-const UniswapV2AliasKeys = ['uniswapv2', 'quickswap'];
-
-export class UniswapV2
+export class UniswapV2Fork
   extends SimpleExchange
-  implements IDex<UniswapData, UniswapParam>
+  implements IDex<UniswapData, UniswapForkParam>
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
@@ -46,7 +50,7 @@ export class UniswapV2
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKeys = UniswapV2AliasKeys,
+    protected dexKeys = UniswapV2ForkExchangeKeys,
     protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
@@ -75,13 +79,19 @@ export class UniswapV2
     side: SwapSide,
   ): AdapterExchangeParam {
     const path = this.fixPath(data.path, srcToken, destToken);
+    const { fee, feeFactor, factory, initCode } = data;
+    // TODO: fix code for forks with variable fees
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           path: 'address[]',
+          initCode: 'bytes32',
+          factory: 'address',
+          fee: 'uint256',
+          feeFactor: 'uint256',
         },
       },
-      { path },
+      { path, initCode, factory, fee: fee[0], feeFactor },
     );
     return {
       targetExchange: data.router,
@@ -90,6 +100,7 @@ export class UniswapV2
     };
   }
 
+  // TODO: fix code for forks with variable fees
   getSimpleParam(
     src: Address,
     dest: Address,
@@ -113,22 +124,24 @@ export class UniswapV2
     );
   }
 
+  // TODO: fix code for forks with variable fees
   getDirectParam(
-    srcToken: Address,
-    destToken: Address,
+    src: Address,
+    dest: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     data: UniswapData,
     side: SwapSide,
-  ): TxInfo<UniswapParam> {
-    const path = this.fixPath(data.path, srcToken, destToken);
-    const encoder = (...params: UniswapParam) =>
+  ): TxInfo<UniswapForkParam> {
+    const path = this.fixPath(data.path, src, dest);
+    const encoder = (...params: UniswapForkParam) =>
       this.routerInterface.encodeFunctionData(
-        side === SwapSide.SELL ? 'swapOnUniswap' : 'buyOnUniswap',
+        side === SwapSide.SELL ? 'swapOnUniswapFork' : 'buyOnUniswapFork',
         params,
       );
+
     return {
-      params: [srcAmount, destAmount, path],
+      params: [data.factory, data.initCode, srcAmount, destAmount, path],
       encoder,
       networkFee: '0',
     };

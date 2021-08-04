@@ -51,10 +51,8 @@ export class CurveV2
   ): AdapterExchangeParam {
     if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
-    let payload;
-
     const { i, j, underlyingSwap } = data;
-    payload = this.abiCoder.encodeParameter(
+    const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           i: 'uint256',
