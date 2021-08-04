@@ -6,9 +6,18 @@ import { DexMap, IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { UniswapV2Fork } from './uniswap-v2-fork';
+import { Weth } from './weth';
 import { ZeroX } from './zerox';
 
-const dexes = [UniswapV2, Curve, CurveV2, StablePool, UniswapV2Fork, ZeroX];
+const dexes = [
+  UniswapV2,
+  Curve,
+  CurveV2,
+  StablePool,
+  UniswapV2Fork,
+  ZeroX,
+  Weth,
+];
 
 export function getDexMap(
   augustusAddress: Address,
