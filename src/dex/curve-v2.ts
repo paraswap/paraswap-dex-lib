@@ -49,7 +49,7 @@ export class CurveV2
     data: CurveV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
     const { i, j, underlyingSwap } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -78,7 +78,7 @@ export class CurveV2
     data: CurveV2Data,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
     const { exchange, i, j, underlyingSwap } = data;
     const defaultArgs: CurveV2Param = [i, j, srcAmount, this.minConversionRate];
