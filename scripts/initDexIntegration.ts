@@ -36,7 +36,7 @@ interface EtherscanABIResponse {
 }
 
 const fetchAndStoreAbi = async ({ name, address }: Options): Promise<void> => {
-  if (!name) return;
+  if (!address) return;
 
   const abi = (
     await axios.get<EtherscanABIResponse>(
