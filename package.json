@@ -7,6 +7,9 @@
   "author": "dev@paraswap.io",
   "license": "MIT",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/jest": "26.0.24",
     "husky": "7.0.1",
