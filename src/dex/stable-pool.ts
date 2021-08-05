@@ -48,7 +48,7 @@ export class StablePool
     data: StablePoolData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
     const { i, j, deadline } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -78,7 +78,7 @@ export class StablePool
     data: StablePoolData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side !== SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
     const { exchange, i, j, deadline } = data;
     const defaultArgs = [i, j, srcAmount, this.minConversionRate, deadline];

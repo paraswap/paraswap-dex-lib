@@ -1,4 +1,15 @@
-import { Address } from '../types';
+import { Interface } from '@ethersproject/abi';
+import ERC20_ABI from '../abi/erc20.json';
+import { SwapSide } from '../constants';
+import {
+  AdapterExchangeParam,
+  Address,
+  NumberAsString,
+  SimpleExchangeParam,
+} from '../types';
+import { isETHAddress } from '../utils';
+import { IDex } from './idex';
+import { SimpleExchange } from './simple-exchange';
 
 const addresses: any = {
   1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
@@ -9,8 +20,59 @@ const addresses: any = {
   137: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
 };
 
-export class Weth {
+export type WData = {};
+
+export class Weth extends SimpleExchange implements IDex<WData, any> {
+  private exchangeRouterInterface: Interface;
+  protected dexKeys = ['wmatic', 'weth', 'wbnb'];
+
   static getAddress(network: number = 1): Address {
     return addresses[network];
+  }
+
+  constructor(augustusAddress: Address, protected network: number) {
+    super(augustusAddress);
+    this.exchangeRouterInterface = new Interface(ERC20_ABI);
+  }
+
+  getAdapterParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: WData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    return {
+      targetExchange: Weth.getAddress(this.network),
+      payload: '0x',
+      networkFee: '0',
+    };
+  }
+
+  getSimpleParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: WData,
+    side: SwapSide,
+  ): SimpleExchangeParam {
+    const address = Weth.getAddress(this.network);
+
+    const swapData = isETHAddress(srcToken)
+      ? this.exchangeRouterInterface.encodeFunctionData('deposit')
+      : this.exchangeRouterInterface.encodeFunctionData('withdraw', [
+          srcAmount,
+        ]);
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      address,
+    );
   }
 }
