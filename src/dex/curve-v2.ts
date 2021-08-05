@@ -35,6 +35,7 @@ export class CurveV2
   protected dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
+  needWethWrapping = true;
 
   constructor(augustusAddress: Address) {
     super(augustusAddress);
