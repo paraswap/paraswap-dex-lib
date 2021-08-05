@@ -104,11 +104,11 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
           if (!dex.needWrapNative) return acc;
 
           if (isETHAddress(swap.src)) {
-            acc.srcAmountWeth = BigInt(srcAmountWeth) + BigInt(se.srcAmount);
+            acc.srcAmountWeth += BigInt(se.srcAmount);
           }
 
           if (isETHAddress(swap.dest)) {
-            acc.destAmountWeth = BigInt(destAmountWeth) + BigInt(se.destAmount);
+            acc.destAmountWeth += BigInt(se.destAmount);
           }
 
           return acc;
