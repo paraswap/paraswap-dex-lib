@@ -2,11 +2,11 @@ import { AbiEncoder } from '@0x/utils';
 import { Interface } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 
-import * as ERC20ABI from '../../abi/erc20.json';
-import * as IParaswapAbi from '../../abi/IParaswap.json';
-import * as ZRX_V2_ABI from '../../abi/zrx.v2.json';
-import * as ZRX_V3_ABI from '../../abi/zrx.v3.json';
-import * as ZRX_V4_ABI from '../../abi/zrx.v4.json';
+import ERC20ABI from '../../abi/erc20.json';
+import IParaswapAbi from '../../abi/IParaswap.json';
+import ZRX_V2_ABI from '../../abi/zrx.v2.json';
+import ZRX_V3_ABI from '../../abi/zrx.v3.json';
+import ZRX_V4_ABI from '../../abi/zrx.v4.json';
 
 import { ETHER_ADDRESS, SwapSide } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
