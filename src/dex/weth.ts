@@ -110,7 +110,7 @@ export class Weth
     if (isETHAddress(destToken) && destAmount !== '0') {
       const opType = WethFunctions.withdrawAllWETH;
       const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
-        WethFunctions.withdrawAllWETH,
+        opType,
         [wethToken],
       );
 
