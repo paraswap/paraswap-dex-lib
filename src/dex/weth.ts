@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from 'paraswap-core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
@@ -15,12 +15,31 @@ const addresses: any = {
   137: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
 };
 
-enum WethFunctions {
+export enum WethFunctions {
   withdrawAllWETH = 'withdrawAllWETH',
   deposit = 'deposit',
 }
 
-export class Weth extends SimpleExchange implements IDex<void, void> {
+type DepositWithdrawReturn = {
+  opType: WethFunctions;
+  callee: string;
+  calldata: string;
+  value: string;
+};
+export interface IWethDepositorWithdrawer {
+  getDepositWithdrawParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    side: SwapSide,
+  ): DepositWithdrawReturn | undefined;
+}
+
+export class Weth
+  extends SimpleExchange
+  implements IDex<void, void>, IWethDepositorWithdrawer
+{
   erc20Interface: Interface;
 
   constructor(augustusAddress: Address, public network: number) {
@@ -40,6 +59,8 @@ export class Weth extends SimpleExchange implements IDex<void, void> {
     data: void,
     side: SwapSide,
   ): AdapterExchangeParam {
+    /** IMPLEMENTED IN CONCURRENT BRANCH % RESOLVE CONFLICT PROPERLY */
+
     return {
       targetExchange: '0',
       payload: '0x',
@@ -55,40 +76,50 @@ export class Weth extends SimpleExchange implements IDex<void, void> {
     data: void,
     side: SwapSide,
   ): SimpleExchangeParam {
+    /** IMPLEMENTED IN CONCURRENT BRANCH % RESOLVE CONFLICT PROPERLY */
+
+    return {
+      calldata: [],
+      callees: [],
+      values: [],
+      networkFee: '0',
+    };
+  }
+
+  getDepositWithdrawParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    side: SwapSide,
+  ): DepositWithdrawReturn | undefined {
     const wethToken = Weth.getAddress(this.network);
 
     if (isETHAddress(srcToken)) {
-      const depositWethData = this.erc20Interface.encodeFunctionData(
-        WethFunctions.deposit,
-      );
+      const opType = WethFunctions.deposit;
+      const depositWethData = this.erc20Interface.encodeFunctionData(opType);
 
       return {
-        callees: [wethToken],
-        calldata: [depositWethData],
-        values: [srcAmount],
-        networkFee: '0',
+        opType,
+        callee: wethToken,
+        calldata: depositWethData,
+        value: srcAmount,
       };
     }
 
-    if (isETHAddress(destToken)) {
+    if (isETHAddress(destToken) && destAmount !== '0') {
+      const opType = WethFunctions.withdrawAllWETH;
       const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
         WethFunctions.withdrawAllWETH,
         [wethToken],
       );
 
       return {
-        callees: [this.augustusAddress],
-        calldata: [withdrawWethData],
-        values: ['0'],
-        networkFee: '0',
+        opType,
+        callee: this.augustusAddress,
+        calldata: withdrawWethData,
+        value: '0',
       };
     }
-
-    return {
-      callees: [],
-      calldata: [],
-      values: [],
-      networkFee: '0',
-    };
   }
 }

@@ -12,6 +12,7 @@ import { SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress } from '../utils';
+import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -126,23 +127,27 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     );
 
     if (srcAmountWeth !== '0' || destAmountWeth !== '0') {
-      const wethCallData = this.dexMap['weth'].getSimpleParam(
-        swap.src,
-        swap.dest,
-        srcAmountWeth,
-        destAmountWeth,
-        undefined,
-        SwapSide.SELL,
-      );
+      const wethCallData = (
+        this.dexMap['weth'] as unknown as IWethDepositorWithdrawer
+      ) // FIXME
+        .getDepositWithdrawParam(
+          swap.src,
+          swap.dest,
+          srcAmountWeth,
+          destAmountWeth,
+          SwapSide.SELL,
+        );
 
-      if (srcAmountWeth !== '0') {
-        simpleExchangeDataFlat.callees.unshift(...wethCallData.callees);
-        simpleExchangeDataFlat.values.unshift(...wethCallData.values);
-        simpleExchangeDataFlat.calldata.unshift(...wethCallData.calldata);
-      } else {
-        simpleExchangeDataFlat.callees.push(...wethCallData.callees);
-        simpleExchangeDataFlat.values.push(...wethCallData.values);
-        simpleExchangeDataFlat.calldata.push(...wethCallData.calldata);
+      if (wethCallData) {
+        if (wethCallData.opType === WethFunctions.deposit) {
+          simpleExchangeDataFlat.callees.unshift(wethCallData.callee);
+          simpleExchangeDataFlat.values.unshift(wethCallData.value);
+          simpleExchangeDataFlat.calldata.unshift(wethCallData.calldata);
+        } else {
+          simpleExchangeDataFlat.callees.push(wethCallData.callee);
+          simpleExchangeDataFlat.values.push(wethCallData.value);
+          simpleExchangeDataFlat.calldata.push(wethCallData.calldata);
+        }
       }
     }
 
