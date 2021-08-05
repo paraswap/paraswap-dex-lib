@@ -6,8 +6,9 @@ import { DexMap, IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { UniswapV2Fork } from './uniswap-v2-fork';
+import { Weth } from './weth';
+import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
-// import { ZeroX } from './zerox';
 import { Balancer } from './balancer';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
@@ -24,11 +25,12 @@ import { Weth } from './weth';
 
 const dexes = [
   UniswapV2,
-  UniswapV2Fork,
   Curve,
   CurveV2,
   StablePool,
-  // ZeroX,
+  UniswapV2Fork,
+  ZeroX,
+  Weth,
   Balancer,
   Bancor,
   BProtocol,

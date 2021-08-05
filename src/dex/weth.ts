@@ -18,6 +18,7 @@ const addresses: any = {
 export enum WethFunctions {
   withdrawAllWETH = 'withdrawAllWETH',
   deposit = 'deposit',
+  withdraw = 'withdraw',
 }
 
 type DepositWithdrawReturn = {
@@ -36,10 +37,13 @@ export interface IWethDepositorWithdrawer {
   ): DepositWithdrawReturn | undefined;
 }
 
+export type WData = {};
+
 export class Weth
   extends SimpleExchange
-  implements IDex<void, void>, IWethDepositorWithdrawer
+  implements IDex<WData, any>, IWethDepositorWithdrawer
 {
+  protected dexKeys = ['wmatic', 'weth', 'wbnb'];
   erc20Interface: Interface;
 
   constructor(augustusAddress: Address, public network: number) {
@@ -52,38 +56,44 @@ export class Weth
   }
 
   getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: void,
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: WData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    /** IMPLEMENTED IN CONCURRENT BRANCH % RESOLVE CONFLICT PROPERLY */
-
     return {
-      targetExchange: '0',
+      targetExchange: Weth.getAddress(this.network),
       payload: '0x',
       networkFee: '0',
     };
   }
 
   getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: void,
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: WData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    /** IMPLEMENTED IN CONCURRENT BRANCH % RESOLVE CONFLICT PROPERLY */
+    const address = Weth.getAddress(this.network);
 
-    return {
-      calldata: [],
-      callees: [],
-      values: [],
-      networkFee: '0',
-    };
+    const swapData = isETHAddress(srcToken)
+      ? this.erc20Interface.encodeFunctionData(WethFunctions.deposit)
+      : this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+          srcAmount,
+        ]);
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      address,
+    );
   }
 
   getDepositWithdrawParam(
