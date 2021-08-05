@@ -113,6 +113,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
           destAmountWeth: BigInt(0),
         },
       );
+
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(
       (acc, se) => ({
         callees: acc.callees.concat(se.callees),
@@ -123,12 +124,23 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       { callees: [], values: [], calldata: [], networkFee: '0' },
     );
 
-    this.handleWethDepositWithdrawAll(
-      simpleExchangeDataFlat,
+    const maybeWethCallData = this.getDepositWithdrawWethCallData(
       srcAmountWeth,
       destAmountWeth,
       swap,
     );
+
+    if (maybeWethCallData) {
+      if (maybeWethCallData.opType === WethFunctions.deposit) {
+        simpleExchangeDataFlat.callees.unshift(maybeWethCallData.callee);
+        simpleExchangeDataFlat.values.unshift(maybeWethCallData.value);
+        simpleExchangeDataFlat.calldata.unshift(maybeWethCallData.calldata);
+      } else {
+        simpleExchangeDataFlat.callees.push(maybeWethCallData.callee);
+        simpleExchangeDataFlat.values.push(maybeWethCallData.value);
+        simpleExchangeDataFlat.calldata.push(maybeWethCallData.calldata);
+      }
+    }
 
     const partialContractSimpleData = this.buildPartialContractSimpleData(
       simpleExchangeDataFlat,
@@ -158,15 +170,14 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     };
   }
 
-  handleWethDepositWithdrawAll(
-    simpleExchangeDataFlat: SimpleExchangeParam,
+  getDepositWithdrawWethCallData(
     srcAmountWeth: bigint,
     destAmountWeth: bigint,
     swap: OptimalSwap,
   ) {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
-    const wethCallData = (
+    return (
       this.dexMap['weth'] as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.src,
@@ -175,17 +186,5 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       destAmountWeth.toString(),
       SwapSide.SELL,
     );
-
-    if (!wethCallData) return;
-
-    if (wethCallData.opType === WethFunctions.deposit) {
-      simpleExchangeDataFlat.callees.unshift(wethCallData.callee);
-      simpleExchangeDataFlat.values.unshift(wethCallData.value);
-      simpleExchangeDataFlat.calldata.unshift(wethCallData.calldata);
-    } else {
-      simpleExchangeDataFlat.callees.push(wethCallData.callee);
-      simpleExchangeDataFlat.values.push(wethCallData.value);
-      simpleExchangeDataFlat.calldata.push(wethCallData.calldata);
-    }
   }
 }
