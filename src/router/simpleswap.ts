@@ -72,16 +72,20 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       throw new Error(`Simpleswap invalid bestRoute`);
     const swap = priceRoute.bestRoute[0].swaps[0];
 
-    const simpleExchangeDataList = swap.swapExchanges.map(se =>
-      this.dexMap[se.exchange.toLowerCase()].getSimpleParam(
+    const simpleExchangeDataList = swap.swapExchanges.map(se => {
+      if (!(se.exchange.toLowerCase() in this.dexMap)) {
+        throw new Error(`${se.exchange.toLowerCase()} dex is not supported!`);
+      }
+
+      return this.dexMap[se.exchange.toLowerCase()].getSimpleParam(
         swap.src,
         swap.dest,
         se.srcAmount,
         se.destAmount,
         se.data,
         SwapSide.SELL,
-      ),
-    );
+      );
+    });
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(
       (acc, se) => ({
         callees: acc.callees.concat(se.callees),
