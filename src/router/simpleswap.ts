@@ -11,6 +11,7 @@ import {
 import { SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
+import { isETHAddress } from '../utils';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -72,16 +73,48 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       throw new Error(`Simpleswap invalid bestRoute`);
     const swap = priceRoute.bestRoute[0].swaps[0];
 
-    const simpleExchangeDataList = swap.swapExchanges.map(se =>
-      this.dexMap[se.exchange.toLowerCase()].getSimpleParam(
-        swap.src,
-        swap.dest,
-        se.srcAmount,
-        se.destAmount,
-        se.data,
-        SwapSide.SELL,
-      ),
-    );
+    const { simpleExchangeDataList, srcAmountWeth, destAmountWeth } =
+      swap.swapExchanges.reduce<{
+        simpleExchangeDataList: SimpleExchangeParam[];
+        srcAmountWeth: string;
+        destAmountWeth: string;
+      }>(
+        (acc, se) => {
+          const dex = this.dexMap[se.exchange.toLowerCase()];
+
+          acc.simpleExchangeDataList.push(
+            dex.getSimpleParam(
+              swap.src,
+              swap.dest,
+              se.srcAmount,
+              se.destAmount,
+              se.data,
+              SwapSide.SELL,
+            ),
+          );
+
+          if (!dex.needWethWrapping) return acc;
+
+          if (isETHAddress(swap.src)) {
+            acc.srcAmountWeth = (
+              BigInt(srcAmountWeth) + BigInt(se.srcAmount)
+            ).toString(); // FIXME: stick to BitInt (currently weird warning
+          }
+
+          if (isETHAddress(swap.dest)) {
+            acc.destAmountWeth = (
+              BigInt(destAmountWeth) + BigInt(se.destAmount)
+            ).toString(); // FIXME same as above
+          }
+
+          return acc;
+        },
+        {
+          simpleExchangeDataList: [],
+          srcAmountWeth: '0',
+          destAmountWeth: '0',
+        },
+      );
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(
       (acc, se) => ({
         callees: acc.callees.concat(se.callees),
@@ -91,6 +124,27 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       }),
       { callees: [], values: [], calldata: [], networkFee: '0' },
     );
+
+    if (srcAmountWeth !== '0' || destAmountWeth !== '0') {
+      const wethCallData = this.dexMap['weth'].getSimpleParam(
+        swap.src,
+        swap.dest,
+        srcAmountWeth,
+        destAmountWeth,
+        undefined,
+        SwapSide.SELL,
+      );
+
+      if (srcAmountWeth !== '0') {
+        simpleExchangeDataFlat.callees.unshift(...wethCallData.callees);
+        simpleExchangeDataFlat.values.unshift(...wethCallData.values);
+        simpleExchangeDataFlat.calldata.unshift(...wethCallData.calldata);
+      } else {
+        simpleExchangeDataFlat.callees.push(...wethCallData.callees);
+        simpleExchangeDataFlat.values.push(...wethCallData.values);
+        simpleExchangeDataFlat.calldata.push(...wethCallData.calldata);
+      }
+    }
 
     const partialContractSimpleData = this.buildPartialContractSimpleData(
       simpleExchangeDataFlat,

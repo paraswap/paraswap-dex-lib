@@ -20,6 +20,7 @@ import { AaveV2 } from './aave-v2';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
+import { Weth } from './weth';
 
 const dexes = [
   UniswapV2,
@@ -41,6 +42,7 @@ const dexes = [
   DodoV1,
   DodoV2,
   UniswapV3,
+  Weth,
 ];
 
 export function getDexMap(
