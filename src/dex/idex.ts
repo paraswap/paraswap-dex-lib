@@ -8,7 +8,7 @@ import {
 import { SwapSide } from '../constants';
 
 export interface IDex<ExchangeData, DirectParam> {
-  needWethWrapping: boolean;
+  needWrapNative: boolean;
 
   getNetworkFee?(
     srcToken: Address,
