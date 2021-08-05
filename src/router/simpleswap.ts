@@ -129,14 +129,13 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     if (srcAmountWeth !== '0' || destAmountWeth !== '0') {
       const wethCallData = (
         this.dexMap['weth'] as unknown as IWethDepositorWithdrawer
-      ) // FIXME
-        .getDepositWithdrawParam(
-          swap.src,
-          swap.dest,
-          srcAmountWeth,
-          destAmountWeth,
-          SwapSide.SELL,
-        );
+      ).getDepositWithdrawParam(
+        swap.src,
+        swap.dest,
+        srcAmountWeth,
+        destAmountWeth,
+        SwapSide.SELL,
+      );
 
       if (wethCallData) {
         if (wethCallData.opType === WethFunctions.deposit) {
