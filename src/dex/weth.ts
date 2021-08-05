@@ -105,7 +105,7 @@ export class Weth
   ): DepositWithdrawReturn | undefined {
     const wethToken = Weth.getAddress(this.network);
 
-    if (isETHAddress(srcToken)) {
+    if (srcAmount !== '0' && isETHAddress(srcToken)) {
       const opType = WethFunctions.deposit;
       const depositWethData = this.erc20Interface.encodeFunctionData(opType);
 
@@ -117,7 +117,7 @@ export class Weth
       };
     }
 
-    if (isETHAddress(destToken) && destAmount !== '0') {
+    if (destAmount !== '0' && isETHAddress(destToken)) {
       const opType = WethFunctions.withdrawAllWETH;
       const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
         opType,
