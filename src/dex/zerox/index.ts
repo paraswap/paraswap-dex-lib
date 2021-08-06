@@ -125,104 +125,6 @@ export class ZeroX
     );
   }
 
-  protected getTokenToTokenSwapData(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    data: ZeroXData,
-  ) {
-    const approveCall = this.getApproveSimpleParam(
-      srcToken,
-      ZRX_EXCHANGE_ERC20PROXY[this.network][data.version],
-      srcAmount,
-    );
-    const assetSwapperData = this.buildSwapData(data, srcAmount);
-    const networkFees = data.networkFees || '0';
-
-    return {
-      callees: [...approveCall.callees, this.getExchange(data)],
-      calldata: [...approveCall.calldata, assetSwapperData],
-      values: [...approveCall.values, networkFees],
-    };
-  }
-
-  protected ethToTokenSwap(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString, // required for buy case
-    data: ZeroXData,
-  ): SimpleExchangeParam {
-    const wethToken = Weth.getAddress(this.network);
-    const depositWethData = this.erc20Interface.encodeFunctionData('deposit');
-    const wethToTokenData = this.getTokenToTokenSwapData(
-      wethToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      data,
-    );
-
-    return {
-      callees: [wethToken, ...wethToTokenData.callees],
-      calldata: [depositWethData, ...wethToTokenData.calldata],
-      values: [srcAmount, ...wethToTokenData.values],
-      networkFee: '0',
-    };
-  }
-
-  protected tokenToEthSwap(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString, // required for buy case
-    data: ZeroXData,
-  ): SimpleExchangeParam {
-    const wethToken = Weth.getAddress(this.network);
-    const wethToTokenData = this.getTokenToTokenSwapData(
-      srcToken,
-      destToken,
-      srcAmount,
-      destAmount,
-      data,
-    );
-    const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
-      'withdrawAllWETH',
-      [wethToken],
-    );
-
-    return {
-      callees: [...wethToTokenData.callees, this.augustusAddress],
-      calldata: [...wethToTokenData.calldata, withdrawWethData],
-      values: [...wethToTokenData.values, '0'],
-      networkFee: '0',
-    };
-  }
-
-  protected tokenToTokenSwap(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString, // required for buy case
-    data: ZeroXData,
-  ): SimpleExchangeParam {
-    const swapData = this.getTokenToTokenSwapData(
-      srcToken,
-      destToken,
-      srcAmount,
-      destAmount,
-      data,
-    );
-
-    return {
-      callees: [...swapData.callees],
-      calldata: [...swapData.calldata],
-      values: [...swapData.values],
-      networkFee: '0',
-    };
-  }
-
   getAdapterParam(
     srcToken: Address,
     destToken: Address,
@@ -301,17 +203,19 @@ export class ZeroX
     data: ZeroXData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    try {
-      if (src === ETHER_ADDRESS) {
-        return this.ethToTokenSwap(src, dest, srcAmount, destAmount, data);
-      } else if (dest === ETHER_ADDRESS) {
-        return this.tokenToEthSwap(src, dest, srcAmount, destAmount, data);
-      } else {
-        return this.tokenToTokenSwap(src, dest, srcAmount, destAmount, data);
-      }
-    } catch (e) {
-      throw new Error(e.message);
-    }
+    const swapData = this.buildSwapData(data, srcAmount);
+    const networkFees = data.networkFees || '0';
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      src, // WARNING: WETH instead ? what about other cases
+      srcAmount,
+      dest,
+      destAmount,
+      swapData,
+      this.getExchange(data),
+      ZRX_EXCHANGE_ERC20PROXY[this.network][data.version],
+      networkFees,
+    );
   }
 
   getDirectParam(
