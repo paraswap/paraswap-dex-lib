@@ -110,7 +110,7 @@ export class UniswapV2Fork
           initCode: 'bytes32',
         },
       },
-      { path, initCode, factory, fee: fee[0], feeFactor },
+      { path, initCode, factory, fee: 10000 - fee[0], feeFactor },
     );
 
     return {
