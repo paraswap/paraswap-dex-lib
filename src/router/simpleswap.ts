@@ -86,12 +86,6 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         destAmountWeth: bigint;
       }>(
         (acc, se) => {
-          if (!(se.exchange.toLowerCase() in this.dexAdapterLocator)) {
-            throw new Error(
-              `${se.exchange.toLowerCase()} dex is not supported!`,
-            );
-          }
-
           const dex = this.dexAdapterLocator(network, se.exchange);
 
           acc.simpleExchangeDataList.push(
