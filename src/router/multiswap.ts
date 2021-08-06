@@ -1,5 +1,4 @@
 import { IRouter } from './irouter';
-import { DexMap } from '../dex/idex';
 import { PayloadEncoder } from './payload-encoder';
 import {
   Address,
@@ -10,6 +9,7 @@ import {
 } from '../types';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
+import { DexAdapterLocator } from '../dex';
 
 type MultiSwapParam = [ContractSellData];
 
@@ -20,8 +20,8 @@ export class MultiSwap
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexMap: DexMap, adapters: Adapters) {
-    super(dexMap, adapters);
+  constructor(dexAdapterLocator: DexAdapterLocator, adapters: Adapters) {
+    super(dexAdapterLocator, adapters);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'multiSwap';
   }
@@ -39,6 +39,7 @@ export class MultiSwap
     beneficiary: Address,
     permit: string,
     deadline: string,
+    network: number,
   ): TxInfo<MultiSwapParam> {
     if (
       priceRoute.bestRoute.length !== 1 ||
@@ -47,6 +48,7 @@ export class MultiSwap
       throw new Error(`Multiswap invalid bestRoute`);
     const { paths, networkFee } = this.getContractPathsWithNetworkFee(
       priceRoute.bestRoute[0].swaps,
+      network,
     );
     const sellData: ContractSellData = {
       fromToken: priceRoute.src,

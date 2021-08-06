@@ -6,24 +6,34 @@ import {
   ContractMegaSwapPath,
   OptimalSwapExchange,
   Address,
-  NumberAsString,
   Adapters,
 } from '../types';
 import { SwapSide } from '../constants';
-import { DexMap } from '../dex/idex';
+import { DexAdapterLocator } from '../dex';
 
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
-  constructor(protected dexMap: DexMap, protected adapters: Adapters) {}
+  constructor(
+    protected dexAdapterLocator: DexAdapterLocator,
+    protected adapters: Adapters,
+  ) {}
   // Should have function for optimally choosing the Adapters
-  getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
+  getContractPathsWithNetworkFee(
+    swaps: OptimalSwap[],
+    network: number,
+  ): {
     paths: ContractPath[];
     networkFee: bigint;
   } {
     let totalNetworkFee = BigInt(0);
     const paths = swaps.map(s => {
-      const adapters = this.getAdapters(s.src, s.dest, s.swapExchanges);
+      const adapters = this.getAdapters(
+        s.src,
+        s.dest,
+        s.swapExchanges,
+        network,
+      );
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
         BigInt(0),
@@ -38,7 +48,10 @@ export class PayloadEncoder {
     return { paths, networkFee: totalNetworkFee };
   }
 
-  getMegaSwapPathsWithNetworkFee(routes: OptimalRoute[]): {
+  getMegaSwapPathsWithNetworkFee(
+    routes: OptimalRoute[],
+    network: number,
+  ): {
     megaSwapPaths: ContractMegaSwapPath[];
     networkFee: bigint;
   } {
@@ -46,6 +59,7 @@ export class PayloadEncoder {
     const megaSwapPaths = routes.map(r => {
       const { paths, networkFee } = this.getContractPathsWithNetworkFee(
         r.swaps,
+        network,
       );
       totalNetworkFee += networkFee;
       return {
@@ -60,6 +74,7 @@ export class PayloadEncoder {
     src: Address,
     dest: Address,
     swapExchanges: OptimalSwapExchange<any>[],
+    network: number,
   ): ContractAdapter[] {
     const exchangeAdapterMap = this.getOptimalExchangeAdapterMap(swapExchanges);
     let adaptersMap: { [adapter: string]: ContractAdapter } = {};
@@ -74,9 +89,10 @@ export class PayloadEncoder {
           route: [],
         };
       }
-      const adapterParam = this.dexMap[
-        se.exchange.toLowerCase() // Proposal: use findByKey() allows us to whitelist multiple exchanges
-      ].getAdapterParam(
+      const adapterParam = this.dexAdapterLocator(
+        network,
+        se.exchange.toLowerCase(), // Proposal: use findByKey() allows us to whitelist multiple exchanges
+      ).getAdapterParam(
         src,
         dest,
         se.srcAmount,

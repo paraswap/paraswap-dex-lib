@@ -1,5 +1,4 @@
 import { IRouter } from './irouter';
-import { DexMap } from '../dex/idex';
 import { PayloadEncoder } from './payload-encoder';
 import {
   Address,
@@ -10,6 +9,7 @@ import {
 } from '../types';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
+import { DexAdapterLocator } from '../dex';
 
 type MegaSwapParam = [ContractMegaSwapSellData];
 
@@ -17,8 +17,8 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexMap: DexMap, adapters: Adapters) {
-    super(dexMap, adapters);
+  constructor(dexAdapterLocator: DexAdapterLocator, adapters: Adapters) {
+    super(dexAdapterLocator, adapters);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'megaSwap';
   }
@@ -36,9 +36,11 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
+    network: number,
   ): TxInfo<MegaSwapParam> {
     const { megaSwapPaths, networkFee } = this.getMegaSwapPathsWithNetworkFee(
       priceRoute.bestRoute,
+      network,
     );
     const sellData: ContractMegaSwapSellData = {
       fromToken: priceRoute.src,

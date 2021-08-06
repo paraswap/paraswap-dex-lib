@@ -1,5 +1,4 @@
 import { IRouter } from './irouter';
-import { DexMap } from '../dex/idex';
 import {
   Address,
   Adapters,
@@ -14,6 +13,7 @@ import { Interface } from '@ethersproject/abi';
 import { isETHAddress } from '../utils';
 import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth';
 import { OptimalSwap } from 'paraswap-core';
+import { DexAdapterLocator } from '../dex';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -26,7 +26,10 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(protected dexMap: DexMap, adapters: Adapters) {
+  constructor(
+    protected dexAdapterLocator: DexAdapterLocator,
+    adapters: Adapters,
+  ) {
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'simpleSwap';
   }
@@ -66,6 +69,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
+    network: number,
   ): TxInfo<SimpleSwapParam> {
     if (
       priceRoute.bestRoute.length !== 1 ||
@@ -82,13 +86,13 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         destAmountWeth: bigint;
       }>(
         (acc, se) => {
-          if (!(se.exchange.toLowerCase() in this.dexMap)) {
+          if (!(se.exchange.toLowerCase() in this.dexAdapterLocator)) {
             throw new Error(
               `${se.exchange.toLowerCase()} dex is not supported!`,
             );
           }
 
-          const dex = this.dexMap[se.exchange.toLowerCase()];
+          const dex = this.dexAdapterLocator(network, se.exchange);
 
           acc.simpleExchangeDataList.push(
             dex.getSimpleParam(
@@ -134,6 +138,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       srcAmountWeth,
       destAmountWeth,
       swap,
+      network,
     );
 
     if (maybeWethCallData) {
@@ -180,11 +185,15 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     srcAmountWeth: bigint,
     destAmountWeth: bigint,
     swap: OptimalSwap,
+    network: number,
   ) {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
     return (
-      this.dexMap['weth'] as unknown as IWethDepositorWithdrawer
+      this.dexAdapterLocator(
+        network,
+        'weth',
+      ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.src,
       swap.dest,

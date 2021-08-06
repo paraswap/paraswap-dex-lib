@@ -1,14 +1,13 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { IDex, DexMap } from './dex/idex';
-import { IRouter, RouterMap } from './router/irouter';
+import { RouterMap } from './router/irouter';
 import { OptimalRate, Address, Adapters } from './types';
 import { ETHER_ADDRESS } from './constants';
 import { getRouterMap } from './router';
-import { getDexMap } from './dex';
+import { buildDexAdapterLocator, DexAdapterLocator } from './dex';
 
 export class TransactionBuilder {
   routerMap: RouterMap;
-  dexMap: DexMap;
+  dexAdapterLocator: DexAdapterLocator;
   provider: JsonRpcProvider;
 
   constructor(
@@ -18,8 +17,11 @@ export class TransactionBuilder {
     adapters: Adapters,
   ) {
     this.provider = new JsonRpcProvider(providerURL);
-    this.dexMap = getDexMap(augustusAddress, network, this.provider);
-    this.routerMap = getRouterMap(this.dexMap, adapters);
+    this.dexAdapterLocator = buildDexAdapterLocator(
+      augustusAddress,
+      this.provider,
+    );
+    this.routerMap = getRouterMap(this.dexAdapterLocator, adapters);
   }
 
   public build({
@@ -57,6 +59,7 @@ export class TransactionBuilder {
       _beneficiary,
       permit || '0x',
       deadline,
+      this.network,
     );
 
     if (onlyParams) return params;

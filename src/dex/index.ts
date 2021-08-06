@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Address } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { DexMap, IDex } from './idex';
+import { IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { UniswapV2Fork } from './uniswap-v2-fork';
@@ -46,27 +46,40 @@ const dexes = [
   Weth,
 ];
 
-export function getDexMap(
+export type DexAdapterLocator = (
+  networkId: number,
+  exchangeName: string,
+) => IDex<any, any> | null;
+
+export function buildDexAdapterLocator(
   augustusAddress: Address,
-  network: number,
   provider: JsonRpcProvider,
-): DexMap {
-  return dexes.reduce(
-    (
-      acc: DexMap,
-      dex: new (
-        augustusAddress: Address,
-        network: number,
-        provider: JsonRpcProvider,
-      ) => IDex<any, any>,
-    ) => {
-      const dexObj = new dex(augustusAddress, network, provider);
-      dexObj.getDEXKeys().forEach(dexKeys => {
-        // temp: move to findDexByKey instead
-        acc[dexKeys] = dexObj;
-      });
-      return acc;
-    },
-    {},
-  );
+): DexAdapterLocator {
+  const networkToAdapter: { [networkId: string]: IDex<any, any> } = {};
+
+  return (networkId, exchangeName) => {
+    /* SEE NEXT COMMIT */
+    // dexes.reduce(
+    //   (
+    //     acc: DexMap,
+    //     dex: new (
+    //       augustusAddress: Address,
+    //       network: number,
+    //       provider: JsonRpcProvider,
+    //     ) => IDex<any, any>,
+    //   ) => {
+    //     try {
+    //       const dexObj = new dex(augustusAddress, network, provider);
+    //       dexObj.getDEXKeys().forEach(dexKeys => {
+    //         // temp: move to findDexByKey instead
+    //         acc[dexKeys] = dexObj;
+    //       });
+    //     } catch (err) {
+    //       // FIXME ignore for now
+    //     }
+    //     return acc;
+    //   },
+    //   {},
+    return null;
+  };
 }

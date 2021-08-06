@@ -51,5 +51,3 @@ export interface IDex<ExchangeData, DirectParam> {
 
   getDEXKeys(): string[];
 }
-
-export type DexMap = { [identifier: string]: IDex<any, any> };
