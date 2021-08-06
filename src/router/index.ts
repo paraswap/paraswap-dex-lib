@@ -29,6 +29,7 @@ export function getRouterMap(
     {},
   );
 
+  // FIXME
   const directRouteMap = Object.values(dexAdapterLocator).reduce(
     (acc: RouterMap, dex: IDex<any, any>) => {
       const directFuctionName =

@@ -75,14 +75,14 @@ export type DexAdapterLocator = (
   exchangeName: string,
 ) => IDex<any, any>;
 
-const networkToAdapters: {
-  [networkId: string]: { [key: string]: IDex<any, any> };
-} = {};
-
 export function buildDexAdapterLocator(
   augustusAddress: Address,
   provider: JsonRpcProvider,
 ): DexAdapterLocator {
+  const networkToAdapters: {
+    [networkId: string]: { [key: string]: IDex<any, any> };
+  } = {};
+
   return (networkId: number, exchangeName: string) => {
     const { key, DexAdapter } = reduceKeyAdapterOffExchangeName(exchangeName);
 
