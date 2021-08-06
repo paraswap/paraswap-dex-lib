@@ -41,12 +41,12 @@ export class UniswapV2
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
+  static ExchangeNames = UniswapV2AliasKeys;
 
   constructor(
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKeys = UniswapV2AliasKeys,
     protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);

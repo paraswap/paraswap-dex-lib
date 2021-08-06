@@ -68,7 +68,7 @@ export class AaveV2
   extends SimpleExchange
   implements IDex<AaveV2Data, AaveV2Param>
 {
-  protected dexKeys = ['aave2'];
+  static ExchangeNames = ['aave2'];
   aavePool: Interface;
   wethGateway: Interface;
 

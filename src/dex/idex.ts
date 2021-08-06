@@ -49,5 +49,5 @@ export interface IDex<ExchangeData, DirectParam> {
 
   getDirectFuctionName?(): { sell?: string; buy?: string };
 
-  getDEXKeys(): string[];
+  getExchangeNames(): string[];
 }

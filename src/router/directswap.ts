@@ -56,7 +56,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.bestRoute[0].swaps[0].swapExchanges.length !== 1 ||
       priceRoute.bestRoute[0].swaps[0].swapExchanges[0].percent !== 100 ||
       !this.dex
-        .getDEXKeys()
+        .getExchangeNames() // FIXME: update logic here
         .includes(
           priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange.toLowerCase(),
         )

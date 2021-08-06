@@ -22,7 +22,7 @@ import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 
-const dexes = [
+const DexAdapters = [
   UniswapV2,
   Curve,
   CurveV2,
@@ -46,40 +46,57 @@ const dexes = [
   Weth,
 ];
 
+const reduceKeyAdapterOffExchangeName = (
+  exchangeName: string,
+): { key: string; DexAdapter: typeof DexAdapters[0] } => {
+  if (/^paraswappool(.*)/i.test(exchangeName))
+    return { key: '0x', DexAdapter: ZeroX };
+
+  const MatchingDexAdapter = DexAdapters.find(d =>
+    d.ExchangeNames.map(k => k.toLowerCase()).includes(
+      exchangeName.toLowerCase(),
+    ),
+  );
+
+  if (!MatchingDexAdapter)
+    throw `failed to find MatchingDex for ${exchangeName}`;
+
+  const firstMatchingDexExchangeName =
+    MatchingDexAdapter.ExchangeNames?.[0]?.toLowerCase();
+
+  if (!firstMatchingDexExchangeName)
+    throw `failed to find firstMatchingDexExchangeName for ${exchangeName}`;
+
+  return { key: firstMatchingDexExchangeName, DexAdapter: MatchingDexAdapter };
+};
+
 export type DexAdapterLocator = (
   networkId: number,
   exchangeName: string,
-) => IDex<any, any> | null;
+) => IDex<any, any>;
+
+const networkToAdapters: {
+  [networkId: string]: { [key: string]: IDex<any, any> };
+} = {};
 
 export function buildDexAdapterLocator(
   augustusAddress: Address,
   provider: JsonRpcProvider,
 ): DexAdapterLocator {
-  const networkToAdapter: { [networkId: string]: IDex<any, any> } = {};
+  return (networkId: number, exchangeName: string) => {
+    const { key, DexAdapter } = reduceKeyAdapterOffExchangeName(exchangeName);
 
-  return (networkId, exchangeName) => {
-    /* SEE NEXT COMMIT */
-    // dexes.reduce(
-    //   (
-    //     acc: DexMap,
-    //     dex: new (
-    //       augustusAddress: Address,
-    //       network: number,
-    //       provider: JsonRpcProvider,
-    //     ) => IDex<any, any>,
-    //   ) => {
-    //     try {
-    //       const dexObj = new dex(augustusAddress, network, provider);
-    //       dexObj.getDEXKeys().forEach(dexKeys => {
-    //         // temp: move to findDexByKey instead
-    //         acc[dexKeys] = dexObj;
-    //       });
-    //     } catch (err) {
-    //       // FIXME ignore for now
-    //     }
-    //     return acc;
-    //   },
-    //   {},
-    return null;
+    if (networkToAdapters[networkId]?.[key])
+      return networkToAdapters[networkId][key];
+
+    if (!networkToAdapters[networkId]) networkToAdapters[networkId] = {};
+
+    networkToAdapters[networkId][key] = new DexAdapter(
+      augustusAddress,
+      networkId,
+      provider,
+    );
+
+    return networkToAdapters[networkId][key];
   };
 }

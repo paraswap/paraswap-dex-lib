@@ -25,7 +25,7 @@ export class OneInchLp
   extends SimpleExchange
   implements IDex<OneInchLpData, OneInchLpParam>
 {
-  protected dexKeys = ['oneinchlp'];
+  static ExchangeNames = ['oneinchlp'];
   exchangeRouterInterface: Interface;
 
   constructor(augustusAddress: Address, private network: number) {

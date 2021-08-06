@@ -25,7 +25,7 @@ export class Shell
   extends SimpleExchange
   implements IDex<ShellData, ShellParam>
 {
-  protected dexKeys = ['shell'];
+  static ExchangeNames = ['shell'];
   exchangeRouterInterface: Interface;
 
   constructor(augustusAddress: Address, private network: number) {

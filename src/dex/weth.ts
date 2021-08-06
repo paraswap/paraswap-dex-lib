@@ -43,7 +43,7 @@ export class Weth
   extends SimpleExchange
   implements IDex<WData, any>, IWethDepositorWithdrawer
 {
-  protected dexKeys = ['wmatic', 'weth', 'wbnb'];
+  static ExchangeNames = ['wmatic', 'weth', 'wbnb'];
   erc20Interface: Interface;
 
   constructor(augustusAddress: Address, public network: number) {

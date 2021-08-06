@@ -64,12 +64,12 @@ export class UniswapV2Fork
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
+  static ExchangeNames = UniswapV2ForkExchangeKeys;
 
   constructor(
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKeys = UniswapV2ForkExchangeKeys,
     protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
