@@ -25,6 +25,7 @@ export class Onebit
 {
   protected dexKeys = ['onebit'];
   exchangeRouterInterface: Interface;
+  needWrapNative = true;
 
   constructor(augustusAddress: Address, private network: number) {
     super(augustusAddress);

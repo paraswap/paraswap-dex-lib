@@ -9,6 +9,7 @@ export class SimpleExchange {
   simpleSwapHelper: Interface;
   protected dexKeys: string[] = [];
   protected abiCoder: AbiCoder;
+  needWrapNative = false;
 
   constructor(protected augustusAddress: Address) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);

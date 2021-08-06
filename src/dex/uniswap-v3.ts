@@ -36,6 +36,7 @@ export class UniswapV3
 {
   protected dexKeys = ['uniswapv3'];
   exchangeRouterInterface: Interface;
+  needWrapNative = true;
 
   constructor(augustusAddress: Address, private network: number) {
     super(augustusAddress);

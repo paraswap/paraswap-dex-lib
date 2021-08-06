@@ -1,15 +1,10 @@
-import { Interface } from '@ethersproject/abi';
-import ERC20_ABI from '../abi/erc20.json';
-import { SwapSide } from '../constants';
-import {
-  AdapterExchangeParam,
-  Address,
-  NumberAsString,
-  SimpleExchangeParam,
-} from '../types';
-import { isETHAddress } from '../utils';
+import { Interface, JsonFragment } from '@ethersproject/abi';
+import { NumberAsString, SwapSide } from 'paraswap-core';
+import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
+import ERC20 from '../abi/erc20.json';
+import { isETHAddress } from '../utils';
 
 const addresses: any = {
   1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
@@ -20,19 +15,44 @@ const addresses: any = {
   137: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
 };
 
+export enum WethFunctions {
+  withdrawAllWETH = 'withdrawAllWETH',
+  deposit = 'deposit',
+  withdraw = 'withdraw',
+}
+
+type DepositWithdrawReturn = {
+  opType: WethFunctions;
+  callee: string;
+  calldata: string;
+  value: string;
+};
+export interface IWethDepositorWithdrawer {
+  getDepositWithdrawParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    side: SwapSide,
+  ): DepositWithdrawReturn | undefined;
+}
+
 export type WData = {};
 
-export class Weth extends SimpleExchange implements IDex<WData, any> {
-  private exchangeRouterInterface: Interface;
+export class Weth
+  extends SimpleExchange
+  implements IDex<WData, any>, IWethDepositorWithdrawer
+{
   protected dexKeys = ['wmatic', 'weth', 'wbnb'];
+  erc20Interface: Interface;
+
+  constructor(augustusAddress: Address, public network: number) {
+    super(augustusAddress);
+    this.erc20Interface = new Interface(ERC20 as JsonFragment[]);
+  }
 
   static getAddress(network: number = 1): Address {
     return addresses[network];
-  }
-
-  constructor(augustusAddress: Address, protected network: number) {
-    super(augustusAddress);
-    this.exchangeRouterInterface = new Interface(ERC20_ABI);
   }
 
   getAdapterParam(
@@ -61,8 +81,8 @@ export class Weth extends SimpleExchange implements IDex<WData, any> {
     const address = Weth.getAddress(this.network);
 
     const swapData = isETHAddress(srcToken)
-      ? this.exchangeRouterInterface.encodeFunctionData('deposit')
-      : this.exchangeRouterInterface.encodeFunctionData('withdraw', [
+      ? this.erc20Interface.encodeFunctionData(WethFunctions.deposit)
+      : this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
           srcAmount,
         ]);
 
@@ -74,5 +94,42 @@ export class Weth extends SimpleExchange implements IDex<WData, any> {
       swapData,
       address,
     );
+  }
+
+  getDepositWithdrawParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    side: SwapSide,
+  ): DepositWithdrawReturn | undefined {
+    const wethToken = Weth.getAddress(this.network);
+
+    if (srcAmount !== '0' && isETHAddress(srcToken)) {
+      const opType = WethFunctions.deposit;
+      const depositWethData = this.erc20Interface.encodeFunctionData(opType);
+
+      return {
+        opType,
+        callee: wethToken,
+        calldata: depositWethData,
+        value: srcAmount,
+      };
+    }
+
+    if (destAmount !== '0' && isETHAddress(destToken)) {
+      const opType = WethFunctions.withdrawAllWETH;
+      const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
+        opType,
+        [wethToken],
+      );
+
+      return {
+        opType,
+        callee: this.augustusAddress,
+        calldata: withdrawWethData,
+        value: '0',
+      };
+    }
   }
 }

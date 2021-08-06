@@ -43,6 +43,7 @@ const dexes = [
   DodoV1,
   DodoV2,
   UniswapV3,
+  Weth,
 ];
 
 export function getDexMap(
