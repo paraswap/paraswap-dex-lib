@@ -12,18 +12,22 @@
   },
   "devDependencies": {
     "@types/jest": "26.0.24",
+    "axios": "^0.21.1",
+    "change-case": "^4.1.2",
     "husky": "7.0.1",
     "jest": "26.6.0",
+    "paraswap-core": "https://github.com/paraswap/paraswap-core#master",
     "prettier": "2.3.2",
     "pretty-quick": "3.1.1",
     "ts-jest": "24.1.0",
     "typescript": "4.3.5",
-    "paraswap-core": "https://github.com/paraswap/paraswap-core#master"
+    "yargs": "^17.0.1"
   },
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "prepare": "husky install && yarn build"
+    "prepare": "husky install && yarn build",
+    "dex:init": "npx ts-node scripts/initDexIntegration.ts"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
