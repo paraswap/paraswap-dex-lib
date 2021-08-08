@@ -52,7 +52,7 @@ export interface IDex<ExchangeData, DirectParam> {
     side: SwapSide,
   ): TxInfo<DirectParam>;
 
-  getDirectFuctionName?(): DirectFunctions;
+  getDirectFunctionName?(): DirectFunctions;
 
   getExchangeNames(): string[];
 }

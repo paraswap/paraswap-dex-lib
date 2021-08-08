@@ -1,6 +1,6 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
-import { IDex } from './idex';
+import { DirectFunctions, IDex } from './idex';
 import {
   Address,
   NumberAsString,
@@ -134,7 +134,7 @@ export class UniswapV2
     };
   }
 
-  static getDirectFuctionName(): { sell?: string; buy?: string } {
+  static getDirectFunctionName(): DirectFunctions {
     return this.directFunctionName;
   }
 }
