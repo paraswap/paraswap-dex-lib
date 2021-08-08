@@ -104,6 +104,8 @@ export class DexAdapterService {
 
     const DexAdapter = this.dexToKeyMap[_dexKey];
 
+    if (!DexAdapter) throw `${dexKey} dex is not supported!`;
+
     this.dexInstances[dexKey] = new DexAdapter(
       this.augustusAddress,
       network,
