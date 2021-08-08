@@ -7,6 +7,11 @@ import {
 } from '../types';
 import { SwapSide } from '../constants';
 
+export type DirectFunctions = {
+  sell?: string;
+  buy?: string;
+};
+
 export interface IDex<ExchangeData, DirectParam> {
   needWrapNative: boolean;
 
@@ -47,7 +52,7 @@ export interface IDex<ExchangeData, DirectParam> {
     side: SwapSide,
   ): TxInfo<DirectParam>;
 
-  getDirectFuctionName?(): { sell?: string; buy?: string };
+  getDirectFuctionName?(): DirectFunctions;
 
   getExchangeNames(): string[];
 }

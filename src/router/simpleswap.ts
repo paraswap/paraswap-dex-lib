@@ -13,7 +13,7 @@ import { Interface } from '@ethersproject/abi';
 import { isETHAddress } from '../utils';
 import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth';
 import { OptimalSwap } from 'paraswap-core';
-import { DexAdapterLocator } from '../dex';
+import { DexAdapterService } from '../dex';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -27,7 +27,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
   contractMethodName: string;
 
   constructor(
-    protected dexAdapterLocator: DexAdapterLocator,
+    protected dexAdapterService: DexAdapterService,
     adapters: Adapters,
   ) {
     this.paraswapInterface = new Interface(IParaswapABI);
@@ -86,7 +86,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         destAmountWeth: bigint;
       }>(
         (acc, se) => {
-          const dex = this.dexAdapterLocator(network, se.exchange);
+          const dex = this.dexAdapterService.getDexByKey(se.exchange, network);
 
           acc.simpleExchangeDataList.push(
             dex.getSimpleParam(
@@ -184,9 +184,9 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
     return (
-      this.dexAdapterLocator(
-        network,
+      this.dexAdapterService.getDexByKey(
         'weth',
+        network,
       ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.src,

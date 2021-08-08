@@ -42,12 +42,12 @@ export class UniswapV2
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
   static ExchangeNames = UniswapV2AliasKeys;
+  static directFunctionName = directUniswapFunctionName;
 
   constructor(
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
@@ -134,7 +134,7 @@ export class UniswapV2
     };
   }
 
-  getDirectFuctionName(): { sell?: string; buy?: string } {
+  static getDirectFuctionName(): { sell?: string; buy?: string } {
     return this.directFunctionName;
   }
 }

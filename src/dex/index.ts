@@ -46,57 +46,72 @@ const DexAdapters = [
   Weth,
 ];
 
-const reduceKeyAdapterOffExchangeName = (
-  exchangeName: string,
-): { key: string; DexAdapter: typeof DexAdapters[0] } => {
-  if (/^paraswappool(.*)/i.test(exchangeName))
-    return { key: '0x', DexAdapter: ZeroX };
+export class DexAdapterService {
+  dexToKeyMap: {
+    [key: string]: new (
+      augustusAddress: Address,
+      networkId: number,
+      provider: JsonRpcProvider,
+    ) => IDex<any, any>;
+  };
+  directFunctionsNames: string[];
+  dexInstances: { [network: number]: { [key: string]: IDex<any, any> } } = {};
+  constructor(
+    private augustusAddress: string,
+    private provider: JsonRpcProvider,
+  ) {
+    this.dexToKeyMap = DexAdapters.reduce<{
+      [exchangeName: string]: new (
+        augustusAddress: Address,
+        networkId: number,
+        provider: JsonRpcProvider,
+      ) => IDex<any, any>;
+    }>((acc, DexAdapter) => {
+      DexAdapter.ExchangeNames.forEach(exchangeName => {
+        acc[exchangeName.toLowerCase()] = DexAdapter;
+      });
 
-  const MatchingDexAdapter = DexAdapters.find(d =>
-    d.ExchangeNames.map(k => k.toLowerCase()).includes(
-      exchangeName.toLowerCase(),
-    ),
-  );
+      return acc;
+    }, {});
 
-  if (!MatchingDexAdapter)
-    throw `failed to find MatchingDex for ${exchangeName}`;
+    this.directFunctionsNames = DexAdapters.filter(DexAdapter =>
+      // @ts-expect-error
+      DexAdapter?.getDirectFuctionName(),
+    )
+      .flatMap(DexAdapter => {
+        // @ts-expect-error
+        const directFunctionName = DexAdapter?.getDirectFunctionName();
 
-  const firstMatchingDexExchangeName =
-    MatchingDexAdapter.ExchangeNames?.[0]?.toLowerCase();
+        return [
+          directFunctionName.sell?.toLowerCase() || '',
+          directFunctionName.buy?.toLowerCase() || '',
+        ];
+      })
+      .filter(x => !!x);
+  }
 
-  if (!firstMatchingDexExchangeName)
-    throw `failed to find firstMatchingDexExchangeName for ${exchangeName}`;
+  getDexByKey(dexKey: string, network: number): IDex<any, any> {
+    let _dexKey = dexKey.toLowerCase();
 
-  return { key: firstMatchingDexExchangeName, DexAdapter: MatchingDexAdapter };
-};
+    if (/^paraswappool(.*)/i.test(dexKey)) _dexKey = 'zerox';
 
-export type DexAdapterLocator = (
-  networkId: number,
-  exchangeName: string,
-) => IDex<any, any>;
+    if (this.dexInstances[network]?.[dexKey])
+      return this.dexInstances[network][dexKey];
 
-export function buildDexAdapterLocator(
-  augustusAddress: Address,
-  provider: JsonRpcProvider,
-): DexAdapterLocator {
-  const networkToAdapters: {
-    [networkId: string]: { [key: string]: IDex<any, any> };
-  } = {};
+    if (!this.dexInstances[network]) this.dexInstances[network] = {};
 
-  return (networkId: number, exchangeName: string) => {
-    const { key, DexAdapter } = reduceKeyAdapterOffExchangeName(exchangeName);
+    const DexAdapter = this.dexToKeyMap[_dexKey];
 
-    if (networkToAdapters[networkId]?.[key])
-      return networkToAdapters[networkId][key];
-
-    if (!networkToAdapters[networkId]) networkToAdapters[networkId] = {};
-
-    networkToAdapters[networkId][key] = new DexAdapter(
-      augustusAddress,
-      networkId,
-      provider,
+    this.dexInstances[network][dexKey] = new DexAdapter(
+      this.augustusAddress,
+      network,
+      this.provider,
     );
 
-    return networkToAdapters[networkId][key];
-  };
+    return this.dexInstances[network][dexKey];
+  }
+
+  isDirectFunctionName(functionName: string): boolean {
+    return this.directFunctionsNames.includes(functionName.toLowerCase());
+  }
 }

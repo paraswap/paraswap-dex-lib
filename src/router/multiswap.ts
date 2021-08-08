@@ -9,7 +9,7 @@ import {
 } from '../types';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
-import { DexAdapterLocator } from '../dex';
+import { DexAdapterService } from '../dex';
 
 type MultiSwapParam = [ContractSellData];
 
@@ -20,8 +20,8 @@ export class MultiSwap
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexAdapterLocator: DexAdapterLocator, adapters: Adapters) {
-    super(dexAdapterLocator, adapters);
+  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
+    super(dexAdapterService, adapters);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'multiSwap';
   }

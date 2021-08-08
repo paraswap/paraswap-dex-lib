@@ -15,5 +15,3 @@ export interface IRouter<RouterParam> {
 
   getContractMethodName(): string;
 }
-
-export type RouterMap = { [contractMethod: string]: IRouter<any> };

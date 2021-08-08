@@ -90,6 +90,7 @@ export class ZeroX
   erc20Interface: Interface;
   ExchangeNames = ['zerox'];
   needWrapNative = true;
+  // FIXME: direct function ??
 
   constructor(
     augustusAddress: Address,

@@ -9,13 +9,13 @@ import {
   Adapters,
 } from '../types';
 import { SwapSide } from '../constants';
-import { DexAdapterLocator } from '../dex';
+import { DexAdapterService } from '../dex';
 
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
   constructor(
-    protected dexAdapterLocator: DexAdapterLocator,
+    protected dexAdapterService: DexAdapterService,
     protected adapters: Adapters,
   ) {}
   // Should have function for optimally choosing the Adapters
@@ -89,17 +89,16 @@ export class PayloadEncoder {
           route: [],
         };
       }
-      const adapterParam = this.dexAdapterLocator(
-        network,
-        se.exchange.toLowerCase(), // Proposal: use findByKey() allows us to whitelist multiple exchanges
-      ).getAdapterParam(
-        src,
-        dest,
-        se.srcAmount,
-        se.destAmount,
-        se.data,
-        SwapSide.SELL,
-      );
+      const adapterParam = this.dexAdapterService
+        .getDexByKey(se.exchange.toLowerCase(), network)
+        .getAdapterParam(
+          src,
+          dest,
+          se.srcAmount,
+          se.destAmount,
+          se.data,
+          SwapSide.SELL,
+        );
       adaptersMap[adapterAddress].percent = (
         parseFloat(adaptersMap[adapterAddress].percent) +
         se.percent * 100

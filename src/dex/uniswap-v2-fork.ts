@@ -65,12 +65,12 @@ export class UniswapV2Fork
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
   static ExchangeNames = UniswapV2ForkExchangeKeys;
+  static directFunctionName = directUniswapFunctionName;
 
   constructor(
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
@@ -167,7 +167,7 @@ export class UniswapV2Fork
     };
   }
 
-  getDirectFuctionName(): { sell?: string; buy?: string } {
+  static getDirectFuctionName(): { sell?: string; buy?: string } {
     return this.directFunctionName;
   }
 }

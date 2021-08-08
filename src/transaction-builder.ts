@@ -1,13 +1,12 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { RouterMap } from './router/irouter';
 import { OptimalRate, Address, Adapters } from './types';
 import { ETHER_ADDRESS } from './constants';
-import { getRouterMap } from './router';
-import { buildDexAdapterLocator, DexAdapterLocator } from './dex';
+import { RouterService } from './router';
+import { DexAdapterService } from './dex';
 
 export class TransactionBuilder {
-  routerMap: RouterMap;
-  dexAdapterLocator: DexAdapterLocator;
+  routerService: RouterService;
+  dexAdapterService: DexAdapterService;
   provider: JsonRpcProvider;
 
   constructor(
@@ -17,11 +16,11 @@ export class TransactionBuilder {
     adapters: Adapters,
   ) {
     this.provider = new JsonRpcProvider(providerURL);
-    this.dexAdapterLocator = buildDexAdapterLocator(
+    this.dexAdapterService = new DexAdapterService(
       augustusAddress,
       this.provider,
     );
-    this.routerMap = getRouterMap(this.dexAdapterLocator, adapters);
+    this.routerService = new RouterService(this.dexAdapterService, adapters);
   }
 
   public build({
@@ -48,19 +47,19 @@ export class TransactionBuilder {
     onlyParams?: boolean;
   }) {
     const _beneficiary = beneficiary || userAddress;
-    const { encoder, params, networkFee } = this.routerMap[
-      priceRoute.contractMethod.toLowerCase()
-    ].build(
-      priceRoute,
-      minMaxAmount,
-      userAddress,
-      partner,
-      feePercent,
-      _beneficiary,
-      permit || '0x',
-      deadline,
-      this.network,
-    );
+    const { encoder, params, networkFee } = this.routerService
+      .getRouterByContractMethod(priceRoute.contractMethod)
+      .build(
+        priceRoute,
+        minMaxAmount,
+        userAddress,
+        partner,
+        feePercent,
+        _beneficiary,
+        permit || '0x',
+        deadline,
+        this.network,
+      );
 
     if (onlyParams) return params;
 
