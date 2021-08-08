@@ -30,7 +30,6 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     beneficiary: Address,
     permit: string,
     deadline: string,
-    network: number,
   ): TxInfo<DexDirectReturn> {
     // TODO: add checks for src and dest amounts
     if (
@@ -45,7 +44,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     const dexName = priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange;
     if (!dexName) throw `Invalid dex name : ${dexName}`;
 
-    const dex = this.dexAdapterService.getDexByKey(dexName, network);
+    const dex = this.dexAdapterService.getDexByKey(dexName);
     if (!dex) throw `Failed to find dex : ${dexName}`;
 
     const swapExchange = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];

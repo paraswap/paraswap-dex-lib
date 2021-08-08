@@ -19,21 +19,13 @@ export class PayloadEncoder {
     protected adapters: Adapters,
   ) {}
   // Should have function for optimally choosing the Adapters
-  getContractPathsWithNetworkFee(
-    swaps: OptimalSwap[],
-    network: number,
-  ): {
+  getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
     paths: ContractPath[];
     networkFee: bigint;
   } {
     let totalNetworkFee = BigInt(0);
     const paths = swaps.map(s => {
-      const adapters = this.getAdapters(
-        s.src,
-        s.dest,
-        s.swapExchanges,
-        network,
-      );
+      const adapters = this.getAdapters(s.src, s.dest, s.swapExchanges);
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
         BigInt(0),
@@ -48,10 +40,7 @@ export class PayloadEncoder {
     return { paths, networkFee: totalNetworkFee };
   }
 
-  getMegaSwapPathsWithNetworkFee(
-    routes: OptimalRoute[],
-    network: number,
-  ): {
+  getMegaSwapPathsWithNetworkFee(routes: OptimalRoute[]): {
     megaSwapPaths: ContractMegaSwapPath[];
     networkFee: bigint;
   } {
@@ -59,7 +48,6 @@ export class PayloadEncoder {
     const megaSwapPaths = routes.map(r => {
       const { paths, networkFee } = this.getContractPathsWithNetworkFee(
         r.swaps,
-        network,
       );
       totalNetworkFee += networkFee;
       return {
@@ -74,7 +62,6 @@ export class PayloadEncoder {
     src: Address,
     dest: Address,
     swapExchanges: OptimalSwapExchange<any>[],
-    network: number,
   ): ContractAdapter[] {
     const exchangeAdapterMap = this.getOptimalExchangeAdapterMap(swapExchanges);
     let adaptersMap: { [adapter: string]: ContractAdapter } = {};
@@ -90,7 +77,7 @@ export class PayloadEncoder {
         };
       }
       const adapterParam = this.dexAdapterService
-        .getDexByKey(se.exchange.toLowerCase(), network)
+        .getDexByKey(se.exchange.toLowerCase())
         .getAdapterParam(
           src,
           dest,

@@ -61,10 +61,11 @@ export class DexAdapterService {
     ) => IDex<any, any>;
   };
   directFunctionsNames: string[];
-  dexInstances: { [network: number]: { [key: string]: IDex<any, any> } } = {};
+  dexInstances: { [key: string]: IDex<any, any> } = {};
   constructor(
     private augustusAddress: string,
     private provider: JsonRpcProvider,
+    private network: number,
   ) {
     this.dexToKeyMap = DexAdapters.reduce<{
       [exchangeName: string]: new (
@@ -93,25 +94,23 @@ export class DexAdapterService {
       .filter(x => !!x);
   }
 
-  getDexByKey(dexKey: string, network: number): IDex<any, any> {
+  getDexByKey(dexKey: string): IDex<any, any> {
+    const network = this.network;
     let _dexKey = dexKey.toLowerCase();
 
     if (/^paraswappool(.*)/i.test(dexKey)) _dexKey = 'zerox';
 
-    if (this.dexInstances[network]?.[dexKey])
-      return this.dexInstances[network][dexKey];
-
-    if (!this.dexInstances[network]) this.dexInstances[network] = {};
+    if (this.dexInstances?.[dexKey]) return this.dexInstances[dexKey];
 
     const DexAdapter = this.dexToKeyMap[_dexKey];
 
-    this.dexInstances[network][dexKey] = new DexAdapter(
+    this.dexInstances[dexKey] = new DexAdapter(
       this.augustusAddress,
       network,
       this.provider,
     );
 
-    return this.dexInstances[network][dexKey];
+    return this.dexInstances[dexKey];
   }
 
   isDirectFunctionName(functionName: string): boolean {

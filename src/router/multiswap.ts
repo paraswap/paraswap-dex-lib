@@ -39,7 +39,6 @@ export class MultiSwap
     beneficiary: Address,
     permit: string,
     deadline: string,
-    network: number,
   ): TxInfo<MultiSwapParam> {
     if (
       priceRoute.bestRoute.length !== 1 ||
@@ -48,7 +47,6 @@ export class MultiSwap
       throw new Error(`Multiswap invalid bestRoute`);
     const { paths, networkFee } = this.getContractPathsWithNetworkFee(
       priceRoute.bestRoute[0].swaps,
-      network,
     );
     const sellData: ContractSellData = {
       fromToken: priceRoute.src,

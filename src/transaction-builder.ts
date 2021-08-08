@@ -19,6 +19,7 @@ export class TransactionBuilder {
     this.dexAdapterService = new DexAdapterService(
       augustusAddress,
       this.provider,
+      network,
     );
     this.routerService = new RouterService(this.dexAdapterService, adapters);
   }
@@ -58,7 +59,6 @@ export class TransactionBuilder {
         _beneficiary,
         permit || '0x',
         deadline,
-        this.network,
       );
 
     if (onlyParams) return params;

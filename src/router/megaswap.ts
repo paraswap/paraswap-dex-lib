@@ -36,11 +36,9 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
-    network: number,
   ): TxInfo<MegaSwapParam> {
     const { megaSwapPaths, networkFee } = this.getMegaSwapPathsWithNetworkFee(
       priceRoute.bestRoute,
-      network,
     );
     const sellData: ContractMegaSwapSellData = {
       fromToken: priceRoute.src,

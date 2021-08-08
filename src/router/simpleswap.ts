@@ -69,7 +69,6 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
-    network: number,
   ): TxInfo<SimpleSwapParam> {
     if (
       priceRoute.bestRoute.length !== 1 ||
@@ -86,7 +85,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         destAmountWeth: bigint;
       }>(
         (acc, se) => {
-          const dex = this.dexAdapterService.getDexByKey(se.exchange, network);
+          const dex = this.dexAdapterService.getDexByKey(se.exchange);
 
           acc.simpleExchangeDataList.push(
             dex.getSimpleParam(
@@ -132,7 +131,6 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       srcAmountWeth,
       destAmountWeth,
       swap,
-      network,
     );
 
     if (maybeWethCallData) {
@@ -179,14 +177,12 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     srcAmountWeth: bigint,
     destAmountWeth: bigint,
     swap: OptimalSwap,
-    network: number,
   ) {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
     return (
       this.dexAdapterService.getDexByKey(
         'weth',
-        network,
       ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.src,

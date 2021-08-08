@@ -10,7 +10,6 @@ export interface IRouter<RouterParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
-    network?: number,
   ): TxInfo<RouterParam>;
 
   getContractMethodName(): string;
