@@ -74,8 +74,4 @@ export class SimpleExchange {
   getDeadline() {
     return Math.floor(new Date().getTime() / 1000) + 60 * 60;
   }
-
-  getExchangeNames(): string[] {
-    return SimpleExchange.dexKeys.map(d => d.toLowerCase());
-  }
 }

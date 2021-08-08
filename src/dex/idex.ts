@@ -53,6 +53,4 @@ export interface IDex<ExchangeData, DirectParam> {
   ): TxInfo<DirectParam>;
 
   getDirectFunctionName?(): DirectFunctions;
-
-  getExchangeNames(): string[];
 }
