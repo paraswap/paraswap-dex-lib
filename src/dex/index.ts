@@ -56,7 +56,7 @@ export class DexAdapterService {
   dexToKeyMap: {
     [key: string]: new (
       augustusAddress: Address,
-      networkId: number,
+      network: number,
       provider: JsonRpcProvider,
     ) => IDex<any, any>;
   };
@@ -69,7 +69,7 @@ export class DexAdapterService {
     this.dexToKeyMap = DexAdapters.reduce<{
       [exchangeName: string]: new (
         augustusAddress: Address,
-        networkId: number,
+        network: number,
         provider: JsonRpcProvider,
       ) => IDex<any, any>;
     }>((acc, DexAdapter) => {

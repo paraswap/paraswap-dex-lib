@@ -6,7 +6,7 @@ import { SimpleExchange } from './simple-exchange';
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
 import { NumberAsString } from 'paraswap-core';
 
-const UNISWAP_V3_ROUTER_ADDRESSES: { [networkid: number]: Address } = {
+const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
   1: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
 };
 
