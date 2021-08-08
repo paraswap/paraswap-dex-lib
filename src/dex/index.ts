@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Address } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { IDex } from './idex';
+import { DirectFunctions, IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { UniswapV2Fork } from './uniswap-v2-fork';
@@ -46,6 +46,12 @@ const DexAdapters = [
   Weth,
 ];
 
+const isWithDirectFunctionName = (
+  DexAdapter: any,
+): DexAdapter is { getDirectFunctionName: () => DirectFunctions } => {
+  return !!DexAdapter?.getDirectFunctionName();
+};
+
 export class DexAdapterService {
   dexToKeyMap: {
     [key: string]: new (
@@ -74,13 +80,10 @@ export class DexAdapterService {
       return acc;
     }, {});
 
-    this.directFunctionsNames = DexAdapters.filter(DexAdapter =>
-      // @ts-expect-error
-      DexAdapter?.getDirectFuctionName(),
-    )
+    this.directFunctionsNames = DexAdapters.filter(isWithDirectFunctionName)
       .flatMap(DexAdapter => {
-        // @ts-expect-error
-        const directFunctionName = DexAdapter?.getDirectFunctionName();
+        if (!isWithDirectFunctionName(DexAdapter)) return ''; // filter doesn't seem to suffice to TS compiler
+        const directFunctionName = DexAdapter.getDirectFunctionName();
 
         return [
           directFunctionName.sell?.toLowerCase() || '',
