@@ -98,21 +98,21 @@ export class DexAdapterService {
     const network = this.network;
     let _dexKey = dexKey.toLowerCase();
 
-    if (/^paraswappool(.*)/i.test(dexKey)) _dexKey = 'zerox';
+    if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if (this.dexInstances?.[dexKey]) return this.dexInstances[dexKey];
+    if (this.dexInstances?.[_dexKey]) return this.dexInstances[_dexKey];
 
     const DexAdapter = this.dexToKeyMap[_dexKey];
 
     if (!DexAdapter) throw `${dexKey} dex is not supported!`;
 
-    this.dexInstances[dexKey] = new DexAdapter(
+    this.dexInstances[_dexKey] = new DexAdapter(
       this.augustusAddress,
       network,
       this.provider,
     );
 
-    return this.dexInstances[dexKey];
+    return this.dexInstances[_dexKey];
   }
 
   isDirectFunctionName(functionName: string): boolean {
