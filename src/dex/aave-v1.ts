@@ -30,7 +30,7 @@ export class AaveV1
   extends SimpleExchange
   implements IDex<AaveV1Data, AaveV1Param>
 {
-  static ExchangeNames = ['aave'];
+  static dexKeys = ['aave'];
   aavePool: Interface;
   aContract: Interface;
 

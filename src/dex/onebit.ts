@@ -23,7 +23,7 @@ export class Onebit
   extends SimpleExchange
   implements IDex<OnebitData, OnebitParam>
 {
-  static ExchangeNames = ['onebit'];
+  static dexKeys = ['onebit'];
   exchangeRouterInterface: Interface;
   needWrapNative = true;
 

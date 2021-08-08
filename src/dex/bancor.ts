@@ -32,7 +32,7 @@ export class Bancor
   extends SimpleExchange
   implements IDex<BancorData, BancorParam>
 {
-  static ExchangeNames = ['bancor'];
+  static dexKeys = ['bancor'];
   exchangeRouterInterface: Interface;
 
   constructor(augustusAddress: Address, private network: number) {

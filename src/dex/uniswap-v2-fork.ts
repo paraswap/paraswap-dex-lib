@@ -64,7 +64,7 @@ export class UniswapV2Fork
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
-  static ExchangeNames = UniswapV2ForkExchangeKeys;
+  static dexKeys = UniswapV2ForkExchangeKeys;
   static directFunctionName = directUniswapFunctionName;
 
   constructor(

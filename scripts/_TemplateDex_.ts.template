@@ -24,7 +24,7 @@ export class _TemplateDex_
   extends SimpleExchange
   implements IDex<_TemplateDex_Data, _TemplateDex_Param>
 {
-  static ExchangeNames = [
+  static dexKeys = [
     // _TO_FILL_UP_
   ];
   exchangeRouterInterface: Interface;

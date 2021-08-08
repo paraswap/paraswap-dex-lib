@@ -52,7 +52,7 @@ export class Balancer
   extends SimpleExchange
   implements IDex<BalancerData, BalancerParam>
 {
-  static ExchangeNames = ['balancer'];
+  static dexKeys = ['balancer'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 

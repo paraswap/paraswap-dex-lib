@@ -7,7 +7,7 @@ import { isETHAddress } from '../utils';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
-  static ExchangeNames: string[] = [];
+  static dexKeys: string[] = [];
   protected abiCoder: AbiCoder;
   needWrapNative = false;
 
@@ -76,6 +76,6 @@ export class SimpleExchange {
   }
 
   getExchangeNames(): string[] {
-    return SimpleExchange.ExchangeNames.map(d => d.toLowerCase());
+    return SimpleExchange.dexKeys.map(d => d.toLowerCase());
   }
 }

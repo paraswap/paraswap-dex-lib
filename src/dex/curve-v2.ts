@@ -32,7 +32,7 @@ export class CurveV2
   extends SimpleExchange
   implements IDex<CurveV2Data, CurveV2Param>
 {
-  static ExchangeNames = ['curvev2'];
+  static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
   needWrapNative = true;

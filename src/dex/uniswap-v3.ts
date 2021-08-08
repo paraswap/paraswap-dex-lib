@@ -34,7 +34,7 @@ export class UniswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
-  static ExchangeNames = ['uniswapv3'];
+  static dexKeys = ['uniswapv3'];
   exchangeRouterInterface: Interface;
   needWrapNative = true;
 

@@ -67,7 +67,7 @@ export class DexAdapterService {
         provider: JsonRpcProvider,
       ) => IDex<any, any>;
     }>((acc, DexAdapter) => {
-      DexAdapter.ExchangeNames.forEach(exchangeName => {
+      DexAdapter.dexKeys.forEach(exchangeName => {
         acc[exchangeName.toLowerCase()] = DexAdapter;
       });
 

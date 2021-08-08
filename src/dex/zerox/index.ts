@@ -88,7 +88,7 @@ export class ZeroX
 {
   routerInterface: Interface;
   erc20Interface: Interface;
-  ExchangeNames = ['zerox'];
+  dexKeys = ['zerox'];
   needWrapNative = true;
   // FIXME: direct function ??
 

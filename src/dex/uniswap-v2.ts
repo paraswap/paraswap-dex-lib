@@ -41,7 +41,7 @@ export class UniswapV2
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
-  static ExchangeNames = UniswapV2AliasKeys;
+  static dexKeys = UniswapV2AliasKeys;
   static directFunctionName = directUniswapFunctionName;
 
   constructor(
