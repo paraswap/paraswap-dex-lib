@@ -100,7 +100,7 @@ export class DexAdapterService {
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if (this.dexInstances?.[_dexKey]) return this.dexInstances[_dexKey];
+    if (this.dexInstances[_dexKey]) return this.dexInstances[_dexKey];
 
     const DexAdapter = this.dexToKeyMap[_dexKey];
 
