@@ -60,7 +60,7 @@ export class DexAdapterService {
       provider: JsonRpcProvider,
     ) => IDex<any, any>;
   };
-  directFunctionsNames: string[];
+  directFunctionsNames: string[] = ['swapOnZeroXv2', 'swapOnZeroXv4']; // FIXME: ugly handle better
   dexInstances: { [key: string]: IDex<any, any> } = {};
   constructor(
     private augustusAddress: string,
@@ -81,17 +81,19 @@ export class DexAdapterService {
       return acc;
     }, {});
 
-    this.directFunctionsNames = DexAdapters.filter(isWithDirectFunctionName)
-      .flatMap(DexAdapter => {
-        if (!isWithDirectFunctionName(DexAdapter)) return ''; // filter doesn't seem to suffice to TS compiler
-        const directFunctionName = DexAdapter.getDirectFunctionName();
+    this.directFunctionsNames = this.directFunctionsNames.concat(
+      DexAdapters.filter(isWithDirectFunctionName)
+        .flatMap(DexAdapter => {
+          if (!isWithDirectFunctionName(DexAdapter)) return ''; // filter doesn't seem to suffice to TS compiler
+          const directFunctionName = DexAdapter.getDirectFunctionName();
 
-        return [
-          directFunctionName.sell?.toLowerCase() || '',
-          directFunctionName.buy?.toLowerCase() || '',
-        ];
-      })
-      .filter(x => !!x);
+          return [
+            directFunctionName.sell?.toLowerCase() || '',
+            directFunctionName.buy?.toLowerCase() || '',
+          ];
+        })
+        .filter(x => !!x),
+    );
   }
 
   getDexByKey(dexKey: string): IDex<any, any> {
