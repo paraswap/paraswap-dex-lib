@@ -49,7 +49,7 @@ const DexAdapters = [
 const isWithDirectFunctionName = (
   DexAdapter: any,
 ): DexAdapter is { getDirectFunctionName: () => DirectFunctions } => {
-  return !!DexAdapter?.getDirectFunctionName();
+  return !!DexAdapter?.getDirectFunctionName?.();
 };
 
 export class DexAdapterService {
