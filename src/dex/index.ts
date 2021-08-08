@@ -81,19 +81,17 @@ export class DexAdapterService {
       return acc;
     }, {});
 
-    this.directFunctionsNames = this.directFunctionsNames.concat(
-      DexAdapters.filter(isWithDirectFunctionName)
-        .flatMap(DexAdapter => {
+    this.directFunctionsNames = this.directFunctionsNames
+      .concat(
+        DexAdapters.filter(isWithDirectFunctionName).flatMap(DexAdapter => {
           if (!isWithDirectFunctionName(DexAdapter)) return ''; // filter doesn't seem to suffice to TS compiler
           const directFunctionName = DexAdapter.getDirectFunctionName();
 
-          return [
-            directFunctionName.sell?.toLowerCase() || '',
-            directFunctionName.buy?.toLowerCase() || '',
-          ];
-        })
-        .filter(x => !!x),
-    );
+          return [directFunctionName.sell || '', directFunctionName.buy || ''];
+        }),
+      )
+      .filter(x => !!x)
+      .map(v => v.toLowerCase());
   }
 
   getDexByKey(dexKey: string): IDex<any, any> {
