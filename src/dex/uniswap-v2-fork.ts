@@ -13,6 +13,7 @@ import { SimpleExchange } from './simple-exchange';
 import UniswapV2RouterABI from '../abi/UniswapV2Router.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
 import { UniswapData } from './uniswap-v2';
+import { prependWithOx } from '../utils';
 
 const UniswapV2ForkExchangeKeys = [
   'sushiswap',
@@ -95,7 +96,8 @@ export class UniswapV2Fork
     side: SwapSide,
   ): AdapterExchangeParam {
     const path = this.fixPath(data.path, srcToken, destToken);
-    const { fee, feeFactor, factory, initCode } = data;
+    const { fee, feeFactor, factory } = data;
+    const initCode = prependWithOx(data.initCode);
     // TODO: fix code for forks with variable fees
     const payload = this.abiCoder.encodeParameter(
       {
