@@ -1,6 +1,6 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
-import { DirectFunctions, IDex } from './idex';
+import { IDex } from './idex';
 import {
   Address,
   NumberAsString,
@@ -53,10 +53,7 @@ type BuyOnUniswapForkParam = [
 
 type UniswapForkParam = SwapOnUniswapForkParam | BuyOnUniswapForkParam;
 
-const directUniswapFunctionName = {
-  sell: 'swapOnUniswapFork',
-  buy: 'buyOnUniswapFork',
-};
+const directUniswapFunctionName = ['swapOnUniswapFork', 'buyOnUniswapFork'];
 
 export class UniswapV2Fork
   extends SimpleExchange
@@ -167,7 +164,7 @@ export class UniswapV2Fork
     };
   }
 
-  static getDirectFunctionName(): DirectFunctions {
+  static getDirectFunctionName(): string[] {
     return this.directFunctionName;
   }
 }

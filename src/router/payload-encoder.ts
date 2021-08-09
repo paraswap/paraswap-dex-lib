@@ -77,7 +77,7 @@ export class PayloadEncoder {
         };
       }
       const adapterParam = this.dexAdapterService
-        .getDexByKey(se.exchange.toLowerCase())
+        .getDexByKey(se.exchange)
         .getAdapterParam(
           src,
           dest,

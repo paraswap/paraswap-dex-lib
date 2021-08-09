@@ -1,6 +1,6 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
-import { DirectFunctions, IDex } from './idex';
+import { IDex } from './idex';
 import {
   Address,
   NumberAsString,
@@ -28,10 +28,7 @@ type BuyOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
 
 type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;
 
-const directUniswapFunctionName = {
-  sell: 'swapOnUniswap',
-  buy: 'buyOnUniswap',
-};
+const directUniswapFunctionName = ['swapOnUniswap', 'buyOnUniswap'];
 
 const UniswapV2AliasKeys = ['uniswapv2', 'quickswap', 'pancakeswap'];
 
@@ -134,7 +131,7 @@ export class UniswapV2
     };
   }
 
-  static getDirectFunctionName(): DirectFunctions {
+  static getDirectFunctionName(): string[] {
     return this.directFunctionName;
   }
 }

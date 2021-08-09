@@ -256,4 +256,8 @@ export class ZeroX
       networkFee: '0',
     };
   }
+
+  static getDirectFunctionName(): string[] {
+    return ['swapOnZeroXv2', 'swapOnZeroXv4'];
+  }
 }

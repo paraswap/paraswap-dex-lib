@@ -1,18 +1,13 @@
 import { IRouter } from './irouter';
 import { IDex } from '../dex/idex';
-import {
-  Address,
-  OptimalRate,
-  ContractSellData,
-  TxInfo,
-  Adapters,
-} from '../types';
+import { Address, OptimalRate, TxInfo, Adapters } from '../types';
 import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 
-type MultiSwapParam = [ContractSellData];
-
 export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
+  // This is just psuedo name as the DirectSwap
+  // is more generic and works with multiple
+  // contract methods.
   contractMethodName: string = 'directSwap';
 
   constructor(private dexAdapterService: DexAdapterService) {}
@@ -39,7 +34,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.bestRoute[0].swaps[0].swapExchanges.length !== 1 ||
       priceRoute.bestRoute[0].swaps[0].swapExchanges[0].percent !== 100
     )
-      throw new Error(`DirectSwap invalid bestRoute`);
+      throw `DirectSwap invalid bestRoute`;
 
     const dexName = priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange;
     if (!dexName) throw `Invalid dex name`;

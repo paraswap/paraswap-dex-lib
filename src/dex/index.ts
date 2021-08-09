@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Address } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { DirectFunctions, IDex } from './idex';
+import { IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { UniswapV2Fork } from './uniswap-v2-fork';
@@ -48,9 +48,13 @@ const DexAdapters = [
 
 const isWithDirectFunctionName = (
   DexAdapter: any,
-): DexAdapter is { getDirectFunctionName: () => DirectFunctions } => {
+): DexAdapter is { getDirectFunctionName: () => string[] } => {
   return !!DexAdapter?.getDirectFunctionName?.();
 };
+
+interface IGetDirectFunctionName {
+  getDirectFunctionName?(): string[];
+}
 
 export class DexAdapterService {
   dexToKeyMap: {
@@ -60,7 +64,7 @@ export class DexAdapterService {
       provider: JsonRpcProvider,
     ) => IDex<any, any>;
   };
-  directFunctionsNames: string[] = ['swapOnZeroXv2', 'swapOnZeroXv4']; // FIXME: ugly handle better
+  directFunctionsNames: string[];
   dexInstances: { [key: string]: IDex<any, any> } = {};
   constructor(
     private augustusAddress: string,
@@ -81,21 +85,17 @@ export class DexAdapterService {
       return acc;
     }, {});
 
-    this.directFunctionsNames = this.directFunctionsNames
-      .concat(
-        DexAdapters.filter(isWithDirectFunctionName).flatMap(DexAdapter => {
-          if (!isWithDirectFunctionName(DexAdapter)) return ''; // filter doesn't seem to suffice to TS compiler
-          const directFunctionName = DexAdapter.getDirectFunctionName();
-
-          return [directFunctionName.sell || '', directFunctionName.buy || ''];
-        }),
-      )
+    this.directFunctionsNames = DexAdapters.flatMap(dexAdapter => {
+      const _dexAdapter = dexAdapter as IGetDirectFunctionName;
+      return _dexAdapter.getDirectFunctionName
+        ? _dexAdapter.getDirectFunctionName()
+        : [];
+    })
       .filter(x => !!x)
       .map(v => v.toLowerCase());
   }
 
   getDexByKey(dexKey: string): IDex<any, any> {
-    const network = this.network;
     let _dexKey = dexKey.toLowerCase();
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
@@ -108,7 +108,7 @@ export class DexAdapterService {
 
     this.dexInstances[_dexKey] = new DexAdapter(
       this.augustusAddress,
-      network,
+      this.network,
       this.provider,
     );
 

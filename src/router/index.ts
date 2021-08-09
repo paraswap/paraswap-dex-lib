@@ -11,9 +11,6 @@ export class RouterService {
   hybridRouterMap: {
     [contractMethod: string]: IRouter<any>;
   };
-  directRouterMap: {
-    [contractMethod: string]: DirectSwap<any>;
-  } = {};
   directSwapRouter: DirectSwap<any>;
 
   constructor(
