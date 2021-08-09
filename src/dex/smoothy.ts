@@ -8,39 +8,37 @@ import {
 } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import StablePoolABI from '../abi/StablePool.json';
+import SmoothyABI from '../abi/Smoothy.json';
 import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
 
-type StablePoolData = {
+type SmoothyData = {
   exchange: string;
   i: string;
   j: string;
-  deadline: string;
 };
 
-type StablePoolParam = [
-  i: NumberAsString,
-  j: NumberAsString,
-  dx: NumberAsString,
-  min_dy: NumberAsString,
-  deadline?: string,
+type SmoothyParam = [
+  bTokenIdxIn: NumberAsString,
+  bTokenIdxOut: NumberAsString,
+  bTokenInAmount: NumberAsString,
+  bTokenOutMin: NumberAsString,
 ];
 
-enum StabePoolFunctions {
+enum SmoothyFunctions {
   swap = 'swap',
 }
 
-export class StablePool
+export class Smoothy
   extends SimpleExchange
-  implements IDex<StablePoolData, StablePoolParam>
+  implements IDex<SmoothyData, SmoothyParam>
 {
-  static dexKeys = ['nerve', 'saddle', 'ironv2'];
+  static dexKeys = ['smoothy'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
   constructor(augustusAddress: Address) {
     super(augustusAddress);
-    this.exchangeRouterInterface = new Interface(StablePoolABI);
+    this.exchangeRouterInterface = new Interface(SmoothyABI);
   }
 
   getAdapterParam(
@@ -48,21 +46,20 @@ export class StablePool
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: StablePoolData,
+    data: SmoothyData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
-    const { i, j, deadline } = data;
+    const { i, j } = data;
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           i: 'int128',
           j: 'int128',
-          deadline: 'uint256',
         },
       },
-      { i, j, deadline },
+      { i, j },
     );
     return {
       targetExchange: data.exchange,
@@ -76,21 +73,15 @@ export class StablePool
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: StablePoolData,
+    data: SmoothyData,
     side: SwapSide,
   ): SimpleExchangeParam {
     if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
-    const { exchange, i, j, deadline } = data;
-    const swapFunctionParams: StablePoolParam = [
-      i,
-      j,
-      srcAmount,
-      this.minConversionRate,
-      deadline,
-    ];
+    const { exchange, i, j } = data;
+    const swapFunctionParams: SmoothyParam = [i, j, srcAmount, destAmount];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      StabePoolFunctions.swap,
+      SmoothyFunctions.swap,
       swapFunctionParams,
     );
 
