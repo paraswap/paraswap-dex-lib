@@ -7,7 +7,6 @@ import { isETHAddress } from '../utils';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
-  static dexKeys: string[] = [];
   protected abiCoder: AbiCoder;
   needWrapNative = false;
 

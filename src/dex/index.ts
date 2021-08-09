@@ -103,7 +103,6 @@ export class DexAdapterService {
     if (this.dexInstances[_dexKey]) return this.dexInstances[_dexKey];
 
     const DexAdapter = this.dexToKeyMap[_dexKey];
-
     if (!DexAdapter) throw `${dexKey} dex is not supported!`;
 
     this.dexInstances[_dexKey] = new DexAdapter(
