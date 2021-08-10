@@ -17,7 +17,7 @@ export class BProtocol
   extends SimpleExchange
   implements IDex<BProtocolData, BProtocolParam>
 {
-  protected dexKeys = ['bprotocol'];
+  static dexKeys = ['bprotocol'];
   exchangeRouterInterface: Interface;
 
   constructor(augustusAddress: Address, private network: number) {

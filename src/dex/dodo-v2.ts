@@ -69,7 +69,7 @@ export class DodoV2
   extends SimpleExchange
   implements IDex<DodoV2Data, DodoV2Param>
 {
-  protected dexKeys = ['dodov2'];
+  static dexKeys = ['dodov2'];
   exchangeRouterInterface: Interface;
 
   constructor(augustusAddress: Address, private network: number) {

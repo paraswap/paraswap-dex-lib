@@ -6,16 +6,18 @@ import {
   ContractMegaSwapPath,
   OptimalSwapExchange,
   Address,
-  NumberAsString,
   Adapters,
 } from '../types';
 import { SwapSide } from '../constants';
-import { DexMap } from '../dex/idex';
+import { DexAdapterService } from '../dex';
 
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
-  constructor(protected dexMap: DexMap, protected adapters: Adapters) {}
+  constructor(
+    protected dexAdapterService: DexAdapterService,
+    protected adapters: Adapters,
+  ) {}
   // Should have function for optimally choosing the Adapters
   getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
     paths: ContractPath[];
@@ -74,16 +76,16 @@ export class PayloadEncoder {
           route: [],
         };
       }
-      const adapterParam = this.dexMap[
-        se.exchange.toLowerCase() // Proposal: use findByKey() allows us to whitelist multiple exchanges
-      ].getAdapterParam(
-        src,
-        dest,
-        se.srcAmount,
-        se.destAmount,
-        se.data,
-        SwapSide.SELL,
-      );
+      const adapterParam = this.dexAdapterService
+        .getDexByKey(se.exchange)
+        .getAdapterParam(
+          src,
+          dest,
+          se.srcAmount,
+          se.destAmount,
+          se.data,
+          SwapSide.SELL,
+        );
       adaptersMap[adapterAddress].percent = (
         parseFloat(adaptersMap[adapterAddress].percent) +
         se.percent * 100

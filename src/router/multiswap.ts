@@ -1,5 +1,4 @@
 import { IRouter } from './irouter';
-import { DexMap } from '../dex/idex';
 import { PayloadEncoder } from './payload-encoder';
 import {
   Address,
@@ -10,6 +9,7 @@ import {
 } from '../types';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
+import { DexAdapterService } from '../dex';
 
 type MultiSwapParam = [ContractSellData];
 
@@ -20,8 +20,8 @@ export class MultiSwap
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexMap: DexMap, adapters: Adapters) {
-    super(dexMap, adapters);
+  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
+    super(dexAdapterService, adapters);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'multiSwap';
   }

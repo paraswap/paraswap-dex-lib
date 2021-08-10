@@ -1,5 +1,4 @@
 import { IRouter } from './irouter';
-import { DexMap } from '../dex/idex';
 import {
   Address,
   Adapters,
@@ -14,6 +13,7 @@ import { Interface } from '@ethersproject/abi';
 import { isETHAddress } from '../utils';
 import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth';
 import { OptimalSwap } from 'paraswap-core';
+import { DexAdapterService } from '../dex';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -26,7 +26,10 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(protected dexMap: DexMap, adapters: Adapters) {
+  constructor(
+    protected dexAdapterService: DexAdapterService,
+    adapters: Adapters,
+  ) {
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'simpleSwap';
   }
@@ -82,13 +85,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         destAmountWeth: bigint;
       }>(
         (acc, se) => {
-          if (!(se.exchange.toLowerCase() in this.dexMap)) {
-            throw new Error(
-              `${se.exchange.toLowerCase()} dex is not supported!`,
-            );
-          }
-
-          const dex = this.dexMap[se.exchange.toLowerCase()];
+          const dex = this.dexAdapterService.getDexByKey(se.exchange);
 
           acc.simpleExchangeDataList.push(
             dex.getSimpleParam(
@@ -184,7 +181,9 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
     return (
-      this.dexMap['weth'] as unknown as IWethDepositorWithdrawer
+      this.dexAdapterService.getDexByKey(
+        'weth',
+      ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.src,
       swap.dest,

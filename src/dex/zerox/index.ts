@@ -54,30 +54,26 @@ const ZRX_EXCHANGE_ERC20PROXY: any = {
 };
 
 type ZeroXData = {
-  minConversionRate: string;
-  order: ZeroXSignedOrder;
-  signatures: any[];
-  networkFees?: string;
   version: number;
-  router: string;
+  order: any; // todo: type the 0xv2 and 0xv4 order
 };
 
 type SwapOnZeroXParam = [
-  Address, // srcToken
-  Address, // destToken
-  NumberAsString, // srcAmount
-  NumberAsString, // destAmount
-  Address, // exchange
-  ZeroXSignedOrder, // payload
+  srcToken: Address,
+  destToken: Address,
+  srcAmount: NumberAsString,
+  destAmount: NumberAsString,
+  exchange: Address,
+  payload: string,
 ];
 
 type BuyOnZeroXParam = [
-  Address, // srcToken
-  Address, // destToken
-  NumberAsString, // srcAmount
-  NumberAsString, // destAmount
-  Address, // exchange
-  ZeroXSignedOrder, // payload
+  srcToken: Address,
+  destToken: Address,
+  srcAmount: NumberAsString,
+  destAmount: NumberAsString,
+  exchange: Address,
+  payload: string,
 ];
 
 type ZeroXParam = SwapOnZeroXParam | BuyOnZeroXParam;
@@ -88,7 +84,7 @@ export class ZeroX
 {
   routerInterface: Interface;
   erc20Interface: Interface;
-  dexKeys = ['zerox'];
+  static dexKeys = ['zerox'];
   needWrapNative = true;
 
   constructor(
@@ -105,10 +101,10 @@ export class ZeroX
     return ZRX_EXCHANGE[this.network][data.version];
   }
 
-  protected buildSwapData(data: ZeroXData, srcAmount: NumberAsString) {
+  protected buildSimpleSwapData(data: ZeroXData, srcAmount: NumberAsString) {
     const zrxABI = ZRX_ABI[data.version];
-    const orders = ZeroXOrder.formatOrders(data.order, data.version);
-    const signatures = data.signatures;
+    const signature = data.order.signature;
+    const order = ZeroXOrder.formatOrders(data.order, data.version);
 
     const methodAbi = zrxABI.find(
       (m: any) =>
@@ -120,19 +116,12 @@ export class ZeroX
     // TODO: fillLimitOrder only accepts one order, find something that can accept multiple orders
     return abiEncoder.encode(
       data.version === 4
-        ? [orders, signatures[0], srcAmount]
-        : [orders, srcAmount, signatures],
+        ? [order, signature, srcAmount]
+        : [[order], srcAmount, [signature]],
     );
   }
 
-  getAdapterParam(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    toAmount: NumberAsString, // required for buy case
-    data: ZeroXData,
-    side: SwapSide,
-  ): AdapterExchangeParam {
+  protected buildPayload(data: ZeroXData) {
     const payload =
       data.version === 4
         ? this.abiCoder.encodeParameter(
@@ -160,7 +149,7 @@ export class ZeroX
             },
             {
               order: ZeroXOrder.formatOrders(data.order, 4),
-              signature: data.signatures[0], //TODO check this one
+              signature: data.order.signature,
             },
           )
         : this.abiCoder.encodeParameter(
@@ -184,13 +173,25 @@ export class ZeroX
               },
             },
             {
-              orders: ZeroXOrder.formatOrders(data.order, 2),
-              signatures: (data.order as ZeroXSignedOrderV2).signature,
+              orders: [ZeroXOrder.formatOrders(data.order, 2)],
+              signatures: [data.order.signature],
             },
           );
+    return payload;
+  }
+
+  getAdapterParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    toAmount: NumberAsString, // required for buy case
+    data: ZeroXData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    // TODO: fix network fees
     return {
-      targetExchange: data.router,
-      payload,
+      targetExchange: this.getExchange(data),
+      payload: this.buildPayload(data),
       networkFee: '0',
     };
   }
@@ -203,11 +204,12 @@ export class ZeroX
     data: ZeroXData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    const swapData = this.buildSwapData(data, srcAmount);
-    const networkFees = data.networkFees || '0';
+    const swapData = this.buildSimpleSwapData(data, srcAmount);
+    // TODO: fix network fees
+    const networkFees = '0';
 
     return this.buildSimpleParamWithoutWETHConversion(
-      src, // WARNING: WETH instead ? what about other cases
+      src,
       srcAmount,
       dest,
       destAmount,
@@ -249,10 +251,14 @@ export class ZeroX
         srcAmount,
         destAmount,
         this.getExchange(data),
-        data.order,
+        this.buildPayload(data),
       ], // TODO wait for adjustment in SC
       encoder,
       networkFee: '0',
     };
+  }
+
+  static getDirectFunctionName(): string[] {
+    return ['swapOnZeroXv2', 'swapOnZeroXv4'];
   }
 }

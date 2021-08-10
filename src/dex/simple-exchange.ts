@@ -7,7 +7,6 @@ import { isETHAddress } from '../utils';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
-  protected dexKeys: string[] = [];
   protected abiCoder: AbiCoder;
   needWrapNative = false;
 
@@ -73,9 +72,5 @@ export class SimpleExchange {
 
   getDeadline() {
     return Math.floor(new Date().getTime() / 1000) + 60 * 60;
-  }
-
-  getDEXKeys(): string[] {
-    return this.dexKeys.map(d => d.toLowerCase());
   }
 }

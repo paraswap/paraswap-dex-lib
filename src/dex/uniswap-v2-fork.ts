@@ -13,6 +13,7 @@ import { SimpleExchange } from './simple-exchange';
 import UniswapV2RouterABI from '../abi/UniswapV2Router.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
 import { UniswapData } from './uniswap-v2';
+import { prependWithOx } from '../utils';
 
 const UniswapV2ForkExchangeKeys = [
   'sushiswap',
@@ -53,10 +54,7 @@ type BuyOnUniswapForkParam = [
 
 type UniswapForkParam = SwapOnUniswapForkParam | BuyOnUniswapForkParam;
 
-const directUniswapFunctionName = {
-  sell: 'swapOnUniswapFork',
-  buy: 'buyOnUniswapFork',
-};
+const directUniswapFunctionName = ['swapOnUniswapFork', 'buyOnUniswapFork'];
 
 export class UniswapV2Fork
   extends SimpleExchange
@@ -64,13 +62,13 @@ export class UniswapV2Fork
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
+  static dexKeys = UniswapV2ForkExchangeKeys;
+  static directFunctionName = directUniswapFunctionName;
 
   constructor(
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKeys = UniswapV2ForkExchangeKeys,
-    protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
@@ -98,7 +96,8 @@ export class UniswapV2Fork
     side: SwapSide,
   ): AdapterExchangeParam {
     const path = this.fixPath(data.path, srcToken, destToken);
-    const { fee, feeFactor, factory, initCode } = data;
+    const { fee, feeFactor, factory } = data;
+    const initCode = prependWithOx(data.initCode);
     // TODO: fix code for forks with variable fees
     const payload = this.abiCoder.encodeParameter(
       {
@@ -167,7 +166,7 @@ export class UniswapV2Fork
     };
   }
 
-  getDirectFuctionName(): { sell?: string; buy?: string } {
+  static getDirectFunctionName(): string[] {
     return this.directFunctionName;
   }
 }

@@ -47,7 +47,7 @@ export class DodoV1
   extends SimpleExchange
   implements IDex<DodoV1Data, DodoV1Param>
 {
-  protected dexKeys = ['dodov1'];
+  static dexKeys = ['dodov1'];
   dodoV2Proxy: Interface;
 
   constructor(augustusAddress: Address, private network: number) {

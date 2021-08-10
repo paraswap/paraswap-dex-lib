@@ -28,10 +28,7 @@ type BuyOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
 
 type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;
 
-const directUniswapFunctionName = {
-  sell: 'swapOnUniswap',
-  buy: 'buyOnUniswap',
-};
+const directUniswapFunctionName = ['swapOnUniswap', 'buyOnUniswap'];
 
 const UniswapV2AliasKeys = ['uniswapv2', 'quickswap', 'pancakeswap'];
 
@@ -41,13 +38,13 @@ export class UniswapV2
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
+  static dexKeys = UniswapV2AliasKeys;
+  static directFunctionName = directUniswapFunctionName;
 
   constructor(
     augustusAddress: Address,
     network: number,
     provider: JsonRpcProvider,
-    protected dexKeys = UniswapV2AliasKeys,
-    protected directFunctionName = directUniswapFunctionName,
   ) {
     super(augustusAddress);
     this.routerInterface = new Interface(UniswapV2RouterABI);
@@ -134,7 +131,7 @@ export class UniswapV2
     };
   }
 
-  getDirectFuctionName(): { sell?: string; buy?: string } {
+  static getDirectFunctionName(): string[] {
     return this.directFunctionName;
   }
 }

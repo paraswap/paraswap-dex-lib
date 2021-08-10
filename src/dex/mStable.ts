@@ -42,7 +42,7 @@ export class MStable
   extends SimpleExchange
   implements IDex<MStableData, MStableParam>
 {
-  protected dexKeys = ['mStable'];
+  static dexKeys = ['mStable'];
   mStableAsset: Interface;
   mStablePool: Interface;
 

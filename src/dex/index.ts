@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Address } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { DexMap, IDex } from './idex';
+import { IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
 import { UniswapV2Fork } from './uniswap-v2-fork';
@@ -21,12 +21,14 @@ import { AaveV2 } from './aave-v2';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
+import { Smoothy } from './smoothy';
 
-const dexes = [
+const DexAdapters = [
   UniswapV2,
   Curve,
   CurveV2,
   StablePool,
+  Smoothy,
   UniswapV2Fork,
   ZeroX,
   Weth,
@@ -46,27 +48,75 @@ const dexes = [
   Weth,
 ];
 
-export function getDexMap(
-  augustusAddress: Address,
-  network: number,
-  provider: JsonRpcProvider,
-): DexMap {
-  return dexes.reduce(
-    (
-      acc: DexMap,
-      dex: new (
+const isWithDirectFunctionName = (
+  DexAdapter: any,
+): DexAdapter is { getDirectFunctionName: () => string[] } => {
+  return !!DexAdapter?.getDirectFunctionName?.();
+};
+
+interface IGetDirectFunctionName {
+  getDirectFunctionName?(): string[];
+}
+
+export class DexAdapterService {
+  dexToKeyMap: {
+    [key: string]: new (
+      augustusAddress: Address,
+      network: number,
+      provider: JsonRpcProvider,
+    ) => IDex<any, any>;
+  };
+  directFunctionsNames: string[];
+  dexInstances: { [key: string]: IDex<any, any> } = {};
+  constructor(
+    private augustusAddress: string,
+    private provider: JsonRpcProvider,
+    private network: number,
+  ) {
+    this.dexToKeyMap = DexAdapters.reduce<{
+      [exchangeName: string]: new (
         augustusAddress: Address,
         network: number,
         provider: JsonRpcProvider,
-      ) => IDex<any, any>,
-    ) => {
-      const dexObj = new dex(augustusAddress, network, provider);
-      dexObj.getDEXKeys().forEach(dexKeys => {
-        // temp: move to findDexByKey instead
-        acc[dexKeys] = dexObj;
+      ) => IDex<any, any>;
+    }>((acc, DexAdapter) => {
+      DexAdapter.dexKeys.forEach(exchangeName => {
+        acc[exchangeName.toLowerCase()] = DexAdapter;
       });
+
       return acc;
-    },
-    {},
-  );
+    }, {});
+
+    this.directFunctionsNames = DexAdapters.flatMap(dexAdapter => {
+      const _dexAdapter = dexAdapter as IGetDirectFunctionName;
+      return _dexAdapter.getDirectFunctionName
+        ? _dexAdapter.getDirectFunctionName()
+        : [];
+    })
+      .filter(x => !!x)
+      .map(v => v.toLowerCase());
+  }
+
+  getDexByKey(dexKey: string): IDex<any, any> {
+    let _dexKey = dexKey.toLowerCase();
+
+    if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
+
+    if (this.dexInstances[_dexKey]) return this.dexInstances[_dexKey];
+
+    const DexAdapter = this.dexToKeyMap[_dexKey];
+    if (!DexAdapter) throw `${dexKey} dex is not supported!`;
+
+    this.dexInstances[_dexKey] = new DexAdapter(
+      this.augustusAddress,
+      this.network,
+      this.provider,
+    );
+
+    return this.dexInstances[_dexKey];
+  }
+
+  isDirectFunctionName(functionName: string): boolean {
+    return this.directFunctionsNames.includes(functionName.toLowerCase());
+  }
 }

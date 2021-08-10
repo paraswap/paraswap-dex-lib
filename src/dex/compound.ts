@@ -20,7 +20,7 @@ export class Compound
   extends SimpleExchange
   implements IDex<CompoundData, CompoundParam>
 {
-  protected dexKeys = ['compound'];
+  static dexKeys = ['compound'];
   cethInterface: Interface;
   erc20Interface: Interface;
 
