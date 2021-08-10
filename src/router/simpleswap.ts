@@ -11,7 +11,7 @@ import { SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress } from '../utils';
-import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth';
+import { IWethDepositorWithdrawer, Weth, WethFunctions } from '../dex/weth';
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
 
@@ -78,44 +78,54 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       throw new Error(`Simpleswap invalid bestRoute`);
     const swap = priceRoute.bestRoute[0].swaps[0];
 
-    const { simpleExchangeDataList, srcAmountWeth, destAmountWeth } =
-      swap.swapExchanges.reduce<{
-        simpleExchangeDataList: SimpleExchangeParam[];
-        srcAmountWeth: bigint;
-        destAmountWeth: bigint;
-      }>(
-        (acc, se) => {
-          const dex = this.dexAdapterService.getDexByKey(se.exchange);
+    const wethAddress = Weth.getAddress(priceRoute.network);
 
-          acc.simpleExchangeDataList.push(
-            dex.getSimpleParam(
-              swap.src,
-              swap.dest,
-              se.srcAmount,
-              se.destAmount,
-              se.data,
-              SwapSide.SELL,
-            ),
-          );
+    const {
+      simpleExchangeDataList,
+      srcAmountWethToDeposit,
+      destAmountWethToWithdraw,
+    } = swap.swapExchanges.reduce<{
+      simpleExchangeDataList: SimpleExchangeParam[];
+      srcAmountWethToDeposit: bigint;
+      destAmountWethToWithdraw: bigint;
+    }>(
+      (acc, se) => {
+        const dex = this.dexAdapterService.getDexByKey(se.exchange);
 
-          if (!dex.needWrapNative) return acc;
+        let _src = swap.src;
+        let _dest = swap.dest;
 
+        if (dex.needWrapNative) {
           if (isETHAddress(swap.src)) {
-            acc.srcAmountWeth += BigInt(se.srcAmount);
+            _src = wethAddress;
+            acc.srcAmountWethToDeposit += BigInt(se.srcAmount);
           }
 
           if (isETHAddress(swap.dest)) {
-            acc.destAmountWeth += BigInt(se.destAmount);
+            _dest = wethAddress;
+            acc.destAmountWethToWithdraw += BigInt(se.destAmount);
           }
+        }
 
-          return acc;
-        },
-        {
-          simpleExchangeDataList: [],
-          srcAmountWeth: BigInt(0),
-          destAmountWeth: BigInt(0),
-        },
-      );
+        acc.simpleExchangeDataList.push(
+          dex.getSimpleParam(
+            _src,
+            _dest,
+            se.srcAmount,
+            se.destAmount,
+            se.data,
+            SwapSide.SELL,
+          ),
+        );
+
+        return acc;
+      },
+      {
+        simpleExchangeDataList: [],
+        srcAmountWethToDeposit: BigInt(0),
+        destAmountWethToWithdraw: BigInt(0),
+      },
+    );
 
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(
       (acc, se) => ({
@@ -128,8 +138,8 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     );
 
     const maybeWethCallData = this.getDepositWithdrawWethCallData(
-      srcAmountWeth,
-      destAmountWeth,
+      srcAmountWethToDeposit,
+      destAmountWethToWithdraw,
       swap,
     );
 
