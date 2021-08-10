@@ -8,6 +8,8 @@ import {
 import { SwapSide } from '../constants';
 
 export interface IDex<ExchangeData, DirectParam> {
+  needWrapNative: boolean;
+
   getNetworkFee?(
     srcToken: Address,
     destToken: Address,
@@ -44,10 +46,4 @@ export interface IDex<ExchangeData, DirectParam> {
     data: ExchangeData,
     side: SwapSide,
   ): TxInfo<DirectParam>;
-
-  getDirectFuctionName?(): { sell?: string; buy?: string };
-
-  getDEXKeys(): string[];
 }
-
-export type DexMap = { [identifier: string]: IDex<any, any> };

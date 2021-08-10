@@ -36,7 +36,7 @@ export class Curve
   extends SimpleExchange
   implements IDex<CurveData, CurveParam>
 {
-  protected dexKeys = [
+  static dexKeys = [
     'curve',
     'curve3',
     'swerve',

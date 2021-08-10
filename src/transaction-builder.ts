@@ -1,14 +1,12 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { IDex, DexMap } from './dex/idex';
-import { IRouter, RouterMap } from './router/irouter';
 import { OptimalRate, Address, Adapters } from './types';
 import { ETHER_ADDRESS } from './constants';
-import { getRouterMap } from './router';
-import { getDexMap } from './dex';
+import { RouterService } from './router';
+import { DexAdapterService } from './dex';
 
 export class TransactionBuilder {
-  routerMap: RouterMap;
-  dexMap: DexMap;
+  routerService: RouterService;
+  dexAdapterService: DexAdapterService;
   provider: JsonRpcProvider;
 
   constructor(
@@ -18,8 +16,12 @@ export class TransactionBuilder {
     adapters: Adapters,
   ) {
     this.provider = new JsonRpcProvider(providerURL);
-    this.dexMap = getDexMap(augustusAddress, network, this.provider);
-    this.routerMap = getRouterMap(this.dexMap, adapters);
+    this.dexAdapterService = new DexAdapterService(
+      augustusAddress,
+      this.provider,
+      network,
+    );
+    this.routerService = new RouterService(this.dexAdapterService, adapters);
   }
 
   public build({
@@ -46,18 +48,18 @@ export class TransactionBuilder {
     onlyParams?: boolean;
   }) {
     const _beneficiary = beneficiary || userAddress;
-    const { encoder, params, networkFee } = this.routerMap[
-      priceRoute.contractMethod.toLowerCase()
-    ].build(
-      priceRoute,
-      minMaxAmount,
-      userAddress,
-      partner,
-      feePercent,
-      _beneficiary,
-      permit || '0x',
-      deadline,
-    );
+    const { encoder, params, networkFee } = this.routerService
+      .getRouterByContractMethod(priceRoute.contractMethod)
+      .build(
+        priceRoute,
+        minMaxAmount,
+        userAddress,
+        partner,
+        feePercent,
+        _beneficiary,
+        permit || '0x',
+        deadline,
+      );
 
     if (onlyParams) return params;
 
@@ -72,7 +74,7 @@ export class TransactionBuilder {
       to: priceRoute.contractAddress,
       value,
       data: encoder.apply(null, params),
-      gasPrice
+      gasPrice,
     };
   }
 }

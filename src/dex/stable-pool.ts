@@ -23,15 +23,18 @@ type StablePoolParam = [
   j: NumberAsString,
   dx: NumberAsString,
   min_dy: NumberAsString,
+  deadline?: string,
 ];
 
-const StablePoolSwapMethod = 'swap';
+enum StabePoolFunctions {
+  swap = 'swap',
+}
 
 export class StablePool
   extends SimpleExchange
   implements IDex<StablePoolData, StablePoolParam>
 {
-  protected dexKeys = ['nerve', 'saddle', 'ironv2'];
+  static dexKeys = ['nerve', 'saddle', 'ironv2'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
@@ -61,7 +64,6 @@ export class StablePool
       },
       { i, j, deadline },
     );
-
     return {
       targetExchange: data.exchange,
       payload,
@@ -69,7 +71,6 @@ export class StablePool
     };
   }
 
-  // Fixme: maintain swapMethod member + move to parent
   getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -81,10 +82,16 @@ export class StablePool
     if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
 
     const { exchange, i, j, deadline } = data;
-    const defaultArgs = [i, j, srcAmount, this.minConversionRate, deadline];
+    const swapFunctionParams: StablePoolParam = [
+      i,
+      j,
+      srcAmount,
+      this.minConversionRate,
+      deadline,
+    ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      StablePoolSwapMethod,
-      defaultArgs,
+      StabePoolFunctions.swap,
+      swapFunctionParams,
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
