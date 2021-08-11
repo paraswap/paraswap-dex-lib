@@ -53,7 +53,6 @@ type BuyOnUniswapForkParam = [
 ];
 type SwapOnUniswapV2ForkParam = [
   tokenIn: Address,
-  tokenOut: Address,
   amountIn: Address,
   amountOutMin: Address,
   weth: Address,
@@ -61,7 +60,6 @@ type SwapOnUniswapV2ForkParam = [
 ];
 type BuyOnUniswapV2ForkParam = [
   tokenIn: Address,
-  tokenOut: Address,
   amountInMax: Address,
   amountOut: Address,
   weth: Address,
@@ -240,7 +238,7 @@ export class UniswapV2Fork
           side === SwapSide.SELL
             ? UniswapV2Functions.swapOnUniswapV2Fork
             : UniswapV2Functions.buyOnUniswapV2Fork,
-          [src, dest, srcAmount, destAmount, data.weth, pools],
+          [src, srcAmount, destAmount, data.weth, pools],
         ];
       }
 
