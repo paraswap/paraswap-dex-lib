@@ -58,6 +58,44 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountInMax",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "weth",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "pools",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "buyOnUniswapV2Fork",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "address",
@@ -1031,6 +1069,44 @@
       }
     ],
     "name": "swapOnUniswapFork",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOutMin",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "weth",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "pools",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "swapOnUniswapV2Fork",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
