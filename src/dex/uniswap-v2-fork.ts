@@ -99,9 +99,10 @@ const isUniswapV2ForkDataNew = (
 function encodePools(pools: UniswapPool[]): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000) - BigInt(fee)) * BigInt(2) ** BigInt(161) +
-      (direction ? BigInt(0) : BigInt(1)) * BigInt(2) ** BigInt(160) +
-      BigInt(address)
+      BigInt(10000 - fee) <<
+      (BigInt(161) +
+        (BigInt(direction ? 0 : 1) << BigInt(160)) +
+        BigInt(address))
     ).toString();
   });
 }
