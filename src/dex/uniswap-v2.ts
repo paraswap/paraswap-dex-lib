@@ -10,7 +10,7 @@ import {
 } from '../types';
 import { SwapSide, ETHER_ADDRESS } from '../constants';
 import { SimpleExchange } from './simple-exchange';
-import UniswapV2RouterABI from '../abi/UniswapV2Router.json';
+import ParaSwapABI from '../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
 
 export type UniswapData = {
@@ -28,7 +28,21 @@ type BuyOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
 
 type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;
 
-const directUniswapFunctionName = ['swapOnUniswap', 'buyOnUniswap'];
+export enum UniswapV2Functions {
+  swap = 'swap',
+  buy = 'buy',
+  swapOnUniswap = 'swapOnUniswap',
+  buyOnUniswap = 'buyOnUniswap',
+  swapOnUniswapFork = 'swapOnUniswapFork',
+  buyOnUniswapFork = 'buyOnUniswapFork',
+  swapOnUniswapV2Fork = 'swapOnUniswapV2Fork',
+  buyOnUniswapV2Fork = 'buyOnUniswapV2Fork',
+}
+
+const directUniswapFunctionName = [
+  UniswapV2Functions.swapOnUniswap,
+  UniswapV2Functions.buyOnUniswap,
+];
 
 const UniswapV2AliasKeys = ['uniswapv2', 'quickswap', 'pancakeswap'];
 
@@ -47,7 +61,7 @@ export class UniswapV2
     provider: JsonRpcProvider,
   ) {
     super(augustusAddress);
-    this.routerInterface = new Interface(UniswapV2RouterABI);
+    this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
   }
 
@@ -97,7 +111,7 @@ export class UniswapV2
   ): SimpleExchangeParam {
     const path = this.fixPath(data.path, src, dest);
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      side === SwapSide.SELL ? 'swap' : 'buy',
+      side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
       [srcAmount, destAmount, path],
     );
     return this.buildSimpleParamWithoutWETHConversion(
@@ -121,7 +135,9 @@ export class UniswapV2
     const path = this.fixPath(data.path, srcToken, destToken);
     const encoder = (...params: UniswapParam) =>
       this.routerInterface.encodeFunctionData(
-        side === SwapSide.SELL ? 'swapOnUniswap' : 'buyOnUniswap',
+        side === SwapSide.SELL
+          ? UniswapV2Functions.swapOnUniswap
+          : UniswapV2Functions.buyOnUniswap,
         params,
       );
     return {
