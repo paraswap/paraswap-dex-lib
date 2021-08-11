@@ -53,15 +53,15 @@ type BuyOnUniswapForkParam = [
 ];
 type SwapOnUniswapV2ForkParam = [
   tokenIn: Address,
-  amountIn: Address,
-  amountOutMin: Address,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
   weth: Address,
   pools: Address[],
 ];
 type BuyOnUniswapV2ForkParam = [
   tokenIn: Address,
-  amountInMax: Address,
-  amountOut: Address,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
   weth: Address,
   pools: Address[],
 ];
