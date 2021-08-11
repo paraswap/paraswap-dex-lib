@@ -51,6 +51,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       feePercent,
       permit,
       deadline,
+      uuid: '0x',
     };
     const encoder = (...params: any[]) =>
       this.paraswapInterface.encodeFunctionData('megaSwap', params);

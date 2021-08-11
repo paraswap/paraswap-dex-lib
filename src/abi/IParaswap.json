@@ -219,6 +219,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.MegaSwapSellData",
@@ -356,6 +361,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.SellData",
@@ -505,6 +515,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.MegaSwapSellData",
@@ -642,6 +657,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.SellData",
@@ -733,6 +753,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.SimpleData",
@@ -818,6 +843,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.SimpleData",
@@ -909,6 +939,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.SimpleData",
@@ -994,6 +1029,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct Utils.SimpleData",

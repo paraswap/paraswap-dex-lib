@@ -171,6 +171,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       feePercent,
       permit,
       deadline,
+      uuid: '0x',
     };
 
     const encoder = (...params: any[]) =>
