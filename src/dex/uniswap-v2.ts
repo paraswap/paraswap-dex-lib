@@ -12,8 +12,33 @@ import { SwapSide, ETHER_ADDRESS } from '../constants';
 import { SimpleExchange } from './simple-exchange';
 import ParaSwapABI from '../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
+import { prependWithOx } from '../utils';
 
-export type UniswapData = {
+const UniswapV2AliasKeys = [
+  'uniswapv2',
+  'quickswap',
+  'pancakeswap',
+  'sushiswap',
+  'defiswap',
+  'linkswap',
+  'pancakeswapv2',
+  'apeswap',
+  'bakeryswap',
+  'julswap',
+  'streetswap',
+  'cometh',
+  'dfyn',
+  'mdex',
+  'biswap',
+  'waultfinance',
+  'shibaswap',
+  'coinswap',
+  'sakeswap',
+  'jetswap',
+  'pantherswap',
+];
+
+type UniswapDataLegacy = {
   router: Address;
   path: Address[];
   factory: Address;
@@ -22,13 +47,13 @@ export type UniswapData = {
   feeFactor: number;
 };
 
-type SwapOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
+type UniswapData = {
+  router: Address;
+  pools: UniswapPool[];
+  weth: Address;
+};
 
-type BuyOnUniswapParam = [NumberAsString, NumberAsString, Address[]];
-
-type UniswapParam = SwapOnUniswapParam | BuyOnUniswapParam;
-
-export enum UniswapV2Functions {
+enum UniswapV2Functions {
   swap = 'swap',
   buy = 'buy',
   swapOnUniswap = 'swapOnUniswap',
@@ -39,12 +64,58 @@ export enum UniswapV2Functions {
   buyOnUniswapV2Fork = 'buyOnUniswapV2Fork',
 }
 
+type SwapOnUniswapParam = [
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  path: Address[],
+];
+type BuyOnUniswapParam = [
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  path: Address[],
+];
+type SwapOnUniswapForkParam = [
+  factory: Address,
+  initCode: string,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  path: Address[],
+];
+type BuyOnUniswapForkParam = [
+  factory: Address,
+  initCode: string,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  path: Address[],
+];
+type UniswapParam =
+  | SwapOnUniswapParam
+  | BuyOnUniswapParam
+  | SwapOnUniswapForkParam
+  | BuyOnUniswapForkParam;
+
 const directUniswapFunctionName = [
   UniswapV2Functions.swapOnUniswap,
   UniswapV2Functions.buyOnUniswap,
+  UniswapV2Functions.swapOnUniswapFork,
+  UniswapV2Functions.buyOnUniswapFork,
 ];
 
-const UniswapV2AliasKeys = ['uniswapv2', 'quickswap', 'pancakeswap'];
+type UniswapPool = {
+  address: Address;
+  direction: boolean;
+  fee: number;
+};
+
+function encodePools(pools: UniswapPool[]): NumberAsString[] {
+  return pools.map(({ fee, direction, address }) => {
+    return (
+      (BigInt(10000 - fee) << BigInt(161)) +
+      (BigInt(direction ? 0 : 1) << BigInt(160)) +
+      BigInt(address)
+    ).toString();
+  });
+}
 
 export class UniswapV2
   extends SimpleExchange
@@ -85,14 +156,16 @@ export class UniswapV2
     data: UniswapData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const path = this.fixPath(data.path, srcToken, destToken);
+    const pools = encodePools(data.pools);
+    const { weth } = data;
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
-          path: 'address[]',
+          pools: 'uint256[]',
+          weth: 'address',
         },
       },
-      { path },
+      { pools, weth },
     );
     return {
       targetExchange: data.router,
@@ -109,10 +182,11 @@ export class UniswapV2
     data: UniswapData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    const path = this.fixPath(data.path, src, dest);
+    const pools = encodePools(data.pools);
+
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
-      [srcAmount, destAmount, path],
+      [src, srcAmount, destAmount, data.weth, pools],
     );
     return this.buildSimpleParamWithoutWETHConversion(
       src,
@@ -124,24 +198,47 @@ export class UniswapV2
     );
   }
 
+  // TODO: Move to new uniswapv2&forks router interface
   getDirectParam(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: UniswapData,
+    _data: UniswapData,
     side: SwapSide,
+    contractMethod?: string,
   ): TxInfo<UniswapParam> {
-    const path = this.fixPath(data.path, srcToken, destToken);
+    if (!contractMethod) throw `contractMethod need to be passed`;
+
+    const data = _data as unknown as UniswapDataLegacy;
+
+    const swapParams = ((): UniswapParam => {
+      const path = this.fixPath(data.path, srcToken, destToken);
+
+      switch (contractMethod) {
+        case UniswapV2Functions.swapOnUniswap:
+        case UniswapV2Functions.buyOnUniswap:
+          return [srcAmount, destAmount, path];
+
+        case UniswapV2Functions.swapOnUniswapFork:
+        case UniswapV2Functions.buyOnUniswapFork:
+          return [
+            data.factory,
+            prependWithOx(data.initCode),
+            srcAmount,
+            destAmount,
+            path,
+          ];
+
+        default:
+          throw `contractMethod=${contractMethod} is not supported`;
+      }
+    })();
+
     const encoder = (...params: UniswapParam) =>
-      this.routerInterface.encodeFunctionData(
-        side === SwapSide.SELL
-          ? UniswapV2Functions.swapOnUniswap
-          : UniswapV2Functions.buyOnUniswap,
-        params,
-      );
+      this.routerInterface.encodeFunctionData(contractMethod, params);
     return {
-      params: [srcAmount, destAmount, path],
+      params: swapParams,
       encoder,
       networkFee: '0',
     };

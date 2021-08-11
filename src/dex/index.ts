@@ -5,7 +5,6 @@ import { CurveV2 } from './curve-v2';
 import { IDex } from './idex';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
-import { UniswapV2Fork } from './uniswap-v2-fork';
 import { Weth } from './weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
@@ -29,7 +28,6 @@ const DexAdapters = [
   CurveV2,
   StablePool,
   Smoothy,
-  UniswapV2Fork,
   ZeroX,
   Weth,
   Balancer,
