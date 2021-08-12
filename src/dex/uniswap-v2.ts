@@ -12,7 +12,8 @@ import { SwapSide, ETHER_ADDRESS } from '../constants';
 import { SimpleExchange } from './simple-exchange';
 import ParaSwapABI from '../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
-import { prependWithOx } from '../utils';
+import { prependWithOx, isETHAddress } from '../utils';
+import { WETHAddresses } from './weth';
 
 const UniswapV2AliasKeys = [
   'uniswapv2',
@@ -50,7 +51,7 @@ type UniswapDataLegacy = {
 type UniswapData = {
   router: Address;
   pools: UniswapPool[];
-  weth: Address;
+  weth?: Address;
 };
 
 enum UniswapV2Functions {
@@ -128,7 +129,7 @@ export class UniswapV2
 
   constructor(
     augustusAddress: Address,
-    network: number,
+    protected network: number,
     provider: JsonRpcProvider,
   ) {
     super(augustusAddress);
@@ -148,6 +149,12 @@ export class UniswapV2
     });
   }
 
+  getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
+    if (!isETHAddress(srcToken) && !isETHAddress(destToken))
+      return '0x0000000000000000000000000000000000000000';
+    return weth || WETHAddresses[this.network];
+  }
+
   getAdapterParam(
     srcToken: Address,
     destToken: Address,
@@ -157,7 +164,7 @@ export class UniswapV2
     side: SwapSide,
   ): AdapterExchangeParam {
     const pools = encodePools(data.pools);
-    const { weth } = data;
+    const weth = this.getWETHAddress(srcToken, destToken, data.weth);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -183,10 +190,10 @@ export class UniswapV2
     side: SwapSide,
   ): SimpleExchangeParam {
     const pools = encodePools(data.pools);
-
+    const weth = this.getWETHAddress(src, dest, data.weth);
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
-      [src, srcAmount, destAmount, data.weth, pools],
+      [src, srcAmount, destAmount, weth, pools],
     );
     return this.buildSimpleParamWithoutWETHConversion(
       src,
