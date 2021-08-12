@@ -91,8 +91,8 @@ export class DodoV1
   ): SimpleExchangeParam {
     const swapFunction = DodoV1Functions.dodoSwapV1;
     const swapFunctionParams: DodoV1Param = [
-      data.fromToken,
-      data.toToken,
+      srcToken,
+      destToken,
       srcAmount,
       destAmount,
       data.dodoPairs,

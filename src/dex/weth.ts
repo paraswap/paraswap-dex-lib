@@ -6,7 +6,7 @@ import { SimpleExchange } from './simple-exchange';
 import ERC20 from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
 
-const addresses: any = {
+export const WETHAddresses: any = {
   1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
   3: '0xc778417e063141139fce010982780140aa0cd5ab',
   4: '0xc778417e063141139fce010982780140aa0cd5ab',
@@ -52,7 +52,7 @@ export class Weth
   }
 
   static getAddress(network: number = 1): Address {
-    return addresses[network];
+    return WETHAddresses[network];
   }
 
   getAdapterParam(

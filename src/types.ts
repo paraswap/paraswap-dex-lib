@@ -23,6 +23,7 @@ export type ContractSellData = {
   feePercent: string;
   permit: string;
   deadline: string;
+  uuid: string;
 };
 
 export type ContractMegaSwapSellData = {
@@ -36,6 +37,7 @@ export type ContractMegaSwapSellData = {
   feePercent: string;
   permit: string;
   deadline: string;
+  uuid: string;
 };
 
 export type ContractBuyData = {
@@ -49,6 +51,7 @@ export type ContractBuyData = {
   feePercent: string;
   permit: string;
   deadline: string;
+  uuid: string;
 };
 
 export type ConstractSimpleData = {
@@ -66,6 +69,7 @@ export type ConstractSimpleData = {
   feePercent: string;
   permit: string;
   deadline: string;
+  uuid: string;
 };
 
 export type ContractAdapter = {

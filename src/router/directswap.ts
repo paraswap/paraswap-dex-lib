@@ -58,6 +58,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       destAmount,
       swapExchange.data,
       priceRoute.side,
+      priceRoute.contractMethod,
     );
   }
 }
