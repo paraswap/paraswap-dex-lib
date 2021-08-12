@@ -100,6 +100,8 @@ const directUniswapFunctionName = [
   UniswapV2Functions.buyOnUniswap,
   UniswapV2Functions.swapOnUniswapFork,
   UniswapV2Functions.buyOnUniswapFork,
+  UniswapV2Functions.swapOnUniswapV2Fork,
+  UniswapV2Functions.buyOnUniswapV2Fork,
 ];
 
 type UniswapPool = {
@@ -217,9 +219,8 @@ export class UniswapV2
   ): TxInfo<UniswapParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
 
-    const data = _data as unknown as UniswapDataLegacy;
-
     const swapParams = ((): UniswapParam => {
+      const data = _data as unknown as UniswapDataLegacy;
       const path = this.fixPath(data.path, srcToken, destToken);
 
       switch (contractMethod) {
@@ -235,6 +236,16 @@ export class UniswapV2
             srcAmount,
             destAmount,
             path,
+          ];
+
+        case UniswapV2Functions.swapOnUniswapV2Fork:
+        case UniswapV2Functions.buyOnUniswapV2Fork:
+          return [
+            srcToken,
+            srcAmount,
+            destAmount,
+            this.getWETHAddress(srcToken, destToken, _data.weth),
+            encodePools(_data.pools),
           ];
 
         default:
