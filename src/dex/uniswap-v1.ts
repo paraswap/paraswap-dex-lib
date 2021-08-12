@@ -5,23 +5,12 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { isETHAddress } from '../utils';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import { NumberAsString } from 'paraswap-core';
 
 export type UniswapV1Data = {
-  // ExactInputSingleParams
   pool: string;
 };
 
-type UniswapV1Param = [
-  tokenIn: Address,
-  tokenOut: Address,
-  fee: number,
-  recipient: Address,
-  deadline: number,
-  amountIn: NumberAsString,
-  amountOutMinimum: NumberAsString,
-  sqrtPriceLimitX96: NumberAsString,
-];
+type UniswapV1Param = [];
 
 export class UniswapV1
   extends SimpleExchange
@@ -38,36 +27,20 @@ export class UniswapV1
     );
   }
 
-  // getAdapterParam(
-  //   srcToken: string,
-  //   destToken: string,
-  //   srcAmount: string,
-  //   destAmount: string,
-  //   data: UniswapV1Data,
-  //   side: SwapSide,
-  // ): AdapterExchangeParam {
-  //   const { fee, deadline, sqrtPriceLimitX96 } = data;
-  //   const payload = this.abiCoder.encodeParameter(
-  //     {
-  //       ParentStruct: {
-  //         fee: 'uint24',
-  //         deadline: 'uint256',
-  //         sqrtPriceLimitX96: 'uint160',
-  //       },
-  //     },
-  //     {
-  //       fee,
-  //       deadline: deadline || this.getDeadline(),
-  //       sqrtPriceLimitX96: sqrtPriceLimitX96 || 0,
-  //     },
-  //   );
-  //
-  //   return {
-  //     targetExchange: UNISWAP_V3_ROUTER_ADDRESSES[this.network], // warning
-  //     payload,
-  //     networkFee: '0', // warning
-  //   };
-  // }
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: UniswapV1Data,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    return {
+      targetExchange: '0x', // warning
+      payload: '0x',
+      networkFee: '0', // warning
+    };
+  }
 
   private getSwapData(
     srcToken: string,
@@ -115,7 +88,7 @@ export class UniswapV1
       destToken,
       destAmount,
       swapData,
-      data.pool, // warning
+      data.pool,
     );
   }
 }

@@ -4,6 +4,7 @@ import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDex } from './idex';
 import { StablePool } from './stable-pool';
+import { UniswapV1 } from './uniswap-v1';
 import { UniswapV2 } from './uniswap-v2';
 import { Weth } from './weth';
 import { ZeroX } from './zerox';
@@ -43,6 +44,7 @@ const DexAdapters = [
   DodoV1,
   DodoV2,
   UniswapV3,
+  UniswapV1,
   Weth,
 ];
 
