@@ -82,9 +82,9 @@ export class ZeroX
   extends SimpleExchange
   implements IDex<ZeroXData, ZeroXParam>
 {
+  static dexKeys = ['zerox'];
   routerInterface: Interface;
   erc20Interface: Interface;
-  static dexKeys = ['zerox'];
   needWrapNative = true;
 
   constructor(
