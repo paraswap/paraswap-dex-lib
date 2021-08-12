@@ -122,7 +122,9 @@ export class MStable
             [destToken, srcAmount, destAmount, this.augustusAddress],
           ];
         default:
-          throw `mStable's OpType ${opType} not supported, failed to build`;
+          throw new Error(
+            `mStable's OpType ${opType} not supported, failed to build`,
+          );
       }
     })();
 

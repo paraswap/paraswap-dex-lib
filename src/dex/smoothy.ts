@@ -9,7 +9,6 @@ import {
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import SmoothyABI from '../abi/Smoothy.json';
-import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
 
 type SmoothyData = {
   exchange: string;
@@ -49,7 +48,7 @@ export class Smoothy
     data: SmoothyData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { i, j } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -76,7 +75,7 @@ export class Smoothy
     data: SmoothyData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j } = data;
     const swapFunctionParams: SmoothyParam = [i, j, srcAmount, destAmount];

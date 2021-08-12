@@ -3,7 +3,6 @@ import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
 import OneInchLpABI from '../abi/OneInchLp.json';
 import { isETHAddress } from '../utils';
 

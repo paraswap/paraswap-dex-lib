@@ -38,6 +38,6 @@ export class RouterService {
       return this.directSwapRouter;
     }
 
-    throw `couldn't recognize contractMethod ${contractMethod}`;
+    throw new Error(`couldn't recognize contractMethod ${contractMethod}`);
   }
 }

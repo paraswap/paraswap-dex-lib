@@ -34,16 +34,18 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.bestRoute[0].swaps[0].swapExchanges.length !== 1 ||
       priceRoute.bestRoute[0].swaps[0].swapExchanges[0].percent !== 100
     )
-      throw `DirectSwap invalid bestRoute`;
+      throw new Error(`DirectSwap invalid bestRoute`);
 
     const dexName = priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange;
-    if (!dexName) throw `Invalid dex name`;
+    if (!dexName) throw new Error(`Invalid dex name`);
 
     const dex = this.dexAdapterService.getDexByKey(dexName);
-    if (!dex) throw `Failed to find dex : ${dexName}`;
+    if (!dex) throw new Error(`Failed to find dex : ${dexName}`);
 
     if (!dex.getDirectParam)
-      throw `Invalid DEX: dex should have getDirectParam : ${dexName}`;
+      throw new Error(
+        `Invalid DEX: dex should have getDirectParam : ${dexName}`,
+      );
 
     const swapExchange = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
     const srcAmount =

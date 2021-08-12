@@ -9,7 +9,6 @@ import {
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveABI from '../abi/Curve.json';
-import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
 
 export type CurveData = {
   exchange: string;
@@ -60,7 +59,7 @@ export class Curve
     data: CurveData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { i, j, deadline, underlyingSwap, v3 } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -91,7 +90,7 @@ export class Curve
     data: CurveData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
     const defaultArgs = [i, j, srcAmount, this.minConversionRate];

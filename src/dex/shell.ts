@@ -3,7 +3,6 @@ import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
 import ShellABI from '../abi/Shell.json';
 
 export type ShellData = {
