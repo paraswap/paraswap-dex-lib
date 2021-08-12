@@ -168,8 +168,8 @@ export class UniswapV2
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
-          pools: 'uint256[]',
           weth: 'address',
+          pools: 'uint256[]',
         },
       },
       { pools, weth },
