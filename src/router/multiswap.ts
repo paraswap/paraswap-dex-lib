@@ -59,7 +59,7 @@ export class MultiSwap
       feePercent,
       permit,
       deadline,
-      uuid: '0x',
+      uuid: '0x00000000000000000000000000000000',
     };
     const encoder = (...params: any[]) =>
       this.paraswapInterface.encodeFunctionData('multiSwap', params);
