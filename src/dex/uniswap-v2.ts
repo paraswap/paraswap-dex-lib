@@ -215,7 +215,7 @@ export class UniswapV2
     side: SwapSide,
     contractMethod?: string,
   ): TxInfo<UniswapParam> {
-    if (!contractMethod) throw `contractMethod need to be passed`;
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
 
     const data = _data as unknown as UniswapDataLegacy;
 
@@ -238,7 +238,7 @@ export class UniswapV2
           ];
 
         default:
-          throw `contractMethod=${contractMethod} is not supported`;
+          throw new Error(`contractMethod=${contractMethod} is not supported`);
       }
     })();
 

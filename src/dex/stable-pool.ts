@@ -9,7 +9,6 @@ import {
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import StablePoolABI from '../abi/StablePool.json';
-import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
 
 type StablePoolData = {
   exchange: string;
@@ -51,7 +50,7 @@ export class StablePool
     data: StablePoolData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { i, j, deadline } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -79,7 +78,7 @@ export class StablePool
     data: StablePoolData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j, deadline } = data;
     const swapFunctionParams: StablePoolParam = [

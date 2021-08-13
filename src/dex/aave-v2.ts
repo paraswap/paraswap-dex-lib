@@ -140,7 +140,7 @@ export class AaveV2
               [aaveLendingPool[this.network], this.augustusAddress, REF_CODE],
             ];
           default:
-            throw `Network ${this.network} not supported`;
+            throw new Error(`Network ${this.network} not supported`);
         }
       }
 
@@ -161,7 +161,7 @@ export class AaveV2
               [aaveLendingPool[this.network], srcAmount, this.augustusAddress],
             ];
           default:
-            throw `Network ${this.network} not supported`;
+            throw new Error(`Network ${this.network} not supported`);
         }
       }
 

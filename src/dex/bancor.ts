@@ -3,7 +3,6 @@ import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import { BUY_NOT_SUPPORTED_ERRROR } from '../constants';
 import BancorABI from '../abi/Bancor.json';
 
 const BANCOR_NETWORK: { [network: string]: string } = {
@@ -48,7 +47,7 @@ export class Bancor
     data: BancorData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { path } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -75,7 +74,7 @@ export class Bancor
     data: BancorData,
     side: SwapSide,
   ): SimpleExchangeParam {
-    if (side === SwapSide.BUY) throw BUY_NOT_SUPPORTED_ERRROR;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const defaultArgs = [
       data.path,
