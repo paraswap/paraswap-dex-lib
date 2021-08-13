@@ -6,7 +6,7 @@ import { SimpleExchange } from './simple-exchange';
 import OnebitABI from '../abi/Onebit.json';
 
 export type OnebitData = {
-  exchange: Address;
+  router: Address;
 };
 type OnebitParam = [
   srcToken: string,
@@ -23,7 +23,7 @@ export class Onebit
   extends SimpleExchange
   implements IDex<OnebitData, OnebitParam>
 {
-  static dexKeys = ['onebit'];
+  static dexKeys = ['omm1'];
   exchangeRouterInterface: Interface;
   needWrapNative = true;
 
@@ -41,7 +41,7 @@ export class Onebit
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: data.exchange,
+      targetExchange: data.router,
       payload: '0x',
       networkFee: '0',
     };
@@ -74,7 +74,7 @@ export class Onebit
       destToken,
       destAmount,
       swapData,
-      data.exchange,
+      data.router,
     );
   }
 }
