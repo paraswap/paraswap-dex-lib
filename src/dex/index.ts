@@ -21,6 +21,7 @@ import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
+import { Kyber } from './kyber';
 
 const DexAdapters = [
   UniswapV2,
@@ -32,6 +33,7 @@ const DexAdapters = [
   Weth,
   Balancer,
   Bancor,
+  Kyber,
   BProtocol,
   MStable,
   Shell,
@@ -45,12 +47,6 @@ const DexAdapters = [
   UniswapV3,
   Weth,
 ];
-
-const isWithDirectFunctionName = (
-  DexAdapter: any,
-): DexAdapter is { getDirectFunctionName: () => string[] } => {
-  return !!DexAdapter?.getDirectFunctionName?.();
-};
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];

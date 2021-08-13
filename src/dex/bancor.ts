@@ -79,7 +79,7 @@ export class Bancor
     const defaultArgs = [
       data.path,
       srcAmount,
-      data.minDestToken,
+      data.minDestToken || '1',
       NULL_ADDRESS,
       '0',
     ];
