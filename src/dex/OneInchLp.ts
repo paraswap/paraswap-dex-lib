@@ -62,7 +62,7 @@ export class OneInchLp
       isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
       isETHAddress(destToken) ? NULL_ADDRESS : destToken,
       srcAmount,
-      '1',
+      destAmount,
       NULL_ADDRESS,
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
@@ -74,7 +74,7 @@ export class OneInchLp
       srcToken,
       srcAmount,
       destToken,
-      '1',
+      destAmount,
       swapData,
       data.exchange,
     );
