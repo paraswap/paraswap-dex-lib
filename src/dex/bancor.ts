@@ -9,6 +9,10 @@ const BANCOR_NETWORK: { [network: string]: string } = {
   1: '0x2F9EC37d6CcFFf1caB21733BdaDEdE11c823cCB0',
 };
 
+const BancorRegistry: { [network: string]: string } = {
+  1: '0x52ae12abe5d8bd778bd5397f99ca900624cfadd4',
+};
+
 export type BancorData = {
   minDestToken: string;
   path: Address[];
@@ -60,7 +64,7 @@ export class Bancor
     );
 
     return {
-      targetExchange: data.bancorNetwork || BANCOR_NETWORK[this.network],
+      targetExchange: BancorRegistry[this.network],
       payload,
       networkFee: '0',
     };
