@@ -53,6 +53,11 @@ const ZRX_EXCHANGE_ERC20PROXY: any = {
   },
 };
 
+enum ZeroXFunctions {
+  swapOnZeroXv2 = 'swapOnZeroXv2',
+  swapOnZeroXv4 = 'swapOnZeroXv4',
+}
+
 type ZeroXData = {
   version: number;
   order: any; // todo: type the 0xv2 and 0xv4 order
@@ -188,7 +193,6 @@ export class ZeroX
     data: ZeroXData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: fix network fees
     return {
       targetExchange: this.getExchange(data),
       payload: this.buildPayload(data),
@@ -205,7 +209,6 @@ export class ZeroX
     side: SwapSide,
   ): SimpleExchangeParam {
     const swapData = this.buildSimpleSwapData(data, srcAmount);
-    // TODO: fix network fees
     const networkFees = '0';
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -232,12 +235,12 @@ export class ZeroX
       switch (data.version) {
         case 2:
           return this.routerInterface.encodeFunctionData(
-            'swapOnZeroXv2', // TODO Buy case
+            ZeroXFunctions.swapOnZeroXv2,
             params,
           );
         case 4:
           return this.routerInterface.encodeFunctionData(
-            'swapOnZeroXv4', // TODO Buy case
+            ZeroXFunctions.swapOnZeroXv4,
             params,
           );
         default:
@@ -252,13 +255,13 @@ export class ZeroX
         destAmount,
         this.getExchange(data),
         this.buildPayload(data),
-      ], // TODO wait for adjustment in SC
+      ],
       encoder,
       networkFee: '0',
     };
   }
 
   static getDirectFunctionName(): string[] {
-    return ['swapOnZeroXv2', 'swapOnZeroXv4'];
+    return [ZeroXFunctions.swapOnZeroXv2, ZeroXFunctions.swapOnZeroXv4];
   }
 }
