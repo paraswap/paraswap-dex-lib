@@ -97,7 +97,7 @@ export class UniswapV3
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,
-      swapFunctionParams,
+      [swapFunctionParams],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
