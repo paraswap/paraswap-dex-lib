@@ -6,7 +6,7 @@ export interface IRouter<RouterParam> {
     minMaxAmount: string,
     userAddress: Address,
     partner: Address,
-    feePercent: string,
+    partnerFeePercent: string,
     beneficiary: Address,
     permit: string,
     deadline: string,
