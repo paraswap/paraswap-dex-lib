@@ -56,8 +56,8 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
         : swapExchange.destAmount;
 
     return dex.getDirectParam!(
-      priceRoute.src,
-      priceRoute.dest,
+      priceRoute.srcToken,
+      priceRoute.destToken,
       srcAmount,
       destAmount,
       swapExchange.data,

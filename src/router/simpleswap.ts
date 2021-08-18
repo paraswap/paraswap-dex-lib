@@ -92,16 +92,16 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       (acc, se) => {
         const dex = this.dexAdapterService.getDexByKey(se.exchange);
 
-        let _src = swap.src;
-        let _dest = swap.dest;
+        let _src = swap.srcToken;
+        let _dest = swap.destToken;
 
         if (dex.needWrapNative) {
-          if (isETHAddress(swap.src)) {
+          if (isETHAddress(swap.srcToken)) {
             _src = wethAddress;
             acc.srcAmountWethToDeposit += BigInt(se.srcAmount);
           }
 
-          if (isETHAddress(swap.dest)) {
+          if (isETHAddress(swap.destToken)) {
             _dest = wethAddress;
             acc.destAmountWethToWithdraw += BigInt(se.destAmount);
           }
@@ -161,8 +161,8 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
 
     const sellData: ConstractSimpleData = {
       ...partialContractSimpleData,
-      fromToken: priceRoute.src,
-      toToken: priceRoute.dest,
+      fromToken: priceRoute.srcToken,
+      toToken: priceRoute.destToken,
       fromAmount: priceRoute.srcAmount,
       toAmount: minMaxAmount,
       expectedAmount: priceRoute.destAmount,
@@ -196,8 +196,8 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
         'weth',
       ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
-      swap.src,
-      swap.dest,
+      swap.srcToken,
+      swap.destToken,
       srcAmountWeth.toString(),
       destAmountWeth.toString(),
       SwapSide.SELL,

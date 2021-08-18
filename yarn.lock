@@ -3492,7 +3492,7 @@ param-case@^3.0.4:
 
 "paraswap-core@https://github.com/paraswap/paraswap-core#master":
   version "1.0.1"
-  resolved "https://github.com/paraswap/paraswap-core#e4f7e2da3f1b561d5358c2fdf6904eaaea5131a0"
+  resolved "https://github.com/paraswap/paraswap-core#4d462a0053362af2a5ff51a8f1a174b4c3b4e9a1"
 
 parse-headers@^2.0.0:
   version "2.0.3"

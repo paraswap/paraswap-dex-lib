@@ -25,14 +25,18 @@ export class PayloadEncoder {
   } {
     let totalNetworkFee = BigInt(0);
     const paths = swaps.map(s => {
-      const adapters = this.getAdapters(s.src, s.dest, s.swapExchanges);
+      const adapters = this.getAdapters(
+        s.srcToken,
+        s.destToken,
+        s.swapExchanges,
+      );
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
         BigInt(0),
       );
       totalNetworkFee += totalPathNetworkFee;
       return {
-        to: s.dest,
+        to: s.destToken,
         totalNetworkFee: totalPathNetworkFee.toString(),
         adapters,
       };
@@ -59,8 +63,8 @@ export class PayloadEncoder {
   }
 
   getAdapters(
-    src: Address,
-    dest: Address,
+    srcToken: Address,
+    destToken: Address,
     swapExchanges: OptimalSwapExchange<any>[],
   ): ContractAdapter[] {
     const exchangeAdapterMap = this.getOptimalExchangeAdapterMap(swapExchanges);
@@ -79,8 +83,8 @@ export class PayloadEncoder {
       const adapterParam = this.dexAdapterService
         .getDexByKey(se.exchange)
         .getAdapterParam(
-          src,
-          dest,
+          srcToken,
+          destToken,
           se.srcAmount,
           se.destAmount,
           se.data,

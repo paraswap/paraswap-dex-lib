@@ -41,7 +41,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       priceRoute.bestRoute,
     );
     const sellData: ContractMegaSwapSellData = {
-      fromToken: priceRoute.src,
+      fromToken: priceRoute.srcToken,
       fromAmount: priceRoute.srcAmount,
       toAmount: minMaxAmount,
       expectedAmount: priceRoute.destAmount,

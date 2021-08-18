@@ -49,7 +49,7 @@ export class MultiSwap
       priceRoute.bestRoute[0].swaps,
     );
     const sellData: ContractSellData = {
-      fromToken: priceRoute.src,
+      fromToken: priceRoute.srcToken,
       fromAmount: priceRoute.srcAmount,
       toAmount: minMaxAmount,
       expectedAmount: priceRoute.destAmount,

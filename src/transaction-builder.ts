@@ -64,7 +64,7 @@ export class TransactionBuilder {
     if (onlyParams) return params;
 
     const value = (
-      priceRoute.src.toLowerCase() === ETHER_ADDRESS.toLowerCase()
+      priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()
         ? BigInt(priceRoute.srcAmount) + BigInt(networkFee)
         : BigInt(networkFee)
     ).toString();
