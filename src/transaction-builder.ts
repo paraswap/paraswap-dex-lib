@@ -28,8 +28,8 @@ export class TransactionBuilder {
     priceRoute,
     minMaxAmount,
     userAddress,
-    partner,
-    feePercent,
+    partnerAddress,
+    partnerFeePercent,
     gasPrice,
     permit,
     deadline,
@@ -39,8 +39,8 @@ export class TransactionBuilder {
     priceRoute: OptimalRate;
     minMaxAmount: string;
     userAddress: Address;
-    partner: Address;
-    feePercent: string;
+    partnerAddress: Address;
+    partnerFeePercent: string;
     gasPrice: string;
     permit?: string;
     deadline: string;
@@ -54,8 +54,8 @@ export class TransactionBuilder {
         priceRoute,
         minMaxAmount,
         userAddress,
-        partner,
-        feePercent,
+        partnerAddress,
+        partnerFeePercent,
         _beneficiary,
         permit || '0x',
         deadline,
