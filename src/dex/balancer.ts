@@ -69,6 +69,8 @@ export class Balancer
     data: BalancerData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    if (side === SwapSide.BUY)
+      throw new Error('Balancer_getAdapterParam: Buy not implemented');
     const { swaps } = data;
     const payload = this.abiCoder.encodeParameter(
       {
@@ -99,6 +101,9 @@ export class Balancer
     data: BalancerData,
     side: SwapSide,
   ): SimpleExchangeParam {
+    // TODO: implement buy
+    if (side === SwapSide.BUY)
+      throw new Error('Balancer_getSimpleParam: Buy not implemented');
     const { swaps } = data;
 
     const [swapFunction, swapFunctionParam] = ((): [
