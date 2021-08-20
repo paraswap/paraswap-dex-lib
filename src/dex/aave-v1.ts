@@ -48,8 +48,6 @@ export class AaveV1
     data: AaveV1Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    //  if (data.isV2) return; // FIXME: better handling
-
     const aToken = data.fromAToken ? srcToken : destToken; // Warning
     const payload = this.abiCoder.encodeParameter(
       {
@@ -61,7 +59,7 @@ export class AaveV1
     );
 
     return {
-      targetExchange: srcToken, // TODO: find better generalisation, equivalent to LENDING_DEXES
+      targetExchange: AAVE_LENDING_POOL,
       payload,
       networkFee: '0',
     };
@@ -75,8 +73,6 @@ export class AaveV1
     data: AaveV1Data,
     side: SwapSide,
   ): SimpleExchangeParam {
-    //   if (data.isV2) return; // FIXME: better handling
-
     const [Interface, swapFunction, swapFunctionParams, swapCallee, spender] =
       ((): [Interface, AaveV1Functions, AaveV1Param, Address, Address?] => {
         if (data.fromAToken) {
