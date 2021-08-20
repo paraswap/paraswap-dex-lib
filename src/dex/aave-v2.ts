@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
@@ -100,7 +100,7 @@ export class AaveV2
 
     return {
       // target exchange is not used by the contract
-      targetExchange: '0x00000000000000000000000000000000',
+      targetExchange: NULL_ADDRESS,
       payload,
       networkFee: '0',
     };

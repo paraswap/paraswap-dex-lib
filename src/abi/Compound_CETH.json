@@ -8,14 +8,5 @@
     "stateMutability": "payable",
     "type": "function",
     "signature": "0x1249c58b"
-  },
-  {
-    "constant": false,
-    "inputs": [],
-    "name": "deposit",
-    "outputs": [],
-    "payable": true,
-    "stateMutability": "payable",
-    "type": "function"
   }
 ]

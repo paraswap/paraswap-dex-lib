@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
@@ -50,7 +50,8 @@ export class Compound
     );
 
     return {
-      targetExchange: srcToken, // TODO: find better generalisation, equivalent to LENDING_DEXES
+      // target exchange is not used by the contract
+      targetExchange: NULL_ADDRESS,
       payload,
       networkFee: '0',
     };
@@ -65,15 +66,12 @@ export class Compound
     side: SwapSide,
   ): SimpleExchangeParam {
     const cToken = data.fromCToken ? srcToken : destToken;
-    const value = isETHAddress(srcToken) ? [] : [srcAmount];
-
-    const swapFunctionParams: CompoundParam = [srcAmount];
-    const swapData = data.fromCToken
-      ? this.cethInterface.encodeFunctionData(
-          CompoundFunctions.redeem,
-          swapFunctionParams,
-        )
-      : this.erc20Interface.encodeFunctionData(CompoundFunctions.mint, [value]); // Warning: does passing value work ?
+    const swapData = isETHAddress(srcToken)
+      ? this.cethInterface.encodeFunctionData(CompoundFunctions.mint)
+      : this.erc20Interface.encodeFunctionData(
+          data.fromCToken ? CompoundFunctions.redeem : CompoundFunctions.mint,
+          [srcAmount],
+        );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
