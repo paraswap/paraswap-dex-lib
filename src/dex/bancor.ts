@@ -85,7 +85,7 @@ export class Bancor
       srcAmount,
       data.minDestToken || '1',
       NULL_ADDRESS,
-      '0',
+      '1',
     ];
     const swapMethod = BancorFunctions.convert2;
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
