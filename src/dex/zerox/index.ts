@@ -60,7 +60,7 @@ enum ZeroXFunctions {
 
 type ZeroXData = {
   version: number;
-  order: any; // todo: type the 0xv2 and 0xv4 order
+  order: ZeroXSignedOrder;
 };
 
 type SwapOnZeroXParam = [

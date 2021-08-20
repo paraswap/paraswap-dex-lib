@@ -38,6 +38,7 @@ export interface ZeroXSignedOrderV4 {
   pool: string;
   expiry: BigInt;
   salt: BigInt;
+  signature: any; // TODO: fix type
 }
 
 export type ZeroXSignedOrder = ZeroXSignedOrderV2 | ZeroXSignedOrderV4;
