@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
+import { convertToBasisPoints } from '../utils';
 
 // This class can be used commonly by all the router
 // that will use the adapters.
@@ -104,7 +105,17 @@ export class PayloadEncoder {
         percent: (se.percent * 100).toFixed(0),
       });
     });
-    return Object.values(adaptersMap);
+    return Object.values(adaptersMap).map(ca => {
+      const rawPercent = ca.route.map(r => Number(r.percent));
+      const fixedPercent = convertToBasisPoints(rawPercent).map(p =>
+        p.toFixed(),
+      );
+      const routeWithFixedPercent = ca.route.map((r, i) => ({
+        ...r,
+        percent: fixedPercent[i],
+      }));
+      return { ...ca, route: routeWithFixedPercent };
+    });
   }
 
   // Find the best adapter, assign exhanges that use best adapter, filter out the
