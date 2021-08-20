@@ -16,16 +16,16 @@ export type UniswapV3Data = {
   deadline?: number;
   sqrtPriceLimitX96?: NumberAsString;
 };
-type UniswapV3Param = [
-  tokenIn: Address,
-  tokenOut: Address,
-  fee: number,
-  recipient: Address,
-  deadline: number,
-  amountIn: NumberAsString,
-  amountOutMinimum: NumberAsString,
-  sqrtPriceLimitX96: NumberAsString,
-];
+type UniswapV3Param = {
+  tokenIn: Address;
+  tokenOut: Address;
+  fee: number;
+  recipient: Address;
+  deadline: number;
+  amountIn: NumberAsString;
+  amountOutMinimum: NumberAsString;
+  sqrtPriceLimitX96: NumberAsString;
+};
 enum UniswapV3Functions {
   exactInputSingle = 'exactInputSingle',
 }
@@ -85,16 +85,16 @@ export class UniswapV3
     side: SwapSide,
   ): SimpleExchangeParam {
     const swapFunction = UniswapV3Functions.exactInputSingle;
-    const swapFunctionParams: UniswapV3Param = [
-      srcToken,
-      destToken,
-      data.fee,
-      this.augustusAddress,
-      data.deadline || this.getDeadline(),
-      srcAmount,
-      destAmount,
-      data.sqrtPriceLimitX96 || '0',
-    ];
+    const swapFunctionParams: UniswapV3Param = {
+      tokenIn: srcToken,
+      tokenOut: destToken,
+      fee: data.fee,
+      recipient: this.augustusAddress,
+      deadline: data.deadline || this.getDeadline(),
+      amountIn: srcAmount,
+      amountOutMinimum: destAmount,
+      sqrtPriceLimitX96: data.sqrtPriceLimitX96 || '0',
+    };
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,
       [swapFunctionParams],
