@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -56,8 +57,12 @@ export class Balancer
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  constructor(augustusAddress: Address) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(BalancerABI as JsonFragment[]);
   }
 
@@ -93,14 +98,14 @@ export class Balancer
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: BalancerData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     // TODO: implement buy
     if (side === SwapSide.BUY)
       throw new Error('Balancer_getSimpleParam: Buy not implemented');

@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -27,8 +28,12 @@ export class Shell
   static dexKeys = ['shell'];
   exchangeRouterInterface: Interface;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(ShellABI as JsonFragment[]);
   }
 
@@ -47,14 +52,14 @@ export class Shell
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: ShellData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const swapFunction = ShellFunctions.originSwap;
     const swapFunctionParams: ShellParam = [
       srcToken,

@@ -1,14 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { SwapSide, MAX_UINT } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from 'paraswap-core';
 import { isETHAddress } from '../utils';
-
-const MAX_UINT =
-  '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
 const DODOV2ProxyAddress: { [network: number]: Address } = {
   1: '0xa356867fdcea8e71aeaf87805808803806231fdc',
@@ -72,8 +70,12 @@ export class DodoV2
   static dexKeys = ['dodov2'];
   exchangeRouterInterface: Interface;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(
       DodoV2ProxyABI as JsonFragment[],
     );
@@ -105,14 +107,14 @@ export class DodoV2
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: DodoV2Data,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const [swapFunction, swapFunctionParams, maybeSpender] = ((): [
       DodoV2Functions,
       DodoV2Param,

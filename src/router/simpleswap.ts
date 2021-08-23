@@ -60,7 +60,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     };
   }
 
-  build(
+  async build(
     priceRoute: OptimalRate,
     minMaxAmount: string,
     userAddress: Address,
@@ -69,7 +69,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
-  ): TxInfo<SimpleSwapParam> {
+  ): Promise<TxInfo<SimpleSwapParam>> {
     if (
       priceRoute.bestRoute.length !== 1 ||
       priceRoute.bestRoute[0].percent !== 100 ||
@@ -80,44 +80,55 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
 
     const wethAddress = Weth.getAddress(priceRoute.network);
 
+    const rawSimpleParams = await Promise.all(
+      swap.swapExchanges.map(async se => {
+        const dex = this.dexAdapterService.getDexByKey(se.exchange);
+        let _src = swap.srcToken;
+        let wethDeposit = BigInt(0);
+        let _dest = swap.destToken;
+        let wethWithdraw = BigInt(0);
+
+        if (dex.needWrapNative) {
+          if (isETHAddress(swap.srcToken)) {
+            _src = wethAddress;
+            wethDeposit = BigInt(se.srcAmount);
+          }
+
+          if (isETHAddress(swap.destToken)) {
+            _dest = wethAddress;
+            wethWithdraw = BigInt(se.destAmount);
+          }
+        }
+        const simpleParams = await dex.getSimpleParam(
+          _src,
+          _dest,
+          se.srcAmount,
+          se.destAmount,
+          se.data,
+          SwapSide.SELL,
+        );
+
+        return {
+          simpleParams,
+          wethDeposit,
+          wethWithdraw,
+        };
+      }),
+    );
+
     const {
       simpleExchangeDataList,
       srcAmountWethToDeposit,
       destAmountWethToWithdraw,
-    } = swap.swapExchanges.reduce<{
+    } = await rawSimpleParams.reduce<{
       simpleExchangeDataList: SimpleExchangeParam[];
       srcAmountWethToDeposit: bigint;
       destAmountWethToWithdraw: bigint;
     }>(
       (acc, se) => {
-        const dex = this.dexAdapterService.getDexByKey(se.exchange);
-
-        let _src = swap.srcToken;
-        let _dest = swap.destToken;
-
-        if (dex.needWrapNative) {
-          if (isETHAddress(swap.srcToken)) {
-            _src = wethAddress;
-            acc.srcAmountWethToDeposit += BigInt(se.srcAmount);
-          }
-
-          if (isETHAddress(swap.destToken)) {
-            _dest = wethAddress;
-            acc.destAmountWethToWithdraw += BigInt(se.destAmount);
-          }
-        }
-
-        acc.simpleExchangeDataList.push(
-          dex.getSimpleParam(
-            _src,
-            _dest,
-            se.srcAmount,
-            se.destAmount,
-            se.data,
-            SwapSide.SELL,
-          ),
-        );
-
+        acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
+        acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
+        acc.simpleExchangeDataList.push(se.simpleParams);
         return acc;
       },
       {

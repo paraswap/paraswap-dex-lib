@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -37,8 +38,12 @@ export class StablePool
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  constructor(augustusAddress: Address) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(StablePoolABI);
   }
 
@@ -70,14 +75,14 @@ export class StablePool
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: StablePoolData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j, deadline } = data;

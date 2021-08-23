@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -38,8 +39,12 @@ export class Kyber
   static dexKeys = ['kyber'];
   exchangeRouterInterface: Interface;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(KyberABI as JsonFragment[]);
   }
 
@@ -71,14 +76,14 @@ export class Kyber
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: KyberData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const minConversionRate = '1';
     const platformFeeBps = '0';
     const swapFunction = KyberFunctions.tradeWithHintAndFee;

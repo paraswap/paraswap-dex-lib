@@ -1,4 +1,5 @@
 import { ContractMethodEncoder, OptimalRate, Address, TxInfo } from '../types';
+import { AsyncOrSync } from 'ts-essentials';
 
 export interface IRouter<RouterParam> {
   build(
@@ -10,7 +11,7 @@ export interface IRouter<RouterParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
-  ): TxInfo<RouterParam>;
+  ): AsyncOrSync<TxInfo<RouterParam>>;
 
   getContractMethodName(): string;
 }

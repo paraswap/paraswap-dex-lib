@@ -134,7 +134,7 @@ export class UniswapV2
     protected network: number,
     provider: JsonRpcProvider,
   ) {
-    super(augustusAddress);
+    super(augustusAddress, provider);
     this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
   }
@@ -183,14 +183,14 @@ export class UniswapV2
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     src: Address,
     dest: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     data: UniswapData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const pools = encodePools(data.pools);
     const weth = this.getWETHAddress(src, dest, data.weth);
     const swapData = this.exchangeRouterInterface.encodeFunctionData(

@@ -1,3 +1,4 @@
+import { AsyncOrSync } from 'ts-essentials';
 import {
   Address,
   SimpleExchangeParam,
@@ -36,7 +37,7 @@ export interface IDex<ExchangeData, DirectParam> {
     destAmount: NumberAsString,
     data: ExchangeData,
     side: SwapSide,
-  ): SimpleExchangeParam;
+  ): AsyncOrSync<SimpleExchangeParam>;
   // Used if there is a possibility for direct swap (Eg. UniswapV2, 0xV2/V4, etc)
   getDirectParam?(
     srcToken: Address,

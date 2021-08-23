@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -35,8 +36,12 @@ export class Smoothy
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  constructor(augustusAddress: Address) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(SmoothyABI);
   }
 
@@ -67,14 +72,14 @@ export class Smoothy
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: SmoothyData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j } = data;

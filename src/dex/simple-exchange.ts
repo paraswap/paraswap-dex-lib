@@ -1,27 +1,53 @@
 import { Interface } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { Contract } from '@ethersproject/contracts';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
+import ERC20ABI from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
+import { MAX_UINT, NULL_ADDRESS } from '../constants';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
   protected abiCoder: AbiCoder;
+  private erc20: Contract;
   needWrapNative = false;
 
-  constructor(protected augustusAddress: Address) {
+  constructor(
+    protected augustusAddress: Address,
+    private provider: JsonRpcProvider,
+  ) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
+    // The contract address is set to null address as the token address is not known upfront
+    this.erc20 = new Contract(NULL_ADDRESS, ERC20ABI, provider);
     this.abiCoder = Web3Abi as unknown as AbiCoder;
   }
 
-  protected getApproveSimpleParam(
+  private async hasAugustusAllowance(
     token: Address,
     target: Address,
     amount: string,
-  ): SimpleExchangeParam {
+  ): Promise<boolean> {
+    return token.toLowerCase() === ETHER_ADDRESS.toLowerCase();
+
+    const tokenContract = this.erc20.attach(token);
+    const allowance = await tokenContract.functions.allowance(
+      this.augustusAddress,
+      target,
+    );
+    return BigInt(allowance.toString()) >= BigInt(amount);
+  }
+
+  protected async getApproveSimpleParam(
+    token: Address,
+    target: Address,
+    amount: string,
+  ): Promise<SimpleExchangeParam> {
     // TODO: add logic to check if allowance is needed
-    if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) {
+    const hasAllowance = await this.hasAugustusAllowance(token, target, amount);
+    if (hasAllowance) {
       return {
         callees: [],
         calldata: [],
@@ -32,7 +58,7 @@ export class SimpleExchange {
 
     const approveCalldata = this.simpleSwapHelper.encodeFunctionData(
       'approve',
-      [token, target, amount],
+      [token, target, MAX_UINT],
     );
 
     return {
@@ -43,7 +69,7 @@ export class SimpleExchange {
     };
   }
 
-  protected buildSimpleParamWithoutWETHConversion(
+  protected async buildSimpleParamWithoutWETHConversion(
     src: Address,
     srcAmount: NumberAsString,
     dest: Address,
@@ -52,8 +78,8 @@ export class SimpleExchange {
     swapCallee: Address,
     spender?: Address,
     networkFee: NumberAsString = '0',
-  ): SimpleExchangeParam {
-    const approveParam = this.getApproveSimpleParam(
+  ): Promise<SimpleExchangeParam> {
+    const approveParam = await this.getApproveSimpleParam(
       src,
       spender || swapCallee,
       srcAmount,

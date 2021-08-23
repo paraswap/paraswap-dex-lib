@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -72,8 +73,12 @@ export class AaveV2
   aavePool: Interface;
   wethGateway: Interface;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    private network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V2 as JsonFragment[]);
     this.wethGateway = new Interface(
       WETH_GATEWAY_ABI[network] as JsonFragment[],
@@ -106,14 +111,14 @@ export class AaveV2
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: AaveV2Data,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,

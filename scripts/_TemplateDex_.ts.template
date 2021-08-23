@@ -58,7 +58,7 @@ export class _TemplateDex_
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,

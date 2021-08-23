@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -27,8 +28,12 @@ export class OneInchLp
   static dexKeys = ['oneinchlp'];
   exchangeRouterInterface: Interface;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(
       OneInchLpABI as JsonFragment[],
     );
@@ -49,14 +54,14 @@ export class OneInchLp
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: OneInchLpData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const swapFunction = OneInchLpFunctions.swap;
     const swapFunctionParams: OneInchLpParam = [
       isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,

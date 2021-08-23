@@ -22,7 +22,7 @@ export class TransactionBuilder {
     this.routerService = new RouterService(this.dexAdapterService, adapters);
   }
 
-  public build({
+  public async build({
     priceRoute,
     minMaxAmount,
     userAddress,
@@ -46,7 +46,7 @@ export class TransactionBuilder {
     onlyParams?: boolean;
   }) {
     const _beneficiary = beneficiary || userAddress;
-    const { encoder, params, networkFee } = this.routerService
+    const { encoder, params, networkFee } = await this.routerService
       .getRouterByContractMethod(priceRoute.contractMethod)
       .build(
         priceRoute,

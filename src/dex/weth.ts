@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -46,8 +47,12 @@ export class Weth
   static dexKeys = ['wmatic', 'weth', 'wbnb'];
   erc20Interface: Interface;
 
-  constructor(augustusAddress: Address, public network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    private network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.erc20Interface = new Interface(ERC20 as JsonFragment[]);
   }
 
@@ -70,14 +75,14 @@ export class Weth
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     data: WData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const address = Weth.getAddress(this.network);
 
     const swapData = isETHAddress(srcToken)

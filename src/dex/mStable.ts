@@ -1,10 +1,10 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import MStableAssetABI from '../abi/MStableAsset.json';
-import MStablePoolABI from '../abi/MStablePool.json';
 
 enum MStableFunctions {
   mint = 'mint',
@@ -44,12 +44,14 @@ export class MStable
 {
   static dexKeys = ['mStable'];
   mStableAsset: Interface;
-  mStablePool: Interface;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.mStableAsset = new Interface(MStableAssetABI as JsonFragment[]);
-    this.mStablePool = new Interface(MStablePoolABI as JsonFragment[]);
   }
 
   getAdapterParam(
@@ -91,14 +93,14 @@ export class MStable
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: MStableData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const { opType, isAssetContract } = data;
 
     const [swapFunction, swapFunctionsParams] = ((): [
@@ -128,9 +130,12 @@ export class MStable
       }
     })();
 
-    const swapData = (
-      isAssetContract ? this.mStableAsset : this.mStablePool
-    ).encodeFunctionData(swapFunction, swapFunctionsParams);
+    // mStableAsset & mStablePool both have the same interface hence we can
+    // simply use mStableAsset contract
+    const swapData = this.mStableAsset.encodeFunctionData(
+      swapFunction,
+      swapFunctionsParams,
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,

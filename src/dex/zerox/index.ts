@@ -97,7 +97,7 @@ export class ZeroX
     public network: number,
     provider: JsonRpcProvider,
   ) {
-    super(augustusAddress);
+    super(augustusAddress, provider);
     this.routerInterface = new Interface(IParaswapAbi);
     this.erc20Interface = new Interface(ERC20ABI);
   }
@@ -200,14 +200,14 @@ export class ZeroX
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     src: Address,
     dest: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     data: ZeroXData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const swapData = this.buildSimpleSwapData(data, srcAmount);
     const networkFees = '0';
 

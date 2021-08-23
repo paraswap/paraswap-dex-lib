@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -36,8 +37,12 @@ export class CurveV2
   minConversionRate = '1';
   needWrapNative = true;
 
-  constructor(augustusAddress: Address) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
   }
 
@@ -70,26 +75,24 @@ export class CurveV2
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: CurveV2Data,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
-    const defaultArgs: CurveV2Param = [i, j, srcAmount, this.minConversionRate];
-    // Only non underlyingSwaps in mainnet have an option to directly deposit ETH
-    if (!underlyingSwap && isETHAddress(srcToken)) defaultArgs.push(true);
+    const args: CurveV2Param = [i, j, srcAmount, this.minConversionRate];
     const swapMethod = underlyingSwap
       ? CurveSwapFunctions.exchange_underlying
       : CurveSwapFunctions.exchange;
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapMethod,
-      defaultArgs,
+      args,
     );
 
     return this.buildSimpleParamWithoutWETHConversion(

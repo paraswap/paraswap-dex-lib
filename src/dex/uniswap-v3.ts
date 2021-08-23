@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -38,8 +39,12 @@ export class UniswapV3
   exchangeRouterInterface: Interface;
   needWrapNative = true;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    private network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(
       UniswapV3RouterABI as JsonFragment[],
     );
@@ -76,14 +81,14 @@ export class UniswapV3
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: UniswapV3Data,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const swapFunction = UniswapV3Functions.exactInputSingle;
     const swapFunctionParams: UniswapV3Param = {
       tokenIn: srcToken,

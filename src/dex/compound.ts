@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
@@ -24,8 +25,12 @@ export class Compound
   cethInterface: Interface;
   erc20Interface: Interface;
 
-  constructor(augustusAddress: Address, private network: number) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    private network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.cethInterface = new Interface(Ceth as JsonFragment[]);
     this.erc20Interface = new Interface(Erc20 as JsonFragment[]);
   }
@@ -57,14 +62,14 @@ export class Compound
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: CompoundData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     const cToken = data.fromCToken ? srcToken : destToken;
     const swapData = isETHAddress(srcToken)
       ? this.cethInterface.encodeFunctionData(CompoundFunctions.mint)

@@ -1,4 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -46,8 +47,12 @@ export class Curve
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  constructor(augustusAddress: Address) {
-    super(augustusAddress);
+  constructor(
+    augustusAddress: Address,
+    public network: number,
+    provider: JsonRpcProvider,
+  ) {
+    super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(CurveABI as JsonFragment[]);
   }
 
@@ -69,10 +74,9 @@ export class Curve
           j: 'int128',
           deadline: 'uint256',
           underlyingSwap: 'bool',
-          v3: 'bool',
         },
       },
-      { i, j, deadline, underlyingSwap, v3 },
+      { i, j, deadline, underlyingSwap },
     );
 
     return {
@@ -82,14 +86,14 @@ export class Curve
     };
   }
 
-  getSimpleParam(
+  async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: CurveData,
     side: SwapSide,
-  ): SimpleExchangeParam {
+  ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
