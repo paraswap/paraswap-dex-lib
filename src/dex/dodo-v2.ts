@@ -72,7 +72,7 @@ export class DodoV2
 
   constructor(
     augustusAddress: Address,
-    public network: number,
+    private network: number,
     provider: JsonRpcProvider,
   ) {
     super(augustusAddress, provider);

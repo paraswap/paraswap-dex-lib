@@ -30,7 +30,7 @@ export class SimpleExchange {
     target: Address,
     amount: string,
   ): Promise<boolean> {
-    return token.toLowerCase() === ETHER_ADDRESS.toLowerCase();
+    if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
 
     const tokenContract = this.erc20.attach(token);
     const allowance = await tokenContract.functions.allowance(

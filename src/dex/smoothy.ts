@@ -38,7 +38,7 @@ export class Smoothy
 
   constructor(
     augustusAddress: Address,
-    public network: number,
+    private network: number,
     provider: JsonRpcProvider,
   ) {
     super(augustusAddress, provider);
