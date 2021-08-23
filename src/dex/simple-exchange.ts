@@ -45,7 +45,6 @@ export class SimpleExchange {
     target: Address,
     amount: string,
   ): Promise<SimpleExchangeParam> {
-    // TODO: add logic to check if allowance is needed
     const hasAllowance = await this.hasAugustusAllowance(token, target, amount);
     if (hasAllowance) {
       return {
