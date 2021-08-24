@@ -8,7 +8,7 @@ import {
   SimpleExchangeParam,
   TxInfo,
 } from '../types';
-import { SwapSide, ETHER_ADDRESS } from '../constants';
+import { SwapSide, ETHER_ADDRESS, NULL_ADDRESS } from '../constants';
 import { SimpleExchange } from './simple-exchange';
 import ParaSwapABI from '../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../abi/UniswapV2ExchangeRouter.json';
@@ -154,7 +154,7 @@ export class UniswapV2
 
   getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
     if (!isETHAddress(srcToken) && !isETHAddress(destToken))
-      return '0x0000000000000000000000000000000000000000';
+      return NULL_ADDRESS;
     return weth || WETHAddresses[this.network];
   }
 
