@@ -10,6 +10,7 @@ import {
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
+import { uuidToBytes16 } from '../utils';
 
 type MegaSwapParam = [ContractMegaSwapSellData];
 
@@ -36,6 +37,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
+    uuid: string,
   ): TxInfo<MegaSwapParam> {
     const { megaSwapPaths, networkFee } = this.getMegaSwapPathsWithNetworkFee(
       priceRoute.bestRoute,
@@ -51,7 +53,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       feePercent: partnerFeePercent,
       permit,
       deadline,
-      uuid: '0x00000000000000000000000000000000',
+      uuid: uuidToBytes16(uuid),
     };
     const encoder = (...params: any[]) =>
       this.paraswapInterface.encodeFunctionData('megaSwap', params);

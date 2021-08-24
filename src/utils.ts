@@ -6,6 +6,8 @@ export const isETHAddress = (address: string) =>
 export const prependWithOx = (str: string) =>
   str.startsWith('0x') ? str : '0x' + str;
 
+export const uuidToBytes16 = (uuid: string) => '0x' + uuid.replace(/-/g, '');
+
 // This function guarantees that the distribution adds up to exactly 100% by
 // applying rounding in the other direction for numbers with the most error.
 export function convertToBasisPoints(dist: number[]): number[] {

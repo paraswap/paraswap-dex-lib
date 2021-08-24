@@ -10,6 +10,7 @@ import {
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
+import { uuidToBytes16 } from '../utils';
 
 type MultiSwapParam = [ContractSellData];
 
@@ -39,6 +40,7 @@ export class MultiSwap
     beneficiary: Address,
     permit: string,
     deadline: string,
+    uuid: string,
   ): TxInfo<MultiSwapParam> {
     if (
       priceRoute.bestRoute.length !== 1 ||
@@ -59,7 +61,7 @@ export class MultiSwap
       feePercent: partnerFeePercent,
       permit,
       deadline,
-      uuid: '0x00000000000000000000000000000000',
+      uuid: uuidToBytes16(uuid),
     };
     const encoder = (...params: any[]) =>
       this.paraswapInterface.encodeFunctionData('multiSwap', params);
