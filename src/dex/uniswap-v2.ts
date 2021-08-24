@@ -37,6 +37,7 @@ const UniswapV2AliasKeys = [
   'sakeswap',
   'jetswap',
   'pantherswap',
+  'uniswapforkoptimized',
 ];
 
 type UniswapDataLegacy = {
