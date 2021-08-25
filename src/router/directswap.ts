@@ -25,6 +25,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     beneficiary: Address,
     permit: string,
     deadline: string,
+    uuid: string,
   ): TxInfo<DexDirectReturn> {
     // TODO: add checks for src and dest amounts
     if (

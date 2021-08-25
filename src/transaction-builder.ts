@@ -31,6 +31,7 @@ export class TransactionBuilder {
     gasPrice,
     permit,
     deadline,
+    uuid,
     beneficiary,
     onlyParams = false,
   }: {
@@ -42,6 +43,7 @@ export class TransactionBuilder {
     gasPrice: string;
     permit?: string;
     deadline: string;
+    uuid: string;
     beneficiary?: Address;
     onlyParams?: boolean;
   }) {
@@ -57,6 +59,7 @@ export class TransactionBuilder {
         _beneficiary,
         permit || '0x',
         deadline,
+        uuid,
       );
 
     if (onlyParams) return params;

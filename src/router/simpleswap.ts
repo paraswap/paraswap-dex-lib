@@ -10,7 +10,7 @@ import {
 import { SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
-import { isETHAddress } from '../utils';
+import { isETHAddress, uuidToBytes16 } from '../utils';
 import { IWethDepositorWithdrawer, Weth, WethFunctions } from '../dex/weth';
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
@@ -69,6 +69,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
+    uuid: string,
   ): Promise<TxInfo<SimpleSwapParam>> {
     if (
       priceRoute.bestRoute.length !== 1 ||
@@ -182,7 +183,7 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       feePercent: partnerFeePercent,
       permit,
       deadline,
-      uuid: '0x00000000000000000000000000000000',
+      uuid: uuidToBytes16(uuid),
     };
 
     const encoder = (...params: any[]) =>

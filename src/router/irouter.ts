@@ -11,6 +11,7 @@ export interface IRouter<RouterParam> {
     beneficiary: Address,
     permit: string,
     deadline: string,
+    uuid: string,
   ): AsyncOrSync<TxInfo<RouterParam>>;
 
   getContractMethodName(): string;
