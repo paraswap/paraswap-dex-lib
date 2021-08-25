@@ -3506,9 +3506,10 @@ param-case@^3.0.4:
     dot-case "^3.0.4"
     tslib "^2.0.3"
 
-"paraswap-core@https://github.com/paraswap/paraswap-core#master":
-  version "1.0.1"
-  resolved "https://github.com/paraswap/paraswap-core#2e8ae04465c7a654c6ad89a2885d803e76e17a59"
+paraswap-core@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/paraswap-core/-/paraswap-core-1.0.2.tgz#9e2ae35bc393b6f3bb9407bd097f21d498abb5a7"
+  integrity sha512-/PyonrjBsv9xOsFk4mVr0rh7BENrQtYYvvZMwu6QFN4qcca2VgmqOgpNWZPvfyBpKY+fUqmbBNlhqlaMQ3TMzQ==
 
 parse-headers@^2.0.0:
   version "2.0.3"
