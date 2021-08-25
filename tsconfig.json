@@ -1,21 +1,21 @@
 {
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "lib": ["es2015"],
+    "lib": ["es2019"],
     "module": "commonjs",
     "noImplicitAny": true,
-    "outDir": "./dist/",
+    "outDir": "./build/",
     "preserveConstEnums": true,
-    "removeComments": true,
     "strictNullChecks": true,
+    "strict": true,
     "sourceMap": true,
-    "target": "es2015",
+    "declaration": true,
     "skipLibCheck": true,
+    "target": "es2019",
     "resolveJsonModule": true,
     "allowJs": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "typeRoots": ["node_modules/@types"]
+    "typeRoots": ["node_modules/@types"],
+    "esModuleInterop": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/*", "./src/abi/*.json"]
 }
