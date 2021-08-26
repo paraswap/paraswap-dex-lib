@@ -142,8 +142,8 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     const simpleExchangeDataFlat = simpleExchangeDataList.reduce(
       (acc, se) => ({
         callees: acc.callees.concat(se.callees),
-        calldata: acc.callees.concat(se.calldata),
-        values: acc.callees.concat(se.values),
+        calldata: acc.calldata.concat(se.calldata),
+        values: acc.values.concat(se.values),
         networkFee: (BigInt(acc.networkFee) + BigInt(se.networkFee)).toString(),
       }),
       { callees: [], values: [], calldata: [], networkFee: '0' },
