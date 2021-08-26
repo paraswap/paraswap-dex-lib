@@ -100,11 +100,12 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
             wethWithdraw = BigInt(se.destAmount);
           }
         }
+
         const simpleParams = await dex.getSimpleParam(
           _src,
           _dest,
           se.srcAmount,
-          se.destAmount,
+          '1',
           se.data,
           SwapSide.SELL,
         );
