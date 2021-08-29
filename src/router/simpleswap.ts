@@ -22,16 +22,18 @@ type PartialContractSimpleData = Pick<
   'callees' | 'exchangeData' | 'values' | 'startIndexes'
 >;
 
-export class SimpleSwap implements IRouter<SimpleSwapParam> {
+abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
   paraswapInterface: Interface;
   contractMethodName: string;
 
   constructor(
     protected dexAdapterService: DexAdapterService,
     adapters: Adapters,
+    protected side: SwapSide,
   ) {
     this.paraswapInterface = new Interface(IParaswapABI);
-    this.contractMethodName = 'simpleSwap';
+    this.contractMethodName =
+      side === SwapSide.SELL ? 'simpleSwap' : 'simpleBuy';
   }
 
   getContractMethodName(): string {
@@ -101,13 +103,29 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
           }
         }
 
+        // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
+        // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
+        // Also that it is is direct swap.
+        const _srcAmount =
+          this.side === SwapSide.SELL
+            ? se.srcAmount
+            : (
+                (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
+                BigInt(priceRoute.srcAmount)
+              ).toString();
+
+        // In case of sell the destAmount is set to minimum (1) as
+        // even if the individual dex is rekt by slippage the swap
+        // should work if the final slippage check passes.
+        const _destAmount = this.side === SwapSide.SELL ? '1' : se.destAmount;
+
         const simpleParams = await dex.getSimpleParam(
           _src,
           _dest,
-          se.srcAmount,
-          '1',
+          _srcAmount,
+          _destAmount,
           se.data,
-          SwapSide.SELL,
+          this.side,
         );
 
         return {
@@ -176,9 +194,14 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       ...partialContractSimpleData,
       fromToken: priceRoute.srcToken,
       toToken: priceRoute.destToken,
-      fromAmount: priceRoute.srcAmount,
-      toAmount: minMaxAmount,
-      expectedAmount: priceRoute.destAmount,
+      fromAmount:
+        this.side === SwapSide.SELL ? priceRoute.srcAmount : minMaxAmount,
+      toAmount:
+        this.side === SwapSide.SELL ? minMaxAmount : priceRoute.destAmount,
+      expectedAmount:
+        this.side === SwapSide.SELL
+          ? priceRoute.destAmount
+          : priceRoute.srcAmount,
       beneficiary,
       partner: partnerAddress,
       feePercent: partnerFeePercent,
@@ -188,7 +211,10 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
     };
 
     const encoder = (...params: any[]) =>
-      this.paraswapInterface.encodeFunctionData('simpleSwap', params);
+      this.paraswapInterface.encodeFunctionData(
+        this.contractMethodName,
+        params,
+      );
     // TODO: fix network fee
     return {
       encoder,
@@ -215,5 +241,17 @@ export class SimpleSwap implements IRouter<SimpleSwapParam> {
       destAmountWeth.toString(),
       SwapSide.SELL,
     );
+  }
+}
+
+export class SimpleSwap extends SimpleRouter {
+  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
+    super(dexAdapterService, adapters, SwapSide.SELL);
+  }
+}
+
+export class SimpleBuy extends SimpleRouter {
+  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
+    super(dexAdapterService, adapters, SwapSide.BUY);
   }
 }

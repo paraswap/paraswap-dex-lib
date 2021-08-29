@@ -37,16 +37,37 @@ type BalancerBatchSwapExactInParam = [
   srcAmount: string,
   destAmount: string,
 ];
+type BalancerBatchEthInSwapExactOutParam = [
+  swaps: BalancerSwaps,
+  destToken: string,
+];
+type BalancerBatchEthOutSwapExactOutParam = [
+  swaps: BalancerSwaps,
+  srcToken: string,
+  maxTotalAmountIn: string,
+];
+type BalancerBatchSwapExactOutParam = [
+  swaps: BalancerSwaps,
+  srcToken: string,
+  destToken: string,
+  maxTotalAmountIn: string,
+];
 
 type BalancerParam =
   | BalancerBatchEthInSwapExactInParam
   | BalancerBatchEthOutSwapExactInParam
-  | BalancerBatchSwapExactInParam;
+  | BalancerBatchSwapExactInParam
+  | BalancerBatchEthInSwapExactOutParam
+  | BalancerBatchEthOutSwapExactOutParam
+  | BalancerBatchSwapExactOutParam;
 
 enum BalancerFunctions {
   batchEthInSwapExactIn = 'batchEthInSwapExactIn',
   batchEthOutSwapExactIn = 'batchEthOutSwapExactIn',
   batchSwapExactIn = 'batchSwapExactIn',
+  batchEthInSwapExactOut = 'batchEthInSwapExactOut',
+  batchEthOutSwapExactOut = 'batchEthOutSwapExactOut',
+  batchSwapExactOut = 'batchSwapExactOut',
 }
 
 export class Balancer
@@ -106,31 +127,43 @@ export class Balancer
     data: BalancerData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: implement buy
-    if (side === SwapSide.BUY)
-      throw new Error('Balancer_getSimpleParam: Buy not implemented');
     const { swaps } = data;
 
     const [swapFunction, swapFunctionParam] = ((): [
       swapFunction: string,
       swapFunctionParam: BalancerParam,
     ] => {
-      if (isETHAddress(srcToken))
-        return [
-          BalancerFunctions.batchEthInSwapExactIn,
-          [swaps, destToken, destAmount],
-        ];
+      if (side === SwapSide.SELL) {
+        if (isETHAddress(srcToken))
+          return [
+            BalancerFunctions.batchEthInSwapExactIn,
+            [swaps, destToken, destAmount],
+          ];
 
-      if (isETHAddress(destToken))
-        return [
-          BalancerFunctions.batchEthOutSwapExactIn,
-          [swaps, srcToken, srcAmount, destAmount],
-        ];
+        if (isETHAddress(destToken))
+          return [
+            BalancerFunctions.batchEthOutSwapExactIn,
+            [swaps, srcToken, srcAmount, destAmount],
+          ];
 
-      return [
-        BalancerFunctions.batchSwapExactIn,
-        [swaps, srcToken, destToken, srcAmount, destAmount],
-      ];
+        return [
+          BalancerFunctions.batchSwapExactIn,
+          [swaps, srcToken, destToken, srcAmount, destAmount],
+        ];
+      } else {
+        if (isETHAddress(srcToken))
+          return [BalancerFunctions.batchEthInSwapExactOut, [swaps, destToken]];
+        if (isETHAddress(destToken))
+          return [
+            BalancerFunctions.batchEthOutSwapExactOut,
+            [swaps, srcToken, srcAmount],
+          ];
+
+        return [
+          BalancerFunctions.batchSwapExactOut,
+          [swaps, srcToken, destToken, srcAmount],
+        ];
+      }
     })();
 
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
