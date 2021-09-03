@@ -45,7 +45,7 @@ export class Weth
   extends SimpleExchange
   implements IDex<WData, any>, IWethDepositorWithdrawer
 {
-  static dexKeys = ['wmatic', 'weth', 'wbnb'];
+  static dexKeys = ['wmatic', 'weth', 'wbnb', 'wavax'];
   erc20Interface: Interface;
 
   constructor(
