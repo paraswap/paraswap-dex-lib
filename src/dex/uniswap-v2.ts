@@ -40,6 +40,7 @@ const UniswapV2AliasKeys = [
   'uniswapforkoptimized',
   'pangolin',
   'traderjoe',
+  'lydiafinance',
 ];
 
 type UniswapDataLegacy = {
