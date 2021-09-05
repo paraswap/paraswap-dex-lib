@@ -29,6 +29,8 @@ export class TransactionBuilder {
     partnerAddress,
     partnerFeePercent,
     gasPrice,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
     permit,
     deadline,
     uuid,
@@ -40,7 +42,9 @@ export class TransactionBuilder {
     userAddress: Address;
     partnerAddress: Address;
     partnerFeePercent: string;
-    gasPrice: string;
+    gasPrice?: string; // // @TODO: improve types? so that either gasPrice or ALL of max.*FeePerGas MUST be returned?
+    maxFeePerGas?: string;
+    maxPriorityFeePerGas?: string;
     permit?: string;
     deadline: string;
     uuid: string;
@@ -76,6 +80,8 @@ export class TransactionBuilder {
       value,
       data: encoder.apply(null, params),
       gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
     };
   }
 }
