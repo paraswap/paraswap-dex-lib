@@ -1,13 +1,13 @@
 import { IRouter } from './irouter';
 import { MultiSwap } from './multiswap';
 import { MegaSwap } from './megaswap';
-import { SimpleSwap } from './simpleswap';
+import { SimpleSwap, SimpleBuy } from './simpleswap';
 import { DirectSwap } from './directswap';
 import { Adapters } from '../types';
 import { DexAdapterService } from '../dex';
 
 export class RouterService {
-  hybridRouters = [MultiSwap, MegaSwap, SimpleSwap];
+  hybridRouters = [MultiSwap, MegaSwap, SimpleSwap, SimpleBuy];
   hybridRouterMap: {
     [contractMethod: string]: IRouter<any>;
   };

@@ -1,6 +1,6 @@
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { OptimalRate, Address, Adapters } from './types';
-import { ETHER_ADDRESS } from './constants';
+import { ETHER_ADDRESS, SwapSide } from './constants';
 import { RouterService } from './router';
 import { DexAdapterService } from './dex';
 
@@ -66,7 +66,11 @@ export class TransactionBuilder {
 
     const value = (
       priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()
-        ? BigInt(priceRoute.srcAmount) + BigInt(networkFee)
+        ? BigInt(
+            priceRoute.side === SwapSide.SELL
+              ? priceRoute.srcAmount
+              : minMaxAmount,
+          ) + BigInt(networkFee)
         : BigInt(networkFee)
     ).toString();
 

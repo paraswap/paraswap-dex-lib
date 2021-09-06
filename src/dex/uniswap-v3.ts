@@ -17,7 +17,8 @@ export type UniswapV3Data = {
   deadline?: number;
   sqrtPriceLimitX96?: NumberAsString;
 };
-type UniswapV3Param = {
+
+type UniswapV3SellParam = {
   tokenIn: Address;
   tokenOut: Address;
   fee: number;
@@ -27,8 +28,23 @@ type UniswapV3Param = {
   amountOutMinimum: NumberAsString;
   sqrtPriceLimitX96: NumberAsString;
 };
+
+type UniswapV3BuyParam = {
+  tokenIn: Address;
+  tokenOut: Address;
+  fee: number;
+  recipient: Address;
+  deadline: number;
+  amountOut: NumberAsString;
+  amountInMaximum: NumberAsString;
+  sqrtPriceLimitX96: NumberAsString;
+};
+
+type UniswapV3Param = UniswapV3SellParam | UniswapV3BuyParam;
+
 enum UniswapV3Functions {
   exactInputSingle = 'exactInputSingle',
+  exactOutputSingle = 'exactOutputSingle',
 }
 
 export class UniswapV3
@@ -89,17 +105,32 @@ export class UniswapV3
     data: UniswapV3Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction = UniswapV3Functions.exactInputSingle;
-    const swapFunctionParams: UniswapV3Param = {
-      tokenIn: srcToken,
-      tokenOut: destToken,
-      fee: data.fee,
-      recipient: this.augustusAddress,
-      deadline: data.deadline || this.getDeadline(),
-      amountIn: srcAmount,
-      amountOutMinimum: destAmount,
-      sqrtPriceLimitX96: data.sqrtPriceLimitX96 || '0',
-    };
+    const swapFunction =
+      side === SwapSide.SELL
+        ? UniswapV3Functions.exactInputSingle
+        : UniswapV3Functions.exactOutputSingle;
+    const swapFunctionParams: UniswapV3Param =
+      side === SwapSide.SELL
+        ? {
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            fee: data.fee,
+            recipient: this.augustusAddress,
+            deadline: data.deadline || this.getDeadline(),
+            amountIn: srcAmount,
+            amountOutMinimum: destAmount,
+            sqrtPriceLimitX96: data.sqrtPriceLimitX96 || '0',
+          }
+        : {
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            fee: data.fee,
+            recipient: this.augustusAddress,
+            deadline: data.deadline || this.getDeadline(),
+            amountOut: destAmount,
+            amountInMaximum: srcAmount,
+            sqrtPriceLimitX96: data.sqrtPriceLimitX96 || '0',
+          };
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,
       [swapFunctionParams],
