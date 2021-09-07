@@ -41,6 +41,13 @@ const UniswapV2AliasKeys = [
   'pangolin',
   'traderjoe',
   'lydiafinance',
+  'canary',
+  'baguette',
+  'complus',
+  'elk',
+  'olive',
+  'yetiswap',
+  'zero',
 ];
 
 type UniswapDataLegacy = {
