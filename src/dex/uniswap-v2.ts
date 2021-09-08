@@ -38,6 +38,7 @@ const UniswapV2AliasKeys = [
   'jetswap',
   'pantherswap',
   'uniswapforkoptimized',
+  'polycat',
   'pangolin',
   'traderjoe',
   'lydiafinance',
