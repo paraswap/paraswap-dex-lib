@@ -38,6 +38,16 @@ const UniswapV2AliasKeys = [
   'jetswap',
   'pantherswap',
   'uniswapforkoptimized',
+  'pangolin',
+  'traderjoe',
+  'lydiafinance',
+  'canary',
+  'baguette',
+  'complus',
+  'elk',
+  'olive',
+  'yetiswap',
+  'zero',
 ];
 
 type UniswapDataLegacy = {
