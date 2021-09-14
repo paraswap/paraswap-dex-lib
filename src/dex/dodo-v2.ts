@@ -11,11 +11,13 @@ import { isETHAddress } from '../utils';
 const DODOV2ProxyAddress: { [network: number]: Address } = {
   1: '0xa356867fdcea8e71aeaf87805808803806231fdc',
   56: '0x8F8Dd7DB1bDA5eD3da8C9daf3bfa471c12d58486',
+  137: '0xa222e6a71D1A1Dd5F279805fbe38d5329C1d0e70',
 };
 
 const DODOAproveAddress: { [network: number]: Address } = {
   1: '0xCB859eA579b28e02B87A1FDE08d087ab9dbE5149',
   56: '0xa128Ba44B2738A558A1fdC06d6303d52D3Cef8c1',
+  137: '0x6D310348d5c12009854DFCf72e0DF9027e8cb4f4',
 };
 
 export type DodoV2Data = {
