@@ -9,6 +9,7 @@ import { Weth } from './weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
+import { BalancerV2 } from './balancer-v2';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -46,6 +47,7 @@ const DexAdapters = [
   DodoV2,
   UniswapV3,
   Weth,
+  BalancerV2,
 ];
 
 interface IGetDirectFunctionName {
