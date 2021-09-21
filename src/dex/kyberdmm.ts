@@ -27,7 +27,7 @@ type KyberDmmParam = [
 
 enum KyberDMMFunctions {
   swapExactTokensForTokens = 'swapExactTokensForTokens',
-  swapExactTokensForETH = 'swapExactTokensForETH',
+  swapTokensForExactTokens = 'swapTokensForExactTokens',
 }
 
 export class KyberDmm
@@ -62,7 +62,7 @@ export class KyberDmm
           path: 'address[]',
         },
       },
-      { poolPath: [data.pools[0].address], path: data.path },
+      { poolPath: data.pools.map(p => p.address), path: data.path },
     );
     return {
       targetExchange: data.router,
@@ -82,7 +82,7 @@ export class KyberDmm
     const swapFunctionParams: KyberDmmParam = [
       srcAmount,
       destAmount,
-      [data.pools[0].address],
+      data.pools.map(p => p.address),
       data.path,
       this.augustusAddress,
       Number.MAX_SAFE_INTEGER.toString(),
