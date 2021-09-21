@@ -59,9 +59,10 @@ export class KyberDmm
       {
         ParentStruct: {
           poolPath: 'address[]',
+          path: 'address[]',
         },
       },
-      { poolPath: [data.pools[0].address] },
+      { poolPath: [data.pools[0].address], path: data.path },
     );
     return {
       targetExchange: data.router,
