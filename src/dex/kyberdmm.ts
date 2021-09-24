@@ -16,14 +16,25 @@ export type KyberDmmData = {
   }[];
   factory: Address;
 };
-type KyberDmmParam = [
+type KyberDmmSellParam = [
   srcAmount: string,
-  destToken: string,
+  destAmount: string,
   pools: string[],
   path: string[],
   to: string,
   deadline: string,
 ];
+
+type KyberDmmBuyParam = [
+  destAmount: string,
+  srcAmount: string,
+  pools: string[],
+  path: string[],
+  to: string,
+  deadline: string,
+];
+
+type KyberDmmParam = KyberDmmBuyParam | KyberDmmSellParam;
 
 enum KyberDMMFunctions {
   swapExactTokensForTokens = 'swapExactTokensForTokens',
