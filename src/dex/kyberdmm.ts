@@ -1,10 +1,10 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
+import KyberDmmABI from '../abi/kyberdmm.abi.json';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import KyberDmmABI from '../abi/kyberdmm.abi.json';
 
 export type KyberDmmData = {
   router: Address;
@@ -16,14 +16,25 @@ export type KyberDmmData = {
   }[];
   factory: Address;
 };
-type KyberDmmParam = [
+type KyberDmmSellParam = [
   srcAmount: string,
-  destToken: string,
+  destAmount: string,
   pools: string[],
   path: string[],
   to: string,
   deadline: string,
 ];
+
+type KyberDmmBuyParam = [
+  destAmount: string,
+  srcAmount: string,
+  pools: string[],
+  path: string[],
+  to: string,
+  deadline: string,
+];
+
+type KyberDmmParam = KyberDmmBuyParam | KyberDmmSellParam;
 
 enum KyberDMMFunctions {
   swapExactTokensForTokens = 'swapExactTokensForTokens',
@@ -79,16 +90,19 @@ export class KyberDmm
     data: KyberDmmData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    const isSell = side === SwapSide.SELL;
     const swapFunctionParams: KyberDmmParam = [
-      srcAmount,
-      destAmount,
+      isSell ? srcAmount : destAmount,
+      isSell ? destAmount : srcAmount,
       data.pools.map(p => p.address),
       data.path,
       this.augustusAddress,
       Number.MAX_SAFE_INTEGER.toString(),
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      KyberDMMFunctions.swapExactTokensForTokens,
+      isSell
+        ? KyberDMMFunctions.swapExactTokensForTokens
+        : KyberDMMFunctions.swapTokensForExactTokens,
       swapFunctionParams,
     );
 
