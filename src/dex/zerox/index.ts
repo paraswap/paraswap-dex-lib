@@ -33,6 +33,9 @@ const ZRX_EXCHANGE: any = {
     2: '0x3F93C3D9304a70c9104642AB8cD37b1E2a7c203A',
     4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
   },
+  137: {
+    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+  },
 };
 
 const ZRX_ABI: any = {
@@ -49,6 +52,9 @@ const ZRX_EXCHANGE_ERC20PROXY: any = {
   },
   56: {
     2: '0xCF21d4b7a265FF779accBA55Ace0F56C8cE6e379',
+    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+  },
+  137: {
     4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
   },
 };
