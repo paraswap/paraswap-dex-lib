@@ -7,6 +7,7 @@ import { SimpleExchange } from './simple-exchange';
 import AAVE_LENDING_POOL_ABI_V2 from '../abi/AaveV2_lending_pool.json';
 import WETH_GATEWAY_ABI_1 from '../abi/aave-weth-gateway.json';
 import WETH_GATEWAY_ABI_137 from '../abi/aave-weth-gateway-137.json';
+import WETH_GATEWAY_ABI_43114 from '../abi/aave-weth-gateway-43114.json';
 import { isETHAddress } from '../utils';
 
 export type AaveV2Data = {
@@ -51,16 +52,19 @@ enum AaveV2PoolAndWethFunctions {
 const aaveLendingPool: { [network: string]: string } = {
   1: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9',
   137: '0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf',
+  43114: '0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C',
 };
 
 const WETH_GATEWAY: any = {
   1: '0xDcD33426BA191383f1c9B431A342498fdac73488',
   137: '0xbEadf48d62aCC944a06EEaE0A9054A90E5A7dc97',
+  43114: '0x8a47F74d1eE0e2edEB4F3A7e64EF3bD8e11D27C8',
 };
 
 const WETH_GATEWAY_ABI: any = {
   1: WETH_GATEWAY_ABI_1,
   137: WETH_GATEWAY_ABI_137,
+  43114: WETH_GATEWAY_ABI_43114,
 };
 
 const REF_CODE = 1;
@@ -141,6 +145,13 @@ export class AaveV2
               AaveV2PoolAndWethFunctions.depositETH,
               [aaveLendingPool[this.network], this.augustusAddress, REF_CODE],
             ];
+          case 43114:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.depositETH,
+              [aaveLendingPool[this.network], this.augustusAddress, REF_CODE],
+            ];
           default:
             throw new Error(`Network ${this.network} not supported`);
         }
@@ -156,6 +167,13 @@ export class AaveV2
               [srcAmount, this.augustusAddress],
             ];
           case 137:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.withdrawETH,
+              [aaveLendingPool[this.network], srcAmount, this.augustusAddress],
+            ];
+          case 43114:
             return [
               this.wethGateway,
               WETH_GATEWAY[this.network],
