@@ -49,6 +49,7 @@ const UniswapV2AliasKeys = [
   'olive',
   'yetiswap',
   'zero',
+  'safeswap',
 ];
 
 type UniswapDataLegacy = {
