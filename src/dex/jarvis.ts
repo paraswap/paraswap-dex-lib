@@ -1,6 +1,6 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
@@ -96,10 +96,20 @@ export class Jarvis
       {
         ParentStruct: {
           opType: 'uint',
+          derivatives: 'address',
+          destDerivatives: 'address',
+          fee: 'uint128',
+          destPool: 'address',
+          expiration: 'uint128',
         },
       },
       {
         opType: type,
+        derivatives: data.derivatives,
+        destDerivatives: data.destDerivatives || NULL_ADDRESS,
+        fee: data.fee,
+        destPool: data.pools[1] || NULL_ADDRESS,
+        expiration: (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0),
       },
     );
 
