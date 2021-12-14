@@ -88,7 +88,7 @@ export class Jarvis
 
     if (type === undefined) {
       throw new Error(
-        `mStable: Invalid OpType ${method}, Should be one of ['mint', 'exchange', 'redeem']`,
+        `Jarvis: Invalid OpType ${method}, Should be one of ['mint', 'exchange', 'redeem']`,
       );
     }
 
