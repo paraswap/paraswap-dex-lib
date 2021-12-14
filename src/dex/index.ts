@@ -3,6 +3,7 @@ import { Address } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDex } from './idex';
+import { Jarvis } from './jarvis';
 import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
 import { UniswapV2 } from './uniswap-v2';
@@ -50,6 +51,7 @@ const DexAdapters = [
   Weth,
   BalancerV2,
   KyberDmm,
+  Jarvis,
 ];
 
 interface IGetDirectFunctionName {
