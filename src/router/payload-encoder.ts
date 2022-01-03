@@ -127,13 +127,16 @@ export class PayloadEncoder {
     if (!swapExchanges.length) return {};
 
     const adapterPoints: { [adapter: string]: number } = {};
-    swapExchanges.forEach(se =>
-      this.adapters[se.exchange.toLowerCase()].forEach(a => {
+    swapExchanges.forEach(se => {
+      const adapters = this.adapters[se.exchange.toLowerCase()];
+      if (!adapters.length)
+        throw new Error(`No adapter found for ${se.exchange}`);
+      adapters.forEach(a => {
         const adapter = a.adapter.toLowerCase();
         if (!(adapter in adapterPoints)) adapterPoints[adapter] = 0;
         adapterPoints[adapter] += 1;
-      }),
-    );
+      });
+    });
 
     const bestAdapter = Object.keys(adapterPoints).reduce((a, b) =>
       adapterPoints[a] > adapterPoints[b] ? a : b,
