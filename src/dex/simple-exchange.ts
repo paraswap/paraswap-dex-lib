@@ -19,7 +19,6 @@ export class SimpleExchange {
     private provider: JsonRpcProvider,
   ) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
-    // The contract address is set to null address as the token address is not known upfront
     this.erc20Interface = new Interface(ERC20ABI);
     this.abiCoder = Web3Abi as unknown as AbiCoder;
   }
