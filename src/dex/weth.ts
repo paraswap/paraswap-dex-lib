@@ -1,10 +1,8 @@
-import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import ERC20 from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
 
 export const WETHAddresses: any = {
@@ -46,7 +44,6 @@ export class Weth
   implements IDex<WData, any>, IWethDepositorWithdrawer
 {
   static dexKeys = ['wmatic', 'weth', 'wbnb', 'wavax'];
-  erc20Interface: Interface;
 
   constructor(
     augustusAddress: Address,
@@ -54,7 +51,6 @@ export class Weth
     provider: JsonRpcProvider,
   ) {
     super(augustusAddress, provider);
-    this.erc20Interface = new Interface(ERC20 as JsonFragment[]);
   }
 
   static getAddress(network: number = 1): Address {

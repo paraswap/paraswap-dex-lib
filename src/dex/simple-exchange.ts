@@ -1,6 +1,5 @@
 import { Interface } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { Contract } from '@ethersproject/contracts';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { ETHER_ADDRESS } from '../constants';
@@ -12,7 +11,7 @@ import { MAX_UINT, NULL_ADDRESS } from '../constants';
 export class SimpleExchange {
   simpleSwapHelper: Interface;
   protected abiCoder: AbiCoder;
-  private erc20: Contract;
+  erc20Interface: Interface;
   needWrapNative = false;
 
   constructor(
@@ -21,7 +20,7 @@ export class SimpleExchange {
   ) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     // The contract address is set to null address as the token address is not known upfront
-    this.erc20 = new Contract(NULL_ADDRESS, ERC20ABI, provider);
+    this.erc20Interface = new Interface(ERC20ABI);
     this.abiCoder = Web3Abi as unknown as AbiCoder;
   }
 
@@ -32,10 +31,17 @@ export class SimpleExchange {
   ): Promise<boolean> {
     if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
 
-    const tokenContract = this.erc20.attach(token);
-    const allowance = await tokenContract.functions.allowance(
+    const allowanceData = this.erc20Interface.encodeFunctionData('allowance', [
       this.augustusAddress,
       target,
+    ]);
+    const allowanceRaw = await this.provider.call({
+      to: token,
+      data: allowanceData,
+    });
+    const allowance = this.erc20Interface.decodeFunctionResult(
+      'allowance',
+      allowanceRaw,
     );
     return BigInt(allowance.toString()) >= BigInt(amount);
   }

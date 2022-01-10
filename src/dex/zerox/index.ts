@@ -2,7 +2,6 @@ import { AbiEncoder } from '@0x/utils';
 import { Interface } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 
-import ERC20ABI from '../../abi/erc20.json';
 import IParaswapAbi from '../../abi/IParaswap.json';
 import ZRX_V2_ABI from '../../abi/zrx.v2.json';
 import ZRX_V3_ABI from '../../abi/zrx.v3.json';
@@ -95,7 +94,6 @@ export class ZeroX
 {
   static dexKeys = ['zerox'];
   routerInterface: Interface;
-  erc20Interface: Interface;
   needWrapNative = true;
 
   constructor(
@@ -105,7 +103,6 @@ export class ZeroX
   ) {
     super(augustusAddress, provider);
     this.routerInterface = new Interface(IParaswapAbi);
-    this.erc20Interface = new Interface(ERC20ABI);
   }
 
   private getExchange(data: ZeroXData) {

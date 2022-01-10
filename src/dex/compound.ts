@@ -5,7 +5,6 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import Ceth from '../abi/Compound_CETH.json'; // CETH abi
-import Erc20 from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
 
 export type CompoundData = {
@@ -23,7 +22,6 @@ export class Compound
 {
   static dexKeys = ['compound'];
   cethInterface: Interface;
-  erc20Interface: Interface;
 
   constructor(
     augustusAddress: Address,
@@ -32,7 +30,6 @@ export class Compound
   ) {
     super(augustusAddress, provider);
     this.cethInterface = new Interface(Ceth as JsonFragment[]);
-    this.erc20Interface = new Interface(Erc20 as JsonFragment[]);
   }
 
   getAdapterParam(
