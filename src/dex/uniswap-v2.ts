@@ -50,6 +50,7 @@ const UniswapV2AliasKeys = [
   'yetiswap',
   'zero',
   'thorus',
+  'safeswap',
 ];
 
 type UniswapDataLegacy = {

@@ -9,6 +9,7 @@ import { NumberAsString } from 'paraswap-core';
 
 const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
   1: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+  137: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
 };
 
 export type UniswapV3Data = {
