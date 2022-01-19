@@ -12,6 +12,7 @@ export const WETHAddresses: any = {
   42: '0xd0a1e359811322d97991e03f863a0c30c2cf029c',
   56: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
   137: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
+  250: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
   43114: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
 };
 
@@ -43,7 +44,7 @@ export class Weth
   extends SimpleExchange
   implements IDex<WData, any>, IWethDepositorWithdrawer
 {
-  static dexKeys = ['wmatic', 'weth', 'wbnb', 'wavax'];
+  static dexKeys = ['wmatic', 'weth', 'wbnb', 'wavax', 'wftm'];
 
   constructor(
     augustusAddress: Address,
