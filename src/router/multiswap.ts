@@ -18,6 +18,7 @@ export class MultiSwap
   extends PayloadEncoder
   implements IRouter<MultiSwapParam>
 {
+  static isBuy = false;
   paraswapInterface: Interface;
   contractMethodName: string;
 

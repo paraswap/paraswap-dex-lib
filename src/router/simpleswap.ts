@@ -245,12 +245,14 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
 }
 
 export class SimpleSwap extends SimpleRouter {
+  static isBuy = false;
   constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
     super(dexAdapterService, adapters, SwapSide.SELL);
   }
 }
 
 export class SimpleBuy extends SimpleRouter {
+  static isBuy = true;
   constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
     super(dexAdapterService, adapters, SwapSide.BUY);
   }

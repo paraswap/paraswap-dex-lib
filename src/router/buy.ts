@@ -15,6 +15,7 @@ import { uuidToBytes16 } from '../utils';
 type BuyParam = [ContractBuyData];
 
 export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
+  static isBuy = true;
   paraswapInterface: Interface;
   contractMethodName: string;
 
