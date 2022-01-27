@@ -41,12 +41,13 @@ export type ContractMegaSwapSellData = {
 };
 
 export type ContractBuyData = {
+  adapter: string;
   fromToken: string;
   toToken: string;
   fromAmount: string;
   toAmount: string;
   beneficiary: string;
-  adapters: ContractBuyAdapter[];
+  route: ContractRoute[];
   partner: string;
   feePercent: string;
   permit: string;
