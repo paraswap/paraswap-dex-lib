@@ -55,6 +55,8 @@ const UniswapV2AliasKeys = [
   'spookyswap',
   'spiritswap',
   'paintswap',
+  'knightswap',
+  'morpheusswap',
 ];
 
 type UniswapDataLegacy = {
