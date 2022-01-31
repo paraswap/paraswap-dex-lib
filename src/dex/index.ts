@@ -25,6 +25,7 @@ import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Kyber } from './kyber';
+import { WAMPL } from './wampl';
 
 const DexAdapters = [
   UniswapV2,
@@ -52,6 +53,7 @@ const DexAdapters = [
   BalancerV2,
   KyberDmm,
   Jarvis,
+  WAMPL,
 ];
 
 interface IGetDirectFunctionName {
