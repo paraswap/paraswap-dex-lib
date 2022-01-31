@@ -54,6 +54,7 @@ const UniswapV2AliasKeys = [
   'cheeseswap',
   'spookyswap',
   'spiritswap',
+  'paintswap',
   'knightswap',
   'morpheusswap',
 ];
