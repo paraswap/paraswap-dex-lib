@@ -67,16 +67,15 @@ export class BalancerV2
 {
   static dexKeys = ['balancerv2'];
   vaultInterface: Interface;
-  vaultAddress: string;
 
   constructor(
     augustusAddress: Address,
     public network: number,
     provider: JsonRpcProvider,
+    protected vaultAddress = VaultAddress[network],
   ) {
     super(augustusAddress, provider);
     this.vaultInterface = new Interface(BalancerV2Abi as JsonFragment[]);
-    this.vaultAddress = VaultAddress[network];
   }
 
   getAdapterParam(

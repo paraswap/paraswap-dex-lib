@@ -12,6 +12,7 @@ import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
 import { BalancerV2 } from './balancer-v2';
+import { BeetsFi } from './beetsfi';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -52,6 +53,7 @@ const DexAdapters = [
   BalancerV2,
   KyberDmm,
   Jarvis,
+  BeetsFi,
 ];
 
 interface IGetDirectFunctionName {
