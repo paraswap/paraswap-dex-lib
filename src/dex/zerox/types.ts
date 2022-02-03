@@ -1,3 +1,5 @@
+import { NumberAsString } from '../../types';
+
 export enum OrderStatus {
   INVALID, // Default value
   INVALID_MAKER_ASSET_AMOUNT, // Order does not have a valid maker asset amount
@@ -8,20 +10,22 @@ export enum OrderStatus {
   CANCELLED, // Order has been cancelled
 }
 
+type Value = NumberAsString | number;
+
 export interface ZeroXSignedOrderV2 {
   senderAddress: string;
   makerAddress: string;
   takerAddress: string;
-  makerFee: BigInt;
-  takerFee: BigInt;
-  makerAssetAmount: BigInt;
-  takerAssetAmount: BigInt;
+  makerFee: Value;
+  takerFee: Value;
+  makerAssetAmount: Value;
+  takerAssetAmount: Value;
   makerAssetData: string;
   takerAssetData: string;
-  salt: BigInt;
+  salt: Value;
   exchangeAddress: string;
   feeRecipientAddress: string;
-  expirationTimeSeconds: BigInt;
+  expirationTimeSeconds: Value;
   makerFeeAssetData: string;
   takerFeeAssetData: string;
   signature: string;
@@ -30,14 +34,14 @@ export interface ZeroXSignedOrderV2 {
 export interface ZeroXSignedOrderV4 {
   makerToken: string;
   takerToken: string;
-  makerAmount: BigInt;
-  takerAmount: BigInt;
+  makerAmount: Value;
+  takerAmount: Value;
   maker: string;
   taker: string;
   txOrigin: string;
   pool: string;
-  expiry: BigInt;
-  salt: BigInt;
+  expiry: Value;
+  salt: Value;
   signature: any; // TODO: fix type
 }
 
