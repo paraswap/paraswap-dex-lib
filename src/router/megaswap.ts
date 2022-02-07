@@ -15,6 +15,7 @@ import { uuidToBytes16 } from '../utils';
 type MegaSwapParam = [ContractMegaSwapSellData];
 
 export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
+  static isBuy = false;
   paraswapInterface: Interface;
   contractMethodName: string;
 

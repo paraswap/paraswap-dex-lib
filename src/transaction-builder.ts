@@ -12,14 +12,19 @@ export class TransactionBuilder {
     augustusAddress: Address,
     protected network: number,
     private provider: StaticJsonRpcProvider,
-    adapters: Adapters,
+    adapters: Adapters = {},
+    buyAdapters: Adapters = {},
   ) {
     this.dexAdapterService = new DexAdapterService(
       augustusAddress,
       this.provider,
       network,
     );
-    this.routerService = new RouterService(this.dexAdapterService, adapters);
+    this.routerService = new RouterService(
+      this.dexAdapterService,
+      adapters,
+      buyAdapters,
+    );
   }
 
   public async build({
