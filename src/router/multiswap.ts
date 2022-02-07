@@ -1,5 +1,5 @@
 import { IRouter } from './irouter';
-import { PayloadEncoder } from './payload-encoder';
+import { PayloadEncoder, encodeFeePercent } from './payload-encoder';
 import {
   Address,
   OptimalRate,
@@ -37,6 +37,7 @@ export class MultiSwap
     userAddress: Address,
     partnerAddress: Address,
     partnerFeePercent: string,
+    positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -58,7 +59,7 @@ export class MultiSwap
       beneficiary,
       path: paths,
       partner: partnerAddress,
-      feePercent: partnerFeePercent,
+      feePercent: encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),
