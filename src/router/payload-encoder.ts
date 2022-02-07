@@ -1,4 +1,5 @@
 import {
+  ContractRoute,
   ContractPath,
   ContractAdapter,
   OptimalSwap,
@@ -80,6 +81,47 @@ export class PayloadEncoder {
     return { megaSwapPaths, networkFee: totalNetworkFee };
   }
 
+  getAdapterAndRouteForBuy(
+    srcToken: Address,
+    destToken: Address,
+    swapExchanges: OptimalSwapExchange<any>[],
+    maxAmount: string,
+    totalSrcAmount: string,
+  ): { adapter: Address; route: ContractRoute[]; networkFee: bigint } {
+    const exchangeAdapterMap = this.getOptimalExchangeAdapterMap(
+      swapExchanges,
+      SwapSide.BUY,
+    );
+    let adapter = '';
+    let networkFee = BigInt(0);
+    let route: ContractRoute[] = [];
+    swapExchanges.forEach((se: OptimalSwapExchange<any>) => {
+      const [adapterAddress, index] =
+        exchangeAdapterMap[se.exchange.toLowerCase()];
+      adapter = adapterAddress; //Will be the same for all exchanges for BUY
+      const adapterParam = this.dexAdapterService
+        .getDexByKey(se.exchange)
+        .getAdapterParam(
+          srcToken,
+          destToken,
+          (
+            (BigInt(se.srcAmount) * BigInt(maxAmount)) /
+            BigInt(totalSrcAmount)
+          ).toString(),
+          se.destAmount,
+          se.data,
+          SwapSide.BUY,
+        );
+      networkFee += BigInt(adapterParam.networkFee);
+      route.push({
+        ...adapterParam,
+        index,
+        percent: (se.percent * 100).toFixed(0),
+      });
+    });
+    return { adapter, route, networkFee };
+  }
+
   getAdapters(
     srcToken: Address,
     destToken: Address,
@@ -137,8 +179,11 @@ export class PayloadEncoder {
 
   // Find the best adapter, assign exhanges that use best adapter, filter out the
   // exchanges that were not assigned with the best adapter, recursively call
-  // getOptimalExchangeAdapterMap until swapExchanges is empty
-  getOptimalExchangeAdapterMap(swapExchanges: OptimalSwapExchange<any>[]): {
+  // getOptimalExchangeAdapterMap until swapExchanges is empty (except for BUY)
+  getOptimalExchangeAdapterMap(
+    swapExchanges: OptimalSwapExchange<any>[],
+    side: SwapSide = SwapSide.SELL,
+  ): {
     [exchange: string]: [Address, number];
   } {
     if (!swapExchanges.length) return {};
@@ -175,6 +220,8 @@ export class PayloadEncoder {
           adapterConfig.index,
         ];
       } else {
+        if (side === SwapSide.BUY)
+          throw new Error('No adapter found containing all exchanges');
         leftSwapExchange.push(se);
       }
     });

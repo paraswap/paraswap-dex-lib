@@ -1,13 +1,14 @@
 import { IRouter } from './irouter';
 import { MultiSwap } from './multiswap';
 import { MegaSwap } from './megaswap';
+import { Buy } from './buy';
 import { SimpleSwap, SimpleBuy } from './simpleswap';
 import { DirectSwap } from './directswap';
 import { Adapters } from '../types';
 import { DexAdapterService } from '../dex';
 
 export class RouterService {
-  hybridRouters = [MultiSwap, MegaSwap, SimpleSwap, SimpleBuy];
+  hybridRouters = [MultiSwap, MegaSwap, SimpleSwap, SimpleBuy, Buy];
   hybridRouterMap: {
     [contractMethod: string]: IRouter<any>;
   };
@@ -15,12 +16,16 @@ export class RouterService {
 
   constructor(
     private dexAdapterService: DexAdapterService,
-    private adapters: Adapters,
+    adapters: Adapters,
+    buyAdapters: Adapters,
   ) {
     this.hybridRouterMap = this.hybridRouters.reduce<{
       [contractMethod: string]: IRouter<any>;
     }>((acc, Router) => {
-      const router = new Router(this.dexAdapterService, this.adapters);
+      const router = new Router(
+        this.dexAdapterService,
+        Router.isBuy ? buyAdapters : adapters,
+      );
       acc[router.getContractMethodName().toLowerCase()] = router;
       return acc;
     }, {});

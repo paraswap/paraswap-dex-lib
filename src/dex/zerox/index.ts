@@ -20,7 +20,11 @@ import type {
   SimpleExchangeParam,
   TxInfo,
 } from '../../types';
-import type { ZeroXSignedOrder, ZeroXSignedOrderV2 } from './types';
+import type {
+  ZeroXSignedOrder,
+  ZeroXSignedOrderV2,
+  ZeroXSignedOrderV4,
+} from './types';
 
 const ZRX_EXCHANGE: any = {
   1: {
@@ -211,6 +215,42 @@ export class ZeroX
     data: ZeroXData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    if (side === SwapSide.BUY) {
+      // Adjust the srcAmount according to the exact order price (rounding up)
+      if (data.version === 4) {
+        const order = data.order as ZeroXSignedOrderV4;
+        if (BigInt(destAmount) > BigInt(order.makerAmount)) {
+          throw new Error(
+            `ZeroX destAmount ${destAmount} > makerAmount ${order.makerAmount}`,
+          );
+        }
+        const calc =
+          (BigInt(destAmount) * BigInt(order.takerAmount) +
+            BigInt(order.makerAmount) -
+            BigInt(1)) /
+          BigInt(order.makerAmount);
+        if (calc > BigInt(srcAmount)) {
+          throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
+        }
+        srcAmount = calc.toString();
+      } else {
+        const order = data.order as ZeroXSignedOrderV2;
+        if (BigInt(destAmount) > BigInt(order.makerAssetAmount)) {
+          throw new Error(
+            `ZeroX destAmount ${destAmount} > makerAmount ${order.makerAssetAmount}`,
+          );
+        }
+        const calc =
+          (BigInt(destAmount) * BigInt(order.takerAssetAmount) +
+            BigInt(order.makerAssetAmount) -
+            BigInt(1)) /
+          BigInt(order.makerAssetAmount);
+        if (calc > BigInt(srcAmount)) {
+          throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
+        }
+        srcAmount = calc.toString();
+      }
+    }
     const swapData = this.buildSimpleSwapData(data, srcAmount);
     const networkFees = '0';
 
