@@ -62,7 +62,7 @@ export class TransactionBuilder {
         userAddress,
         partnerAddress,
         partnerFeePercent,
-        positiveSlippageToUser || true,
+        positiveSlippageToUser ?? true,
         _beneficiary,
         permit || '0x',
         deadline,
