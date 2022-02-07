@@ -20,11 +20,11 @@ export function encodeFeePercent(
   if (fee > 10000) throw new Error('fee bps should be less than 10000');
 
   // Set 14th bit if positiveSlippageToUser is true
-  if (positiveSlippageToUser) fee = fee | (BigInt(1) << BigInt(14));
+  if (positiveSlippageToUser) fee |= BigInt(1) << BigInt(14);
 
   // Bits 248 - 255 is used for version;
   // Set version = 1;
-  fee = fee | (BigInt(1) << BigInt(248));
+  fee |= BigInt(1) << BigInt(248);
 
   return fee.toString();
 }
