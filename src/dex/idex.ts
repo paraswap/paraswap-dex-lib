@@ -73,16 +73,19 @@ export interface IDexPricing<ExchangeData> {
     to: Token,
     amounts: bigint[],
     side: SwapSide,
-    includePools: string[], // list of pool identifiers
+    // list of pool identifiers to use for pricing, if undefined use all pools
+    limitPools?: string[],
   ): Promise<ExchangePrices<ExchangeData> | null>;
 
-  startListening?(): AsyncOrSync<void>;
+  initialize?(): AsyncOrSync<void>;
 
-  getAdapters(): { adapter: Address; index: number }[];
+  getAdapters(): { adapterName: string; index: number }[];
 }
 
 export interface IDexPooltracker {
-  updatePoolState(): AsyncOrSync<void>;
+  // This is called once before getTopXPoolsForToken is called for multiple tokens
+  // This can be helpful to update common state required for calculating getTopXPoolsForToken
+  updatePoolState?(): AsyncOrSync<void>;
 
   getTopXPoolsForToken(token: Token, cnt: number): AsyncOrSync<PoolLiquidity[]>;
 }
@@ -101,5 +104,5 @@ export interface DexContructor<ExchangeData, DirectParam> {
     dexKey: string,
   ): IDexComplete<ExchangeData, DirectParam>;
 
-  dexKeysWithNetwork: [string, number][];
+  dexKeysWithNetwork: { dexKey: string; networks: number[] }[];
 }
