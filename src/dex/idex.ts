@@ -87,7 +87,10 @@ export interface IDexPooltracker {
   // This can be helpful to update common state required for calculating getTopXPoolsForToken
   updatePoolState?(): AsyncOrSync<void>;
 
-  getTopXPoolsForToken(token: Token, cnt: number): AsyncOrSync<PoolLiquidity[]>;
+  getTopPoolsForToken(
+    token: Token,
+    count: number,
+  ): AsyncOrSync<PoolLiquidity[]>;
 }
 
 // TODO: refactor the name to IDex
