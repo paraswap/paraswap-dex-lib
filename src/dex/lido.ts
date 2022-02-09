@@ -4,6 +4,7 @@ import { NumberAsString, SwapSide } from 'paraswap-core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDex } from './idex';
 import stETHAbi from '../abi/stETH.json';
+import { NULL_ADDRESS } from '../constants';
 
 export const stETH: any = {
   1: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -54,6 +55,7 @@ export class Lido implements IDex<LidoData, any> {
   ): Promise<SimpleExchangeParam> {
     const swapData = this.stETHInterface.encodeFunctionData(
       stETHFunctions.submit,
+      [NULL_ADDRESS],
     );
 
     return {
