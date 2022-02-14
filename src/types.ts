@@ -1,6 +1,7 @@
 import { SwapSide } from './constants';
 import { Address } from 'paraswap-core';
-
+import { BlockHeader } from 'web3-eth';
+export { BlockHeader } from 'web3-eth';
 export {
   Address,
   NumberAsString,
@@ -11,6 +12,11 @@ export {
   OptionalRate,
   OptimalRate,
 } from 'paraswap-core';
+import { Logger } from 'log4js';
+export { Logger } from 'log4js';
+
+// Check: Should the logger be replaced with Logger Interface
+export type LoggerConstructor = (name?: string) => Logger;
 
 export type ContractSellData = {
   fromToken: string;
@@ -164,4 +170,26 @@ export type PoolLiquidity = {
   address: Address;
   connectorTokens: Token[];
   liquidityUSD: number;
+};
+
+// TODO: put this in the paraswap-core
+export interface Log {
+  address: string;
+  data: string;
+  topics: string[];
+  logIndex: number;
+  transactionIndex: number;
+  transactionHash: string;
+  blockHash: string;
+  blockNumber: number;
+
+  // The following are not declared in web3-core, but still appear in logs
+  removed?: boolean;
+  id?: string;
+}
+
+export type DexConfigMap<DexParams> = {
+  [dexKey: string]: {
+    [network: number]: DexParams;
+  };
 };

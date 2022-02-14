@@ -11,8 +11,7 @@ import { Weth } from './weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
-import { BalancerV2 } from './balancer-v2';
-import { BeetsFi } from './beetsfi';
+import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -27,7 +26,7 @@ import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Kyber } from './kyber';
 
-const DexAdapters = [
+const TxBuildableDEXes = [
   UniswapV2,
   Curve,
   CurveV2,
@@ -50,11 +49,17 @@ const DexAdapters = [
   DodoV2,
   UniswapV3,
   Weth,
-  BalancerV2,
   KyberDmm,
   Jarvis,
-  BeetsFi,
 ];
+
+const DEXes = [BalancerV2];
+
+export type LegacyDexConstructor = new (
+  augustusAddress: Address,
+  network: number,
+  provider: JsonRpcProvider,
+) => IDex<any, any>;
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];
@@ -62,11 +67,7 @@ interface IGetDirectFunctionName {
 
 export class DexAdapterService {
   dexToKeyMap: {
-    [key: string]: new (
-      augustusAddress: Address,
-      network: number,
-      provider: JsonRpcProvider,
-    ) => IDex<any, any>;
+    [key: string]: LegacyDexConstructor;
   };
   directFunctionsNames: string[];
   dexInstances: { [key: string]: IDex<any, any> } = {};
@@ -75,12 +76,8 @@ export class DexAdapterService {
     private provider: JsonRpcProvider,
     private network: number,
   ) {
-    this.dexToKeyMap = DexAdapters.reduce<{
-      [exchangeName: string]: new (
-        augustusAddress: Address,
-        network: number,
-        provider: JsonRpcProvider,
-      ) => IDex<any, any>;
+    this.dexToKeyMap = TxBuildableDEXes.reduce<{
+      [exchangeName: string]: LegacyDexConstructor;
     }>((acc, DexAdapter) => {
       DexAdapter.dexKeys.forEach(exchangeName => {
         acc[exchangeName.toLowerCase()] = DexAdapter;
@@ -89,7 +86,7 @@ export class DexAdapterService {
       return acc;
     }, {});
 
-    this.directFunctionsNames = DexAdapters.flatMap(dexAdapter => {
+    this.directFunctionsNames = TxBuildableDEXes.flatMap(dexAdapter => {
       const _dexAdapter = dexAdapter as IGetDirectFunctionName;
       return _dexAdapter.getDirectFunctionName
         ? _dexAdapter.getDirectFunctionName()

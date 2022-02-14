@@ -1,4 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
+import { JsonRpcProvider } from '@ethersproject/providers';
 import {
   Address,
   SimpleExchangeParam,
@@ -9,8 +10,8 @@ import {
   ExchangePrices,
   PoolLiquidity,
 } from '../types';
-import { SwapSide } from '../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { SwapSide, Network } from '../constants';
+import { IDexHelper } from '../dex-helper/idex-helper';
 
 // TODO: refactor the name to IDexTxBuilder
 export interface IDex<ExchangeData, DirectParam> {
@@ -60,12 +61,13 @@ export interface IDexPricing<ExchangeData> {
   // wrapping/ unwrapping like weth, lending pools, etc
   // or has a pool where arbitarily large amounts has
   // constant price.
-  hasConstantPriceLargeAmounts(): boolean;
+  readonly hasConstantPriceLargeAmounts: boolean;
 
   getPoolIdentifiers(
     from: Token,
     to: Token,
     side: SwapSide,
+    blockNumber: number,
   ): AsyncOrSync<string[]>;
 
   getPricesVolume(
@@ -73,13 +75,14 @@ export interface IDexPricing<ExchangeData> {
     to: Token,
     amounts: bigint[],
     side: SwapSide,
+    blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
   ): Promise<ExchangePrices<ExchangeData> | null>;
 
-  initialize?(): AsyncOrSync<void>;
+  initialize?(blockNumber: number): AsyncOrSync<void>;
 
-  getAdapters(): { adapterName: string; index: number }[];
+  getAdapters(): { name: string; index: number }[];
 }
 
 export interface IDexPooltracker {
@@ -94,18 +97,19 @@ export interface IDexPooltracker {
 }
 
 // TODO: refactor the name to IDex
-export interface IDexComplete<ExchangeData, DirectParam>
-  extends IDex<ExchangeData, DirectParam>,
+export interface IDexComplete<
+  ExchangeData,
+  DirectParam,
+  OptimizedExchangeData = ExchangeData,
+> extends IDex<OptimizedExchangeData, DirectParam>,
     IDexPricing<ExchangeData>,
     IDexPooltracker {}
 
 export interface DexContructor<ExchangeData, DirectParam> {
-  new (
-    augustusAddress: Address,
-    network: number,
-    provider: JsonRpcProvider,
-    dexKey: string,
-  ): IDexComplete<ExchangeData, DirectParam>;
+  new (network: Network, dexKey: string, dexHelper: IDexHelper): IDexComplete<
+    ExchangeData,
+    DirectParam
+  >;
 
-  dexKeysWithNetwork: { dexKey: string; networks: number[] }[];
+  dexKeysWithNetwork: { key: string; networks: Network[] }[];
 }
