@@ -7,7 +7,7 @@ import {
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
 import { isETHAddress } from '../utils';
@@ -30,7 +30,7 @@ enum CurveSwapFunctions {
 
 export class CurveV2
   extends SimpleExchange
-  implements IDex<CurveV2Data, CurveV2Param>
+  implements IDexTxBuilder<CurveV2Data, CurveV2Param>
 {
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;

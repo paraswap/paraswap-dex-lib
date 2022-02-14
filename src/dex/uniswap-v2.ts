@@ -1,6 +1,6 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import {
   Address,
   NumberAsString,
@@ -142,7 +142,7 @@ function encodePools(pools: UniswapPool[]): NumberAsString[] {
 
 export class UniswapV2
   extends SimpleExchange
-  implements IDex<UniswapData, UniswapParam>
+  implements IDexTxBuilder<UniswapData, UniswapParam>
 {
   routerInterface: Interface;
   exchangeRouterInterface: Interface;

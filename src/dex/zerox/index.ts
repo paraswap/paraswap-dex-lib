@@ -12,7 +12,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { Weth } from '../weth';
 import { ZeroXOrder } from './order';
 
-import type { IDex } from '../idex';
+import type { IDexTxBuilder } from '../idex';
 import type {
   AdapterExchangeParam,
   Address,
@@ -94,7 +94,7 @@ type ZeroXParam = SwapOnZeroXParam | BuyOnZeroXParam;
 
 export class ZeroX
   extends SimpleExchange
-  implements IDex<ZeroXData, ZeroXParam>
+  implements IDexTxBuilder<ZeroXData, ZeroXParam>
 {
   static dexKeys = ['zerox'];
   routerInterface: Interface;

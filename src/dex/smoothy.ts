@@ -7,7 +7,7 @@ import {
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import SmoothyABI from '../abi/Smoothy.json';
 
@@ -30,7 +30,7 @@ enum SmoothyFunctions {
 
 export class Smoothy
   extends SimpleExchange
-  implements IDex<SmoothyData, SmoothyParam>
+  implements IDexTxBuilder<SmoothyData, SmoothyParam>
 {
   static dexKeys = ['smoothy'];
   exchangeRouterInterface: Interface;

@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import OneInchLpABI from '../abi/OneInchLp.json';
 import { isETHAddress } from '../utils';
@@ -23,7 +23,7 @@ enum OneInchLpFunctions {
 
 export class OneInchLp
   extends SimpleExchange
-  implements IDex<OneInchLpData, OneInchLpParam>
+  implements IDexTxBuilder<OneInchLpData, OneInchLpParam>
 {
   static dexKeys = ['oneinchlp'];
   exchangeRouterInterface: Interface;

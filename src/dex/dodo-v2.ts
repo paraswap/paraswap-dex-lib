@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide, MAX_UINT } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from 'paraswap-core';
@@ -59,7 +59,7 @@ enum DodoV2Functions {
 
 export class DodoV2
   extends SimpleExchange
-  implements IDex<DodoV2Data, DodoV2Param>
+  implements IDexTxBuilder<DodoV2Data, DodoV2Param>
 {
   static dexKeys = ['dodov2'];
   exchangeRouterInterface: Interface;

@@ -13,8 +13,7 @@ import {
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
 
-// TODO: refactor the name to IDexTxBuilder
-export interface IDex<ExchangeData, DirectParam> {
+export interface IDexTxBuilder<ExchangeData, DirectParam> {
   needWrapNative: boolean;
 
   getNetworkFee?(
@@ -97,16 +96,16 @@ export interface IDexPooltracker {
 }
 
 // TODO: refactor the name to IDex
-export interface IDexComplete<
+export interface IDex<
   ExchangeData,
   DirectParam,
   OptimizedExchangeData = ExchangeData,
-> extends IDex<OptimizedExchangeData, DirectParam>,
+> extends IDexTxBuilder<OptimizedExchangeData, DirectParam>,
     IDexPricing<ExchangeData>,
     IDexPooltracker {}
 
 export interface DexContructor<ExchangeData, DirectParam> {
-  new (network: Network, dexKey: string, dexHelper: IDexHelper): IDexComplete<
+  new (network: Network, dexKey: string, dexHelper: IDexHelper): IDex<
     ExchangeData,
     DirectParam
   >;

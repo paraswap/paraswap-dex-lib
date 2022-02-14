@@ -7,7 +7,7 @@ import {
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveABI from '../abi/Curve.json';
 
@@ -34,7 +34,7 @@ export enum CurveSwapFunctions {
 
 export class Curve
   extends SimpleExchange
-  implements IDex<CurveData, CurveParam>
+  implements IDexTxBuilder<CurveData, CurveParam>
 {
   static dexKeys = [
     'curve',

@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import AAVE_LENDING_POOL_ABI_V2 from '../abi/AaveV2_lending_pool.json';
 import WETH_GATEWAY_ABI_1 from '../abi/aave-weth-gateway.json';
@@ -71,7 +71,7 @@ const REF_CODE = 1;
 
 export class AaveV2
   extends SimpleExchange
-  implements IDex<AaveV2Data, AaveV2Param>
+  implements IDexTxBuilder<AaveV2Data, AaveV2Param>
 {
   static dexKeys = ['aave2'];
   aavePool: Interface;

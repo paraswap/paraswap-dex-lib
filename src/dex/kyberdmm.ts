@@ -3,7 +3,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import KyberDmmABI from '../abi/kyberdmm.abi.json';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 
 export type KyberDmmData = {
@@ -43,7 +43,7 @@ enum KyberDMMFunctions {
 
 export class KyberDmm
   extends SimpleExchange
-  implements IDex<KyberDmmData, KyberDmmParam>
+  implements IDexTxBuilder<KyberDmmData, KyberDmmParam>
 {
   static dexKeys = ['kyberdmm'];
   exchangeRouterInterface: Interface;

@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Address } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { Jarvis } from './jarvis';
 import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
@@ -59,7 +59,7 @@ export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
   provider: JsonRpcProvider,
-) => IDex<any, any>;
+) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];
@@ -70,7 +70,7 @@ export class DexAdapterService {
     [key: string]: LegacyDexConstructor;
   };
   directFunctionsNames: string[];
-  dexInstances: { [key: string]: IDex<any, any> } = {};
+  dexInstances: { [key: string]: IDexTxBuilder<any, any> } = {};
   constructor(
     private augustusAddress: string,
     private provider: JsonRpcProvider,
@@ -96,7 +96,7 @@ export class DexAdapterService {
       .map(v => v.toLowerCase());
   }
 
-  getDexByKey(dexKey: string): IDex<any, any> {
+  getDexByKey(dexKey: string): IDexTxBuilder<any, any> {
     let _dexKey = dexKey.toLowerCase();
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';

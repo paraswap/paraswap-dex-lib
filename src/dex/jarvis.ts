@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import JarvisABI from '../abi/Jarvis.json';
 
@@ -56,7 +56,7 @@ enum JarvisFunctions {
 
 export class Jarvis
   extends SimpleExchange
-  implements IDex<JarvisData, JarvisParam>
+  implements IDexTxBuilder<JarvisData, JarvisParam>
 {
   static dexKeys = ['jarvis'];
   poolInterface: Interface;

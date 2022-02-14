@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import OnebitABI from '../abi/Onebit.json';
 
@@ -22,7 +22,7 @@ enum OnebitFunctions {
 
 export class Onebit
   extends SimpleExchange
-  implements IDex<OnebitData, OnebitParam>
+  implements IDexTxBuilder<OnebitData, OnebitParam>
 {
   static dexKeys = ['omm1'];
   exchangeRouterInterface: Interface;

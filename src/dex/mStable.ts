@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import MStableAssetABI from '../abi/MStableAsset.json';
 
@@ -40,7 +40,7 @@ type MStableParam = MStableMint | MStableSwap | MStableRedeem;
 
 export class MStable
   extends SimpleExchange
-  implements IDex<MStableData, MStableParam>
+  implements IDexTxBuilder<MStableData, MStableParam>
 {
   static dexKeys = ['mStable'];
   mStableAsset: Interface;

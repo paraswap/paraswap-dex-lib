@@ -1,7 +1,7 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import { isETHAddress } from '../utils';
 
@@ -42,7 +42,7 @@ export type WData = {};
 
 export class Weth
   extends SimpleExchange
-  implements IDex<WData, any>, IWethDepositorWithdrawer
+  implements IDexTxBuilder<WData, any>, IWethDepositorWithdrawer
 {
   static dexKeys = ['wmatic', 'weth', 'wbnb', 'wavax', 'wftm'];
 

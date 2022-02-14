@@ -27,7 +27,7 @@ import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork } from '../../utils';
-import { IDexComplete } from '../../dex/idex';
+import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   TokenState,
@@ -501,8 +501,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements
-    IDexComplete<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
 {
   protected eventPools: BalancerV2EventPool;
 
