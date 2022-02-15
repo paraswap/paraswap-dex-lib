@@ -104,10 +104,15 @@ export interface IDex<
     IDexPricing<ExchangeData>,
     IDexPooltracker {}
 
-export interface DexContructor<ExchangeData, DirectParam> {
+export interface DexContructor<
+  ExchangeData,
+  DirectParam,
+  OptimizedExchangeData = DirectParam,
+> {
   new (network: Network, dexKey: string, dexHelper: IDexHelper): IDex<
     ExchangeData,
-    DirectParam
+    DirectParam,
+    OptimizedExchangeData
   >;
 
   dexKeysWithNetwork: { key: string; networks: Network[] }[];

@@ -63,7 +63,7 @@ const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
 
 const BalancerConfig: DexConfigMap<DexParams> = {
-  balancerv2: {
+  ['BalancerV2']: {
     [Network.MAINNET]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
@@ -75,7 +75,7 @@ const BalancerConfig: DexConfigMap<DexParams> = {
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
   },
-  beetsfi: {
+  ['BeetsFi']: {
     [Network.FANTOM]: {
       subgraphURL:
         'https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx',
@@ -512,7 +512,7 @@ export class BalancerV2
 
   logger: Logger;
 
-  protected constructor(
+  constructor(
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,

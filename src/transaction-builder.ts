@@ -1,25 +1,20 @@
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { OptimalRate, Address, Adapters } from './types';
 import { ETHER_ADDRESS, SwapSide } from './constants';
 import { RouterService } from './router';
 import { DexAdapterService } from './dex';
+import { IDexHelper } from './dex-helper/idex-helper';
 
 export class TransactionBuilder {
   routerService: RouterService;
   dexAdapterService: DexAdapterService;
 
   constructor(
-    augustusAddress: Address,
     protected network: number,
-    private provider: StaticJsonRpcProvider,
+    protected dexHelper: IDexHelper,
     adapters: Adapters = {},
     buyAdapters: Adapters = {},
   ) {
-    this.dexAdapterService = new DexAdapterService(
-      augustusAddress,
-      this.provider,
-      network,
-    );
+    this.dexAdapterService = new DexAdapterService(dexHelper, network);
     this.routerService = new RouterService(
       this.dexAdapterService,
       adapters,

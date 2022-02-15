@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Address } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { IDexTxBuilder } from './idex';
+import { IDexTxBuilder, DexContructor, IDex } from './idex';
 import { Jarvis } from './jarvis';
 import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
@@ -25,8 +25,9 @@ import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Kyber } from './kyber';
+import { IDexHelper } from '../dex-helper/idex-helper';
 
-const TxBuildableDEXes = [
+const LegacyDexes = [
   UniswapV2,
   Curve,
   CurveV2,
@@ -53,7 +54,7 @@ const TxBuildableDEXes = [
   Jarvis,
 ];
 
-const DEXes = [BalancerV2];
+const Dexes = [BalancerV2];
 
 export type LegacyDexConstructor = new (
   augustusAddress: Address,
@@ -67,55 +68,104 @@ interface IGetDirectFunctionName {
 
 export class DexAdapterService {
   dexToKeyMap: {
-    [key: string]: LegacyDexConstructor;
-  };
+    [key: string]: LegacyDexConstructor | DexContructor<any, any, any>;
+  } = {};
   directFunctionsNames: string[];
-  dexInstances: { [key: string]: IDexTxBuilder<any, any> } = {};
-  constructor(
-    private augustusAddress: string,
-    private provider: JsonRpcProvider,
-    private network: number,
-  ) {
-    this.dexToKeyMap = TxBuildableDEXes.reduce<{
-      [exchangeName: string]: LegacyDexConstructor;
-    }>((acc, DexAdapter) => {
-      DexAdapter.dexKeys.forEach(exchangeName => {
-        acc[exchangeName.toLowerCase()] = DexAdapter;
+  txBuilderDexInstances: { [key: string]: IDexTxBuilder<any, any> } = {};
+  isLegacy: { [dexKey: string]: boolean } = {};
+  // dexKeys only has keys for non legacy dexes
+  dexKeys: string[] = [];
+
+  constructor(private dexHelper: IDexHelper, private network: number) {
+    LegacyDexes.forEach(DexAdapter => {
+      DexAdapter.dexKeys.forEach(key => {
+        this.dexToKeyMap[key.toLowerCase()] = DexAdapter;
+        this.isLegacy[key.toLowerCase()] = true;
       });
+    });
 
-      return acc;
-    }, {});
+    Dexes.forEach(DexAdapter => {
+      DexAdapter.dexKeysWithNetwork.forEach(({ key, networks }) => {
+        if (networks.includes(network)) {
+          this.dexToKeyMap[key.toLowerCase()] = DexAdapter;
+          this.isLegacy[key.toLowerCase()] = false;
+          this.dexKeys.push(key);
+        }
+      });
+    });
 
-    this.directFunctionsNames = TxBuildableDEXes.flatMap(dexAdapter => {
-      const _dexAdapter = dexAdapter as IGetDirectFunctionName;
-      return _dexAdapter.getDirectFunctionName
-        ? _dexAdapter.getDirectFunctionName()
-        : [];
-    })
+    this.directFunctionsNames = [...LegacyDexes, ...Dexes]
+      .flatMap(dexAdapter => {
+        const _dexAdapter = dexAdapter as IGetDirectFunctionName;
+        return _dexAdapter.getDirectFunctionName
+          ? _dexAdapter.getDirectFunctionName()
+          : [];
+      })
       .filter(x => !!x)
       .map(v => v.toLowerCase());
   }
 
-  getDexByKey(dexKey: string): IDexTxBuilder<any, any> {
+  getTxBuilderDexByKey(dexKey: string): IDexTxBuilder<any, any> {
     let _dexKey = dexKey.toLowerCase();
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if (this.dexInstances[_dexKey]) return this.dexInstances[_dexKey];
+    if (this.txBuilderDexInstances[_dexKey])
+      return this.txBuilderDexInstances[_dexKey];
 
     const DexAdapter = this.dexToKeyMap[_dexKey];
     if (!DexAdapter) throw new Error(`${dexKey} dex is not supported!`);
 
-    this.dexInstances[_dexKey] = new DexAdapter(
-      this.augustusAddress,
-      this.network,
-      this.provider,
-    );
+    if (this.isLegacy[dexKey]) {
+      this.txBuilderDexInstances[_dexKey] =
+        new (DexAdapter as LegacyDexConstructor)(
+          this.dexHelper.augustusAddress,
+          this.network,
+          this.dexHelper.provider,
+        );
+    } else {
+      this.txBuilderDexInstances[_dexKey] = new (DexAdapter as DexContructor<
+        any,
+        any,
+        any
+      >)(this.network, _dexKey, this.dexHelper);
+    }
 
-    return this.dexInstances[_dexKey];
+    return this.txBuilderDexInstances[_dexKey];
   }
 
   isDirectFunctionName(functionName: string): boolean {
     return this.directFunctionsNames.includes(functionName.toLowerCase());
+  }
+
+  getAllDexKeys() {
+    return this.dexKeys;
+  }
+
+  getDexes(dexKeys: string[]): { [dexKey: string]: IDex<any, any, any> } {
+    return dexKeys.reduce(
+      (acc: { [dexKey: string]: IDex<any, any, any> }, key) => {
+        const _key = key.toLowerCase();
+        if (!(_key in this.isLegacy) || this.isLegacy[_key])
+          throw new Error('Invalid Dex Key');
+
+        if (!this.txBuilderDexInstances[_key]) {
+          const DexAdapter = this.dexToKeyMap[_key] as DexContructor<
+            any,
+            any,
+            any
+          >;
+          this.txBuilderDexInstances[_key] = new DexAdapter(
+            this.network,
+            _key,
+            this.dexHelper,
+          );
+        }
+
+        acc[_key] = this.txBuilderDexInstances[_key] as IDex<any, any, any>;
+        return acc;
+      },
+      {},
+    );
   }
 }

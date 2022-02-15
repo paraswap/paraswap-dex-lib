@@ -85,7 +85,7 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
 
     const rawSimpleParams = await Promise.all(
       swap.swapExchanges.map(async se => {
-        const dex = this.dexAdapterService.getDexByKey(se.exchange);
+        const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
         let _src = swap.srcToken;
         let wethDeposit = BigInt(0);
         let _dest = swap.destToken;
@@ -231,7 +231,7 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
     return (
-      this.dexAdapterService.getDexByKey(
+      this.dexAdapterService.getTxBuilderDexByKey(
         'weth',
       ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
