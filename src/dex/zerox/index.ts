@@ -65,6 +65,8 @@ const ZRX_EXCHANGE_ERC20PROXY: any = {
 enum ZeroXFunctions {
   swapOnZeroXv2 = 'swapOnZeroXv2',
   swapOnZeroXv4 = 'swapOnZeroXv4',
+  swapOnZeroXv2WithPermit = 'swapOnZeroXv2WithPermit',
+  swapOnZeroXv4WithPermit = 'swapOnZeroXv4WithPermit',
 }
 
 type ZeroXData = {
@@ -80,17 +82,17 @@ type SwapOnZeroXParam = [
   exchange: Address,
   payload: string,
 ];
-
-type BuyOnZeroXParam = [
+type SwapOnZeroXWithPermitParam = [
   srcToken: Address,
   destToken: Address,
   srcAmount: NumberAsString,
   destAmount: NumberAsString,
   exchange: Address,
   payload: string,
+  permit: string,
 ];
 
-type ZeroXParam = SwapOnZeroXParam | BuyOnZeroXParam;
+type ZeroXParam = SwapOnZeroXParam | SwapOnZeroXWithPermitParam;
 
 export class ZeroX
   extends SimpleExchange
@@ -273,17 +275,23 @@ export class ZeroX
     destAmount: NumberAsString,
     data: ZeroXData,
     side: SwapSide,
+    permit: string,
   ): TxInfo<ZeroXParam> {
+    const usePermit = permit !== '0x';
     const encoder = (...params: ZeroXParam) => {
       switch (data.version) {
         case 2:
           return this.routerInterface.encodeFunctionData(
-            ZeroXFunctions.swapOnZeroXv2,
+            usePermit
+              ? ZeroXFunctions.swapOnZeroXv2WithPermit
+              : ZeroXFunctions.swapOnZeroXv2,
             params,
           );
         case 4:
           return this.routerInterface.encodeFunctionData(
-            ZeroXFunctions.swapOnZeroXv4,
+            usePermit
+              ? ZeroXFunctions.swapOnZeroXv4WithPermit
+              : ZeroXFunctions.swapOnZeroXv4,
             params,
           );
         default:
@@ -291,14 +299,24 @@ export class ZeroX
       }
     };
     return {
-      params: [
-        srcToken,
-        destToken,
-        srcAmount,
-        destAmount,
-        this.getExchange(data),
-        this.buildPayload(data),
-      ],
+      params: usePermit
+        ? [
+            srcToken,
+            destToken,
+            srcAmount,
+            destAmount,
+            this.getExchange(data),
+            this.buildPayload(data),
+            permit,
+          ]
+        : [
+            srcToken,
+            destToken,
+            srcAmount,
+            destAmount,
+            this.getExchange(data),
+            this.buildPayload(data),
+          ],
       encoder,
       networkFee: '0',
     };
