@@ -543,7 +543,7 @@ export class BalancerV2
     );
   }
 
-  async initialize(blockNumber: number) {
+  async initializePricing(blockNumber: number) {
     await this.setupEventPools(blockNumber);
   }
 
@@ -561,7 +561,8 @@ export class BalancerV2
       .slice(0, 10);
   }
 
-  getAdapters(): { name: string; index: number }[] {
+  getAdapters(side: SwapSide): { name: string; index: number }[] {
+    if (side === SwapSide.BUY) return [];
     return this.adapters;
   }
 

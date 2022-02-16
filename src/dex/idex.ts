@@ -67,7 +67,7 @@ export interface IDexPricing<ExchangeData> {
     to: Token,
     side: SwapSide,
     blockNumber: number,
-  ): AsyncOrSync<string[]>;
+  ): Promise<string[]>;
 
   getPricesVolume(
     from: Token,
@@ -79,9 +79,9 @@ export interface IDexPricing<ExchangeData> {
     limitPools?: string[],
   ): Promise<ExchangePrices<ExchangeData> | null>;
 
-  initialize?(blockNumber: number): AsyncOrSync<void>;
+  initializePricing?(blockNumber: number): AsyncOrSync<void>;
 
-  getAdapters(): { name: string; index: number }[];
+  getAdapters(side: SwapSide): { name: string; index: number }[];
 }
 
 export interface IDexPooltracker {

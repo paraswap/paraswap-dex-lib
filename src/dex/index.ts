@@ -71,12 +71,14 @@ export class DexAdapterService {
     [key: string]: LegacyDexConstructor | DexContructor<any, any, any>;
   } = {};
   directFunctionsNames: string[];
-  txBuilderDexInstances: { [key: string]: IDexTxBuilder<any, any> } = {};
+  dexInstances: {
+    [key: string]: IDexTxBuilder<any, any> | IDex<any, any, any>;
+  } = {};
   isLegacy: { [dexKey: string]: boolean } = {};
   // dexKeys only has keys for non legacy dexes
   dexKeys: string[] = [];
 
-  constructor(private dexHelper: IDexHelper, private network: number) {
+  constructor(private dexHelper: IDexHelper, public network: number) {
     LegacyDexes.forEach(DexAdapter => {
       DexAdapter.dexKeys.forEach(key => {
         this.dexToKeyMap[key.toLowerCase()] = DexAdapter;
@@ -110,28 +112,26 @@ export class DexAdapterService {
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if (this.txBuilderDexInstances[_dexKey])
-      return this.txBuilderDexInstances[_dexKey];
+    if (this.dexInstances[_dexKey]) return this.dexInstances[_dexKey];
 
     const DexAdapter = this.dexToKeyMap[_dexKey];
     if (!DexAdapter) throw new Error(`${dexKey} dex is not supported!`);
 
     if (this.isLegacy[dexKey]) {
-      this.txBuilderDexInstances[_dexKey] =
-        new (DexAdapter as LegacyDexConstructor)(
-          this.dexHelper.augustusAddress,
-          this.network,
-          this.dexHelper.provider,
-        );
+      this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
+        this.dexHelper.augustusAddress,
+        this.network,
+        this.dexHelper.provider,
+      );
     } else {
-      this.txBuilderDexInstances[_dexKey] = new (DexAdapter as DexContructor<
+      this.dexInstances[_dexKey] = new (DexAdapter as DexContructor<
         any,
         any,
         any
       >)(this.network, _dexKey, this.dexHelper);
     }
 
-    return this.txBuilderDexInstances[_dexKey];
+    return this.dexInstances[_dexKey];
   }
 
   isDirectFunctionName(functionName: string): boolean {
@@ -142,30 +142,20 @@ export class DexAdapterService {
     return this.dexKeys;
   }
 
-  getDexes(dexKeys: string[]): { [dexKey: string]: IDex<any, any, any> } {
-    return dexKeys.reduce(
-      (acc: { [dexKey: string]: IDex<any, any, any> }, key) => {
-        const _key = key.toLowerCase();
-        if (!(_key in this.isLegacy) || this.isLegacy[_key])
-          throw new Error('Invalid Dex Key');
+  getDexByKey(key: string): IDex<any, any, any> {
+    const _key = key.toLowerCase();
+    if (!(_key in this.isLegacy) || this.isLegacy[_key])
+      throw new Error('Invalid Dex Key');
 
-        if (!this.txBuilderDexInstances[_key]) {
-          const DexAdapter = this.dexToKeyMap[_key] as DexContructor<
-            any,
-            any,
-            any
-          >;
-          this.txBuilderDexInstances[_key] = new DexAdapter(
-            this.network,
-            _key,
-            this.dexHelper,
-          );
-        }
+    if (!this.dexInstances[_key]) {
+      const DexAdapter = this.dexToKeyMap[_key] as DexContructor<any, any, any>;
+      this.dexInstances[_key] = new DexAdapter(
+        this.network,
+        _key,
+        this.dexHelper,
+      );
+    }
 
-        acc[_key] = this.txBuilderDexInstances[_key] as IDex<any, any, any>;
-        return acc;
-      },
-      {},
-    );
+    return this.dexInstances[_key] as IDex<any, any, any>;
   }
 }
