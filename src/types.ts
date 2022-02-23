@@ -143,17 +143,14 @@ export type SimpleExchangeParam = {
 // TODO: fix the type
 export type ContractMethodEncoder = (...args: any[]) => any;
 
-// TODO: put this in the paraswap-core
 export type Token = {
   address: string;
   decimals: number;
   symbol?: string;
 };
 
-// TODO: put this in the paraswap-core
 export type ExchangePrices<T> = PoolPrices<T>[];
 
-// TODO: put this in the paraswap-core
 export type PoolPrices<T> = {
   prices: bigint[];
   unit: bigint;
@@ -164,7 +161,6 @@ export type PoolPrices<T> = {
   poolAddresses?: Array<Address>;
 };
 
-// TODO: put this in the paraswap-core
 export type PoolLiquidity = {
   exchange: string;
   address: Address;
@@ -172,7 +168,6 @@ export type PoolLiquidity = {
   liquidityUSD: number;
 };
 
-// TODO: put this in the paraswap-core
 export interface Log {
   address: string;
   data: string;
