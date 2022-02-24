@@ -62,7 +62,7 @@ const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
 
-const BalancerConfig: DexConfigMap<DexParams> = {
+export const BalancerConfig: DexConfigMap<DexParams> = {
   BalancerV2: {
     [Network.MAINNET]: {
       subgraphURL:
