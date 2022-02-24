@@ -59,11 +59,11 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     filterConstantPricePool: boolean = false,
-  ): Promise<(string[] | undefined)[]> {
+  ): Promise<(string[] | null)[]> {
     return await Promise.all(
       dexKeys.map(key => {
         try {
-          return new Promise<string[] | undefined>((resolve, reject) => {
+          return new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
               () => reject(new Error(`Timout`)),
               FETCH_POOL_INDENTIFIER_TIMEOUT,
@@ -74,7 +74,7 @@ export class PricingHelper {
               filterConstantPricePool &&
               dexInstace.hasConstantPriceLargeAmounts
             )
-              return undefined;
+              return null;
 
             dexInstace
               .getPoolIdentifiers(from, to, side, blockNumber)
@@ -98,14 +98,14 @@ export class PricingHelper {
     side: SwapSide,
     blockNumber: number,
     dexKeys: string[],
-    limitPoolsMap: { [key: string]: string[] | undefined },
+    limitPoolsMap: { [key: string]: string[] | null } | null,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
       dexKeys.map(key => {
         try {
-          const limitPools = limitPoolsMap[key];
+          const limitPools = limitPoolsMap ? limitPoolsMap[key] : null;
 
-          if (limitPools && !!limitPools.length) return [];
+          if (limitPools && !limitPools.length) return [];
 
           return new Promise<PoolPrices<any>[] | null>((resolve, reject) => {
             const timer = setTimeout(
@@ -116,7 +116,14 @@ export class PricingHelper {
             const dexInstace = this.dexAdapterService.getDexByKey(key);
 
             dexInstace
-              .getPricesVolume(from, to, amounts, side, blockNumber, limitPools)
+              .getPricesVolume(
+                from,
+                to,
+                amounts,
+                side,
+                blockNumber,
+                limitPools ? limitPools : undefined,
+              )
               .then(resolve, reject)
               .finally(() => {
                 clearTimeout(timer);
