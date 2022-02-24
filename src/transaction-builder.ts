@@ -6,16 +6,8 @@ import { DexAdapterService } from './dex';
 export class TransactionBuilder {
   routerService: RouterService;
 
-  constructor(
-    protected dexAdapterService: DexAdapterService,
-    adapters: Adapters = {},
-    buyAdapters: Adapters = {},
-  ) {
-    this.routerService = new RouterService(
-      this.dexAdapterService,
-      adapters,
-      buyAdapters,
-    );
+  constructor(protected dexAdapterService: DexAdapterService) {
+    this.routerService = new RouterService(this.dexAdapterService);
   }
 
   public async build({
