@@ -81,7 +81,7 @@ export interface IDexPricing<ExchangeData> {
 
   initializePricing?(blockNumber: number): AsyncOrSync<void>;
 
-  getAdapters(side: SwapSide): { name: string; index: number }[];
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null;
 }
 
 export interface IDexPooltracker {

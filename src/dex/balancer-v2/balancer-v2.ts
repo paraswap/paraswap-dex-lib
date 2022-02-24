@@ -562,8 +562,8 @@ export class BalancerV2
       .slice(0, 10);
   }
 
-  getAdapters(side: SwapSide): { name: string; index: number }[] {
-    if (side === SwapSide.BUY) return [];
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
+    if (side === SwapSide.BUY) return null;
     return this.adapters;
   }
 

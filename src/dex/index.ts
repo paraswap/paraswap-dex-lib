@@ -139,18 +139,20 @@ export class DexAdapterService {
           const sellAdapters = (
             this.dexInstances[_key] as IDex<any, any, any>
           ).getAdapters(SwapSide.SELL);
-          this.sellAdapters[_key] = sellAdapters.map(({ name, index }) => ({
-            adapter: AdapterNameAddressMap[network][name],
-            index,
-          }));
+          if (sellAdapters)
+            this.sellAdapters[_key] = sellAdapters.map(({ name, index }) => ({
+              adapter: AdapterNameAddressMap[network][name],
+              index,
+            }));
 
           const buyAdapters = (
             this.dexInstances[_key] as IDex<any, any, any>
-          ).getAdapters(SwapSide.SELL);
-          this.buyAdapters[_key] = buyAdapters.map(({ name, index }) => ({
-            adapter: AdapterNameAddressMap[network][name],
-            index,
-          }));
+          ).getAdapters(SwapSide.BUY);
+          if (buyAdapters)
+            this.buyAdapters[_key] = buyAdapters.map(({ name, index }) => ({
+              adapter: AdapterNameAddressMap[network][name],
+              index,
+            }));
         }
       });
     });
