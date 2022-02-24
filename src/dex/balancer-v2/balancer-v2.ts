@@ -63,7 +63,7 @@ const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
 
 const BalancerConfig: DexConfigMap<DexParams> = {
-  ['BalancerV2']: {
+  BalancerV2: {
     [Network.MAINNET]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
@@ -75,7 +75,7 @@ const BalancerConfig: DexConfigMap<DexParams> = {
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
   },
-  ['BeetsFi']: {
+  BeetsFi: {
     [Network.FANTOM]: {
       subgraphURL:
         'https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx',
@@ -210,9 +210,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const variables = {
       count: MAX_POOL_CNT,
     };
-    const {
-      data: { data },
-    } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       { query: fetchAllPools, variables },
       subgraphTimeout,
@@ -418,9 +416,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       })
       .flat();
 
-    const data = await this.dexHelper.multiContract.aggregate(multiCallData, {
-      blockTag: blockNumber,
-    });
+    const data = await this.dexHelper.multiContract.callStatic.aggregate(
+      multiCallData,
+      {
+        blockTag: blockNumber,
+      },
+    );
 
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
@@ -599,9 +600,10 @@ export class BalancerV2
       const allPools = this.getPools(_from, _to);
       const allowedPools = limitPools
         ? allPools.filter(({ address }) =>
-            limitPools.includes(address.toLowerCase()),
+            limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
           )
         : allPools;
+
       if (!allowedPools.length) return null;
 
       const unitVolume = BigInt(
@@ -831,9 +833,7 @@ export class BalancerV2
         }
       }
     }`;
-    const {
-      data: { data },
-    } = await this.dexHelper.httpRequest.post(this.subgraphURL, {
+    const { data } = await this.dexHelper.httpRequest.post(this.subgraphURL, {
       query,
       variables,
     });

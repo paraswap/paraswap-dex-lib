@@ -151,7 +151,7 @@ export class DexAdapterService {
       const DexAdapter = this.dexToKeyMap[_key] as DexContructor<any, any, any>;
       this.dexInstances[_key] = new DexAdapter(
         this.network,
-        _key,
+        key,
         this.dexHelper,
       );
     }

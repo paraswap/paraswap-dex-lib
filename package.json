@@ -38,7 +38,7 @@
     "lodash": "4.17.21",
     "log4js": "6.3.0",
     "ts-essentials": "9.1.2",
-    "web3-eth": "1.7.0",
+    "web3-eth": "1.6.0",
     "web3-eth-abi": "1.4.0"
   },
   "sideEffects": false

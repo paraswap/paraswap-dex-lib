@@ -9,6 +9,7 @@ export {
   ICache,
   IBlockManager,
   IRequestWrapper,
+  EventSubscriber,
 } from './dex-helper';
 
 export { StatefulEventSubscriber } from './stateful-event-subscriber';
@@ -21,4 +22,5 @@ export {
   Token,
   LoggerConstructor,
   Logger,
+  BlockHeader,
 } from './types';
