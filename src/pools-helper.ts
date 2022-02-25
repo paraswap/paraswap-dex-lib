@@ -1,4 +1,10 @@
-import { LoggerConstructor, PoolLiquidity, Logger, Token } from './types';
+import {
+  LoggerConstructor,
+  PoolLiquidity,
+  Logger,
+  Token,
+  Address,
+} from './types';
 import { DexAdapterService } from './dex';
 
 export class PoolsHelper {
@@ -16,13 +22,13 @@ export class PoolsHelper {
   }
 
   private async getTopPoolsDex(
-    token: Token,
+    tokenAddress: Address,
     dexKey: string,
     count: number,
   ): Promise<PoolLiquidity[]> {
     try {
       const dex = this.dexAdapterService.getDexByKey(dexKey);
-      return dex.getTopPoolsForToken(token, count);
+      return dex.getTopPoolsForToken(tokenAddress, count);
     } catch (e) {
       this.logger.error(`getTopPools_${dexKey}`, e);
       return [];
@@ -30,13 +36,13 @@ export class PoolsHelper {
   }
 
   public async getTopPools(
-    token: Token,
+    tokenAddress: Address,
     dexKeys: string[],
     countPerDex: number,
   ): Promise<PoolLiquidity[]> {
     return (
       await Promise.all(
-        dexKeys.map(key => this.getTopPoolsDex(token, key, countPerDex)),
+        dexKeys.map(key => this.getTopPoolsDex(tokenAddress, key, countPerDex)),
       )
     ).flat();
   }

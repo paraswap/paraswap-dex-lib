@@ -90,7 +90,7 @@ export interface IDexPooltracker {
   updatePoolState?(): AsyncOrSync<void>;
 
   getTopPoolsForToken(
-    token: Token,
+    tokenAddress: Address,
     count: number,
   ): AsyncOrSync<PoolLiquidity[]>;
 }

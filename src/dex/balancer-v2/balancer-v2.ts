@@ -812,11 +812,11 @@ export class BalancerV2
   }
 
   async getTopPoolsForToken(
-    token: Token,
+    tokenAddress: Address,
     count: number,
   ): Promise<PoolLiquidity[]> {
     const variables = {
-      tokens: [token.address],
+      tokens: [tokenAddress],
       count,
     };
 
@@ -851,7 +851,7 @@ export class BalancerV2
           acc: Token[],
           { decimals, address }: { decimals: number; address: string },
         ) => {
-          if (address.toLowerCase() != token.address.toLowerCase())
+          if (address.toLowerCase() != tokenAddress.toLowerCase())
             acc.push({ decimals, address: address.toLowerCase() });
           return acc;
         },
