@@ -81,9 +81,10 @@ export type UniswapV2Data = {
 };
 
 export type DexParams = {
-  subgraphURL: string;
+  subgraphURL?: string;
   factoryAddress: Address;
   initCode: string;
   poolGasCost?: number;
   feeCode: number;
+  router?: Address;
 };

@@ -26,7 +26,7 @@ import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Kyber } from './kyber';
 import { IDexHelper } from '../dex-helper/idex-helper';
-import { SwapSide } from '../constants';
+import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 
 const LegacyDexes = [
@@ -61,29 +61,29 @@ const Dexes = [BalancerV2];
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
 } = {
-  1: {
+  [Network.MAINNET]: {
     Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
     Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
     Adapter03: '0xe6A36F977844EB6AE1609686682698D20e4B0C26',
     BuyAdapter: '0x4bF27594E968b8CAccA75985469211eb35e2C771',
   },
-  137: {
+  [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
     PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
   },
-  56: {
+  [Network.BSC]: {
     BscAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
     BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
   },
-  3: {
+  [Network.ROPSTEN]: {
     RopstenAdapter01: '0xcECD5055D08dc8846440e654525ba13f77C2D5F6',
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
-  43114: {
+  [Network.AVALANCHE]: {
     AvalancheAdapter01: '0x749015EFfb59fcB9B826d854F3cA5c5C2F192147',
     AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
-  250: {
+  [Network.FANTOM]: {
     FantomAdapter01: '0xCBaeB06C2dF373c07A2Dc205266EC3bCd525DfB6',
     FantomBuyAdapter: '0x3032B8c9CF91C791A8EcC2c7831A11279f419386',
   },
