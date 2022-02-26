@@ -1,3 +1,4 @@
+import { Address } from './types';
 export { SwapSide } from 'paraswap-core';
 
 export const ETHER_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
@@ -29,3 +30,12 @@ export enum Network {
   ZK_SYNC_MAINNET = 271,
   ZK_SYNC_ROPSTEN = 273,
 }
+
+export const MULTI_V2: { [network: number]: Address } = {
+  [Network.MAINNET]: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
+  [Network.ROPSTEN]: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
+  [Network.BSC]: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
+  [Network.POLYGON]: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
+  [Network.AVALANCHE]: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
+  [Network.FANTOM]: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
+};

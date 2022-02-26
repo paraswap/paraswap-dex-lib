@@ -11,10 +11,12 @@
     "access": "public"
   },
   "devDependencies": {
+    "@types/axios": "0.14.0",
     "@types/jest": "26.0.24",
     "@types/lodash": "4.14.178",
-    "axios": "^0.21.1",
+    "axios": "0.26.0",
     "change-case": "^4.1.2",
+    "dotenv": "16.0.0",
     "husky": "7.0.1",
     "jest": "26.6.0",
     "paraswap-core": "1.0.2",
