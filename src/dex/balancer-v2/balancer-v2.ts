@@ -10,7 +10,6 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
-  DexConfigMap,
 } from '../../types';
 import {
   SwapSide,
@@ -44,6 +43,7 @@ import {
   DexParams,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
+import { BalancerConfig } from './config';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment"]}) {
@@ -61,28 +61,6 @@ const subgraphTimeout = 1000 * 10;
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
-
-export const BalancerConfig: DexConfigMap<DexParams> = {
-  BalancerV2: {
-    [Network.MAINNET]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
-      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-    },
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2',
-      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-    },
-  },
-  BeetsFi: {
-    [Network.FANTOM]: {
-      subgraphURL:
-        'https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx',
-      vaultAddress: '0x20dd72ed959b6147912c2e529f0a0c651c33c9ce',
-    },
-  },
-};
 
 const Adapters: { [chainId: number]: { name: string; index: number }[] } = {
   [Network.MAINNET]: [
