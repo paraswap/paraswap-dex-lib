@@ -13,6 +13,26 @@ import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
 
+const OneShift14 = BigInt(1) << BigInt(14);
+const OneShift248 = BigInt(1) << BigInt(248);
+
+export function encodeFeePercent(
+  partnerFeePercent: string,
+  positiveSlippageToUser: boolean,
+) {
+  let fee = BigInt(partnerFeePercent);
+  if (fee > 10000) throw new Error('fee bps should be less than 10000');
+
+  // Set 14th bit if positiveSlippageToUser is true
+  if (positiveSlippageToUser) fee |= OneShift14;
+
+  // Bits 248 - 255 is used for version;
+  // Set version = 1;
+  fee |= OneShift248;
+
+  return fee.toString();
+}
+
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
