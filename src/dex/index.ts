@@ -6,12 +6,14 @@ import { IDexTxBuilder, DexContructor, IDex } from './idex';
 import { Jarvis } from './jarvis';
 import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
-import { UniswapV2 } from './uniswap-v2';
 import { Weth } from './weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
+import { UniswapV2 } from './uniswap-v2/uniswap-v2';
+import { BiSwap } from './uniswap-v2/biswap';
+import { MDEX } from './uniswap-v2/mdex';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -30,7 +32,6 @@ import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 
 const LegacyDexes = [
-  UniswapV2,
   Curve,
   CurveV2,
   StablePool,
@@ -56,7 +57,7 @@ const LegacyDexes = [
   Jarvis,
 ];
 
-const Dexes = [BalancerV2];
+const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
@@ -172,6 +173,8 @@ export class DexAdapterService {
     let _dexKey = dexKey.toLowerCase();
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
+
+    if ('uniswapforkoptimized' === dexKey) _dexKey = 'uniswapv2';
 
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];

@@ -40,8 +40,10 @@ import {
   isETHAddress,
   prependWithOx,
 } from '../../utils';
-import uniswapV2ABI from '../../abi/uniswap-v2/uniswapv2.abi.json';
-import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.abi.json';
+import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
+import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
+import ParaSwapABI from '../../abi/IParaswap.json';
+import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from '@ethersproject/contracts';
 import { WETHAddresses } from '../weth';
 import { UniswapV2Config } from './config';
@@ -153,6 +155,7 @@ interface UniswapV2PoolOrderedParams {
 interface UniswapV2PoolState {
   reserves0: string;
   reserves1: string;
+  feeCode: number;
 }
 
 const iface = new Interface(uniswapV2ABI);
@@ -184,7 +187,12 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private poolAddress: Address,
     private token0: Token,
     private token1: Token,
+    // feeCode is ignored if DynamicFees is set to true
+    private feeCode: number,
     logger: Logger,
+    private dynamicFees = false,
+    // feesMultiCallData is only used if dynamicFees is set to true
+    private feesMultiCallData?: { target: Address; callData: string },
   ) {
     super(
       parentName +
@@ -207,6 +215,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
         return {
           reserves0: event.args.reserve0.toString(),
           reserves1: event.args.reserve1.toString(),
+          feeCode: state.feeCode,
         };
     }
     return null;
@@ -215,33 +224,40 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<UniswapV2PoolState>> {
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.callStatic.aggregate(
-        [
-          {
-            target: this.token0.address,
-            callData: erc20iface.encodeFunctionData('balanceOf', [
-              this.poolAddress,
-            ]),
-          },
-          {
-            target: this.token1.address,
-            callData: erc20iface.encodeFunctionData('balanceOf', [
-              this.poolAddress,
-            ]),
-          },
-        ],
-        {
-          blockTag: blockNumber,
-        },
-      );
+    let calldata = [
+      {
+        target: this.token0.address,
+        callData: erc20iface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+      },
+      {
+        target: this.token1.address,
+        callData: erc20iface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+      },
+    ];
 
-    const reserves = data.returnData.map(r =>
+    if (this.dynamicFees && this.feesMultiCallData) {
+      calldata.push(this.feesMultiCallData);
+    }
+
+    const data = await this.dexHelper.multiContract.callStatic.aggregate(
+      calldata,
+      {
+        blockTag: blockNumber,
+      },
+    );
+
+    const reserves = data.returnData.map((r: any) =>
       coder.decode(['uint256'], r)[0].toString(),
     );
+
     return {
       reserves0: reserves[0],
       reserves1: reserves[1],
+      feeCode: this.dynamicFees ? parseInt(reserves[2]) : this.feeCode,
     };
   }
 }
@@ -296,11 +312,13 @@ export class UniswapV2
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
+    protected isDynamicFees = false,
     protected factoryAddress: Address = UniswapV2Config[dexKey][network]
       .factoryAddress,
     protected subgraphURL: string | undefined = UniswapV2Config[dexKey][network]
       .subgraphURL,
     protected initCode: string = UniswapV2Config[dexKey][network].initCode,
+    // feeCode is ignored when isDynamicFees is set to true
     protected feeCode: number = UniswapV2Config[dexKey][network].feeCode,
     protected poolGasCost: number = UniswapV2Config[dexKey][network]
       .poolGasCost ?? DefaultUniswapV2PoolGasGost,
@@ -316,24 +334,40 @@ export class UniswapV2
       uniswapV2factoryABI,
       dexHelper.provider,
     );
+
+    this.routerInterface = new Interface(ParaSwapABI);
+    this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
+  }
+
+  // getFeesMultiCallData should be override
+  // when isDynamicFees is set to true
+  protected getFeesMultiCallData(
+    poolAddress: Address,
+  ): undefined | { target: Address; callData: string } {
+    return undefined;
   }
 
   private async addPool(
     pair: UniswapV2Pair,
     reserves0: string,
     reserves1: string,
+    feeCode: number,
     blockNumber: number,
   ) {
     pair.pool = new UniswapV2EventPool(
       this.dexKey,
       this.dexHelper,
-      pair.address,
+      pair.exchange!,
       pair.token0,
       pair.token1,
+      feeCode,
       this.logger,
+      this.isDynamicFees,
+      this.getFeesMultiCallData(pair.exchange!),
     );
 
-    if (blockNumber) pair.pool.setState({ reserves0, reserves1 }, blockNumber);
+    if (blockNumber)
+      pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
     this.dexHelper.blockManager.subscribeToLogs(
       pair.pool,
       pair.exchange!,
@@ -426,20 +460,24 @@ export class UniswapV2
   ): Promise<UniswapV2PoolState[]> {
     try {
       const calldata = pairs
-        .map(pair => [
-          {
-            target: pair.token0.address,
-            callData: erc20iface.encodeFunctionData('balanceOf', [
-              pair.exchange!,
-            ]),
-          },
-          {
-            target: pair.token1.address,
-            callData: erc20iface.encodeFunctionData('balanceOf', [
-              pair.exchange!,
-            ]),
-          },
-        ])
+        .map(pair => {
+          let calldata = [
+            {
+              target: pair.token0.address,
+              callData: erc20iface.encodeFunctionData('balanceOf', [
+                pair.exchange!,
+              ]),
+            },
+            {
+              target: pair.token1.address,
+              callData: erc20iface.encodeFunctionData('balanceOf', [
+                pair.exchange!,
+              ]),
+            },
+          ];
+          if (this.isDynamicFees)
+            calldata.push(this.getFeesMultiCallData(pair.exchange!)!);
+        })
         .flat();
 
       const data: { returnData: any[] } =
@@ -451,11 +489,12 @@ export class UniswapV2
         data.returnData.map(
           r => <string>coder.decode(['uint256'], r)[0].toString(),
         ),
-        2,
+        this.isDynamicFees ? 3 : 2,
       );
       return reserves.map(pair => ({
         reserves0: pair[0],
         reserves1: pair[1],
+        feeCode: this.isDynamicFees ? parseInt(pair[2]) : this.feeCode,
       }));
     } catch (e) {
       this.logger.error(
@@ -497,6 +536,7 @@ export class UniswapV2
           pair,
           pairState.reserves0,
           pairState.reserves1,
+          pairState.feeCode,
           blockNumber,
         );
       } else pair.pool.setState(pairState, blockNumber);
@@ -520,7 +560,7 @@ export class UniswapV2
       return null;
     }
     const fee = (
-      this.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
+      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
     ).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
@@ -585,7 +625,10 @@ export class UniswapV2
 
       const poolIdentifier = `${this.dexKey}_${tokenAdderess}`;
 
-      if (limitPools.length !== 1 || limitPools[0] !== poolIdentifier)
+      if (
+        limitPools &&
+        (limitPools.length !== 1 || limitPools[0] !== poolIdentifier)
+      )
         return null;
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
@@ -655,7 +698,7 @@ export class UniswapV2
   }
 
   async getTopPoolsForToken(
-    token: Token,
+    tokenAddress: Address,
     count: number,
   ): Promise<PoolLiquidity[]> {
     if (!this.subgraphURL) return [];
@@ -689,7 +732,7 @@ export class UniswapV2
 
     const { data } = await this.dexHelper.httpRequest.post(this.subgraphURL, {
       query,
-      variables: { token, count },
+      variables: { token: tokenAddress, count },
     });
 
     if (!(data && data.pools0 && data.pools1))

@@ -2,11 +2,6 @@ import { DexParams } from './types';
 import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
 
-// TODO: handle these!!
-// 'biswap',
-// 'uniswapforkoptimized',
-// 'cheeseswap',
-
 export const UniswapV2Config: DexConfigMap<DexParams> = {
   UniswapV2: {
     [Network.MAINNET]: {
@@ -201,15 +196,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       factoryAddress: '0xe0C1bb6DF4851feEEdc3E14Bd509FEAF428f7655',
       initCode:
         '0x47cc4f3a5e7a237c464e09c6758ac645084f198b8f64eedc923317ac4481a10c',
-      poolGasCost: 80 * 1000,
-      feeCode: 20,
-    },
-  },
-  MDEX: {
-    [Network.BSC]: {
-      factoryAddress: '0x3cd1c46068daea5ebb0d3f55f6915b10648062b8',
-      initCode:
-        '0x0d994d996174b05cfc7bed897dc1b20b4c458fc8d64fe98bc78b3c64a6b4d093',
       poolGasCost: 80 * 1000,
       feeCode: 20,
     },
