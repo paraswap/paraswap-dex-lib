@@ -259,9 +259,10 @@ export class PhantomStablePool extends BasePool {
     const balances = pool.tokens.map(
       t => poolState.tokens[t.address.toLowerCase()].balance,
     );
-    const scalingFactors = pool.tokens.map(t =>
-      getTokenScalingFactor(t.decimals),
+    const scalingFactors = pool.tokens.map(
+      t => poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
     );
+
     const poolPairData: PhantomStablePoolPairData = {
       tokens: tokenAddresses,
       balances,

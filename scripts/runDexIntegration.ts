@@ -30,12 +30,12 @@ const wstETH = {
 // i.e. bbausd<>bbausdc for BPT>token
 // i.e. bbausdc<>bbadai for token>token
 const bbausd = {
-  address: '0x4fd63966879300cafafbb35d157dc5229278ed23',
+  address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
   decimals: 18,
 };
 
 const bbausdc = {
-  address: '0x652d486b80c461c397b0d95612a404da936f3db3',
+  address: '0x9210f1204b5a24742eba12f710636d76240df3d0',
   decimals: 18,
 };
 
@@ -58,17 +58,20 @@ async function main() {
 
   await balancerV2.setupEventPools(blocknumber);
 
+  const from = bbausdc;
+  const to = USDC;
+
   const pools = await balancerV2.getPoolIdentifiers(
-    bbausd,
-    bbausdc,
+    from,
+    to,
     SwapSide.SELL,
     blocknumber,
   );
   console.log('WETH <> DAI Pool Ideintifiers: ', pools);
 
   const prices = await balancerV2.getPricesVolume(
-    bbausd,
-    bbausdc,
+    from,
+    to,
     amounts,
     SwapSide.SELL,
     blocknumber,
@@ -76,11 +79,11 @@ async function main() {
   );
   console.log('WETH <> DAI Pool Prices: ', prices);
 
-  const poolLiquidity = await balancerV2.getTopPoolsForToken(
-    bbadai.address,
-    10,
-  );
-  console.log('WETH Top Pools:', poolLiquidity);
+  // const poolLiquidity = await balancerV2.getTopPoolsForToken(
+  //   from.address,
+  //   10,
+  // );
+  // console.log('WETH Top Pools:', poolLiquidity);
 }
 
 main();

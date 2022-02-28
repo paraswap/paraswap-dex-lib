@@ -21,9 +21,11 @@ import {
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
+import { LinearPool } from './LinearPool';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
+import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork } from '../../utils';
@@ -48,7 +50,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig } from './config';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear"]}) {
     id
     address
     poolType
@@ -112,6 +114,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'LiquidityBootstrapping',
     'Investment',
     'StablePhantom',
+    'AaveLinear',
   ];
 
   constructor(
@@ -127,11 +130,13 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       Stable: new StablePool(),
       Weighted: new WeightedPool(),
       StablePhantom: new PhantomStablePool(),
+      AaveLinear: new LinearPool(),
     };
     this.poolInterfaces = {
       Stable: new Interface(StablePoolABI),
       Weighted: new Interface(WeightedPoolABI),
       MetaStable: new Interface(MetaStablePoolABI),
+      Linear: new Interface(LinearPoolABI),
     };
     this.vaultInterface = new Interface(VaultABI);
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
@@ -357,6 +362,27 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         );
         return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
       }
+
+      case 'AaveLinear': {
+        const poolPairData = this.poolMaths[
+          'AaveLinear'
+        ].parsePoolPairDataBigInt(pool, poolState, from.address, to.address);
+        const _prices = this.poolMaths['AaveLinear'].onSell(
+          _amounts,
+          poolPairData.tokens,
+          poolPairData.balances,
+          poolPairData.indexIn,
+          poolPairData.indexOut,
+          poolPairData.bptIndex,
+          poolPairData.wrappedIndex,
+          poolPairData.mainIndex,
+          poolPairData.scalingFactors,
+          poolPairData.swapFee,
+          poolPairData.lowerTarget,
+          poolPairData.upperTarget,
+        );
+        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
+      }
     }
 
     return null;
@@ -383,7 +409,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           },
         ];
 
-        if (['MetaStable'].includes(pool.poolType)) {
+        if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
           poolCallData.push({
             target: pool.address,
             callData:
@@ -412,6 +438,17 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
             ),
           });
         }
+
+        if (['AaveLinear'].includes(pool.poolType)) {
+          // Will create onchain call data for linearPools
+          // Assumes getPoolTokens + getSwapFeePercentage call data is added separately (see above)
+          const linearCalls = LinearPool.getOnChainCalls(
+            pool,
+            this.poolInterfaces['Linear'],
+          );
+          poolCallData.push(...linearCalls);
+        }
+
         return poolCallData;
       })
       .flat();
@@ -426,6 +463,20 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
       (acc: { [address: string]: PoolState }, pool) => {
+        if (['AaveLinear'].includes(pool.poolType)) {
+          // This will decode multicall data for all pools associated with linear pool
+          const [decoded, newIndex] = LinearPool.decodeOnChainCalls(
+            pool,
+            this.poolInterfaces,
+            this.vaultInterface,
+            data,
+            i,
+          );
+          i = newIndex;
+          acc = { ...acc, ...decoded };
+          return acc;
+        }
+
         const poolTokens = this.vaultInterface.decodeFunctionResult(
           'getPoolTokens',
           data.returnData[i++],
@@ -436,7 +487,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           data.returnData[i++],
         )[0];
 
-        const scalingFactors = ['MetaStable'].includes(pool.poolType)
+        const scalingFactors = ['MetaStable', 'StablePhantom'].includes(
+          pool.poolType,
+        )
           ? this.poolInterfaces['MetaStable'].decodeFunctionResult(
               'getScalingFactors',
               data.returnData[i++],
