@@ -1,5 +1,5 @@
 import { IRouter } from './irouter';
-import { PayloadEncoder } from './payload-encoder';
+import { PayloadEncoder, encodeFeePercent } from './payload-encoder';
 import {
   Address,
   OptimalRate,
@@ -35,6 +35,7 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
     userAddress: Address,
     partnerAddress: Address,
     partnerFeePercent: string,
+    positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -63,7 +64,7 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       beneficiary,
       route,
       partner: partnerAddress,
-      feePercent: partnerFeePercent,
+      feePercent: encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

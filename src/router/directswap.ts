@@ -22,6 +22,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     userAddress: Address,
     partnerAddress: Address,
     partnerFeePercent: string,
+    positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -63,6 +64,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       destAmount,
       swapExchange.data,
       priceRoute.side,
+      permit,
       priceRoute.contractMethod,
     );
   }

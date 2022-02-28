@@ -83,6 +83,8 @@ enum UniswapV2Functions {
   buyOnUniswapFork = 'buyOnUniswapFork',
   swapOnUniswapV2Fork = 'swapOnUniswapV2Fork',
   buyOnUniswapV2Fork = 'buyOnUniswapV2Fork',
+  swapOnUniswapV2ForkWithPermit = 'swapOnUniswapV2ForkWithPermit',
+  buyOnUniswapV2ForkWithPermit = 'buyOnUniswapV2ForkWithPermit',
 }
 
 type SwapOnUniswapParam = [
@@ -109,11 +111,45 @@ type BuyOnUniswapForkParam = [
   amountOut: NumberAsString,
   path: Address[],
 ];
+type SwapOnUniswapV2ForkParam = [
+  tokenIn: Address,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+];
+type BuyOnUniswapV2ForkParam = [
+  tokenIn: Address,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+];
+type SwapOnUniswapV2ForkWithPermitParam = [
+  tokenIn: Address,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+  permit: string,
+];
+type BuyOnUniswapV2ForkWithPermitParam = [
+  tokenIn: Address,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+  permit: string,
+];
 type UniswapParam =
   | SwapOnUniswapParam
   | BuyOnUniswapParam
   | SwapOnUniswapForkParam
-  | BuyOnUniswapForkParam;
+  | BuyOnUniswapForkParam
+  | SwapOnUniswapV2ForkParam
+  | BuyOnUniswapV2ForkParam
+  | SwapOnUniswapV2ForkWithPermitParam
+  | BuyOnUniswapV2ForkWithPermitParam;
 
 const directUniswapFunctionName = [
   UniswapV2Functions.swapOnUniswap,
@@ -235,9 +271,11 @@ export class UniswapV2
     destAmount: NumberAsString,
     _data: UniswapData,
     side: SwapSide,
+    permit: string,
     contractMethod?: string,
   ): TxInfo<UniswapParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+    if (permit !== '0x') contractMethod += 'WithPermit';
 
     const swapParams = ((): UniswapParam => {
       const data = _data as unknown as UniswapDataLegacy;
@@ -268,13 +306,24 @@ export class UniswapV2
             encodePools(_data.pools),
           ];
 
+        case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
+        case UniswapV2Functions.buyOnUniswapV2ForkWithPermit:
+          return [
+            srcToken,
+            srcAmount,
+            destAmount,
+            this.getWETHAddress(srcToken, destToken, _data.weth),
+            encodePools(_data.pools),
+            permit,
+          ];
+
         default:
           throw new Error(`contractMethod=${contractMethod} is not supported`);
       }
     })();
 
     const encoder = (...params: UniswapParam) =>
-      this.routerInterface.encodeFunctionData(contractMethod, params);
+      this.routerInterface.encodeFunctionData(contractMethod!, params);
     return {
       params: swapParams,
       encoder,
