@@ -45,9 +45,17 @@ export class BiSwap extends UniswapV2 {
   }
 
   protected getFeesMultiCallData(poolAddress: Address) {
-    return {
+    const callEntry = {
       target: poolAddress,
       callData: this.biSwapPool.encodeFunctionData('swapFee', []),
+    };
+    const callDecoder = (values: any[]) =>
+      parseInt(
+        this.biSwapPool.decodeFunctionResult('swapFee', values)[0].toString(),
+      ) * 10;
+    return {
+      callEntry,
+      callDecoder,
     };
   }
 }

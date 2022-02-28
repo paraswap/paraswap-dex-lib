@@ -73,7 +73,7 @@ const AdapterNameAddressMap: {
     PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
   },
   [Network.BSC]: {
-    BscAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
+    BscAdapter01: '0xcEC935682c0b510fb91c0A12275Bb7e14EEBE87c',
     BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
   },
   [Network.ROPSTEN]: {

@@ -45,11 +45,22 @@ export class MDEX extends UniswapV2 {
   }
 
   protected getFeesMultiCallData(poolAddress: Address) {
-    return {
+    const callEntry = {
       target: this.factoryAddress,
       callData: this.mdexFactory.encodeFunctionData('getPairFees', [
         poolAddress,
       ]),
+    };
+
+    const callDecoder = (values: any[]) =>
+      parseInt(
+        this.mdexFactory
+          .decodeFunctionResult('getPairFees', values)[0]
+          .toString(),
+      );
+    return {
+      callEntry,
+      callDecoder,
     };
   }
 }

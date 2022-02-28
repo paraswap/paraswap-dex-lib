@@ -192,7 +192,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     logger: Logger,
     private dynamicFees = false,
     // feesMultiCallData is only used if dynamicFees is set to true
-    private feesMultiCallData?: { target: Address; callData: string },
+    private feesMultiCallEntry?: { target: Address; callData: string },
+    private feesMultiCallDecoder?: (values: any[]) => number,
   ) {
     super(
       parentName +
@@ -239,8 +240,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       },
     ];
 
-    if (this.dynamicFees && this.feesMultiCallData) {
-      calldata.push(this.feesMultiCallData);
+    if (this.dynamicFees) {
+      calldata.push(this.feesMultiCallEntry!);
     }
 
     const data = await this.dexHelper.multiContract.callStatic.aggregate(
@@ -250,14 +251,12 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       },
     );
 
-    const reserves = data.returnData.map((r: any) =>
-      coder.decode(['uint256'], r)[0].toString(),
-    );
-
     return {
-      reserves0: reserves[0],
-      reserves1: reserves[1],
-      feeCode: this.dynamicFees ? parseInt(reserves[2]) : this.feeCode,
+      reserves0: coder.decode(['uint256'], data.returnData[0])[0].toString(),
+      reserves1: coder.decode(['uint256'], data.returnData[1])[0].toString(),
+      feeCode: this.dynamicFees
+        ? this.feesMultiCallDecoder!(data.returnData[2])
+        : this.feeCode,
     };
   }
 }
@@ -315,15 +314,16 @@ export class UniswapV2
     protected isDynamicFees = false,
     protected factoryAddress: Address = UniswapV2Config[dexKey][network]
       .factoryAddress,
-    protected subgraphURL: string | undefined = UniswapV2Config[dexKey][network]
-      .subgraphURL,
+    protected subgraphURL: string | undefined = UniswapV2Config[dexKey] &&
+      UniswapV2Config[dexKey][network].subgraphURL,
     protected initCode: string = UniswapV2Config[dexKey][network].initCode,
     // feeCode is ignored when isDynamicFees is set to true
     protected feeCode: number = UniswapV2Config[dexKey][network].feeCode,
     protected poolGasCost: number = UniswapV2Config[dexKey][network]
       .poolGasCost ?? DefaultUniswapV2PoolGasGost,
     protected adapters = Adapters[network],
-    protected router = UniswapV2Config[dexKey][network].router ??
+    protected router = (UniswapV2Config[dexKey] &&
+      UniswapV2Config[dexKey][network].router) ??
       UniswapV2ExchangeRouter[network],
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
@@ -341,9 +341,12 @@ export class UniswapV2
 
   // getFeesMultiCallData should be override
   // when isDynamicFees is set to true
-  protected getFeesMultiCallData(
-    poolAddress: Address,
-  ): undefined | { target: Address; callData: string } {
+  protected getFeesMultiCallData(poolAddress: Address):
+    | undefined
+    | {
+        callEntry: { target: Address; callData: string };
+        callDecoder: (values: any[]) => number;
+      } {
     return undefined;
   }
 
@@ -354,6 +357,8 @@ export class UniswapV2
     feeCode: number,
     blockNumber: number,
   ) {
+    const { callEntry, callDecoder } =
+      this.getFeesMultiCallData(pair.exchange!) || {};
     pair.pool = new UniswapV2EventPool(
       this.dexKey,
       this.dexHelper,
@@ -363,7 +368,8 @@ export class UniswapV2
       feeCode,
       this.logger,
       this.isDynamicFees,
-      this.getFeesMultiCallData(pair.exchange!),
+      callEntry,
+      callDecoder,
     );
 
     if (blockNumber)
@@ -442,9 +448,7 @@ export class UniswapV2
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     if (pair) return pair;
-    const exchange = await this.factory.methods
-      .getPair(token0.address, token1.address)
-      .call();
+    const exchange = await this.factory.getPair(token0.address, token1.address);
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
     } else {
@@ -459,8 +463,11 @@ export class UniswapV2
     blockNumber: number,
   ): Promise<UniswapV2PoolState[]> {
     try {
+      const multiCallFeeData = pairs.map(pair =>
+        this.getFeesMultiCallData(pair.exchange!),
+      );
       const calldata = pairs
-        .map(pair => {
+        .map((pair, i) => {
           let calldata = [
             {
               target: pair.token0.address,
@@ -475,8 +482,8 @@ export class UniswapV2
               ]),
             },
           ];
-          if (this.isDynamicFees)
-            calldata.push(this.getFeesMultiCallData(pair.exchange!)!);
+          if (this.isDynamicFees) calldata.push(multiCallFeeData[i]!.callEntry);
+          return calldata;
         })
         .flat();
 
@@ -485,16 +492,13 @@ export class UniswapV2
           blockTag: blockNumber,
         });
 
-      const reserves = _.chunk(
-        data.returnData.map(
-          r => <string>coder.decode(['uint256'], r)[0].toString(),
-        ),
-        this.isDynamicFees ? 3 : 2,
-      );
-      return reserves.map(pair => ({
-        reserves0: pair[0],
-        reserves1: pair[1],
-        feeCode: this.isDynamicFees ? parseInt(pair[2]) : this.feeCode,
+      const returnData = _.chunk(data.returnData, this.isDynamicFees ? 3 : 2);
+      return pairs.map((pair, i) => ({
+        reserves0: coder.decode(['uint256'], returnData[i][0])[0].toString(),
+        reserves1: coder.decode(['uint256'], returnData[i][1])[0].toString(),
+        feeCode: this.isDynamicFees
+          ? multiCallFeeData[i]!.callDecoder(returnData[i][2])
+          : this.feeCode,
       }));
     } catch (e) {
       this.logger.error(
