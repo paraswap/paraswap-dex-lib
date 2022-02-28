@@ -4,7 +4,7 @@ const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
 };
 
-class BasePool {
+export class BasePool {
   _subtractSwapFeeAmount(amount: bigint, _swapFeePercentage: bigint): bigint {
     // This returns amount - fee amount, so we round up (favoring a higher fee amount).
     const feeAmount = MathSol.mulUpFixed(amount, _swapFeePercentage);

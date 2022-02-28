@@ -20,6 +20,7 @@ import {
   Network,
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
+import { PhantomStablePool } from './PhantomStablePool';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
@@ -47,7 +48,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig } from './config';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom"]}) {
     id
     address
     poolType
@@ -110,6 +111,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'Weighted',
     'LiquidityBootstrapping',
     'Investment',
+    'StablePhantom',
   ];
 
   constructor(
@@ -124,6 +126,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.poolMaths = {
       Stable: new StablePool(),
       Weighted: new WeightedPool(),
+      StablePhantom: new PhantomStablePool(),
     };
     this.poolInterfaces = {
       Stable: new Interface(StablePoolABI),
@@ -336,6 +339,24 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         );
         return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
       }
+
+      case 'StablePhantom': {
+        const poolPairData = this.poolMaths[
+          'StablePhantom'
+        ].parsePoolPairDataBigInt(pool, poolState, from.address, to.address);
+        const _prices = this.poolMaths['StablePhantom'].onSell(
+          _amounts,
+          poolPairData.tokens,
+          poolPairData.balances,
+          poolPairData.indexIn,
+          poolPairData.indexOut,
+          poolPairData.bptIndex,
+          poolPairData.scalingFactors,
+          poolPairData.swapFee,
+          poolPairData.amp,
+        );
+        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
+      }
     }
 
     return null;
@@ -383,7 +404,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
             ),
           });
         }
-        if (['Stable', 'MetaStable'].includes(pool.poolType)) {
+        if (['Stable', 'MetaStable', 'StablePhantom'].includes(pool.poolType)) {
           poolCallData.push({
             target: pool.address,
             callData: this.poolInterfaces['Stable'].encodeFunctionData(
@@ -433,7 +454,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
             )[0]
           : undefined;
 
-        const amp = ['Stable', 'MetaStable'].includes(pool.poolType)
+        const amp = ['Stable', 'MetaStable', 'StablePhantom'].includes(
+          pool.poolType,
+        )
           ? this.poolInterfaces['Stable'].decodeFunctionResult(
               'getAmplificationParameter',
               data.returnData[i++],
