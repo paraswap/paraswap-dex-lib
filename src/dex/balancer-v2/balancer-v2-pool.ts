@@ -11,16 +11,17 @@ class BasePool {
     return amount - feeAmount;
   }
 
+  // These methods use fixed versions to match SC scaling
   _upscaleArray(amounts: bigint[], scalingFactors: bigint[]): bigint[] {
-    return amounts.map((a, i) => MathSol.mul(a, scalingFactors[i]));
+    return amounts.map((a, i) => MathSol.mulUpFixed(a, scalingFactors[i]));
   }
 
   _upscale(amount: bigint, scalingFactor: bigint): bigint {
-    return MathSol.mul(amount, scalingFactor);
+    return MathSol.mulUpFixed(amount, scalingFactor);
   }
 
   _downscaleDown(amount: bigint, scalingFactor: bigint): bigint {
-    return MathSol.divDown(amount, scalingFactor);
+    return MathSol.divDownFixed(amount, scalingFactor);
   }
 }
 

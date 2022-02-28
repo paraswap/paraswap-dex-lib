@@ -42,6 +42,7 @@ import {
   SwapTypes,
   DexParams,
 } from './types';
+import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig } from './config';
 
@@ -285,7 +286,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
             ? pool.tokens.map(
                 t => poolState.tokens[t.address.toLowerCase()].scalingFactor,
               )
-            : pool.tokens.map(t => BigInt(10 ** (18 - t.decimals)));
+            : pool.tokens.map(t => getTokenScalingFactor(t.decimals));
 
         const _prices = this.poolMaths['Stable'].onSell(
           _amounts,
@@ -320,8 +321,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         const tokenInWeight = poolState.tokens[inAddress].weight;
         const tokenOutWeight = poolState.tokens[outAddress].weight;
 
-        const tokenInScalingFactor = BigInt(10 ** (18 - tokenIn.decimals));
-        const tokenOutScalingFactor = BigInt(10 ** (18 - tokenOut.decimals));
+        const tokenInScalingFactor = getTokenScalingFactor(tokenIn.decimals);
+        const tokenOutScalingFactor = getTokenScalingFactor(tokenOut.decimals);
 
         const _prices = this.poolMaths['Weighted'].onSell(
           _amounts,
