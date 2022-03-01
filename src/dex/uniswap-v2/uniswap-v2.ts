@@ -178,6 +178,8 @@ export type UniswapV2Pair = {
   pool?: UniswapV2EventPool;
 };
 
+const subgraphTimeout = 10 * 1000;
+
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => iface.parseLog(log);
 
@@ -734,10 +736,14 @@ export class UniswapV2
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(this.subgraphURL, {
-      query,
-      variables: { token: tokenAddress, count },
-    });
+    const { data } = await this.dexHelper.httpRequest.post(
+      this.subgraphURL,
+      {
+        query,
+        variables: { token: tokenAddress.toLowerCase(), count },
+      },
+      subgraphTimeout,
+    );
 
     if (!(data && data.pools0 && data.pools1))
       throw new Error("Couldn't fetch the pools from the subgraph");

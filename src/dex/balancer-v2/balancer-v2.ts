@@ -811,10 +811,14 @@ export class BalancerV2
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post(this.subgraphURL, {
-      query,
-      variables,
-    });
+    const { data } = await this.dexHelper.httpRequest.post(
+      this.subgraphURL,
+      {
+        query,
+        variables,
+      },
+      subgraphTimeout,
+    );
 
     if (!(data && data.pools))
       throw new Error(

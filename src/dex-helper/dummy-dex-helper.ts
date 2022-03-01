@@ -4,13 +4,13 @@ import {
   IBlockManager,
   EventSubscriber,
   IRequestWrapper,
-} from '../src/dex-helper/index';
+} from './index';
 import axios from 'axios';
-import { Address, LoggerConstructor } from '../src/types';
-import { MULTI_V2 } from '../src/constants';
+import { Address, LoggerConstructor } from '../types';
+import { MULTI_V2 } from '../constants';
 import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import multiABIV2 from '../src/abi/multi-v2.json';
+import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
 
 const ProviderURL: { [network: number]: string } = {
@@ -20,12 +20,12 @@ const ProviderURL: { [network: number]: string } = {
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
   async get(key: string): Promise<string | null> {
-    console.log('Cache Requested: ', key);
+    // console.log('Cache Requested: ', key);
     return null;
   }
 
   async setex(key: string, seconds: number, value: string): Promise<void> {
-    console.log('Cache Stored: ', key, seconds, value);
+    // console.log('Cache Stored: ', key, seconds, value);
     return;
   }
 }
