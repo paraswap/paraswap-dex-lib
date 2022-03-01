@@ -40,7 +40,7 @@ const bbausdc = {
 };
 
 const bbadai = {
-  address: '0xa3823e50f20982656557a4a6a9c06ba5467ae908',
+  address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
   decimals: 18,
 };
 

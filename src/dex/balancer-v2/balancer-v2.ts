@@ -346,9 +346,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       }
 
       case 'StablePhantom': {
-        const poolPairData = this.poolMaths[
-          'StablePhantom'
-        ].parsePoolPairDataBigInt(pool, poolState, from.address, to.address);
+        const poolPairData = this.poolMaths['StablePhantom'].parsePoolPairData(
+          pool,
+          poolState,
+          from.address,
+          to.address,
+        );
         const _prices = this.poolMaths['StablePhantom'].onSell(
           _amounts,
           poolPairData.tokens,
@@ -364,9 +367,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       }
 
       case 'AaveLinear': {
-        const poolPairData = this.poolMaths[
-          'AaveLinear'
-        ].parsePoolPairDataBigInt(pool, poolState, from.address, to.address);
+        const poolPairData = this.poolMaths['AaveLinear'].parsePoolPairData(
+          pool,
+          poolState,
+          from.address,
+          to.address,
+        );
         const _prices = this.poolMaths['AaveLinear'].onSell(
           _amounts,
           poolPairData.tokens,

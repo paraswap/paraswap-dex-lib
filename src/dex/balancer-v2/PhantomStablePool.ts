@@ -4,7 +4,6 @@ import { isSameAddress } from './utils';
 import * as StableMath from './StableMath';
 import { BZERO } from './balancer-v2-math';
 import { SubgraphPoolBase, PoolState } from './types';
-import { getTokenScalingFactor } from './utils';
 
 enum PairTypes {
   BptToToken,
@@ -240,34 +239,35 @@ export class PhantomStablePool extends BasePool {
   /*
     Helper function to parse pool data into params for onSell function.
     */
-  parsePoolPairDataBigInt(
+  parsePoolPairData(
     pool: SubgraphPoolBase,
     poolState: PoolState,
     tokenIn: string,
     tokenOut: string,
   ): PhantomStablePoolPairData {
-    const indexIn = pool.tokens.findIndex(
-      t => t.address.toLowerCase() === tokenIn.toLowerCase(),
-    );
-    const indexOut = pool.tokens.findIndex(
-      t => t.address.toLowerCase() === tokenOut.toLowerCase(),
-    );
-    const bptIndex = pool.tokens.findIndex(
-      t => t.address.toLowerCase() === pool.address.toLowerCase(),
-    );
-    const tokenAddresses = pool.tokens.map(t => t.address);
-    const balances = pool.tokens.map(
-      t => poolState.tokens[t.address.toLowerCase()].balance,
-    );
-    const scalingFactors = pool.tokens.map(
-      t => poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
-    );
+    let indexIn = 0,
+      indexOut = 0,
+      bptIndex = 0;
+    const balances: BigInt[] = [];
+    const scalingFactors: BigInt[] = [];
+
+    const tokens = pool.tokens.map((t, i) => {
+      if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
+      if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
+      if (t.address.toLowerCase() === pool.address.toLowerCase()) bptIndex = i;
+
+      balances.push(poolState.tokens[t.address.toLowerCase()].balance);
+      scalingFactors.push(
+        poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
+      );
+      return t.address;
+    });
 
     const poolPairData: PhantomStablePoolPairData = {
-      tokens: tokenAddresses,
+      tokens,
       balances,
-      indexIn: indexIn,
-      indexOut: indexOut,
+      indexIn,
+      indexOut,
       scalingFactors,
       bptIndex,
       swapFee: poolState.swapFee,
