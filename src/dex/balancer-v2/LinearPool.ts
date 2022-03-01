@@ -360,7 +360,8 @@ export class LinearPool extends BasePool {
   }
 
   /*
-  TO DO - Waiting for confirmation of a good/quick estimate to use here.
+  Swapping to BPT allows for a very large amount as pre-minted.
+  Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
   checkBalance(
     balanceOut: bigint,
