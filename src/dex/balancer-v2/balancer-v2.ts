@@ -263,14 +263,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     unitVolume: bigint,
     side: SwapSide,
   ): { unit: bigint; prices: bigint[] } | null {
-    // _MAX_IN_RATIO and _MAX_OUT_RATIO is set to 30% of the pool liquidity
-    const checkBalance = (balanceIn: bigint, balanceOut: bigint) =>
-      ((side === SwapSide.SELL ? balanceIn : balanceOut) * BigInt(3)) /
-        BigInt(10) >
-      (amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume);
-
     // const scaleBN = (val: string, d: number) =>
     //   BigInt(new BigNumber(val).times(10 ** d).toFixed(0));
     const _amounts = [unitVolume, ...amounts.slice(1)];
@@ -287,7 +279,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         const balances = pool.tokens.map(
           t => poolState.tokens[t.address.toLowerCase()].balance,
         );
-        if (!checkBalance(balances[indexIn], balances[indexOut])) return null;
 
         const scalingFactors =
           pool.poolType === 'MetaStable'
@@ -295,6 +286,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
                 t => poolState.tokens[t.address.toLowerCase()].scalingFactor,
               )
             : pool.tokens.map(t => getTokenScalingFactor(t.decimals));
+
+        if (
+          !this.poolMaths['Stable'].checkBalance(
+            balances[indexOut],
+            scalingFactors[indexOut],
+            amounts,
+            unitVolume,
+          )
+        )
+          return null;
 
         const _prices = this.poolMaths['Stable'].onSell(
           _amounts,
@@ -324,7 +325,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         const tokenInBalance = poolState.tokens[inAddress].balance;
         const tokenOutBalance = poolState.tokens[outAddress].balance;
-        if (!checkBalance(tokenInBalance, tokenOutBalance)) return null;
+        if (
+          !this.poolMaths['Weighted'].checkBalance(
+            tokenInBalance,
+            tokenOutBalance,
+            side,
+            amounts,
+            unitVolume,
+          )
+        )
+          return null;
 
         const tokenInWeight = poolState.tokens[inAddress].weight;
         const tokenOutWeight = poolState.tokens[outAddress].weight;
@@ -352,6 +362,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           from.address,
           to.address,
         );
+        if (
+          !this.poolMaths['StablePhantom'].checkBalance(
+            poolPairData.balances[poolPairData.indexOut],
+            poolPairData.scalingFactors[poolPairData.indexOut],
+            amounts,
+            unitVolume,
+          )
+        )
+          return null;
         const _prices = this.poolMaths['StablePhantom'].onSell(
           _amounts,
           poolPairData.tokens,
@@ -373,6 +392,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           from.address,
           to.address,
         );
+        if (
+          !this.poolMaths['AaveLinear'].checkBalance(
+            poolPairData.balances[poolPairData.indexOut],
+            poolPairData.scalingFactors[poolPairData.indexOut],
+            amounts,
+            unitVolume,
+          )
+        )
+          return null;
         const _prices = this.poolMaths['AaveLinear'].onSell(
           _amounts,
           poolPairData.tokens,

@@ -1,4 +1,5 @@
-import { MathSol, BZERO, BONE } from './balancer-v2-math';
+import { MathSol, BZERO } from './balancer-v2-math';
+import { SwapSide } from '../../constants';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
@@ -353,6 +354,24 @@ export class StablePool extends BaseGeneralPool {
       tokenAmountsIn,
     );
   }
+
+  /*
+  For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
+  */
+  checkBalance(
+    balanceOut: bigint,
+    scalingFactor: bigint,
+    amounts: bigint[],
+    unitVolume: bigint,
+  ): boolean {
+    const swapMax =
+      (this._upscale(balanceOut, scalingFactor) * BigInt(99)) / BigInt(100);
+    const swapAmount =
+      amounts[amounts.length - 1] > unitVolume
+        ? amounts[amounts.length - 1]
+        : unitVolume;
+    return swapMax > swapAmount;
+  }
 }
 
 export class WeightedMath {
@@ -414,5 +433,25 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
       _weightOut,
       tokenAmountsIn,
     );
+  }
+
+  /*
+  For weighted pools there is a Swap limit of 30%: amounts swapped may not be larger than this percentage of total balance.
+  */
+  checkBalance(
+    balanceIn: bigint,
+    balanceOut: bigint,
+    side: SwapSide,
+    amounts: bigint[],
+    unitVolume: bigint,
+  ): boolean {
+    const swapMax =
+      ((side === SwapSide.SELL ? balanceIn : balanceOut) * BigInt(3)) /
+      BigInt(10);
+    const swapAmount =
+      amounts[amounts.length - 1] > unitVolume
+        ? amounts[amounts.length - 1]
+        : unitVolume;
+    return swapMax > swapAmount;
   }
 }

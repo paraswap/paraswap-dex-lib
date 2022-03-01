@@ -358,4 +358,22 @@ export class LinearPool extends BasePool {
 
     return [pools, startIndex];
   }
+
+  /*
+  TO DO - Waiting for confirmation of a good/quick estimate to use here.
+  */
+  checkBalance(
+    balanceOut: bigint,
+    scalingFactor: bigint,
+    amounts: bigint[],
+    unitVolume: bigint,
+  ): boolean {
+    const swapMax =
+      (this._upscale(balanceOut, scalingFactor) * BigInt(99)) / BigInt(100);
+    const swapAmount =
+      amounts[amounts.length - 1] > unitVolume
+        ? amounts[amounts.length - 1]
+        : unitVolume;
+    return swapMax > swapAmount;
+  }
 }
