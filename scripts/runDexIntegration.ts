@@ -58,8 +58,8 @@ async function main() {
 
   await balancerV2.setupEventPools(blocknumber);
 
-  const from = bbausdc;
-  const to = USDC;
+  const from = bbausd;
+  const to = bbadai;
 
   const pools = await balancerV2.getPoolIdentifiers(
     from,
@@ -79,11 +79,8 @@ async function main() {
   );
   console.log('WETH <> DAI Pool Prices: ', prices);
 
-  // const poolLiquidity = await balancerV2.getTopPoolsForToken(
-  //   from.address,
-  //   10,
-  // );
-  // console.log('WETH Top Pools:', poolLiquidity);
+  const poolLiquidity = await balancerV2.getTopPoolsForToken(from.address, 10);
+  console.log('WETH Top Pools:', poolLiquidity);
 }
 
 main();
