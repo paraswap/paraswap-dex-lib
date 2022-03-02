@@ -22,6 +22,7 @@ import {
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
+import { VirtualBoostedPool } from './VirtualBoostedPool';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
@@ -113,8 +114,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'Weighted',
     'LiquidityBootstrapping',
     'Investment',
-    'StablePhantom',
-    'AaveLinear',
   ];
 
   constructor(
@@ -131,6 +130,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       Weighted: new WeightedPool(),
       StablePhantom: new PhantomStablePool(),
       AaveLinear: new LinearPool(),
+      VirtualBoosted: new VirtualBoostedPool(),
     };
     this.poolInterfaces = {
       Stable: new Interface(StablePoolABI),
@@ -219,7 +219,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
-    const allPools = await this.fetchAllSubgraphPools();
+    const subgraphPools = await this.fetchAllSubgraphPools();
+    // Create the new 'VirtualBoosted' pool types from preconfigured info.
+    const virtualPools =
+      VirtualBoostedPool.getVirtualBoostedPools(subgraphPools);
+    // Add the virtual pools to the list of all pools from the Subgraph
+    const allPools = [...virtualPools, ...subgraphPools];
     this.allPools = allPools;
     const eventSupportedPools = allPools.filter(pool =>
       this.eventSupportedPoolTypes.includes(pool.poolType),
@@ -258,7 +263,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     from: Token,
     to: Token,
     pool: SubgraphPoolBase,
-    poolState: PoolState,
+    poolStates: { [address: string]: PoolState },
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
@@ -270,6 +275,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     switch (pool.poolType) {
       case 'MetaStable':
       case 'Stable': {
+        const poolState = poolStates[pool.address];
         const indexIn = pool.tokens.findIndex(
           t => t.address.toLowerCase() === from.address.toLowerCase(),
         );
@@ -311,6 +317,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       case 'Weighted':
       case 'LiquidityBootstrapping':
       case 'Investment': {
+        const poolState = poolStates[pool.address];
         const inAddress = from.address.toLowerCase();
         const outAddress = to.address.toLowerCase();
 
@@ -356,6 +363,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       }
 
       case 'StablePhantom': {
+        const poolState = poolStates[pool.address];
         const poolPairData = this.poolMaths['StablePhantom'].parsePoolPairData(
           pool,
           poolState,
@@ -386,6 +394,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       }
 
       case 'AaveLinear': {
+        const poolState = poolStates[pool.address];
         const poolPairData = this.poolMaths['AaveLinear'].parsePoolPairData(
           pool,
           poolState,
@@ -415,6 +424,22 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           poolPairData.lowerTarget,
           poolPairData.upperTarget,
         );
+        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
+      }
+
+      case 'VirtualBoosted': {
+        // TO DO - This is just a rough draft to see if concept is suitable
+        // TO DO - Add checkBalance
+        // VirtualBoosted pools consist of more than one pool so need all poolStates
+        const _prices = this.poolMaths['VirtualBoosted']._calcOutGivenIn(
+          from.address,
+          to.address,
+          pool.address,
+          poolStates,
+          amounts,
+        );
+        // TO DO - This returns the price but not sure how Tx/Swaps would be constructed
+        // i.e. Will return price for DAI/USDC but this is a swap through 3 pools (tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut)
         return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
       }
     }
@@ -483,6 +508,18 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           poolCallData.push(...linearCalls);
         }
 
+        if (['VirtualBoosted'].includes(pool.poolType)) {
+          // Will create onchain call data for all phantomStable + linearPools associated with the Virtual Pool
+          // Assumes getPoolTokens + getSwapFeePercentage call data is added separately (see above)
+          const virtualBoostedCalls = VirtualBoostedPool.getOnChainCalls(
+            pool,
+            this.vaultAddress,
+            this.vaultInterface,
+            this.poolInterfaces,
+          );
+          poolCallData.push(...virtualBoostedCalls);
+        }
+
         return poolCallData;
       })
       .flat();
@@ -500,6 +537,20 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         if (['AaveLinear'].includes(pool.poolType)) {
           // This will decode multicall data for all pools associated with linear pool
           const [decoded, newIndex] = LinearPool.decodeOnChainCalls(
+            pool,
+            this.poolInterfaces,
+            this.vaultInterface,
+            data,
+            i,
+          );
+          i = newIndex;
+          acc = { ...acc, ...decoded };
+          return acc;
+        }
+
+        if (['VirtualBoosted'].includes(pool.poolType)) {
+          // This will decode multicall data for all pools associated with virtual pool
+          const [decoded, newIndex] = VirtualBoostedPool.decodeOnChainCalls(
             pool,
             this.poolInterfaces,
             this.vaultInterface,
@@ -732,7 +783,7 @@ export class BalancerV2
               _from,
               _to,
               pool,
-              poolState,
+              poolStates[poolAddress] ? poolStates : missingPoolsStateMap,
               amounts,
               unitVolume,
               side,

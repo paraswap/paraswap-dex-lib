@@ -58,8 +58,8 @@ async function main() {
 
   await balancerV2.setupEventPools(blocknumber);
 
-  const from = bbausd;
-  const to = bbadai;
+  const from = DAI;
+  const to = USDC;
 
   const pools = await balancerV2.getPoolIdentifiers(
     from,
