@@ -275,18 +275,6 @@ export class LinearPool extends BasePool {
       target: pool.address,
       callData: poolInterface.encodeFunctionData('getScalingFactors'),
     });
-    poolCallData.push({
-      target: pool.address,
-      callData: poolInterface.encodeFunctionData('getMainIndex'),
-    });
-    poolCallData.push({
-      target: pool.address,
-      callData: poolInterface.encodeFunctionData('getWrappedIndex'),
-    });
-    poolCallData.push({
-      target: pool.address,
-      callData: poolInterface.encodeFunctionData('getBptIndex'),
-    });
     // returns lowerTarget, upperTarget
     poolCallData.push({
       target: pool.address,
@@ -325,31 +313,20 @@ export class LinearPool extends BasePool {
       data.returnData[startIndex++],
     )[0];
 
-    const mainIndex = poolInterface.decodeFunctionResult(
-      'getMainIndex',
-      data.returnData[startIndex++],
-    );
-
-    const wrappedIndex = poolInterface.decodeFunctionResult(
-      'getWrappedIndex',
-      data.returnData[startIndex++],
-    );
-
-    const bptIndex = poolInterface.decodeFunctionResult(
-      'getBptIndex',
-      data.returnData[startIndex++],
-    );
-
     const [lowerTarget, upperTarget] = poolInterface.decodeFunctionResult(
       'getTargets',
       data.returnData[startIndex++],
     );
 
+    const bptIndex = pool.tokens.findIndex(
+      t => t.address.toLowerCase() === pool.address.toLowerCase(),
+    );
+
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
-      mainIndex: Number(mainIndex),
-      wrappedIndex: Number(wrappedIndex),
-      bptIndex: Number(bptIndex),
+      mainIndex: Number(pool.mainIndex),
+      wrappedIndex: Number(pool.wrappedIndex),
+      bptIndex,
       lowerTarget: BigInt(lowerTarget.toString()),
       upperTarget: BigInt(upperTarget.toString()),
       tokens: poolTokens.tokens.reduce(

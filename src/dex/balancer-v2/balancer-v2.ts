@@ -48,6 +48,8 @@ const fetchAllPools = `query ($count: Int) {
       address
       decimals
     }
+    mainIndex
+    wrappedIndex
   }
 }`;
 

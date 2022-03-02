@@ -30,6 +30,8 @@ export interface SubgraphPoolBase {
   address: string;
   poolType: string;
   tokens: SubgraphToken[];
+  mainIndex: number;
+  wrappedIndex: number;
 }
 
 export type BalancerSwapsV2 = {
