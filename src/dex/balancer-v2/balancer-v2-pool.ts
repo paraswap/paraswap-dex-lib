@@ -2,6 +2,7 @@ import { Interface } from '@ethersproject/abi';
 import { MathSol, BZERO } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import { getTokenScalingFactor } from './utils';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 
@@ -29,6 +30,25 @@ export class BasePool {
     return MathSol.divDownFixed(amount, scalingFactor);
   }
 }
+
+type WeightedPoolPairData = {
+  tokenInBalance: BigInt;
+  tokenOutBalance: BigInt;
+  tokenInScalingFactor: BigInt;
+  tokenOutScalingFactor: BigInt;
+  tokenInWeight: BigInt;
+  tokenOutWeight: BigInt;
+  swapFee: BigInt;
+};
+
+type StablePoolPairData = {
+  balances: BigInt[];
+  indexIn: number;
+  indexOut: number;
+  scalingFactors: BigInt[];
+  swapFee: BigInt;
+  amp: BigInt;
+};
 
 abstract class BaseGeneralPool extends BasePool {
   // Swap Hooks
@@ -360,6 +380,41 @@ export class StablePool extends BaseGeneralPool {
   }
 
   /*
+  Helper function to parse pool data into params for onSell function.
+  */
+  parsePoolPairData(
+    pool: SubgraphPoolBase,
+    poolState: PoolState,
+    tokenIn: string,
+    tokenOut: string,
+    isMetaStable: boolean,
+  ): StablePoolPairData {
+    let indexIn = 0,
+      indexOut = 0;
+    const scalingFactors: BigInt[] = [];
+    const balances = pool.tokens.map((t, i) => {
+      if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
+      if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
+      if (isMetaStable)
+        scalingFactors.push(
+          poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
+        );
+      else scalingFactors.push(getTokenScalingFactor(t.decimals));
+      return poolState.tokens[t.address.toLowerCase()].balance;
+    });
+
+    const poolPairData: StablePoolPairData = {
+      balances,
+      indexIn,
+      indexOut,
+      scalingFactors,
+      swapFee: poolState.swapFee,
+      amp: poolState.amp ? poolState.amp : BigInt(0),
+    };
+    return poolPairData;
+  }
+
+  /*
   Helper function to construct onchain multicall data for StablePool.
   */
   static getOnChainCalls(
@@ -517,6 +572,42 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
       _weightOut,
       tokenAmountsIn,
     );
+  }
+
+  /*
+  Helper function to parse pool data into params for onSell function.
+  */
+  parsePoolPairData(
+    pool: SubgraphPoolBase,
+    poolState: PoolState,
+    tokenIn: string,
+    tokenOut: string,
+  ): WeightedPoolPairData {
+    const inAddress = tokenIn.toLowerCase();
+    const outAddress = tokenOut.toLowerCase();
+
+    const tIn = pool.tokens.find(t => t.address.toLowerCase() === inAddress);
+    const tOut = pool.tokens.find(t => t.address.toLowerCase() === outAddress);
+
+    if (!tIn || !tOut) return {} as WeightedPoolPairData;
+
+    const tokenInBalance = poolState.tokens[inAddress].balance;
+    const tokenOutBalance = poolState.tokens[outAddress].balance;
+    const tokenInWeight = poolState.tokens[inAddress].weight || BigInt(0);
+    const tokenOutWeight = poolState.tokens[outAddress].weight || BigInt(0);
+    const tokenInScalingFactor = getTokenScalingFactor(tIn.decimals);
+    const tokenOutScalingFactor = getTokenScalingFactor(tOut.decimals);
+
+    const poolPairData: WeightedPoolPairData = {
+      tokenInBalance,
+      tokenOutBalance,
+      tokenInScalingFactor,
+      tokenOutScalingFactor,
+      tokenInWeight,
+      tokenOutWeight,
+      swapFee: poolState.swapFee,
+    };
+    return poolPairData;
   }
 
   /*

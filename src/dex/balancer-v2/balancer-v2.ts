@@ -251,27 +251,17 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     switch (pool.poolType) {
       case 'MetaStable':
       case 'Stable': {
-        const indexIn = pool.tokens.findIndex(
-          t => t.address.toLowerCase() === from.address.toLowerCase(),
+        const poolPairData = this.poolMaths['Stable'].parsePoolPairData(
+          pool,
+          poolState,
+          from.address,
+          to.address,
+          pool.poolType === 'MetaStable',
         );
-        const indexOut = pool.tokens.findIndex(
-          t => t.address.toLowerCase() === to.address.toLowerCase(),
-        );
-        const balances = pool.tokens.map(
-          t => poolState.tokens[t.address.toLowerCase()].balance,
-        );
-
-        const scalingFactors =
-          pool.poolType === 'MetaStable'
-            ? pool.tokens.map(
-                t => poolState.tokens[t.address.toLowerCase()].scalingFactor,
-              )
-            : pool.tokens.map(t => getTokenScalingFactor(t.decimals));
-
         if (
           !this.poolMaths['Stable'].checkBalance(
-            balances[indexOut],
-            scalingFactors[indexOut],
+            poolPairData.balances[poolPairData.indexOut],
+            poolPairData.scalingFactors[poolPairData.indexOut],
             amounts,
             unitVolume,
           )
@@ -280,36 +270,29 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         const _prices = this.poolMaths['Stable'].onSell(
           _amounts,
-          balances,
-          indexIn,
-          indexOut,
-          scalingFactors,
-          poolState.swapFee,
-          poolState.amp,
+          poolPairData.balances,
+          poolPairData.indexIn,
+          poolPairData.indexOut,
+          poolPairData.scalingFactors,
+          poolPairData.swapFee,
+          poolPairData.amp,
         );
         return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
       }
       case 'Weighted':
       case 'LiquidityBootstrapping':
       case 'Investment': {
-        const inAddress = from.address.toLowerCase();
-        const outAddress = to.address.toLowerCase();
-
-        const tokenIn = pool.tokens.find(
-          t => t.address.toLowerCase() === inAddress,
-        );
-        const tokenOut = pool.tokens.find(
-          t => t.address.toLowerCase() === outAddress,
+        const poolPairData = this.poolMaths['Weighted'].parsePoolPairData(
+          pool,
+          poolState,
+          from.address,
+          to.address,
         );
 
-        if (!tokenIn || !tokenOut) return null;
-
-        const tokenInBalance = poolState.tokens[inAddress].balance;
-        const tokenOutBalance = poolState.tokens[outAddress].balance;
         if (
           !this.poolMaths['Weighted'].checkBalance(
-            tokenInBalance,
-            tokenOutBalance,
+            poolPairData.tokenInBalance,
+            poolPairData.tokenOutBalance,
             side,
             amounts,
             unitVolume,
@@ -317,21 +300,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         )
           return null;
 
-        const tokenInWeight = poolState.tokens[inAddress].weight;
-        const tokenOutWeight = poolState.tokens[outAddress].weight;
-
-        const tokenInScalingFactor = getTokenScalingFactor(tokenIn.decimals);
-        const tokenOutScalingFactor = getTokenScalingFactor(tokenOut.decimals);
-
         const _prices = this.poolMaths['Weighted'].onSell(
           _amounts,
-          tokenInBalance,
-          tokenOutBalance,
-          tokenInScalingFactor,
-          tokenOutScalingFactor,
-          tokenInWeight,
-          tokenOutWeight,
-          poolState.swapFee,
+          poolPairData.tokenInBalance,
+          poolPairData.tokenOutBalance,
+          poolPairData.tokenInScalingFactor,
+          poolPairData.tokenOutScalingFactor,
+          poolPairData.tokenInWeight,
+          poolPairData.tokenOutWeight,
+          poolPairData.swapFee,
         );
         return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
       }
