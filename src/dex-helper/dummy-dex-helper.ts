@@ -7,15 +7,11 @@ import {
 } from './index';
 import axios from 'axios';
 import { Address, LoggerConstructor } from '../types';
-import { MULTI_V2 } from '../constants';
+import { MULTI_V2, ProviderURL } from '../constants';
 import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
-
-const ProviderURL: { [network: number]: string } = {
-  1: process.env.HTTP_PROVIDER_1 || '',
-};
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {

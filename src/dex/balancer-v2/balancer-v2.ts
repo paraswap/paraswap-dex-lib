@@ -41,6 +41,7 @@ import {
   OptimizedBalancerV2Data,
   SwapTypes,
   DexParams,
+  PoolStateMap,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig } from './config';
@@ -82,8 +83,6 @@ const Adapters: { [chainId: number]: { name: string; index: number }[] } = {
     },
   ],
 };
-
-export type PoolStateMap = { [address: string]: PoolState };
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;

@@ -39,3 +39,7 @@ export const MULTI_V2: { [network: number]: Address } = {
   [Network.AVALANCHE]: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
   [Network.FANTOM]: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
 };
+
+export const ProviderURL: { [network: number]: string } = {
+  [Network.MAINNET]: process.env.HTTP_PROVIDER_1 || '',
+};

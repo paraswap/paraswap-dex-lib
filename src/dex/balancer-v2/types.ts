@@ -73,3 +73,5 @@ export type DexParams = {
   subgraphURL: string;
   vaultAddress: Address;
 };
+
+export type PoolStateMap = { [address: string]: PoolState };
