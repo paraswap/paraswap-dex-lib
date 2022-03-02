@@ -28,11 +28,11 @@ export class PricingHelper {
 
   private async initializeDex(dexKey: string, blockNumber: number) {
     try {
-      const dexInstace = this.dexAdapterService.getDexByKey(dexKey);
+      const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
 
-      if (!dexInstace.initializePricing) return;
+      if (!dexInstance.initializePricing) return;
 
-      return await dexInstace.initializePricing(blockNumber);
+      return await dexInstance.initializePricing(blockNumber);
     } catch (e) {
       this.logger.error('Error_startListening:', e);
       setTimeout(
@@ -68,15 +68,15 @@ export class PricingHelper {
               () => reject(new Error(`Timout`)),
               FETCH_POOL_INDENTIFIER_TIMEOUT,
             );
-            const dexInstace = this.dexAdapterService.getDexByKey(key);
+            const dexInstance = this.dexAdapterService.getDexByKey(key);
 
             if (
               filterConstantPricePool &&
-              dexInstace.hasConstantPriceLargeAmounts
+              dexInstance.hasConstantPriceLargeAmounts
             )
               return null;
 
-            dexInstace
+            dexInstance
               .getPoolIdentifiers(from, to, side, blockNumber)
               .then(resolve, reject)
               .finally(() => {
@@ -113,9 +113,9 @@ export class PricingHelper {
               FETCH_POOL_PRICES_TIMEOUT,
             );
 
-            const dexInstace = this.dexAdapterService.getDexByKey(key);
+            const dexInstance = this.dexAdapterService.getDexByKey(key);
 
-            dexInstace
+            dexInstance
               .getPricesVolume(
                 from,
                 to,

@@ -14,6 +14,7 @@ import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
 import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
+import { Dfyn } from './uniswap-v2/dfyn';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -59,7 +60,7 @@ const LegacyDexes = [
   Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX];
+const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
@@ -176,7 +177,7 @@ export class DexAdapterService {
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if ('uniswapforkoptimized' === dexKey) _dexKey = 'uniswapv2';
+    if ('uniswapforkoptimized' === _dexKey) _dexKey = 'uniswapv2';
 
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];

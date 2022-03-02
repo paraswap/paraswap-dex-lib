@@ -321,9 +321,12 @@ export class UniswapV2
     protected initCode: string = UniswapV2Config[dexKey][network].initCode,
     // feeCode is ignored when isDynamicFees is set to true
     protected feeCode: number = UniswapV2Config[dexKey][network].feeCode,
-    protected poolGasCost: number = UniswapV2Config[dexKey][network]
-      .poolGasCost ?? DefaultUniswapV2PoolGasGost,
-    protected adapters = Adapters[network],
+    protected poolGasCost: number = (UniswapV2Config[dexKey] &&
+      UniswapV2Config[dexKey][network].poolGasCost) ??
+      DefaultUniswapV2PoolGasGost,
+    protected adapters = (UniswapV2Config[dexKey] &&
+      UniswapV2Config[dexKey][network].adapters) ??
+      Adapters[network],
     protected router = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].router) ??
       UniswapV2ExchangeRouter[network],
@@ -601,11 +604,11 @@ export class UniswapV2
     const from = wrapETH(_from, this.network);
     const to = wrapETH(_to, this.network);
 
-    const tokenAdderess = [from.address.toLowerCase(), to.address.toLowerCase()]
+    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
       .sort((a, b) => (a > b ? 1 : -1))
       .join('_');
 
-    const poolIdentifier = `${this.dexKey}_${tokenAdderess}`;
+    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
     return [poolIdentifier];
   }
 
@@ -622,14 +625,14 @@ export class UniswapV2
       const from = wrapETH(_from, this.network);
       const to = wrapETH(_to, this.network);
 
-      const tokenAdderess = [
+      const tokenAddress = [
         from.address.toLowerCase(),
         to.address.toLowerCase(),
       ]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
-      const poolIdentifier = `${this.dexKey}_${tokenAdderess}`;
+      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
 
       if (
         limitPools &&
@@ -647,9 +650,9 @@ export class UniswapV2
 
       if (!pairParam) return null;
 
-      const unitAmount =
-        BigInt(1) *
-        BigInt(10 ** (side == SwapSide.BUY ? to.decimals : from.decimals));
+      const unitAmount = BigInt(
+        10 ** (side == SwapSide.BUY ? to.decimals : from.decimals),
+      );
       const unit =
         side == SwapSide.BUY
           ? await this.getBuyPricePath(unitAmount, [pairParam])
