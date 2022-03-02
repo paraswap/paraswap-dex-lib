@@ -444,4 +444,9 @@ export class VirtualBoostedPool {
 
     return [BZERO];
   }
+
+  getSwapData(tokenIn: string, tokenOut: string, boostedPool: string): void {
+    // this function could easily return swap data for a token pair
+    // i.e. for DAI>USDC it would return tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut in correct swap format
+  }
 }
