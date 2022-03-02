@@ -1,5 +1,9 @@
+import { Interface } from '@ethersproject/abi';
 import { MathSol, BZERO } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
+import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
+import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
@@ -356,6 +360,86 @@ export class StablePool extends BaseGeneralPool {
   }
 
   /*
+  Helper function to construct onchain multicall data for StablePool.
+  */
+  static getOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultAddress: string,
+    vaultInterface: Interface,
+  ): callData[] {
+    const poolInterface = new Interface(StablePoolABI);
+
+    return [
+      {
+        target: vaultAddress,
+        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getAmplificationParameter'),
+      },
+    ];
+  }
+
+  /*
+  Helper function to decodes multicall data for a Stable Pool.
+  data must contain returnData
+  startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
+  */
+  static decodeOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultInterface: Interface,
+    data: any,
+    startIndex: number,
+  ): [{ [address: string]: PoolState }, number] {
+    const poolInterface = new Interface(StablePoolABI);
+
+    const pools = {} as { [address: string]: PoolState };
+
+    const poolTokens = vaultInterface.decodeFunctionResult(
+      'getPoolTokens',
+      data.returnData[startIndex++],
+    );
+
+    const swapFee = poolInterface.decodeFunctionResult(
+      'getSwapFeePercentage',
+      data.returnData[startIndex++],
+    )[0];
+
+    const amp = poolInterface.decodeFunctionResult(
+      'getAmplificationParameter',
+      data.returnData[startIndex++],
+    );
+
+    const poolState: PoolState = {
+      swapFee: BigInt(swapFee.toString()),
+      tokens: poolTokens.tokens.reduce(
+        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
+          const tokenState: TokenState = {
+            balance: BigInt(poolTokens.balances[j].toString()),
+          };
+
+          ptAcc[pt.toLowerCase()] = tokenState;
+          return ptAcc;
+        },
+        {},
+      ),
+    };
+
+    if (amp) {
+      poolState.amp = BigInt(amp.value.toString());
+    }
+
+    pools[pool.address] = poolState;
+
+    return [pools, startIndex];
+  }
+
+  /*
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
   checkBalance(
@@ -433,6 +517,84 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
       _weightOut,
       tokenAmountsIn,
     );
+  }
+
+  /*
+  Helper function to construct onchain multicall data for WeightedPool (also 'LiquidityBootstrapping' and 'Investment' pool types).
+  */
+  static getOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultAddress: string,
+    vaultInterface: Interface,
+  ): callData[] {
+    const poolInterface = new Interface(WeightedPoolABI);
+    return [
+      {
+        target: vaultAddress,
+        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getNormalizedWeights'),
+      },
+    ];
+  }
+
+  /*
+  Helper function to decodes multicall data for a Weighted Pool.
+  data must contain returnData
+  startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
+  */
+  static decodeOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultInterface: Interface,
+    data: any,
+    startIndex: number,
+  ): [{ [address: string]: PoolState }, number] {
+    const poolInterface = new Interface(WeightedPoolABI);
+
+    const pools = {} as { [address: string]: PoolState };
+
+    const poolTokens = vaultInterface.decodeFunctionResult(
+      'getPoolTokens',
+      data.returnData[startIndex++],
+    );
+
+    const swapFee = poolInterface.decodeFunctionResult(
+      'getSwapFeePercentage',
+      data.returnData[startIndex++],
+    )[0];
+
+    const normalisedWeights = poolInterface.decodeFunctionResult(
+      'getNormalizedWeights',
+      data.returnData[startIndex++],
+    )[0];
+
+    const poolState: PoolState = {
+      swapFee: BigInt(swapFee.toString()),
+      tokens: poolTokens.tokens.reduce(
+        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
+          const tokenState: TokenState = {
+            balance: BigInt(poolTokens.balances[j].toString()),
+          };
+
+          if (normalisedWeights)
+            tokenState.weight = BigInt(normalisedWeights[j].toString());
+
+          ptAcc[pt.toLowerCase()] = tokenState;
+          return ptAcc;
+        },
+        {},
+      ),
+    };
+
+    pools[pool.address] = poolState;
+
+    return [pools, startIndex];
   }
 
   /*

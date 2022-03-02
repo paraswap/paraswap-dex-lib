@@ -22,28 +22,18 @@ import {
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
-import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
-import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
-import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
-import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  TokenState,
   PoolState,
-  SubgraphToken,
   SubgraphPoolBase,
-  BalancerSwapsV2,
   BalancerV2Data,
-  BalancerFunds,
-  BalancerSwap,
   BalancerParam,
   OptimizedBalancerV2Data,
   SwapTypes,
-  DexParams,
 } from './types';
 import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
@@ -101,7 +91,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   poolMaths: { [type: string]: any };
-  poolInterfaces: { [type: string]: Interface };
 
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
@@ -113,8 +102,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'Weighted',
     'LiquidityBootstrapping',
     'Investment',
-    'StablePhantom',
-    'AaveLinear',
   ];
 
   constructor(
@@ -131,12 +118,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       Weighted: new WeightedPool(),
       StablePhantom: new PhantomStablePool(),
       AaveLinear: new LinearPool(),
-    };
-    this.poolInterfaces = {
-      Stable: new Interface(StablePoolABI),
-      Weighted: new Interface(WeightedPoolABI),
-      MetaStable: new Interface(MetaStablePoolABI),
-      Linear: new Interface(LinearPoolABI),
     };
     this.vaultInterface = new Interface(VaultABI);
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
@@ -428,59 +409,49 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ): Promise<PoolStateMap> {
     const multiCallData = subgraphPoolBase
       .map(pool => {
-        let poolCallData = [
-          {
-            target: this.vaultAddress,
-            callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
-              pool.id,
-            ]),
-          },
-          {
-            target: pool.address,
-            callData: this.poolInterfaces['Weighted'].encodeFunctionData(
-              'getSwapFeePercentage',
-            ), // different function for element pool
-          },
-        ];
-
-        if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
-          poolCallData.push({
-            target: pool.address,
-            callData:
-              this.poolInterfaces['MetaStable'].encodeFunctionData(
-                'getScalingFactors',
-              ),
-          });
-        }
+        let poolCallData = [];
         if (
           ['Weighted', 'LiquidityBootstrapping', 'Investment'].includes(
             pool.poolType,
           )
         ) {
-          poolCallData.push({
-            target: pool.address,
-            callData: this.poolInterfaces['Weighted'].encodeFunctionData(
-              'getNormalizedWeights',
-            ),
-          });
+          // Will create onchain call data for WeightedPool types
+          const weightedCalls = WeightedPool.getOnChainCalls(
+            pool,
+            this.vaultAddress,
+            this.vaultInterface,
+          );
+          poolCallData.push(...weightedCalls);
         }
-        if (['Stable', 'MetaStable', 'StablePhantom'].includes(pool.poolType)) {
-          poolCallData.push({
-            target: pool.address,
-            callData: this.poolInterfaces['Stable'].encodeFunctionData(
-              'getAmplificationParameter',
-            ),
-          });
+
+        if (['Stable'].includes(pool.poolType)) {
+          // Will create onchain call data for StablePool
+          const stableCalls = StablePool.getOnChainCalls(
+            pool,
+            this.vaultAddress,
+            this.vaultInterface,
+          );
+          poolCallData.push(...stableCalls);
         }
 
         if (['AaveLinear'].includes(pool.poolType)) {
           // Will create onchain call data for linearPools
-          // Assumes getPoolTokens + getSwapFeePercentage call data is added separately (see above)
           const linearCalls = LinearPool.getOnChainCalls(
             pool,
-            this.poolInterfaces['Linear'],
+            this.vaultAddress,
+            this.vaultInterface,
           );
           poolCallData.push(...linearCalls);
+        }
+
+        if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
+          // Will create onchain call data for Meta/PhantomStablePool
+          const metaStableCalls = PhantomStablePool.getOnChainCalls(
+            pool,
+            this.vaultAddress,
+            this.vaultInterface,
+          );
+          poolCallData.push(...metaStableCalls);
         }
 
         return poolCallData;
@@ -497,11 +468,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
       (acc: { [address: string]: PoolState }, pool) => {
-        if (['AaveLinear'].includes(pool.poolType)) {
-          // This will decode multicall data for all pools associated with linear pool
-          const [decoded, newIndex] = LinearPool.decodeOnChainCalls(
+        if (
+          ['Weighted', 'LiquidityBootstrapping', 'Investment'].includes(
+            pool.poolType,
+          )
+        ) {
+          // This will decode multicall data for all pools associated with Weighted pools
+          const [decoded, newIndex] = WeightedPool.decodeOnChainCalls(
             pool,
-            this.poolInterfaces,
             this.vaultInterface,
             data,
             i,
@@ -511,75 +485,45 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           return acc;
         }
 
-        const poolTokens = this.vaultInterface.decodeFunctionResult(
-          'getPoolTokens',
-          data.returnData[i++],
-        );
-
-        const swapFee = this.poolInterfaces['Weighted'].decodeFunctionResult(
-          'getSwapFeePercentage',
-          data.returnData[i++],
-        )[0];
-
-        const scalingFactors = ['MetaStable', 'StablePhantom'].includes(
-          pool.poolType,
-        )
-          ? this.poolInterfaces['MetaStable'].decodeFunctionResult(
-              'getScalingFactors',
-              data.returnData[i++],
-            )[0]
-          : undefined;
-
-        const normalisedWeights = [
-          'Weighted',
-          'LiquidityBootstrapping',
-          'Investment',
-        ].includes(pool.poolType)
-          ? this.poolInterfaces['Weighted'].decodeFunctionResult(
-              'getNormalizedWeights',
-              data.returnData[i++],
-            )[0]
-          : undefined;
-
-        const amp = ['Stable', 'MetaStable', 'StablePhantom'].includes(
-          pool.poolType,
-        )
-          ? this.poolInterfaces['Stable'].decodeFunctionResult(
-              'getAmplificationParameter',
-              data.returnData[i++],
-            )
-          : undefined;
-
-        let poolState: PoolState = {
-          swapFee: BigInt(swapFee.toString()),
-          tokens: poolTokens.tokens.reduce(
-            (
-              ptAcc: { [address: string]: TokenState },
-              pt: string,
-              j: number,
-            ) => {
-              let tokenState: TokenState = {
-                balance: BigInt(poolTokens.balances[j].toString()),
-              };
-
-              if (scalingFactors)
-                tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
-
-              if (normalisedWeights)
-                tokenState.weight = BigInt(normalisedWeights[j].toString());
-
-              ptAcc[pt.toLowerCase()] = tokenState;
-              return ptAcc;
-            },
-            {},
-          ),
-        };
-
-        if (amp) {
-          poolState.amp = BigInt(amp.value.toString());
+        if (['AaveLinear'].includes(pool.poolType)) {
+          // This will decode multicall data for all pools associated with linear pool
+          const [decoded, newIndex] = LinearPool.decodeOnChainCalls(
+            pool,
+            this.vaultInterface,
+            data,
+            i,
+          );
+          i = newIndex;
+          acc = { ...acc, ...decoded };
+          return acc;
         }
 
-        acc[pool.address.toLowerCase()] = poolState;
+        if (['Stable'].includes(pool.poolType)) {
+          // This will decode multicall data for Stable pools
+          const [decoded, newIndex] = StablePool.decodeOnChainCalls(
+            pool,
+            this.vaultInterface,
+            data,
+            i,
+          );
+          i = newIndex;
+          acc = { ...acc, ...decoded };
+          return acc;
+        }
+
+        if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
+          // This will decode multicall data for Meta/PhantomStable pools
+          const [decoded, newIndex] = PhantomStablePool.decodeOnChainCalls(
+            pool,
+            this.vaultInterface,
+            data,
+            i,
+          );
+          i = newIndex;
+          acc = { ...acc, ...decoded };
+          return acc;
+        }
+
         return acc;
       },
       {},
