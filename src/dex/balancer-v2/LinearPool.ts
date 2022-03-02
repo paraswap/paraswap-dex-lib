@@ -5,6 +5,7 @@ import * as LinearMath from './LinearMath';
 import { BZERO } from './balancer-v2-math';
 import { BasePool } from './balancer-v2-pool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 
 export enum PairTypes {
   BptToMainToken,
@@ -255,25 +256,24 @@ export class LinearPool extends BasePool {
     */
   static getOnChainCalls(
     pool: SubgraphPoolBase,
-    poolInterface: Interface,
+    vaultAddress: string,
+    vaultInterface: Interface,
   ): callData[] {
-    // Assumes poolTokens and swapFee callData are already added in main getOnChainState
-    const poolCallData: callData[] = [];
+    const poolInterface = new Interface(LinearPoolABI);
+
+    const poolCallData: callData[] = [
+      {
+        target: vaultAddress,
+        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+      },
+    ];
     poolCallData.push({
       target: pool.address,
       callData: poolInterface.encodeFunctionData('getScalingFactors'),
-    });
-    poolCallData.push({
-      target: pool.address,
-      callData: poolInterface.encodeFunctionData('getMainIndex'),
-    });
-    poolCallData.push({
-      target: pool.address,
-      callData: poolInterface.encodeFunctionData('getWrappedIndex'),
-    });
-    poolCallData.push({
-      target: pool.address,
-      callData: poolInterface.encodeFunctionData('getBptIndex'),
     });
     // returns lowerTarget, upperTarget
     poolCallData.push({
@@ -290,11 +290,12 @@ export class LinearPool extends BasePool {
     */
   static decodeOnChainCalls(
     pool: SubgraphPoolBase,
-    poolInterfaces: { [type: string]: Interface },
     vaultInterface: Interface,
     data: any,
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
+    const poolInterface = new Interface(LinearPoolABI);
+
     const pools = {} as { [address: string]: PoolState };
 
     const poolTokens = vaultInterface.decodeFunctionResult(
@@ -302,40 +303,30 @@ export class LinearPool extends BasePool {
       data.returnData[startIndex++],
     );
 
-    const swapFee = poolInterfaces['Linear'].decodeFunctionResult(
+    const swapFee = poolInterface.decodeFunctionResult(
       'getSwapFeePercentage',
       data.returnData[startIndex++],
     )[0];
 
-    const scalingFactors = poolInterfaces['Linear'].decodeFunctionResult(
+    const scalingFactors = poolInterface.decodeFunctionResult(
       'getScalingFactors',
       data.returnData[startIndex++],
     )[0];
 
-    const mainIndex = poolInterfaces['Linear'].decodeFunctionResult(
-      'getMainIndex',
+    const [lowerTarget, upperTarget] = poolInterface.decodeFunctionResult(
+      'getTargets',
       data.returnData[startIndex++],
     );
 
-    const wrappedIndex = poolInterfaces['Linear'].decodeFunctionResult(
-      'getWrappedIndex',
-      data.returnData[startIndex++],
+    const bptIndex = pool.tokens.findIndex(
+      t => t.address.toLowerCase() === pool.address.toLowerCase(),
     );
-
-    const bptIndex = poolInterfaces['Linear'].decodeFunctionResult(
-      'getBptIndex',
-      data.returnData[startIndex++],
-    );
-
-    const [lowerTarget, upperTarget] = poolInterfaces[
-      'Linear'
-    ].decodeFunctionResult('getTargets', data.returnData[startIndex++]);
 
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
-      mainIndex: Number(mainIndex),
-      wrappedIndex: Number(wrappedIndex),
-      bptIndex: Number(bptIndex),
+      mainIndex: Number(pool.mainIndex),
+      wrappedIndex: Number(pool.wrappedIndex),
+      bptIndex,
       lowerTarget: BigInt(lowerTarget.toString()),
       upperTarget: BigInt(upperTarget.toString()),
       tokens: poolTokens.tokens.reduce(

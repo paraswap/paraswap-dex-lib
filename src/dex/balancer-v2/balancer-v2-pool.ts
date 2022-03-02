@@ -1,5 +1,10 @@
+import { Interface } from '@ethersproject/abi';
 import { MathSol, BZERO } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
+import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import { getTokenScalingFactor } from './utils';
+import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
+import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
@@ -25,6 +30,25 @@ export class BasePool {
     return MathSol.divDownFixed(amount, scalingFactor);
   }
 }
+
+type WeightedPoolPairData = {
+  tokenInBalance: BigInt;
+  tokenOutBalance: BigInt;
+  tokenInScalingFactor: BigInt;
+  tokenOutScalingFactor: BigInt;
+  tokenInWeight: BigInt;
+  tokenOutWeight: BigInt;
+  swapFee: BigInt;
+};
+
+type StablePoolPairData = {
+  balances: BigInt[];
+  indexIn: number;
+  indexOut: number;
+  scalingFactors: BigInt[];
+  swapFee: BigInt;
+  amp: BigInt;
+};
 
 abstract class BaseGeneralPool extends BasePool {
   // Swap Hooks
@@ -356,6 +380,121 @@ export class StablePool extends BaseGeneralPool {
   }
 
   /*
+  Helper function to parse pool data into params for onSell function.
+  */
+  parsePoolPairData(
+    pool: SubgraphPoolBase,
+    poolState: PoolState,
+    tokenIn: string,
+    tokenOut: string,
+    isMetaStable: boolean,
+  ): StablePoolPairData {
+    let indexIn = 0,
+      indexOut = 0;
+    const scalingFactors: BigInt[] = [];
+    const balances = pool.tokens.map((t, i) => {
+      if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
+      if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
+      if (isMetaStable)
+        scalingFactors.push(
+          poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
+        );
+      else scalingFactors.push(getTokenScalingFactor(t.decimals));
+      return poolState.tokens[t.address.toLowerCase()].balance;
+    });
+
+    const poolPairData: StablePoolPairData = {
+      balances,
+      indexIn,
+      indexOut,
+      scalingFactors,
+      swapFee: poolState.swapFee,
+      amp: poolState.amp ? poolState.amp : BigInt(0),
+    };
+    return poolPairData;
+  }
+
+  /*
+  Helper function to construct onchain multicall data for StablePool.
+  */
+  static getOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultAddress: string,
+    vaultInterface: Interface,
+  ): callData[] {
+    const poolInterface = new Interface(StablePoolABI);
+
+    return [
+      {
+        target: vaultAddress,
+        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getAmplificationParameter'),
+      },
+    ];
+  }
+
+  /*
+  Helper function to decodes multicall data for a Stable Pool.
+  data must contain returnData
+  startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
+  */
+  static decodeOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultInterface: Interface,
+    data: any,
+    startIndex: number,
+  ): [{ [address: string]: PoolState }, number] {
+    const poolInterface = new Interface(StablePoolABI);
+
+    const pools = {} as { [address: string]: PoolState };
+
+    const poolTokens = vaultInterface.decodeFunctionResult(
+      'getPoolTokens',
+      data.returnData[startIndex++],
+    );
+
+    const swapFee = poolInterface.decodeFunctionResult(
+      'getSwapFeePercentage',
+      data.returnData[startIndex++],
+    )[0];
+
+    const amp = poolInterface.decodeFunctionResult(
+      'getAmplificationParameter',
+      data.returnData[startIndex++],
+    );
+
+    const poolState: PoolState = {
+      swapFee: BigInt(swapFee.toString()),
+      tokens: poolTokens.tokens.reduce(
+        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
+          const tokenState: TokenState = {
+            balance: BigInt(poolTokens.balances[j].toString()),
+          };
+
+          ptAcc[pt.toLowerCase()] = tokenState;
+          return ptAcc;
+        },
+        {},
+      ),
+    };
+
+    if (amp) {
+      poolState.amp = BigInt(amp.value.toString());
+    }
+
+    pools[pool.address] = poolState;
+
+    return [pools, startIndex];
+  }
+
+  /*
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
   checkBalance(
@@ -433,6 +572,120 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
       _weightOut,
       tokenAmountsIn,
     );
+  }
+
+  /*
+  Helper function to parse pool data into params for onSell function.
+  */
+  parsePoolPairData(
+    pool: SubgraphPoolBase,
+    poolState: PoolState,
+    tokenIn: string,
+    tokenOut: string,
+  ): WeightedPoolPairData {
+    const inAddress = tokenIn.toLowerCase();
+    const outAddress = tokenOut.toLowerCase();
+
+    const tIn = pool.tokens.find(t => t.address.toLowerCase() === inAddress);
+    const tOut = pool.tokens.find(t => t.address.toLowerCase() === outAddress);
+
+    if (!tIn || !tOut) return {} as WeightedPoolPairData;
+
+    const tokenInBalance = poolState.tokens[inAddress].balance;
+    const tokenOutBalance = poolState.tokens[outAddress].balance;
+    const tokenInWeight = poolState.tokens[inAddress].weight || BigInt(0);
+    const tokenOutWeight = poolState.tokens[outAddress].weight || BigInt(0);
+    const tokenInScalingFactor = getTokenScalingFactor(tIn.decimals);
+    const tokenOutScalingFactor = getTokenScalingFactor(tOut.decimals);
+
+    const poolPairData: WeightedPoolPairData = {
+      tokenInBalance,
+      tokenOutBalance,
+      tokenInScalingFactor,
+      tokenOutScalingFactor,
+      tokenInWeight,
+      tokenOutWeight,
+      swapFee: poolState.swapFee,
+    };
+    return poolPairData;
+  }
+
+  /*
+  Helper function to construct onchain multicall data for WeightedPool (also 'LiquidityBootstrapping' and 'Investment' pool types).
+  */
+  static getOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultAddress: string,
+    vaultInterface: Interface,
+  ): callData[] {
+    const poolInterface = new Interface(WeightedPoolABI);
+    return [
+      {
+        target: vaultAddress,
+        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getNormalizedWeights'),
+      },
+    ];
+  }
+
+  /*
+  Helper function to decodes multicall data for a Weighted Pool.
+  data must contain returnData
+  startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
+  */
+  static decodeOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultInterface: Interface,
+    data: any,
+    startIndex: number,
+  ): [{ [address: string]: PoolState }, number] {
+    const poolInterface = new Interface(WeightedPoolABI);
+
+    const pools = {} as { [address: string]: PoolState };
+
+    const poolTokens = vaultInterface.decodeFunctionResult(
+      'getPoolTokens',
+      data.returnData[startIndex++],
+    );
+
+    const swapFee = poolInterface.decodeFunctionResult(
+      'getSwapFeePercentage',
+      data.returnData[startIndex++],
+    )[0];
+
+    const normalisedWeights = poolInterface.decodeFunctionResult(
+      'getNormalizedWeights',
+      data.returnData[startIndex++],
+    )[0];
+
+    const poolState: PoolState = {
+      swapFee: BigInt(swapFee.toString()),
+      tokens: poolTokens.tokens.reduce(
+        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
+          const tokenState: TokenState = {
+            balance: BigInt(poolTokens.balances[j].toString()),
+          };
+
+          if (normalisedWeights)
+            tokenState.weight = BigInt(normalisedWeights[j].toString());
+
+          ptAcc[pt.toLowerCase()] = tokenState;
+          return ptAcc;
+        },
+        {},
+      ),
+    };
+
+    pools[pool.address] = poolState;
+
+    return [pools, startIndex];
   }
 
   /*

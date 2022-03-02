@@ -1,9 +1,11 @@
+import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 import { BasePool } from './balancer-v2-pool';
 import { isSameAddress } from './utils';
 import * as StableMath from './StableMath';
 import { BZERO } from './balancer-v2-math';
-import { SubgraphPoolBase, PoolState } from './types';
+import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
+import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 
 enum PairTypes {
   BptToToken,
@@ -274,6 +276,102 @@ export class PhantomStablePool extends BasePool {
       amp: poolState.amp ? poolState.amp : BigInt(0),
     };
     return poolPairData;
+  }
+
+  /*
+  Helper function to construct onchain multicall data for PhantomStablePool.
+  Main difference to standard StablePool is scaling factors which includes rate.
+  This also applies to MetaStablePool.
+  */
+  static getOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultAddress: string,
+    vaultInterface: Interface,
+  ): callData[] {
+    const poolInterface = new Interface(MetaStablePoolABI);
+
+    return [
+      {
+        target: vaultAddress,
+        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getScalingFactors'),
+      },
+      {
+        target: pool.address,
+        callData: poolInterface.encodeFunctionData('getAmplificationParameter'),
+      },
+    ];
+  }
+
+  /*
+  Helper function to decodes multicall data for a PhantomStable Pool.
+  Main difference to standard StablePool is scaling factors which includes rate.
+  This also applies to MetaStablePool.
+  data must contain returnData
+  startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
+  */
+  static decodeOnChainCalls(
+    pool: SubgraphPoolBase,
+    vaultInterface: Interface,
+    data: any,
+    startIndex: number,
+  ): [{ [address: string]: PoolState }, number] {
+    const poolInterface = new Interface(MetaStablePoolABI);
+
+    const pools = {} as { [address: string]: PoolState };
+
+    const poolTokens = vaultInterface.decodeFunctionResult(
+      'getPoolTokens',
+      data.returnData[startIndex++],
+    );
+
+    const swapFee = poolInterface.decodeFunctionResult(
+      'getSwapFeePercentage',
+      data.returnData[startIndex++],
+    )[0];
+
+    const scalingFactors = poolInterface.decodeFunctionResult(
+      'getScalingFactors',
+      data.returnData[startIndex++],
+    )[0];
+
+    const amp = poolInterface.decodeFunctionResult(
+      'getAmplificationParameter',
+      data.returnData[startIndex++],
+    );
+
+    const poolState: PoolState = {
+      swapFee: BigInt(swapFee.toString()),
+      tokens: poolTokens.tokens.reduce(
+        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
+          const tokenState: TokenState = {
+            balance: BigInt(poolTokens.balances[j].toString()),
+          };
+
+          if (scalingFactors)
+            tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
+
+          ptAcc[pt.toLowerCase()] = tokenState;
+          return ptAcc;
+        },
+        {},
+      ),
+    };
+
+    if (amp) {
+      poolState.amp = BigInt(amp.value.toString());
+    }
+
+    pools[pool.address] = poolState;
+
+    return [pools, startIndex];
   }
 
   /*

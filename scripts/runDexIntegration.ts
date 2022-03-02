@@ -79,8 +79,8 @@ async function main() {
   );
   console.log('WETH <> DAI Pool Prices: ', prices);
 
-  const poolLiquidity = await balancerV2.getTopPoolsForToken(from.address, 10);
-  console.log('WETH Top Pools:', poolLiquidity);
+  // const poolLiquidity = await balancerV2.getTopPoolsForToken(from.address, 10);
+  // console.log('WETH Top Pools:', poolLiquidity);
 }
 
 main();

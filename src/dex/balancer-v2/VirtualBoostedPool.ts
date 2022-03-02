@@ -4,6 +4,8 @@ import { BZERO } from './balancer-v2-math';
 import { LinearPool } from './LinearPool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { PoolState, TokenState, SubgraphPoolBase, callData } from './types';
+import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
+import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 
 export type MainToken = {
   address: string;
@@ -90,6 +92,8 @@ export class VirtualBoostedPool {
           poolType: 'VirtualBoosted',
           tokens:
             VirtualBoostedPool.virtualBoostedPools[pool.address].mainTokens,
+          mainIndex: 0,
+          wrappedIndex: 0,
         });
     });
 
@@ -106,21 +110,33 @@ export class VirtualBoostedPool {
     pool: SubgraphPoolBase,
     vaultAddress: string,
     vaultInterface: Interface,
-    poolInterfaces: { [type: string]: Interface },
   ): callData[] {
+    const poolInterfaceLinear = new Interface(LinearPoolABI);
+    const poolInterfaceMetaStable = new Interface(MetaStablePoolABI);
+
     // Add calls for PhantomStable Pool
-    // Assumes poolTokens and swapFee callData are already added in main getOnChainState
     const poolCallData: callData[] = [];
+    // Add pool tokens for upper PhantomStablePool
+    poolCallData.push({
+      target: vaultAddress,
+      callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+    });
+    // Add swap fee for upper PhantomStablePool
+    poolCallData.push({
+      target: pool.address,
+      callData: poolInterfaceMetaStable.encodeFunctionData(
+        'getSwapFeePercentage',
+      ),
+    });
     // Add scaling factors for upper PhantomStablePool
     poolCallData.push({
       target: pool.address,
-      callData:
-        poolInterfaces['MetaStable'].encodeFunctionData('getScalingFactors'),
+      callData: poolInterfaceMetaStable.encodeFunctionData('getScalingFactors'),
     });
     // Add amp parameter for upper PhantomStable Pool
     poolCallData.push({
       target: pool.address,
-      callData: poolInterfaces['MetaStable'].encodeFunctionData(
+      callData: poolInterfaceMetaStable.encodeFunctionData(
         'getAmplificationParameter',
       ),
     });
@@ -136,32 +152,30 @@ export class VirtualBoostedPool {
         });
         poolCallData.push({
           target: linearPool.address,
-          callData: poolInterfaces['Weighted'].encodeFunctionData(
+          callData: poolInterfaceLinear.encodeFunctionData(
             'getSwapFeePercentage',
           ),
         });
         poolCallData.push({
           target: linearPool.address,
-          callData:
-            poolInterfaces['Linear'].encodeFunctionData('getScalingFactors'),
+          callData: poolInterfaceLinear.encodeFunctionData('getScalingFactors'),
         });
         poolCallData.push({
           target: linearPool.address,
-          callData: poolInterfaces['Linear'].encodeFunctionData('getMainIndex'),
+          callData: poolInterfaceLinear.encodeFunctionData('getMainIndex'),
         });
         poolCallData.push({
           target: linearPool.address,
-          callData:
-            poolInterfaces['Linear'].encodeFunctionData('getWrappedIndex'),
+          callData: poolInterfaceLinear.encodeFunctionData('getWrappedIndex'),
         });
         poolCallData.push({
           target: linearPool.address,
-          callData: poolInterfaces['Linear'].encodeFunctionData('getBptIndex'),
+          callData: poolInterfaceLinear.encodeFunctionData('getBptIndex'),
         });
         // returns lowerTarget, upperTarget
         poolCallData.push({
           target: linearPool.address,
-          callData: poolInterfaces['Linear'].encodeFunctionData('getTargets'),
+          callData: poolInterfaceLinear.encodeFunctionData('getTargets'),
         });
       },
     );
@@ -175,28 +189,29 @@ export class VirtualBoostedPool {
     */
   static decodeOnChainCalls(
     pool: SubgraphPoolBase,
-    poolInterfaces: { [type: string]: Interface },
     vaultInterface: Interface,
     data: any,
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
+    const poolInterfaceLinear = new Interface(LinearPoolABI);
+    const poolInterfaceMetaStable = new Interface(MetaStablePoolABI);
     const pools: { [address: string]: PoolState } = {};
     const poolTokens = vaultInterface.decodeFunctionResult(
       'getPoolTokens',
       data.returnData[startIndex++],
     );
 
-    const swapFee = poolInterfaces['Weighted'].decodeFunctionResult(
+    const swapFee = poolInterfaceMetaStable.decodeFunctionResult(
       'getSwapFeePercentage',
       data.returnData[startIndex++],
     )[0];
 
-    const scalingFactors = poolInterfaces['MetaStable'].decodeFunctionResult(
+    const scalingFactors = poolInterfaceMetaStable.decodeFunctionResult(
       'getScalingFactors',
       data.returnData[startIndex++],
     )[0];
 
-    const amp = poolInterfaces['Stable'].decodeFunctionResult(
+    const amp = poolInterfaceMetaStable.decodeFunctionResult(
       'getAmplificationParameter',
       data.returnData[startIndex++],
     );
@@ -230,36 +245,36 @@ export class VirtualBoostedPool {
           data.returnData[startIndex++],
         );
 
-        const swapFee = poolInterfaces['Weighted'].decodeFunctionResult(
+        const swapFee = poolInterfaceLinear.decodeFunctionResult(
           'getSwapFeePercentage',
           data.returnData[startIndex++],
         )[0];
 
-        const scalingFactors = poolInterfaces[
-          'MetaStable'
-        ].decodeFunctionResult(
+        const scalingFactors = poolInterfaceLinear.decodeFunctionResult(
           'getScalingFactors',
           data.returnData[startIndex++],
         )[0];
 
-        const mainIndex = poolInterfaces['Linear'].decodeFunctionResult(
+        const mainIndex = poolInterfaceLinear.decodeFunctionResult(
           'getMainIndex',
           data.returnData[startIndex++],
         );
 
-        const wrappedIndex = poolInterfaces['Linear'].decodeFunctionResult(
+        const wrappedIndex = poolInterfaceLinear.decodeFunctionResult(
           'getWrappedIndex',
           data.returnData[startIndex++],
         );
 
-        const bptIndex = poolInterfaces['Linear'].decodeFunctionResult(
+        const bptIndex = poolInterfaceLinear.decodeFunctionResult(
           'getBptIndex',
           data.returnData[startIndex++],
         );
 
-        const [lowerTarget, upperTarget] = poolInterfaces[
-          'Linear'
-        ].decodeFunctionResult('getTargets', data.returnData[startIndex++]);
+        const [lowerTarget, upperTarget] =
+          poolInterfaceLinear.decodeFunctionResult(
+            'getTargets',
+            data.returnData[startIndex++],
+          );
 
         const poolState: PoolState = {
           swapFee: BigInt(swapFee.toString()),
