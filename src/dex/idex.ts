@@ -51,6 +51,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam> {
     destAmount: NumberAsString,
     data: ExchangeData,
     side: SwapSide,
+    permit: string,
     contractMethod?: string,
   ): TxInfo<DirectParam>;
 }

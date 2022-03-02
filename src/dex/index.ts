@@ -30,6 +30,7 @@ import { Kyber } from './kyber';
 import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
+import { Lido } from './lido';
 
 const LegacyDexes = [
   Curve,
@@ -55,6 +56,7 @@ const LegacyDexes = [
   Weth,
   KyberDmm,
   Jarvis,
+  Lido,
 ];
 
 const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX];

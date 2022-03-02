@@ -856,9 +856,11 @@ export class UniswapV2
     destAmount: NumberAsString,
     _data: UniswapData,
     side: SwapSide,
+    permit: string,
     contractMethod?: string,
   ): TxInfo<UniswapParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+    if (permit !== '0x') contractMethod += 'WithPermit';
 
     const swapParams = ((): UniswapParam => {
       const data = _data as unknown as UniswapDataLegacy;
@@ -889,13 +891,24 @@ export class UniswapV2
             encodePools(_data.pools),
           ];
 
+        case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
+        case UniswapV2Functions.buyOnUniswapV2ForkWithPermit:
+          return [
+            srcToken,
+            srcAmount,
+            destAmount,
+            this.getWETHAddress(srcToken, destToken, _data.weth),
+            encodePools(_data.pools),
+            permit,
+          ];
+
         default:
           throw new Error(`contractMethod=${contractMethod} is not supported`);
       }
     })();
 
     const encoder = (...params: UniswapParam) =>
-      this.routerInterface.encodeFunctionData(contractMethod, params);
+      this.routerInterface.encodeFunctionData(contractMethod!, params);
     return {
       params: swapParams,
       encoder,
