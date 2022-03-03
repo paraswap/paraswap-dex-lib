@@ -14,6 +14,7 @@
     "@types/axios": "0.14.0",
     "@types/jest": "26.0.24",
     "@types/lodash": "4.14.178",
+    "@types/node": "^17.0.21",
     "axios": "0.26.0",
     "change-case": "^4.1.2",
     "dotenv": "16.0.0",
@@ -27,10 +28,12 @@
     "yargs": "^17.0.1"
   },
   "scripts": {
+    "init-integration": "ts-node scripts/init-dex-integration.ts",
+    "test-integration": "ts-node scripts/test-dex-integration.ts",
     "build": "tsc",
     "test": "jest",
     "prepare": "husky install && yarn build",
-    "dex:init": "npx ts-node scripts/initDexIntegration.ts"
+    "dex:init": "ts-node scripts/initDexIntegration.ts"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
