@@ -7,7 +7,7 @@ import {
 } from './index';
 import axios from 'axios';
 import { Address, LoggerConstructor } from '../types';
-import { MULTI_V2, ProviderURL } from '../constants';
+import { MULTI_V2, ProviderURL, AugustusAddress } from '../constants';
 import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
@@ -88,7 +88,7 @@ export class DummyDexHelper implements IDexHelper {
   constructor(network: number) {
     this.cache = new DummyCache();
     this.httpRequest = new DymmyRequestWrapper();
-    this.augustusAddress = '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57';
+    this.augustusAddress = AugustusAddress[network];
     this.provider = new JsonRpcProvider(ProviderURL[network]);
     this.multiContract = new Contract(
       MULTI_V2[network],

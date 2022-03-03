@@ -188,3 +188,13 @@ export type DexConfigMap<DexParams> = {
     [network: number]: DexParams;
   };
 };
+
+export type TxObject = {
+  from: Address;
+  to: Address;
+  value: string;
+  data: string;
+  gasPrice?: string;
+  maxFeePerGas?: string;
+  maxPriorityFeePerGas?: string;
+};
