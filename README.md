@@ -1,4 +1,4 @@
-# Dex Lib
+# ParaSwap Dex Lib
 
 ## Description
 
