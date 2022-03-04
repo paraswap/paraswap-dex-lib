@@ -127,5 +127,5 @@ export type DexParams = {
   poolGasCost?: number;
   feeCode: number;
   router?: Address;
-  adapters?: { [side: string]: { name: string; index: number }[] };
+  adapters?: { [side: string]: { name: string; index: number }[] | null };
 };
