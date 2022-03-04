@@ -71,7 +71,7 @@ const AdapterNameAddressMap: {
     Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
     Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
     Adapter03: '0xe6A36F977844EB6AE1609686682698D20e4B0C26',
-    BuyAdapter: '0x4bF27594E968b8CAccA75985469211eb35e2C771',
+    BuyAdapter: '0xd8b2760230BbF3aA9777E175eC1c9720EB499ebA',
   },
   [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
@@ -82,7 +82,7 @@ const AdapterNameAddressMap: {
     BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
   },
   [Network.ROPSTEN]: {
-    RopstenAdapter01: '0xcECD5055D08dc8846440e654525ba13f77C2D5F6',
+    RopstenAdapter01: '0x74fF86C61CF66334dCfc999814DE4695B4BaE57b',
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
   [Network.AVALANCHE]: {
