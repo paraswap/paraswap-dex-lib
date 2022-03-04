@@ -10,6 +10,7 @@ const templateFolderPath = path.resolve('dex-template');
 const dexNamePlaceholder = /__DexName__/g;
 const dexNameCamelPlaceholder = /__DexNameCamel__/g;
 const dexNameParamPlaceholder = /__DexNameParam__/g;
+const dexNameConstantPlaceholder = /__DexNameConstant__/g;
 
 const paramCasePattern = /^[a-z0-9\-]+$/g;
 
@@ -50,6 +51,7 @@ async function generateDexesFromTemplate(
   const spaceSplitted = dexNameParam.replace(/-/g, ' ');
   const dexNamePascal = pascalCase(spaceSplitted);
   const dexNameCamel = camelCase(spaceSplitted);
+  const dexNameConstant = dexNameParam.replace(/-/g, '_').toUpperCase();
 
   const fileNames = await readdirAsync(templateFolderPath);
 
@@ -69,7 +71,8 @@ async function generateDexesFromTemplate(
     const newDexFileContent = templateFileContent
       .replace(dexNamePlaceholder, dexNamePascal)
       .replace(dexNameCamelPlaceholder, dexNameCamel)
-      .replace(dexNameParamPlaceholder, dexNameParam);
+      .replace(dexNameParamPlaceholder, dexNameParam)
+      .replace(dexNameConstantPlaceholder, dexNameConstant);
 
     await writeFileAsync(toPath, newDexFileContent);
   }
