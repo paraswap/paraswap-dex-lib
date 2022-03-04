@@ -120,6 +120,7 @@ function allowTokenTransferProxyParams(
       tokenTransferProxy,
       MAX_UINT,
     ]),
+    value: '0',
   };
 }
 
@@ -129,6 +130,7 @@ function deployAdapterParams(bytecode: string, network = Network.MAINNET) {
   return {
     from: ownerAddress,
     data: bytecode,
+    value: '0',
   };
 }
 
@@ -146,6 +148,7 @@ function whiteListAdapterParams(contractAddress: Address, network: Network) {
       role,
       contractAddress,
     ]),
+    value: '0',
   };
 }
 

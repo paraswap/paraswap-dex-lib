@@ -67,16 +67,14 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   ): Promise<OptimalRate> {
     const blockNumber = await this.dexHelper.provider.getBlockNumber();
     const poolIdentifiers =
-      _poolIdentifiers ||
-      (
-        await this.pricingHelper.getPoolIdentifiers(
-          from,
-          to,
-          side,
-          blockNumber,
-          [this.dexKey],
-        )
-      )[0];
+      (_poolIdentifiers && { [this.dexKey]: _poolIdentifiers }) ||
+      (await this.pricingHelper.getPoolIdentifiers(
+        from,
+        to,
+        side,
+        blockNumber,
+        [this.dexKey],
+      ));
     const amounts = _.range(0, chunks + 1).map(
       i => (amount * BigInt(i)) / BigInt(chunks),
     );
@@ -87,7 +85,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       side,
       blockNumber,
       [this.dexKey],
-      { [this.dexKey]: poolIdentifiers },
+      poolIdentifiers,
     );
 
     const finalPrice = poolPrices[0];
