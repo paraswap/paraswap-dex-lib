@@ -2,11 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import yargs from 'yargs';
-import { paramCase } from 'change-case';
+import { paramCase, pascalCase, camelCase } from 'change-case';
 
 const dexFolderPath = path.resolve('src', 'dex');
 const templateFolderPath = path.resolve('dex-template');
+
 const dexNamePlaceholder = /{{DexName}}/g;
+const dexNameCamelPlaceholder = /{{DexNameCamel}}/g;
 
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
@@ -46,13 +48,17 @@ function trimTemplateExtension(name: string) {
   return name.replace(dotTemplatePattern, '');
 }
 
-async function generateDexesFromTemplate(dexName: string, newDexPath: string) {
+async function generateDexesFromTemplate(argName: string, newDexPath: string) {
+  const dexNameParam = paramCase(argName);
+  const dexNamePascal = pascalCase(argName);
+  const dexNameCamel = camelCase(argName);
+
   const fileNames = await readdirAsync(templateFolderPath);
 
   for (const fileTemplateName of fileNames) {
     let fileName = trimTemplateExtension(fileTemplateName).replace(
       dexNamePlaceholder,
-      dexName,
+      dexNameParam,
     );
 
     const fromPath = path.join(templateFolderPath, fileTemplateName);
@@ -62,10 +68,9 @@ async function generateDexesFromTemplate(dexName: string, newDexPath: string) {
       encoding: 'utf8',
     });
 
-    const newDexFileContent = templateFileContent.replace(
-      dexNamePlaceholder,
-      dexName,
-    );
+    const newDexFileContent = templateFileContent
+      .replace(dexNamePlaceholder, dexNamePascal)
+      .replace(dexNameCamelPlaceholder, dexNameCamel);
 
     await writeFileAsync(toPath, newDexFileContent);
   }
@@ -73,16 +78,17 @@ async function generateDexesFromTemplate(dexName: string, newDexPath: string) {
 
 const main = async () => {
   const { name: argName } = argv;
-  const dexName = paramCase(argName);
-  const newDexPath = path.join(dexFolderPath, dexName);
+  const dexNameParam = paramCase(argName);
 
-  console.log(`Adding new Dex Integration for ${dexName}. Please wait...`);
+  const newDexPath = path.join(dexFolderPath, dexNameParam);
+
+  console.log(`Adding new Dex Integration for ${dexNameParam}. Please wait...`);
 
   // Check if ABI provided for the contracts
 
   await createFolder(newDexPath);
 
-  await generateDexesFromTemplate(dexName, newDexPath);
+  await generateDexesFromTemplate(argName, newDexPath);
 };
 
 if (require.main === module)
