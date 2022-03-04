@@ -118,3 +118,5 @@ export interface DexContructor<
 
   dexKeysWithNetwork: { key: string; networks: Network[] }[];
 }
+
+export type IRouteOptimizer<T> = (formaterRate: T) => T;

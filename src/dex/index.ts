@@ -1,8 +1,8 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { Address } from '../types';
+import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { IDexTxBuilder, DexContructor, IDex } from './idex';
+import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
@@ -11,7 +11,9 @@ import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
+import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
+import { uniswapMerge } from './uniswap-v2/optimizer';
 import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
 import { Dfyn } from './uniswap-v2/dfyn';
@@ -114,6 +116,11 @@ export class DexAdapterService {
   isLegacy: { [dexKey: string]: boolean } = {};
   // dexKeys only has keys for non legacy dexes
   dexKeys: string[] = [];
+
+  public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
+    balancerV2Merge,
+    uniswapMerge,
+  ];
 
   constructor(
     private dexHelper: IDexHelper,
