@@ -28,8 +28,8 @@
     "yargs": "^17.0.1"
   },
   "scripts": {
-    "init-integration": "ts-node scripts/init-dex-integration.ts",
-    "test-integration": "jest --testPathPattern src/dex/$npm_config_name/.+.test.ts$",
+    "init-integration": "ts-node scripts/dex-integration.ts init",
+    "test-integration": "ts-node scripts/dex-integration.ts test",
     "build": "tsc",
     "test": "jest",
     "prepare": "husky install && yarn build"
