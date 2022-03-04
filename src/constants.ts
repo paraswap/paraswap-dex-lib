@@ -41,7 +41,7 @@ export const MULTI_V2: { [network: number]: Address } = {
 };
 
 export const ProviderURL: { [network: number]: string } = {
-  [Network.MAINNET]: process.env.HTTP_PROVIDER_1 || '',
+  [Network.MAINNET]: process.env.HTTP_PROVIDER || '',
 };
 
 export const TokenTransferProxyAddress: { [nid: number]: Address } = {
