@@ -7,9 +7,10 @@ import { pascalCase, camelCase } from 'change-case';
 const dexFolderPath = path.resolve('src', 'dex');
 const templateFolderPath = path.resolve('dex-template');
 
-const dexNameFilePlaceholder = /DexName/g;
-const dexNamePlaceholder = /{{DexName}}/g;
-const dexNameCamelPlaceholder = /{{DexNameCamel}}/g;
+const dexNamePlaceholder = /__DexName__/g;
+const dexNameCamelPlaceholder = /__DexNameCamel__/g;
+const dexNameParamPlaceholder = /__DexNameParam__/g;
+
 const paramCasePattern = /^[a-z0-9\-]+$/g;
 
 const readFileAsync = promisify(fs.readFile);
@@ -54,7 +55,7 @@ async function generateDexesFromTemplate(
 
   for (const fileTemplateName of fileNames) {
     let fileName = trimTemplateExtension(fileTemplateName).replace(
-      dexNameFilePlaceholder,
+      dexNamePlaceholder,
       dexNameParam,
     );
 
@@ -67,7 +68,8 @@ async function generateDexesFromTemplate(
 
     const newDexFileContent = templateFileContent
       .replace(dexNamePlaceholder, dexNamePascal)
-      .replace(dexNameCamelPlaceholder, dexNameCamel);
+      .replace(dexNameCamelPlaceholder, dexNameCamel)
+      .replace(dexNameParamPlaceholder, dexNameParam);
 
     await writeFileAsync(toPath, newDexFileContent);
   }

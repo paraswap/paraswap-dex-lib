@@ -19,11 +19,11 @@ import {
   MAX_UINT,
   Network,
 } from '../../constants';
-import { StablePool, WeightedPool } from './balancer-v2-pool';
-import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
-import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
-import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
-import VaultABI from '../../abi/balancer-v2/vault.json';
+import { StablePool, WeightedPool } from './__DexNameParam__-pool';
+import StablePoolABI from '../../abi/__DexNameParam__/stable-pool.json';
+import WeightedPoolABI from '../../abi/__DexNameParam__/weighted-pool.json';
+import MetaStablePoolABI from '../../abi/__DexNameParam__/meta-stable-pool.json';
+import VaultABI from '../../abi/__DexNameParam__/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -33,11 +33,11 @@ import {
   PoolState,
   SubgraphToken,
   SubgraphPoolBase,
-  BalancerV2Data,
+  __DexName__Data,
   BalancerFunds,
   BalancerSwap,
   BalancerParam,
-  OptimizedBalancerV2Data,
+  Optimized__DexName__Data,
   SwapTypes,
   DexParams,
   PoolStateMap,
@@ -87,7 +87,7 @@ function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;
 }
 
-export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
+export class __DexName__EventPool extends StatefulEventSubscriber<PoolStateMap> {
   public vaultInterface: Interface;
 
   handlers: {
@@ -476,11 +476,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 }
 
-export class BalancerV2
+export class __DexName__
   extends SimpleExchange
-  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements IDex<__DexName__Data, BalancerParam, Optimized__DexName__Data>
 {
-  protected eventPools: BalancerV2EventPool;
+  protected eventPools: __DexName__EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -500,7 +500,7 @@ export class BalancerV2
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new BalancerV2EventPool(
+    this.eventPools = new __DexName__EventPool(
       dexKey,
       network,
       vaultAddress,
@@ -567,7 +567,7 @@ export class BalancerV2
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<BalancerV2Data>> {
+  ): Promise<null | ExchangePrices<__DexName__Data>> {
     if (side === SwapSide.BUY) return null;
     try {
       const _from = wrapETH(from, this.network);
@@ -647,7 +647,7 @@ export class BalancerV2
           }
         })
         .filter(p => !!p);
-      return poolPrices as ExchangePrices<BalancerV2Data>;
+      return poolPrices as ExchangePrices<__DexName__Data>;
     } catch (e) {
       this.logger.error(
         `Error_getPrices ${from.symbol || from.address}, ${
@@ -664,7 +664,7 @@ export class BalancerV2
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: OptimizedBalancerV2Data,
+    data: Optimized__DexName__Data,
     side: SwapSide,
   ): AdapterExchangeParam {
     const params = this.getBalancerParam(
@@ -718,10 +718,10 @@ export class BalancerV2
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: OptimizedBalancerV2Data,
+    data: Optimized__DexName__Data,
     side: SwapSide,
   ): BalancerParam {
-    // BalancerV2 Uses Address(0) as ETH
+    // __DexName__ Uses Address(0) as ETH
     const assets = [srcToken, destToken].map(t =>
       t.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? NULL_ADDRESS : t,
     );
@@ -760,7 +760,7 @@ export class BalancerV2
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: OptimizedBalancerV2Data,
+    data: Optimized__DexName__Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const params = this.getBalancerParam(
@@ -797,9 +797,9 @@ export class BalancerV2
     };
 
     const query = `query ($tokens: [Bytes!], $count: Int) {
-      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, 
-           where: {tokensList_contains: $tokens, 
-                   swapEnabled: true, 
+      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
+           where: {tokensList_contains: $tokens,
+                   swapEnabled: true,
                    totalLiquidity_gt: 0}) {
         address
         totalLiquidity
