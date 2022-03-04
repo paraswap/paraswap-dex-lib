@@ -22,4 +22,11 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
       vaultAddress: '0x20dd72ed959b6147912c2e529f0a0c651c33c9ce',
     },
   },
+  Embr: {
+    [Network.AVALANCHE]: {
+      subgraphURL:
+        'https://node-us.embr.finance/subgraphs/name/embrfinance/embr-avalanche-v2',
+      vaultAddress: '0xad68ea482860cd7077a5D0684313dD3a9BC70fbB',
+    },
+  },
 };

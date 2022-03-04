@@ -26,7 +26,7 @@ class DummyCache implements ICache {
   }
 }
 
-class DymmyRequestWrapper implements IRequestWrapper {
+class DummyRequestWrapper implements IRequestWrapper {
   async get(
     url: string,
     timeout?: number,
@@ -64,14 +64,14 @@ class DymmyRequestWrapper implements IRequestWrapper {
   }
 }
 
-class DummmyBlockManager implements IBlockManager {
+class DummyBlockManager implements IBlockManager {
   subscribeToLogs(
     subscriber: EventSubscriber,
     contractAddress: Address | Address[],
     afterBlockNumber: number,
   ): void {
     console.log(
-      `Subscrived to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
+      `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
     );
   }
 }
@@ -87,7 +87,7 @@ export class DummyDexHelper implements IDexHelper {
 
   constructor(network: number) {
     this.cache = new DummyCache();
-    this.httpRequest = new DymmyRequestWrapper();
+    this.httpRequest = new DummyRequestWrapper();
     this.augustusAddress = AugustusAddress[network];
     this.provider = new JsonRpcProvider(ProviderURL[network]);
     this.multiContract = new Contract(
@@ -95,7 +95,7 @@ export class DummyDexHelper implements IDexHelper {
       multiABIV2,
       this.provider,
     );
-    this.blockManager = new DummmyBlockManager();
+    this.blockManager = new DummyBlockManager();
     this.getLogger = name => log4js.getLogger(name);
   }
 }

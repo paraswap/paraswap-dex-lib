@@ -16,6 +16,7 @@ import { UniswapV2 } from './uniswap-v2/uniswap-v2';
 import { uniswapMerge } from './uniswap-v2/optimizer';
 import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
+import { Dfyn } from './uniswap-v2/dfyn';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -32,6 +33,7 @@ import { Kyber } from './kyber';
 import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
+import { Lido } from './lido';
 
 const LegacyDexes = [
   Curve,
@@ -57,9 +59,10 @@ const LegacyDexes = [
   Weth,
   KyberDmm,
   Jarvis,
+  Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX];
+const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
@@ -181,7 +184,7 @@ export class DexAdapterService {
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if ('uniswapforkoptimized' === dexKey) _dexKey = 'uniswapv2';
+    if ('uniswapforkoptimized' === _dexKey) _dexKey = 'uniswapv2';
 
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];
