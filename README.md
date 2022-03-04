@@ -19,6 +19,8 @@ yarn install
 yarn init-integration your-dex-name
 ```
 
+You can find your newly integrated Dex in `src/dex/your-dex-name`
+
 - Run tests for `your-dex-name`:
 
 ```bash
