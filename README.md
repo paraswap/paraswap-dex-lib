@@ -18,4 +18,4 @@ yarn install
 - `yarn init-integration your-dex-name` - specify the name of your Dex to initialize it
 - `yarn test-integration your-dex-name` - specify the name of the Dex to run tests for
 
-**Notice: The first argument (name) must be provided in `param-case`. Only "a-z", "0-9", and "-" letters are allowed.**
+**Notice:** The first argument (name) must be provided in `param-case`. Only "a-z", "0-9", and "-" letters are allowed.
