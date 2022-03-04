@@ -2,20 +2,16 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import yargs from 'yargs';
-// import axios from 'axios';
-import { pascalCase, headerCase, paramCase } from 'change-case';
+import { paramCase } from 'change-case';
 
-const dexFolder = path.resolve('src', 'dex');
-const templateFolder = path.resolve('dex-template');
-const dexNamePattern = /{{[^{}]*}}/g;
-const dotTemplatePattern = /.template$/g;
+const dexFolderPath = path.resolve('src', 'dex');
+const templateFolderPath = path.resolve('dex-template');
+const dexNamePlaceholder = /{{DexName}}/g;
 
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
-
-interface InitOptions {
-  name: string;
-}
+const readdirAsync = promisify(fs.readdir);
+const mkdirAsync = promisify(fs.mkdir);
 
 const argv = yargs
   .command('init-integration', 'Integrate new dex by the "name" from templates')
@@ -29,100 +25,67 @@ const argv = yargs
   .help()
   .alias('help', 'h').argv;
 
-// const fetchAndStoreAbi = async ({ name }: InitOptions): Promise<void> => {
-//   if (!address) return;
-
-//   const abi = (
-//     await axios.get<EtherscanABIResponse>(
-//       `https://api.etherscan.io/api?module=contract&action=getabi&address=${address}`,
-//     )
-//   ).data.result;
-
-//   await writeFileAsync(
-//     path.join(__dirname, '../src/abi/', `${pascalCase(name)}.json`),
-//     abi,
-//   );
-// };
-
-async function generateDexBoilerplateFiler({ name }: InitOptions) {
-  const dexFileTemplate = await readFileAsync(
-    path.join(__dirname, './_TemplateDex_.ts.template'),
-    { encoding: 'utf8' },
-  );
-
-  const dexFileContent = dexFileTemplate.replace(
-    /_TemplateDex_/gi,
-    pascalCase(name),
-  );
-
-  await writeFileAsync(
-    path.join(__dirname, '../src/dex', `${headerCase(name).toLowerCase()}.ts`),
-    dexFileContent,
-  );
+async function createFolder(newDexPath: string) {
+  try {
+    await mkdirAsync(newDexPath);
+  } catch (e) {
+    if (e.code === 'EEXIST') {
+      throw new Error(
+        `Dex folder ${
+          newDexPath.split('/').slice(-1)[0]
+        } already exists. Please provide original name`,
+      );
+    } else {
+      throw e;
+    }
+  }
 }
 
-function isFolderExists(name: string) {
-  fs.readdir(dexFolder, (err, files) => {
-    if (err) {
-      throw err;
-    }
+const dotTemplatePattern = /.template$/g;
+function trimTemplateExtension(name: string) {
+  return name.replace(dotTemplatePattern, '');
+}
 
-    for (const fileTemplate of files) {
-      let file = fileTemplate
-        .replace(dexNamePattern, name)
-        .replace(dotTemplatePattern, '');
+async function generateDexesFromTemplate(dexName: string, newDexPath: string) {
+  const fileNames = await readdirAsync(templateFolderPath);
 
-      const fromPath = path.join(templateFolder, fileTemplate);
-      const toPath = path.join(dexFolder, file);
-    }
-  });
+  for (const fileTemplateName of fileNames) {
+    let fileName = trimTemplateExtension(fileTemplateName).replace(
+      dexNamePlaceholder,
+      dexName,
+    );
+
+    const fromPath = path.join(templateFolderPath, fileTemplateName);
+    const toPath = path.join(newDexPath, fileName);
+
+    const templateFileContent = await readFileAsync(fromPath, {
+      encoding: 'utf8',
+    });
+
+    const newDexFileContent = templateFileContent.replace(
+      dexNamePlaceholder,
+      dexName,
+    );
+
+    await writeFileAsync(toPath, newDexFileContent);
+  }
 }
 
 const main = async () => {
   const { name: argName } = argv;
-  const name = paramCase(argName);
+  const dexName = paramCase(argName);
+  const newDexPath = path.join(dexFolderPath, dexName);
 
-  console.log(`Adding new Dex Integration for ${name}. Please wait...`);
-
-  console.log({ name });
-  console.log(dexFolder);
-  console.log(templateFolder);
-
-  if (isFolderExists(name)) {
-    throw new Error('Dex folder already exists. Please provide original name');
-  }
-
-  fs.readdir(templateFolder, (err, files) => {
-    if (err) {
-      console.error('Could not list the directory.', err);
-      process.exit(1);
-    }
-
-    for (const fileTemplate of files) {
-      let file = fileTemplate
-        .replace(dexNamePattern, name)
-        .replace(dotTemplatePattern, '');
-
-      const fromPath = path.join(templateFolder, fileTemplate);
-      const toPath = path.join(dexFolder, file);
-    }
-  });
-
-  const dexFileTemplate = await readFileAsync(
-    path.join(__dirname, './_TemplateDex_.ts.template'),
-    { encoding: 'utf8' },
-  );
+  console.log(`Adding new Dex Integration for ${dexName}. Please wait...`);
 
   // Check if ABI provided for the contracts
 
-  // Check the folder exists
+  await createFolder(newDexPath);
 
-  // await Promise.all(
-  //   [fetchAndStoreAbi, generateDexBoilerplateFiler].map(f => f(argv)),
-  // );
+  await generateDexesFromTemplate(dexName, newDexPath);
 };
 
 if (require.main === module)
   main().catch(error => {
-    console.error(`Error: ${error}\nPlease retry...`);
+    console.error(`${error}\nPlease retry...`);
   });
