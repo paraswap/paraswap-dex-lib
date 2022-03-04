@@ -26,16 +26,16 @@ export interface SubgraphPoolBase {
   tokens: SubgraphToken[];
 }
 
-export type BalancerSwapV2 = {
+export type __DexName__Swap = {
   poolId: string;
   amount: string;
 };
 
-export type OptimizedBalancerV2Data = {
-  swaps: BalancerSwapV2[];
+export type Optimized__DexName__Data = {
+  swaps: __DexName__Swap[];
 };
 
-export type BalancerFunds = {
+export type __DexName__Funds = {
   sender: string;
   recipient: string;
   fromInternalBalance: boolean;
@@ -56,16 +56,16 @@ export enum SwapTypes {
   SwapExactOut,
 }
 
-export type BalancerParam = [
+export type __DexName__Param = [
   kind: SwapTypes,
   swaps: BalancerSwap[],
   assets: string[],
-  funds: BalancerFunds,
+  funds: __DexName__Funds,
   limits: string[],
   deadline: string,
 ];
 
-export type BalancerV2Data = {
+export type __DexName__Data = {
   poolId: string;
 };
 

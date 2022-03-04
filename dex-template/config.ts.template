@@ -2,8 +2,8 @@ import { DexParams } from './types';
 import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
 
-export const BalancerConfig: DexConfigMap<DexParams> = {
-  BalancerV2: {
+export const __DexName__Config: DexConfigMap<DexParams> = {
+  __DexName__: {
     [Network.MAINNET]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
