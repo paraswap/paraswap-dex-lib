@@ -3,7 +3,7 @@ dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { BalancerV2 } from './balancer-v2';
+import { __DexName__ } from './__DexNameParam__';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 
 const WETH = {
@@ -22,17 +22,17 @@ const amounts = [
   BigInt('2000000000000000000'),
 ];
 
-const dexKey = 'BalancerV2';
+const dexKey = '__DexName__';
 
-describe('BalancerV2', function () {
+describe('__DexName__', function () {
   it('getPoolIdentifiers and getPricesVolume', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
     const blocknumber = await dexHelper.provider.getBlockNumber();
-    const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+    const __DexNameCamel__ = new __DexName__(Network.MAINNET, dexKey, dexHelper);
 
-    await balancerV2.setupEventPools(blocknumber);
+    await __DexNameCamel__.setupEventPools(blocknumber);
 
-    const pools = await balancerV2.getPoolIdentifiers(
+    const pools = await __DexNameCamel__.getPoolIdentifiers(
       WETH,
       DAI,
       SwapSide.SELL,
@@ -42,7 +42,7 @@ describe('BalancerV2', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await balancerV2.getPricesVolume(
+    const poolPrices = await __DexNameCamel__.getPricesVolume(
       WETH,
       DAI,
       amounts,
@@ -58,9 +58,9 @@ describe('BalancerV2', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
-    const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+    const __DexNameCamel__ = new __DexName__(Network.MAINNET, dexKey, dexHelper);
 
-    const poolLiquidity = await balancerV2.getTopPoolsForToken(
+    const poolLiquidity = await __DexNameCamel__.getTopPoolsForToken(
       WETH.address,
       10,
     );

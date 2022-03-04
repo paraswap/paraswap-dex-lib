@@ -11,9 +11,9 @@ import {
 } from '../../constants';
 import { JsonRpcProvider } from '@ethersproject/providers';
 
-describe('BalancerV2 E2E', () => {
-  describe('BalancerV2 MAINNET', () => {
-    const dexKey = 'BalancerV2';
+describe('__DexName__ E2E', () => {
+  describe('__DexName__ MAINNET', () => {
+    const dexKey = '__DexName__';
     const network = Network.MAINNET;
     const tokens = Tokens[Network.MAINNET];
     const holders = Holders[Network.MAINNET];

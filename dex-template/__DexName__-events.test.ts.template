@@ -1,18 +1,18 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { BalancerV2EventPool } from './balancer-v2';
+import { __DexName__EventPool } from './__DexNameParam__';
 import { SubgraphPoolBase, PoolStateMap } from './types';
-import { BalancerConfig } from './config';
+import { __DexName__Config } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import axios from 'axios';
 
 jest.setTimeout(50 * 1000);
-const dexKey = 'BalancerV2';
+const dexKey = '__DexName__';
 const network = Network.MAINNET;
-const config = BalancerConfig[dexKey][network];
+const config = __DexName__Config[dexKey][network];
 
 async function getSubgraphPool(
   address: string,
@@ -46,21 +46,21 @@ async function getSubgraphPool(
 }
 
 async function fetchOnePoolState(
-  balancerPools: BalancerV2EventPool,
+  __DexNameCamel__Pools: __DexName__EventPool,
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolStateMap> {
   const subPools: SubgraphPoolBase[] = [
     await getSubgraphPool(poolAddress, blockNumber),
   ];
-  const poolsStateMap = await balancerPools.getOnChainState(
+  const poolsStateMap = await __DexNameCamel__Pools.getOnChainState(
     subPools,
     blockNumber,
   );
   return poolsStateMap;
 }
 
-describe('BalancerV2 Event', function () {
+describe('__DexName__ Event', function () {
   const blockNumbers: { [event: string]: [number, string][] } = {
     Swap: [
       [14132661, '0xaac98ee71d4f8a156b6abaa6844cdb7789d086ce'],
@@ -100,14 +100,14 @@ describe('BalancerV2 Event', function () {
     ],
   };
 
-  describe('BalancerV2EventPool', function () {
+  describe('__DexName__EventPool', function () {
     Object.keys(blockNumbers).forEach((event: string) => {
       blockNumbers[event].forEach(([blockNumber, poolAddress]) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
           const logger = dexHelper.getLogger(dexKey);
 
-          const balancerPools = new BalancerV2EventPool(
+          const __DexNameCamel__Pools = new __DexName__EventPool(
             dexKey,
             network,
             config.vaultAddress,
@@ -117,10 +117,10 @@ describe('BalancerV2 Event', function () {
           );
 
           await testEventSubscriber(
-            balancerPools,
-            balancerPools.addressesSubscribed,
+            __DexNameCamel__Pools,
+            __DexNameCamel__Pools.addressesSubscribed,
             (_blockNumber: number) =>
-              fetchOnePoolState(balancerPools, _blockNumber, poolAddress),
+              fetchOnePoolState(__DexNameCamel__Pools, _blockNumber, poolAddress),
             blockNumber,
             `${dexKey}_${poolAddress}`,
             dexHelper.provider,

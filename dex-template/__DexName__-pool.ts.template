@@ -1,4 +1,4 @@
-import { MathSol, BZERO, BONE } from './balancer-v2-math';
+import { MathSol, BZERO, BONE } from './__DexNameParam__-math';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
