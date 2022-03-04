@@ -8,21 +8,21 @@ import {
 } from '../types';
 import { IDex } from './idex';
 import { SimpleExchange } from './simple-exchange';
-import _TemplateDex_ABI from '../abi/_TemplateDex_.json';
+import {{DexName}}ABI from '../abi/{{DexName}}.json';
 
-export type _TemplateDex_Data = {
+export type {{DexName}}Data = {
     exchange: string; // _DOUBLE_CHECK_
 };
-type _TemplateDex_Param = [
+type {{DexName}}Param = [
 
 ];
-enum _TemplateDex_Functions {
+enum {{DexName}}Functions {
 
 }
 
-export class _TemplateDex_
+export class {{DexName}}
   extends SimpleExchange
-  implements IDex<_TemplateDex_Data, _TemplateDex_Param>
+  implements IDex<{{DexName}}Data, {{DexName}}Param>
 {
   static dexKeys = [
     // _TO_FILL_UP_
@@ -31,15 +31,17 @@ export class _TemplateDex_
 
   constructor(augustusAddress: Address, private network: number, provider: JsonRpcProvider,) {
     super(augustusAddress, provider);
-    this.exchangeRouterInterface = new Interface(_TemplateDex_ABI as JsonFragment[]);
+    this.exchangeRouterInterface = new Interface({{DexName}}ABI as JsonFragment[]);
   }
+
+  const {{DexNameCamel}} = new {{DexName}}(param1, param2);
 
   getAdapterParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: _TemplateDex_Data,
+    data: {{DexName}}Data,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`); // _DOUBLE_CHECK_
@@ -64,13 +66,13 @@ export class _TemplateDex_
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: _TemplateDex_Data,
+    data: {{DexName}}Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`); // _DOUBLE_CHECK_
 
     const swapFunction = '_TO_FILL_UP_';
-    const swapFunctionParams: _TemplateDex_Param = [/* _TO_FILL_UP_ */];
+    const swapFunctionParams: {{DexName}}Param = [/* _TO_FILL_UP_ */];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,
       swapFunctionParams,
@@ -82,7 +84,7 @@ export class _TemplateDex_
       destToken,
       destAmount,
       swapData,
-      data.exchange, // _DOUBLE_CHECK_ 
+      data.exchange, // _DOUBLE_CHECK_
     );
   }
 }

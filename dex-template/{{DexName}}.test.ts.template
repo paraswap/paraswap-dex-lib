@@ -1,0 +1,3 @@
+function {{DexName}}(test, {{DexName}}_used);
+
+const {{DexNameCamel}} = new {{DexName}}(param1, param2);
