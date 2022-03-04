@@ -66,7 +66,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
             index: 11,
           },
         ],
-        [SwapSide.BUY]: [],
+        [SwapSide.BUY]: null,
       },
     },
   },

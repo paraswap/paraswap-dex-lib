@@ -702,7 +702,7 @@ export class UniswapV2
     }
   }
 
-  getAdapters(side: SwapSide): { name: string; index: number }[] {
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side];
   }
 
