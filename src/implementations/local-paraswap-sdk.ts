@@ -27,6 +27,8 @@ export interface IParaSwapSDK {
     minMaxAmount: BigInt,
     userAddress: Address,
   ): Promise<TxObject>;
+
+  initializePricing?(): Promise<void>;
 }
 
 const chunks = 10;
@@ -52,7 +54,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
 
   async initializePricing() {
     const blockNumber = await this.dexHelper.provider.getBlockNumber();
-    return await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
+    await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
   }
 
   async getPrices(
@@ -87,6 +89,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       [this.dexKey],
       { [this.dexKey]: poolIdentifiers },
     );
+
     const finalPrice = poolPrices[0];
     const quoteAmount = finalPrice.prices[chunks];
     const srcAmount = (
@@ -96,17 +99,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       side === SwapSide.SELL ? quoteAmount : amount
     ).toString();
 
-    return {
+    const unoptimizedRate = {
       blockNumber,
       network: this.network,
       srcToken: from.address,
       srcDecimals: from.decimals,
       srcAmount,
-      srcUSD: '0',
       destToken: to.address,
       destDecimals: to.decimals,
       destAmount,
-      destUSD: '0',
       bestRoute: [
         {
           percent: 100,
@@ -134,11 +135,19 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
-      contractMethod,
       tokenTransferProxy: TokenTransferProxyAddress[this.network],
       contractAddress: AugustusAddress[this.network],
-      partnerFee: 0,
+    };
+
+    const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
+
+    return {
+      ...optimizedRate,
       hmac: '0',
+      srcUSD: '0',
+      destUSD: '0',
+      contractMethod,
+      partnerFee: 0,
     };
   }
 

@@ -5,6 +5,7 @@ import {
   Token,
   PoolPrices,
   ExchangePrices,
+  UnoptimizedRate,
 } from './types';
 import {
   SwapSide,
@@ -13,9 +14,11 @@ import {
   FETCH_POOL_PRICES_TIMEOUT,
 } from './constants';
 import { DexAdapterService } from './dex';
+import { IRouteOptimizer } from './dex/idex';
 
 export class PricingHelper {
   logger: Logger;
+  public optimizeRate: IRouteOptimizer<UnoptimizedRate>;
 
   constructor(
     protected dexAdapterService: DexAdapterService,
@@ -24,6 +27,11 @@ export class PricingHelper {
     this.logger = loggerConstructor(
       `PricingHelper_${dexAdapterService.network}`,
     );
+    this.optimizeRate = (ur: UnoptimizedRate) =>
+      this.dexAdapterService.routeOptimizers.reduce(
+        (acc: UnoptimizedRate, fn: IRouteOptimizer<UnoptimizedRate>) => fn(acc),
+        ur,
+      );
   }
 
   private async initializeDex(dexKey: string, blockNumber: number) {

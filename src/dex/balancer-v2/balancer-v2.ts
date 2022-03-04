@@ -33,7 +33,6 @@ import {
   PoolState,
   SubgraphToken,
   SubgraphPoolBase,
-  BalancerSwapsV2,
   BalancerV2Data,
   BalancerFunds,
   BalancerSwap,

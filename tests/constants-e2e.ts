@@ -27,9 +27,12 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
       decimals: 18,
     },
+    WETH: {
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      decimals: 18,
+    },
     // Fix the decimals for the tokens below
     // SETH: {address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb', decimals: 18},
-    // WETH: {address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', decimals: 18},
     // LINK: {address: '0x514910771af9ca656af840dff83e8264ecf986ca', decimals: 18},
     // DAI: {address: '0x6b175474e89094c44da98b954eedeac495271d0f', decimals: 18},
     // MLN: {address: '0xec67005c4e498ec7f55e092bd1d35cbc47c91892', decimals: 18},
@@ -79,8 +82,8 @@ export const Holders: {
     WBTC: '0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922',
     BADGER: '0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be',
     STETH: '0x06920c9fc643de77b99cb7670a944ad31eaaa260',
+    WETH: '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8',
     // Uncomment once the tokens are added above
-    // WETH: '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8',
     // XAUT: '0xc4e161e8d8a4bc4ac762ab33a28bbac5474203d7',
     // CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     // MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',

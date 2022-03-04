@@ -200,6 +200,8 @@ export async function testE2E(
       ? new APIParaswapSDK(network, dexKey)
       : new LocalParaswapSDK(network, dexKey);
 
+  if (paraswap.initializePricing) await paraswap.initializePricing();
+
   const priceRoute = await paraswap.getPrices(
     srcToken,
     destToken,

@@ -26,13 +26,13 @@ export interface SubgraphPoolBase {
   tokens: SubgraphToken[];
 }
 
-export type BalancerSwapsV2 = {
+export type BalancerSwapV2 = {
   poolId: string;
   amount: string;
-}[];
+};
 
 export type OptimizedBalancerV2Data = {
-  swaps: BalancerSwapsV2;
+  swaps: BalancerSwapV2[];
 };
 
 export type BalancerFunds = {
