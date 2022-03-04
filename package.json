@@ -29,11 +29,10 @@
   },
   "scripts": {
     "init-integration": "ts-node scripts/init-dex-integration.ts",
-    "test-integration": "ts-node scripts/test-dex-integration.ts",
+    "test-integration": "jest --testPathPattern src/dex/$npm_config_name/.+.test.ts$",
     "build": "tsc",
     "test": "jest",
-    "prepare": "husky install && yarn build",
-    "dex:init": "ts-node scripts/initDexIntegration.ts"
+    "prepare": "husky install && yarn build"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
