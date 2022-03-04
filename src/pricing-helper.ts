@@ -59,8 +59,8 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     filterConstantPricePool: boolean = false,
-  ): Promise<(string[] | null)[]> {
-    return await Promise.all(
+  ): Promise<{ [dexKey: string]: string[] | null }> {
+    const poolIdentifiers = await Promise.all(
       dexKeys.map(key => {
         try {
           return new Promise<string[] | null>((resolve, reject) => {
@@ -88,6 +88,17 @@ export class PricingHelper {
           return [];
         }
       }),
+    );
+    return dexKeys.reduce(
+      (
+        acc: { [dexKey: string]: string[] | null },
+        dexKey: string,
+        index: number,
+      ) => {
+        acc[dexKey] = poolIdentifiers[index];
+        return acc;
+      },
+      {},
     );
   }
 
