@@ -194,11 +194,11 @@ export async function testE2E(
     expect(whitelistTx.success).toEqual(true);
   }
 
+  const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
-  const paraswap: IParaSwapSDK =
-    testingEndpoint && !poolIdentifiers
-      ? new APIParaswapSDK(network, dexKey)
-      : new LocalParaswapSDK(network, dexKey);
+  const paraswap: IParaSwapSDK = useAPI
+    ? new APIParaswapSDK(network, dexKey)
+    : new LocalParaswapSDK(network, dexKey);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
@@ -226,12 +226,14 @@ export async function testE2E(
   const swapTx = await ts.simulate(swapParams);
   console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
   // Only log gas estimate if testing against API
-  // if (testingEndpoint)
-  //   console.log(
-  //     `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
-  //       swapTx!.gasUsed
-  //     }, Difference: ${priceRoute.gasCost - swapTx!.gasUsed}`,
-  //   );
+  if (useAPI)
+    console.log(
+      `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
+        swapTx!.gasUsed
+      }, Difference: ${
+        parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
+      }`,
+    );
   console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
   expect(swapTx!.success).toEqual(true);
 }

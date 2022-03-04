@@ -3,12 +3,16 @@ import { isETHAddress } from '../../utils';
 import { UniswapV2Config } from './config';
 import { MDEXConfig } from './mdex';
 import { BiSwapConfig } from './biswap';
+import { Dfyn } from './dfyn';
 import _ from 'lodash';
 
+// BakerySwap is removed from AllUniswapForks as it has a modified
+// pool implementation which is not compatible with UniswapForkOptimized
 const AllUniswapForks = [
-  ...Object.keys(UniswapV2Config),
+  ...Object.keys(UniswapV2Config).filter(dexKey => dexKey !== 'BakerySwap'),
   ...Object.keys(MDEXConfig),
   ...Object.keys(BiSwapConfig),
+  ...Object.keys(Dfyn),
 ];
 
 // TODO: use something similar for DODO as well
