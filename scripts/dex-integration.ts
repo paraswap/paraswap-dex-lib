@@ -137,7 +137,7 @@ yargs
     },
     function (argv: { name: string }) {
       initIntegration(argv).catch(error => {
-        console.error(`${error}\nPlease retry...`);
+        console.error(`${error}`);
       });
     },
   )
@@ -151,7 +151,11 @@ yargs
       });
     },
     function (argv) {
-      testIntegration(argv);
+      try {
+        testIntegration(argv);
+      } catch (error) {
+        console.error(`${error}`);
+      }
     },
   )
   .help()
