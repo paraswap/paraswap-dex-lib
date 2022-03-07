@@ -1,1 +1,4 @@
 yarn-error.log
+.env
+tests/logs.json
+tests/states.json

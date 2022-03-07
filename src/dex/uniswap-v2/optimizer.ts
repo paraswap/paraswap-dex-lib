@@ -1,15 +1,7 @@
 import { UnoptimizedRate, OptimalSwap, Address } from '../../types';
 import { isETHAddress } from '../../utils';
-import { UniswapV2Config } from './config';
-import { MDEXConfig } from './mdex';
-import { BiSwapConfig } from './biswap';
+import { AllUniswapForks } from './constants';
 import _ from 'lodash';
-
-const AllUniswapForks = [
-  ...Object.keys(UniswapV2Config),
-  ...Object.keys(MDEXConfig),
-  ...Object.keys(BiSwapConfig),
-];
 
 // TODO: use something similar for DODO as well
 export function uniswapMerge(or: UnoptimizedRate): UnoptimizedRate {

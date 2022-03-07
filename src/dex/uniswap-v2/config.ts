@@ -1,6 +1,6 @@
 import { DexParams } from './types';
 import { DexConfigMap } from '../../types';
-import { Network } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 
 export const UniswapV2Config: DexConfigMap<DexParams> = {
   UniswapV2: {
@@ -59,6 +59,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xe2e87433120e32c4738a7d8f3271f3d872cbe16241d67537139158d90bac61d3',
       feeCode: 30,
       router: '0x4B8107Bbdf7f7adF7B42a1C9cF14FAD8d32111C0',
+      adapters: {
+        [SwapSide.SELL]: [
+          {
+            name: 'BscAdapter01',
+            index: 11,
+          },
+        ],
+        [SwapSide.BUY]: null,
+      },
     },
   },
   CanarySwap: {
@@ -72,7 +81,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
-  ChesseSwap: {
+  CheeseSwap: {
     [Network.BSC]: {
       factoryAddress: '0xdd538e4fd1b69b7863e1f741213276a6cf1efb3b',
       initCode:
@@ -118,15 +127,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       factoryAddress: '0x9DEB29c9a4c7A88a3C0257393b7f3335338D9A9D',
       initCode:
         '0x69d637e77615df9f235f642acebbdad8963ef35c5523142078c9b8f9d0ceba7e',
-      feeCode: 30,
-    },
-  },
-  Dfyn: {
-    [Network.POLYGON]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/ss-sonic/dfyn-v4',
-      factoryAddress: '0xE7Fb3e833eFE5F9c441105EB65Ef8b261266423B',
-      initCode:
-        '0xf187ed688403aa4f7acfada758d8d53698753b998a3071b06f1b777f4330eaf3',
       feeCode: 30,
     },
   },

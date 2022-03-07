@@ -14,7 +14,7 @@ export class PoolsHelper {
     protected dexAdapterService: DexAdapterService,
     loggerConstructor: LoggerConstructor,
   ) {
-    this.logger = loggerConstructor(`PoolsHelper_{dexAdapterService.network}`);
+    this.logger = loggerConstructor(`PoolsHelper_${dexAdapterService.network}`);
   }
 
   public getAllDexKeys(): string[] {

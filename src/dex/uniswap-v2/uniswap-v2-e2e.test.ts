@@ -103,7 +103,7 @@ describe('UniswapV2 E2E', () => {
     });
 
     describe('swapOnUniswap', () => {
-      it('ETH -> TOKEN swapOnUniswap', async () => {
+      it('ETH -> TOKEN', async () => {
         await testE2E(
           tokens['ETH'],
           tokens['WBTC'],
@@ -116,7 +116,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN[BADGER] -> ETH swapOnUniswap', async () => {
+      it('TOKEN[BADGER] -> ETH', async () => {
         await testE2E(
           tokens['BADGER'],
           tokens['ETH'],
@@ -129,7 +129,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN[USDC] -> ETH swapOnUniswap', async () => {
+      it('TOKEN[USDC] -> ETH', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['ETH'],
@@ -142,7 +142,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN -> TOKEN swapOnUniswap', async () => {
+      it('TOKEN -> TOKEN', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['WBTC'],
@@ -158,7 +158,7 @@ describe('UniswapV2 E2E', () => {
     });
 
     describe('swapOnUniswapFork', () => {
-      it('ETH -> TOKEN swapOnUniswapFork', async () => {
+      it('ETH -> TOKEN', async () => {
         await testE2E(
           tokens['ETH'],
           tokens['WBTC'],
@@ -171,7 +171,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN -> ETH swapOnUniswapFork', async () => {
+      it('TOKEN -> ETH', async () => {
         await testE2E(
           tokens['BADGER'],
           tokens['ETH'],
@@ -184,7 +184,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN -> TOKEN swapOnUniswapFork', async () => {
+      it('TOKEN -> TOKEN', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['WBTC'],
@@ -199,8 +199,50 @@ describe('UniswapV2 E2E', () => {
       });
     });
 
+    describe('swapOnUniswapV2Fork', () => {
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens['ETH'],
+          tokens['WBTC'],
+          holders['ETH'],
+          '7000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens['BADGER'],
+          tokens['ETH'],
+          holders['BADGER'],
+          '700000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['WBTC'],
+          holders['USDC'],
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+    });
+
     describe('buyOnUniswap', () => {
-      it('TOKEN -> ETH buyOnUniswap', async () => {
+      it('TOKEN -> ETH', async () => {
         await testE2E(
           tokens['USDT'],
           tokens['ETH'],
@@ -213,7 +255,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('ETH -> TOKEN[BADGER] buyOnUniswap', async () => {
+      it('ETH -> TOKEN[BADGER]', async () => {
         await testE2E(
           tokens['ETH'],
           tokens['BADGER'],
@@ -226,7 +268,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN[USDC] -> ETH buyOnUniswap', async () => {
+      it('TOKEN[USDC] -> ETH', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['ETH'],
@@ -239,7 +281,8 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN -> TOKEN buyOnUniswap', async () => {
+
+      it('TOKEN -> TOKEN', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['WBTC'],
@@ -254,8 +297,120 @@ describe('UniswapV2 E2E', () => {
       });
     });
 
+    describe('buyOnUniswapFork', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens['USDT'],
+          tokens['ETH'],
+          holders['USDT'],
+          '700000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapFork,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN[BADGER]', async () => {
+        await testE2E(
+          tokens['ETH'],
+          tokens['BADGER'],
+          holders['ETH'],
+          '700000000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapFork,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN[USDC] -> ETH', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['ETH'],
+          holders['USDC'],
+          '2000000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapFork,
+          network,
+          provider,
+        );
+      });
+
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['WBTC'],
+          holders['USDC'],
+          '200000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapFork,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('buyOnUniswapV2Fork', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens['USDT'],
+          tokens['ETH'],
+          holders['USDT'],
+          '700000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN[BADGER]', async () => {
+        await testE2E(
+          tokens['ETH'],
+          tokens['BADGER'],
+          holders['ETH'],
+          '700000000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN[USDC] -> ETH', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['ETH'],
+          holders['USDC'],
+          '2000000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['WBTC'],
+          holders['USDC'],
+          '200000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+    });
+
     describe('simpleBuy', () => {
-      it('TOKEN -> ETH simpleBuy', async () => {
+      it('TOKEN -> ETH', async () => {
         await testE2E(
           tokens['USDT'],
           tokens['ETH'],
@@ -268,7 +423,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('ETH -> TOKEN[BADGER] simpleBuy', async () => {
+      it('ETH -> TOKEN[BADGER]', async () => {
         await testE2E(
           tokens['ETH'],
           tokens['BADGER'],
@@ -281,7 +436,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN[USDC] -> ETH simpleBuy', async () => {
+      it('TOKEN[USDC] -> ETH', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['ETH'],
@@ -294,7 +449,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN -> TOKEN simpleBuy', async () => {
+      it('TOKEN -> TOKEN', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['WBTC'],
@@ -310,7 +465,7 @@ describe('UniswapV2 E2E', () => {
     });
 
     describe('BuyMethod', () => {
-      it('TOKEN -> ETH buy', async () => {
+      it('TOKEN -> ETH', async () => {
         await testE2E(
           tokens['USDT'],
           tokens['ETH'],
@@ -323,7 +478,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('ETH -> TOKEN[BADGER] buy', async () => {
+      it('ETH -> TOKEN[BADGER]', async () => {
         await testE2E(
           tokens['ETH'],
           tokens['BADGER'],
@@ -336,7 +491,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN[USDC] -> ETH buy', async () => {
+      it('TOKEN[USDC] -> ETH', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['ETH'],
@@ -349,7 +504,7 @@ describe('UniswapV2 E2E', () => {
           provider,
         );
       });
-      it('TOKEN -> TOKEN buy', async () => {
+      it('TOKEN -> TOKEN', async () => {
         await testE2E(
           tokens['USDC'],
           tokens['WBTC'],

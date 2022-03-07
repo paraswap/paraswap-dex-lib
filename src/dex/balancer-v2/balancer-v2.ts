@@ -392,81 +392,121 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       })
       .flat();
 
-    const data = await this.dexHelper.multiContract.callStatic.aggregate(
-      multiCallData,
-      {
-        blockTag: blockNumber,
-      },
-    );
+    // 500 is an arbitary number choosed based on the blockGasLimit
+    const slicedMultiCallData = _.chunk(multiCallData, 500);
+
+    const returnData = (
+      await Promise.all(
+        slicedMultiCallData.map(async _multiCallData =>
+          this.dexHelper.multiContract.callStatic.tryAggregate(
+            false,
+            _multiCallData,
+            {
+              blockTag: blockNumber,
+            },
+          ),
+        ),
+      )
+    ).flat();
+
+    const decodeThrowError = (
+      contractInterface: Interface,
+      functionName: string,
+      resultEntry: { success: boolean; returnData: any },
+      poolAddress: string,
+    ) => {
+      if (!resultEntry.success)
+        throw new Error(`Failed to execute ${functionName} for ${poolAddress}`);
+      return contractInterface.decodeFunctionResult(
+        functionName,
+        resultEntry.returnData,
+      );
+    };
 
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
       (acc: { [address: string]: PoolState }, pool) => {
-        const poolTokens = this.vaultInterface.decodeFunctionResult(
-          'getPoolTokens',
-          data.returnData[i++],
-        );
+        try {
+          const poolTokens = decodeThrowError(
+            this.vaultInterface,
+            'getPoolTokens',
+            returnData[i++],
+            pool.address,
+          );
 
-        const swapFee = this.poolInterfaces['Weighted'].decodeFunctionResult(
-          'getSwapFeePercentage',
-          data.returnData[i++],
-        )[0];
+          const swapFee = decodeThrowError(
+            this.poolInterfaces['Weighted'],
+            'getSwapFeePercentage',
+            returnData[i++],
+            pool.address,
+          )[0];
 
-        const scalingFactors = ['MetaStable'].includes(pool.poolType)
-          ? this.poolInterfaces['MetaStable'].decodeFunctionResult(
-              'getScalingFactors',
-              data.returnData[i++],
-            )[0]
-          : undefined;
+          const scalingFactors = ['MetaStable'].includes(pool.poolType)
+            ? decodeThrowError(
+                this.poolInterfaces['MetaStable'],
+                'getScalingFactors',
+                returnData[i++],
+                pool.address,
+              )[0]
+            : undefined;
 
-        const normalisedWeights = [
-          'Weighted',
-          'LiquidityBootstrapping',
-          'Investment',
-        ].includes(pool.poolType)
-          ? this.poolInterfaces['Weighted'].decodeFunctionResult(
-              'getNormalizedWeights',
-              data.returnData[i++],
-            )[0]
-          : undefined;
+          const normalisedWeights = [
+            'Weighted',
+            'LiquidityBootstrapping',
+            'Investment',
+          ].includes(pool.poolType)
+            ? decodeThrowError(
+                this.poolInterfaces['Weighted'],
+                'getNormalizedWeights',
+                returnData[i++],
+                pool.address,
+              )[0]
+            : undefined;
 
-        const amp = ['Stable', 'MetaStable'].includes(pool.poolType)
-          ? this.poolInterfaces['Stable'].decodeFunctionResult(
-              'getAmplificationParameter',
-              data.returnData[i++],
-            )
-          : undefined;
+          const amp = ['Stable', 'MetaStable'].includes(pool.poolType)
+            ? decodeThrowError(
+                this.poolInterfaces['Stable'],
+                'getAmplificationParameter',
+                returnData[i++],
+                pool.address,
+              )
+            : undefined;
 
-        let poolState: PoolState = {
-          swapFee: BigInt(swapFee.toString()),
-          tokens: poolTokens.tokens.reduce(
-            (
-              ptAcc: { [address: string]: TokenState },
-              pt: string,
-              j: number,
-            ) => {
-              let tokenState: TokenState = {
-                balance: BigInt(poolTokens.balances[j].toString()),
-              };
+          let poolState: PoolState = {
+            swapFee: BigInt(swapFee.toString()),
+            tokens: poolTokens.tokens.reduce(
+              (
+                ptAcc: { [address: string]: TokenState },
+                pt: string,
+                j: number,
+              ) => {
+                let tokenState: TokenState = {
+                  balance: BigInt(poolTokens.balances[j].toString()),
+                };
 
-              if (scalingFactors)
-                tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
+                if (scalingFactors)
+                  tokenState.scalingFactor = BigInt(
+                    scalingFactors[j].toString(),
+                  );
 
-              if (normalisedWeights)
-                tokenState.weight = BigInt(normalisedWeights[j].toString());
+                if (normalisedWeights)
+                  tokenState.weight = BigInt(normalisedWeights[j].toString());
 
-              ptAcc[pt.toLowerCase()] = tokenState;
-              return ptAcc;
-            },
-            {},
-          ),
-        };
+                ptAcc[pt.toLowerCase()] = tokenState;
+                return ptAcc;
+              },
+              {},
+            ),
+          };
 
-        if (amp) {
-          poolState.amp = BigInt(amp.value.toString());
+          if (amp) {
+            poolState.amp = BigInt(amp.value.toString());
+          }
+
+          acc[pool.address.toLowerCase()] = poolState;
+        } catch (e) {
+          this.logger.error('MultiCall Failed', e);
         }
-
-        acc[pool.address.toLowerCase()] = poolState;
         return acc;
       },
       {},

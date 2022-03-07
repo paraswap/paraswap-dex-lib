@@ -16,6 +16,7 @@ import { UniswapV2 } from './uniswap-v2/uniswap-v2';
 import { uniswapMerge } from './uniswap-v2/optimizer';
 import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
+import { Dfyn } from './uniswap-v2/dfyn';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -32,6 +33,7 @@ import { Kyber } from './kyber';
 import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
+import { Lido } from './lido';
 
 const LegacyDexes = [
   Curve,
@@ -57,9 +59,10 @@ const LegacyDexes = [
   Weth,
   KyberDmm,
   Jarvis,
+  Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX];
+const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
@@ -68,7 +71,7 @@ const AdapterNameAddressMap: {
     Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
     Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
     Adapter03: '0xe6A36F977844EB6AE1609686682698D20e4B0C26',
-    BuyAdapter: '0x4bF27594E968b8CAccA75985469211eb35e2C771',
+    BuyAdapter: '0xd8b2760230BbF3aA9777E175eC1c9720EB499ebA',
   },
   [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
@@ -79,7 +82,7 @@ const AdapterNameAddressMap: {
     BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
   },
   [Network.ROPSTEN]: {
-    RopstenAdapter01: '0xcECD5055D08dc8846440e654525ba13f77C2D5F6',
+    RopstenAdapter01: '0x74fF86C61CF66334dCfc999814DE4695B4BaE57b',
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
   [Network.AVALANCHE]: {
@@ -181,7 +184,7 @@ export class DexAdapterService {
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if ('uniswapforkoptimized' === dexKey) _dexKey = 'uniswapv2';
+    if ('uniswapforkoptimized' === _dexKey) _dexKey = 'uniswapv2';
 
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];

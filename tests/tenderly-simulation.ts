@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { TxObject } from '../src/types';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
 
@@ -37,7 +38,7 @@ export class TenderlySimulation {
     }
   }
 
-  async simulate(params: any) {
+  async simulate(params: TxObject) {
     let _params = {
       from: params.from,
       to: params.to,
