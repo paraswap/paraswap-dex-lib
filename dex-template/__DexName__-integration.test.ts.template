@@ -22,11 +22,12 @@ import { Tokens } from '../../../tests/constants-e2e';
   (This comment should be removed from the final implementation)
 */
 
+const network = Network.MAINNET;
 const TokenASymbol = 'TokenASymbol';
-const TokenA = Tokens[TokenASymbol];
+const TokenA = Tokens[network][TokenASymbol];
 
 const TokenBSymbol = 'TokenBSymbol';
-const TokenB = Tokens[TokenBSymbol];
+const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
   BigInt('0'),
@@ -37,10 +38,10 @@ const amounts = [
 const dexKey = '__DexName__';
 
 describe('__DexName__', function () {
-  it('getPoolIdentifiers and getPricesVolume', async function () {
-    const dexHelper = new DummyDexHelper(Network.MAINNET);
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.provider.getBlockNumber();
-    const __DexNameCamel__ = new __DexName__(Network.MAINNET, dexKey, dexHelper);
+    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
 
     await __DexNameCamel__.setupEventPools(blocknumber);
 
@@ -68,9 +69,40 @@ describe('__DexName__', function () {
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
 
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    const dexHelper = new DummyDexHelper(network);
+    const blocknumber = await dexHelper.provider.getBlockNumber();
+    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
+
+    await __DexNameCamel__.setupEventPools(blocknumber);
+
+    const pools = await __DexNameCamel__.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blocknumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await __DexNameCamel__.getPricesVolume(
+      WETH,
+      DAI,
+      amounts,
+      SwapSide.BUY,
+      blocknumber,
+      pools,
+    );
+    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+  });
+
   it('getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(Network.MAINNET);
-    const __DexNameCamel__ = new __DexName__(Network.MAINNET, dexKey, dexHelper);
+    const dexHelper = new DummyDexHelper(network);
+    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
 
     const poolLiquidity = await __DexNameCamel__.getTopPoolsForToken(
       TokenA.address,

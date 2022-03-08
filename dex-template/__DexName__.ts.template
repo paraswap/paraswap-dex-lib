@@ -23,15 +23,10 @@ import {
   PoolState,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { __DexName__Config } from './config';
+import { __DexName__Config, Adapters } from './config';
 
-const Adapters: { [chainId: number]: { name: string; index: number }[] } = {
-  // TODO: add adapters for each chain 
-};
 
-/* 
-  
-*/
+
 export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
@@ -46,6 +41,7 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
+    protected adapters = Adapters[network],
     // TODO: add any additional params required for event subscriber
   ) {
     super(parentName, logger);
@@ -144,7 +140,7 @@ export class __DexName__
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    // TODO: complete me!
+    return this.adapters[side];
   }
 
   // Returns list of pool identifiers that can be used 

@@ -47,13 +47,15 @@ describe('__DexName__ E2E', () => {
   describe('__DexName__ MAINNET', () => {
     const dexKey = '__DexName__';
     const network = Network.MAINNET;
-    const tokens = Tokens[Network.MAINNET];
-    const holders = Holders[Network.MAINNET];
+    const tokens = Tokens[network];
+    const holders = Holders[network];
     const provider = new JsonRpcProvider(ProviderURL[network]);
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const tokenASymbol: string = 'tokenASymbol';
     const tokenBSymbol: string = 'tokenBSymbol';
     const tokenAAmount: string = 'tokenAAmount';
+    const tokenBAmount: string = 'tokenBAmount';
+    const ethAmount = '1000000000000000000';
     // TODO: Add any direct swap contractMethod name if it exists
     // TODO: If buy is not supported remove the buy contract methods
     const contractMethods: { [side: sell]: ContractMethod } = {
@@ -73,7 +75,7 @@ describe('__DexName__ E2E', () => {
               tokens['ETH'],
               tokens[tokenASymbol],
               holders['ETH'],
-              '1000000000000000000',
+              side === SwapSide.SELL ? ethAmount : tokenAAmount,
               side,
               dexKey,
               contractMethod,
@@ -86,7 +88,7 @@ describe('__DexName__ E2E', () => {
               tokens[tokenASymbol],
               tokens['ETH'],
               holders[tokenASymbol],
-              tokenAAmount,
+              side === SwapSide.SELL ? tokenAAmount: ethAmount,
               side,
               dexKey,
               contractMethod,
@@ -99,7 +101,7 @@ describe('__DexName__ E2E', () => {
               tokens[tokenASymbol],
               tokens[tokenBSymbol],
               holders[tokenASymbol],
-              tokenAAmount,
+              side === SwapSide.SELL ? tokenAAmount: tokenBAmount,
               side,
               dexKey,
               contractMethod,

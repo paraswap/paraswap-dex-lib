@@ -7,3 +7,7 @@ export const __DexName__Config: DexConfigMap<DexParams> = {
     // TODO: complete me!
   }
 };
+
+export const Adapters: { [chainId: number]: { name: string; index: number }[] | null } = {
+  // TODO: add adapters for each chain 
+};
