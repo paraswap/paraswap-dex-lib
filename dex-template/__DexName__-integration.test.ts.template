@@ -5,16 +5,28 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { __DexName__ } from './__DexNameParam__';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
+import { Tokens } from '../../../tests/constants-e2e';
 
-const WETH = {
-  address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  decimals: 18,
-};
+/*
+  README
+  ======
 
-const DAI = {
-  address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-  decimals: 18,
-};
+  This test script adds tests for __DexName__ general integration 
+  with the DEX interface. The test cases below are example tests. 
+  It is recommended to add tests which cover __DexName__ specific
+  logic. 
+
+  You can run this individual test script by running:
+  `npx jest src/dex/<dex-name>/<dex-name>-integration.tests.ts`
+
+  (This comment should be removed from the final implementation)
+*/
+
+const TokenASymbol = 'TokenASymbol';
+const TokenA = Tokens[TokenASymbol];
+
+const TokenBSymbol = 'TokenBSymbol';
+const TokenB = Tokens[TokenBSymbol];
 
 const amounts = [
   BigInt('0'),
@@ -33,12 +45,12 @@ describe('__DexName__', function () {
     await __DexNameCamel__.setupEventPools(blocknumber);
 
     const pools = await __DexNameCamel__.getPoolIdentifiers(
-      WETH,
-      DAI,
+      TokenA,
+      TokenB,
       SwapSide.SELL,
       blocknumber,
     );
-    console.log('WETH <> DAI Pool Ideintifiers: ', pools);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -50,7 +62,7 @@ describe('__DexName__', function () {
       blocknumber,
       pools,
     );
-    console.log('WETH <> DAI Pool Prices: ', poolPrices);
+    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
@@ -61,11 +73,11 @@ describe('__DexName__', function () {
     const __DexNameCamel__ = new __DexName__(Network.MAINNET, dexKey, dexHelper);
 
     const poolLiquidity = await __DexNameCamel__.getTopPoolsForToken(
-      WETH.address,
+      TokenA.address,
       10,
     );
-    console.log('WETH Top Pools:', poolLiquidity);
+    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
-    checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
+    checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
   });
 });

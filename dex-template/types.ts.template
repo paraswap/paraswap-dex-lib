@@ -1,77 +1,21 @@
 import { Address } from '../../types';
 
-export type TokenState = {
-  balance: bigint;
-  scalingFactor?: bigint; // It includes the token priceRate
-  weight?: bigint;
-};
-
 export type PoolState = {
-  tokens: {
-    [address: string]: TokenState;
-  };
-  swapFee: bigint;
-  amp?: bigint;
+  // TODO: poolState is the state of event 
+  // subsrciber. This should be the minimum
+  // set of parameters required to compute 
+  // pool prices. Complete me!
 };
-
-export type SubgraphToken = {
-  address: string;
-  decimals: number;
-};
-
-export interface SubgraphPoolBase {
-  id: string;
-  address: string;
-  poolType: string;
-  tokens: SubgraphToken[];
-}
-
-export type __DexName__Swap = {
-  poolId: string;
-  amount: string;
-};
-
-export type Optimized__DexName__Data = {
-  swaps: __DexName__Swap[];
-};
-
-export type __DexName__Funds = {
-  sender: string;
-  recipient: string;
-  fromInternalBalance: boolean;
-  toInternalBalance: boolean;
-};
-
-// Indexes represent the index of the asset assets array param
-export type BalancerSwap = {
-  poolId: string;
-  assetInIndex: number;
-  assetOutIndex: number;
-  amount: string;
-  userData: string;
-};
-
-export enum SwapTypes {
-  SwapExactIn,
-  SwapExactOut,
-}
-
-export type __DexName__Param = [
-  kind: SwapTypes,
-  swaps: BalancerSwap[],
-  assets: string[],
-  funds: __DexName__Funds,
-  limits: string[],
-  deadline: string,
-];
 
 export type __DexName__Data = {
-  poolId: string;
+  // TODO: __DexName__Data is the dex data that is
+  // returned by the API that can be used for 
+  // tx building. The data structure should be minimal.
+  // Complete me!
 };
 
 export type DexParams = {
-  subgraphURL: string;
-  vaultAddress: Address;
-};
-
-export type PoolStateMap = { [address: string]: PoolState };
+  // TODO: DexParams is set of parameters the can
+  // be used to initiate a DEX fork. 
+  // Complete me! 
+}
