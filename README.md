@@ -18,7 +18,11 @@ yarn install
 yarn init-integration <your-dex-name>
 ```
 
-You can find template code for newly integrated Dex in `src/dex/<your-dex-name>` 5. Complete the template code by filling the functions implementations. Template code is highly documented which should help you build the implementation. You should look into existing DEX implementation in `src/dex/` to understand the interfaces. Please refer below for detailed explainations and good practices. 6. Complete the test templates (All files with `src/dex/<your-dex-name>/*.test.ts`). Each DEX implementation should have thorough testing. We have multiple kinds of tests each dex must have. You can refer to [Writing Tests](#writing-testing) for detailed explaination. You can run all the tests using
+You can find template code for newly integrated Dex in `src/dex/<your-dex-name>`
+
+5. Complete the template code by filling the functions implementations. Template code is highly documented which should help you build the implementation. You should look into existing DEX implementation in `src/dex/` to understand the interfaces. Please refer below for detailed explainations and good practices.
+
+6. Complete the test templates (All files with `src/dex/<your-dex-name>/*.test.ts`). Each DEX implementation should have thorough testing. We have multiple kinds of tests each dex must have. You can refer to [Writing Tests](#writing-testing) for detailed explaination. You can run all the tests using
 
 ```bash
 yarn test-integration <your-dex-name>
@@ -37,7 +41,7 @@ TODO: explain the blockmanager and stateful event subscriber
 ### Good Practices for DEX integration
 
 - Fullnode calls are expensive. An integration should minimize the number of fullnode rpc calls by following [Event based Pricing](#Understanding-the-event-based-pricing-approach)
-- Use Multicall. Instead of performing each RPC calls individually they should be batched together into one multicall.
+- Use Multicall. Instead of performing each RPC calls individually they should be batched together into multicalls.
 - Contract & Interface instances should be reused. There will be cases when you would be lured to create Contract/Interface objects for every dex pool to perform on-chain calls. This can lead to memory leaks in DEXes like UniswapV2 where there can be arbitrarily many pools. In such cases all the pools with the same abi should reuse the same Contract/Interface object.
 
 ### Writing Testing
