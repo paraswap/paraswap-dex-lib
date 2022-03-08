@@ -1,10 +1,10 @@
 import { Address, Token } from '../src/types';
-import { Network } from '../src/constants';
+import { ETHER_ADDRESS, Network } from '../src/constants';
 
 export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
   [Network.MAINNET]: {
     ETH: {
-      address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      address: ETHER_ADDRESS,
       decimals: 18,
     },
     USDC: {
@@ -71,6 +71,78 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     // CVX: {address: '0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B', decimals: 18},
     // UST: {address: '0xa47c8bf37f92abed4a126bda807a7b7498661acd', decimals: 18},
   },
+
+  [Network.POLYGON]: {
+    DAI: {
+      address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+      decimals: 18,
+    },
+    USDC: {
+      address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+      decimals: 6,
+    },
+    WETH: {
+      address: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+      decimals: 18,
+    },
+    WMATIC: {
+      address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+      decimals: 18,
+    },
+    AMWMATIC: {
+      address: '0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4',
+      decimals: 18,
+    },
+    MUST: {
+      address: '0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f',
+      decimals: 18,
+    },
+    AMDAI: {
+      address: '0x27F8D03b3a2196956ED754baDc28D73be8830A6e',
+      decimals: 18,
+    },
+    BTU: {
+      address: '0xfdc26cda2d2440d0e83cd1dee8e8be48405806dc',
+      decimals: 18,
+    },
+    USDT: {
+      address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+      decimals: 6,
+    },
+    WBTC: {
+      address: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6',
+      decimals: 8,
+    },
+    MATIC: { address: ETHER_ADDRESS, decimals: 18 },
+    mUSD: {
+      address: '0xe840b73e5287865eec17d250bfb1536704b43b21',
+      decimals: 18,
+    },
+    AMWETH: {
+      address: '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390',
+      decimals: 18,
+    },
+    AMWBTC: {
+      address: '0x5c2ed810328349100a66b82b78a1791b101c9d61',
+      decimals: 8,
+    },
+    KNC: {
+      address: '0x1c954e8fe737f99f68fa1ccda3e51ebdb291948c',
+      decimals: 18,
+    },
+    jEUR: {
+      address: '0x4e3decbb3645551b8a19f0ea1678079fcb33fb4c',
+      decimals: 18,
+    },
+    jGPB: {
+      address: '0x767058f11800fba6a682e73a6e79ec5eb74fac8c',
+      decimals: 18,
+    },
+    jCHF: {
+      address: '0xbd1463f02f61676d53fd183c2b19282bff93d099',
+      decimals: 18,
+    },
+  },
 };
 
 export const Holders: {
@@ -114,5 +186,21 @@ export const Holders: {
     // CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
     // jEUR: '0x4f0CF2F63913524b85c1126AB7eE7957857f3482',
     // UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
+  },
+  [Network.POLYGON]: {
+    MATIC: '0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245',
+    DAI: '0x97F3A94B2cd2484E46Bc36ea668823F60b6cf137',
+    WETH: '0xd3d176F7e4b43C70a68466949F6C64F06Ce75BB9',
+    WMATIC: '0xFffbCD322cEace527C8ec6Da8de2461C6D9d4e6e',
+    AMWMATIC: '0x730dfedff1e4f4ca2c02b3bfc5aa11ee7ad0872f',
+    USDC: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
+    MUST: '0x2f96197A9F1e8199cb20f5f406431BD37f39B0a5',
+    AMDAI: '0xFA0DCe8280FCDf369a4cbFc1830d3302789307a6',
+    mUSD: '0x5084f622cbDf1E22E473d66d97916524745B9b6e',
+    USDT: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
+    WBTC: '0xdc9232e2df177d7a12fdff6ecbab114e2231198d',
+    AMWETH: '0x6f1c28c40b5fed4fb546f85959ae2f7c16365cad',
+    KNC: '0x41Af7fd16dFC29bdA8D8aAA4CeFfC0E8046992eC',
+    jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
   },
 };
