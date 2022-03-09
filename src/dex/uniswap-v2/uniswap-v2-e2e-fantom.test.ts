@@ -12,1174 +12,1116 @@ import {
 import { JsonRpcProvider } from '@ethersproject/providers';
 
 describe('UniswapV2 E2E Fantom', () => {
+  const network = Network.FANTOM;
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const provider = new JsonRpcProvider(ProviderURL[network]);
+
   describe('SpookySwap', () => {
+    const dexKey = 'SpookySwap';
+
     describe('simpleSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('simpleBuy', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '70000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '700000000',
           SwapSide.BUY,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
 
     describe('BuyMethod', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.buy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
         );
       });
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '70000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.buy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
         );
       });
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '700000000',
           SwapSide.BUY,
-          EXCHANGES.SPOOKYSWAP,
-          [ContractMethod.buy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('SpiritSwap', () => {
+    const dexKey = 'SpiritSwap';
+
     describe('simpleSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('simpleBuy', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '70000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '700000000',
           SwapSide.BUY,
-          EXCHANGES.SPIRITSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('SushiSwap', () => {
+    const dexKey = 'SushiSwap';
+
     describe('simpleSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('simpleBuy', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '70000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '700000000',
           SwapSide.BUY,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('PaintSwap', () => {
+    const dexKey = 'PaintSwap';
+
     describe('simpleSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('simpleBuy', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '70000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '700000000',
           SwapSide.BUY,
-          EXCHANGES.PAINTSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('KnightSwap', () => {
+    const dexKey = 'KnightSwap';
+
     describe('simpleSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('simpleBuy', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '70000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '700000000',
           SwapSide.BUY,
-          EXCHANGES.KNIGHTSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('MorpheusSwap', () => {
+    const dexKey = 'MorpheusSwap';
+
     describe('simpleSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('simpleBuy', () => {
       it('FTM -> USDC', async () => {
-        await doTest(
-          FTM,
-          USDC,
-          holders[FTM],
+        await testE2E(
+          tokens.FTM,
+          tokens.USDC,
+          holders.FTM,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDC -> FTM', async () => {
-        await doTest(
-          USDC,
-          FTM,
-          holders[USDC],
+        await testE2E(
+          tokens.USDC,
+          tokens.FTM,
+          holders.USDC,
           '70000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('WFTM -> USDC', async () => {
-        await doTest(
-          WFTM,
-          USDC,
-          holders[WFTM],
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
           '700000000',
           SwapSide.BUY,
-          EXCHANGES.MORPHEUSSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          <any>FANTOM_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
