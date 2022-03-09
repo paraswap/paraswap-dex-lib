@@ -14,6 +14,7 @@
     "@types/axios": "0.14.0",
     "@types/jest": "26.0.24",
     "@types/lodash": "4.14.178",
+    "@types/node": "^17.0.21",
     "axios": "0.26.0",
     "change-case": "^4.1.2",
     "dotenv": "16.0.0",
@@ -23,14 +24,16 @@
     "prettier": "2.3.2",
     "pretty-quick": "3.1.1",
     "ts-jest": "24.1.0",
+    "ts-node": "^10.6.0",
     "typescript": "4.3.5",
     "yargs": "^17.0.1"
   },
   "scripts": {
+    "init-integration": "ts-node scripts/dex-integration.ts init",
+    "test-integration": "ts-node scripts/dex-integration.ts test",
     "build": "tsc",
     "test": "jest",
-    "prepare": "husky install && yarn build",
-    "dex:init": "npx ts-node scripts/initDexIntegration.ts"
+    "prepare": "husky install && yarn build"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",

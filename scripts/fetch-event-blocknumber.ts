@@ -7,7 +7,7 @@ import VaultABI from '../src/abi/balancer-v2/vault.json';
 import { ProviderURL, Network } from '../src/constants';
 import { Address } from '../src/types';
 
-// This is a helper script to fetch blocknumbers where a certain
+// This is a helper script to fetch blockNumbers where a certain
 // event was released by a certain contract
 async function getBlockNumbersForEvents(
   contractAddress: Address,

@@ -30,3 +30,26 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
     },
   },
 };
+
+export const Adapters: {
+  [chainId: number]: { name: string; index: number }[];
+} = {
+  [Network.MAINNET]: [
+    {
+      name: 'Adapter02',
+      index: 9,
+    },
+  ],
+  [Network.POLYGON]: [
+    {
+      name: 'PolygonAdapter01',
+      index: 9,
+    },
+  ],
+  [Network.FANTOM]: [
+    {
+      name: 'FantomAdapter01',
+      index: 5,
+    },
+  ],
+};
