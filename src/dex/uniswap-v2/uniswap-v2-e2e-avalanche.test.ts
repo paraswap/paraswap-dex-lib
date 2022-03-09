@@ -12,1478 +12,1410 @@ import {
 import { JsonRpcProvider } from '@ethersproject/providers';
 
 describe('UniswapV2 E2E Avalanche', () => {
-  describe('Pangolin', () => {
+  const network = Network.AVALANCHE;
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const provider = new JsonRpcProvider(ProviderURL[network]);
+
+  describe('PangolinSwap', () => {
+    const dexKey = 'PangolinSwap';
+
     describe('simpleSwap', () => {
       it('AVAX -> USDT.e', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDT.e -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('BuyMethod', () => {
       it('AVAX -> USDT.e', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.buy],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
         );
       });
 
       it('USDT.e -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '7000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.buy],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '100000000',
           SwapSide.BUY,
-          EXCHANGES.PANGOLIN,
-          [ContractMethod.buy],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('TraderJoe', () => {
+    const dexKey = 'TraderJoe';
+
     describe('simpleSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '1000000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.TRADERJOE,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('SushiSwap', () => {
+    const dexKey = 'SushiSwap';
+
     describe('simpleSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.SUSHISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Canary', () => {
+  describe('CanarySwap', () => {
+    const dexKey = 'CanarySwap';
+
     describe('simpleSwap', () => {
       it('AVAX -> PNG', async () => {
-        await doTest(
-          AVAX,
-          PNG,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.PNG,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('PNG -> AVAX', async () => {
-        await doTest(
-          PNG,
-          AVAX,
-          holders[PNG],
+        await testE2E(
+          tokens.PNG,
+          tokens.AVAX,
+          holders.PNG,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> PNG', async () => {
-        await doTest(
-          WAVAX,
-          PNG,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.PNG,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> PNG', async () => {
-        await doTest(
-          AVAX,
-          PNG,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.PNG,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('PNG -> AVAX', async () => {
-        await doTest(
-          PNG,
-          AVAX,
-          holders[PNG],
+        await testE2E(
+          tokens.PNG,
+          tokens.AVAX,
+          holders.PNG,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> PNG', async () => {
-        await doTest(
-          WAVAX,
-          PNG,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.PNG,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> PNG', async () => {
-        await doTest(
-          AVAX,
-          PNG,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.PNG,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('PNG -> AVAX', async () => {
-        await doTest(
-          PNG,
-          AVAX,
-          holders[PNG],
+        await testE2E(
+          tokens.PNG,
+          tokens.AVAX,
+          holders.PNG,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> PNG', async () => {
-        await doTest(
-          WAVAX,
-          PNG,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.PNG,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CANARY,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Baguette', () => {
+  describe('BaguetteSwap', () => {
+    const dexKey = 'BaguetteSwap';
+
     describe('simpleSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.simpleSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '10000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.simpleSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.simpleSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.multiSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.AVAX,
+          holders.USDTe,
           '10000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.multiSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.multiSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> USDTe', async () => {
-        await doTest(
-          AVAX,
-          USDTe,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDTe,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.megaSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDTe -> AVAX', async () => {
-        await doTest(
-          USDTe,
-          AVAX,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokensAVAX,
+          holders.USDTe,
           '10000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.megaSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BAGUETTE,
-          [ContractMethod.megaSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Complus', () => {
+  describe('ComplusSwap', () => {
+    const dexKey = 'ComplusSwap';
+
     describe('simpleSwap', () => {
       it('AVAX -> USDT', async () => {
-        await doTest(
-          AVAX,
-          USDT,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDT,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.simpleSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '100000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.simpleSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.simpleSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> USDT', async () => {
-        await doTest(
-          AVAX,
-          USDT,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDT,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.multiSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '100000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.multiSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.multiSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> USDT', async () => {
-        await doTest(
-          AVAX,
-          USDT,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.USDT,
+          holders.AVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.megaSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '100000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.megaSwap],
-          18,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COMPLUS,
-          [ContractMethod.megaSwap],
-          18,
-          6,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Elk', () => {
+  describe('ElkFinance', () => {
+    const dexKey = 'ElkFinance';
+
     describe('simpleSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDT', async () => {
-        await doTest(
-          WAVAX,
-          USDT,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDT,
+          holders.WAVAX,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.ELK,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('Thorus', () => {
+    const dexKey = 'Thorus';
+
     describe('simpleSwap', () => {
       it('AVAX -> THO', async () => {
-        await doTest(
-          AVAX,
-          THO,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.THO,
+          holders.AVAX,
           '10000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.simpleSwap],
-          undefined,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('THO -> AVAX', async () => {
-        await doTest(
-          THO,
-          AVAX,
-          holders[THO],
+        await testE2E(
+          tokens.THO,
+          tokens.AVAX,
+          holders.THO,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.simpleSwap],
-          18,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('THO -> USDCe', async () => {
-        await doTest(
-          THO,
-          USDCe,
-          holders[THO],
+        await testE2E(
+          tokens.THO,
+          tokens.USDCe,
+          holders.THO,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.simpleSwap],
-          18,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> THO', async () => {
-        await doTest(
-          AVAX,
-          THO,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.THO,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.multiSwap],
-          undefined,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('THO -> AVAX', async () => {
-        await doTest(
-          THO,
-          AVAX,
-          holders[THO],
+        await testE2E(
+          tokens.THO,
+          tokens.AVAX,
+          holders.THO,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.multiSwap],
-          18,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('THO -> USDCe', async () => {
-        await doTest(
-          THO,
-          USDCe,
-          holders[THO],
+        await testE2E(
+          tokens.THO,
+          tokens.USDCe,
+          holders.THO,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.multiSwap],
-          18,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> THO', async () => {
-        await doTest(
-          AVAX,
-          THO,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.THO,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.megaSwap],
-          undefined,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('THO -> AVAX', async () => {
-        await doTest(
-          THO,
-          AVAX,
-          holders[THO],
+        await testE2E(
+          tokens.THO,
+          tokens.AVAX,
+          holders.THO,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.megaSwap],
-          18,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('THO -> USDCe', async () => {
-        await doTest(
-          THO,
-          USDCe,
-          holders[THO],
+        await testE2E(
+          tokens.THO,
+          tokens.USDCe,
+          holders.THO,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.THORUS,
-          [ContractMethod.megaSwap],
-          18,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('Olive', () => {
+    const dexKey = 'Olive';
+
     describe('simpleSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('USDT.e -> DAI.e', async () => {
-        await doTest(
-          USDTe,
-          DAIE,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.DAIE,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.simpleSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('USDT.e -> DAI.e', async () => {
-        await doTest(
-          USDTe,
-          DAIE,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.DAIE,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.multiSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '300000000000000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('USDT.e -> DAI.e', async () => {
-        await doTest(
-          USDTe,
-          DAIE,
-          holders[USDTe],
+        await testE2E(
+          tokens.USDTe,
+          tokens.DAIE,
+          holders.USDTe,
           '100000000',
           SwapSide.SELL,
-          EXCHANGES.OLIVE,
-          [ContractMethod.megaSwap],
-          6,
-          18,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('YetiSwap', () => {
+    const dexKey = 'YetiSwap';
+
     describe('simpleSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('multiSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('megaSwap', () => {
       it('AVAX -> ETH', async () => {
-        await doTest(
-          AVAX,
-          ETH,
-          holders[AVAX],
+        await testE2E(
+          tokens.AVAX,
+          tokens.ETH,
+          holders.AVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('ETH -> AVAX', async () => {
-        await doTest(
-          ETH,
-          AVAX,
-          holders[ETH],
+        await testE2E(
+          tokens.ETH,
+          tokens.AVAX,
+          holders.ETH,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
 
       it('WAVAX -> USDTe', async () => {
-        await doTest(
-          WAVAX,
-          USDTe,
-          holders[WAVAX],
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDTe,
+          holders.WAVAX,
           '3000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.YETISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          AVALANCHE_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
