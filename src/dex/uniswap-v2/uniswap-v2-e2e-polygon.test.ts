@@ -342,7 +342,7 @@ describe('UniswapV2 E2E Polygon', () => {
           holders.MATIC,
           '7000000000000000000',
           SwapSide.SELL,
-          'SushiSwap',
+          dexKey,
           ContractMethod.multiSwap,
           network,
           provider,
