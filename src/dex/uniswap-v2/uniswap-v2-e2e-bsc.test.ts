@@ -12,1303 +12,1251 @@ import {
 import { JsonRpcProvider } from '@ethersproject/providers';
 
 describe('UniswapV2 E2E BSC', () => {
-  describe('Pancake Swap V2', () => {
+  const network = Network.BSC;
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const provider = new JsonRpcProvider(ProviderURL[network]);
+
+  describe('PancakeSwapV2', () => {
+    const dexKey = 'PancakeSwapV2';
+
     describe('Simpleswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          BUSD,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.BUSD,
+          holders.DAI,
           '7000000000000000000000',
           SwapSide.SELL,
-          'pancakeswapv2',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          BUSD,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.BUSD,
+          holders.DAI,
           '7000000000000000000000',
           SwapSide.SELL,
-          'pancakeswapv2',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('BuyMethod', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          BUSD,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.BUSD,
+          holders.DAI,
           '7000000000000000000000',
           SwapSide.BUY,
-          'pancakeswapv2',
+          dexKey,
           [ContractMethod.buy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Julswap', () => {
+  describe('JulSwap', () => {
+    const dexKey = 'JulSwap';
+
     describe('Simpleswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          BUSD,
-          WBNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.WBNB,
+          holders.BUSD,
           '7000000000000000000',
           SwapSide.SELL,
-          'julswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          BUSD,
-          WBNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.WBNB,
+          holders.BUSD,
           '7000000000000000000',
           SwapSide.SELL,
-          'julswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('ApeSwap V2', () => {
+  describe('ApeSwap', () => {
+    const dexKey = 'ApeSwap';
+
     describe('Simpleswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          BUSD,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.BUSD,
+          holders.DAI,
           '7000000000000000000000',
           SwapSide.SELL,
-          'apeswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          BUSD,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.BUSD,
+          holders.DAI,
           '7000000000000000000000',
           SwapSide.SELL,
-          'apeswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Pancake Swap', () => {
+  describe('PancakeSwap', () => {
+    const dexKey = 'PancakeSwap';
+
     describe('Simpleswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          WBNB,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
           '70000000000000000000',
           SwapSide.SELL,
-          'pancakeswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          WBNB,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
           '7000000000000000000000',
           SwapSide.SELL,
-          'pancakeswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Bakery Swap', () => {
+  describe('BakerySwap', () => {
+    const dexKey = 'BakerySwap';
+
     describe('Simpleswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '70000000000000000000',
           SwapSide.SELL,
-          'bakeryswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '70000000000000000000',
           SwapSide.SELL,
-          'bakeryswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('Street Swap', () => {
+    const dexKey = 'StreetSwap';
+
     describe('Simpleswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          WBNB,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
           '70000000000000000000',
           SwapSide.SELL,
-          'streetswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          WBNB,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
           '70000000000000000000',
           SwapSide.SELL,
-          'streetswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Panther Swap', () => {
+  describe('PantherSwap', () => {
+    const dexKey = 'PantherSwap';
+
     describe('Simpleswap', () => {
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '7000000000000000000',
           SwapSide.SELL,
-          'pantherswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('TOKEN -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '70000000000000000000',
           SwapSide.SELL,
-          'pantherswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('Token -> TOKEN', async () => {
-        await doTest(
-          BUSD,
-          USDT,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.USDT,
+          holders.BUSD,
           '70000000000000000000',
           SwapSide.SELL,
-          'pantherswap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          DAI,
-          WBNB,
-          holders[DAI],
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
           '70000000000000000000',
           SwapSide.SELL,
-          'pantherswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '7000000000000000000',
           SwapSide.SELL,
-          'pantherswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
 
       it('TOKEN -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '70000000000000000000',
           SwapSide.SELL,
-          'pantherswap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('MDEX', () => {
+    const dexKey = 'MDEX';
+
     describe('Simpleswap', () => {
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          USDT,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MDEX,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MDEX,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('Token -> BNB', async () => {
-        await doTest(
-          USDT,
-          BNB,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BNB,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MDEX,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe.skip('BUY', () => {
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          USDT,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.MDEX,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.MDEX,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('Token -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '10000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.MDEX,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          USDT,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MDEX,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MDEX,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('Token -> BNB', async () => {
-        await doTest(
-          USDT,
-          BNB,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BNB,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MDEX,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Megapath', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.MDEX,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('Biswap', () => {
+  describe('BiSwap', () => {
+    const dexKey = 'BiSwap';
+
     describe('Simpleswap', () => {
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          USDT,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('Token -> BNB', async () => {
-        await doTest(
-          USDT,
-          BNB,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BNB,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BISWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe.skip('BUY', () => {
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          USDT,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.BISWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.BISWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('Token -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '10000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.BISWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
 
     describe('Multiswap', () => {
       it('BNB -> TOKEN', async () => {
-        await doTest(
-          BNB,
-          USDT,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('Token -> BNB', async () => {
-        await doTest(
-          USDT,
-          BNB,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BNB,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BISWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
 
     describe('Megapath', () => {
       it('Token -> TOKEN', async () => {
-        await doTest(
-          USDT,
-          USDC,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
           '1000000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.BISWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
-  describe('WaultFinanace', () => {
+  describe('WaultFinance', () => {
+    const dexKey = 'WaultFinance';
+
     describe('Simpleswap', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          'WaultFinance',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.SELL,
-          'WaultFinance',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '100000000000000000000',
           SwapSide.SELL,
-          'WaultFinance',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
     describe.skip('SimpleBuy', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.BUY,
-          'WaultFinance',
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.BUY,
-          'WaultFinance',
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '100000000000000000000',
           SwapSide.BUY,
-          'WaultFinance',
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
     describe('MultiSwap', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          'WaultFinance',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.SELL,
-          'WaultFinance',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '100000000000000000000',
           SwapSide.SELL,
-          'WaultFinance',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
     describe('MegaSwap', () => {
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.SELL,
-          'WaultFinance',
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('CoinSwap', () => {
+    const dexKey = 'CoinSwap';
+
     describe('Simpleswap', () => {
       it('BUSD -> WBNB', async () => {
-        await doTest(
-          BUSD,
-          WBNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.WBNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
 
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
     describe.skip('SimpleBuy', () => {
       it('BUSD -> WBNB', async () => {
-        await doTest(
-          BUSD,
-          WBNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.WBNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
 
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
 
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '1000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
 
     describe('MultiSwap', () => {
       it('BUSD -> WBNB', async () => {
-        await doTest(
-          BUSD,
-          WBNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.WBNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
     describe('MegaSwap', () => {
       it('BUSD -> WBNB', async () => {
-        await doTest(
-          BUSD,
-          WBNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.WBNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '1000000000000000000',
           SwapSide.SELL,
-          EXCHANGES.COINSWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('JetSwap', () => {
+    const dexKey = 'JetSwap';
+
     describe('Simpleswap', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          'JetSwap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.SELL,
-          'JetSwap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '100000000000000000000',
           SwapSide.SELL,
-          'JetSwap',
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
     describe.skip('SimpleBuy', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.BUY,
-          'JetSwap',
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.BUY,
-          'JetSwap',
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '100000000000000000000',
           SwapSide.BUY,
-          'JetSwap',
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
     describe('MultiSwap', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
-          'JetSwap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.SELL,
-          'JetSwap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '100000000000000000000',
           SwapSide.SELL,
-          'JetSwap',
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
     describe('MegaSwap', () => {
       it('USDT -> BUSD', async () => {
-        await doTest(
-          USDT,
-          BUSD,
-          holders[USDT],
+        await testE2E(
+          tokens.USDT,
+          tokens.BUSD,
+          holders.USDT,
           '100000000000000000000',
           SwapSide.SELL,
-          'JetSwap',
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
   });
 
   describe('CheeseSwap', () => {
+    const dexKey = 'CheeseSwap';
+
     describe('Simpleswap', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '100000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
       it('WBNB -> BUSD', async () => {
-        await doTest(
-          WBNB,
-          BUSD,
-          holders[WBNB],
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.simpleSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
         );
       });
     });
     describe('Multi', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
       it('WBNB -> BUSD', async () => {
-        await doTest(
-          WBNB,
-          BUSD,
-          holders[WBNB],
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.multiSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
         );
       });
     });
     describe('Mega', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '30000000000000000',
           SwapSide.SELL,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.megaSwap],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
         );
       });
     });
     describe('SimpleBuy', () => {
       it('BNB -> BUSD', async () => {
-        await doTest(
-          BNB,
-          BUSD,
-          holders[BNB],
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
           '7000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('BUSD -> BNB', async () => {
-        await doTest(
-          BUSD,
-          BNB,
-          holders[BUSD],
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
           '7000000000000',
           SwapSide.BUY,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
       it('WBNB -> BUSD', async () => {
-        await doTest(
-          WBNB,
-          BUSD,
-          holders[WBNB],
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
           '7000000000000000000',
           SwapSide.BUY,
-          EXCHANGES.CHEESESWAP,
-          [ContractMethod.simpleBuy],
-          undefined,
-          undefined,
-          BSC_NETWORK_ID,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
         );
       });
     });
