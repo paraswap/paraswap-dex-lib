@@ -22,13 +22,15 @@ You can find template code for newly integrated Dex in `src/dex/<your-dex-name>`
 
 5. Complete the template code by filling the functions implementations. Template code is highly documented which should help you build the implementation. You should look into existing DEX implementation in `src/dex/` to understand the interfaces. Please refer below for detailed explainations and good practices.
 
-6. Complete the test templates (All files with `src/dex/<your-dex-name>/*.test.ts`). Each DEX implementation should have thorough testing. We have multiple kinds of tests each dex must have. You can refer to [Writing Tests](#writing-testing) for detailed explaination. You can run all the tests using
+6. Add `<your-dex-name>` to `Dexes` list in `src/dex/index.ts`
+
+7. Complete the test templates (All files with `src/dex/<your-dex-name>/*.test.ts`). Each DEX implementation should have thorough testing. We have multiple kinds of tests each dex must have. You can refer to [Writing Tests](#writing-testing) for detailed explaination. You can run all the tests using
 
 ```bash
 yarn test-integration <your-dex-name>
 ```
 
-7. Create a PR(pull-request) from your feature branch to DexLib master. The PR must contain brief explanation about the DEX background, pricing logic, links to existing documentation, important contract addresses, and anything you think could help us review your code faster.
+8. Create a PR(pull-request) from your feature branch to DexLib master. The PR must contain brief explanation about the DEX background, pricing logic, links to existing documentation, important contract addresses, and anything you think could help us review your code faster.
 
 ### Understanding the event based pricing approach
 
