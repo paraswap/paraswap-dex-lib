@@ -17,20 +17,6 @@ describe('UniswapV2 E2E Polygon', () => {
   const holders = Holders[network];
   const provider = new JsonRpcProvider(ProviderURL[network]);
 
-  it('simpleBuy USDC -> BTU', async () => {
-    await testE2E(
-      tokens.USDC,
-      tokens.BTU,
-      holders.USDC,
-      '10000000000000000000',
-      SwapSide.BUY,
-      undefined,
-      undefined,
-      network,
-      provider,
-    );
-  });
-
   describe('QuickSwap', () => {
     const dexKey = 'QuickSwap';
 
