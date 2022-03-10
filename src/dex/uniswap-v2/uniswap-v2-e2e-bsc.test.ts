@@ -61,7 +61,7 @@ describe('UniswapV2 E2E BSC', () => {
           '7000000000000000000000',
           SwapSide.BUY,
           dexKey,
-          [ContractMethod.buy],
+          ContractMethod.buy,
           network,
           provider,
         );
