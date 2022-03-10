@@ -1,6 +1,7 @@
 import { SwapSide } from './constants';
 import { Address } from 'paraswap-core';
-
+import { BlockHeader } from 'web3-eth';
+export { BlockHeader } from 'web3-eth';
 export {
   Address,
   NumberAsString,
@@ -11,6 +12,12 @@ export {
   OptionalRate,
   OptimalRate,
 } from 'paraswap-core';
+import { Logger } from 'log4js';
+export { Logger } from 'log4js';
+import { OptimalRate } from 'paraswap-core';
+
+// Check: Should the logger be replaced with Logger Interface
+export type LoggerConstructor = (name?: string) => Logger;
 
 export type ContractSellData = {
   fromToken: string;
@@ -136,3 +143,64 @@ export type SimpleExchangeParam = {
 
 // TODO: fix the type
 export type ContractMethodEncoder = (...args: any[]) => any;
+
+export type Token = {
+  address: string;
+  decimals: number;
+  symbol?: string;
+};
+
+export type ExchangePrices<T> = PoolPrices<T>[];
+
+export type PoolPrices<T> = {
+  prices: bigint[];
+  unit: bigint;
+  data: T;
+  poolIdentifier?: string;
+  exchange: string;
+  gasCost: number;
+  poolAddresses?: Array<Address>;
+};
+
+export type PoolLiquidity = {
+  exchange: string;
+  address: Address;
+  connectorTokens: Token[];
+  liquidityUSD: number;
+};
+
+export interface Log {
+  address: string;
+  data: string;
+  topics: string[];
+  logIndex: number;
+  transactionIndex: number;
+  transactionHash: string;
+  blockHash: string;
+  blockNumber: number;
+
+  // The following are not declared in web3-core, but still appear in logs
+  removed?: boolean;
+  id?: string;
+}
+
+export type DexConfigMap<DexParams> = {
+  [dexKey: string]: {
+    [network: number]: DexParams;
+  };
+};
+
+export type TxObject = {
+  from: Address;
+  to?: Address; // undefined in case of contract deployment
+  value: string;
+  data: string;
+  gasPrice?: string;
+  maxFeePerGas?: string;
+  maxPriorityFeePerGas?: string;
+};
+
+export type UnoptimizedRate = Omit<
+  OptimalRate,
+  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
+>;

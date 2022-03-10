@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import KyberABI from '../abi/KyberProxy.json';
 import { NumberAsString } from 'paraswap-core';
@@ -34,7 +34,7 @@ enum KyberFunctions {
 
 export class Kyber
   extends SimpleExchange
-  implements IDex<KyberData, KyberParam>
+  implements IDexTxBuilder<KyberData, KyberParam>
 {
   static dexKeys = ['kyber'];
   exchangeRouterInterface: Interface;

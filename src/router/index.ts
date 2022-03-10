@@ -6,6 +6,7 @@ import { SimpleSwap, SimpleBuy } from './simpleswap';
 import { DirectSwap } from './directswap';
 import { Adapters } from '../types';
 import { DexAdapterService } from '../dex';
+import { SwapSide } from '../constants';
 
 export class RouterService {
   hybridRouters = [MultiSwap, MegaSwap, SimpleSwap, SimpleBuy, Buy];
@@ -14,11 +15,10 @@ export class RouterService {
   };
   directSwapRouter: DirectSwap<any>;
 
-  constructor(
-    private dexAdapterService: DexAdapterService,
-    adapters: Adapters,
-    buyAdapters: Adapters,
-  ) {
+  constructor(private dexAdapterService: DexAdapterService) {
+    const adapters = dexAdapterService.getAllDexAdapters(SwapSide.SELL);
+    const buyAdapters = dexAdapterService.getAllDexAdapters(SwapSide.BUY);
+
     this.hybridRouterMap = this.hybridRouters.reduce<{
       [contractMethod: string]: IRouter<any>;
     }>((acc, Router) => {

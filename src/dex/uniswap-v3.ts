@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
 import { NumberAsString } from 'paraswap-core';
@@ -50,7 +50,7 @@ enum UniswapV3Functions {
 
 export class UniswapV3
   extends SimpleExchange
-  implements IDex<UniswapV3Data, UniswapV3Param>
+  implements IDexTxBuilder<UniswapV3Data, UniswapV3Param>
 {
   static dexKeys = ['uniswapv3'];
   exchangeRouterInterface: Interface;

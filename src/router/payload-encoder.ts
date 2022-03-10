@@ -103,7 +103,7 @@ export class PayloadEncoder {
         exchangeAdapterMap[se.exchange.toLowerCase()];
       adapter = adapterAddress; //Will be the same for all exchanges for BUY
       const adapterParam = this.dexAdapterService
-        .getDexByKey(se.exchange)
+        .getTxBuilderDexByKey(se.exchange)
         .getAdapterParam(
           srcToken,
           destToken,
@@ -144,7 +144,7 @@ export class PayloadEncoder {
         };
       }
       const adapterParam = this.dexAdapterService
-        .getDexByKey(se.exchange)
+        .getTxBuilderDexByKey(se.exchange)
         .getAdapterParam(
           srcToken,
           destToken,

@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BProtocolABI from '../abi/BProtocol.json';
 
@@ -16,7 +16,7 @@ enum BProtocolFunctions {
 
 export class BProtocol
   extends SimpleExchange
-  implements IDex<BProtocolData, BProtocolParam>
+  implements IDexTxBuilder<BProtocolData, BProtocolParam>
 {
   static dexKeys = ['bprotocol'];
   exchangeRouterInterface: Interface;

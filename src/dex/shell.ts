@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import ShellABI from '../abi/Shell.json';
 
@@ -23,7 +23,7 @@ enum ShellFunctions {
 
 export class Shell
   extends SimpleExchange
-  implements IDex<ShellData, ShellParam>
+  implements IDexTxBuilder<ShellData, ShellParam>
 {
   static dexKeys = ['shell'];
   exchangeRouterInterface: Interface;

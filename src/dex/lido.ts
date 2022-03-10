@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import stETHAbi from '../abi/stETH.json';
 import { NULL_ADDRESS } from '../constants';
 
@@ -16,7 +16,7 @@ export enum stETHFunctions {
 
 export type LidoData = {};
 
-export class Lido implements IDex<LidoData, any> {
+export class Lido implements IDexTxBuilder<LidoData, any> {
   static dexKeys = ['lido'];
   stETHInterface: Interface;
 

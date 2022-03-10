@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BancorABI from '../abi/Bancor.json';
 
@@ -34,7 +34,7 @@ enum BancorFunctions {
 
 export class Bancor
   extends SimpleExchange
-  implements IDex<BancorData, BancorParam>
+  implements IDexTxBuilder<BancorData, BancorParam>
 {
   static dexKeys = ['bancor'];
   exchangeRouterInterface: Interface;

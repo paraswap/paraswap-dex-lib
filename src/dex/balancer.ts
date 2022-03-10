@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BalancerABI from '../abi/Balancer.json';
 import { isETHAddress } from '../utils';
@@ -72,7 +72,7 @@ enum BalancerFunctions {
 
 export class Balancer
   extends SimpleExchange
-  implements IDex<BalancerData, BalancerParam>
+  implements IDexTxBuilder<BalancerData, BalancerParam>
 {
   static dexKeys = ['balancer'];
   exchangeRouterInterface: Interface;

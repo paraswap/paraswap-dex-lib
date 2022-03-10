@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDex } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import Ceth from '../abi/Compound_CETH.json'; // CETH abi
 import { isETHAddress } from '../utils';
@@ -18,7 +18,7 @@ enum CompoundFunctions {
 
 export class Compound
   extends SimpleExchange
-  implements IDex<CompoundData, CompoundParam>
+  implements IDexTxBuilder<CompoundData, CompoundParam>
 {
   static dexKeys = ['compound'];
   cethInterface: Interface;
