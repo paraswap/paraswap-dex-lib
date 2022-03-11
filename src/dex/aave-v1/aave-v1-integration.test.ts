@@ -9,110 +9,95 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for AaveV1 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover AaveV1 specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/aave-v1/aave-v1-integration.tests.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
-const network = Network.MAINNET;
-const TokenASymbol = 'USDT';
-const TokenA = Tokens[network][TokenASymbol];
-
-const TokenBSymbol = 'aUSDT';
-const TokenB = Tokens[network][TokenBSymbol];
-
-const amounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
-
-const dexKey = 'AaveV1';
+import { aaveV1GetToken } from './tokens';
 
 describe('AaveV1', function () {
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const aaveV1 = new AaveV1(network, dexKey, dexHelper);
+  describe('AaveV2 MAINNET', () => {
+    const network = Network.MAINNET;
+    const USDTSymbol = 'USDT';
+    const USDT = Tokens[network][USDTSymbol];
 
-    const pools = await aaveV1.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.SELL,
-      blocknumber,
-    );
-    console.log(
-      `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
-      pools,
-    );
+    const aUSDTSymbol = 'aUSDT';
+    const aUSDT = aaveV1GetToken(network, aUSDTSymbol);
+    if (!aUSDT) {
+      expect(aUSDT).not.toBe(null);
+      return;
+    }
 
-    expect(pools.length).toBeGreaterThan(0);
+    const amounts = [
+      BigInt('0'),
+      BigInt('1000000000000000000'),
+      BigInt('2000000000000000000'),
+    ];
 
-    const poolPrices = await aaveV1.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.SELL,
-      blocknumber,
-      pools,
-    );
+    const dexKey = 'AaveV1';
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const aaveV1 = new AaveV1(network, dexKey, dexHelper);
 
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+      const pools = await aaveV1.getPoolIdentifiers(
+        USDT,
+        aUSDT,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
 
-    expect(poolPrices).not.toBeNull();
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  });
+      expect(pools.length).toBeGreaterThan(0);
 
-  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const aaveV1 = new AaveV1(network, dexKey, dexHelper);
+      const poolPrices = await aaveV1.getPricesVolume(
+        USDT,
+        aUSDT,
+        amounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
 
-    const pools = await aaveV1.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.BUY,
-      blocknumber,
-    );
-    console.log(
-      `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
-      pools,
-    );
+      console.log('${USDTSymbol} <> ${aUSDTSymbol} Pool Prices: ', poolPrices);
 
-    expect(pools.length).toBeGreaterThan(0);
+      expect(poolPrices).not.toBeNull();
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    });
 
-    const poolPrices = await aaveV1.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.BUY,
-      blocknumber,
-      pools,
-    );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const aaveV1 = new AaveV1(network, dexKey, dexHelper);
 
-    expect(poolPrices).not.toBeNull();
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  });
+      const pools = await aaveV1.getPoolIdentifiers(
+        USDT,
+        aUSDT,
+        SwapSide.BUY,
+        blocknumber,
+      );
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
 
-  it('getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const aaveV1 = new AaveV1(network, dexKey, dexHelper);
+      expect(pools.length).toBeGreaterThan(0);
 
-    const poolLiquidity = await aaveV1.getTopPoolsForToken(TokenA.address, 10);
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+      const poolPrices = await aaveV1.getPricesVolume(
+        USDT,
+        aUSDT,
+        amounts,
+        SwapSide.BUY,
+        blocknumber,
+        pools,
+      );
+      console.log('${USDTSymbol} <> ${aUSDTSymbol} Pool Prices: ', poolPrices);
 
-    checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+      expect(poolPrices).not.toBeNull();
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      const dexHelper = new DummyDexHelper(network);
+      const aaveV1 = new AaveV1(network, dexKey, dexHelper);
+
+      const poolLiquidity = await aaveV1.getTopPoolsForToken(USDT.address, 10);
+      console.log(`${USDTSymbol} Top Pools:`, poolLiquidity);
+
+      checkPoolsLiquidity(poolLiquidity, USDT.address, dexKey);
+    });
   });
 });
