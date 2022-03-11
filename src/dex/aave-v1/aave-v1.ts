@@ -161,21 +161,17 @@ export class AaveV1
     data: AaveV1Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    const amount = side === SwapSide.SELL ? srcAmount : destAmount;
     const [Interface, swapFunction, swapFunctionParams, swapCallee, spender] =
       ((): [Interface, AaveV1Functions, AaveV1Param, Address, Address?] => {
         if (data.fromAToken) {
-          return [
-            this.aContract,
-            AaveV1Functions.redeem,
-            [srcAmount],
-            srcToken,
-          ];
+          return [this.aContract, AaveV1Functions.redeem, [amount], srcToken];
         }
 
         return [
           this.aavePool,
           AaveV1Functions.deposit,
-          [srcToken, srcAmount, REF_CODE],
+          [srcToken, amount, REF_CODE],
           AAVE_LENDING_POOL,
           AAVE_PROXY, // warning
         ];
@@ -188,7 +184,7 @@ export class AaveV1
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
-      srcAmount,
+      amount,
       destToken,
       destAmount,
       swapData,

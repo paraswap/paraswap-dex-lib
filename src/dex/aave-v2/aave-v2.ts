@@ -181,6 +181,7 @@ export class AaveV2
     data: AaveV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    const amount = side === SwapSide.SELL ? srcAmount : destAmount;
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
@@ -217,26 +218,26 @@ export class AaveV2
 
       if (isETHAddress(destToken)) {
         switch (this.network) {
-          case 1:
+          case Network.MAINNET:
             return [
               this.wethGateway,
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.withdrawETH,
-              [srcAmount, this.augustusAddress],
+              [amount, this.augustusAddress],
             ];
-          case 137:
+          case Network.POLYGON:
             return [
               this.wethGateway,
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.withdrawETH,
-              [aaveLendingPool[this.network], srcAmount, this.augustusAddress],
+              [aaveLendingPool[this.network], amount, this.augustusAddress],
             ];
-          case 43114:
+          case Network.AVALANCHE:
             return [
               this.wethGateway,
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.withdrawETH,
-              [aaveLendingPool[this.network], srcAmount, this.augustusAddress],
+              [aaveLendingPool[this.network], amount, this.augustusAddress],
             ];
           default:
             throw new Error(`Network ${this.network} not supported`);
@@ -248,7 +249,7 @@ export class AaveV2
           this.aavePool,
           aaveLendingPool[this.network],
           AaveV2PoolAndWethFunctions.withdraw,
-          [destToken, srcAmount, this.augustusAddress],
+          [destToken, amount, this.augustusAddress],
         ];
       }
 
@@ -256,7 +257,7 @@ export class AaveV2
         this.aavePool,
         aaveLendingPool[this.network],
         AaveV2PoolAndWethFunctions.deposit,
-        [srcToken, srcAmount, this.augustusAddress, REF_CODE],
+        [srcToken, amount, this.augustusAddress, REF_CODE],
       ];
     })();
 
@@ -267,7 +268,7 @@ export class AaveV2
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
-      srcAmount,
+      amount,
       destToken,
       destAmount,
       swapData,
