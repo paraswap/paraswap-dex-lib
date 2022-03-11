@@ -10,7 +10,7 @@ import {
   SwapSide,
 } from '../../constants';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { Tokens as AaveV2Tokens } from './tokens';
+import { aaveV2GetToken } from './tokens';
 
 jest.setTimeout(1000 * 60 * 3);
 
@@ -23,9 +23,20 @@ describe('AaveV2 E2E', () => {
     const provider = new JsonRpcProvider(ProviderURL[network]);
 
     const ETH = tokens['ETH'];
-    const aWETH = AaveV2Tokens[network]['aWETH'];
+    const aWETH = aaveV2GetToken(network, 'aWETH');
+    const WETH = tokens['WETH'];
     const USDT = tokens['USDT'];
-    const aUSDT = AaveV2Tokens[network]['aUSDT'];
+    const aUSDT = aaveV2GetToken(network, 'aUSDT');
+
+    if (!aWETH) {
+      expect(aWETH).not.toBe(null);
+      return;
+    }
+    if (!aUSDT) {
+      expect(aUSDT).not.toBe(null);
+      return;
+    }
+
     const ethAmount = '1000000000000000000';
     const aUSDTAmount: string = '2000000000';
 
@@ -54,7 +65,7 @@ describe('AaveV2 E2E', () => {
               provider,
             );
           });
-          it('WETH -> ETH', async () => {
+          it('aWETH -> ETH', async () => {
             await testE2E(
               aWETH,
               ETH,
@@ -73,6 +84,19 @@ describe('AaveV2 E2E', () => {
               aUSDT,
               holders['USDT'],
               aUSDTAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('aWETH -> wETH', async () => {
+            await testE2E(
+              aWETH,
+              WETH,
+              holders['aWETH'],
+              ethAmount,
               side,
               dexKey,
               contractMethod,

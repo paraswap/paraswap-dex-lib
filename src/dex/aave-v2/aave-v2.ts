@@ -8,17 +8,9 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import {
-  SwapSide,
-  Network,
-  NULL_ADDRESS,
-} from '../../constants';
+import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import { isETHAddress, getDexKeysWithNetwork, wrapETH } from '../../utils';
-import {
-  AaveV2Data,
-  AaveV2Param,
-  AaveV2PoolAndWethFunctions,
-} from './types';
+import { AaveV2Data, AaveV2Param, AaveV2PoolAndWethFunctions } from './types';
 
 import WETH_GATEWAY_ABI_MAINNET from '../../abi/aave-weth-gateway.json';
 import WETH_GATEWAY_ABI_POLYGON from '../../abi/aave-weth-gateway-polygon.json';
@@ -30,10 +22,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 
 import { SimpleExchange } from '../simple-exchange';
 import { AaveV2Config, Adapters } from './config';
-
-import tokensMainnet from './tokens-mainnet.json';
-import tokensPolygon from './tokens-polygon.json';
-import tokensAvalanche from './tokens-avalanche.json';
+import { isAaveV2Pair } from './tokens';
 
 const aaveLendingPool: { [network: string]: string } = {
   [Network.MAINNET]: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9',
@@ -69,31 +58,15 @@ export class AaveV2
 
   logger: Logger;
 
-  private lendingTokensAddresses = new Set<string>();
-
   private aavePool: Interface;
   private wethGateway: Interface;
   constructor(
     protected network: Network,
     protected dexKey: string,
-    protected dexHelper: IDexHelper,
-    // TODO: add any additional optional params to support other fork DEXes
+    protected dexHelper: IDexHelper, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
-    if (this.network == Network.MAINNET) {
-      tokensMainnet.forEach((token: Token) => {
-        this.lendingTokensAddresses.add(token.address);
-      });
-    } else if (this.network == Network.POLYGON) {
-      tokensPolygon.forEach((token: Token) => {
-        this.lendingTokensAddresses.add(token.address);
-      });
-    } else if (this.network == Network.AVALANCHE) {
-      tokensAvalanche.forEach((token: Token) => {
-        this.lendingTokensAddresses.add(token.address);
-      });
-    }
     this.wethGateway = new Interface(WETH_GATEWAY_ABI[network]);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V2);
   }
@@ -102,8 +75,7 @@ export class AaveV2
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
-  }
+  async initializePricing(blockNumber: number) {}
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -142,11 +114,19 @@ export class AaveV2
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AaveV2Data>> {
-    const fromAToken = this.lendingTokensAddresses.has(srcToken.address);
+    const _src = wrapETH(srcToken, this.network);
+    const _dst = wrapETH(destToken, this.network);
+    const aToken = isAaveV2Pair(this.network, _src, _dst);
+    if (!aToken) {
+      return null;
+    }
+    const fromAToken = aToken == _src;
     return [
       {
         prices: amounts,
-        unit: BigInt(10 ** (side === SwapSide.SELL ? destToken : srcToken).decimals),
+        unit: BigInt(
+          10 ** (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        ),
         gasCost: isETHAddress(srcToken.address)
           ? Aave2ETHGasCost
           : Aave2LendingGasCost,
@@ -187,7 +167,6 @@ export class AaveV2
       payload,
       networkFee: '0',
     };
-
   }
 
   // Encode call data used by simpleSwap like routers
@@ -294,7 +273,6 @@ export class AaveV2
       swapData,
       swapCallee,
     );
-
   }
 
   // This is called once before getTopPoolsForToken is

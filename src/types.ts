@@ -151,7 +151,7 @@ export type Token = {
 };
 
 export type aToken = {
-  symbol: string;
+  aSymbol: string;
   aAddress: string;
   address: string;
   decimals: number;

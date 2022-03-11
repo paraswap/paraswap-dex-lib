@@ -16,8 +16,8 @@ for (const [key, tokens] of Object.entries(tokensByNetwork)) {
   Tokens[network] = {};
   TokensByAddress[network] = {};
   for (const token of tokens) {
-    Tokens[network][token.symbol] = token;
-    TokensByAddress[network][token.aAddress] = token;
+    Tokens[network][token.aSymbol] = token;
+    TokensByAddress[network][token.aAddress.toLowerCase()] = token;
   }
 }
 
@@ -53,6 +53,6 @@ export function aaveV1GetToken(network: number, symbol: string): Token | null {
   return {
     address: aToken.aAddress,
     decimals: aToken.decimals,
-    symbol: aToken.symbol,
+    symbol: aToken.aSymbol,
   };
 }

@@ -12,37 +12,6 @@ import {
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { aaveV1GetToken } from './tokens';
 
-/*
-  README
-  ======
-
-  This test script should add e2e tests for AaveV1. The tests
-  should cover as many cases as possible. Most of the DEXes follow
-  the following test structure:
-    - DexName
-      - ForkName + Network
-        - ContractMethod
-          - ETH -> Token swap
-          - Token -> ETH swap
-          - Token -> Token swap
-
-  The template already enumerates the basic structure which involves
-  testing simpleSwap, multiSwap, megaSwap contract methods for
-  ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace USDT and
-  aUSDT with any two highly liquid tokens on AaveV1 for the tests
-  to work. If the tokens that you would like to use are not defined in
-  Tokens or Holders map, you can update the './tests/constants-e2e'
-
-  Other than the standard cases that are already added by the template
-  it is highly recommended to add test cases which could be specific
-  to testing AaveV1 (Eg. Tests based on poolType, special tokens,
-  etc).
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-e2e.tests.ts`
-
-  (This comment should be removed from the final implementation)
-*/
 jest.setTimeout(1000 * 60 * 3);
 
 describe('AaveV1 E2E', () => {
