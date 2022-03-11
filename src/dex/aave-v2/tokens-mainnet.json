@@ -1,0 +1,157 @@
+[
+  {
+    "symbol": "aUSDT",
+    "address": "0x3ed3b47dd13ec9a98b44e6204a523e766b225811",
+    "decimals": 6
+  },
+  {
+    "symbol": "aWBTC",
+    "address": "0x9ff58f4ffb29fa2266ab25e75e2a8b3503311656",
+    "decimals": 8
+  },
+  {
+    "symbol": "aWETH",
+    "address": "0x030ba81f1c18d280636f32af80b9aad02cf0854e",
+    "decimals": 18
+  },
+  {
+    "symbol": "aYFI",
+    "address": "0x5165d24277cd063f5ac44efd447b27025e888f37",
+    "decimals": 18
+  },
+  {
+    "symbol": "aZRX",
+    "address": "0xdf7ff54aacacbff42dfe29dd6144a69b629f8c9e",
+    "decimals": 18
+  },
+  {
+    "symbol": "aUNI",
+    "address": "0xb9d7cb55f463405cdfbe4e90a6d2df01c2b92bf1",
+    "decimals": 18
+  },
+  {
+    "symbol": "aAAVE",
+    "address": "0xffc97d72e13e01096502cb8eb52dee56f74dad7b",
+    "decimals": 18
+  },
+  {
+    "symbol": "aBAT",
+    "address": "0x05ec93c0365baaeabf7aeffb0972ea7ecdd39cf1",
+    "decimals": 18
+  },
+  {
+    "symbol": "aBUSD",
+    "address": "0xa361718326c15715591c299427c62086f69923d9",
+    "decimals": 18
+  },
+  {
+    "symbol": "aDAI",
+    "address": "0x028171bca77440897b824ca71d1c56cac55b68a3",
+    "decimals": 18
+  },
+  {
+    "symbol": "aENJ",
+    "address": "0xac6df26a590f08dcc95d5a4705ae8abbc88509ef",
+    "decimals": 18
+  },
+  {
+    "symbol": "aKNC",
+    "address": "0x39c6b3e42d6a679d7d776778fe880bc9487c2eda",
+    "decimals": 18
+  },
+  {
+    "symbol": "aLINK",
+    "address": "0xa06bc25b5805d5f8d82847d191cb4af5a3e873e0",
+    "decimals": 18
+  },
+  {
+    "symbol": "aMANA",
+    "address": "0xa685a61171bb30d4072b338c80cb7b2c865c873e",
+    "decimals": 18
+  },
+  {
+    "symbol": "aMKR",
+    "address": "0xc713e5e149d5d0715dcd1c156a020976e7e56b88",
+    "decimals": 18
+  },
+  {
+    "symbol": "aREN",
+    "address": "0xcc12abe4ff81c9378d670de1b57f8e0dd228d77a",
+    "decimals": 18
+  },
+  {
+    "symbol": "aSNX",
+    "address": "0x35f6b052c598d933d69a4eec4d04c73a191fe6c2",
+    "decimals": 18
+  },
+  {
+    "symbol": "aSUSD",
+    "address": "0x6c5024cd4f8a59110119c56f8933403a539555eb",
+    "decimals": 18
+  },
+  {
+    "symbol": "aTUSD",
+    "address": "0x101cc05f4a51c0319f570d5e146a8c625198e636",
+    "decimals": 18
+  },
+  {
+    "symbol": "aUSDC",
+    "address": "0xbcca60bb61934080951369a648fb03df4f96263c",
+    "decimals": 6
+  },
+  {
+    "symbol": "aCRV",
+    "address": "0x8dae6cb04688c62d939ed9b68d32bc62e49970b1",
+    "decimals": 18
+  },
+  {
+    "symbol": "aGUSD",
+    "address": "0xd37ee7e4f452c6638c96536e68090de8cbcdb583",
+    "decimals": 2
+  },
+  {
+    "symbol": "aBAL",
+    "address": "0x272f97b7a56a387ae942350bbc7df5700f8a4576",
+    "decimals": 18
+  },
+  {
+    "symbol": "aXSUSHI",
+    "address": "0xf256cc7847e919fac9b808cc216cac87ccf2f47a",
+    "decimals": 18
+  },
+  {
+    "symbol": "aRENFIL",
+    "address": "0x514cd6756ccbe28772d4cb81bc3156ba9d1744aa",
+    "decimals": 18
+  },
+  {
+    "symbol": "aRAI",
+    "address": "0xc9bc48c72154ef3e5425641a3c747242112a46af",
+    "decimals": 18
+  },
+  {
+    "symbol": "aAMPL",
+    "address": "0x1e6bb68acec8fefbd87d192be09bb274170a0548",
+    "decimals": 9
+  },
+  {
+    "symbol": "aUSDP",
+    "address": "0x2e8f4bdbe3d47d7d7de490437aea9915d930f1a3",
+    "decimals": 18
+  },
+  {
+    "symbol": "aDPI",
+    "address": "0x6f634c6135d2ebd550000ac92f494f9cb8183dae",
+    "decimals": 18
+  },
+  {
+    "symbol": "aFRAX",
+    "address": "0xd4937682df3c8aef4fe912a96a74121c0829e664",
+    "decimals": 18
+  },
+  {
+    "symbol": "aFEI",
+    "address": "0x683923db55fead99a79fa01a27eec3cb19679cc3",
+    "decimals": 18
+  }
+]

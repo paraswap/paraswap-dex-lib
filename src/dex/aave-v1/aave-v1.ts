@@ -3,7 +3,6 @@ import {
   Token,
   Address,
   ExchangePrices,
-  Log,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -19,12 +18,6 @@ import { AaveV1Config, Adapters } from './config';
 import AAVE_LENDING_POOL_ABI_V1 from '../../abi/AaveV1_lending_pool.json';
 import ERC20 from '../../abi/erc20.json';
 import tokens from './tokens-mainnet.json';
-
-const lendingTokensAddresses = new Set<string>();
-
-tokens.forEach((token: Token) => {
-  lendingTokensAddresses.add(token.address);
-});
 
 const AaveGasCost = 400 * 1000;
 
@@ -50,16 +43,21 @@ export class AaveV1
   aavePool: Interface;
   aContract: Interface;
 
+  private lendingTokensAddresses = new Set<string>();
   constructor(
     protected network: Network,
     protected dexKey: string,
-    protected dexHelper: IDexHelper,
-  ) // TODO: add any additional optional params to support other fork DEXes
-  {
+    protected dexHelper: IDexHelper, // TODO: add any additional optional params to support other fork DEXes
+  ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V1 as JsonFragment[]);
     this.aContract = new Interface(ERC20 as JsonFragment[]);
+    if (network == Network.MAINNET) {
+      tokens.forEach((token: Token) => {
+        this.lendingTokensAddresses.add(token.address);
+      });
+    }
   }
 
   // Initialize pricing is called once in the start of
@@ -107,7 +105,7 @@ export class AaveV1
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AaveV1Data>> {
-    const fromAToken = lendingTokensAddresses.has(
+    const fromAToken = this.lendingTokensAddresses.has(
       srcToken.address.toLowerCase(),
     );
     return [

@@ -10,6 +10,7 @@ import {
   SwapSide,
 } from '../../constants';
 import { JsonRpcProvider } from '@ethersproject/providers';
+import { Tokens as AaveV1Tokens } from './tokens';
 
 /*
   README
@@ -61,8 +62,8 @@ describe('AaveV1 E2E', () => {
     const ethAmount = '100000000000000000';
 
     const ETH = Tokens[network]['ETH'];
-    const aETH = Tokens[network][aETHSymbol];
-    const aUSDT = Tokens[network][aUSDTSymbol];
+    const aETH = AaveV1Tokens[network][aETHSymbol];
+    const aUSDT = AaveV1Tokens[network][aUSDTSymbol];
     const USDT = Tokens[network][USDTSymbol];
 
     const contractMethods: { [side in SwapSide]: ContractMethod[] } = {

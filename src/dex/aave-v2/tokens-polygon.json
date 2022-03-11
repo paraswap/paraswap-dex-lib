@@ -1,0 +1,37 @@
+[
+  {
+    "symbol": "amAAVE",
+    "address": "0x7ec62b6fc19174255335c8f4346e0c2fcf870a6b",
+    "decimals": 18
+  },
+  {
+    "symbol": "amDAI",
+    "address": "0x639cb7b21ee2161df9c882483c9d55c90c20ca3e",
+    "decimals": 18
+  },
+  {
+    "symbol": "amUSDC",
+    "address": "0x2271e3fef9e15046d09e1d78a8ff038c691e9cf9",
+    "decimals": 6
+  },
+  {
+    "symbol": "amUSDT",
+    "address": "0xf8744c0bd8c7adea522d6dde2298b17284a79d1b",
+    "decimals": 6
+  },
+  {
+    "symbol": "amWBTC",
+    "address": "0xc9276eca6798a14f64ec33a526b547dad50bda2f",
+    "decimals": 8
+  },
+  {
+    "symbol": "amWETH",
+    "address": "0x7ae20397ca327721f013bb9e140c707f82871b56",
+    "decimals": 18
+  },
+  {
+    "symbol": "amWMATIC",
+    "address": "0xf45444171435d0acb08a8af493837ef18e86ee27",
+    "decimals": 18
+  }
+]
