@@ -714,7 +714,7 @@ describe('UniswapV2 E2E Avalanche', () => {
       it('USDTe -> AVAX', async () => {
         await testE2E(
           tokens.USDTe,
-          tokensAVAX,
+          tokens.AVAX,
           holders.USDTe,
           '10000000',
           SwapSide.SELL,
