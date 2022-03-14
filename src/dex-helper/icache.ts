@@ -1,5 +1,15 @@
 export interface ICache {
-  get(key: string): Promise<string | null>;
+  get(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<string | null>;
 
-  setex(key: string, seconds: number, value: string): Promise<void>;
+  setex(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+    seconds: number,
+    value: string,
+  ): Promise<void>;
 }

@@ -2,6 +2,95 @@ import { DexParams } from './types';
 import { DexConfigMap } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
+export const Adapters: {
+  [chainId: number]: { [side: string]: { name: string; index: number }[] };
+} = {
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'Adapter01',
+        index: 4,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BuyAdapter',
+        index: 1,
+      },
+    ],
+  },
+  [Network.ROPSTEN]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'RopstenAdapter01',
+        index: 0,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'RopstenBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'PolygonAdapter01',
+        index: 4,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'PolygonBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BscAdapter01',
+        index: 3,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BscBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'AvalancheAdapter01',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'AvalancheBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
+  [Network.FANTOM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'FantomAdapter01',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'FantomBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
+};
+
 export const UniswapV2Config: DexConfigMap<DexParams> = {
   UniswapV2: {
     [Network.MAINNET]: {

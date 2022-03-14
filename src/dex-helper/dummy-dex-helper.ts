@@ -15,13 +15,23 @@ import log4js from 'log4js';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
-  async get(key: string): Promise<string | null> {
-    // console.log('Cache Requested: ', key);
+  async get(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<string | null> {
+    // console.log('Cache Requested: ', dexKey, network, key);
     return null;
   }
 
-  async setex(key: string, seconds: number, value: string): Promise<void> {
-    // console.log('Cache Stored: ', key, seconds, value);
+  async setex(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+    seconds: number,
+    value: string,
+  ): Promise<void> {
+    // console.log('Cache Stored: ', dexKey, network, cacheKey, seconds, value);
     return;
   }
 }

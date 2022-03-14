@@ -43,7 +43,7 @@ import {
   PoolStateMap,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { BalancerConfig } from './config';
+import { BalancerConfig, Adapters } from './config';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment"]}) {
@@ -61,27 +61,6 @@ const subgraphTimeout = 1000 * 10;
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
-
-const Adapters: { [chainId: number]: { name: string; index: number }[] } = {
-  [Network.MAINNET]: [
-    {
-      name: 'Adapter02',
-      index: 9,
-    },
-  ],
-  [Network.POLYGON]: [
-    {
-      name: 'PolygonAdapter01',
-      index: 9,
-    },
-  ],
-  [Network.FANTOM]: [
-    {
-      name: 'FantomAdapter01',
-      index: 5,
-    },
-  ],
-};
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;
@@ -169,9 +148,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
-    const cacheKey = `${this.parentName}_AllSubgraphPools_${this.network}`;
-
-    const cachedPools = await this.dexHelper.cache.get(cacheKey);
+    const cacheKey = 'AllSubgraphPools';
+    const cachedPools = await this.dexHelper.cache.get(
+      this.parentName,
+      this.network,
+      cacheKey,
+    );
     if (cachedPools) {
       const allPools = JSON.parse(cachedPools);
       this.logger.info(
@@ -196,6 +178,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       throw new Error('Unable to fetch pools from the subgraph');
 
     this.dexHelper.cache.setex(
+      this.parentName,
+      this.network,
       cacheKey,
       POOL_CACHE_TTL,
       JSON.stringify(data.pools),
