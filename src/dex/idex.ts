@@ -59,7 +59,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam> {
 export interface IDexPricing<ExchangeData> {
   // This is true if the the DEX is simply
   // wrapping/ unwrapping like weth, lending pools, etc
-  // or has a pool where arbitarily large amounts has
+  // or has a pool where arbitrarily large amounts has
   // constant price.
   readonly hasConstantPriceLargeAmounts: boolean;
 
