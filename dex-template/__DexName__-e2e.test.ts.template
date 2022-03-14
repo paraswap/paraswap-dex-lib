@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
+import { Tokens, Holders, NativeTokenSymbols } from '../../../tests/constants-e2e';
 import {
   Network,
   ProviderURL,
@@ -44,38 +44,47 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 */
 
 describe('__DexName__ E2E', () => {
+  const dexKey = '__DexName__';
+
   describe('__DexName__ MAINNET', () => {
-    const dexKey = '__DexName__';
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
     const provider = new JsonRpcProvider(ProviderURL[network]);
+
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const tokenASymbol: string = 'tokenASymbol';
     const tokenBSymbol: string = 'tokenBSymbol';
+    const nativeTokenSymbol = NativeTokenSymbols[network];
+
     const tokenAAmount: string = 'tokenAAmount';
     const tokenBAmount: string = 'tokenBAmount';
-    const ethAmount = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
     // TODO: Add any direct swap contractMethod name if it exists
     // TODO: If buy is not supported remove the buy contract methods
-    const contractMethods: { [side: sell]: ContractMethod } = {
-      [SwapSide.SELL]: [
+    
+    const sideToContractMethods = new Map([
+      [SwapSide.SELL, [
         ContractMethod.simpleSwap,
         ContractMethod.multiSwap,
         ContractMethod.megaSwap,
-      ],
-      [SwapSide.BUY]: [ContractMethod.simpleBuy, ContractMethod.buy],
-    };
+      ]],
+      [SwapSide.BUY: [
+        ContractMethod.simpleBuy, 
+        ContractMethod.buy
+      ]],
+    ]);
 
-    [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>
-      sellContractMethods.forEach((contractMethod: ContractMethod) => {
+    sideToContractMethods.forEach((contractMethods, side) =>
+      contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it('ETH -> TOKEN', async () => {
+          it(nativeTokenSymbol + ' -> TOKEN', async () => {
             await testE2E(
-              tokens['ETH'],
+              tokens[nativeTokenSymbol],
               tokens[tokenASymbol],
-              holders['ETH'],
-              side === SwapSide.SELL ? ethAmount : tokenAAmount,
+              holders[nativeTokenSymbol],
+              side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
               side,
               dexKey,
               contractMethod,
@@ -83,12 +92,12 @@ describe('__DexName__ E2E', () => {
               provider,
             );
           });
-          it('TOKEN -> ETH', async () => {
+          it('TOKEN -> ' + nativeTokenSymbol, async () => {
             await testE2E(
               tokens[tokenASymbol],
-              tokens['ETH'],
+              tokens[nativeTokenSymbol],
               holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount: ethAmount,
+              side === SwapSide.SELL ? tokenAAmount: nativeTokenAmount,
               side,
               dexKey,
               contractMethod,

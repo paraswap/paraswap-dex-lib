@@ -116,3 +116,10 @@ export const Holders: {
     // UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
   },
 };
+
+export const NativeTokenSymbols: { [network: number]: string } = {
+  [Network.MAINNET]: 'ETH',
+  [Network.POLYGON]: 'MATIC',
+  [Network.BSC]: 'BNB',
+  [Network.AVALANCHE]: 'AVAX',
+};
