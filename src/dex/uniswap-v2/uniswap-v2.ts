@@ -157,12 +157,16 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    const data = await this.dexHelper.multiContract.callStatic.aggregate(
-      calldata,
-      {
-        blockTag: blockNumber,
-      },
-    );
+    // const data = await this.dexHelper.multiContract.callStatic.aggregate(
+    //   calldata,
+    //   {
+    //     blockTag: blockNumber,
+    //   },
+    // );
+
+    const data = await this.dexHelper.multiContract.methods
+      .aggregate(calldata)
+      .call({}, blockNumber);
 
     return {
       reserves0: coder.decode(['uint256'], data.returnData[0])[0].toString(),
@@ -403,10 +407,15 @@ export class UniswapV2
         })
         .flat();
 
+      // const data: { returnData: any[] } =
+      //   await this.dexHelper.multiContract.callStatic.aggregate(calldata, {
+      //     blockTag: blockNumber,
+      //   });
+
       const data: { returnData: any[] } =
-        await this.dexHelper.multiContract.callStatic.aggregate(calldata, {
-          blockTag: blockNumber,
-        });
+        await this.dexHelper.multiContract.methods
+          .aggregate(calldata)
+          .call({}, blockNumber);
 
       const returnData = _.chunk(data.returnData, this.isDynamicFees ? 3 : 2);
       return pairs.map((pair, i) => ({

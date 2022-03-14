@@ -44,8 +44,10 @@
     "log4js": "6.3.0",
     "paraswap": "5.1.0",
     "ts-essentials": "9.1.2",
+    "web3": "1.6.0",
     "web3-eth": "1.6.0",
-    "web3-eth-abi": "1.4.0"
+    "web3-eth-abi": "1.4.0",
+    "web3-eth-contract": "1.6.0"
   },
   "sideEffects": false
 }
