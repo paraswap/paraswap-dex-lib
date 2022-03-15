@@ -8,10 +8,12 @@ import {
 import axios from 'axios';
 import { Address, LoggerConstructor } from '../types';
 import { MULTI_V2, ProviderURL, AugustusAddress } from '../constants';
-import { Contract } from '@ethersproject/contracts';
+// import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
+import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
@@ -94,16 +96,17 @@ export class DummyDexHelper implements IDexHelper {
   multiContract: Contract;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
+  web3Provider: Web3;
 
   constructor(network: number) {
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.augustusAddress = AugustusAddress[network];
     this.provider = new JsonRpcProvider(ProviderURL[network]);
-    this.multiContract = new Contract(
+    this.web3Provider = new Web3(ProviderURL[network]);
+    this.multiContract = new this.web3Provider.eth.Contract(
+      multiABIV2 as any,
       MULTI_V2[network],
-      multiABIV2,
-      this.provider,
     );
     this.blockManager = new DummyBlockManager();
     this.getLogger = name => log4js.getLogger(name);

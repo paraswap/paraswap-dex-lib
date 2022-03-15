@@ -379,16 +379,26 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // 500 is an arbitary number choosed based on the blockGasLimit
     const slicedMultiCallData = _.chunk(multiCallData, 500);
 
+    // const returnData = (
+    //   await Promise.all(
+    //     slicedMultiCallData.map(async _multiCallData =>
+    //       this.dexHelper.multiContract.callStatic.tryAggregate(
+    //         false,
+    //         _multiCallData,
+    //         {
+    //           blockTag: blockNumber,
+    //         },
+    //       ),
+    //     ),
+    //   )
+    // ).flat();
+
     const returnData = (
       await Promise.all(
         slicedMultiCallData.map(async _multiCallData =>
-          this.dexHelper.multiContract.callStatic.tryAggregate(
-            false,
-            _multiCallData,
-            {
-              blockTag: blockNumber,
-            },
-          ),
+          this.dexHelper.multiContract.methods
+            .tryAggregate(false, _multiCallData)
+            .call({}, blockNumber),
         ),
       )
     ).flat();
