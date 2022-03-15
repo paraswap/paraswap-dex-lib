@@ -4,30 +4,15 @@ dotenv.config();
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { Weth } from './weth';
-import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
+import { checkConstantPoolPrices } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-/*
-  README
-  ======
-
-  This test script adds tests for Weth general integration 
-  with the DEX interface. The test cases below are example tests. 
-  It is recommended to add tests which cover Weth specific
-  logic. 
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.tests.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 const network = Network.MAINNET;
-const TokenASymbol = 'TokenASymbol';
-const TokenA = Tokens[network][TokenASymbol];
+const EthSymbol = 'ETH';
+const EthToken = Tokens[network][EthSymbol];
 
-const TokenBSymbol = 'TokenBSymbol';
-const TokenB = Tokens[network][TokenBSymbol];
+const WethSymbol = 'WETH';
+const WethToken = Tokens[network][WethSymbol];
 
 const amounts = [
   BigInt('0'),
@@ -43,30 +28,28 @@ describe('Weth', function () {
     const blocknumber = await dexHelper.provider.getBlockNumber();
     const weth = new Weth(network, dexKey, dexHelper);
 
-    await weth.setupEventPools(blocknumber);
-
     const pools = await weth.getPoolIdentifiers(
-      TokenA,
-      TokenB,
+      EthToken,
+      WethToken,
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+    console.log(`${EthToken} <> ${WethToken} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await weth.getPricesVolume(
-      WETH,
-      DAI,
+      EthToken,
+      WethToken,
       amounts,
       SwapSide.SELL,
       blocknumber,
       pools,
     );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    console.log(`${EthToken} <> ${WethToken} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
@@ -74,21 +57,19 @@ describe('Weth', function () {
     const blocknumber = await dexHelper.provider.getBlockNumber();
     const weth = new Weth(network, dexKey, dexHelper);
 
-    await weth.setupEventPools(blocknumber);
-
     const pools = await weth.getPoolIdentifiers(
-      TokenA,
-      TokenB,
+      EthToken,
+      WethToken,
       SwapSide.BUY,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+    console.log(`${EthToken} <> ${WethToken} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await weth.getPricesVolume(
-      WETH,
-      DAI,
+      EthToken,
+      WethToken,
       amounts,
       SwapSide.BUY,
       blocknumber,
@@ -97,19 +78,6 @@ describe('Weth', function () {
     console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
-  });
-
-  it('getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const weth = new Weth(network, dexKey, dexHelper);
-
-    const poolLiquidity = await weth.getTopPoolsForToken(
-      TokenA.address,
-      10,
-    );
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
-
-    checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   });
 });
