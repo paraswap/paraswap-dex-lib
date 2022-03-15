@@ -386,7 +386,7 @@ describe('UniswapV2 E2E BSC', () => {
       });
     });
 
-    describe.skip('BUY', () => {
+    describe('BUY', () => {
       it('BNB -> TOKEN', async () => {
         await testE2E(
           tokens.BNB,
@@ -447,7 +447,7 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.USDT,
           tokens.USDC,
           holders.USDT,
-          '1000000000000000000000',
+          '1000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -532,7 +532,7 @@ describe('UniswapV2 E2E BSC', () => {
       });
     });
 
-    describe.skip('BUY', () => {
+    describe('BUY', () => {
       it('BNB -> TOKEN', async () => {
         await testE2E(
           tokens.BNB,
@@ -642,7 +642,7 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.BNB,
           tokens.BUSD,
           holders.BNB,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -677,13 +677,13 @@ describe('UniswapV2 E2E BSC', () => {
         );
       });
     });
-    describe.skip('SimpleBuy', () => {
+    describe('SimpleBuy', () => {
       it('BNB -> BUSD', async () => {
         await testE2E(
           tokens.BNB,
           tokens.BUSD,
           holders.BNB,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.simpleBuy,
@@ -709,7 +709,7 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.BUSD,
           tokens.BNB,
           holders.BUSD,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.simpleBuy,
@@ -724,7 +724,7 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.BNB,
           tokens.BUSD,
           holders.BNB,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -822,7 +822,7 @@ describe('UniswapV2 E2E BSC', () => {
         );
       });
     });
-    describe.skip('SimpleBuy', () => {
+    describe('SimpleBuy', () => {
       it('BUSD -> WBNB', async () => {
         await testE2E(
           tokens.BUSD,
@@ -959,7 +959,7 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.BNB,
           tokens.BUSD,
           holders.BNB,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -994,13 +994,13 @@ describe('UniswapV2 E2E BSC', () => {
         );
       });
     });
-    describe.skip('SimpleBuy', () => {
+    describe('SimpleBuy', () => {
       it('BNB -> BUSD', async () => {
         await testE2E(
           tokens.BNB,
           tokens.BUSD,
           holders.BNB,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.simpleBuy,
@@ -1026,7 +1026,7 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.BUSD,
           tokens.BNB,
           holders.BUSD,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.simpleBuy,
@@ -1041,7 +1041,7 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.BNB,
           tokens.BUSD,
           holders.BNB,
-          '100000000000000000000',
+          '10000000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
