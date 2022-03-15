@@ -27,11 +27,7 @@ import {
   TradeInfo,
 } from './types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import {
-  Adapters,
-  KyberDmmConfig,
-  KyberDmmExchangeRouterAddress,
-} from './config';
+import { Adapters, KyberDmmConfig } from './config';
 import { Logger } from 'log4js';
 import { Contract } from '@ethersproject/contracts';
 
@@ -39,10 +35,7 @@ import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
-import { wrapETH } from '../../utils';
-import { AsyncOrSync } from 'ts-essentials';
-
-const logger = global.LOGGER();
+import { getDexKeysWithNetwork, wrapETH } from '../../utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -65,17 +58,16 @@ export class KyberDmm
 
   readonly hasConstantPriceLargeAmounts = false;
 
+  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
+    getDexKeysWithNetwork(KyberDmmConfig);
+
   constructor(
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected config = KyberDmmConfig[dexKey][network],
-    protected adapters = (KyberDmmConfig[dexKey] &&
-      KyberDmmConfig[dexKey][network].adapters) ??
-      Adapters[network],
-    protected router = (KyberDmmConfig[dexKey] &&
-      KyberDmmConfig[dexKey][network].routerAddress) ??
-      KyberDmmExchangeRouterAddress[network],
+    protected adapters = Adapters[network],
+    protected router = KyberDmmConfig[dexKey][network].routerAddress,
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
 
@@ -91,19 +83,6 @@ export class KyberDmm
     this.exchangeRouterInterface = new Interface(KyberDmmExchangeRouterABI);
   }
 
-  getDirectParam?(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: KyberDmmData,
-    side: SwapSide,
-    permit: string,
-    contractMethod?: string,
-  ): TxInfo<KyberDmmParam> {
-    throw new Error('Method not implemented.');
-  }
-
   async getPoolIdentifiers(
     from: Token,
     to: Token,
@@ -113,16 +92,18 @@ export class KyberDmm
     from = wrapETH(from, this.network);
     to = wrapETH(to, this.network);
 
-    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
-      .sort((a, b) => (a > b ? 1 : -1))
-      .join('_');
+    const pair = await this.findPair(from, to);
 
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    return [poolIdentifier];
+    if (pair && pair.exchanges.length > 0)
+      return pair.exchanges.map(poolAddress => {
+        return `${this.dexKey}_${poolAddress.toLowerCase()}`;
+      });
+    else return [];
   }
 
-  getAdapters(side: SwapSide): { name: string; index: number }[] {
-    return this.adapters[side];
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
+    if (side === SwapSide.BUY) return null;
+    return this.adapters;
   }
 
   async getTopPoolsForToken(
@@ -264,7 +245,7 @@ export class KyberDmm
         pair.token0,
         pair.token1,
         poolData.ampBps,
-        logger,
+        this.logger,
       );
       pair.pools[poolAddress] = pool;
       if (blockNumber) pool.setState(poolData, blockNumber);
@@ -295,7 +276,6 @@ export class KyberDmm
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
       }
-
       await this.catchUpPair(from, to, blockNumber);
       const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
 
@@ -326,10 +306,10 @@ export class KyberDmm
       );
     } catch (e) {
       if (blockNumber === 0)
-        logger.error(
+        this.logger.error(
           `${this.dexKey}_getPricesVolume: Aurelius block manager not yet instantiated`,
         );
-      logger.error(`${this.dexKey}_getPrices`, e);
+      this.logger.error(`${this.dexKey}_getPrices`, e);
       return null;
     }
   }
@@ -418,9 +398,9 @@ export class KyberDmm
         .flat();
 
       const data: { returnData: any[] } =
-        await this.dexHelper.multiContract.methods
-          .aggregate(calldata)
-          .call({}, blockNumber);
+        await this.dexHelper.multiContract.callStatic.aggregate(calldata, {
+          blockTag: blockNumber,
+        });
 
       return pair.exchanges.reduce(
         (acc: { [key: string]: KyberDmmPoolState }, poolAddress, poolIndex) => {
@@ -457,7 +437,7 @@ export class KyberDmm
         {},
       );
     } catch (e) {
-      logger.error(
+      this.logger.error(
         `${this.dexKey}_getManyPoolReserves could not get reserves`,
         e,
       );
@@ -480,7 +460,7 @@ export class KyberDmm
     let poolsState = await this.getManyPoolReserves(pair, blockNumber);
 
     if (!Object.keys(poolsState).length) {
-      logger.error(
+      this.logger.error(
         `${this.dexKey}_getManyPoolReserves didn't get any pool reserves`,
       );
     }
@@ -522,7 +502,7 @@ export class KyberDmm
       .filter(s => s.state);
 
     if (!pairState.length) {
-      logger.error(
+      this.logger.error(
         `${this.dexKey}_orderPairParams expected reserves, got none (maybe the pool doesn't exist)`,
         from.symbol || from.address,
         to.symbol || to.address,
@@ -551,9 +531,10 @@ export class KyberDmm
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     if (pair) return pair;
-    const exchanges = await this.factory.methods
-      .getPools(token0.address, token1.address)
-      .call();
+    const exchanges = await this.factory.getPools(
+      token0.address,
+      token1.address,
+    );
     if (!exchanges || !exchanges.length) {
       pair = { token0, token1, exchanges: [], pools: {} };
     } else {

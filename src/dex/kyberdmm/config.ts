@@ -36,33 +36,26 @@ export const Adapters: {
 } = {
   [Network.MAINNET]: [
     {
-      name: '',
-      index: 9,
+      name: 'Adapter03',
+      index: 6,
     },
   ],
   [Network.POLYGON]: [
     {
-      name: '',
-      index: 9,
+      name: 'BscAdapter01',
+      index: 10,
     },
   ],
   [Network.BSC]: [
     {
-      name: '',
-      index: 5,
+      name: 'FantomAdapter01',
+      index: 12,
     },
   ],
   [Network.AVALANCHE]: [
     {
-      name: '',
-      index: 5,
+      name: 'AvalancheAdapter01',
+      index: 4,
     },
   ],
-};
-
-export const KyberDmmExchangeRouterAddress: { [network: number]: Address } = {
-  [Network.MAINNET]: '0x1c87257F5e8609940Bc751a07BB085Bb7f8cDBE6',
-  [Network.POLYGON]: '0x546C79662E028B661dFB4767664d0273184E4dD1',
-  [Network.BSC]: '0x78df70615ffc8066cc0887917f2Cd72092C86409',
-  [Network.AVALANCHE]: '0x8Efa5A9AD6D594Cf76830267077B78cE0Bc5A5F8',
 };
