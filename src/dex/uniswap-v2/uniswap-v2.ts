@@ -44,7 +44,7 @@ import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
-import { Contract } from '@ethersproject/contracts';
+import { Contract } from 'web3-eth-contract';
 import { WETHAddresses } from '../weth';
 import { UniswapV2Config, Adapters } from './config';
 
@@ -249,10 +249,9 @@ export class UniswapV2
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
 
-    this.factory = new Contract(
+    this.factory = new dexHelper.web3Provider.eth.Contract(
+      uniswapV2factoryABI as any,
       factoryAddress,
-      uniswapV2factoryABI,
-      dexHelper.provider,
     );
 
     this.routerInterface = new Interface(ParaSwapABI);
@@ -368,7 +367,9 @@ export class UniswapV2
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     if (pair) return pair;
-    const exchange = await this.factory.getPair(token0.address, token1.address);
+    const exchange = await this.factory.methods
+      .getPair(token0.address, token1.address)
+      .call();
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
     } else {
