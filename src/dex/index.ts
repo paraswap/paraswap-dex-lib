@@ -6,7 +6,7 @@ import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
-import { Weth } from './weth';
+import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
@@ -42,7 +42,6 @@ const LegacyDexes = [
   StablePool,
   Smoothy,
   ZeroX,
-  Weth,
   Balancer,
   Bancor,
   Kyber,
@@ -57,13 +56,12 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   UniswapV3,
-  Weth,
   KyberDmm,
   Jarvis,
   Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
+const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn, Weth];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };

@@ -1,4 +1,4 @@
-export type WethData = {};
+export type WethData = null;
 
 export type DexParams = {
   contractAddress: string;
