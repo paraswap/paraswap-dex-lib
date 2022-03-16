@@ -546,6 +546,10 @@ export class UniswapV2
       const from = wrapETH(_from, this.network);
       const to = wrapETH(_to, this.network);
 
+      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+        return null;
+      }
+
       const tokenAddress = [
         from.address.toLowerCase(),
         to.address.toLowerCase(),
@@ -555,15 +559,8 @@ export class UniswapV2
 
       const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
 
-      if (
-        limitPools &&
-        (limitPools.length !== 1 || limitPools[0] !== poolIdentifier)
-      )
+      if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
-
-      if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return null;
-      }
 
       await this.batchCatchUpPairs([[from, to]], blockNumber);
 
