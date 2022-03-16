@@ -36,6 +36,8 @@
     "prepare": "husky install && yarn build"
   },
   "dependencies": {
+    "@balancer-labs/sor": "^0.3.3",
+    "bignumber.js": "^9.0.2",
     "@0x/utils": "^4.5.2",
     "@ethersproject/abi": "5.4.0",
     "@ethersproject/contracts": "5.4.1",
@@ -44,8 +46,8 @@
     "log4js": "6.3.0",
     "paraswap": "5.1.0",
     "ts-essentials": "9.1.2",
-    "web3-eth": "1.6.0",
-    "web3-eth-abi": "1.4.0"
+    "web3-eth": "1.7.1",
+    "web3-eth-abi": "1.7.1"
   },
   "sideEffects": false
 }
