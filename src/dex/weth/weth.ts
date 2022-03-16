@@ -11,12 +11,21 @@ import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork, isETHAddress, WethMap } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { WethData, WethFunctions, DexParams } from './types';
+import {
+  WethData,
+  WethFunctions,
+  DexParams,
+  IWethDepositorWithdrawer,
+  DepositWithdrawReturn,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, WethConfig } from './config';
 import { isWETH } from './utils';
 
-export class Weth extends SimpleExchange implements IDex<WethData, DexParams> {
+export class Weth
+  extends SimpleExchange
+  implements IDex<WethData, DexParams>, IWethDepositorWithdrawer
+{
   readonly hasConstantPriceLargeAmounts = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -165,5 +174,42 @@ export class Weth extends SimpleExchange implements IDex<WethData, DexParams> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     return [];
+  }
+
+  getDepositWithdrawParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    side: SwapSide,
+  ): DepositWithdrawReturn | undefined {
+    const wethToken = Weth.getAddress(this.network);
+
+    if (srcAmount !== '0' && isETHAddress(srcToken)) {
+      const opType = WethFunctions.deposit;
+      const depositWethData = this.erc20Interface.encodeFunctionData(opType);
+
+      return {
+        opType,
+        callee: wethToken,
+        calldata: depositWethData,
+        value: srcAmount,
+      };
+    }
+
+    if (destAmount !== '0' && isETHAddress(destToken)) {
+      const opType = WethFunctions.withdrawAllWETH;
+      const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
+        opType,
+        [wethToken],
+      );
+
+      return {
+        opType,
+        callee: this.augustusAddress,
+        calldata: withdrawWethData,
+        value: '0',
+      };
+    }
   }
 }

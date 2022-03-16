@@ -13,7 +13,7 @@ export enum WethFunctions {
   withdraw = 'withdraw',
 }
 
-type DepositWithdrawReturn = {
+export type DepositWithdrawReturn = {
   opType: WethFunctions;
   callee: string;
   calldata: string;
