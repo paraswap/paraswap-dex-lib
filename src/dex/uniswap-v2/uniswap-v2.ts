@@ -51,7 +51,7 @@ import { UniswapV2Config, Adapters } from './config';
 const MAX_UINT_BIGINT = BigInt(MAX_UINT);
 const RESERVE_LIMIT = BigInt(2) ** BigInt(112) - BigInt(1);
 
-const DefaultUniswapV2PoolGasGost = 90 * 1000;
+const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
 interface UniswapV2PoolOrderedParams {
   tokenIn: string;
@@ -238,7 +238,7 @@ export class UniswapV2
     protected feeCode: number = UniswapV2Config[dexKey][network].feeCode,
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].poolGasCost) ??
-      DefaultUniswapV2PoolGasGost,
+      DefaultUniswapV2PoolGasCost,
     protected adapters = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].adapters) ??
       Adapters[network],

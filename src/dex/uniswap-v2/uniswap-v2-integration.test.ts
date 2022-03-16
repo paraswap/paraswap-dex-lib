@@ -36,7 +36,7 @@ describe('UniswapV2', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log('WETH <> DAI Pool Ideintifiers: ', pools);
+    console.log('WETH <> DAI Pool Identifiers: ', pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
