@@ -8,7 +8,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress, WethMap } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { WethData, WethFunctions, DexParams } from './types';
@@ -22,6 +22,10 @@ export class Weth extends SimpleExchange implements IDex<WethData, DexParams> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WethConfig);
 
+  public static getAddress(network: number = 1): Address {
+    return WethMap[network];
+  }
+
   logger: Logger;
 
   constructor(
@@ -31,7 +35,6 @@ export class Weth extends SimpleExchange implements IDex<WethData, DexParams> {
     protected adapters = Adapters[network],
     protected unitPrice = BigInt(1e18),
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
-    protected contractAddress = WethConfig[dexKey][network].contractAddress,
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -96,7 +99,7 @@ export class Weth extends SimpleExchange implements IDex<WethData, DexParams> {
         unit: this.unitPrice,
         gasCost: this.poolGasCost,
         exchange: this.dexKey,
-        poolAddresses: [this.contractAddress],
+        poolAddresses: [Weth.getAddress(this.network)],
         data: null,
       },
     ];
@@ -114,7 +117,7 @@ export class Weth extends SimpleExchange implements IDex<WethData, DexParams> {
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: this.contractAddress,
+      targetExchange: Weth.getAddress(this.network),
       payload: '0x',
       networkFee: '0',
     };
@@ -144,7 +147,7 @@ export class Weth extends SimpleExchange implements IDex<WethData, DexParams> {
       destToken,
       destAmount,
       swapData,
-      this.contractAddress,
+      Weth.getAddress(this.network),
     );
   }
 

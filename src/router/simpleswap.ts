@@ -11,7 +11,12 @@ import { SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress, uuidToBytes16 } from '../utils';
-import { IWethDepositorWithdrawer, Weth, WethFunctions } from '../dex/weth';
+import { Weth } from '../dex/weth/weth';
+import {
+  IWethDepositorWithdrawer,
+  WethFunctions,
+} from '../dex/weth/types';
+
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
 import { encodeFeePercent } from './payload-encoder';
