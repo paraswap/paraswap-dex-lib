@@ -478,7 +478,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.AVAX,
           tokens.PNG,
           holders.AVAX,
-          '3000000000000000000',
+          '300000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -506,7 +506,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.WAVAX,
           tokens.PNG,
           holders.WAVAX,
-          '7000000000000000000',
+          '100000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -522,7 +522,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.AVAX,
           tokens.PNG,
           holders.AVAX,
-          '3000000000000000000',
+          '30000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -550,7 +550,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.WAVAX,
           tokens.PNG,
           holders.WAVAX,
-          '7000000000000000000',
+          '700000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -566,7 +566,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.AVAX,
           tokens.PNG,
           holders.AVAX,
-          '3000000000000000000',
+          '300000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,
@@ -594,7 +594,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.WAVAX,
           tokens.PNG,
           holders.WAVAX,
-          '7000000000000000000',
+          '700000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,
@@ -605,8 +605,8 @@ describe('UniswapV2 E2E Avalanche', () => {
     });
   });
 
-  describe('BaguetteSwap', () => {
-    const dexKey = 'BaguetteSwap';
+  describe('Baguette', () => {
+    const dexKey = 'Baguette';
 
     describe('simpleSwap', () => {
       it('AVAX -> USDTe', async () => {
@@ -614,7 +614,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.AVAX,
           tokens.USDTe,
           holders.AVAX,
-          '7000000000000000000',
+          '100000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -764,7 +764,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.ETH,
           tokens.AVAX,
           holders.ETH,
-          '100000000000000000',
+          '1000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -808,7 +808,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.ETH,
           tokens.AVAX,
           holders.ETH,
-          '100000000000000000',
+          '10000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -852,7 +852,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.ETH,
           tokens.AVAX,
           holders.ETH,
-          '100000000000000000',
+          '100000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,
