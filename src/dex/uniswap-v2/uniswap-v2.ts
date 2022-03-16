@@ -525,6 +525,10 @@ export class UniswapV2
     const from = wrapETH(_from, this.network);
     const to = wrapETH(_to, this.network);
 
+    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      return [];
+    }
+
     const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
       .sort((a, b) => (a > b ? 1 : -1))
       .join('_');
