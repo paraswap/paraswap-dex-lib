@@ -12,10 +12,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress, uuidToBytes16 } from '../utils';
 import { Weth } from '../dex/weth/weth';
-import {
-  IWethDepositorWithdrawer,
-  WethFunctions,
-} from '../dex/weth/types';
+import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
 
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
@@ -237,9 +234,24 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
   ) {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
+    // Get dexKey from network
+    // It assumes each network has unique wrapped exchange
+    const wrappedExchangeKey = Weth.dexKeysWithNetwork.reduce(
+      (prev, current) => {
+        if (
+          prev === '' &&
+          current.networks.includes(this.dexAdapterService.network)
+        ) {
+          return current.key;
+        }
+        return prev;
+      },
+      '',
+    );
+
     return (
       this.dexAdapterService.getTxBuilderDexByKey(
-        'weth',
+        wrappedExchangeKey,
       ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.srcToken,
