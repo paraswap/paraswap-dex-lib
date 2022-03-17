@@ -75,6 +75,10 @@ export class Weth
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (srcToken.address.toLowerCase() === destToken.address.toLowerCase()) {
+      return [];
+    }
+
     const tokenAddress = [
       srcToken.address.toLowerCase(),
       destToken.address.toLowerCase(),
