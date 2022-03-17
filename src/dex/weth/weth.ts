@@ -8,7 +8,12 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork, isETHAddress, WethMap } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  isETHAddress,
+  WethMap,
+  isWETH,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -20,7 +25,6 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, WethConfig } from './config';
-import { isWETH } from './utils';
 
 export class Weth
   extends SimpleExchange
@@ -96,8 +100,8 @@ export class Weth
   ): Promise<null | ExchangePrices<WethData>> {
     const isWETHSwap =
       (isETHAddress(srcToken.address) &&
-        isWETH(destToken.address, this.dexKey, this.network)) ||
-      (isWETH(srcToken.address, this.dexKey, this.network) &&
+        isWETH(destToken.address, this.network)) ||
+      (isWETH(srcToken.address, this.network) &&
         isETHAddress(destToken.address));
 
     if (!isWETHSwap) return null;
