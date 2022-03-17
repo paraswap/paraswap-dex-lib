@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 import { BasePool } from './balancer-v2-pool';
-import { isSameAddress } from './utils';
+import { isSameAddress, decodeThrowError } from './utils';
 import * as StableMath from './StableMath';
 import { BZERO } from './balancer-v2-math';
 import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
@@ -320,31 +320,36 @@ export class PhantomStablePool extends BasePool {
   static decodeOnChainCalls(
     pool: SubgraphPoolBase,
     vaultInterface: Interface,
-    data: any,
+    data: { success: boolean; returnData: any }[],
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
     const poolInterface = new Interface(MetaStablePoolABI);
 
     const pools = {} as { [address: string]: PoolState };
 
-    const poolTokens = vaultInterface.decodeFunctionResult(
+    const poolTokens = decodeThrowError(
+      vaultInterface,
       'getPoolTokens',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     );
-
-    const swapFee = poolInterface.decodeFunctionResult(
+    const swapFee = decodeThrowError(
+      poolInterface,
       'getSwapFeePercentage',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     )[0];
-
-    const scalingFactors = poolInterface.decodeFunctionResult(
+    const scalingFactors = decodeThrowError(
+      poolInterface,
       'getScalingFactors',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     )[0];
-
-    const amp = poolInterface.decodeFunctionResult(
+    const amp = decodeThrowError(
+      poolInterface,
       'getAmplificationParameter',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     );
 
     const poolState: PoolState = {

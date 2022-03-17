@@ -5,6 +5,7 @@ import {
   Token,
   PoolPrices,
   ExchangePrices,
+  UnoptimizedRate,
 } from './types';
 import {
   SwapSide,
@@ -13,9 +14,11 @@ import {
   FETCH_POOL_PRICES_TIMEOUT,
 } from './constants';
 import { DexAdapterService } from './dex';
+import { IRouteOptimizer } from './dex/idex';
 
 export class PricingHelper {
   logger: Logger;
+  public optimizeRate: IRouteOptimizer<UnoptimizedRate>;
 
   constructor(
     protected dexAdapterService: DexAdapterService,
@@ -24,15 +27,20 @@ export class PricingHelper {
     this.logger = loggerConstructor(
       `PricingHelper_${dexAdapterService.network}`,
     );
+    this.optimizeRate = (ur: UnoptimizedRate) =>
+      this.dexAdapterService.routeOptimizers.reduce(
+        (acc: UnoptimizedRate, fn: IRouteOptimizer<UnoptimizedRate>) => fn(acc),
+        ur,
+      );
   }
 
   private async initializeDex(dexKey: string, blockNumber: number) {
     try {
-      const dexInstace = this.dexAdapterService.getDexByKey(dexKey);
+      const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
 
-      if (!dexInstace.initializePricing) return;
+      if (!dexInstance.initializePricing) return;
 
-      return await dexInstace.initializePricing(blockNumber);
+      return await dexInstance.initializePricing(blockNumber);
     } catch (e) {
       this.logger.error('Error_startListening:', e);
       setTimeout(
@@ -59,24 +67,24 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     filterConstantPricePool: boolean = false,
-  ): Promise<(string[] | null)[]> {
-    return await Promise.all(
-      dexKeys.map(key => {
+  ): Promise<{ [dexKey: string]: string[] | null }> {
+    const poolIdentifiers = await Promise.all(
+      dexKeys.map(async key => {
         try {
-          return new Promise<string[] | null>((resolve, reject) => {
+          return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
               () => reject(new Error(`Timout`)),
               FETCH_POOL_INDENTIFIER_TIMEOUT,
             );
-            const dexInstace = this.dexAdapterService.getDexByKey(key);
+            const dexInstance = this.dexAdapterService.getDexByKey(key);
 
             if (
               filterConstantPricePool &&
-              dexInstace.hasConstantPriceLargeAmounts
+              dexInstance.hasConstantPriceLargeAmounts
             )
               return null;
 
-            dexInstace
+            dexInstance
               .getPoolIdentifiers(from, to, side, blockNumber)
               .then(resolve, reject)
               .finally(() => {
@@ -88,6 +96,17 @@ export class PricingHelper {
           return [];
         }
       }),
+    );
+    return dexKeys.reduce(
+      (
+        acc: { [dexKey: string]: string[] | null },
+        dexKey: string,
+        index: number,
+      ) => {
+        acc[dexKey] = poolIdentifiers[index];
+        return acc;
+      },
+      {},
     );
   }
 
@@ -101,34 +120,36 @@ export class PricingHelper {
     limitPoolsMap: { [key: string]: string[] | null } | null,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
-      dexKeys.map(key => {
+      dexKeys.map(async key => {
         try {
           const limitPools = limitPoolsMap ? limitPoolsMap[key] : null;
 
           if (limitPools && !limitPools.length) return [];
 
-          return new Promise<PoolPrices<any>[] | null>((resolve, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error(`Timout`)),
-              FETCH_POOL_PRICES_TIMEOUT,
-            );
+          return await new Promise<PoolPrices<any>[] | null>(
+            (resolve, reject) => {
+              const timer = setTimeout(
+                () => reject(new Error(`Timout`)),
+                FETCH_POOL_PRICES_TIMEOUT,
+              );
 
-            const dexInstace = this.dexAdapterService.getDexByKey(key);
+              const dexInstance = this.dexAdapterService.getDexByKey(key);
 
-            dexInstace
-              .getPricesVolume(
-                from,
-                to,
-                amounts,
-                side,
-                blockNumber,
-                limitPools ? limitPools : undefined,
-              )
-              .then(resolve, reject)
-              .finally(() => {
-                clearTimeout(timer);
-              });
-          });
+              dexInstance
+                .getPricesVolume(
+                  from,
+                  to,
+                  amounts,
+                  side,
+                  blockNumber,
+                  limitPools ? limitPools : undefined,
+                )
+                .then(resolve, reject)
+                .finally(() => {
+                  clearTimeout(timer);
+                });
+            },
+          );
         } catch (e) {
           this.logger.error(`Error_${key}_getPoolPrices:`, e);
           return [];

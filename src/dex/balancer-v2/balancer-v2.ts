@@ -34,10 +34,12 @@ import {
   BalancerParam,
   OptimizedBalancerV2Data,
   SwapTypes,
+  DexParams,
+  PoolStateMap,
 } from './types';
 import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
-import { BalancerConfig } from './config';
+import { BalancerConfig, Adapters } from './config';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear"]}) {
@@ -57,29 +59,6 @@ const subgraphTimeout = 1000 * 10;
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
-
-const Adapters: { [chainId: number]: { name: string; index: number }[] } = {
-  [Network.MAINNET]: [
-    {
-      name: 'Adapter02',
-      index: 9,
-    },
-  ],
-  [Network.POLYGON]: [
-    {
-      name: 'PolygonAdapter01',
-      index: 9,
-    },
-  ],
-  [Network.FANTOM]: [
-    {
-      name: 'FantomAdapter01',
-      index: 5,
-    },
-  ],
-};
-
-export type PoolStateMap = { [address: string]: PoolState };
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;
@@ -163,9 +142,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
-    const cacheKey = `${this.parentName}_AllSubgraphPools_${this.network}`;
-
-    const cachedPools = await this.dexHelper.cache.get(cacheKey);
+    const cacheKey = 'AllSubgraphPools';
+    const cachedPools = await this.dexHelper.cache.get(
+      this.parentName,
+      this.network,
+      cacheKey,
+    );
     if (cachedPools) {
       const allPools = JSON.parse(cachedPools);
       this.logger.info(
@@ -190,6 +172,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       throw new Error('Unable to fetch pools from the subgraph');
 
     this.dexHelper.cache.setex(
+      this.parentName,
+      this.network,
       cacheKey,
       POOL_CACHE_TTL,
       JSON.stringify(data.pools),
@@ -437,12 +421,32 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       })
       .flat();
 
-    const data = await this.dexHelper.multiContract.callStatic.aggregate(
-      multiCallData,
-      {
-        blockTag: blockNumber,
-      },
-    );
+    // 500 is an arbitary number choosed based on the blockGasLimit
+    const slicedMultiCallData = _.chunk(multiCallData, 500);
+
+    // const returnData = (
+    //   await Promise.all(
+    //     slicedMultiCallData.map(async _multiCallData =>
+    //       this.dexHelper.multiContract.callStatic.tryAggregate(
+    //         false,
+    //         _multiCallData,
+    //         {
+    //           blockTag: blockNumber,
+    //         },
+    //       ),
+    //     ),
+    //   )
+    // ).flat();
+
+    const returnData = (
+      await Promise.all(
+        slicedMultiCallData.map(async _multiCallData =>
+          this.dexHelper.multiContract.methods
+            .tryAggregate(false, _multiCallData)
+            .call({}, blockNumber),
+        ),
+      )
+    ).flat();
 
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
@@ -456,7 +460,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           const [decoded, newIndex] = WeightedPool.decodeOnChainCalls(
             pool,
             this.vaultInterface,
-            data,
+            returnData,
             i,
           );
           i = newIndex;
@@ -469,7 +473,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           const [decoded, newIndex] = LinearPool.decodeOnChainCalls(
             pool,
             this.vaultInterface,
-            data,
+            returnData,
             i,
           );
           i = newIndex;
@@ -482,7 +486,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           const [decoded, newIndex] = StablePool.decodeOnChainCalls(
             pool,
             this.vaultInterface,
-            data,
+            returnData,
             i,
           );
           i = newIndex;
@@ -495,7 +499,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           const [decoded, newIndex] = PhantomStablePool.decodeOnChainCalls(
             pool,
             this.vaultInterface,
-            data,
+            returnData,
             i,
           );
           i = newIndex;
@@ -845,10 +849,14 @@ export class BalancerV2
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post(this.subgraphURL, {
-      query,
-      variables,
-    });
+    const { data } = await this.dexHelper.httpRequest.post(
+      this.subgraphURL,
+      {
+        query,
+        variables,
+      },
+      subgraphTimeout,
+    );
 
     if (!(data && data.pools))
       throw new Error(

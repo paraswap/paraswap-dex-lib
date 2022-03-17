@@ -3,7 +3,7 @@ dotenv.config();
 
 import { Network, SwapSide } from '../src/constants';
 import { BalancerV2 } from '../src/dex/balancer-v2/balancer-v2';
-import { DummyDexHelper } from './dummyDexHelper';
+import { DummyDexHelper } from '../src/dex-helper/index';
 
 const WETH = {
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',

@@ -2,7 +2,7 @@ import { Interface } from '@ethersproject/abi';
 import { MathSol, BZERO } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
-import { getTokenScalingFactor } from './utils';
+import { getTokenScalingFactor, decodeThrowError } from './utils';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 
@@ -448,26 +448,30 @@ export class StablePool extends BaseGeneralPool {
   static decodeOnChainCalls(
     pool: SubgraphPoolBase,
     vaultInterface: Interface,
-    data: any,
+    data: { success: boolean; returnData: any }[],
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
     const poolInterface = new Interface(StablePoolABI);
 
     const pools = {} as { [address: string]: PoolState };
 
-    const poolTokens = vaultInterface.decodeFunctionResult(
+    const poolTokens = decodeThrowError(
+      vaultInterface,
       'getPoolTokens',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     );
-
-    const swapFee = poolInterface.decodeFunctionResult(
+    const swapFee = decodeThrowError(
+      poolInterface,
       'getSwapFeePercentage',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     )[0];
-
-    const amp = poolInterface.decodeFunctionResult(
+    const amp = decodeThrowError(
+      poolInterface,
       'getAmplificationParameter',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     );
 
     const poolState: PoolState = {
@@ -643,26 +647,30 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
   static decodeOnChainCalls(
     pool: SubgraphPoolBase,
     vaultInterface: Interface,
-    data: any,
+    data: { success: boolean; returnData: any }[],
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
     const poolInterface = new Interface(WeightedPoolABI);
 
     const pools = {} as { [address: string]: PoolState };
 
-    const poolTokens = vaultInterface.decodeFunctionResult(
+    const poolTokens = decodeThrowError(
+      vaultInterface,
       'getPoolTokens',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     );
-
-    const swapFee = poolInterface.decodeFunctionResult(
+    const swapFee = decodeThrowError(
+      poolInterface,
       'getSwapFeePercentage',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     )[0];
-
-    const normalisedWeights = poolInterface.decodeFunctionResult(
+    const normalisedWeights = decodeThrowError(
+      poolInterface,
       'getNormalizedWeights',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     )[0];
 
     const poolState: PoolState = {

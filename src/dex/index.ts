@@ -1,17 +1,23 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { Address } from '../types';
+import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
-import { IDexTxBuilder, DexContructor, IDex } from './idex';
+import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
-import { UniswapV2 } from './uniswap-v2';
 import { Weth } from './weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
+import { balancerV2Merge } from './balancer-v2/optimizer';
+import { UniswapV2 } from './uniswap-v2/uniswap-v2';
+import { UniswapV2Alias } from './uniswap-v2/constants';
+import { uniswapMerge } from './uniswap-v2/optimizer';
+import { BiSwap } from './uniswap-v2/biswap';
+import { MDEX } from './uniswap-v2/mdex';
+import { Dfyn } from './uniswap-v2/dfyn';
 import { Bancor } from './bancor';
 import { BProtocol } from './bProtocol';
 import { MStable } from './mStable';
@@ -26,11 +32,11 @@ import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Kyber } from './kyber';
 import { IDexHelper } from '../dex-helper/idex-helper';
-import { SwapSide } from '../constants';
+import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
+import { Lido } from './lido';
 
 const LegacyDexes = [
-  UniswapV2,
   Curve,
   CurveV2,
   StablePool,
@@ -54,36 +60,37 @@ const LegacyDexes = [
   Weth,
   KyberDmm,
   Jarvis,
+  Lido,
 ];
 
-const Dexes = [BalancerV2];
+const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
 } = {
-  1: {
+  [Network.MAINNET]: {
     Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
     Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
     Adapter03: '0xe6A36F977844EB6AE1609686682698D20e4B0C26',
-    BuyAdapter: '0x4bF27594E968b8CAccA75985469211eb35e2C771',
+    BuyAdapter: '0xd8b2760230BbF3aA9777E175eC1c9720EB499ebA',
   },
-  137: {
+  [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
     PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
   },
-  56: {
-    BscAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
+  [Network.BSC]: {
+    BscAdapter01: '0xcEC935682c0b510fb91c0A12275Bb7e14EEBE87c',
     BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
   },
-  3: {
-    RopstenAdapter01: '0xcECD5055D08dc8846440e654525ba13f77C2D5F6',
+  [Network.ROPSTEN]: {
+    RopstenAdapter01: '0x74fF86C61CF66334dCfc999814DE4695B4BaE57b',
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
-  43114: {
+  [Network.AVALANCHE]: {
     AvalancheAdapter01: '0x749015EFfb59fcB9B826d854F3cA5c5C2F192147',
     AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
-  250: {
+  [Network.FANTOM]: {
     FantomAdapter01: '0xCBaeB06C2dF373c07A2Dc205266EC3bCd525DfB6',
     FantomBuyAdapter: '0x3032B8c9CF91C791A8EcC2c7831A11279f419386',
   },
@@ -110,6 +117,12 @@ export class DexAdapterService {
   isLegacy: { [dexKey: string]: boolean } = {};
   // dexKeys only has keys for non legacy dexes
   dexKeys: string[] = [];
+  uniswapV2Alias: string | null;
+
+  public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
+    balancerV2Merge,
+    uniswapMerge,
+  ];
 
   constructor(
     private dexHelper: IDexHelper,
@@ -166,6 +179,11 @@ export class DexAdapterService {
       })
       .filter(x => !!x)
       .map(v => v.toLowerCase());
+
+    this.uniswapV2Alias =
+      this.network in UniswapV2Alias
+        ? UniswapV2Alias[this.network].toLowerCase()
+        : null;
   }
 
   getTxBuilderDexByKey(dexKey: string): IDexTxBuilder<any, any> {
@@ -173,9 +191,20 @@ export class DexAdapterService {
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
+    if ('uniswapforkoptimized' === _dexKey) {
+      if (!this.uniswapV2Alias)
+        throw new Error(
+          `${dexKey} dex is not supported for network(${this.network})!`,
+        );
+      _dexKey = this.uniswapV2Alias;
+    }
+
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];
-      if (!DexAdapter) throw new Error(`${dexKey} dex is not supported!`);
+      if (!DexAdapter)
+        throw new Error(
+          `${dexKey} dex is not supported for network(${this.network})!`,
+        );
 
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
         this.dexHelper.augustusAddress,

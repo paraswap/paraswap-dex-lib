@@ -34,13 +34,13 @@ export interface SubgraphPoolBase {
   wrappedIndex: number;
 }
 
-export type BalancerSwapsV2 = {
+export type BalancerSwapV2 = {
   poolId: string;
   amount: string;
-}[];
+};
 
 export type OptimizedBalancerV2Data = {
-  swaps: BalancerSwapsV2;
+  swaps: BalancerSwapV2[];
 };
 
 export type BalancerFunds = {
@@ -86,3 +86,4 @@ export interface callData {
   target: string;
   callData: string;
 }
+export type PoolStateMap = { [address: string]: PoolState };

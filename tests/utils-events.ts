@@ -1,0 +1,144 @@
+import _ from 'lodash';
+import fs from 'fs';
+import path from 'path';
+import { Log, BlockHeader, Address } from '../src/types';
+import { StatefulEventSubscriber } from '../src/stateful-event-subscriber';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { DeepReadonly } from 'ts-essentials';
+
+const statePath = './states.json';
+const absStatePath = path.join(__dirname, statePath);
+let states: { [k: string]: any } = {};
+if (fs.existsSync(absStatePath)) states = require(statePath);
+
+const logPath = './logs.json';
+const absLogPath = path.join(__dirname, logPath);
+let logs: { [k: string]: BlockInfo } = {};
+if (fs.existsSync(absLogPath)) logs = require(logPath);
+
+const bigintify = (val: string) => BigInt(val);
+const stringify = (val: bigint) => val.toString();
+
+interface BlockInfo {
+  logs: Log[];
+  blockHeaders: { [blockNumber: number]: BlockHeader };
+}
+
+export async function testEventSubscriber<SubscriberState>(
+  eventSubscriber: StatefulEventSubscriber<SubscriberState>,
+  subscribedAddress: Address[],
+  fetchState: (blocknumber: number) => Promise<SubscriberState>,
+  blockNumber: number,
+  cacheKey: string,
+  provider: JsonRpcProvider,
+) {
+  // Get state of the subscriber block before the event was released
+  let poolState = getSavedState(blockNumber - 1, cacheKey);
+  if (!poolState) {
+    poolState = await fetchState(blockNumber - 1);
+    saveState(blockNumber - 1, cacheKey, poolState);
+  }
+
+  // Set subscriber state before the event block
+  eventSubscriber.setState(
+    poolState as DeepReadonly<SubscriberState>,
+    blockNumber - 1,
+  );
+  eventSubscriber.isTracking = () => true;
+
+  // Get logs and blockHeader of the block when the event was emitted
+  let blockInfo = await getSavedBlockInfo(blockNumber, cacheKey);
+  if (!blockInfo) {
+    const logs = (
+      await Promise.all(
+        subscribedAddress.map(address =>
+          provider.getLogs({
+            fromBlock: blockNumber,
+            toBlock: blockNumber,
+            address,
+          }),
+        ),
+      )
+    ).flat();
+
+    blockInfo = {
+      logs,
+      blockHeaders: {
+        [blockNumber]: <BlockHeader>(
+          (<unknown>await provider.getBlock(blockNumber))
+        ),
+      },
+    };
+    saveBlockInfo(blockNumber, cacheKey, blockInfo);
+  }
+
+  // Update subscriber with event logs
+  await eventSubscriber.update(blockInfo.logs, blockInfo.blockHeaders);
+
+  // Get the expected state of the subscriber after the event
+  let expectedNewPoolState = getSavedState(blockNumber, cacheKey);
+  if (!expectedNewPoolState) {
+    expectedNewPoolState = await fetchState(blockNumber);
+    saveState(blockNumber, cacheKey, expectedNewPoolState);
+  }
+
+  // Get the updated state of the subscriber
+  const newPoolState = eventSubscriber.getState(blockNumber);
+
+  // Expect the updated state to be same as the expected state
+  expect(newPoolState).toEqual(expectedNewPoolState);
+}
+
+export function deepTypecast<T>(
+  obj: any,
+  checker: (val: any) => boolean,
+  caster: (val: T) => any,
+): any {
+  return _.forEach(
+    obj,
+    (val: any, key: any, obj: any) =>
+      (obj[key] = checker(val)
+        ? caster(val)
+        : _.isObject(val)
+        ? deepTypecast(val, checker, caster)
+        : val),
+  );
+}
+
+export function getSavedState<SubscriberState>(
+  blockNumber: number,
+  cacheKey: string,
+): SubscriberState | undefined {
+  const _state = states[`${cacheKey}_${blockNumber}`];
+  if (_state) {
+    const checker = (obj: any) => _.isString(obj) && obj.includes('bi@');
+    const caster = (obj: string) => bigintify(obj.slice(3));
+    return deepTypecast<string>(_.cloneDeep(_state), checker, caster);
+  }
+  return undefined;
+}
+
+function saveState<SubscriberState>(
+  blockNumber: number,
+  cacheKey: string,
+  state: SubscriberState,
+) {
+  const checker = (obj: any) => typeof obj === 'bigint';
+  const caster = (obj: bigint) => 'bi@'.concat(stringify(obj));
+  const _state = deepTypecast<bigint>(_.cloneDeep(state), checker, caster);
+  states[`${cacheKey}_${blockNumber}`] = _state;
+  fs.writeFileSync(absStatePath, JSON.stringify(states, null, 2));
+}
+
+function getSavedBlockInfo(blockNumber: number, cacheKey: string): BlockInfo {
+  return logs[`${cacheKey}_${blockNumber}`];
+}
+
+function saveBlockInfo(
+  blockNumber: number,
+  cacheKey: string,
+  blockInfo: BlockInfo,
+) {
+  logs[`${cacheKey}_${blockNumber}`] = blockInfo;
+  fs.writeFileSync(absLogPath, JSON.stringify(logs, null, 2));
+}
