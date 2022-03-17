@@ -45,7 +45,7 @@ export class Weth
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network],
+    protected adapters = Adapters[network] || {},
     protected unitPrice = BigInt(1e18),
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
   ) {
@@ -62,7 +62,7 @@ export class Weth
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side];
+    return this.adapters[side] || null;
   }
 
   // Returns list of pool identifiers that can be used

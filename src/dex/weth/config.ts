@@ -16,23 +16,15 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.RINKEBY]: {
       poolGasCost: WethGasCost,
     },
-  },
-  Wbnb: {
     [Network.BSC]: {
       poolGasCost: WethGasCost,
     },
-  },
-  Wmatic: {
     [Network.POLYGON]: {
       poolGasCost: WethGasCost,
     },
-  },
-  Wavax: {
     [Network.AVALANCHE]: {
       poolGasCost: WethGasCost,
     },
-  },
-  Wftm: {
     [Network.FANTOM]: {
       poolGasCost: WethGasCost,
     },
