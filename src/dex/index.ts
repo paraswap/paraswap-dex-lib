@@ -9,7 +9,7 @@ import { StablePool } from './stable-pool';
 import { Weth } from './weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
-import { Balancer } from './balancer';
+import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
@@ -43,7 +43,6 @@ const LegacyDexes = [
   Smoothy,
   ZeroX,
   Weth,
-  Balancer,
   Bancor,
   Kyber,
   BProtocol,
@@ -63,7 +62,7 @@ const LegacyDexes = [
   Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
+const Dexes = [BalancerV1, BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
