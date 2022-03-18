@@ -44,14 +44,14 @@ import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
-import { Contract } from '@ethersproject/contracts';
+import { Contract } from 'web3-eth-contract';
 import { WETHAddresses } from '../weth';
 import { UniswapV2Config, Adapters } from './config';
 
 const MAX_UINT_BIGINT = BigInt(MAX_UINT);
 const RESERVE_LIMIT = BigInt(2) ** BigInt(112) - BigInt(1);
 
-const DefaultUniswapV2PoolGasGost = 90 * 1000;
+const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
 interface UniswapV2PoolOrderedParams {
   tokenIn: string;
@@ -157,12 +157,16 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    const data = await this.dexHelper.multiContract.callStatic.aggregate(
-      calldata,
-      {
-        blockTag: blockNumber,
-      },
-    );
+    // const data = await this.dexHelper.multiContract.callStatic.aggregate(
+    //   calldata,
+    //   {
+    //     blockTag: blockNumber,
+    //   },
+    // );
+
+    const data = await this.dexHelper.multiContract.methods
+      .aggregate(calldata)
+      .call({}, blockNumber);
 
     return {
       reserves0: coder.decode(['uint256'], data.returnData[0])[0].toString(),
@@ -234,7 +238,7 @@ export class UniswapV2
     protected feeCode: number = UniswapV2Config[dexKey][network].feeCode,
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].poolGasCost) ??
-      DefaultUniswapV2PoolGasGost,
+      DefaultUniswapV2PoolGasCost,
     protected adapters = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].adapters) ??
       Adapters[network],
@@ -245,10 +249,9 @@ export class UniswapV2
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
 
-    this.factory = new Contract(
+    this.factory = new dexHelper.web3Provider.eth.Contract(
+      uniswapV2factoryABI as any,
       factoryAddress,
-      uniswapV2factoryABI,
-      dexHelper.provider,
     );
 
     this.routerInterface = new Interface(ParaSwapABI);
@@ -364,7 +367,9 @@ export class UniswapV2
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     if (pair) return pair;
-    const exchange = await this.factory.getPair(token0.address, token1.address);
+    const exchange = await this.factory.methods
+      .getPair(token0.address, token1.address)
+      .call();
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
     } else {
@@ -403,10 +408,15 @@ export class UniswapV2
         })
         .flat();
 
+      // const data: { returnData: any[] } =
+      //   await this.dexHelper.multiContract.callStatic.aggregate(calldata, {
+      //     blockTag: blockNumber,
+      //   });
+
       const data: { returnData: any[] } =
-        await this.dexHelper.multiContract.callStatic.aggregate(calldata, {
-          blockTag: blockNumber,
-        });
+        await this.dexHelper.multiContract.methods
+          .aggregate(calldata)
+          .call({}, blockNumber);
 
       const returnData = _.chunk(data.returnData, this.isDynamicFees ? 3 : 2);
       return pairs.map((pair, i) => ({
@@ -515,6 +525,10 @@ export class UniswapV2
     const from = wrapETH(_from, this.network);
     const to = wrapETH(_to, this.network);
 
+    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      return [];
+    }
+
     const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
       .sort((a, b) => (a > b ? 1 : -1))
       .join('_');
@@ -536,6 +550,10 @@ export class UniswapV2
       const from = wrapETH(_from, this.network);
       const to = wrapETH(_to, this.network);
 
+      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+        return null;
+      }
+
       const tokenAddress = [
         from.address.toLowerCase(),
         to.address.toLowerCase(),
@@ -545,15 +563,8 @@ export class UniswapV2
 
       const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
 
-      if (
-        limitPools &&
-        (limitPools.length !== 1 || limitPools[0] !== poolIdentifier)
-      )
+      if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
-
-      if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return null;
-      }
 
       await this.batchCatchUpPairs([[from, to]], blockNumber);
 
