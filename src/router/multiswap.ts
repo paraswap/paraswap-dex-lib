@@ -61,7 +61,10 @@ export class MultiSwap
       fromToken: priceRoute.srcToken,
       fromAmount: priceRoute.srcAmount,
       toAmount: minMaxAmount,
-      expectedAmount: priceRoute.destAmount,
+      expectedAmount: (
+        (BigInt(priceRoute.destAmount) * BigInt(95)) /
+        BigInt(100)
+      ).toString(),
       beneficiary,
       path: paths,
       partner: referrerAddress || partnerAddress,

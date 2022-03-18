@@ -203,7 +203,10 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
         this.side === SwapSide.SELL ? minMaxAmount : priceRoute.destAmount,
       expectedAmount:
         this.side === SwapSide.SELL
-          ? priceRoute.destAmount
+          ? (
+              (BigInt(priceRoute.destAmount) * BigInt(95)) /
+              BigInt(100)
+            ).toString()
           : priceRoute.srcAmount,
       beneficiary,
       partner: referrerAddress || partnerAddress,
