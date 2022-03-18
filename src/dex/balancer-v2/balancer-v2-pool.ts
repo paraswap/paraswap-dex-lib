@@ -363,6 +363,17 @@ class StableMath {
 }
 
 export class StablePool extends BaseGeneralPool {
+  vaultAddress: string;
+  vaultInterface: Interface;
+  poolInterface: Interface;
+
+  constructor(vaultAddress: string, vaultInterface: Interface) {
+    super();
+    this.vaultAddress = vaultAddress;
+    this.vaultInterface = vaultInterface;
+    this.poolInterface = new Interface(StablePoolABI);
+  }
+
   _onSwapGivenIn(
     tokenAmountsIn: bigint[],
     balances: bigint[],
@@ -417,25 +428,23 @@ export class StablePool extends BaseGeneralPool {
   /*
   Helper function to construct onchain multicall data for StablePool.
   */
-  static getOnChainCalls(
-    pool: SubgraphPoolBase,
-    vaultAddress: string,
-    vaultInterface: Interface,
-  ): callData[] {
-    const poolInterface = new Interface(StablePoolABI);
-
+  getOnChainCalls(pool: SubgraphPoolBase): callData[] {
     return [
       {
-        target: vaultAddress,
-        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+        target: this.vaultAddress,
+        callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
+          pool.id,
+        ]),
       },
       {
         target: pool.address,
-        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+        callData: this.poolInterface.encodeFunctionData('getSwapFeePercentage'),
       },
       {
         target: pool.address,
-        callData: poolInterface.encodeFunctionData('getAmplificationParameter'),
+        callData: this.poolInterface.encodeFunctionData(
+          'getAmplificationParameter',
+        ),
       },
     ];
   }
@@ -445,30 +454,27 @@ export class StablePool extends BaseGeneralPool {
   data must contain returnData
   startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
   */
-  static decodeOnChainCalls(
+  decodeOnChainCalls(
     pool: SubgraphPoolBase,
-    vaultInterface: Interface,
     data: { success: boolean; returnData: any }[],
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
-    const poolInterface = new Interface(StablePoolABI);
-
     const pools = {} as { [address: string]: PoolState };
 
     const poolTokens = decodeThrowError(
-      vaultInterface,
+      this.vaultInterface,
       'getPoolTokens',
       data[startIndex++],
       pool.address,
     );
     const swapFee = decodeThrowError(
-      poolInterface,
+      this.poolInterface,
       'getSwapFeePercentage',
       data[startIndex++],
       pool.address,
     )[0];
     const amp = decodeThrowError(
-      poolInterface,
+      this.poolInterface,
       'getAmplificationParameter',
       data[startIndex++],
       pool.address,
@@ -562,6 +568,17 @@ export class WeightedMath {
 }
 
 export class WeightedPool extends BaseMinimalSwapInfoPool {
+  vaultAddress: string;
+  vaultInterface: Interface;
+  poolInterface: Interface;
+
+  constructor(vaultAddress: string, vaultInterface: Interface) {
+    super();
+    this.vaultAddress = vaultAddress;
+    this.vaultInterface = vaultInterface;
+    this.poolInterface = new Interface(WeightedPoolABI);
+  }
+
   _onSwapGivenIn(
     tokenAmountsIn: bigint[],
     currentBalanceTokenIn: bigint,
@@ -617,24 +634,21 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
   /*
   Helper function to construct onchain multicall data for WeightedPool (also 'LiquidityBootstrapping' and 'Investment' pool types).
   */
-  static getOnChainCalls(
-    pool: SubgraphPoolBase,
-    vaultAddress: string,
-    vaultInterface: Interface,
-  ): callData[] {
-    const poolInterface = new Interface(WeightedPoolABI);
+  getOnChainCalls(pool: SubgraphPoolBase): callData[] {
     return [
       {
-        target: vaultAddress,
-        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+        target: this.vaultAddress,
+        callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
+          pool.id,
+        ]),
       },
       {
         target: pool.address,
-        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+        callData: this.poolInterface.encodeFunctionData('getSwapFeePercentage'),
       },
       {
         target: pool.address,
-        callData: poolInterface.encodeFunctionData('getNormalizedWeights'),
+        callData: this.poolInterface.encodeFunctionData('getNormalizedWeights'),
       },
     ];
   }
@@ -644,30 +658,27 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
   data must contain returnData
   startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
   */
-  static decodeOnChainCalls(
+  decodeOnChainCalls(
     pool: SubgraphPoolBase,
-    vaultInterface: Interface,
     data: { success: boolean; returnData: any }[],
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
-    const poolInterface = new Interface(WeightedPoolABI);
-
     const pools = {} as { [address: string]: PoolState };
 
     const poolTokens = decodeThrowError(
-      vaultInterface,
+      this.vaultInterface,
       'getPoolTokens',
       data[startIndex++],
       pool.address,
     );
     const swapFee = decodeThrowError(
-      poolInterface,
+      this.poolInterface,
       'getSwapFeePercentage',
       data[startIndex++],
       pool.address,
     )[0];
     const normalisedWeights = decodeThrowError(
-      poolInterface,
+      this.poolInterface,
       'getNormalizedWeights',
       data[startIndex++],
       pool.address,

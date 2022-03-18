@@ -94,13 +94,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     logger: Logger,
   ) {
     super(parentName, logger);
-    this.poolMaths = {
-      Stable: new StablePool(),
-      Weighted: new WeightedPool(),
-      StablePhantom: new PhantomStablePool(),
-      AaveLinear: new LinearPool(),
-    };
     this.vaultInterface = new Interface(VaultABI);
+    this.poolMaths = {
+      Stable: new StablePool(this.vaultAddress, this.vaultInterface),
+      Weighted: new WeightedPool(this.vaultAddress, this.vaultInterface),
+      StablePhantom: new PhantomStablePool(
+        this.vaultAddress,
+        this.vaultInterface,
+      ),
+      AaveLinear: new LinearPool(this.vaultAddress, this.vaultInterface),
+    };
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -379,7 +382,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           )
         ) {
           // Will create onchain call data for WeightedPool types
-          const weightedCalls = WeightedPool.getOnChainCalls(
+          const weightedCalls = this.poolMaths['Weighted'].getOnChainCalls(
             pool,
             this.vaultAddress,
             this.vaultInterface,
@@ -389,7 +392,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         if (['Stable'].includes(pool.poolType)) {
           // Will create onchain call data for StablePool
-          const stableCalls = StablePool.getOnChainCalls(
+          const stableCalls = this.poolMaths['Stable'].getOnChainCalls(
             pool,
             this.vaultAddress,
             this.vaultInterface,
@@ -399,7 +402,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         if (['AaveLinear'].includes(pool.poolType)) {
           // Will create onchain call data for linearPools
-          const linearCalls = LinearPool.getOnChainCalls(
+          const linearCalls = this.poolMaths['AaveLinear'].getOnChainCalls(
             pool,
             this.vaultAddress,
             this.vaultInterface,
@@ -409,11 +412,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
           // Will create onchain call data for Meta/PhantomStablePool
-          const metaStableCalls = PhantomStablePool.getOnChainCalls(
-            pool,
-            this.vaultAddress,
-            this.vaultInterface,
-          );
+          const metaStableCalls = this.poolMaths[
+            'StablePhantom'
+          ].getOnChainCalls(pool, this.vaultAddress, this.vaultInterface);
           poolCallData.push(...metaStableCalls);
         }
 
@@ -457,12 +458,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
           )
         ) {
           // This will decode multicall data for all pools associated with Weighted pools
-          const [decoded, newIndex] = WeightedPool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            returnData,
-            i,
-          );
+          const [decoded, newIndex] = this.poolMaths[
+            'Weighted'
+          ].decodeOnChainCalls(pool, returnData, i);
           i = newIndex;
           acc = { ...acc, ...decoded };
           return acc;
@@ -470,12 +468,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         if (['AaveLinear'].includes(pool.poolType)) {
           // This will decode multicall data for all pools associated with linear pool
-          const [decoded, newIndex] = LinearPool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            returnData,
-            i,
-          );
+          const [decoded, newIndex] = this.poolMaths[
+            'AaveLinear'
+          ].decodeOnChainCalls(pool, returnData, i);
           i = newIndex;
           acc = { ...acc, ...decoded };
           return acc;
@@ -483,12 +478,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         if (['Stable'].includes(pool.poolType)) {
           // This will decode multicall data for Stable pools
-          const [decoded, newIndex] = StablePool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            returnData,
-            i,
-          );
+          const [decoded, newIndex] = this.poolMaths[
+            'Stable'
+          ].decodeOnChainCalls(pool, returnData, i);
           i = newIndex;
           acc = { ...acc, ...decoded };
           return acc;
@@ -496,12 +488,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
           // This will decode multicall data for Meta/PhantomStable pools
-          const [decoded, newIndex] = PhantomStablePool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            returnData,
-            i,
-          );
+          const [decoded, newIndex] = this.poolMaths[
+            'StablePhantom'
+          ].decodeOnChainCalls(pool, returnData, i);
           i = newIndex;
           acc = { ...acc, ...decoded };
           return acc;
