@@ -5,6 +5,8 @@ import { isSameAddress, decodeThrowError } from './utils';
 import * as StableMath from './StableMath';
 import { BZERO } from './balancer-v2-math';
 import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
+import { SwapSide } from '../../constants';
+
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 
 enum PairTypes {
@@ -15,13 +17,13 @@ enum PairTypes {
 
 type PhantomStablePoolPairData = {
   tokens: string[];
-  balances: BigInt[];
+  balances: bigint[];
   indexIn: number;
   indexOut: number;
-  scalingFactors: BigInt[];
+  scalingFactors: bigint[];
   bptIndex: number;
-  swapFee: BigInt;
-  amp: BigInt;
+  swapFee: bigint;
+  amp: bigint;
 };
 
 /*
@@ -60,27 +62,17 @@ export class PhantomStablePool extends BasePool {
         MathSol.mulDownFixed(getTokenScalingFactor(decimals), priceRate)
     )
     */
-  onSell(
-    amounts: bigint[],
-    tokens: string[],
-    balances: bigint[],
-    indexIn: number,
-    indexOut: number,
-    bptIndex: number,
-    scalingFactors: bigint[],
-    swapFeePercentage: bigint,
-    amplificationParameter: bigint,
-  ): bigint[] {
+  onSell(amounts: bigint[], poolPairData: PhantomStablePoolPairData): bigint[] {
     return this._swapGivenIn(
       amounts,
-      tokens,
-      balances,
-      indexIn,
-      indexOut,
-      bptIndex,
-      scalingFactors,
-      swapFeePercentage,
-      amplificationParameter,
+      poolPairData.tokens,
+      poolPairData.balances,
+      poolPairData.indexIn,
+      poolPairData.indexOut,
+      poolPairData.bptIndex,
+      poolPairData.scalingFactors,
+      poolPairData.swapFee,
+      poolPairData.amp,
     );
   }
 
@@ -260,8 +252,8 @@ export class PhantomStablePool extends BasePool {
     let indexIn = 0,
       indexOut = 0,
       bptIndex = 0;
-    const balances: BigInt[] = [];
-    const scalingFactors: BigInt[] = [];
+    const balances: bigint[] = [];
+    const scalingFactors: bigint[] = [];
 
     const tokens = pool.tokens.map((t, i) => {
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
@@ -388,13 +380,18 @@ export class PhantomStablePool extends BasePool {
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
   checkBalance(
-    balanceOut: bigint,
-    scalingFactor: bigint,
     amounts: bigint[],
     unitVolume: bigint,
+    side: SwapSide,
+    poolPairData: PhantomStablePoolPairData,
   ): boolean {
     const swapMax =
-      (this._upscale(balanceOut, scalingFactor) * BigInt(99)) / BigInt(100);
+      (this._upscale(
+        poolPairData.balances[poolPairData.indexOut],
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      ) *
+        BigInt(99)) /
+      BigInt(100);
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

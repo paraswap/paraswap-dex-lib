@@ -6,6 +6,7 @@ import { BZERO } from './balancer-v2-math';
 import { BasePool } from './balancer-v2-pool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
+import { SwapSide } from '../../constants';
 
 export enum PairTypes {
   BptToMainToken,
@@ -18,17 +19,17 @@ export enum PairTypes {
 
 type LinearPoolPairData = {
   tokens: string[];
-  balances: BigInt[];
+  balances: bigint[];
   indexIn: number;
   indexOut: number;
-  scalingFactors: BigInt[];
+  scalingFactors: bigint[];
   bptIndex: number;
-  swapFee: BigInt;
-  amp: BigInt;
+  swapFee: bigint;
+  amp: bigint;
   wrappedIndex: number;
   mainIndex: number;
-  lowerTarget: BigInt;
-  upperTarget: BigInt;
+  lowerTarget: bigint;
+  upperTarget: bigint;
 };
 
 /*
@@ -64,33 +65,20 @@ export class LinearPool extends BasePool {
         MathSol.mulDownFixed(getTokenScalingFactor(decimals), priceRate)
     )
     */
-  onSell(
-    amounts: bigint[],
-    tokens: string[],
-    balances: bigint[],
-    indexIn: number,
-    indexOut: number,
-    bptIndex: number,
-    wrappedIndex: number,
-    mainIndex: number,
-    scalingFactors: bigint[],
-    swapFeePercentage: bigint,
-    lowerTarget: bigint,
-    upperTarget: bigint,
-  ): bigint[] {
+  onSell(amounts: bigint[], poolPairData: LinearPoolPairData): bigint[] {
     return this._swapGivenIn(
       amounts,
-      tokens,
-      balances,
-      indexIn,
-      indexOut,
-      bptIndex,
-      wrappedIndex,
-      mainIndex,
-      scalingFactors,
-      swapFeePercentage,
-      lowerTarget,
-      upperTarget,
+      poolPairData.tokens,
+      poolPairData.balances,
+      poolPairData.indexIn,
+      poolPairData.indexOut,
+      poolPairData.bptIndex,
+      poolPairData.wrappedIndex,
+      poolPairData.mainIndex,
+      poolPairData.scalingFactors,
+      poolPairData.swapFee,
+      poolPairData.lowerTarget,
+      poolPairData.upperTarget,
     );
   }
 
@@ -230,8 +218,8 @@ export class LinearPool extends BasePool {
     let indexIn = 0,
       indexOut = 0,
       bptIndex = 0;
-    const balances: BigInt[] = [];
-    const scalingFactors: BigInt[] = [];
+    const balances: bigint[] = [];
+    const scalingFactors: bigint[] = [];
 
     const tokens = pool.tokens.map((t, i) => {
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
@@ -363,13 +351,18 @@ export class LinearPool extends BasePool {
   Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
   checkBalance(
-    balanceOut: bigint,
-    scalingFactor: bigint,
     amounts: bigint[],
     unitVolume: bigint,
+    side: SwapSide,
+    poolPairData: LinearPoolPairData,
   ): boolean {
     const swapMax =
-      (this._upscale(balanceOut, scalingFactor) * BigInt(99)) / BigInt(100);
+      (this._upscale(
+        poolPairData.balances[poolPairData.indexOut],
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      ) *
+        BigInt(99)) /
+      BigInt(100);
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

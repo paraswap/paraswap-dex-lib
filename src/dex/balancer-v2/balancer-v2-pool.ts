@@ -32,47 +32,39 @@ export class BasePool {
 }
 
 type WeightedPoolPairData = {
-  tokenInBalance: BigInt;
-  tokenOutBalance: BigInt;
-  tokenInScalingFactor: BigInt;
-  tokenOutScalingFactor: BigInt;
-  tokenInWeight: BigInt;
-  tokenOutWeight: BigInt;
-  swapFee: BigInt;
+  tokenInBalance: bigint;
+  tokenOutBalance: bigint;
+  tokenInScalingFactor: bigint;
+  tokenOutScalingFactor: bigint;
+  tokenInWeight: bigint;
+  tokenOutWeight: bigint;
+  swapFee: bigint;
 };
 
 type StablePoolPairData = {
-  balances: BigInt[];
+  balances: bigint[];
   indexIn: number;
   indexOut: number;
-  scalingFactors: BigInt[];
-  swapFee: BigInt;
-  amp: BigInt;
+  scalingFactors: bigint[];
+  swapFee: bigint;
+  amp: bigint;
 };
 
 abstract class BaseGeneralPool extends BasePool {
   // Swap Hooks
 
   // Modification: this is inspired from the function onSwap which is in the original contract
-  onSell(
-    amounts: bigint[],
-    balances: bigint[],
-    indexIn: number,
-    indexOut: number,
-    _scalingFactors: bigint[],
-    _swapFeePercentage: bigint,
-    _amplificationParameter: bigint,
-  ): bigint[] {
+  onSell(amounts: bigint[], poolPairData: StablePoolPairData): bigint[] {
     // _validateIndexes(indexIn, indexOut, _getTotalTokens());
     // uint256[] memory scalingFactors = _scalingFactors();
     return this._swapGivenIn(
       amounts,
-      balances,
-      indexIn,
-      indexOut,
-      _scalingFactors,
-      _swapFeePercentage,
-      _amplificationParameter,
+      poolPairData.balances,
+      poolPairData.indexIn,
+      poolPairData.indexOut,
+      poolPairData.scalingFactors,
+      poolPairData.swapFee,
+      poolPairData.amp,
     );
   }
 
@@ -135,39 +127,41 @@ abstract class BaseMinimalSwapInfoPool extends BasePool {
   // Modification: this is inspired from the function onSwap which is in the original contract
   onSell(
     tokenAmountsIn: bigint[],
-    balanceTokenIn: bigint,
-    balanceTokenOut: bigint,
-    _scalingFactorTokenIn: bigint,
-    _scalingFactorTokenOut: bigint,
-    _weightIn: bigint,
-    _weightOut: bigint,
-    _swapFeePercentage: bigint,
+    poolPairData: WeightedPoolPairData,
   ): bigint[] {
     // uint256 _scalingFactorTokenIn = _scalingFactor(request.tokenIn);
     // uint256 _scalingFactorTokenOut = _scalingFactor(request.tokenOut);
 
     // Fees are subtracted before scaling, to reduce the complexity of the rounding direction analysis.
     const tokenAmountsInWithFee = tokenAmountsIn.map(a =>
-      this._subtractSwapFeeAmount(a, _swapFeePercentage),
+      this._subtractSwapFeeAmount(a, poolPairData.swapFee),
     );
 
     // All token amounts are upscaled.
-    balanceTokenIn = this._upscale(balanceTokenIn, _scalingFactorTokenIn);
-    balanceTokenOut = this._upscale(balanceTokenOut, _scalingFactorTokenOut);
+    const balanceTokenIn = this._upscale(
+      poolPairData.tokenInBalance,
+      poolPairData.tokenInScalingFactor,
+    );
+    const balanceTokenOut = this._upscale(
+      poolPairData.tokenOutBalance,
+      poolPairData.tokenOutScalingFactor,
+    );
     const tokenAmountsInScaled = tokenAmountsInWithFee.map(a =>
-      this._upscale(a, _scalingFactorTokenIn),
+      this._upscale(a, poolPairData.tokenInScalingFactor),
     );
 
     const amountsOut = this._onSwapGivenIn(
       tokenAmountsInScaled,
       balanceTokenIn,
       balanceTokenOut,
-      _weightIn,
-      _weightOut,
+      poolPairData.tokenInWeight,
+      poolPairData.tokenOutWeight,
     );
 
     // amountOut tokens are exiting the Pool, so we round down.
-    return amountsOut.map(a => this._downscaleDown(a, _scalingFactorTokenOut));
+    return amountsOut.map(a =>
+      this._downscaleDown(a, poolPairData.tokenOutScalingFactor),
+    );
   }
 
   abstract _onSwapGivenIn(
@@ -398,15 +392,14 @@ export class StablePool extends BaseGeneralPool {
     poolState: PoolState,
     tokenIn: string,
     tokenOut: string,
-    isMetaStable: boolean,
   ): StablePoolPairData {
     let indexIn = 0,
       indexOut = 0;
-    const scalingFactors: BigInt[] = [];
+    const scalingFactors: bigint[] = [];
     const balances = pool.tokens.map((t, i) => {
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
       if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
-      if (isMetaStable)
+      if (pool.poolType === 'MetaStable')
         scalingFactors.push(
           poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
         );
@@ -508,13 +501,18 @@ export class StablePool extends BaseGeneralPool {
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
   checkBalance(
-    balanceOut: bigint,
-    scalingFactor: bigint,
     amounts: bigint[],
     unitVolume: bigint,
+    side: SwapSide,
+    poolPairData: StablePoolPairData,
   ): boolean {
     const swapMax =
-      (this._upscale(balanceOut, scalingFactor) * BigInt(99)) / BigInt(100);
+      (this._upscale(
+        poolPairData.balances[poolPairData.indexOut],
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      ) *
+        BigInt(99)) /
+      BigInt(100);
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]
@@ -711,14 +709,16 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
   For weighted pools there is a Swap limit of 30%: amounts swapped may not be larger than this percentage of total balance.
   */
   checkBalance(
-    balanceIn: bigint,
-    balanceOut: bigint,
-    side: SwapSide,
     amounts: bigint[],
     unitVolume: bigint,
+    side: SwapSide,
+    poolPairData: WeightedPoolPairData,
   ): boolean {
     const swapMax =
-      ((side === SwapSide.SELL ? balanceIn : balanceOut) * BigInt(3)) /
+      ((side === SwapSide.SELL
+        ? poolPairData.tokenInBalance
+        : poolPairData.tokenOutBalance) *
+        BigInt(3)) /
       BigInt(10);
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
