@@ -10,22 +10,14 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import {
-  SwapSide,
-  Network,
-} from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import {
-  BalancerV1Data,
-  PoolState,
-} from './types';
+import { BalancerV1Data, PoolState, DexParams, Pool } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerV1Config, Adapters } from './config';
-
-
 
 export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -41,24 +33,27 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected adapters = Adapters[network],
-    // TODO: add any additional params required for event subscriber
+    protected adapters = Adapters[network], // TODO: add any additional params required for event subscriber
   ) {
     super(parentName, logger);
 
     // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.interface.parseLog(log);
-    this.addressesSubscribed = [/* subscribed addresses */];
+    this.addressesSubscribed = [
+      // TODO: Here to be all pools addresses?
+    ];
 
     // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
+    this.handlers['LOG_EXIT'] = this.handleExitPool.bind(this);
+    this.handlers['LOG_SWAP'] = this.handleSwap.bind(this);
   }
 
   /**
-   * The function is called everytime any of the subscribed 
+   * The function is called everytime any of the subscribed
    * addresses release log. The function accepts the current
    * state, updates the state according to the log, and returns
-   * the updated state. 
+   * the updated state.
    * @param state - Current state of event subscriber
    * @param log - Log released by one of the subscribed addresses
    * @returns Updates state of the event subscriber after the log
@@ -70,11 +65,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
-        return this.handlers[event.name](
-          event,
-          state,
-          log,
-        );
+        return this.handlers[event.name](event, state, log);
       }
       return state;
     } catch (e) {
@@ -86,11 +77,48 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
+  handleJoinPool(event: any, pool: Pool, log: Log): Pool {
+    const tokenIn = event.args.tokenIn.toLowerCase();
+    const tokenAmountIn = event.args.tokenAmountIn.toString();
+    pool.tokens = pool.tokens.map(token => {
+      if (token.address.toLowerCase() === tokenIn)
+        token.balance = token.balance.plus(tokenAmountIn);
+      return token;
+    });
+    return pool;
+  }
+
+  handleExitPool(event: any, pool: Pool, log: Log): Pool {
+    const tokenOut = event.args.tokenOut.toLowerCase();
+    const tokenAmountOut = event.args.tokenAmountOut.toString();
+    pool.tokens = pool.tokens.map(token => {
+      if (token.address.toLowerCase() === tokenOut)
+        token.balance = token.balance.minus(tokenAmountOut);
+      return token;
+    });
+    return pool;
+  }
+
+  handleSwap(event: any, pool: Pool, log: Log): Pool {
+    const tokenIn = event.args.tokenIn.toLowerCase();
+    const tokenAmountIn = event.args.tokenAmountIn.toString();
+    const tokenOut = event.args.tokenOut.toLowerCase();
+    const tokenAmountOut = event.args.tokenAmountOut.toString();
+    pool.tokens = pool.tokens.map(token => {
+      if (token.address.toLowerCase() === tokenIn)
+        token.balance = token.balance.plus(tokenAmountIn);
+      else if (token.address.toLowerCase() === tokenOut)
+        token.balance = token.balance.minus(tokenAmountOut);
+      return token;
+    });
+    return pool;
+  }
+
   /**
    * The function generates state using on-chain calls. This
-   * function is called to regenrate state if the event based 
-   * system fails to fetch events and the local state is no 
-   * more correct. 
+   * function is called to regenrate state if the event based
+   * system fails to fetch events and the local state is no
+   * more correct.
    * @param blockNumber - Blocknumber for which the state should
    * should be generated
    * @returns state of the event subsriber at blocknumber
@@ -102,7 +130,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
 
 export class BalancerV1
   extends SimpleExchange
-  implements IDex<BalancerV1Data>
+  implements IDex<BalancerV1Data, DexParams>
 {
   protected eventPools: BalancerV1EventPool;
 
@@ -116,8 +144,7 @@ export class BalancerV1
   constructor(
     protected network: Network,
     protected dexKey: string,
-    protected dexHelper: IDexHelper,
-    // TODO: add any additional optional params to support other fork DEXes
+    protected dexHelper: IDexHelper, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -129,9 +156,9 @@ export class BalancerV1
     );
   }
 
-  // Initialize pricing is called once in the start of 
+  // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to 
+  // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
     // TODO: complete me!
@@ -143,10 +170,10 @@ export class BalancerV1
     return this.adapters[side];
   }
 
-  // Returns list of pool identifiers that can be used 
+  // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifers must be unique
-  // across DEXes. It is recommended to use 
-  // ${dexKey}_${poolAddress} as a poolIdentifier 
+  // across DEXes. It is recommended to use
+  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -159,7 +186,7 @@ export class BalancerV1
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
-  // any pools can be used. 
+  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -187,7 +214,7 @@ export class BalancerV1
 
   // Encode call data used by simpleSwap like routers
   // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion 
+  // Hint: this.buildSimpleParamWithoutWETHConversion
   // could be useful
   async getSimpleParam(
     srcToken: string,
@@ -200,17 +227,17 @@ export class BalancerV1
     // TODO: complete me!
   }
 
-  // This is called once before getTopPoolsForToken is 
-  // called for multiple tokens. This can be helpful to 
-  // update common state required for calculating 
-  // getTopPoolsForToken. It is optional for a DEX 
+  // This is called once before getTopPoolsForToken is
+  // called for multiple tokens. This can be helpful to
+  // update common state required for calculating
+  // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   updatePoolState(): Promise<void> {
     // TODO: complete me!
   }
 
   // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned. 
+  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
