@@ -499,3 +499,10 @@ export const Holders: {
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
   },
 };
+
+export const NativeTokenSymbols: { [network: number]: string } = {
+  [Network.MAINNET]: 'ETH',
+  [Network.POLYGON]: 'MATIC',
+  [Network.BSC]: 'BNB',
+  [Network.AVALANCHE]: 'AVAX',
+};

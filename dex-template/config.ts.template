@@ -8,6 +8,8 @@ export const __DexName__Config: DexConfigMap<DexParams> = {
   }
 };
 
-export const Adapters: { [chainId: number]: { name: string; index: number }[] | null } = {
+export const Adapters: {
+  [chainId: number]: { [side: string]: { name: string; index: number }[] | null };
+} = {
   // TODO: add adapters for each chain 
 };
