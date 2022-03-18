@@ -50,4 +50,11 @@ TODO: explain the blockmanager and stateful event subscriber
 
 - Integration Tests (`<you-dex-name>-integration.test.ts`): Tests the basic validity of the integration like prices are valid, obeys the limit pools, etc.
 - Events Unit Tests (`<you-dex-name>-events.test.ts`): Unit tests the event based system. This is done by fetching the state on-chain before the event, manually pushing the block logs to the event subsriber, comparing the local state with on-chain state.
-- E2E Tests (`<you-dex-name>-e2e.test.ts`): End to end test the intergation which involves pricing, transaction building and simulating the transaction on chain using tenderly fork simulations.
+- E2E Tests (`<you-dex-name>-e2e.test.ts`): End to end test the intergation which involves pricing, transaction building and simulating the transaction on chain using tenderly fork simulations. E2E tests use the Tenderly fork api. Please add the following to your .env file:
+
+```bash
+TENDERLY_TOKEN=Find this under Account>Settings>Authorization.
+TENDERLY_ACCOUNT_ID=Your Tenderly account name.
+TENDERLY_PROJECT=Name of a Tenderly project you have created in your
+dashboard.
+```
