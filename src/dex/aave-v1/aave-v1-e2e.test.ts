@@ -57,7 +57,7 @@ describe('AaveV1 E2E', () => {
     [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>
       contractMethods[side].forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it('ETH -> TOKEN', async () => {
+          it('ETH -> aETH', async () => {
             await testE2E(
               ETH,
               aETH,
@@ -70,7 +70,7 @@ describe('AaveV1 E2E', () => {
               provider,
             );
           });
-          it('TOKEN -> ETH', async () => {
+          it('aETH -> ETH', async () => {
             await testE2E(
               aETH,
               ETH,
@@ -83,11 +83,24 @@ describe('AaveV1 E2E', () => {
               provider,
             );
           });
-          it('TOKEN -> TOKEN', async () => {
+          it('USDT -> aUSDT', async () => {
             await testE2E(
               USDT,
               aUSDT,
               holders[USDTSymbol],
+              side === SwapSide.SELL ? aUSDTAmount : aUSDTAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('aUSDT -> USDT', async () => {
+            await testE2E(
+              aUSDT,
+              USDT,
+              holders[aUSDTSymbol],
               side === SwapSide.SELL ? aUSDTAmount : aUSDTAmount,
               side,
               dexKey,

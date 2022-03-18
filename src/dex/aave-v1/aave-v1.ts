@@ -34,7 +34,7 @@ export class AaveV1
   extends SimpleExchange
   implements IDex<AaveV1Data, AaveV1Param>
 {
-  readonly hasConstantPriceLargeAmounts = false;
+  readonly hasConstantPriceLargeAmounts = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AaveV1Config);
@@ -76,6 +76,10 @@ export class AaveV1
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    const aToken = isAAVEPair(this.network, srcToken, destToken);
+    if (aToken === null) {
+      return [];
+    }
     const tokenAddress = [
       srcToken.address.toLowerCase(),
       destToken.address.toLowerCase(),

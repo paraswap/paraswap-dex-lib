@@ -51,7 +51,7 @@ export class AaveV2
   extends SimpleExchange
   implements IDex<AaveV2Data, AaveV2Param>
 {
-  readonly hasConstantPriceLargeAmounts = false;
+  readonly hasConstantPriceLargeAmounts = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AaveV2Config);
@@ -63,7 +63,7 @@ export class AaveV2
   constructor(
     protected network: Network,
     protected dexKey: string,
-    protected dexHelper: IDexHelper, // TODO: add any additional optional params to support other fork DEXes
+    protected dexHelper: IDexHelper,
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -93,6 +93,14 @@ export class AaveV2
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    const aToken = isAaveV2Pair(
+      this.network,
+      wrapETH(srcToken, this.network),
+      wrapETH(destToken, this.network),
+    );
+    if (aToken === null) {
+      return [];
+    }
     const tokenAddress = [
       srcToken.address.toLowerCase(),
       destToken.address.toLowerCase(),
