@@ -6,6 +6,7 @@ export interface IRouter<RouterParam> {
     priceRoute: OptimalRate,
     minMaxAmount: string,
     userAddress: Address,
+    referrerAddress: Address | undefined,
     partner: Address,
     partnerFeePercent: string,
     positiveSlippageToUser: boolean,

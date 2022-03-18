@@ -14,7 +14,16 @@ import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
 
 const OneShift14 = BigInt(1) << BigInt(14);
+const OneShift16 = BigInt(1) << BigInt(16);
 const OneShift248 = BigInt(1) << BigInt(248);
+
+// Referrer gets 50% of what ParaSwap takes i.e. 25% of positive slippage
+export const feePercentForReferrer = (
+  BigInt(5000) |
+  OneShift14 |
+  OneShift16 |
+  OneShift248
+).toString();
 
 export function encodeFeePercent(
   partnerFeePercent: string,

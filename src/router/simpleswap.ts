@@ -14,7 +14,7 @@ import { isETHAddress, uuidToBytes16 } from '../utils';
 import { IWethDepositorWithdrawer, Weth, WethFunctions } from '../dex/weth';
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
-import { encodeFeePercent } from './payload-encoder';
+import { encodeFeePercent, feePercentForReferrer } from './payload-encoder';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -67,6 +67,7 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     priceRoute: OptimalRate,
     minMaxAmount: string,
     userAddress: Address,
+    referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
     positiveSlippageToUser: boolean,
@@ -205,8 +206,10 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
           ? priceRoute.destAmount
           : priceRoute.srcAmount,
       beneficiary,
-      partner: partnerAddress,
-      feePercent: encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+      partner: referrerAddress || partnerAddress,
+      feePercent: referrerAddress
+        ? feePercentForReferrer
+        : encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

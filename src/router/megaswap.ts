@@ -1,5 +1,9 @@
 import { IRouter } from './irouter';
-import { PayloadEncoder, encodeFeePercent } from './payload-encoder';
+import {
+  PayloadEncoder,
+  encodeFeePercent,
+  feePercentForReferrer,
+} from './payload-encoder';
 import {
   Address,
   OptimalRate,
@@ -33,6 +37,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     priceRoute: OptimalRate,
     minMaxAmount: string,
     userAddress: Address,
+    referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
     positiveSlippageToUser: boolean,
@@ -51,8 +56,10 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       expectedAmount: priceRoute.destAmount,
       beneficiary,
       path: megaSwapPaths,
-      partner: partnerAddress,
-      feePercent: encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+      partner: referrerAddress || partnerAddress,
+      feePercent: referrerAddress
+        ? feePercentForReferrer
+        : encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),
