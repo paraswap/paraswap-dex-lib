@@ -38,7 +38,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
   etc). 
 
   You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-e2e.tests.ts`
+  `npx jest src/dex/<dex-name>/<dex-name>-e2e.test.ts`
 
   e2e tests use the Tenderly fork api. Please add the following to your 
   .env file:
