@@ -11,6 +11,8 @@ import {
 } from '../../constants';
 import { JsonRpcProvider } from '@ethersproject/providers';
 
+jest.setTimeout(50 * 1000);
+
 describe('BalancerV2 E2E', () => {
   describe('BalancerV2 MAINNET', () => {
     const dexKey = 'BalancerV2';
@@ -59,6 +61,49 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+      it('TOKEN -> BPT, LinearPool', async () => {
+        // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
+        await testE2E(
+          tokens['USDT'],
+          tokens['BBAUSDT'],
+          holders['USDT'],
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('BPT -> TOKEN, PhantomStablePool', async () => {
+        // PhamtomStable allows swaps between BPT and tokens
+        await testE2E(
+          tokens['BBAUSD'],
+          tokens['BBADAI'],
+          holders['BBAUSD'],
+          '20000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      // NO HOLDERS OF BBADAI AS ALL IN VAULT
+      // it('BPT -> TOKEN, LinearPool', async () => {
+      //   // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
+      //   await testE2E(
+      //     tokens['BBADAI'],
+      //     tokens['DAI'],
+      //     holders['BBADAI'],
+      //     '20000000',
+      //     SwapSide.SELL,
+      //     dexKey,
+      //     ContractMethod.simpleSwap,
+      //     network,
+      //     provider,
+      //   );
+      // });
     });
 
     describe('Multiswap', () => {
@@ -94,6 +139,34 @@ describe('BalancerV2 E2E', () => {
           tokens['WBTC'],
           holders['USDC'],
           '2000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> BPT, LinearPool', async () => {
+        // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
+        await testE2E(
+          tokens['USDT'],
+          tokens['BBAUSDT'],
+          holders['USDT'],
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('BPT -> TOKEN, PhantomStablePool', async () => {
+        // PhamtomStable allows swaps between BPT and tokens
+        await testE2E(
+          tokens['BBAUSD'],
+          tokens['BBAUSDT'],
+          holders['BBAUSD'],
+          '20000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,

@@ -183,6 +183,20 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xa47c8bf37f92abed4a126bda807a7b7498661acd',
       decimals: 18,
     },
+    BBAUSDT: {
+      // bpt of USDT Linear Pool
+      address: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
+      decimals: 18,
+    },
+    BBADAI: {
+      // bpt of DAI Linear Pool
+      address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
+      decimals: 18,
+    },
+    BBAUSD: {
+      address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -441,6 +455,7 @@ export const Holders: {
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
     jEUR: '0x4f0CF2F63913524b85c1126AB7eE7957857f3482',
     UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
+    BBAUSD: '0x4a65e76be1b4e8dd6ef618277fa55200e3f8f20a',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
