@@ -12,7 +12,7 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { aaveV1GetToken } from './tokens';
 
 describe('AaveV1', function () {
-  describe('AaveV2 MAINNET', () => {
+  describe('AaveV1 MAINNET', () => {
     const network = Network.MAINNET;
     const USDTSymbol = 'USDT';
     const USDT = Tokens[network][USDTSymbol];
