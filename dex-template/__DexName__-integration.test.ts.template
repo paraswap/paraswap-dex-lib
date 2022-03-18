@@ -17,7 +17,7 @@ import { Tokens } from '../../../tests/constants-e2e';
   logic. 
 
   You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.tests.ts`
+  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
 
   (This comment should be removed from the final implementation)
 */

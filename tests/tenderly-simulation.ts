@@ -2,6 +2,8 @@ import axios from 'axios';
 import { TxObject } from '../src/types';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
+const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID;
+const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT;
 
 export class TenderlySimulation {
   lastTx: string = '';
@@ -19,7 +21,7 @@ export class TenderlySimulation {
 
     try {
       let res = await axios.post(
-        `https://api.tenderly.co/api/v1/account/paraswap/project/paraswap/fork`,
+        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork`,
         {
           network_id: this.network.toString(),
         },
@@ -50,7 +52,7 @@ export class TenderlySimulation {
     };
     try {
       const { data } = await axios.post(
-        `https://api.tenderly.co/api/v1/account/paraswap/project/paraswap/fork/${this.forkId}/simulate`,
+        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,
         {
           timeout: 10 * 1000,
@@ -65,13 +67,13 @@ export class TenderlySimulation {
         return {
           success: true,
           gasUsed: data.transaction.gas_used,
-          tenderlyUrl: `https://dashboard.tenderly.co/paraswap/paraswap/fork/${this.forkId}/simulation/${lastTx}`,
+          tenderlyUrl: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
           transaction: data.transaction,
         };
       } else {
         return {
           success: false,
-          tenderlyUrl: `https://dashboard.tenderly.co/paraswap/paraswap/fork/${this.forkId}/simulation/${lastTx}`,
+          tenderlyUrl: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
           error: `Simulation failed: ${data.transaction.error_info.error_message} at ${data.transaction.error_info.address}`,
         };
       }
