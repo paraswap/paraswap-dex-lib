@@ -75,8 +75,8 @@ const AdapterNameAddressMap: {
     BuyAdapter: '0xd8b2760230BbF3aA9777E175eC1c9720EB499ebA',
   },
   [Network.POLYGON]: {
-    PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-    PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
+    PolygonAdapter01: '0x564B759c1A7976476649452e804A13B963610065',
+    PolygonBuyAdapter: '0x2A1b5Da9E380314602579aD269A99981DD01409c',
   },
   [Network.BSC]: {
     BscAdapter01: '0xcEC935682c0b510fb91c0A12275Bb7e14EEBE87c',

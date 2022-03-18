@@ -179,7 +179,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
 }
 
 export const UniswapV2ExchangeRouter: { [network: number]: Address } = {
-  [Network.POLYGON]: '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
+  [Network.POLYGON]: '0x5b99094C3c2129F17b78cE5eBD1Cd8ADB887b340',
   [Network.MAINNET]: '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
   [Network.ROPSTEN]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
   [Network.BSC]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
