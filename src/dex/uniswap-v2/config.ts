@@ -129,7 +129,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 20,
     },
   },
-  BaguetteSwap: {
+  Baguette: {
     [Network.AVALANCHE]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/baguette-exchange/baguette',

@@ -69,9 +69,9 @@ export class PricingHelper {
     filterConstantPricePool: boolean = false,
   ): Promise<{ [dexKey: string]: string[] | null }> {
     const poolIdentifiers = await Promise.all(
-      dexKeys.map(key => {
+      dexKeys.map(async key => {
         try {
-          return new Promise<string[] | null>((resolve, reject) => {
+          return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
               () => reject(new Error(`Timout`)),
               FETCH_POOL_INDENTIFIER_TIMEOUT,
@@ -120,34 +120,36 @@ export class PricingHelper {
     limitPoolsMap: { [key: string]: string[] | null } | null,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
-      dexKeys.map(key => {
+      dexKeys.map(async key => {
         try {
           const limitPools = limitPoolsMap ? limitPoolsMap[key] : null;
 
           if (limitPools && !limitPools.length) return [];
 
-          return new Promise<PoolPrices<any>[] | null>((resolve, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error(`Timout`)),
-              FETCH_POOL_PRICES_TIMEOUT,
-            );
+          return await new Promise<PoolPrices<any>[] | null>(
+            (resolve, reject) => {
+              const timer = setTimeout(
+                () => reject(new Error(`Timout`)),
+                FETCH_POOL_PRICES_TIMEOUT,
+              );
 
-            const dexInstance = this.dexAdapterService.getDexByKey(key);
+              const dexInstance = this.dexAdapterService.getDexByKey(key);
 
-            dexInstance
-              .getPricesVolume(
-                from,
-                to,
-                amounts,
-                side,
-                blockNumber,
-                limitPools ? limitPools : undefined,
-              )
-              .then(resolve, reject)
-              .finally(() => {
-                clearTimeout(timer);
-              });
-          });
+              dexInstance
+                .getPricesVolume(
+                  from,
+                  to,
+                  amounts,
+                  side,
+                  blockNumber,
+                  limitPools ? limitPools : undefined,
+                )
+                .then(resolve, reject)
+                .finally(() => {
+                  clearTimeout(timer);
+                });
+            },
+          );
         } catch (e) {
           this.logger.error(`Error_${key}_getPoolPrices:`, e);
           return [];

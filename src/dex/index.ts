@@ -12,6 +12,7 @@ import { Balancer } from './balancer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
+import { UniswapV2Alias } from './uniswap-v2/constants';
 import { uniswapMerge } from './uniswap-v2/optimizer';
 import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
@@ -115,6 +116,7 @@ export class DexAdapterService {
   isLegacy: { [dexKey: string]: boolean } = {};
   // dexKeys only has keys for non legacy dexes
   dexKeys: string[] = [];
+  uniswapV2Alias: string | null;
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
     balancerV2Merge,
@@ -176,6 +178,11 @@ export class DexAdapterService {
       })
       .filter(x => !!x)
       .map(v => v.toLowerCase());
+
+    this.uniswapV2Alias =
+      this.network in UniswapV2Alias
+        ? UniswapV2Alias[this.network].toLowerCase()
+        : null;
   }
 
   getTxBuilderDexByKey(dexKey: string): IDexTxBuilder<any, any> {
@@ -183,11 +190,20 @@ export class DexAdapterService {
 
     if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
 
-    if ('uniswapforkoptimized' === _dexKey) _dexKey = 'uniswapv2';
+    if ('uniswapforkoptimized' === _dexKey) {
+      if (!this.uniswapV2Alias)
+        throw new Error(
+          `${dexKey} dex is not supported for network(${this.network})!`,
+        );
+      _dexKey = this.uniswapV2Alias;
+    }
 
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];
-      if (!DexAdapter) throw new Error(`${dexKey} dex is not supported!`);
+      if (!DexAdapter)
+        throw new Error(
+          `${dexKey} dex is not supported for network(${this.network})!`,
+        );
 
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
         this.dexHelper.augustusAddress,

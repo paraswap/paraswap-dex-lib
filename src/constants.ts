@@ -43,6 +43,11 @@ export const MULTI_V2: { [network: number]: Address } = {
 
 export const ProviderURL: { [network: number]: string } = {
   [Network.MAINNET]: process.env.HTTP_PROVIDER || '',
+  [Network.ROPSTEN]: process.env.HTTP_PROVIDER_3 || '',
+  [Network.BSC]: process.env.HTTP_PROVIDER_56 || '',
+  [Network.POLYGON]: process.env.HTTP_PROVIDER_137 || '',
+  [Network.FANTOM]: process.env.HTTP_PROVIDER_250 || '',
+  [Network.AVALANCHE]: process.env.HTTP_PROVIDER_43114 || '',
 };
 
 export const TokenTransferProxyAddress: { [nid: number]: Address } = {

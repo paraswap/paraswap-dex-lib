@@ -38,7 +38,14 @@ import { JsonRpcProvider } from '@ethersproject/providers';
   etc). 
 
   You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-e2e.tests.ts`
+  `npx jest src/dex/<dex-name>/<dex-name>-e2e.test.ts`
+
+  e2e tests use the Tenderly fork api. Please add the following to your 
+  .env file:
+  TENDERLY_TOKEN=Find this under Account>Settings>Authorization.
+  TENDERLY_ACCOUNT_ID=Your Tenderly account name.
+  TENDERLY_PROJECT=Name of a Tenderly project you have created in your 
+  dashboard.
 
   (This comment should be removed from the final implementation)
 */
