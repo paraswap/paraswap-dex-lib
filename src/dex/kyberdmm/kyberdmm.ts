@@ -19,6 +19,7 @@ import {
   SimpleExchangeParam,
   Token,
   TxInfo,
+  Address,
 } from '../../types';
 import {
   KyberDmmData,
@@ -29,12 +30,11 @@ import {
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Adapters, KyberDmmConfig } from './config';
 import { Logger } from 'log4js';
-import { Contract } from '@ethersproject/contracts';
+import { Contract } from 'web3-eth-contract';
 
 import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
-import ParaSwapABI from '../../abi/IParaswap.json';
 import { getDexKeysWithNetwork, wrapETH } from '../../utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
@@ -53,7 +53,6 @@ export class KyberDmm
   factory: Contract;
   logger: Logger;
 
-  routerInterface: Interface;
   exchangeRouterInterface: Interface;
 
   readonly hasConstantPriceLargeAmounts = false;
@@ -67,19 +66,16 @@ export class KyberDmm
     protected dexHelper: IDexHelper,
     protected config = KyberDmmConfig[dexKey][network],
     protected adapters = Adapters[network],
-    protected router = KyberDmmConfig[dexKey][network].routerAddress,
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
 
     this.logger = dexHelper.getLogger(dexKey);
 
-    this.factory = new Contract(
+    this.factory = new this.dexHelper.web3Provider.eth.Contract(
+      kyberDmmFactoryABI as any,
       config.factoryAddress,
-      kyberDmmFactoryABI,
-      dexHelper.provider,
     );
 
-    this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(KyberDmmExchangeRouterABI);
   }
 
@@ -357,7 +353,7 @@ export class KyberDmm
       prices: prices.map(p => BigInt(p.toFixed(0))),
       unit: BigInt(unit.toFixed(0)),
       data: {
-        router: this.routerInterface,
+        router: this.config.routerAddress,
         path: [from.address.toLowerCase(), to.address.toLowerCase()],
         factory: this.config.factoryAddress,
         pools: [
@@ -398,9 +394,9 @@ export class KyberDmm
         .flat();
 
       const data: { returnData: any[] } =
-        await this.dexHelper.multiContract.callStatic.aggregate(calldata, {
-          blockTag: blockNumber,
-        });
+        await this.dexHelper.multiContract.methods
+          .aggregate(calldata)
+          .call({}, blockNumber);
 
       return pair.exchanges.reduce(
         (acc: { [key: string]: KyberDmmPoolState }, poolAddress, poolIndex) => {
@@ -531,10 +527,9 @@ export class KyberDmm
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     if (pair) return pair;
-    const exchanges = await this.factory.getPools(
-      token0.address,
-      token1.address,
-    );
+    const exchanges = await this.factory.methods
+      .getPools(token0.address, token1.address)
+      .call();
     if (!exchanges || !exchanges.length) {
       pair = { token0, token1, exchanges: [], pools: {} };
     } else {
