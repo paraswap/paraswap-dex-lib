@@ -29,30 +29,8 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerV1Config, Adapters } from './config';
 import BalancerV1ABI from '../../abi/BalancerV1.json';
+import { getAllPublicSwapPools } from './sor-overload';
 
-const fetchAllPoolsQuery = `#graphql
-        query ($count: Int) {
-            pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {active: true, publicSwap: true, liquidity_gt: 0}) {
-              id
-              address
-              publicSwap
-              swapFee
-              totalWeight
-              tokensList
-              liquidity
-              tokens {
-                id
-                address
-                balance
-                decimals
-                symbol
-                denormWeight
-              }
-            }
-          }
-      `;
-
-const subgraphTimeout = 1000 * 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const balancerV1Interface = new Interface(BalancerV1ABI);
 const POOL_CACHE_TTL = 60 * 60; // 1hr
@@ -119,7 +97,6 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     log: Readonly<Log>,
   ): DeepReadonly<PoolStateMap> | null {
     const _state: PoolStateMap = {};
-    // Is it Ok that we make deepClone here?
     for (const [address, pool] of Object.entries(state))
       _state[address] = typecastReadOnlyPoolState(pool);
 
@@ -183,57 +160,13 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return pool;
   }
 
-  async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
-    const cacheKey = 'AllSubgraphPools';
-    const cachedPools = await this.dexHelper.cache.get(
-      this.parentName,
-      this.network,
-      cacheKey,
-    );
-    if (cachedPools) {
-      const allPools = JSON.parse(cachedPools);
-      this.logger.info(
-        `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
-      );
-      return allPools;
-    }
-
-    this.logger.info(
-      `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
-    );
-    const variables = {
-      count: MAX_POOL_CNT,
-    };
-    const { data } = await this.dexHelper.httpRequest.post(
-      this.subgraphURL,
-      { query: fetchAllPoolsQuery, variables },
-      subgraphTimeout,
-    );
-
-    if (!(data && data.pools))
-      throw new Error('Unable to fetch pools from the subgraph');
-
-    this.dexHelper.cache.setex(
-      this.parentName,
-      this.network,
-      cacheKey,
-      POOL_CACHE_TTL,
-      JSON.stringify(data.pools),
-    );
-    const allPools = data.pools;
-    this.logger.info(
-      `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
-    );
-    return allPools;
-  }
-
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     // It is quicker to querry the static url for all the pools than querrying the subgraph
     // but the url doesn't take into account the blockNumber hence for testing purpose
     // the state should be passed to the setup function call.
     // const allPoolsNonZeroBalances: SubGraphPools = await getAllPublicPools(blockNumber);
     // const poolsHelper = new SOR.POOLS();
-    const allPoolsNonZeroBalances = await fetchAllSubgraphPools(
+    const allPoolsNonZeroBalances = await getAllPublicSwapPools(
       poolUrls[this.network],
     );
     // It is important to the onchain querry as the subgraph pool might not contain the
@@ -302,12 +235,21 @@ export class BalancerV1
     this.exchangeRouterInterface = new Interface(BalancerV1ABI);
   }
 
-  // Initialize pricing is called once in the start of
+  async setupEventPools(blockNumber: number) {
+    const poolState = await this.eventPools.generateState(blockNumber);
+    this.eventPools.setState(poolState, blockNumber);
+    this.dexHelper.blockManager.subscribeToLogs(
+      this.eventPools,
+      this.eventPools.addressesSubscribed,
+      blockNumber,
+    );
+  }
+
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    await this.setupEventPools(blockNumber);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -316,6 +258,7 @@ export class BalancerV1
     return this.adapters[side] || null;
   }
 
+  /* DONE: No need to check */
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -381,7 +324,7 @@ export class BalancerV1
       let minBalance = amounts[amounts.length - 1];
       if (unitVolume > minBalance) minBalance = unitVolume;
 
-      const topPools = await this.eventPools.getTopPools(
+      const topPools = await this.getTopPools(
         from,
         to,
         side,
@@ -421,6 +364,7 @@ export class BalancerV1
     }
   }
 
+  /* DONE: No need to check */
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -451,7 +395,8 @@ export class BalancerV1
     };
   }
 
-  async getSimpleParam(
+  /* DONE: No need to check */
+  getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
@@ -528,21 +473,53 @@ export class BalancerV1
     );
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
-
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
+
+
+    const _minBalance = new BigNumber(minBalance.toString());
+    // Limits are from MAX_IN_RATIO/MAX_OUT_RATIO in the pool contracts
+    const checkBalance = (p: OldPool) =>
+      (side === SwapSide.SELL ? p.balanceIn.div(2) : p.balanceOut.div(3)).gt(
+        _minBalance,
+      );
+    const selectedPools = pools
+      .map(p => parsePoolPairData(p, from.address, to.address))
+      .filter(
+        p =>
+          !!p &&
+          (!usedPools || usedPools[`Balancer_${p.id}`] === routeID) &&
+          checkBalance(p),
+      )
+      .sort(
+        (p1, p2) =>
+          parseFloat(
+            p2!.balanceOut.times(1e18).idiv(p2!.weightOut).toFixed(0),
+          ) -
+          parseFloat(p1!.balanceOut.times(1e18).idiv(p1!.weightOut).toFixed(0)),
+      )
+      .slice(0, 10) as OldPool[];
+
+    if (!selectedPools || !selectedPools.length) return null;
+    if (!isStale) return selectedPools;
+
+    const rawSelectedPools = pools.filter(p =>
+      selectedPools.some(sp => p.id.toLowerCase() === sp.id.toLowerCase()),
+    );
+
+    await updatePoolState(
+      rawSelectedPools,
+      this.multicallAddress,
+      this.web3Provider as Web3Provider,
+      blockNumber,
+    );
+
+    return rawSelectedPools
+      .map(p => parsePoolPairData(p, from.address, to.address))
+      .filter(p => !!p && checkBalance(p)) as OldPool[];
   }
 }
