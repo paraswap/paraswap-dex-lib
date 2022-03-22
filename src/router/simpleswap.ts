@@ -34,7 +34,7 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     adapters: Adapters,
     protected side: SwapSide,
 
-    // Get dexKey from network
+    // prepare mapping: network -> wrapped exchange key
     // It assumes that no network has more than one wrapped exchange
     protected wExchangeNetworkToKey = Weth.dexKeysWithNetwork.reduce<
       Record<number, string>
