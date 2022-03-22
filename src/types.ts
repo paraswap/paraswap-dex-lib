@@ -14,6 +14,7 @@ export {
 } from 'paraswap-core';
 import { Logger } from 'log4js';
 export { Logger } from 'log4js';
+import { OptimalRate } from 'paraswap-core';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -188,3 +189,18 @@ export type DexConfigMap<DexParams> = {
     [network: number]: DexParams;
   };
 };
+
+export type TxObject = {
+  from: Address;
+  to?: Address; // undefined in case of contract deployment
+  value: string;
+  data: string;
+  gasPrice?: string;
+  maxFeePerGas?: string;
+  maxPriorityFeePerGas?: string;
+};
+
+export type UnoptimizedRate = Omit<
+  OptimalRate,
+  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
+>;

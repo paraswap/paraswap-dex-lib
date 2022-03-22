@@ -35,10 +35,12 @@ import {
   BalancerParam,
   OptimizedBalancerV2Data,
   SwapTypes,
+  DexParams,
+  PoolStateMap,
 } from './types';
 import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
-import { BalancerConfig } from './config';
+import { BalancerConfig, Adapters } from './config';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear"]}) {
@@ -54,33 +56,21 @@ const fetchAllPools = `query ($count: Int) {
   }
 }`;
 
+// These should match the Balancer Pool types available on Subgraph
+enum BalancerPoolTypes {
+  Weighted = 'Weighted',
+  Stable = 'Stable',
+  MetaStable = 'MetaStable',
+  LiquidityBootstrapping = 'LiquidityBootstrapping',
+  Investment = 'Investment',
+  AaveLinear = 'AaveLinear',
+  StablePhantom = 'StablePhantom',
+}
+
 const subgraphTimeout = 1000 * 10;
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
-
-const Adapters: { [chainId: number]: { name: string; index: number }[] } = {
-  [Network.MAINNET]: [
-    {
-      name: 'Adapter02',
-      index: 9,
-    },
-  ],
-  [Network.POLYGON]: [
-    {
-      name: 'PolygonAdapter01',
-      index: 9,
-    },
-  ],
-  [Network.FANTOM]: [
-    {
-      name: 'FantomAdapter01',
-      index: 5,
-    },
-  ],
-};
-
-export type PoolStateMap = { [address: string]: PoolState };
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;
@@ -93,7 +83,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
   } = {};
 
-  poolMaths: { [type: string]: any };
+  pools: {
+    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
+  };
 
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
@@ -116,14 +108,29 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     logger: Logger,
   ) {
     super(parentName, logger);
-    this.poolMaths = {
-      Stable: new StablePool(),
-      Weighted: new WeightedPool(),
-      StablePhantom: new PhantomStablePool(),
-      AaveLinear: new LinearPool(),
-      VirtualBoosted: new VirtualBoostedPool(),
-    };
     this.vaultInterface = new Interface(VaultABI);
+    const weightedPool = new WeightedPool(
+      this.vaultAddress,
+      this.vaultInterface,
+    );
+    const stablePool = new StablePool(this.vaultAddress, this.vaultInterface);
+    const stablePhantomPool = new PhantomStablePool(
+      this.vaultAddress,
+      this.vaultInterface,
+    );
+    const aaveLinearPool = new LinearPool(
+      this.vaultAddress,
+      this.vaultInterface,
+    );
+
+    this.pools = {};
+    this.pools[BalancerPoolTypes.Weighted] = weightedPool;
+    this.pools[BalancerPoolTypes.Stable] = stablePool;
+    this.pools[BalancerPoolTypes.MetaStable] = stablePool;
+    this.pools[BalancerPoolTypes.LiquidityBootstrapping] = weightedPool;
+    this.pools[BalancerPoolTypes.Investment] = weightedPool;
+    this.pools[BalancerPoolTypes.AaveLinear] = aaveLinearPool;
+    this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -165,9 +172,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
-    const cacheKey = `${this.parentName}_AllSubgraphPools_${this.network}`;
-
-    const cachedPools = await this.dexHelper.cache.get(cacheKey);
+    const cacheKey = 'AllSubgraphPools';
+    const cachedPools = await this.dexHelper.cache.get(
+      this.parentName,
+      this.network,
+      cacheKey,
+    );
     if (cachedPools) {
       const allPools = JSON.parse(cachedPools);
       this.logger.info(
@@ -192,6 +202,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       throw new Error('Unable to fetch pools from the subgraph');
 
     this.dexHelper.cache.setex(
+      this.parentName,
+      this.network,
       cacheKey,
       POOL_CACHE_TTL,
       JSON.stringify(data.pools),
@@ -244,6 +256,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return pool;
   }
 
+  isSupportedPool(poolType: string): boolean {
+    const supportedPoolTypes: string[] = Object.values(BalancerPoolTypes);
+    return supportedPoolTypes.includes(poolType);
+  }
+
   getPricesPool(
     from: Token,
     to: Token,
@@ -253,160 +270,36 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     unitVolume: bigint,
     side: SwapSide,
   ): { unit: bigint; prices: bigint[] } | null {
-    // const scaleBN = (val: string, d: number) =>
-    //   BigInt(new BigNumber(val).times(10 ** d).toFixed(0));
-    const _amounts = [unitVolume, ...amounts.slice(1)];
-
-    switch (pool.poolType) {
-      case 'MetaStable':
-      case 'Stable': {
-        const poolState = poolStates[pool.address];
-        const poolPairData = this.poolMaths['Stable'].parsePoolPairData(
-          pool,
-          poolState,
-          from.address,
-          to.address,
-          pool.poolType === 'MetaStable',
-        );
-        if (
-          !this.poolMaths['Stable'].checkBalance(
-            poolPairData.balances[poolPairData.indexOut],
-            poolPairData.scalingFactors[poolPairData.indexOut],
-            amounts,
-            unitVolume,
-          )
-        )
-          return null;
-
-        const _prices = this.poolMaths['Stable'].onSell(
-          _amounts,
-          poolPairData.balances,
-          poolPairData.indexIn,
-          poolPairData.indexOut,
-          poolPairData.scalingFactors,
-          poolPairData.swapFee,
-          poolPairData.amp,
-        );
-        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
-      }
-      case 'Weighted':
-      case 'LiquidityBootstrapping':
-      case 'Investment': {
-        const poolState = poolStates[pool.address];
-        const poolPairData = this.poolMaths['Weighted'].parsePoolPairData(
-          pool,
-          poolState,
-          from.address,
-          to.address,
-        );
-
-        if (
-          !this.poolMaths['Weighted'].checkBalance(
-            poolPairData.tokenInBalance,
-            poolPairData.tokenOutBalance,
-            side,
-            amounts,
-            unitVolume,
-          )
-        )
-          return null;
-
-        const _prices = this.poolMaths['Weighted'].onSell(
-          _amounts,
-          poolPairData.tokenInBalance,
-          poolPairData.tokenOutBalance,
-          poolPairData.tokenInScalingFactor,
-          poolPairData.tokenOutScalingFactor,
-          poolPairData.tokenInWeight,
-          poolPairData.tokenOutWeight,
-          poolPairData.swapFee,
-        );
-        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
-      }
-
-      case 'StablePhantom': {
-        const poolState = poolStates[pool.address];
-        const poolPairData = this.poolMaths['StablePhantom'].parsePoolPairData(
-          pool,
-          poolState,
-          from.address,
-          to.address,
-        );
-        if (
-          !this.poolMaths['StablePhantom'].checkBalance(
-            poolPairData.balances[poolPairData.indexOut],
-            poolPairData.scalingFactors[poolPairData.indexOut],
-            amounts,
-            unitVolume,
-          )
-        )
-          return null;
-        const _prices = this.poolMaths['StablePhantom'].onSell(
-          _amounts,
-          poolPairData.tokens,
-          poolPairData.balances,
-          poolPairData.indexIn,
-          poolPairData.indexOut,
-          poolPairData.bptIndex,
-          poolPairData.scalingFactors,
-          poolPairData.swapFee,
-          poolPairData.amp,
-        );
-        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
-      }
-
-      case 'AaveLinear': {
-        const poolState = poolStates[pool.address];
-        const poolPairData = this.poolMaths['AaveLinear'].parsePoolPairData(
-          pool,
-          poolState,
-          from.address,
-          to.address,
-        );
-        if (
-          !this.poolMaths['AaveLinear'].checkBalance(
-            poolPairData.balances[poolPairData.indexOut],
-            poolPairData.scalingFactors[poolPairData.indexOut],
-            amounts,
-            unitVolume,
-          )
-        )
-          return null;
-        const _prices = this.poolMaths['AaveLinear'].onSell(
-          _amounts,
-          poolPairData.tokens,
-          poolPairData.balances,
-          poolPairData.indexIn,
-          poolPairData.indexOut,
-          poolPairData.bptIndex,
-          poolPairData.wrappedIndex,
-          poolPairData.mainIndex,
-          poolPairData.scalingFactors,
-          poolPairData.swapFee,
-          poolPairData.lowerTarget,
-          poolPairData.upperTarget,
-        );
-        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
-      }
-
-      case 'VirtualBoosted': {
-        // TO DO - This is just a rough draft to see if concept is suitable
-        // TO DO - Add checkBalance
-        // VirtualBoosted pools consist of more than one pool so need all poolStates
-        const _prices = this.poolMaths['VirtualBoosted']._calcOutGivenIn(
-          from.address,
-          to.address,
-          pool.address,
-          poolStates,
-          amounts,
-        );
-        // TO DO - This returns the price but not sure how Tx/Swaps would be constructed
-        // i.e. Will return price for DAI/USDC but this is a swap through 3 pools (tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut)
-        return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
-      }
+    if (!this.isSupportedPool(pool.poolType)) {
+      console.error(`Unsupported Pool Type: ${pool.poolType}`);
+      return null;
     }
 
-    return null;
+    const _amounts = [unitVolume, ...amounts.slice(1)];
+    const poolState = poolStates[pool.address];
+
+    const poolPairData = this.pools[pool.poolType].parsePoolPairData(
+      pool,
+      poolState,
+      from.address,
+      to.address,
+    );
+
+    if (
+      !this.pools[pool.poolType].checkBalance(
+        amounts,
+        unitVolume,
+        side,
+        poolPairData as any,
+      )
+    )
+      return null;
+
+    const _prices = this.pools[pool.poolType].onSell(
+      _amounts,
+      poolPairData as any,
+    );
+    return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
   }
 
   async getOnChainState(
@@ -415,145 +308,35 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ): Promise<PoolStateMap> {
     const multiCallData = subgraphPoolBase
       .map(pool => {
-        let poolCallData = [];
-        if (
-          ['Weighted', 'LiquidityBootstrapping', 'Investment'].includes(
-            pool.poolType,
-          )
-        ) {
-          // Will create onchain call data for WeightedPool types
-          const weightedCalls = WeightedPool.getOnChainCalls(
-            pool,
-            this.vaultAddress,
-            this.vaultInterface,
-          );
-          poolCallData.push(...weightedCalls);
-        }
+        if (!this.isSupportedPool(pool.poolType)) return [];
 
-        if (['Stable'].includes(pool.poolType)) {
-          // Will create onchain call data for StablePool
-          const stableCalls = StablePool.getOnChainCalls(
-            pool,
-            this.vaultAddress,
-            this.vaultInterface,
-          );
-          poolCallData.push(...stableCalls);
-        }
-
-        if (['AaveLinear'].includes(pool.poolType)) {
-          // Will create onchain call data for linearPools
-          const linearCalls = LinearPool.getOnChainCalls(
-            pool,
-            this.vaultAddress,
-            this.vaultInterface,
-          );
-          poolCallData.push(...linearCalls);
-        }
-
-        if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
-          // Will create onchain call data for Meta/PhantomStablePool
-          const metaStableCalls = PhantomStablePool.getOnChainCalls(
-            pool,
-            this.vaultAddress,
-            this.vaultInterface,
-          );
-          poolCallData.push(...metaStableCalls);
-        }
-
-        if (['VirtualBoosted'].includes(pool.poolType)) {
-          // Will create onchain call data for all phantomStable + linearPools associated with the Virtual Pool
-          // Assumes getPoolTokens + getSwapFeePercentage call data is added separately (see above)
-          const virtualBoostedCalls = VirtualBoostedPool.getOnChainCalls(
-            pool,
-            this.vaultAddress,
-            this.vaultInterface,
-          );
-          poolCallData.push(...virtualBoostedCalls);
-        }
-
-        return poolCallData;
+        return this.pools[pool.poolType].getOnChainCalls(pool);
       })
       .flat();
 
-    const data = await this.dexHelper.multiContract.callStatic.aggregate(
-      multiCallData,
-      {
-        blockTag: blockNumber,
-      },
-    );
+    // 500 is an arbitary number choosed based on the blockGasLimit
+    const slicedMultiCallData = _.chunk(multiCallData, 500);
+
+    const returnData = (
+      await Promise.all(
+        slicedMultiCallData.map(async _multiCallData =>
+          this.dexHelper.multiContract.methods
+            .tryAggregate(false, _multiCallData)
+            .call({}, blockNumber),
+        ),
+      )
+    ).flat();
 
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
       (acc: { [address: string]: PoolState }, pool) => {
-        if (
-          ['Weighted', 'LiquidityBootstrapping', 'Investment'].includes(
-            pool.poolType,
-          )
-        ) {
-          // This will decode multicall data for all pools associated with Weighted pools
-          const [decoded, newIndex] = WeightedPool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            data,
-            i,
-          );
-          i = newIndex;
-          acc = { ...acc, ...decoded };
-          return acc;
-        }
+        if (!this.isSupportedPool(pool.poolType)) return acc;
 
-        if (['AaveLinear'].includes(pool.poolType)) {
-          // This will decode multicall data for all pools associated with linear pool
-          const [decoded, newIndex] = LinearPool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            data,
-            i,
-          );
-          i = newIndex;
-          acc = { ...acc, ...decoded };
-          return acc;
-        }
-
-        if (['Stable'].includes(pool.poolType)) {
-          // This will decode multicall data for Stable pools
-          const [decoded, newIndex] = StablePool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            data,
-            i,
-          );
-          i = newIndex;
-          acc = { ...acc, ...decoded };
-          return acc;
-        }
-
-        if (['MetaStable', 'StablePhantom'].includes(pool.poolType)) {
-          // This will decode multicall data for Meta/PhantomStable pools
-          const [decoded, newIndex] = PhantomStablePool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            data,
-            i,
-          );
-          i = newIndex;
-          acc = { ...acc, ...decoded };
-          return acc;
-        }
-
-        if (['VirtualBoosted'].includes(pool.poolType)) {
-          // This will decode multicall data for all pools associated with virtual pool
-          const [decoded, newIndex] = VirtualBoostedPool.decodeOnChainCalls(
-            pool,
-            this.vaultInterface,
-            data,
-            i,
-          );
-          i = newIndex;
-          acc = { ...acc, ...decoded };
-          return acc;
-        }
-
+        const [decoded, newIndex] = this.pools[
+          pool.poolType
+        ].decodeOnChainCalls(pool, returnData, i);
+        i = newIndex;
+        acc = { ...acc, ...decoded };
         return acc;
       },
       {},
@@ -896,10 +679,14 @@ export class BalancerV2
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post(this.subgraphURL, {
-      query,
-      variables,
-    });
+    const { data } = await this.dexHelper.httpRequest.post(
+      this.subgraphURL,
+      {
+        query,
+        variables,
+      },
+      subgraphTimeout,
+    );
 
     if (!(data && data.pools))
       throw new Error(

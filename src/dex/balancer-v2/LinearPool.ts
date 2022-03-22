@@ -1,11 +1,12 @@
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
-import { isSameAddress, getTokenScalingFactor } from './utils';
+import { isSameAddress, decodeThrowError } from './utils';
 import * as LinearMath from './LinearMath';
 import { BZERO } from './balancer-v2-math';
 import { BasePool } from './balancer-v2-pool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
+import { SwapSide } from '../../constants';
 
 export enum PairTypes {
   BptToMainToken,
@@ -18,17 +19,17 @@ export enum PairTypes {
 
 type LinearPoolPairData = {
   tokens: string[];
-  balances: BigInt[];
+  balances: bigint[];
   indexIn: number;
   indexOut: number;
-  scalingFactors: BigInt[];
+  scalingFactors: bigint[];
   bptIndex: number;
-  swapFee: BigInt;
-  amp: BigInt;
+  swapFee: bigint;
+  amp: bigint;
   wrappedIndex: number;
   mainIndex: number;
-  lowerTarget: BigInt;
-  upperTarget: BigInt;
+  lowerTarget: bigint;
+  upperTarget: bigint;
 };
 
 /*
@@ -44,7 +45,17 @@ export class LinearPool extends BasePool {
   // and equal to _INITIAL_BPT_SUPPLY, but most of it remains in the Pool, waiting to be exchanged for tokens. The
   // actual amount of BPT in circulation is the total supply minus the amount held by the Pool, and is known as the
   // 'virtual supply'.
-  static MAX_TOKEN_BALANCE = BigNumber.from('2').pow('112').sub('1');
+  MAX_TOKEN_BALANCE = BigNumber.from('2').pow('112').sub('1');
+  vaultAddress: string;
+  vaultInterface: Interface;
+  poolInterface: Interface;
+
+  constructor(vaultAddress: string, vaultInterface: Interface) {
+    super();
+    this.vaultAddress = vaultAddress;
+    this.vaultInterface = vaultInterface;
+    this.poolInterface = new Interface(LinearPoolABI);
+  }
 
   /*
     scaling factors should include rate:
@@ -54,33 +65,20 @@ export class LinearPool extends BasePool {
         MathSol.mulDownFixed(getTokenScalingFactor(decimals), priceRate)
     )
     */
-  onSell(
-    amounts: bigint[],
-    tokens: string[],
-    balances: bigint[],
-    indexIn: number,
-    indexOut: number,
-    bptIndex: number,
-    wrappedIndex: number,
-    mainIndex: number,
-    scalingFactors: bigint[],
-    swapFeePercentage: bigint,
-    lowerTarget: bigint,
-    upperTarget: bigint,
-  ): bigint[] {
+  onSell(amounts: bigint[], poolPairData: LinearPoolPairData): bigint[] {
     return this._swapGivenIn(
       amounts,
-      tokens,
-      balances,
-      indexIn,
-      indexOut,
-      bptIndex,
-      wrappedIndex,
-      mainIndex,
-      scalingFactors,
-      swapFeePercentage,
-      lowerTarget,
-      upperTarget,
+      poolPairData.tokens,
+      poolPairData.balances,
+      poolPairData.indexIn,
+      poolPairData.indexOut,
+      poolPairData.bptIndex,
+      poolPairData.wrappedIndex,
+      poolPairData.mainIndex,
+      poolPairData.scalingFactors,
+      poolPairData.swapFee,
+      poolPairData.lowerTarget,
+      poolPairData.upperTarget,
     );
   }
 
@@ -125,7 +123,7 @@ export class LinearPool extends BasePool {
     );
 
     // VirtualBPTSupply must be used for the maths
-    const virtualBptSupply = LinearPool.MAX_TOKEN_BALANCE.sub(
+    const virtualBptSupply = this.MAX_TOKEN_BALANCE.sub(
       balances[bptIndex],
     ).toBigInt();
 
@@ -213,15 +211,16 @@ export class LinearPool extends BasePool {
     */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolState: PoolState,
+    poolStates: { [address: string]: PoolState },
     tokenIn: string,
     tokenOut: string,
   ): LinearPoolPairData {
+    const poolState = poolStates[pool.address];
     let indexIn = 0,
       indexOut = 0,
       bptIndex = 0;
-    const balances: BigInt[] = [];
-    const scalingFactors: BigInt[] = [];
+    const balances: bigint[] = [];
+    const scalingFactors: bigint[] = [];
 
     const tokens = pool.tokens.map((t, i) => {
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
@@ -253,32 +252,28 @@ export class LinearPool extends BasePool {
 
   /*
     Helper function to construct onchain multicall data for Linear Pool.
-    */
-  static getOnChainCalls(
-    pool: SubgraphPoolBase,
-    vaultAddress: string,
-    vaultInterface: Interface,
-  ): callData[] {
-    const poolInterface = new Interface(LinearPoolABI);
-
+  */
+  getOnChainCalls(pool: SubgraphPoolBase): callData[] {
     const poolCallData: callData[] = [
       {
-        target: vaultAddress,
-        callData: vaultInterface.encodeFunctionData('getPoolTokens', [pool.id]),
+        target: this.vaultAddress,
+        callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
+          pool.id,
+        ]),
       },
       {
         target: pool.address,
-        callData: poolInterface.encodeFunctionData('getSwapFeePercentage'),
+        callData: this.poolInterface.encodeFunctionData('getSwapFeePercentage'),
       },
     ];
     poolCallData.push({
       target: pool.address,
-      callData: poolInterface.encodeFunctionData('getScalingFactors'),
+      callData: this.poolInterface.encodeFunctionData('getScalingFactors'),
     });
     // returns lowerTarget, upperTarget
     poolCallData.push({
       target: pool.address,
-      callData: poolInterface.encodeFunctionData('getTargets'),
+      callData: this.poolInterface.encodeFunctionData('getTargets'),
     });
     return poolCallData;
   }
@@ -288,34 +283,36 @@ export class LinearPool extends BasePool {
     data must contain returnData
     startIndex is where to start in returnData. Allows this decode function to be called along with other pool types.
     */
-  static decodeOnChainCalls(
+  decodeOnChainCalls(
     pool: SubgraphPoolBase,
-    vaultInterface: Interface,
-    data: any,
+    data: { success: boolean; returnData: any }[],
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
-    const poolInterface = new Interface(LinearPoolABI);
-
     const pools = {} as { [address: string]: PoolState };
 
-    const poolTokens = vaultInterface.decodeFunctionResult(
+    const poolTokens = decodeThrowError(
+      this.vaultInterface,
       'getPoolTokens',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     );
-
-    const swapFee = poolInterface.decodeFunctionResult(
+    const swapFee = decodeThrowError(
+      this.poolInterface,
       'getSwapFeePercentage',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     )[0];
-
-    const scalingFactors = poolInterface.decodeFunctionResult(
+    const scalingFactors = decodeThrowError(
+      this.poolInterface,
       'getScalingFactors',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     )[0];
-
-    const [lowerTarget, upperTarget] = poolInterface.decodeFunctionResult(
+    const [lowerTarget, upperTarget] = decodeThrowError(
+      this.poolInterface,
       'getTargets',
-      data.returnData[startIndex++],
+      data[startIndex++],
+      pool.address,
     );
 
     const bptIndex = pool.tokens.findIndex(
@@ -355,13 +352,18 @@ export class LinearPool extends BasePool {
   Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
   checkBalance(
-    balanceOut: bigint,
-    scalingFactor: bigint,
     amounts: bigint[],
     unitVolume: bigint,
+    side: SwapSide,
+    poolPairData: LinearPoolPairData,
   ): boolean {
     const swapMax =
-      (this._upscale(balanceOut, scalingFactor) * BigInt(99)) / BigInt(100);
+      (this._upscale(
+        poolPairData.balances[poolPairData.indexOut],
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      ) *
+        BigInt(99)) /
+      BigInt(100);
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

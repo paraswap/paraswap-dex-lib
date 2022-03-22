@@ -4,33 +4,41 @@ import {
   IBlockManager,
   EventSubscriber,
   IRequestWrapper,
-} from '../src/dex-helper/index';
+} from './index';
 import axios from 'axios';
-import { Address, LoggerConstructor } from '../src/types';
-import { MULTI_V2 } from '../src/constants';
-import { Contract } from '@ethersproject/contracts';
+import { Address, LoggerConstructor } from '../types';
+import { MULTI_V2, ProviderURL, AugustusAddress } from '../constants';
+// import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import multiABIV2 from '../src/abi/multi-v2.json';
+import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
-
-const ProviderURL: { [network: number]: string } = {
-  1: process.env.HTTP_PROVIDER_1 || '',
-};
+import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
-  async get(key: string): Promise<string | null> {
-    console.log('Cache Requested: ', key);
+  async get(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<string | null> {
+    // console.log('Cache Requested: ', dexKey, network, key);
     return null;
   }
 
-  async setex(key: string, seconds: number, value: string): Promise<void> {
-    console.log('Cache Stored: ', key, seconds, value);
+  async setex(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+    seconds: number,
+    value: string,
+  ): Promise<void> {
+    // console.log('Cache Stored: ', dexKey, network, cacheKey, seconds, value);
     return;
   }
 }
 
-class DymmyRequestWrapper implements IRequestWrapper {
+class DummyRequestWrapper implements IRequestWrapper {
   async get(
     url: string,
     timeout?: number,
@@ -68,14 +76,14 @@ class DymmyRequestWrapper implements IRequestWrapper {
   }
 }
 
-class DummmyBlockManager implements IBlockManager {
+class DummyBlockManager implements IBlockManager {
   subscribeToLogs(
     subscriber: EventSubscriber,
     contractAddress: Address | Address[],
     afterBlockNumber: number,
   ): void {
     console.log(
-      `Subscrived to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
+      `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
     );
   }
 }
@@ -88,18 +96,19 @@ export class DummyDexHelper implements IDexHelper {
   multiContract: Contract;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
+  web3Provider: Web3;
 
   constructor(network: number) {
     this.cache = new DummyCache();
-    this.httpRequest = new DymmyRequestWrapper();
-    this.augustusAddress = '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57';
+    this.httpRequest = new DummyRequestWrapper();
+    this.augustusAddress = AugustusAddress[network];
     this.provider = new JsonRpcProvider(ProviderURL[network]);
-    this.multiContract = new Contract(
+    this.web3Provider = new Web3(ProviderURL[network]);
+    this.multiContract = new this.web3Provider.eth.Contract(
+      multiABIV2 as any,
       MULTI_V2[network],
-      multiABIV2,
-      this.provider,
     );
-    this.blockManager = new DummmyBlockManager();
+    this.blockManager = new DummyBlockManager();
     this.getLogger = name => log4js.getLogger(name);
   }
 }
