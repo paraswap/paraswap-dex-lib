@@ -33,6 +33,17 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     protected dexAdapterService: DexAdapterService,
     adapters: Adapters,
     protected side: SwapSide,
+
+    // Get dexKey from network
+    // It assumes that no network has more than one wrapped exchange
+    protected wExchangeNetworkToKey = Weth.dexKeysWithNetwork.reduce<
+      Record<number, string>
+    >((prev, current) => {
+      for (const network of current.networks) {
+        prev[network] = current.key;
+      }
+      return prev;
+    }, {}),
   ) {
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName =
@@ -234,24 +245,9 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
   ) {
     if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
 
-    // Get dexKey from network
-    // It assumes each network has unique wrapped exchange
-    const wrappedExchangeKey = Weth.dexKeysWithNetwork.reduce(
-      (prev, current) => {
-        if (
-          prev === '' &&
-          current.networks.includes(this.dexAdapterService.network)
-        ) {
-          return current.key;
-        }
-        return prev;
-      },
-      '',
-    );
-
     return (
       this.dexAdapterService.getTxBuilderDexByKey(
-        wrappedExchangeKey,
+        this.wExchangeNetworkToKey[this.dexAdapterService.network],
       ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.srcToken,
