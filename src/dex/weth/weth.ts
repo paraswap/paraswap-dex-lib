@@ -53,12 +53,6 @@ export class Weth
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {}
-
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
