@@ -37,6 +37,7 @@ import {
   SwapTypes,
   DexParams,
   PoolStateMap,
+  BalancerSwap,
 } from './types';
 import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
@@ -65,6 +66,7 @@ enum BalancerPoolTypes {
   Investment = 'Investment',
   AaveLinear = 'AaveLinear',
   StablePhantom = 'StablePhantom',
+  VirtualBoosted = 'VirtualBoosted',
 }
 
 const subgraphTimeout = 1000 * 10;
@@ -84,7 +86,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   pools: {
-    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
+    [type: string]:
+      | WeightedPool
+      | StablePool
+      | LinearPool
+      | PhantomStablePool
+      | VirtualBoostedPool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
@@ -123,6 +130,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.vaultInterface,
     );
 
+    const virtualBoostedPool = new VirtualBoostedPool(
+      this.vaultAddress,
+      this.vaultInterface,
+    );
+
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
     this.pools[BalancerPoolTypes.Stable] = stablePool;
@@ -131,6 +143,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.Investment] = weightedPool;
     this.pools[BalancerPoolTypes.AaveLinear] = aaveLinearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
+    this.pools[BalancerPoolTypes.VirtualBoosted] = virtualBoostedPool;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -276,11 +289,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
 
     const _amounts = [unitVolume, ...amounts.slice(1)];
-    const poolState = poolStates[pool.address];
 
     const poolPairData = this.pools[pool.poolType].parsePoolPairData(
       pool,
-      poolState,
+      poolStates,
       from.address,
       to.address,
     );
@@ -591,18 +603,36 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): BalancerParam {
-    // BalancerV2 Uses Address(0) as ETH
-    const assets = [srcToken, destToken].map(t =>
-      t.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? NULL_ADDRESS : t,
-    );
+    let assets: string[] = [];
+    let swaps: BalancerSwap[] = [];
+    let limits: string[] = [];
+    if (data.swaps[0].poolId.includes('virtualBoostedPool')) {
+      // VirtualBoostedPools swaps will consist of multihops.
+      // getSwapData will construct the relevant swaps, assets and limits
+      const swapData = VirtualBoostedPool.getSwapData(
+        srcToken,
+        destToken,
+        data.swaps[0].poolId,
+        data.swaps[0].amount,
+      );
+      assets = swapData.assets;
+      swaps = swapData.swaps;
+      limits = swapData.limits;
+    } else {
+      // BalancerV2 Uses Address(0) as ETH
+      assets = [srcToken, destToken].map(t =>
+        t.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? NULL_ADDRESS : t,
+      );
+      swaps = data.swaps.map(s => ({
+        poolId: s.poolId,
+        assetInIndex: 0,
+        assetOutIndex: 1,
+        amount: s.amount,
+        userData: '0x',
+      }));
 
-    const swaps = data.swaps.map(s => ({
-      poolId: s.poolId,
-      assetInIndex: 0,
-      assetOutIndex: 1,
-      amount: s.amount,
-      userData: '0x',
-    }));
+      limits = [MAX_INT, MAX_INT];
+    }
 
     const funds = {
       sender: this.augustusAddress,
@@ -610,8 +640,6 @@ export class BalancerV2
       fromInternalBalance: false,
       toInternalBalance: false,
     };
-
-    const limits = [MAX_INT, MAX_INT];
 
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,

@@ -89,6 +89,19 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['USDC'],
+          holders['DAI'],
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
       // NO HOLDERS OF BBADAI AS ALL IN VAULT
       // it('BPT -> TOKEN, LinearPool', async () => {
       //   // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
