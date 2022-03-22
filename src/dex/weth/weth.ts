@@ -63,19 +63,19 @@ export class Weth
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (srcToken.address.toLowerCase() === destToken.address.toLowerCase()) {
+    if (
+      isETHAddress(srcToken.address) &&
+      isWETH(destToken.address, this.network)
+    ) {
+      return [`${this.network}_${destToken.address}`];
+    } else if (
+      isWETH(srcToken.address, this.network) &&
+      isETHAddress(destToken.address)
+    ) {
+      return [`${this.network}_${srcToken.address}`];
+    } else {
       return [];
     }
-
-    const tokenAddress = [
-      srcToken.address.toLowerCase(),
-      destToken.address.toLowerCase(),
-    ]
-      .sort((a, b) => (a > b ? 1 : -1))
-      .join('_');
-
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    return [poolIdentifier];
   }
 
   async getPricesVolume(
