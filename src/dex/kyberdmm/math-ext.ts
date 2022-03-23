@@ -1,27 +1,26 @@
-import BigNumber from 'bignumber.js';
-
-const PRECISION = new BigNumber(10).pow(18);
+const PRECISION = BigInt(10) ** BigInt(18);
 
 /// @dev Returns x*y in precision
-export const mulInPrecision = (x: BigNumber, y: BigNumber): BigNumber =>
-  x.times(y).idiv(PRECISION);
+export const mulInPrecision = (x: bigint, y: bigint): bigint => {
+  return (x * y) / PRECISION;
+};
 
 /// @dev source: dsMath
 /// @param xInPrecision should be < PRECISION, so this can not overflow
 /// @return zInPrecision = (x/PRECISION) ^k * PRECISION
 export const unsafePowInPrecision = (
-  xInPrecision: BigNumber,
-  k: BigNumber,
-): BigNumber => {
-  if (!xInPrecision.lte(PRECISION)) throw new Error(`MathExt: x > PRECISION`);
+  xInPrecision: bigint,
+  k: bigint,
+): bigint => {
+  if (xInPrecision > PRECISION) throw new Error(`MathExt: x > PRECISION`);
 
-  let zInPrecision = k.mod(2).eq(0) ? PRECISION : xInPrecision;
+  let zInPrecision = k % BigInt(2) == BigInt(0) ? PRECISION : xInPrecision;
 
-  for (let c = k.idiv(2); !c.eq(0); c = c.idiv(2)) {
-    xInPrecision = xInPrecision.times(xInPrecision).idiv(PRECISION);
+  for (let c = k / BigInt(2); c != BigInt(0); c = c / BigInt(2)) {
+    xInPrecision = mulInPrecision(xInPrecision, xInPrecision);
 
-    if (!c.mod(2).eq(0)) {
-      zInPrecision = zInPrecision.times(xInPrecision).idiv(PRECISION);
+    if (c / BigInt(2) != BigInt(0)) {
+      zInPrecision = mulInPrecision(zInPrecision, xInPrecision);
     }
   }
   return zInPrecision;

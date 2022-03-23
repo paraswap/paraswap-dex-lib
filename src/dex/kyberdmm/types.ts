@@ -1,9 +1,7 @@
 import { EventFragment } from '@ethersproject/abi';
 import { BigNumberish } from '@ethersproject/bignumber';
 import { ValueOf } from 'ts-essentials';
-import BigNumber from 'bignumber.js';
 import { Address, Token } from '../../types';
-import { KyberDmmPool } from './pool';
 
 export type KyberDmmSellParam = [
   srcAmount: string,
@@ -42,11 +40,11 @@ export type KyberDmmData = {
 };
 
 export type TradeInfo = {
-  reserves0: BigNumber;
-  reserves1: BigNumber;
-  vReserves0: BigNumber;
-  vReserves1: BigNumber;
-  feeInPrecision: BigNumber;
+  reserves0: bigint;
+  reserves1: bigint;
+  vReserves0: bigint;
+  vReserves1: bigint;
+  feeInPrecision: bigint;
 };
 
 export type KyberDmmAbiEventMap = {

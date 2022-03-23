@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { KyberDmmPool, KyberDmmPoolState } from './pool';
-import BigNumber from 'bignumber.js';
 import { KyberDmmConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -21,25 +20,25 @@ type PoolParam = {
   address: string;
   token0Symbol: string;
   token1Symbol: string;
-  ampBps: BigNumber;
+  ampBps: bigint;
 };
 
 const poolsParams: PoolParam[] = [
   {
     address: '0xD343d5dba2FBa55EEF58189619c05e33CAB95cA1',
-    ampBps: new BigNumber(15000),
+    ampBps: BigInt(15000),
     token0Symbol: 'WBTC',
     token1Symbol: 'USDT',
   },
   {
     address: '0x1cf68Bbc2b6D3C6CfE1BD3590CF0E10b06a05F17',
-    ampBps: new BigNumber(20000),
+    ampBps: BigInt(20000),
     token0Symbol: 'WBTC',
     token1Symbol: 'WETH',
   },
   {
     address: '0xA97642500517C728cE1339A466DE0F10C19034CD',
-    ampBps: new BigNumber(10000),
+    ampBps: BigInt(10000),
     token0Symbol: 'REQ',
     token1Symbol: 'WETH',
   },

@@ -1,5 +1,4 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import BigNumber from 'bignumber.js';
 import { DeepReadonly } from 'ts-essentials';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import { getFee, getRFactor } from './fee-formula';
@@ -19,18 +18,18 @@ export type KyberDmmPair = {
 
 export interface KyberDmmPoolState {
   reserves: {
-    reserves0: BigNumber;
-    reserves1: BigNumber;
-    vReserves0: BigNumber;
-    vReserves1: BigNumber;
+    reserves0: bigint;
+    reserves1: bigint;
+    vReserves0: bigint;
+    vReserves1: bigint;
   };
   trendData: {
-    shortEMA: BigNumber;
-    longEMA: BigNumber;
-    lastBlockVolume: BigNumber;
-    lastTradeBlock: BigNumber;
+    shortEMA: bigint;
+    longEMA: bigint;
+    lastBlockVolume: bigint;
+    lastTradeBlock: bigint;
   };
-  ampBps: BigNumber;
+  ampBps: bigint;
 }
 
 export interface KyberDmmPoolOrderedParams {
@@ -58,7 +57,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
 
     token0: Token,
     token1: Token,
-    public ampBps: BigNumber,
+    public ampBps: bigint,
 
     logger: Logger,
   ) {
@@ -85,20 +84,20 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
           return {
             ...state,
             reserves: {
-              reserves0: new BigNumber(event.args.reserve0.toString()),
-              reserves1: new BigNumber(event.args.reserve1.toString()),
-              vReserves0: new BigNumber(event.args.vReserve0.toString()),
-              vReserves1: new BigNumber(event.args.vReserve1.toString()),
+              reserves0: BigInt(event.args.reserve0.toString()),
+              reserves1: BigInt(event.args.reserve1.toString()),
+              vReserves0: BigInt(event.args.vReserve0.toString()),
+              vReserves1: BigInt(event.args.vReserve1.toString()),
             },
           };
         else
           return {
             ...state,
             reserves: {
-              reserves0: new BigNumber(event.args.reserve0.toString()),
-              reserves1: new BigNumber(event.args.reserve1.toString()),
-              vReserves0: new BigNumber(event.args.reserve0.toString()),
-              vReserves1: new BigNumber(event.args.reserve1.toString()),
+              reserves0: BigInt(event.args.reserve0.toString()),
+              reserves1: BigInt(event.args.reserve1.toString()),
+              vReserves0: BigInt(event.args.reserve0.toString()),
+              vReserves1: BigInt(event.args.reserve1.toString()),
             },
           };
       }
@@ -106,12 +105,10 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
         return {
           ...state,
           trendData: {
-            shortEMA: new BigNumber(event.args.shortEMA.toString()),
-            longEMA: new BigNumber(event.args.longEMA.toString()),
-            lastBlockVolume: new BigNumber(
-              event.args.lastBlockVolume.toString(),
-            ),
-            lastTradeBlock: new BigNumber(blockHeader.number.toString()),
+            shortEMA: BigInt(event.args.shortEMA.toString()),
+            longEMA: BigInt(event.args.longEMA.toString()),
+            lastBlockVolume: BigInt(event.args.lastBlockVolume.toString()),
+            lastTradeBlock: BigInt(blockHeader.number.toString()),
           },
         };
     }
@@ -119,7 +116,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   }
 
   isAmpPool(): boolean {
-    return !this.ampBps.eq(BPS);
+    return this.ampBps != BPS;
   }
 
   async generateState(
@@ -141,11 +138,11 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
 
     const [reserves0, reserves1, vReserves0, vReserves1] = coder
       .decode(['uint256', 'uint256', 'uint256', 'uint256'], data.returnData[0])
-      .map(a => new BigNumber(a.toString()));
+      .map(a => BigInt(a.toString()));
 
     const [shortEMA, longEMA, , lastTradeBlock] = coder
       .decode(['uint256', 'uint256', 'uint128', 'uint256'], data.returnData[1])
-      .map(a => new BigNumber(a.toString()));
+      .map(a => BigInt(a.toString()));
 
     if (blockNumber == 'latest')
       blockNumber = await this.dexHelper.provider.getBlockNumber();
@@ -165,7 +162,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
         ['uint256', 'uint256', 'uint128', 'uint256'],
         prevBlockData.returnData[0],
       )
-      .map(a => new BigNumber(a.toString()));
+      .map(a => BigInt(a.toString()));
 
     return {
       trendData: {
@@ -185,20 +182,17 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   }
 }
 
-const BPS = new BigNumber(10000);
+const BPS = BigInt(10000);
 
-const getFinalFee = (
-  feeInPrecision: BigNumber,
-  _ampBps: BigNumber,
-): BigNumber => {
-  if (_ampBps.lte(20000)) {
+const getFinalFee = (feeInPrecision: bigint, _ampBps: bigint): bigint => {
+  if (_ampBps <= 20000) {
     return feeInPrecision;
-  } else if (_ampBps.lte(50000)) {
-    return feeInPrecision.times(20).idiv(30);
-  } else if (_ampBps.lte(200000)) {
-    return feeInPrecision.times(10).idiv(30);
+  } else if (_ampBps <= 50000) {
+    return (feeInPrecision * BigInt(20)) / BigInt(30);
+  } else if (_ampBps <= 200000) {
+    return (feeInPrecision * BigInt(10)) / BigInt(30);
   } else {
-    return feeInPrecision.times(4).idiv(30);
+    return (feeInPrecision * BigInt(4)) / BigInt(30);
   }
 };
 
@@ -211,14 +205,11 @@ export const getTradeInfo = (
   const _ampBps = state.ampBps;
   let vReserves0 = state.reserves.vReserves0;
   let vReserves1 = state.reserves.vReserves1;
-  if (_ampBps.eq(BPS)) {
+  if (_ampBps == BPS) {
     vReserves0 = state.reserves.reserves0;
     vReserves1 = state.reserves.reserves1;
   }
-  const rFactorInPrecision = getRFactor(
-    new BigNumber(blockNumber),
-    state.trendData,
-  );
+  const rFactorInPrecision = getRFactor(BigInt(blockNumber), state.trendData);
   const feeInPrecision = getFinalFee(getFee(rFactorInPrecision), _ampBps);
   return {
     reserves0: isTokenOrdered

@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../../dex/idex';
@@ -36,6 +35,7 @@ import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
 import { getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { BigNumber } from '@0x/utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -325,33 +325,34 @@ export class KyberDmm
     //   to.address.toLowerCase(),
     // ].sort((a, b) => (a > b ? 1 : -1));
 
-    const unitAmount = new BigNumber(1)
-      .times(10 ** (side == SwapSide.BUY ? to.decimals : from.decimals))
-      .toFixed();
+    const unitAmount = (
+      BigInt(1) *
+      BigInt(10 ** (side == SwapSide.BUY ? to.decimals : from.decimals))
+    ).toString();
 
     const tradeInfo = getTradeInfo(pool.state, blockNumber, direction);
 
     const unit =
       side == SwapSide.BUY
-        ? await this.getBuyPrice(tradeInfo, new BigNumber(unitAmount))
-        : await this.getSellPrice(tradeInfo, new BigNumber(unitAmount));
+        ? await this.getBuyPrice(tradeInfo, BigInt(unitAmount))
+        : await this.getSellPrice(tradeInfo, BigInt(unitAmount));
 
     const prices =
       side == SwapSide.BUY
         ? await Promise.all(
             amounts.map(amount =>
-              this.getBuyPrice(tradeInfo, new BigNumber(amount.toString())),
+              this.getBuyPrice(tradeInfo, BigInt(amount.toString())),
             ),
           )
         : await Promise.all(
             amounts.map(amount =>
-              this.getSellPrice(tradeInfo, new BigNumber(amount.toString())),
+              this.getSellPrice(tradeInfo, BigInt(amount.toString())),
             ),
           );
 
     return {
-      prices: prices.map(p => BigInt(p.toFixed(0))),
-      unit: BigInt(unit.toFixed(0)),
+      prices: prices.map(p => BigInt(p.toString())),
+      unit: BigInt(unit.toString()),
       data: {
         router: this.config.routerAddress,
         path: [from.address.toLowerCase(), to.address.toLowerCase()],
@@ -406,11 +407,11 @@ export class KyberDmm
           );
           const [reserves0, reserves1, vReserves0, vReserves1] = coder
             .decode(['uint256', 'uint256', 'uint256', 'uint256'], poolData[0])
-            .map(n => new BigNumber(n.toString()));
+            .map(n => BigInt(n.toString()));
           const [shortEMA, longEMA, lastBlockVolume, lastTradeBlock] = coder
             .decode(['uint256', 'uint256', 'uint128', 'uint256'], poolData[1])
-            .map(n => new BigNumber(n.toString()));
-          const ampBps = new BigNumber(
+            .map(n => BigInt(n.toString()));
+          const ampBps = BigInt(
             coder.decode(['uint256'], poolData[2]).toString(),
           );
           acc[poolAddress] = {
@@ -466,7 +467,7 @@ export class KyberDmm
       poolsState = Object.fromEntries(
         Object.entries(poolsState)
           .sort(([, stateA], [, stateB]) =>
-            stateA.reserves.vReserves0.lt(stateB.reserves.reserves0) ? 1 : -1,
+            stateA.reserves.vReserves0 < stateB.reserves.reserves0 ? 1 : -1,
           )
           .slice(0, MAX_TRACKED_PAIR_POOLS),
       );
@@ -539,7 +540,7 @@ export class KyberDmm
     return pair;
   }
 
-  private async getBuyPrice(priceParams: TradeInfo, amountOut: BigNumber) {
+  private async getBuyPrice(priceParams: TradeInfo, amountOut: bigint) {
     const {
       reserves0: reserveIn,
       reserves1: reserveOut,
@@ -547,19 +548,19 @@ export class KyberDmm
       vReserves1: vReserveOut,
       feeInPrecision,
     } = priceParams;
-    if (!amountOut.gt(0)) return 0;
-    if (!(reserveIn.gt(0) && reserveOut.gt(amountOut))) return 0;
+    if (amountOut <= 0) return 0;
+    if (!(reserveIn > BigInt(0)) && reserveOut > amountOut) return 0;
 
-    let numerator = vReserveIn.times(amountOut);
-    let denominator = vReserveOut.minus(amountOut);
-    const amountIn = numerator.idiv(denominator).plus(1);
+    let numerator = vReserveIn * amountOut;
+    let denominator = vReserveOut - amountOut;
+    const amountIn = numerator / denominator + BigInt(1);
     // amountIn = floor(amountIN *PRECISION / (PRECISION - feeInPrecision));
-    numerator = amountIn.times(PRECISION);
-    denominator = PRECISION.minus(feeInPrecision);
-    return numerator.plus(denominator.minus(1)).idiv(denominator);
+    numerator = amountIn * PRECISION;
+    denominator = PRECISION - feeInPrecision;
+    return numerator + denominator - BigInt(1) / denominator;
   }
 
-  private async getSellPrice(priceParams: TradeInfo, amountIn: BigNumber) {
+  private async getSellPrice(priceParams: TradeInfo, amountIn: bigint) {
     const {
       reserves0: reserveIn,
       reserves1: reserveOut,
@@ -567,16 +568,14 @@ export class KyberDmm
       vReserves1: vReserveOut,
       feeInPrecision,
     } = priceParams;
-    if (!amountIn.gt(0)) return 0;
-    if (!(reserveIn.gt(0) && reserveOut.gt(0))) return 0;
+    if (amountIn <= 0) return 0;
+    if (!(reserveIn > 0) && reserveOut > 0) return 0;
 
-    const amountInWithFee = amountIn
-      .times(PRECISION.minus(feeInPrecision))
-      .idiv(PRECISION);
-    const numerator = amountInWithFee.times(vReserveOut);
-    const denominator = vReserveIn.plus(amountInWithFee);
-    const amountOut = numerator.idiv(denominator);
-    if (!reserveOut.gt(amountOut)) return 0;
+    const amountInWithFee = amountIn * PRECISION - feeInPrecision / PRECISION;
+    const numerator = amountInWithFee * vReserveOut;
+    const denominator = vReserveIn + amountInWithFee;
+    const amountOut = numerator / denominator;
+    if (reserveOut <= amountOut) return 0;
     return amountOut;
   }
 }
