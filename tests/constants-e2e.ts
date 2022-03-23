@@ -7,6 +7,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    REQ: {
+      address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
+      decimals: 18,
+    },
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
