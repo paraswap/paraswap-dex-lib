@@ -394,17 +394,21 @@ export class BalancerV1
       tokenOut: tokenOut,
       decimalsIn: tI.decimals,
       decimalsOut: tO.decimals,
-      balanceIn: bmath.bnum(tI.balance),
-      balanceOut: bmath.bnum(tO.balance),
+      balanceIn: bmath.bnum(tI.balance.toString()),
+      balanceOut: bmath.bnum(tO.balance.toString()),
       weightIn: bmath.scale(
-        bmath.bnum(tI.denormWeight).div(bmath.bnum(p.totalWeight)),
+        bmath
+          .bnum(tI.denormWeight.toString())
+          .div(bmath.bnum(p.totalWeight.toString())),
         18,
       ),
       weightOut: bmath.scale(
-        bmath.bnum(tO.denormWeight).div(bmath.bnum(p.totalWeight)),
+        bmath
+          .bnum(tO.denormWeight.toString())
+          .div(bmath.bnum(p.totalWeight.toString())),
         18,
       ),
-      swapFee: bmath.bnum(p.swapFee),
+      swapFee: bmath.bnum(p.swapFee.toString()),
     };
 
     return poolPairData;
@@ -414,6 +418,8 @@ export class BalancerV1
   // Modifies the balance of pools according to the on chain state
   // at a certain blockNumber
   async updatePoolState(): Promise<void> {
+    const pools = this.eventPools.allPools;
+
     if (pools.length === 0) throw Error('There are no pools.');
 
     let addresses: string[][] = [];
@@ -432,12 +438,12 @@ export class BalancerV1
 
     let results = await this.eventPools.balancerMulticall.methods
       .getPoolInfo(addresses, total)
-      .call({}, blockNumber);
+      .call();
 
     let j = 0;
     for (let i = 0; i < pools.length; i++) {
       pools[i].tokens.forEach(token => {
-        token.balance = bmath.bnum(results[j]);
+        token.balance = bignumberify(bmath.bnum(results[j]));
         j++;
       });
     }
