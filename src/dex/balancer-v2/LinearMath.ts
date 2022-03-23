@@ -1,5 +1,12 @@
 import { MathSol } from './balancer-v2-math';
 
+/*
+Note when comparing vs smart contract:
+Math.divDown === MathSol.divDown (i.e. no fixed point)
+uint256.divDown === MathSol.divDownFixed (i.e. has fixed point)
+Similar for mul
+*/
+
 type Params = {
   fee: bigint;
   lowerTarget: bigint;
@@ -22,11 +29,8 @@ export function _calcBptOutPerMainIn(
   const previousNominalMain = _toNominal(mainBalance, params);
   const afterNominalMain = _toNominal(mainBalance + mainIn, params);
   const deltaNominalMain = afterNominalMain - previousNominalMain;
-  const invariant = _calcInvariantUp(previousNominalMain, wrappedBalance);
-  return MathSol.divDownFixed(
-    MathSol.mulDownFixed(bptSupply, deltaNominalMain),
-    invariant,
-  );
+  const invariant = _calcInvariant(previousNominalMain, wrappedBalance);
+  return MathSol.divDown(MathSol.mul(bptSupply, deltaNominalMain), invariant);
 }
 
 export function _calcBptInPerMainOut(
@@ -40,11 +44,8 @@ export function _calcBptInPerMainOut(
   const previousNominalMain = _toNominal(mainBalance, params);
   const afterNominalMain = _toNominal(mainBalance - mainOut, params);
   const deltaNominalMain = previousNominalMain - afterNominalMain;
-  const invariant = _calcInvariantDown(previousNominalMain, wrappedBalance);
-  return MathSol.divUpFixed(
-    MathSol.mulUpFixed(bptSupply, deltaNominalMain),
-    invariant,
-  );
+  const invariant = _calcInvariant(previousNominalMain, wrappedBalance);
+  return MathSol.divUp(MathSol.mul(bptSupply, deltaNominalMain), invariant);
 }
 
 export function _calcBptInPerWrappedOut(
@@ -56,11 +57,11 @@ export function _calcBptInPerWrappedOut(
 ): bigint {
   // Amount in, so we round up overall.
   const nominalMain = _toNominal(mainBalance, params);
-  const previousInvariant = _calcInvariantUp(nominalMain, wrappedBalance);
+  const previousInvariant = _calcInvariant(nominalMain, wrappedBalance);
   const newWrappedBalance = wrappedBalance - wrappedOut;
-  const newInvariant = _calcInvariantDown(nominalMain, newWrappedBalance);
-  const newBptBalance = MathSol.divDownFixed(
-    MathSol.mulDownFixed(bptSupply, newInvariant),
+  const newInvariant = _calcInvariant(nominalMain, newWrappedBalance);
+  const newBptBalance = MathSol.divDown(
+    MathSol.mul(bptSupply, newInvariant),
     previousInvariant,
   );
   return bptSupply - newBptBalance;
@@ -74,8 +75,7 @@ export function _calcWrappedOutPerMainIn(
   // Amount out, so we round down overall.
   const previousNominalMain = _toNominal(mainBalance, params);
   const afterNominalMain = _toNominal(mainBalance + mainIn, params);
-  const deltaNominalMain = afterNominalMain - previousNominalMain;
-  return deltaNominalMain;
+  return afterNominalMain - previousNominalMain;
 }
 
 export function _calcWrappedInPerMainOut(
@@ -86,8 +86,7 @@ export function _calcWrappedInPerMainOut(
   // Amount in, so we round up overall.
   const previousNominalMain = _toNominal(mainBalance, params);
   const afterNominalMain = _toNominal(mainBalance - mainOut, params);
-  const deltaNominalMain = previousNominalMain - afterNominalMain;
-  return deltaNominalMain;
+  return previousNominalMain - afterNominalMain;
 }
 
 export function _calcMainInPerBptOut(
@@ -102,9 +101,9 @@ export function _calcMainInPerBptOut(
     return _fromNominal(bptOut, params);
   }
   const previousNominalMain = _toNominal(mainBalance, params);
-  const invariant = _calcInvariantUp(previousNominalMain, wrappedBalance);
-  const deltaNominalMain = MathSol.divUpFixed(
-    MathSol.mulUpFixed(invariant, bptOut),
+  const invariant = _calcInvariant(previousNominalMain, wrappedBalance);
+  const deltaNominalMain = MathSol.divUp(
+    MathSol.mul(invariant, bptOut),
     bptSupply,
   );
   const afterNominalMain = previousNominalMain + deltaNominalMain;
@@ -121,9 +120,9 @@ export function _calcMainOutPerBptIn(
 ): bigint {
   // Amount out, so we round down overall.
   const previousNominalMain = _toNominal(mainBalance, params);
-  const invariant = _calcInvariantDown(previousNominalMain, wrappedBalance);
-  const deltaNominalMain = MathSol.divDownFixed(
-    MathSol.mulDownFixed(invariant, bptIn),
+  const invariant = _calcInvariant(previousNominalMain, wrappedBalance);
+  const deltaNominalMain = MathSol.divDown(
+    MathSol.mul(invariant, bptIn),
     bptSupply,
   );
   const afterNominalMain = previousNominalMain - deltaNominalMain;
@@ -138,8 +137,7 @@ export function _calcMainOutPerWrappedIn(
 ): bigint {
   // Amount out, so we round down overall.
   const previousNominalMain = _toNominal(mainBalance, params);
-  const deltaNominalMain = wrappedIn;
-  const afterNominalMain = previousNominalMain - deltaNominalMain;
+  const afterNominalMain = previousNominalMain - wrappedIn;
   const newMainBalance = _fromNominal(afterNominalMain, params);
   return mainBalance - newMainBalance;
 }
@@ -151,8 +149,7 @@ export function _calcMainInPerWrappedOut(
 ): bigint {
   // Amount in, so we round up overall.
   const previousNominalMain = _toNominal(mainBalance, params);
-  const deltaNominalMain = wrappedOut;
-  const afterNominalMain = previousNominalMain + deltaNominalMain;
+  const afterNominalMain = previousNominalMain + wrappedOut;
   const newMainBalance = _fromNominal(afterNominalMain, params);
   return newMainBalance - mainBalance;
 }
@@ -171,11 +168,11 @@ export function _calcBptOutPerWrappedIn(
   }
 
   const nominalMain = _toNominal(mainBalance, params);
-  const previousInvariant = _calcInvariantUp(nominalMain, wrappedBalance);
+  const previousInvariant = _calcInvariant(nominalMain, wrappedBalance);
   const newWrappedBalance = wrappedBalance + wrappedIn;
-  const newInvariant = _calcInvariantDown(nominalMain, newWrappedBalance);
-  const newBptBalance = MathSol.divDownFixed(
-    MathSol.mulDownFixed(bptSupply, newInvariant),
+  const newInvariant = _calcInvariant(nominalMain, newWrappedBalance);
+  const newBptBalance = MathSol.divDown(
+    MathSol.mul(bptSupply, newInvariant),
     previousInvariant,
   );
   return newBptBalance - bptSupply;
@@ -195,13 +192,11 @@ export function _calcWrappedInPerBptOut(
   }
 
   const nominalMain = _toNominal(mainBalance, params);
-  const previousInvariant = _calcInvariantUp(nominalMain, wrappedBalance);
+  const previousInvariant = _calcInvariant(nominalMain, wrappedBalance);
   const newBptBalance = bptSupply + bptOut;
   const newWrappedBalance =
-    MathSol.mulUpFixed(
-      MathSol.divUpFixed(newBptBalance, bptSupply),
-      previousInvariant,
-    ) - nominalMain;
+    MathSol.divUp(MathSol.mul(newBptBalance, previousInvariant), bptSupply) -
+    nominalMain;
   return newWrappedBalance - wrappedBalance;
 }
 
@@ -214,24 +209,15 @@ export function _calcWrappedOutPerBptIn(
 ): bigint {
   // Amount out, so we round down overall.
   const nominalMain = _toNominal(mainBalance, params);
-  const previousInvariant = _calcInvariantUp(nominalMain, wrappedBalance);
+  const previousInvariant = _calcInvariant(nominalMain, wrappedBalance);
   const newBptBalance = bptSupply - bptIn;
   const newWrappedBalance =
-    MathSol.mulUpFixed(
-      MathSol.divUpFixed(newBptBalance, bptSupply),
-      previousInvariant,
-    ) - nominalMain;
+    MathSol.divUp(MathSol.mul(newBptBalance, previousInvariant), bptSupply) -
+    nominalMain;
   return wrappedBalance - newWrappedBalance;
 }
 
-function _calcInvariantUp(
-  nominalMainBalance: bigint,
-  wrappedBalance: bigint,
-): bigint {
-  return nominalMainBalance + wrappedBalance;
-}
-
-function _calcInvariantDown(
+function _calcInvariant(
   nominalMainBalance: bigint,
   wrappedBalance: bigint,
 ): bigint {
