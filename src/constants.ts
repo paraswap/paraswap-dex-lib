@@ -19,6 +19,8 @@ export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 export const FETCH_POOL_INDENTIFIER_TIMEOUT = 500; // 0.5s
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
+export const MAX_UINT_BIGINT = BigInt(2) ** BigInt(256) - BigInt(1);
+
 export enum Network {
   MAINNET = 1,
   ROPSTEN = 3,

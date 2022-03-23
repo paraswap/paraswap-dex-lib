@@ -12,10 +12,17 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  Token,
+  PoolPrices,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, MAX_UINT_BIGINT } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork, isETHAddress } from '../../utils';
+import {
+  wrapETH,
+  getDexKeysWithNetwork,
+  isETHAddress,
+  interpolate,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -27,7 +34,7 @@ import {
   BalancerParam,
   BalancerFunctions,
   PoolStates,
-  Token,
+  Token as SORToken,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerV1Config, Adapters } from './config';
@@ -35,6 +42,7 @@ import BalancerV1ABI from '../../abi/BalancerV1.json';
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { AxiosResponse } from 'axios';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
+import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
 
 // These are required to filter out log calls from the event calls
 const LogCallTopics = [
@@ -56,6 +64,8 @@ const LogCallTopics = [
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const balancerV1Interface = new Interface(BalancerV1ABI);
 const POOL_CACHE_TTL = 60 * 60; // 1hr
+const BALANCER_CHUNKS = 10;
+const BALANCER_SWAP_GASCOST = 120 * 1000;
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;
@@ -63,7 +73,7 @@ function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
 
 const bignumberify = (val: any) => new BigNumber(val);
 
-export function typecastReadOnlyToken(readOnlyToken: any): Token {
+export function typecastReadOnlyToken(readOnlyToken: any): SORToken {
   return {
     address: readOnlyToken.address,
     balance: bignumberify(readOnlyToken.balance),
@@ -204,7 +214,6 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async getAllPoolDataOnChain(
     pools: PoolStates,
-    balancerMultiAddress: string,
     blockNumber: number,
   ): Promise<PoolStates> {
     if (pools.pools.length === 0) throw Error('There are no pools.');
@@ -231,7 +240,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     let onChainPools: PoolStates = { pools: [] };
 
     for (let i = 0; i < pools.pools.length; i++) {
-      let tokens: Token[] = [];
+      let tokens: SORToken[] = [];
 
       let p: PoolState = {
         id: pools.pools[i].id,
@@ -279,7 +288,6 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // latest balance because of slow block processing time
     const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
       allPoolsNonZeroBalances,
-      this.multicallAddress,
       blockNumber,
     );
 
@@ -292,6 +300,35 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.addressesSubscribed.push(this.factoryAddress);
     return poolStateMap;
   }
+
+  async getPoolPrices(pool: OldPool, side: SwapSide, amount: bigint) {
+    if (
+      side === SwapSide.BUY &&
+      amount * BigInt(2) > BigInt(pool.balanceOut.toFixed(0))
+    ) {
+      return MAX_UINT_BIGINT;
+    }
+    const _amount = new BigNumber(amount.toString());
+    const res =
+      side === SwapSide.SELL
+        ? calcOutGivenIn(
+            pool.balanceIn,
+            pool.weightIn,
+            pool.balanceOut,
+            pool.weightOut,
+            _amount as any,
+            pool.swapFee,
+          )
+        : calcInGivenOut(
+            pool.balanceIn,
+            pool.weightIn,
+            pool.balanceOut,
+            pool.weightOut,
+            _amount as any,
+            pool.swapFee,
+          );
+    return BigInt(res.toFixed(0));
+  }
 }
 
 export class BalancerV1
@@ -303,6 +340,9 @@ export class BalancerV1
   readonly hasConstantPriceLargeAmounts = false;
 
   readonly exchangeRouterInterface: Interface;
+
+  readonly exchangeProxy: Address =
+    '0x6317c5e82a06e1d8bf200d21f4510ac2c038ac81';
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerV1Config);
@@ -414,19 +454,19 @@ export class BalancerV1
     return poolPairData;
   }
 
-  // Has almost the same logic as getAllPoolDataOnChain
-  // Modifies the balance of pools according to the on chain state
-  // at a certain blockNumber
-  async updatePoolState(): Promise<void> {
-    const pools = this.eventPools.allPools;
+  async updatePoolState(
+    pools?: PoolState[],
+    blockNumber?: number,
+  ): Promise<void> {
+    const _pools = pools === undefined ? this.eventPools.allPools : pools;
 
-    if (pools.length === 0) throw Error('There are no pools.');
+    if (_pools.length === 0) throw Error('There are no pools.');
 
     let addresses: string[][] = [];
     let total = 0;
 
-    for (let i = 0; i < pools.length; i++) {
-      let pool = pools[i];
+    for (let i = 0; i < _pools.length; i++) {
+      let pool = _pools[i];
 
       addresses.push([pool.id]);
       total++;
@@ -438,11 +478,11 @@ export class BalancerV1
 
     let results = await this.eventPools.balancerMulticall.methods
       .getPoolInfo(addresses, total)
-      .call();
+      .call({}, blockNumber);
 
     let j = 0;
-    for (let i = 0; i < pools.length; i++) {
-      pools[i].tokens.forEach(token => {
+    for (let i = 0; i < _pools.length; i++) {
+      _pools[i].tokens.forEach(token => {
         token.balance = bignumberify(bmath.bnum(results[j]));
         j++;
       });
@@ -490,15 +530,66 @@ export class BalancerV1
       selectedPools.some(sp => p.id.toLowerCase() === sp.id.toLowerCase()),
     );
 
-    await this.updatePoolState(
-      rawSelectedPools,
-      this.multicallAddress,
-      blockNumber,
-    );
+    await this.updatePoolState(rawSelectedPools, blockNumber);
 
     return rawSelectedPools
       .map(p => this.parsePoolPairData(p, from.address, to.address))
       .filter(p => !!p && checkBalance(p)) as OldPool[];
+  }
+
+  getPools(from: Token, to: Token): PoolState[] {
+    return this.eventPools.allPools
+      .filter(
+        p =>
+          p.tokens.some(
+            token => token.address.toLowerCase() === from.address.toLowerCase(),
+          ) &&
+          p.tokens.some(
+            token => token.address.toLowerCase() === to.address.toLowerCase(),
+          ),
+      )
+      .slice(0, 10);
+  }
+
+  async getPoolPrices(
+    from: Token,
+    to: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    unitVolume: bigint,
+    exchangeProxy: Address,
+    pool: OldPool,
+  ): Promise<PoolPrices<BalancerV1Data> | null> {
+    try {
+      let unit = await this.eventPools.getPoolPrices(pool, side, unitVolume);
+
+      const _width = Math.floor((amounts.length - 1) / BALANCER_CHUNKS);
+      const _amounts = Array.from(Array(BALANCER_CHUNKS).keys()).map(
+        i => amounts[(i + 1) * _width],
+      );
+
+      const _prices = await Promise.all(
+        _amounts.map(a => this.eventPools.getPoolPrices(pool, side, a)),
+      );
+
+      const prices = interpolate(_amounts, _prices, amounts, side);
+
+      return {
+        prices,
+        unit,
+        data: {
+          pool: pool.id,
+          exchangeProxy,
+        },
+        poolAddresses: [pool.id],
+        exchange: 'Balancer',
+        poolIdentifier: `Balancer_${pool.id}`,
+        gasCost: BALANCER_SWAP_GASCOST,
+      };
+    } catch (e) {
+      this.logger.error(`Error_getPoolPrices: ${pool.id}`, e);
+      return null;
+    }
   }
 
   // TODO: Check this function
@@ -510,67 +601,101 @@ export class BalancerV1
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV1Data>> {
+    if (side === SwapSide.BUY) return null;
     try {
-      const from = wrapETH(srcToken, this.network);
-      const to = wrapETH(destToken, this.network);
+      const _from = wrapETH(srcToken, this.network);
+      const _to = wrapETH(destToken, this.network);
 
-      let state = this.eventPools.getState(blockNumber);
-      let isStale = false;
-      if (!state) {
-        state = this.eventPools.getStaleState();
-        if (!state) {
-          this.logger.error(
-            'Error_getPrices: Neither updated nor stale state found',
-          );
-          return null;
-        }
-        isStale = true;
-        this.logger.warn('Warning_getPrices: Stale state being used');
-      }
+      const allPools = this.getPools(_from, _to);
+      const allowedPools = limitPools
+        ? allPools.filter(({ id }) =>
+            limitPools.includes(`${this.dexKey}_${id.toLowerCase()}`),
+          )
+        : allPools;
+
+      if (!allowedPools.length) return null;
 
       const unitVolume = BigInt(
-        10 ** (side === SwapSide.SELL ? from : to).decimals,
+        10 ** (side === SwapSide.SELL ? _from : _to).decimals,
       );
-      const pools = Object.values(state).map(typecastReadOnlyPool);
-      let minBalance = amounts[amounts.length - 1];
-      if (unitVolume > minBalance) minBalance = unitVolume;
 
-      const topPools = await this.getTopPools(
-        from,
-        to,
-        side,
-        pools,
-        minBalance,
-        routeID,
-        usedPools,
-        isStale,
-        this.blockNumber,
+      const quoteUnitVolume = BigInt(
+        10 ** (side === SwapSide.SELL ? _to : _from).decimals,
       );
-      if (!topPools || !topPools.length) return null;
 
-      const rates = (
-        await Promise.all(
-          topPools.map(p =>
-            this.getPoolPrices(
-              from,
-              to,
+      const poolStates = this.eventPools.getState(blockNumber);
+      if (!poolStates) {
+        this.logger.error(`getState returned null`);
+        return null;
+      }
+
+      const missingPools = allowedPools.filter(
+        pool => !(pool.id.toLowerCase() in poolStates),
+      );
+
+      const missingPoolStates = missingPools.length
+        ? await this.eventPools.getAllPoolDataOnChain(
+            { pools: missingPools },
+            blockNumber,
+          )
+        : { pools: [] };
+
+      const missingPoolStateMaps: PoolStateMap = {};
+      missingPoolStates.pools.forEach(
+        pool => (missingPoolStateMaps[pool.id.toLowerCase()] = pool),
+      );
+
+      const poolPrices = allowedPools
+        .map(async pool => {
+          const poolAddress = pool.id.toLowerCase();
+          const poolState =
+            poolStates[poolAddress] || missingPoolStateMaps[poolAddress];
+          if (!poolState) {
+            this.logger.error(`Unable to find the poolState ${poolAddress}`);
+            return null;
+          }
+          // TODO: re-chech what should be the current block time stamp
+          try {
+            const res = await this.getPoolPrices(
+              _from,
+              _to,
               amounts,
               side,
               unitVolume,
               this.exchangeProxy,
-              p,
-            ),
-          ),
-        )
-      ).filter(r => !!r) as PoolPrices<BalancerData>[];
-
-      return rates;
+              pool,
+            );
+            if (!res) return;
+            return {
+              unit: res.unit,
+              prices: res.prices,
+              data: {
+                poolId: pool.id,
+              },
+              poolAddresses: [poolAddress],
+              exchange: this.dexKey,
+              gasCost: 150 * 1000,
+              poolIdentifier: `${this.dexKey}_${poolAddress}`,
+            };
+          } catch (e) {
+            this.logger.error(
+              `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
+                destToken.symbol || destToken.address
+              }, ${side}, ${pool.id}:`,
+              e,
+            );
+            return null;
+          }
+        })
+        .filter(p => !!p);
+      return poolPrices as unknown as ExchangePrices<BalancerV1Data>;
     } catch (e) {
-      if (this.blockNumber === 0)
-        this.logger.error(
-          `Error_getPrices: Aurelius block manager not yet instantiated`,
-        );
-      this.logger.error('Error_getPrices:', e);
+      this.logger.error(
+        `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
+          destToken.symbol || destToken.address
+        }, ${side}:`,
+        e,
+      );
       return null;
     }
   }
@@ -682,9 +807,10 @@ export class BalancerV1
     );
   }
 
-  // TODO: Check this function
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
-  ): Promise<PoolLiquidity[]> {}
+  ): Promise<PoolLiquidity[]> {
+    // TODO: Fill this function
+  }
 }
