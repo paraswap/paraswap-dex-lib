@@ -8,19 +8,18 @@ export interface Token {
   denormWeight: BigNumber;
 }
 
-export interface SubgraphPoolBase {
-  id: string;
-  address: string;
-  tokens: Token[];
-}
-
 export type PoolState = {
   id: string;
   swapFee: BigNumber;
   totalWeight: BigNumber;
   tokens: Token[];
   tokensList: string[];
+  publicSwap?: string;
 };
+
+export interface PoolStates {
+  pools: PoolState[];
+}
 
 export type PoolStateMap = { [address: string]: PoolState };
 

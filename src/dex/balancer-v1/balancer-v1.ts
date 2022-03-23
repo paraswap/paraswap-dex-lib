@@ -1,8 +1,9 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
+import BigNumber from 'bignumber.js';
 import _ from 'lodash';
+import * as bmath from '@balancer-labs/sor/dist/bmath';
 import {
-  Token,
   Address,
   ExchangePrices,
   Log,
@@ -21,15 +22,35 @@ import {
   PoolState,
   DexParams,
   PoolStateMap,
-  SubgraphPoolBase,
   OptimizedBalancerV1Data,
   BalancerParam,
   BalancerFunctions,
+  PoolStates,
+  Token,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerV1Config, Adapters } from './config';
 import BalancerV1ABI from '../../abi/BalancerV1.json';
-import { getAllPublicSwapPools } from './sor-overload';
+import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
+import { AxiosResponse } from 'axios';
+import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
+
+// These are required to filter out log calls from the event calls
+const LogCallTopics = [
+  '0xb02f0b7300000000000000000000000000000000000000000000000000000000',
+  '0x5db3427700000000000000000000000000000000000000000000000000000000',
+  '0x46ab38f100000000000000000000000000000000000000000000000000000000',
+  '0x4f69c0d400000000000000000000000000000000000000000000000000000000',
+  '0x8201aa3f00000000000000000000000000000000000000000000000000000000',
+  '0x7c5e9ea400000000000000000000000000000000000000000000000000000000',
+  '0x34e1990700000000000000000000000000000000000000000000000000000000',
+  '0x49b5955200000000000000000000000000000000000000000000000000000000',
+  '0x4bb278f300000000000000000000000000000000000000000000000000000000',
+  '0x3fdddaa200000000000000000000000000000000000000000000000000000000',
+  '0xe4e1e53800000000000000000000000000000000000000000000000000000000',
+  '0xcf5e7bd300000000000000000000000000000000000000000000000000000000',
+  '0x02c9674800000000000000000000000000000000000000000000000000000000',
+];
 
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const balancerV1Interface = new Interface(BalancerV1ABI);
@@ -60,6 +81,16 @@ export function typecastReadOnlyPool(readOnlyPool: any): PoolState {
   };
 }
 
+const poolUrls: { [key: number]: string } = {
+  1: 'https://storageapi.fleek.co/balancer-bucket/balancer-exchange/pools',
+  42: 'https://storageapi.fleek.co/balancer-bucket/balancer-exchange-kovan/pools',
+};
+
+const defaultfactoryAddress = '0x9424B1412450D0f8Fc2255FAf6046b98213B76Bd';
+const defaultMulticallAddress = '0x514053acec7177e277b947b1ebb5c08ab4c4580e';
+
+const POOL_FETCH_TIMEOUT = 5000;
+
 export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
     [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
@@ -67,7 +98,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   logDecoder: (log: Log) => any;
 
-  public allPools: SubgraphPoolBase[] = [];
+  public allPools: PoolState[] = [];
 
   addressesSubscribed: string[];
 
@@ -76,15 +107,17 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected subgraphURL: string,
     protected adapters = Adapters[network] || {},
+    protected factoryAddress: Address = defaultfactoryAddress,
+    protected multicallAddress: Address = defaultMulticallAddress,
+    protected balancerMultiInterface = new Interface(
+      BalancerCustomMulticallABI,
+    ),
   ) {
     super(parentName, logger);
 
     this.logDecoder = (log: Log) => balancerV1Interface.parseLog(log);
-    this.addressesSubscribed = [
-      // TODO: Here to be all pools addresses?
-    ];
+    this.addressesSubscribed = []; // Will be filled in generateState function
 
     // Add handlers
     this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
@@ -97,30 +130,32 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     log: Readonly<Log>,
   ): DeepReadonly<PoolStateMap> | null {
     const _state: PoolStateMap = {};
-    for (const [address, pool] of Object.entries(state))
-      _state[address] = typecastReadOnlyPoolState(pool);
+    for (let pool of Object.values(state))
+      _state[pool.id] = typecastReadOnlyPool(pool);
 
-    try {
-      const event = this.logDecoder(log);
-      if (event.name in this.handlers) {
-        const poolAddress = event.args.poolId.slice(0, 42).toLowerCase();
-        // Only update the _state if we are tracking the pool
-        if (poolAddress in _state) {
-          _state[poolAddress] = this.handlers[event.name](
-            event,
-            _state[poolAddress],
-            log,
+    if (log.address == this.factoryAddress) {
+      // Handle factory events
+    } else {
+      if (LogCallTopics.includes(log.topics[0])) {
+        // TODO: handle special log calls
+      } else {
+        try {
+          const event = this.logDecoder(log);
+          if (event.name in this.handlers)
+            _state[log.address.toLowerCase()] = this.handlers[event.name](
+              event,
+              _state[log.address.toLowerCase()],
+              log,
+            );
+        } catch (e) {
+          this.logger.error(
+            `Error_${this.name}_processLog could not parse the log with topic ${log.topics}:`,
+            e,
           );
         }
       }
-      return _state;
-    } catch (e) {
-      this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
-        e,
-      );
-      return null;
     }
+    return _state;
   }
 
   handleJoinPool(event: any, pool: PoolState, log: Log): PoolState {
@@ -160,43 +195,105 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return pool;
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+  async getAllPoolDataOnChain(
+    pools: PoolStates,
+    balancerMultiAddress: string,
+    blockNumber: number,
+  ): Promise<PoolStates> {
+    if (pools.pools.length === 0) throw Error('There are no pools.');
+
+    let addresses: string[][] = [];
+    let total = 0;
+
+    for (let i = 0; i < pools.pools.length; i++) {
+      let pool = pools.pools[i];
+
+      addresses.push([pool.id]);
+      total++;
+      pool.tokens.forEach(token => {
+        addresses[i].push(token.address);
+        total++;
+      });
+    }
+
+    //Original: let results = await contract.getPoolInfo(addresses, total);
+    let results = await this.dexHelper.multiContract.methods
+      .aggregate({
+        target: balancerMultiAddress,
+        callData: this.balancerMultiInterface.encodeFunctionData(
+          'getPoolInfo',
+          [addresses, total],
+        ),
+      })
+      .call({}, blockNumber);
+
+    // TODO: Parse multicall results
+
+    let j = 0;
+    let onChainPools: PoolStates = { pools: [] };
+
+    for (let i = 0; i < pools.pools.length; i++) {
+      let tokens: Token[] = [];
+
+      let p: PoolState = {
+        id: pools.pools[i].id,
+        swapFee: bignumberify(
+          bmath.scale(bmath.bnum(pools.pools[i].swapFee.toString()), 18),
+        ),
+        totalWeight: bignumberify(
+          bmath.scale(bmath.bnum(pools.pools[i].totalWeight.toString()), 18),
+        ),
+        tokens: tokens,
+        tokensList: pools.pools[i].tokensList,
+      };
+
+      pools.pools[i].tokens.forEach(token => {
+        let bal = bmath.bnum(results[j]);
+        j++;
+        p.tokens.push({
+          address: token.address,
+          balance: bignumberify(bal),
+          decimals: Number(token.decimals),
+          denormWeight: bignumberify(
+            bmath.scale(bmath.bnum(token.denormWeight.toString()), 18),
+          ),
+        });
+      });
+      onChainPools.pools.push(p);
+    }
+    return onChainPools;
+  }
+
+  async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
     // It is quicker to querry the static url for all the pools than querrying the subgraph
     // but the url doesn't take into account the blockNumber hence for testing purpose
     // the state should be passed to the setup function call.
     // const allPoolsNonZeroBalances: SubGraphPools = await getAllPublicPools(blockNumber);
     // const poolsHelper = new SOR.POOLS();
-    const allPoolsNonZeroBalances = await getAllPublicSwapPools(
-      poolUrls[this.network],
-    );
+    const allPoolsNonZeroBalances = (
+      await this.dexHelper.httpRequest.get<AxiosResponse<PoolStates>>(
+        poolUrls[this.network],
+        POOL_FETCH_TIMEOUT,
+      )
+    ).data;
+
     // It is important to the onchain querry as the subgraph pool might not contain the
     // latest balance because of slow block processing time
-    const allPoolsNonZeroBalancesChain = await getAllPoolDataOnChain(
+    const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
       allPoolsNonZeroBalances,
       this.multicallAddress,
-      this.web3Provider as Web3Provider,
       blockNumber,
     );
 
-    let poolState: PoolState = {};
+    let poolStateMap: PoolStateMap = {};
     allPoolsNonZeroBalancesChain.pools.forEach(
-      pool => (poolState[pool.id.toLowerCase()] = pool),
+      pool => (poolStateMap[pool.id.toLowerCase()] = pool),
     );
     // Subscribe to all the pools and the factory contract
-    this.addressesSubscribed = Object.keys(poolState);
+    this.addressesSubscribed = Object.keys(poolStateMap);
     this.addressesSubscribed.push(this.factoryAddress);
-    return poolState;
+    return poolStateMap;
   }
-
-  // async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
-  //   const allPools = await this.fetchAllSubgraphPools();
-  //   this.allPools = allPools;
-  //   const allPoolsLatestState = await this.getOnChainState(
-  //     eventSupportedPools,
-  //     blockNumber,
-  //   );
-  //   return allPoolsLatestState;
-  // }
 }
 
 export class BalancerV1
@@ -229,7 +326,6 @@ export class BalancerV1
       network,
       dexHelper,
       this.logger,
-      subgraphURL,
       adapters,
     );
     this.exchangeRouterInterface = new Interface(BalancerV1ABI);
@@ -245,20 +341,14 @@ export class BalancerV1
     );
   }
 
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
     await this.setupEventPools(blockNumber);
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] || null;
   }
 
-  /* DONE: No need to check */
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -280,10 +370,137 @@ export class BalancerV1
     return [poolIdentifier];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
+  // Original Implementation: https://github.com/balancer-labs/balancer-sor/blob/v1.0.0-1/src/helpers.ts
+  // No change has been made. This function doesn't exist in older SOR and is needed to convert the new SOR Pool
+  // to the older SOR Pool. The new SOR has the datatype PoolPairData which is equivalent to old SOR datatype
+  // Pool.
+  parsePoolPairData(
+    p: PoolState,
+    tokenIn: string,
+    tokenOut: string,
+  ): OldPool | null {
+    let tI = p.tokens.find(
+      t => t.address.toLowerCase() === tokenIn.toLowerCase(),
+    );
+    // logger.debug("tI", tI.balance.toString(), tI);
+    let tO = p.tokens.find(
+      t => t.address.toLowerCase() === tokenOut.toLowerCase(),
+    );
+
+    // logger.debug("tO", tO.balance.toString()), tO);
+    if (!tI || !tO) return null;
+
+    let poolPairData = {
+      id: p.id,
+      tokenIn: tokenIn,
+      tokenOut: tokenOut,
+      decimalsIn: tI.decimals,
+      decimalsOut: tO.decimals,
+      balanceIn: bmath.bnum(tI.balance),
+      balanceOut: bmath.bnum(tO.balance),
+      weightIn: bmath.scale(
+        bmath.bnum(tI.denormWeight).div(bmath.bnum(p.totalWeight)),
+        18,
+      ),
+      weightOut: bmath.scale(
+        bmath.bnum(tO.denormWeight).div(bmath.bnum(p.totalWeight)),
+        18,
+      ),
+      swapFee: bmath.bnum(p.swapFee),
+    };
+
+    return poolPairData;
+  }
+
+  // Has almost the same logic as getAllPoolDataOnChain
+  // Modifies the balance of pools according to the on chain state
+  // at a certain blockNumber
+  async updatePoolState(): Promise<void> {
+    if (pools.length === 0) throw Error('There are no pools.');
+
+    const contract = new Contract(multiAddress, CustomMultiAbi, provider);
+
+    let addresses: string[][] = [];
+    let total = 0;
+
+    for (let i = 0; i < pools.length; i++) {
+      let pool = pools[i];
+
+      addresses.push([pool.id]);
+      total++;
+      pool.tokens.forEach(token => {
+        addresses[i].push(token.address);
+        total++;
+      });
+    }
+
+    //Original: let results = await contract.getPoolInfo(addresses, total);
+    let results = await contract.getPoolInfo(addresses, total, {
+      blockTag: blockNumber,
+    });
+
+    let j = 0;
+    for (let i = 0; i < pools.length; i++) {
+      pools[i].tokens.forEach(token => {
+        token.balance = bmath.bnum(results[j]);
+        j++;
+      });
+    }
+  }
+
+  async getTopPools(
+    from: Token,
+    to: Token,
+    side: SwapSide,
+    pools: PoolState[],
+    minBalance: bigint,
+    routeID: number,
+    usedPools: { [poolIdentifier: string]: number } | null,
+    isStale: boolean,
+    blockNumber: number,
+  ) {
+    const _minBalance = new BigNumber(minBalance.toString());
+    // Limits are from MAX_IN_RATIO/MAX_OUT_RATIO in the pool contracts
+    const checkBalance = (p: OldPool) =>
+      (side === SwapSide.SELL ? p.balanceIn.div(2) : p.balanceOut.div(3)).gt(
+        _minBalance,
+      );
+    const selectedPools = pools
+      .map(p => this.parsePoolPairData(p, from.address, to.address))
+      .filter(
+        p =>
+          !!p &&
+          (!usedPools || usedPools[`Balancer_${p.id}`] === routeID) &&
+          checkBalance(p),
+      )
+      .sort(
+        (p1, p2) =>
+          parseFloat(
+            p2!.balanceOut.times(1e18).idiv(p2!.weightOut).toFixed(0),
+          ) -
+          parseFloat(p1!.balanceOut.times(1e18).idiv(p1!.weightOut).toFixed(0)),
+      )
+      .slice(0, 10) as OldPool[];
+
+    if (!selectedPools || !selectedPools.length) return null;
+    if (!isStale) return selectedPools;
+
+    const rawSelectedPools = pools.filter(p =>
+      selectedPools.some(sp => p.id.toLowerCase() === sp.id.toLowerCase()),
+    );
+
+    await this.updatePoolState(
+      rawSelectedPools,
+      this.multicallAddress,
+      blockNumber,
+    );
+
+    return rawSelectedPools
+      .map(p => this.parsePoolPairData(p, from.address, to.address))
+      .filter(p => !!p && checkBalance(p)) as OldPool[];
+  }
+
+  // TODO: Check this function
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -296,25 +513,18 @@ export class BalancerV1
       const from = wrapETH(srcToken, this.network);
       const to = wrapETH(destToken, this.network);
 
-      let state = this.eventPools.getState(this.blockNumber);
+      let state = this.eventPools.getState(blockNumber);
       let isStale = false;
       if (!state) {
-        if (this.eventPools.isFetching) {
+        state = this.eventPools.getStaleState();
+        if (!state) {
           this.logger.error(
-            'Error_getPrices: Pools state fetching still in process',
+            'Error_getPrices: Neither updated nor stale state found',
           );
           return null;
-        } else {
-          state = this.eventPools.getStaleState();
-          if (!state) {
-            this.logger.error(
-              'Error_getPrices: Neither updated nor stale state found',
-            );
-            return null;
-          }
-          isStale = true;
-          this.logger.warn('Warning_getPrices: Stale state being used');
         }
+        isStale = true;
+        this.logger.warn('Warning_getPrices: Stale state being used');
       }
 
       const unitVolume = BigInt(
@@ -364,7 +574,6 @@ export class BalancerV1
     }
   }
 
-  /* DONE: No need to check */
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -395,7 +604,6 @@ export class BalancerV1
     };
   }
 
-  /* DONE: No need to check */
   getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -473,53 +681,9 @@ export class BalancerV1
     );
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
+  // TODO: Check this function
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
-  ): Promise<PoolLiquidity[]> {
-
-
-    const _minBalance = new BigNumber(minBalance.toString());
-    // Limits are from MAX_IN_RATIO/MAX_OUT_RATIO in the pool contracts
-    const checkBalance = (p: OldPool) =>
-      (side === SwapSide.SELL ? p.balanceIn.div(2) : p.balanceOut.div(3)).gt(
-        _minBalance,
-      );
-    const selectedPools = pools
-      .map(p => parsePoolPairData(p, from.address, to.address))
-      .filter(
-        p =>
-          !!p &&
-          (!usedPools || usedPools[`Balancer_${p.id}`] === routeID) &&
-          checkBalance(p),
-      )
-      .sort(
-        (p1, p2) =>
-          parseFloat(
-            p2!.balanceOut.times(1e18).idiv(p2!.weightOut).toFixed(0),
-          ) -
-          parseFloat(p1!.balanceOut.times(1e18).idiv(p1!.weightOut).toFixed(0)),
-      )
-      .slice(0, 10) as OldPool[];
-
-    if (!selectedPools || !selectedPools.length) return null;
-    if (!isStale) return selectedPools;
-
-    const rawSelectedPools = pools.filter(p =>
-      selectedPools.some(sp => p.id.toLowerCase() === sp.id.toLowerCase()),
-    );
-
-    await updatePoolState(
-      rawSelectedPools,
-      this.multicallAddress,
-      this.web3Provider as Web3Provider,
-      blockNumber,
-    );
-
-    return rawSelectedPools
-      .map(p => parsePoolPairData(p, from.address, to.address))
-      .filter(p => !!p && checkBalance(p)) as OldPool[];
-  }
+  ): Promise<PoolLiquidity[]> {}
 }
