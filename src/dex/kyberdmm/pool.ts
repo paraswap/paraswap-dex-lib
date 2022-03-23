@@ -80,16 +80,28 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   ): Promise<DeepReadonly<KyberDmmPoolState> | null> {
     const event = this.decoder(log);
     switch (event.name) {
-      case 'Sync':
-        return {
-          ...state,
-          reserves: {
-            reserves0: new BigNumber(event.args.reserve0.toString()),
-            reserves1: new BigNumber(event.args.reserve1.toString()),
-            vReserves0: new BigNumber(event.args.vReserve0.toString()),
-            vReserves1: new BigNumber(event.args.vReserve1.toString()),
-          },
-        };
+      case 'Sync': {
+        if (this.isAmpPool())
+          return {
+            ...state,
+            reserves: {
+              reserves0: new BigNumber(event.args.reserve0.toString()),
+              reserves1: new BigNumber(event.args.reserve1.toString()),
+              vReserves0: new BigNumber(event.args.vReserve0.toString()),
+              vReserves1: new BigNumber(event.args.vReserve1.toString()),
+            },
+          };
+        else
+          return {
+            ...state,
+            reserves: {
+              reserves0: new BigNumber(event.args.reserve0.toString()),
+              reserves1: new BigNumber(event.args.reserve1.toString()),
+              vReserves0: new BigNumber(event.args.reserve0.toString()),
+              vReserves1: new BigNumber(event.args.reserve1.toString()),
+            },
+          };
+      }
       case 'UpdateEMA':
         return {
           ...state,
@@ -104,6 +116,10 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
         };
     }
     return null;
+  }
+
+  isAmpPool(): boolean {
+    return !this.ampBps.eq(BPS);
   }
 
   async generateState(
@@ -122,12 +138,35 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
           },
         ])
         .call({}, blockNumber);
+
     const [reserves0, reserves1, vReserves0, vReserves1] = coder
       .decode(['uint256', 'uint256', 'uint256', 'uint256'], data.returnData[0])
       .map(a => new BigNumber(a.toString()));
-    const [shortEMA, longEMA, lastBlockVolume, lastTradeBlock] = coder
+
+    const [shortEMA, longEMA, , lastTradeBlock] = coder
       .decode(['uint256', 'uint256', 'uint128', 'uint256'], data.returnData[1])
       .map(a => new BigNumber(a.toString()));
+
+    if (blockNumber == 'latest')
+      blockNumber = await this.dexHelper.provider.getBlockNumber();
+
+    const prevBlockData: { returnData: any[] } =
+      await this.dexHelper.multiContract.methods
+        .aggregate([
+          {
+            target: this.poolAddress,
+            callData: iface.encodeFunctionData('getVolumeTrendData', []),
+          },
+        ])
+        .call({}, blockNumber - 1);
+
+    const [, , lastBlockVolume] = coder
+      .decode(
+        ['uint256', 'uint256', 'uint128', 'uint256'],
+        prevBlockData.returnData[0],
+      )
+      .map(a => new BigNumber(a.toString()));
+
     return {
       trendData: {
         shortEMA,
