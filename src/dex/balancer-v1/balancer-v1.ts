@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import { Contract } from 'web3-eth-contract';
 import { DeepReadonly } from 'ts-essentials';
 import BigNumber from 'bignumber.js';
 import _ from 'lodash';
@@ -102,6 +103,8 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   addressesSubscribed: string[];
 
+  balancerMulticall: Contract;
+
   constructor(
     protected parentName: string,
     protected network: number,
@@ -118,6 +121,10 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     this.logDecoder = (log: Log) => balancerV1Interface.parseLog(log);
     this.addressesSubscribed = []; // Will be filled in generateState function
+    this.balancerMulticall = new dexHelper.web3Provider.eth.Contract(
+      BalancerCustomMulticallABI as any,
+      this.multicallAddress,
+    );
 
     // Add handlers
     this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
@@ -216,18 +223,9 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       });
     }
 
-    //Original: let results = await contract.getPoolInfo(addresses, total);
-    let results = await this.dexHelper.multiContract.methods
-      .aggregate({
-        target: balancerMultiAddress,
-        callData: this.balancerMultiInterface.encodeFunctionData(
-          'getPoolInfo',
-          [addresses, total],
-        ),
-      })
+    let results = await this.balancerMulticall.methods
+      .getPoolInfo(addresses, total)
       .call({}, blockNumber);
-
-    // TODO: Parse multicall results
 
     let j = 0;
     let onChainPools: PoolStates = { pools: [] };
@@ -265,7 +263,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
-    // It is quicker to querry the static url for all the pools than querrying the subgraph
+    // It is quicker to query the static url for all the pools than querying the subgraph
     // but the url doesn't take into account the blockNumber hence for testing purpose
     // the state should be passed to the setup function call.
     // const allPoolsNonZeroBalances: SubGraphPools = await getAllPublicPools(blockNumber);
@@ -277,7 +275,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       )
     ).data;
 
-    // It is important to the onchain querry as the subgraph pool might not contain the
+    // It is important to the onchain query as the subgraph pool might not contain the
     // latest balance because of slow block processing time
     const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
       allPoolsNonZeroBalances,
@@ -418,8 +416,6 @@ export class BalancerV1
   async updatePoolState(): Promise<void> {
     if (pools.length === 0) throw Error('There are no pools.');
 
-    const contract = new Contract(multiAddress, CustomMultiAbi, provider);
-
     let addresses: string[][] = [];
     let total = 0;
 
@@ -434,10 +430,9 @@ export class BalancerV1
       });
     }
 
-    //Original: let results = await contract.getPoolInfo(addresses, total);
-    let results = await contract.getPoolInfo(addresses, total, {
-      blockTag: blockNumber,
-    });
+    let results = await this.eventPools.balancerMulticall.methods
+      .getPoolInfo(addresses, total)
+      .call({}, blockNumber);
 
     let j = 0;
     for (let i = 0; i < pools.length; i++) {
