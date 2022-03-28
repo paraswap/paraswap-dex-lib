@@ -50,5 +50,8 @@ export const Adapters: {
     [side: string]: { name: string; index: number }[];
   };
 } = {
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: 'Adapter01', index: 5 }] },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter01', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 4 }],
+  },
 };
