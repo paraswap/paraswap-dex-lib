@@ -28,7 +28,7 @@ export type BalancerSwap = {
   tokenInParam: string;
   tokenOutParam: string;
   maxPrice: string;
-}[];
+};
 
 export type BalancerV1Data = {
   exchangeProxy: Address;
