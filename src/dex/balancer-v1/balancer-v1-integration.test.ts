@@ -7,26 +7,11 @@ import { BalancerV1 } from './balancer-v1';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-/*
-  README
-  ======
-
-  This test script adds tests for BalancerV1 general integration 
-  with the DEX interface. The test cases below are example tests. 
-  It is recommended to add tests which cover BalancerV1 specific
-  logic. 
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.tests.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 const network = Network.MAINNET;
-const TokenASymbol = 'TokenASymbol';
+const TokenASymbol = 'WETH';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'TokenBSymbol';
+const TokenBSymbol = 'DAI';
 const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
@@ -51,19 +36,19 @@ describe('BalancerV1', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await balancerV1.getPricesVolume(
-      WETH,
-      DAI,
+      TokenA,
+      TokenB,
       amounts,
       SwapSide.SELL,
       blocknumber,
       pools,
     );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
@@ -82,19 +67,19 @@ describe('BalancerV1', function () {
       SwapSide.BUY,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await balancerV1.getPricesVolume(
-      WETH,
-      DAI,
+      TokenA,
+      TokenB,
       amounts,
       SwapSide.BUY,
       blocknumber,
       pools,
     );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
