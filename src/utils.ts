@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { ETHER_ADDRESS, Network, SwapSide, MAX_UINT_BIGINT } from './constants';
 import { Address, Token, DexConfigMap } from './types';
 
@@ -67,9 +68,9 @@ export function getDexKeysWithNetwork<T>(
 
 // We assume that the rate always gets worse when be go bigger in volume.
 // Both oldVolume and newVolume are sorted
-// Considering these assumption, whenver we don't have a price we consider
+// Considering these assumption, whenever we don't have a price we consider
 // the price for the next volume price available and interpolate linearly.
-// Interpolate can be usefull in two cases
+// Interpolate can be useful in two cases
 // -> you have a smaller chunked prices and you want go to a higher chunked prices
 // -> you have a linear prices and you want go to a not skewed prices
 // -> could be used by the order book exchanges as an orderbook works almost with the same principles.
@@ -130,4 +131,8 @@ export function interpolate(
         (oldVolume[i] - lastOldVolume)
     );
   });
+}
+
+export function bignumberify(val: any) {
+  return new BigNumber(val);
 }
