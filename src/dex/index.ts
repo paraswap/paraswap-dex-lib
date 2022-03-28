@@ -10,6 +10,7 @@ import { Weth } from './weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
+import { balancerV1Merge } from './balancer-v1/optimizer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
@@ -119,6 +120,7 @@ export class DexAdapterService {
   uniswapV2Alias: string | null;
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
+    balancerV1Merge,
     balancerV2Merge,
     uniswapMerge,
   ];

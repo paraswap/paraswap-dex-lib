@@ -23,7 +23,7 @@ export interface PoolStates {
 
 export type PoolStateMap = { [address: string]: PoolState };
 
-export type BalancerSwaps = {
+export type BalancerSwap = {
   pool: Address;
   tokenInParam: string;
   tokenOutParam: string;
@@ -37,7 +37,7 @@ export type BalancerV1Data = {
 
 export type OptimizedBalancerV1Data = {
   exchangeProxy: Address;
-  swaps: BalancerSwaps;
+  swaps: BalancerSwap[];
 };
 
 export type DexParams = {
@@ -45,34 +45,34 @@ export type DexParams = {
 };
 
 type BalancerBatchEthInSwapExactInParam = [
-  swaps: BalancerSwaps,
+  swaps: BalancerSwap[],
   destToken: string,
   destAmount: string,
 ];
 type BalancerBatchEthOutSwapExactInParam = [
-  swaps: BalancerSwaps,
+  swaps: BalancerSwap[],
   srcToken: string,
   srcAmount: string,
   destAmount: string,
 ];
 type BalancerBatchSwapExactInParam = [
-  swaps: BalancerSwaps,
+  swaps: BalancerSwap[],
   srcToken: string,
   destToken: string,
   srcAmount: string,
   destAmount: string,
 ];
 type BalancerBatchEthInSwapExactOutParam = [
-  swaps: BalancerSwaps,
+  swaps: BalancerSwap[],
   destToken: string,
 ];
 type BalancerBatchEthOutSwapExactOutParam = [
-  swaps: BalancerSwaps,
+  swaps: BalancerSwap[],
   srcToken: string,
   maxTotalAmountIn: string,
 ];
 type BalancerBatchSwapExactOutParam = [
-  swaps: BalancerSwaps,
+  swaps: BalancerSwap[],
   srcToken: string,
   destToken: string,
   maxTotalAmountIn: string,
