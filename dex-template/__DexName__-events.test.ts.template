@@ -55,7 +55,7 @@ async function fetchPoolState(
 }
 
 describe('__DexName__ Event', function () {
-  const blockNumbers: { [eventName: string]: number[] } = {
+  const blockNumbers: { [eventName: string]: [number, string][] } = {
     // TODO: complete me!
   };
 
