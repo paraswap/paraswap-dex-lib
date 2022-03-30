@@ -3,6 +3,7 @@ import { UniswapV2Config } from './config';
 import { MDEXConfig } from './mdex';
 import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
+import { ExcaliburConfig } from './excalibur';
 
 // BakerySwap is removed from AllUniswapForks and UniswapForksWithNetwork
 // as it has a modified pool implementation which is not compatible with
@@ -13,6 +14,7 @@ export const AllUniswapForks = [
   ...Object.keys(MDEXConfig),
   ...Object.keys(BiSwapConfig),
   ...Object.keys(DfynConfig),
+  ...Object.keys(ExcaliburConfig),
 ];
 
 const transformToNetworkMap = (config: {
@@ -39,6 +41,7 @@ export const UniswapForksWithNetwork = transformToNetworkMap({
   ...MDEXConfig,
   ...BiSwapConfig,
   ...DfynConfig,
+  ...ExcaliburConfig,
 });
 
 // These are exchanges used for swapOnUniswap method
