@@ -39,7 +39,6 @@ export class Excalibur extends UniswapV2 {
       ExcaliburConfig[dexKey][network].initCode,
       ExcaliburConfig[dexKey][network].feeCode,
     );
-    this.feeFactor = 100000;
     this.excaliburPool = new Interface(excaliburPoolABI);
   }
 
@@ -53,7 +52,7 @@ export class Excalibur extends UniswapV2 {
         this.excaliburPool
           .decodeFunctionResult('feeAmount', values)[0]
           .toString(),
-      );
+      ) / 10;
     return {
       callEntry,
       callDecoder,
