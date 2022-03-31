@@ -9,6 +9,45 @@ export class NervePoolMath {
 
   constructor(protected name: string, protected logger: Logger) {}
 
+  calculateSwap(
+    state: PoolState,
+    tokenIndexFrom: number,
+    tokenIndexTo: number,
+    dx: bigint,
+    blockTimestamp: bigint,
+  ) {
+    const xp = this._xp(state);
+
+    // uint256 x = dx.mul(self.tokenPrecisionMultipliers[tokenIndexFrom])
+    //    .add(xp[tokenIndexFrom]);
+    const x =
+      dx * state.tokenPrecisionMultipliers[tokenIndexFrom] + xp[tokenIndexFrom];
+
+    const y = this._getY(
+      state,
+      tokenIndexFrom,
+      tokenIndexTo,
+      x,
+      xp,
+      blockTimestamp,
+    );
+
+    if (y === undefined) {
+      state.isValid = false;
+      return undefined;
+    }
+
+    // dy = xp[tokenIndexTo].sub(y).sub(1);
+    let dy = xp[tokenIndexTo] - y - ONE;
+
+    // dyFee = dy.mul(self.swapFee).div(FEE_DENOMINATOR);
+    const dyFee = (dy * state.swapFee) / this.FEE_DENOMINATOR;
+
+    // dy = dy.sub(dyFee).div(self.tokenPrecisionMultipliers[tokenIndexTo]);
+    dy = (dy - dyFee) / state.tokenPrecisionMultipliers[tokenIndexTo];
+    return { dy, dyFee };
+  }
+
   calculateWithdrawOneToken(
     state: PoolState,
     tokenAmount: bigint,
@@ -60,6 +99,7 @@ export class NervePoolMath {
     v.preciseA = this._getAPrecise(state, blockTimestamp);
     v.d0 = this._getD(state, xp, v.preciseA);
 
+    // v.d1 = v.d0.sub(tokenAmount.mul(v.d0).div(self.lpToken.totalSupply()));
     v.d1 = v.d0 - (tokenAmount * v.d0) / state.lpToken_supply;
     v.newY = this._getYD(state, v.preciseA, tokenIndex, xp, v.d1);
 
@@ -79,9 +119,12 @@ export class NervePoolMath {
       xpReduced[i] -= (dxExpected * v.feePerToken) / this.FEE_DENOMINATOR;
     }
 
+    // uint256 dy = xpReduced[tokenIndex].sub(getYD(v.preciseA, tokenIndex, xpReduced, v.d1));
     let dy =
       xpReduced[tokenIndex] -
       this._getYD(state, v.preciseA, tokenIndex, xpReduced, v.d1);
+
+    // dy = dy.sub(1).div(self.tokenPrecisionMultipliers[tokenIndex]);
     dy = (dy - ONE) / state.tokenPrecisionMultipliers[tokenIndex];
 
     return { dy, newY: v.newY };
@@ -89,6 +132,7 @@ export class NervePoolMath {
 
   protected _feePerToken(state: PoolState) {
     const numTokens = this._getNumTokens(state);
+    // self.swapFee.mul(self.pooledTokens.length).div(self.pooledTokens.length.sub(1).mul(4));
     return (state.swapFee * numTokens) / ((numTokens - ONE) * biginterify(4));
   }
 
@@ -96,45 +140,6 @@ export class NervePoolMath {
     // It is not correct. We should calculate user withdrawFeeMultiplier by
     // the time passed since the liquidity was added
     return state.defaultWithdrawFee;
-  }
-
-  calculateSwap(
-    state: PoolState,
-    tokenIndexFrom: number,
-    tokenIndexTo: number,
-    dx: bigint,
-    blockTimestamp: bigint,
-  ) {
-    const xp = this._xp(state);
-
-    // uint256 x = dx.mul(self.tokenPrecisionMultipliers[tokenIndexFrom])
-    //    .add(xp[tokenIndexFrom]);
-    const x =
-      dx * state.tokenPrecisionMultipliers[tokenIndexFrom] + xp[tokenIndexFrom];
-
-    const y = this._getY(
-      state,
-      tokenIndexFrom,
-      tokenIndexTo,
-      x,
-      xp,
-      blockTimestamp,
-    );
-
-    if (y === undefined) {
-      state.isValid = false;
-      return undefined;
-    }
-
-    // dy = xp[tokenIndexTo].sub(y).sub(1);
-    let dy = xp[tokenIndexTo] - y - ONE;
-
-    // dyFee = dy.mul(self.swapFee).div(FEE_DENOMINATOR);
-    const dyFee = (dy * state.swapFee) / this.FEE_DENOMINATOR;
-
-    // dy = dy.sub(dyFee).div(self.tokenPrecisionMultipliers[tokenIndexTo]);
-    dy = (dy - dyFee) / state.tokenPrecisionMultipliers[tokenIndexTo];
-    return { dy, dyFee };
   }
 
   protected _getYD(
@@ -152,19 +157,26 @@ export class NervePoolMath {
 
     for (let i = 0; i < numTokens; i++) {
       if (i != tokenIndex) {
+        // s = s.add(xp[i]);
         s = s + xp[i];
+
+        // c = c.mul(d).div(xp[i].mul(numTokens));
         c = (c * d) / (xp[i] * numTokens);
       }
     }
+    // c = c.mul(d).mul(A_PRECISION).div(nA.mul(numTokens));
     c = (c * d * this.A_PRECISION) / (nA * numTokens);
 
+    // uint256 b = s.add(d.mul(A_PRECISION).div(nA));
     const b = s + (d * this.A_PRECISION) / nA;
     let yPrev: bigint;
     let y = d;
 
     for (let i = 0; i < this.MAX_LOOP_LIMIT; i++) {
       yPrev = y;
-      y = (y * y + c) / (y * biginterify(2) + a - d);
+
+      // y = y.mul(y).add(c).div(y.mul(2).add(b).sub(d));
+      y = (y * y + c) / (y * biginterify(2) + b - d);
       if (MathUtil.within1(y, yPrev)) {
         return y;
       }
