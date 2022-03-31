@@ -12,6 +12,7 @@ export interface PoolState {
   lpToken_supply: bigint;
   balances: bigint[];
   tokenPrecisionMultipliers: bigint[];
+  isValid: boolean;
 }
 
 export type MetapoolState = PoolState & {
