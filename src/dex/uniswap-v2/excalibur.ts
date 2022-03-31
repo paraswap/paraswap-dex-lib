@@ -48,11 +48,13 @@ export class Excalibur extends UniswapV2 {
       callData: this.excaliburPool.encodeFunctionData('feeAmount', []),
     };
     const callDecoder = (values: any[]) =>
-      parseInt(
-        this.excaliburPool
-          .decodeFunctionResult('feeAmount', values)[0]
-          .toString(),
-      ) / 10;
+      Math.ceil(
+        parseInt(
+          this.excaliburPool
+            .decodeFunctionResult('feeAmount', values)[0]
+            .toString(),
+        ) / 10,
+      );
     return {
       callEntry,
       callDecoder,
