@@ -1101,4 +1101,138 @@ describe('UniswapV2 E2E Polygon', () => {
       });
     });
   });
+
+  describe('RadioShack', () => {
+    const dexKey = 'RadioShack';
+
+    describe('simpleSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.WETH,
+          holders.MATIC,
+          '100000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.MATIC,
+          holders.WETH,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.DAI,
+          holders.USDT,
+          '1000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('multiSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.WETH,
+          holders.MATIC,
+          '100000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.MATIC,
+          holders.WETH,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.DAI,
+          holders.USDT,
+          '1000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('megaSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.WETH,
+          holders.MATIC,
+          '100000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.MATIC,
+          holders.WETH,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.DAI,
+          holders.USDT,
+          '1000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });
