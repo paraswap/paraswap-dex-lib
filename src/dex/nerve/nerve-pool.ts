@@ -3,33 +3,19 @@ import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import type { AbiItem } from 'web3-utils';
 const erc20ABI = require('../../abi/erc20.json');
-const nervePoolABI = require('../../abi/nerve/nerve-pool.json');
-import {
-  Token,
-  Address,
-  ExchangePrices,
-  Log,
-  AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
-  Logger,
-} from '../../types';
-import { SwapSide, Network } from '../../constants';
+const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
+import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { NerveData, NervePoolConfig, PoolState } from './types';
-import { SimpleExchange } from '../simple-exchange';
-import { NerveConfig, Adapters } from './config';
+import { NervePoolConfig, PoolState } from './types';
+import { Adapters } from './config';
 import { getManyPoolStates } from './getstate-multicall';
 import { BlockHeader } from 'web3-eth';
-import { biginterify, ZERO, ONE, MathUtil } from './utils';
+import { biginterify } from './utils';
+import { NervePoolMath } from './nerve-math';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
-  protected readonly FEE_DENOMINATOR = biginterify(10 ** 10);
-  protected readonly A_PRECISION = biginterify(100);
-  protected readonly MAX_LOOP_LIMIT = biginterify(256);
+  protected nervePoolMath: NervePoolMath;
 
   handlers: {
     [event: string]: (
@@ -48,7 +34,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   lpTokenIface: Interface;
 
-  isStateValid = true;
+  isFetching = false;
 
   constructor(
     protected parentName: string,
@@ -57,9 +43,10 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     logger: Logger,
     protected adapters = Adapters[network], // TODO: add any additional params required for event subscriber
     public poolConfig: NervePoolConfig,
-    protected nervePoolABI: AbiItem[] = nervePoolABI,
+    protected nervePoolABI: AbiItem[] = nervePoolABIDefault,
   ) {
     super(`${parentName}_${poolConfig.name}`, logger);
+    this.nervePoolMath = new NervePoolMath(this.name, this.logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = [poolConfig.address];
@@ -138,6 +125,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
         balances: state.balances.map(biginterify),
         tokenPrecisionMultipliers:
           state.tokenPrecisionMultipliers.map(biginterify),
+        isValid: state.isValid,
       };
       if (event.name in this.handlers)
         return this.handlers[event.name](event, _state, log, blockHeader);
@@ -203,7 +191,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   handleTokenSwap(
     event: any,
     state: PoolState,
-    _0: Log,
+    _2: Log,
     blockHeader: BlockHeader,
   ) {
     const blockTimestamp = biginterify(blockHeader.timestamp);
@@ -213,7 +201,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     const tokenIndexFrom = event.args.soldId.toNumber();
     const tokenIndexTo = event.args.boughtId.toNumber();
 
-    const swap = this._calculateSwap(
+    const swap = this.nervePoolMath.calculateSwap(
       state,
       tokenIndexFrom,
       tokenIndexTo,
@@ -222,7 +210,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     );
 
     if (swap === undefined) {
-      this.isStateValid = false;
+      state.isValid = false;
       return state;
     }
 
@@ -230,7 +218,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
     const dyAdminFee =
       (dyFee * state.adminFee) /
-      this.FEE_DENOMINATOR /
+      this.nervePoolMath.FEE_DENOMINATOR /
       state.tokenPrecisionMultipliers[tokenIndexFrom];
 
     state.balances[tokenIndexFrom] += transferredDx;
@@ -240,184 +228,101 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       this.logger.error(
         `For ${this.parentName}_${this.poolConfig.name} _calculateSwap value ${dy} is not equal to ${dyEvent} event value`,
       );
-      this.isStateValid = false;
+      state.isValid = false;
     }
 
     return state;
   }
 
   handleAddLiquidity(event: any, state: PoolState) {
-    const tokenAmounts = event.args.tokenAmounts.map(biginterify);
-    const fees = event.args.fees.map(biginterify);
-    const invariant = biginterify(event.args.invariant);
+    const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
+    const fees = event.args.fees.map(biginterify) as bigint[];
     const lpTokenSupply = biginterify(event.args.lpTokenSupply);
 
     state.lpToken_supply = lpTokenSupply;
-
+    for (const [i, tokenAmount] of tokenAmounts.entries()) {
+      // We receive the real transferred amount. No need to check it
+      state.balances[i] += tokenAmount;
+      state.balances[i] -=
+        (fees[i] * state.adminFee) / this.nervePoolMath.FEE_DENOMINATOR;
+    }
     return state;
   }
 
-  handleRemoveLiquidity(event: any, state: PoolState) {}
+  handleRemoveLiquidity(event: any, state: PoolState) {
+    const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
+    const lpTokenSupply = biginterify(event.args.lpTokenSupply);
 
-  handleRemoveLiquidityOne(event: any, state: PoolState) {}
+    state.lpToken_supply = lpTokenSupply;
+    for (const [i, tokenAmount] of tokenAmounts.entries()) {
+      // We receive the real transferred amount. No need to check it
+      state.balances[i] -= tokenAmount;
+    }
+  }
 
-  handleRemoveLiquidityImbalance(event: any, state: PoolState) {}
-
-  protected _calculateSwap(
+  handleRemoveLiquidityOne(
+    event: any,
     state: PoolState,
-    tokenIndexFrom: number,
-    tokenIndexTo: number,
-    dx: bigint,
-    blockTimestamp: bigint,
+    _2: Log,
+    blockHeader: BlockHeader,
   ) {
-    const xp = this._xp(state);
+    // To calculate remove liquidity one, we need to calculate the user fee.
+    // It depends on the time when user deposited assets. That info can be obtained
+    // by onchain call, but here there is no point of doing this.
+    // Therefore we just invalidate our state so that next state request will generate new one
 
-    // uint256 x = dx.mul(self.tokenPrecisionMultipliers[tokenIndexFrom])
-    //    .add(xp[tokenIndexFrom]);
-    const x =
-      dx * state.tokenPrecisionMultipliers[tokenIndexFrom] + xp[tokenIndexFrom];
+    state.isValid = false;
+    return state;
 
-    const y = this._getY(
-      state,
-      tokenIndexFrom,
-      tokenIndexTo,
-      x,
-      xp,
-      blockTimestamp,
-    );
+    // It was original implementation before I knew about the problem
+    // I will keep it till PR review. If we stick to this solution, I will
+    // remove this code.
 
-    if (y === undefined) {
-      this.isStateValid = false;
-      return undefined;
-    }
+    // const blockTimestamp = biginterify(blockHeader.timestamp);
+    // const lpTokenAmount = biginterify(event.args.lpTokenAmount);
+    // const tokenIndex = event.args.boughtId.toNumber();
+    // const dyEvent = biginterify(event.args.tokensBought);
 
-    // dy = xp[tokenIndexTo].sub(y).sub(1);
-    let dy = xp[tokenIndexTo] - y - ONE;
+    // const { dy, dyFee } = this.nervePoolMath.calculateWithdrawOneToken(
+    //   state,
+    //   lpTokenAmount,
+    //   tokenIndex,
+    //   blockTimestamp,
+    // );
+    // // self.balances[tokenIndex] = self.balances[tokenIndex].sub(
+    // //    dy.add(dyFee.mul(self.adminFee).div(FEE_DENOMINATOR)));
+    // state.balances[tokenIndex] -=
+    //   dy + (dyFee * state.adminFee) / this.nervePoolMath.FEE_DENOMINATOR;
 
-    // dyFee = dy.mul(self.swapFee).div(FEE_DENOMINATOR);
-    const dyFee = (dy * state.swapFee) / this.FEE_DENOMINATOR;
+    // state.lpToken_supply -= lpTokenAmount;
 
-    // dy = dy.sub(dyFee).div(self.tokenPrecisionMultipliers[tokenIndexTo]);
-    dy = (dy - dyFee) / state.tokenPrecisionMultipliers[tokenIndexTo];
-    return { dy, dyFee };
+    // // Check calculations correctness
+    // if (dyEvent !== dy) {
+    //   this.logger.error(
+    //     `For ${this.parentName}_${
+    //       this.poolConfig.name
+    //     } _calculateWithdrawOneToken value ${stringify(
+    //       dy,
+    //     )} is not equal to ${stringify(dyEvent)} event value`,
+    //   );
+    //   state.isValid = false;
+    // }
+
+    // return state;
   }
 
-  protected _getY(
-    state: PoolState,
-    tokenIndexFrom: number,
-    tokenIndexTo: number,
-    x: bigint,
-    xp: bigint[],
-    blockTimestamp: bigint,
-  ) {
-    const numTokens = biginterify(this.numTokens);
-    const a = this._getAPrecise(state, blockTimestamp);
-    const d = this._getD(xp, a);
-    let c = d;
-    let s: bigint;
-    const nA = numTokens * a;
+  handleRemoveLiquidityImbalance(event: any, state: PoolState) {
+    const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
+    const fees = event.args.fees.map(biginterify) as bigint[];
+    const lpTokenSupply = biginterify(event.args.lpTokenSupply);
 
-    let _x: bigint;
-    for (let i = 0; i < numTokens; i++) {
-      if (i == tokenIndexFrom) {
-        _x = x;
-      } else if (i != tokenIndexTo) {
-        _x = xp[i];
-      } else {
-        continue;
-      }
-      s = s + _x;
-      // c = c.mul(d).div(_x.mul(numTokens));
-      c = (c * d) / (_x * numTokens);
-    }
-    // c = c.mul(d).mul(A_PRECISION).div(nA.mul(numTokens));
-    c = (c * d * this.A_PRECISION) / (nA * numTokens);
-
-    // uint256 b = s.add(d.mul(A_PRECISION).div(nA));
-    const b = s + (d * this.A_PRECISION) / nA;
-    let yPrev: bigint;
-    let y = d;
-
-    for (let i = 0; i < this.MAX_LOOP_LIMIT; i++) {
-      yPrev = y;
-      // y = y.mul(y).add(c).div(y.mul(2).add(b).sub(d));
-      y = (y * y + c) / (y * biginterify(2) + b - d);
-
-      if (MathUtil.within1(y, yPrev)) {
-        return y;
-      }
+    state.lpToken_supply = lpTokenSupply;
+    for (const [i, tokenAmount] of tokenAmounts.entries()) {
+      state.balances[i] -= tokenAmount;
+      state.balances[i] -=
+        (fees[i] * state.adminFee) / this.nervePoolMath.FEE_DENOMINATOR;
     }
 
-    this.logger.error(
-      `Event pool ${this.name} parsing function _getY approximation did not converge`,
-    );
-    this.isStateValid = false;
-    return undefined;
-  }
-
-  protected _getAPrecise(state: PoolState, blockTimestamp: bigint) {
-    const t1 = state.futureATime; // time when ramp is finished
-    const a1 = state.futureA; // final A value when ramp is finished
-
-    if (blockTimestamp < t1) {
-      const t0 = state.initialATime; // time when ramp is started
-      const a0 = state.initialA; // initial A value when ramp is started
-      if (a1 > a0) {
-        // a0.add(a1.sub(a0).mul(block.timestamp.sub(t0)).div(t1.sub(t0)));
-        return a0 + ((a1 - a0) * (blockTimestamp - t0)) / (t1 - t0);
-      } else {
-        // a0.sub(a0.sub(a1).mul(block.timestamp.sub(t0)).div(t1.sub(t0)));
-        return a0 - ((a0 - a1) * (blockTimestamp - t0)) / (t1 - t0);
-      }
-    } else {
-      return a1;
-    }
-  }
-
-  protected _getD(xp: bigint[], a: bigint) {
-    const numTokens = biginterify(xp.length);
-    let s: bigint;
-    for (let i = 0; i < numTokens; i++) {
-      s = s + xp[i];
-    }
-    if (s === ZERO) {
-      return ZERO;
-    }
-
-    let prevD: bigint;
-    let d = s;
-    let nA = a * numTokens;
-
-    for (let i = 0; i < this.MAX_LOOP_LIMIT; i++) {
-      let dP = d;
-      for (let j = 0; j < numTokens; j++) {
-        // dP = dP.mul(d).div(xp[j].mul(numTokens));
-        dP = (dP * d) / (xp[j] * numTokens);
-      }
-      prevD = d;
-      // d = nA.mul(s).div(A_PRECISION).add(dP.mul(numTokens)).mul(d).div(
-      //    nA.sub(A_PRECISION).mul(d).div(A_PRECISION).add(
-      //      numTokens.add(1).mul(dP)));
-      d =
-        (nA * s) / this.A_PRECISION +
-        (dP * numTokens * d) /
-          (((nA - this.A_PRECISION) * d) /
-            (this.A_PRECISION + (numTokens + ONE) * dP));
-      if (MathUtil.within1(d, prevD)) {
-        return d;
-      }
-    }
-
-    // Convergence should occur in 4 loops or less. If this is reached, there may be something wrong
-    // with the pool.
-    this.logger.error(`Event pool ${this.name} method _getD did not converge`);
-    this.isStateValid = false;
-    return undefined;
-  }
-
-  protected _xp(state: PoolState) {
-    return state.balances.map(
-      (balanceValue, i) => balanceValue * state.tokenPrecisionMultipliers[i],
-    );
+    return state;
   }
 }
