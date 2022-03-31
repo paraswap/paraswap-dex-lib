@@ -65,7 +65,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     this.addressesSubscribed = [poolConfig.address];
     if (poolConfig.trackCoins) {
       this.addressesSubscribed = _.concat(
-        poolConfig.coins,
+        this.poolCoins,
         this.addressesSubscribed,
       );
     }
@@ -92,7 +92,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       if (
         this.poolConfig.trackCoins &&
         _.findIndex(
-          this.poolConfig.coins,
+          this.poolCoins,
           c => c.toLowerCase() === log.address.toLowerCase(),
         ) != -1
       )
@@ -100,6 +100,22 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
       return this.poolIface.parseLog(log);
     };
+  }
+
+  get poolAddress() {
+    return this.poolConfig.address;
+  }
+
+  get lpTokenAddress() {
+    return this.poolConfig.lpTokenAddress;
+  }
+
+  get poolCoins() {
+    return this.poolConfig.coins;
+  }
+
+  get numTokens() {
+    return this.poolCoins.length;
   }
 
   protected processLog(
@@ -230,13 +246,22 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
-  handleAddLiquidity(event: any, state: PoolState, log: Log) {}
+  handleAddLiquidity(event: any, state: PoolState) {
+    const tokenAmounts = event.args.tokenAmounts.map(biginterify);
+    const fees = event.args.fees.map(biginterify);
+    const invariant = biginterify(event.args.invariant);
+    const lpTokenSupply = biginterify(event.args.lpTokenSupply);
 
-  handleRemoveLiquidity(event: any, state: PoolState, log: Log) {}
+    state.lpToken_supply = lpTokenSupply;
 
-  handleRemoveLiquidityOne(event: any, state: PoolState, log: Log) {}
+    return state;
+  }
 
-  handleRemoveLiquidityImbalance(event: any, state: PoolState, log: Log) {}
+  handleRemoveLiquidity(event: any, state: PoolState) {}
+
+  handleRemoveLiquidityOne(event: any, state: PoolState) {}
+
+  handleRemoveLiquidityImbalance(event: any, state: PoolState) {}
 
   protected _calculateSwap(
     state: PoolState,
@@ -285,7 +310,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     xp: bigint[],
     blockTimestamp: bigint,
   ) {
-    const numTokens = biginterify(this.poolConfig.coins.length);
+    const numTokens = biginterify(this.numTokens);
     const a = this._getAPrecise(state, blockTimestamp);
     const d = this._getD(xp, a);
     let c = d;
