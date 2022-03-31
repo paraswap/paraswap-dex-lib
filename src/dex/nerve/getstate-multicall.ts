@@ -1,18 +1,19 @@
 import _ from 'lodash';
-import { NerveMetapool, MetapoolState } from './nerve-metapool';
-import { NervePool, PoolState } from './nerve-pool';
+import { NerveEventMetapool } from './nerve-metapool';
+import { NerveEventPool } from './nerve-pool';
+import { PoolState, MetapoolState } from './types';
 
 const biginterify = (val: any) => BigInt(val);
 const stringify = (val: any) => val.toString();
 const strbify = (val: any) => biginterify(stringify(val));
 
 async function _getManyPoolStates(
-  pools: (NervePool | NerveMetapool)[],
+  pools: (NerveEventPool | NerveEventMetapool)[],
   multi: any,
   blockNumber: number | 'latest' = 'latest',
 ): Promise<(PoolState | Partial<MetapoolState>)[]> {
   const calldata = _(pools)
-    .map((pool: NervePool | NerveMetapool) => [
+    .map((pool: NerveEventPool | NerveEventMetapool) => [
       {
         target: pool.poolAddress,
         callData: pool.poolIface.encodeFunctionData('swapStorage', []),
@@ -21,13 +22,13 @@ async function _getManyPoolStates(
         target: pool.lpTokenAddress,
         callData: pool.lpTokenIface.encodeFunctionData('totalSupply', []),
       },
-      _.range(0, pool.COINS.length).map(poolIndex => ({
+      _.range(0, pool.numTokens).map(poolIndex => ({
         target: pool.poolAddress,
         callData: pool.poolIface.encodeFunctionData('getTokenBalance', [
           poolIndex,
         ]),
       })),
-      (pool as NerveMetapool).basePool
+      (pool as NerveEventMetapool).basePool
         ? [
             {
               target: pool.poolAddress,
@@ -46,7 +47,7 @@ async function _getManyPoolStates(
   const data = await multi.methods.aggregate(calldata).call({}, blockNumber);
 
   let p = 0;
-  return pools.map((pool: NervePool | NerveMetapool) => {
+  return pools.map((pool: NerveEventPool | NerveEventMetapool) => {
     const swapStorage = pool.poolIface.decodeFunctionResult(
       'swapStorage',
       data.returnData[p++],
@@ -64,7 +65,7 @@ async function _getManyPoolStates(
       balances: [BigInt('0')],
       tokenPrecisionMultipliers: [BigInt('0')],
     };
-    return (pool as NerveMetapool).basePool
+    return (pool as NerveEventMetapool).basePool
       ? {
           ..._state,
           baseVirtualPrice: BigInt('0'),
@@ -75,18 +76,18 @@ async function _getManyPoolStates(
 }
 
 export async function getManyPoolStates(
-  pools: (NervePool | NerveMetapool)[],
+  pools: (NerveEventPool | NerveEventMetapool)[],
   multi: any,
   blockNumber: number | 'latest' = 'latest',
 ): Promise<(PoolState | MetapoolState)[]> {
   const _poolsMap = _.reduce(
     pools,
     (
-      acc: { [key: string]: NervePool | NerveMetapool },
-      pool: NervePool | NerveMetapool,
+      acc: { [key: string]: NerveEventPool | NerveEventMetapool },
+      pool: NerveEventPool | NerveEventMetapool,
     ) => {
       acc[pool.poolAddress.toLowerCase()] = pool;
-      const _basepool = (pool as NerveMetapool).basePool;
+      const _basepool = (pool as NerveEventMetapool).basePool;
       if (_basepool) acc[_basepool.poolAddress] = _basepool;
       return acc;
     },
@@ -111,13 +112,13 @@ export async function getManyPoolStates(
     {},
   );
 
-  return _.map(pools, (pool: NervePool | NerveMetapool) =>
-    (pool as NerveMetapool).basePool
+  return _.map(pools, (pool: NerveEventPool | NerveEventMetapool) =>
+    (pool as NerveEventMetapool).basePool
       ? ({
           ..._poolStatesMap[pool.poolAddress.toLowerCase()],
           basePoolState:
             _poolStatesMap[
-              (pool as NerveMetapool).basePool.poolAddress.toLowerCase()
+              (pool as NerveEventMetapool).basePool.poolAddress.toLowerCase()
             ],
         } as MetapoolState)
       : (_poolStatesMap[pool.poolAddress.toLowerCase()] as PoolState),
