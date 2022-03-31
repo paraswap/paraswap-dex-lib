@@ -260,12 +260,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
-  handleRemoveLiquidityOne(
-    event: any,
-    state: PoolState,
-    _2: Log,
-    blockHeader: BlockHeader,
-  ) {
+  handleRemoveLiquidityOne(_0: any, state: PoolState, _2: Log) {
     // To calculate remove liquidity one, we need to calculate the user fee.
     // It depends on the time when user deposited assets. That info can be obtained
     // by onchain call, but here there is no point of doing this.
@@ -273,42 +268,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
     state.isValid = false;
     return state;
-
-    // It was original implementation before I knew about the problem
-    // I will keep it till PR review. If we stick to this solution, I will
-    // remove this code.
-
-    // const blockTimestamp = biginterify(blockHeader.timestamp);
-    // const lpTokenAmount = biginterify(event.args.lpTokenAmount);
-    // const tokenIndex = event.args.boughtId.toNumber();
-    // const dyEvent = biginterify(event.args.tokensBought);
-
-    // const { dy, dyFee } = this.nervePoolMath.calculateWithdrawOneToken(
-    //   state,
-    //   lpTokenAmount,
-    //   tokenIndex,
-    //   blockTimestamp,
-    // );
-    // // self.balances[tokenIndex] = self.balances[tokenIndex].sub(
-    // //    dy.add(dyFee.mul(self.adminFee).div(FEE_DENOMINATOR)));
-    // state.balances[tokenIndex] -=
-    //   dy + (dyFee * state.adminFee) / this.nervePoolMath.FEE_DENOMINATOR;
-
-    // state.lpToken_supply -= lpTokenAmount;
-
-    // // Check calculations correctness
-    // if (dyEvent !== dy) {
-    //   this.logger.error(
-    //     `For ${this.parentName}_${
-    //       this.poolConfig.name
-    //     } _calculateWithdrawOneToken value ${stringify(
-    //       dy,
-    //     )} is not equal to ${stringify(dyEvent)} event value`,
-    //   );
-    //   state.isValid = false;
-    // }
-
-    // return state;
   }
 
   handleRemoveLiquidityImbalance(event: any, state: PoolState) {
