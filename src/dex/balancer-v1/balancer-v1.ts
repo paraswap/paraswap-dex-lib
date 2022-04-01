@@ -363,41 +363,6 @@ export class BalancerV1
     return pools.map(({ id }) => BalancerV1.getIdentifier(this.dexKey, id));
   }
 
-  async updatePoolState(
-    pools?: PoolState[],
-    blockNumber?: number,
-  ): Promise<void> {
-    const _pools = pools === undefined ? this.eventPools.allPools : pools;
-
-    if (_pools.length === 0) throw Error('There are no pools.');
-
-    let addresses: string[][] = [];
-    let total = 0;
-
-    for (let i = 0; i < _pools.length; i++) {
-      let pool = _pools[i];
-
-      addresses.push([pool.id]);
-      total++;
-      pool.tokens.forEach(token => {
-        addresses[i].push(token.address);
-        total++;
-      });
-    }
-
-    let results = await this.eventPools.balancerMulticall.methods
-      .getPoolInfo(addresses, total)
-      .call({}, blockNumber);
-
-    let j = 0;
-    for (let i = 0; i < _pools.length; i++) {
-      _pools[i].tokens.forEach(token => {
-        token.balance = bignumberify(bmath.bnum(results[j]));
-        j++;
-      });
-    }
-  }
-
   getPools(from: Token, to: Token, limit: number = 10): PoolState[] {
     return this.eventPools.allPools
       .filter(
