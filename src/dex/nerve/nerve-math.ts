@@ -77,6 +77,8 @@ export class NervePoolMath {
     return { dy, dyFee: dySwapFee };
   }
 
+  swapUnderlying(state: PoolState) {}
+
   protected _getNumTokens(state: PoolState) {
     return biginterify(state.tokenPrecisionMultipliers.length);
   }
