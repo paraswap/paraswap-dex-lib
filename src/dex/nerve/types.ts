@@ -1,4 +1,8 @@
-import { Address } from '../../types';
+import type { DeepReadonly } from 'ts-essentials';
+import type { BlockHeader } from 'web3-eth';
+import type { Address, Log } from '../../types';
+import type { NerveEventMetapool } from './nerve-metapool';
+import type { NerveEventPool } from './nerve-pool';
 
 export interface PoolState {
   initialA: bigint;
@@ -18,14 +22,13 @@ export interface PoolState {
 export type MetapoolState = PoolState & {
   baseVirtualPrice: bigint;
   baseCacheLastUpdated: bigint;
-  basePoolState: PoolState;
+  basePool: PoolState;
 };
 
 export interface NervePoolConfig {
   coins: Address[];
   address: Address;
   name: string;
-  type: number; // 1: stable coin pool, 2: others pools
   isMetapool: boolean;
   lpTokenAddress: string;
   trackCoins: boolean;
@@ -39,7 +42,20 @@ export type NerveData = {
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  poolConfigs: Record<string, NervePoolConfig>;
 };
+
+export type AdapterMappings = {
+  [side: string]: { name: string; index: number }[];
+};
+
+export type EventHandler<S> = (
+  event: any,
+  pool: S,
+  log: Log,
+  blockHeader: BlockHeader,
+) => DeepReadonly<S>;
+
+export type EventPoolOrMetapool = NerveEventPool | NerveEventMetapool;
+
+export type PoolOrMetapoolState = PoolState | MetapoolState;
