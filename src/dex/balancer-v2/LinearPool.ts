@@ -162,47 +162,124 @@ export class LinearPool extends BasePool {
   ): bigint[] {
     const amountsOut: bigint[] = [];
 
-    if (pairType === PairTypes.MainTokenToBpt) {
-      tokenAmountsIn.forEach(amountIn => {
-        let amt: bigint;
-        try {
-          amt = LinearMath._calcBptOutPerMainIn(
-            amountIn,
-            mainBalance,
-            wrappedBalance,
-            virtualBptSupply,
-            {
+    switch (pairType) {
+      case PairTypes.BptToMainToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcMainOutPerBptIn(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = BZERO;
+          }
+          amountsOut.push(amt);
+        });
+        break;
+      case PairTypes.MainTokenToBpt:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcBptOutPerMainIn(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = BZERO;
+          }
+          amountsOut.push(amt);
+        });
+        break;
+      case PairTypes.MainTokenToWrappedToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcWrappedOutPerMainIn(amountIn, mainBalance, {
               fee: fee,
               lowerTarget: lowerTarget,
               upperTarget: upperTarget,
-            },
-          );
-        } catch (err) {
-          amt = BZERO;
-        }
-        amountsOut.push(amt);
-      });
-    } else if (pairType === PairTypes.BptToMainToken) {
-      tokenAmountsIn.forEach(amountIn => {
-        let amt: bigint;
-        try {
-          amt = LinearMath._calcMainOutPerBptIn(
-            amountIn,
-            mainBalance,
-            wrappedBalance,
-            virtualBptSupply,
-            {
+            });
+          } catch (err) {
+            amt = BZERO;
+          }
+          amountsOut.push(amt);
+        });
+        break;
+      case PairTypes.WrappedTokenToMainToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcMainOutPerWrappedIn(amountIn, mainBalance, {
               fee: fee,
               lowerTarget: lowerTarget,
               upperTarget: upperTarget,
-            },
-          );
-        } catch (err) {
-          amt = BZERO;
-        }
-        amountsOut.push(amt);
-      });
-    } else amountsOut.push(BZERO);
+            });
+          } catch (err) {
+            amt = BZERO;
+          }
+          amountsOut.push(amt);
+        });
+        break;
+      case PairTypes.BptToWrappedToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcWrappedOutPerBptIn(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = BZERO;
+          }
+          amountsOut.push(amt);
+        });
+        break;
+      case PairTypes.WrappedTokenToBpt:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcBptOutPerWrappedIn(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = BZERO;
+          }
+          amountsOut.push(amt);
+        });
+        break;
+      default:
+        amountsOut.push(BZERO);
+    }
     return amountsOut;
   }
 

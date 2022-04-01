@@ -63,6 +63,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
       decimals: 6,
     },
+    waUSDT: {
+      address: '0xf8Fd466F12e236f4c96F7Cce6c79EAdB819abF58',
+      decimals: 6,
+    },
     ALUSD: {
       address: '0xbc6da0fe9ad5f3b0d58160288917aa56653660e9',
       decimals: 18,
