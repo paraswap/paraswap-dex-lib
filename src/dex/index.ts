@@ -35,7 +35,6 @@ import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
-import { RadioShack } from './uniswap-v2/radioshack';
 
 const LegacyDexes = [
   Curve,
@@ -64,7 +63,7 @@ const LegacyDexes = [
   Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn, RadioShack];
+const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
