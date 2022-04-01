@@ -81,9 +81,6 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     protected adapters = Adapters[network] || {},
     protected factoryAddress: Address = defaultfactoryAddress,
     protected multicallAddress: Address = defaultMulticallAddress,
-    protected balancerMultiInterface = new Interface(
-      BalancerCustomMulticallABI,
-    ),
   ) {
     super(parentName, logger);
 
