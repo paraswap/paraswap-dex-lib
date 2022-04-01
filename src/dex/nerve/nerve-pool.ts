@@ -7,23 +7,18 @@ const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { NervePoolConfig, PoolState } from './types';
-import { Adapters } from './config';
+import { EventHandler, NervePoolConfig, PoolOrMetapoolState, PoolState } from './types';
+import { Adapters, NerveConfig } from './config';
 import { getManyPoolStates } from './getstate-multicall';
 import { BlockHeader } from 'web3-eth';
-import { biginterify } from './utils';
+import { biginterify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   protected nervePoolMath: NervePoolMath;
 
   handlers: {
-    [event: string]: (
-      event: any,
-      pool: PoolState,
-      log: Log,
-      blockHeader: BlockHeader,
-    ) => PoolState;
+    [event: string]: EventHandler<PoolOrMetapoolState>;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -34,16 +29,16 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   lpTokenIface: Interface;
 
-  isFetching = false;
-
   constructor(
     protected parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected adapters = Adapters[network], // TODO: add any additional params required for event subscriber
-    public poolConfig: NervePoolConfig,
-    protected nervePoolABI: AbiItem[] = nervePoolABIDefault,
+    protected adapters = Adapters[network],
+    protected poolName: string = 'ThreePool',
+    public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
+      .poolConfigs[poolName],
+    protected poolABI: AbiItem[] = nervePoolABIDefault,
   ) {
     super(`${parentName}_${poolConfig.name}`, logger);
     this.nervePoolMath = new NervePoolMath(this.name, this.logger);
@@ -72,7 +67,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['RampA'] = this.handleRampA.bind(this);
     this.handlers['StopRampA'] = this.handleStopRampA.bind(this);
 
-    this.poolIface = new Interface(JSON.stringify(this.nervePoolABI));
+    this.poolIface = new Interface(JSON.stringify(this.poolABI));
     this.lpTokenIface = new Interface(JSON.stringify(erc20ABI));
 
     this.logDecoder = (log: Log) => {
@@ -105,28 +100,14 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     return this.poolCoins.length;
   }
 
-  protected processLog(
+  processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<PoolState> | null {
     try {
       const event = this.logDecoder(log);
-      const _state: PoolState = {
-        initialA: biginterify(state.initialA),
-        futureA: biginterify(state.futureA),
-        initialATime: biginterify(state.initialATime),
-        futureATime: biginterify(state.futureATime),
-        swapFee: biginterify(state.swapFee),
-        adminFee: biginterify(state.adminFee),
-        defaultDepositFee: biginterify(state.defaultDepositFee),
-        defaultWithdrawFee: biginterify(state.defaultWithdrawFee),
-        lpToken_supply: biginterify(state.lpToken_supply),
-        balances: state.balances.map(biginterify),
-        tokenPrecisionMultipliers:
-          state.tokenPrecisionMultipliers.map(biginterify),
-        isValid: state.isValid,
-      };
+      const _state: PoolState = typeCastPoolState(state);
       if (event.name in this.handlers)
         return this.handlers[event.name](event, _state, log, blockHeader);
       return _state;
@@ -136,14 +117,17 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
-  async setup(blockNumber: number, poolState: PoolState | null = null) {
+  async setup(
+    blockNumber: number,
+    poolState: DeepReadonly<PoolState> | null = null,
+  ) {
     if (!poolState) poolState = await this.generateState(blockNumber);
     if (blockNumber) this.setState(poolState, blockNumber);
   }
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<Readonly<PoolState>> {
+  ): Promise<DeepReadonly<PoolState>> {
     return (
       await getManyPoolStates([this], this.dexHelper.multiContract, blockNumber)
     )[0];
