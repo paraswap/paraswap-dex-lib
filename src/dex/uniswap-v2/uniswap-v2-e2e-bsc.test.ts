@@ -639,9 +639,9 @@ describe('UniswapV2 E2E BSC', () => {
     describe('Simpleswap', () => {
       it('BNB -> TOKEN', async () => {
         await testE2E(
-          tokens.WBNB,
-          tokens.USDC,
-          holders.WBNB,
+          tokens.BNB,
+          tokens.RADIO,
+          holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
           dexKey,
@@ -653,7 +653,7 @@ describe('UniswapV2 E2E BSC', () => {
       it('Token -> TOKEN', async () => {
         await testE2E(
           tokens.BUSD,
-          tokens.USDC,
+          tokens.RADIO,
           holders.BUSD,
           '1000000000000000000000',
           SwapSide.SELL,
@@ -665,9 +665,9 @@ describe('UniswapV2 E2E BSC', () => {
       });
       it('Token -> BNB', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.RADIO,
           tokens.BNB,
-          holders.USDC,
+          holders.RADIO,
           '1000000000000000000000',
           SwapSide.SELL,
           dexKey,
@@ -682,7 +682,7 @@ describe('UniswapV2 E2E BSC', () => {
       it('BNB -> TOKEN', async () => {
         await testE2E(
           tokens.BNB,
-          tokens.USDC,
+          tokens.RADIO,
           holders.BNB,
           '100000000000000000000',
           SwapSide.BUY,
@@ -695,7 +695,7 @@ describe('UniswapV2 E2E BSC', () => {
       it('Token -> TOKEN', async () => {
         await testE2E(
           tokens.BUSD,
-          tokens.USDC,
+          tokens.RADIO,
           holders.BUSD,
           '1000000000000000000000',
           SwapSide.BUY,
@@ -707,9 +707,9 @@ describe('UniswapV2 E2E BSC', () => {
       });
       it('Token -> BNB', async () => {
         await testE2E(
-          tokens.BUSD,
+          tokens.RADIO,
           tokens.BNB,
-          holders.BUSD,
+          holders.RADIO,
           '10000000000000000000',
           SwapSide.BUY,
           dexKey,
@@ -724,7 +724,7 @@ describe('UniswapV2 E2E BSC', () => {
       it('BNB -> TOKEN', async () => {
         await testE2E(
           tokens.BNB,
-          tokens.USDC,
+          tokens.RADIO,
           holders.BNB,
           '100000000000000000000',
           SwapSide.SELL,
@@ -737,7 +737,7 @@ describe('UniswapV2 E2E BSC', () => {
       it('Token -> TOKEN', async () => {
         await testE2E(
           tokens.BUSD,
-          tokens.USDC,
+          tokens.RADIO,
           holders.BUSD,
           '1000000000000000000000',
           SwapSide.SELL,
@@ -749,9 +749,9 @@ describe('UniswapV2 E2E BSC', () => {
       });
       it('Token -> BNB', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.RADIO,
           tokens.BNB,
-          holders.USDC,
+          holders.RADIO,
           '1000000000000000000000',
           SwapSide.SELL,
           dexKey,
@@ -766,7 +766,7 @@ describe('UniswapV2 E2E BSC', () => {
       it('Token -> TOKEN', async () => {
         await testE2E(
           tokens.BUSD,
-          tokens.USDC,
+          tokens.RADIO,
           holders.BUSD,
           '1000000000000000000000',
           SwapSide.SELL,

@@ -1109,7 +1109,7 @@ describe('UniswapV2 E2E Polygon', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.WETH,
+          tokens.RADIO,
           holders.MATIC,
           '100000000000000000000',
           SwapSide.SELL,
@@ -1122,9 +1122,9 @@ describe('UniswapV2 E2E Polygon', () => {
 
       it('Token -> MATIC', async () => {
         await testE2E(
-          tokens.WETH,
+          tokens.RADIO,
           tokens.MATIC,
-          holders.WETH,
+          holders.RADIO,
           '1000000000000000000',
           SwapSide.SELL,
           dexKey,
@@ -1136,9 +1136,9 @@ describe('UniswapV2 E2E Polygon', () => {
 
       it('Token -> Token', async () => {
         await testE2E(
-          tokens.USDT,
+          tokens.RADIO,
           tokens.DAI,
-          holders.USDT,
+          holders.RADIO,
           '1000000000',
           SwapSide.SELL,
           dexKey,
@@ -1152,7 +1152,7 @@ describe('UniswapV2 E2E Polygon', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.WETH,
+          tokens.RADIO,
           holders.MATIC,
           '100000000000000000000',
           SwapSide.SELL,
@@ -1165,9 +1165,9 @@ describe('UniswapV2 E2E Polygon', () => {
 
       it('Token -> MATIC', async () => {
         await testE2E(
-          tokens.WETH,
+          tokens.RADIO,
           tokens.MATIC,
-          holders.WETH,
+          holders.RADIO,
           '1000000000000000000',
           SwapSide.SELL,
           dexKey,
@@ -1179,9 +1179,9 @@ describe('UniswapV2 E2E Polygon', () => {
 
       it('Token -> Token', async () => {
         await testE2E(
-          tokens.USDT,
+          tokens.RADIO,
           tokens.DAI,
-          holders.USDT,
+          holders.RADIO,
           '1000000000',
           SwapSide.SELL,
           dexKey,
@@ -1195,7 +1195,7 @@ describe('UniswapV2 E2E Polygon', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.WETH,
+          tokens.RADIO,
           holders.MATIC,
           '100000000000000000000',
           SwapSide.SELL,
@@ -1208,9 +1208,9 @@ describe('UniswapV2 E2E Polygon', () => {
 
       it('Token -> MATIC', async () => {
         await testE2E(
-          tokens.WETH,
+          tokens.RADIO,
           tokens.MATIC,
-          holders.WETH,
+          holders.RADIO,
           '1000000000000000000',
           SwapSide.SELL,
           dexKey,
@@ -1222,9 +1222,9 @@ describe('UniswapV2 E2E Polygon', () => {
 
       it('Token -> Token', async () => {
         await testE2E(
-          tokens.USDT,
+          tokens.RADIO,
           tokens.DAI,
-          holders.USDT,
+          holders.RADIO,
           '1000000000',
           SwapSide.SELL,
           dexKey,
