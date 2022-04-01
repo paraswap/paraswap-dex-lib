@@ -483,27 +483,10 @@ export class BalancerV1
         return null;
       }
 
-      const missingPools = allowedPools.filter(
-        pool => !(pool.id.toLowerCase() in poolStates),
-      );
-
-      const missingPoolStates = missingPools.length
-        ? await this.eventPools.getAllPoolDataOnChain(
-            { pools: missingPools },
-            blockNumber,
-          )
-        : { pools: [] };
-
-      const missingPoolStateMaps: PoolStateMap = {};
-      missingPoolStates.pools.forEach(
-        pool => (missingPoolStateMaps[pool.id.toLowerCase()] = pool),
-      );
-
       const poolPrices = allowedPools
         .map(async pool => {
           const poolAddress = pool.id.toLowerCase();
-          const poolState =
-            poolStates[poolAddress] || missingPoolStateMaps[poolAddress];
+          const poolState = poolStates[poolAddress];
           if (!poolState) {
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
