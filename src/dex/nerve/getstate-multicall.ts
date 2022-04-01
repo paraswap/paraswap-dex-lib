@@ -1,19 +1,20 @@
 import _ from 'lodash';
-import { NerveEventMetapool } from './nerve-metapool';
-import { NerveEventPool } from './nerve-pool';
-import { PoolState, MetapoolState } from './types';
-
-const biginterify = (val: any) => BigInt(val);
-const stringify = (val: any) => val.toString();
-const strbify = (val: any) => biginterify(stringify(val));
+import { DeepReadonly } from 'ts-essentials';
+import type { NerveEventMetapool } from './nerve-metapool';
+import {
+  PoolState,
+  MetapoolState,
+  EventPoolOrMetapool,
+  PoolOrMetapoolState,
+} from './types';
 
 async function _getManyPoolStates(
-  pools: (NerveEventPool | NerveEventMetapool)[],
+  pools: EventPoolOrMetapool[],
   multi: any,
   blockNumber: number | 'latest' = 'latest',
-): Promise<(PoolState | Partial<MetapoolState>)[]> {
+): Promise<PoolOrMetapoolState[]> {
   const calldata = _(pools)
-    .map((pool: NerveEventPool | NerveEventMetapool) => [
+    .map((pool: EventPoolOrMetapool) => [
       {
         target: pool.poolAddress,
         callData: pool.poolIface.encodeFunctionData('swapStorage', []),
@@ -47,7 +48,7 @@ async function _getManyPoolStates(
   const data = await multi.methods.aggregate(calldata).call({}, blockNumber);
 
   let p = 0;
-  return pools.map((pool: NerveEventPool | NerveEventMetapool) => {
+  return pools.map((pool: EventPoolOrMetapool) => {
     const swapStorage = pool.poolIface.decodeFunctionResult(
       'swapStorage',
       data.returnData[p++],
@@ -64,6 +65,7 @@ async function _getManyPoolStates(
       lpToken_supply: BigInt('0'),
       balances: [BigInt('0')],
       tokenPrecisionMultipliers: [BigInt('0')],
+      isValid: true,
     };
     return (pool as NerveEventMetapool).basePool
       ? {
@@ -76,15 +78,15 @@ async function _getManyPoolStates(
 }
 
 export async function getManyPoolStates(
-  pools: (NerveEventPool | NerveEventMetapool)[],
+  pools: EventPoolOrMetapool[],
   multi: any,
   blockNumber: number | 'latest' = 'latest',
-): Promise<(PoolState | MetapoolState)[]> {
+): Promise<DeepReadonly<PoolOrMetapoolState>[]> {
   const _poolsMap = _.reduce(
     pools,
     (
-      acc: { [key: string]: NerveEventPool | NerveEventMetapool },
-      pool: NerveEventPool | NerveEventMetapool,
+      acc: { [key: string]: EventPoolOrMetapool },
+      pool: EventPoolOrMetapool,
     ) => {
       acc[pool.poolAddress.toLowerCase()] = pool;
       const _basepool = (pool as NerveEventMetapool).basePool;
@@ -101,26 +103,22 @@ export async function getManyPoolStates(
 
   const _poolStatesMap = _.reduce(
     Object.keys(_poolsMap),
-    (
-      acc: { [key: string]: PoolState | Partial<MetapoolState> },
-      add: string,
-      i: number,
-    ) => {
+    (acc: { [key: string]: PoolOrMetapoolState }, add: string, i: number) => {
       acc[add] = _poolStates[i];
       return acc;
     },
     {},
   );
 
-  return _.map(pools, (pool: NerveEventPool | NerveEventMetapool) =>
+  return _.map(pools, (pool: EventPoolOrMetapool) =>
     (pool as NerveEventMetapool).basePool
       ? ({
           ..._poolStatesMap[pool.poolAddress.toLowerCase()],
-          basePoolState:
+          basePool:
             _poolStatesMap[
               (pool as NerveEventMetapool).basePool.poolAddress.toLowerCase()
             ],
         } as MetapoolState)
       : (_poolStatesMap[pool.poolAddress.toLowerCase()] as PoolState),
-  );
+  ) as DeepReadonly<PoolOrMetapoolState>[];
 }
