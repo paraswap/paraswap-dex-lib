@@ -19,7 +19,7 @@ export const unsafePowInPrecision = (
   for (let c = k / BigInt(2); c != BigInt(0); c = c / BigInt(2)) {
     xInPrecision = mulInPrecision(xInPrecision, xInPrecision);
 
-    if (c / BigInt(2) != BigInt(0)) {
+    if (c % BigInt(2) != BigInt(0)) {
       zInPrecision = mulInPrecision(zInPrecision, xInPrecision);
     }
   }

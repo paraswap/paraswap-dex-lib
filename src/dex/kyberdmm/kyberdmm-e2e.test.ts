@@ -15,6 +15,8 @@ import {
 } from '../../constants';
 import { JsonRpcProvider } from '@ethersproject/providers';
 
+jest.setTimeout(50 * 1000);
+
 describe('KyberDmm E2E', () => {
   const dexKey = 'KyberDmm';
 
@@ -29,7 +31,7 @@ describe('KyberDmm E2E', () => {
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const tokenAAmount: string = '2000000';
-    const tokenBAmount: string = '200000000';
+    const tokenBAmount: string = '2000000';
     const nativeTokenAmount = '1000000000000000000';
 
     const sideToContractMethods = new Map([
@@ -41,6 +43,7 @@ describe('KyberDmm E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>

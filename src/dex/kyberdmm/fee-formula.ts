@@ -28,13 +28,13 @@ export const getFee = (rFactorInPrecision: bigint): bigint => {
       const tmp = rFactorInPrecision - U;
       const tmp3 = unsafePowInPrecision(tmp, BigInt(3));
       return (
-        C1 + mulInPrecision(A, tmp3) + mulInPrecision(B, tmp) / BigInt(10000)
+        (C1 + mulInPrecision(A, tmp3) + mulInPrecision(B, tmp)) / BigInt(10000)
       );
     } else {
       const tmp = U - rFactorInPrecision;
       const tmp3 = unsafePowInPrecision(tmp, BigInt(3));
       return (
-        C1 - mulInPrecision(A, tmp3) - mulInPrecision(B, tmp) / BigInt(10000)
+        (C1 - mulInPrecision(A, tmp3) - mulInPrecision(B, tmp)) / BigInt(10000)
       );
     }
   } else {
@@ -42,11 +42,11 @@ export const getFee = (rFactorInPrecision: bigint): bigint => {
     let tmp =
       rFactorInPrecision > G ? rFactorInPrecision - G : G - rFactorInPrecision;
     tmp = unsafePowInPrecision(tmp, BigInt(2));
-    const tmp2 = (F * tmp) / tmp + L;
+    const tmp2 = (F * tmp) / (tmp + L);
     if (rFactorInPrecision > G) {
-      return C2 + tmp2 / BigInt(10000);
+      return (C2 + tmp2) / BigInt(10000);
     } else {
-      return C2 - tmp2 / BigInt(10000);
+      return (C2 - tmp2) / BigInt(10000);
     }
   }
 };
@@ -112,5 +112,5 @@ export const calculateRFactor = (
 /// @dev so this function can not overflow and returned ema is not overflow uint128
 export const newEMA = (ema: bigint, alpha: bigint, value: bigint): bigint => {
   if (alpha > PRECISION) throw new Error('NewEma: alpha > PRECISION');
-  return PRECISION - alpha * ema + (alpha * value) / PRECISION;
+  return ((PRECISION - alpha) * ema + alpha * value) / PRECISION;
 };

@@ -90,11 +90,13 @@ export class KyberDmm
 
     const pair = await this.findPair(from, to);
 
-    if (pair && pair.exchanges.length > 0)
-      return pair.exchanges.map(poolAddress => {
+    if (pair && pair.exchanges.length > 0) {
+      const z = pair.exchanges.map(poolAddress => {
         return `${this.dexKey}_${poolAddress.toLowerCase()}`;
       });
-    else return [];
+
+      return z;
+    } else return [];
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -272,6 +274,7 @@ export class KyberDmm
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
       }
+
       await this.catchUpPair(from, to, blockNumber);
       const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
 
@@ -326,8 +329,7 @@ export class KyberDmm
     // ].sort((a, b) => (a > b ? 1 : -1));
 
     const unitAmount = (
-      BigInt(1) *
-      BigInt(10 ** (side == SwapSide.BUY ? to.decimals : from.decimals))
+      BigInt(10) ** BigInt(side == SwapSide.BUY ? to.decimals : from.decimals)
     ).toString();
 
     const tradeInfo = getTradeInfo(pool.state, blockNumber, direction);
@@ -549,7 +551,7 @@ export class KyberDmm
       feeInPrecision,
     } = priceParams;
     if (amountOut <= 0) return 0;
-    if (!(reserveIn > BigInt(0)) && reserveOut > amountOut) return 0;
+    if (reserveIn <= BigInt(0) || reserveOut <= amountOut) return 0;
 
     let numerator = vReserveIn * amountOut;
     let denominator = vReserveOut - amountOut;
@@ -557,7 +559,7 @@ export class KyberDmm
     // amountIn = floor(amountIN *PRECISION / (PRECISION - feeInPrecision));
     numerator = amountIn * PRECISION;
     denominator = PRECISION - feeInPrecision;
-    return numerator + denominator - BigInt(1) / denominator;
+    return (numerator + denominator - BigInt(1)) / denominator;
   }
 
   private async getSellPrice(priceParams: TradeInfo, amountIn: bigint) {
@@ -569,9 +571,10 @@ export class KyberDmm
       feeInPrecision,
     } = priceParams;
     if (amountIn <= 0) return 0;
-    if (!(reserveIn > 0) && reserveOut > 0) return 0;
+    if (reserveIn <= 0 || reserveOut <= 0) return 0;
 
-    const amountInWithFee = amountIn * PRECISION - feeInPrecision / PRECISION;
+    const amountInWithFee =
+      (amountIn * (PRECISION - feeInPrecision)) / PRECISION;
     const numerator = amountInWithFee * vReserveOut;
     const denominator = vReserveIn + amountInWithFee;
     const amountOut = numerator / denominator;
