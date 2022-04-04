@@ -59,3 +59,9 @@ export type EventHandler<S> = (
 export type EventPoolOrMetapool = NerveEventPool | NerveEventMetapool;
 
 export type PoolOrMetapoolState = PoolState | MetapoolState;
+
+export type EventPoolMappings = { [pool: string]: EventPoolOrMetapool };
+
+export type NotEventPoolMappings = {
+  [pool: string]: { state?: PoolOrMetapoolState; config: NervePoolConfig };
+};
