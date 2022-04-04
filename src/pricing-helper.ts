@@ -84,12 +84,14 @@ export class PricingHelper {
             )
               return null;
 
-            dexInstance
+            const a = dexInstance
               .getPoolIdentifiers(from, to, side, blockNumber)
               .then(resolve, reject)
               .finally(() => {
                 clearTimeout(timer);
               });
+
+            return a;
           });
         } catch (e) {
           this.logger.error(`Error_${key}_getPoolIdentifiers:`, e);
@@ -97,6 +99,7 @@ export class PricingHelper {
         }
       }),
     );
+
     return dexKeys.reduce(
       (
         acc: { [dexKey: string]: string[] | null },

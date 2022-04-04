@@ -26,6 +26,7 @@ import { Onebit } from './onebit';
 import { Compound } from './compound';
 import { AaveV1 } from './aave-v1/aave-v1';
 import { AaveV2 } from './aave-v2/aave-v2';
+import { AaveV3 } from './aave-v3/aave-v3';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
@@ -61,7 +62,16 @@ const LegacyDexes = [
   Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn, AaveV1, AaveV2];
+const Dexes = [
+  BalancerV2,
+  UniswapV2,
+  BiSwap,
+  MDEX,
+  Dfyn,
+  AaveV1,
+  AaveV2,
+  AaveV3,
+];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
