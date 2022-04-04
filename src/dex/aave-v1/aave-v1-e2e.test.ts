@@ -27,6 +27,7 @@ describe('AaveV1 E2E', () => {
     const USDTSymbol: string = 'USDT';
 
     const aUSDTAmount: string = '2000000000';
+    const USDTAmount: string = '2000000000';
     const aETHAmount: string = '100000000000000000';
     const ethAmount = '100000000000000000';
 
@@ -34,15 +35,8 @@ describe('AaveV1 E2E', () => {
     const aETH = aaveV1GetToken(network, aETHSymbol);
     const aUSDT = aaveV1GetToken(network, aUSDTSymbol);
 
-    if (!aETH) {
-      console.log(aETH);
-      expect(aETH).not.toBe(null);
-      return;
-    }
-    if (!aUSDT) {
-      expect(aUSDT).not.toBe(null);
-      return;
-    }
+    expect(aETH).not.toBe(null);
+    expect(aUSDT).not.toBe(null);
     const USDT = Tokens[network][USDTSymbol];
 
     const contractMethods: { [side in SwapSide]: ContractMethod[] } = {
@@ -60,7 +54,7 @@ describe('AaveV1 E2E', () => {
           it('ETH -> aETH', async () => {
             await testE2E(
               ETH,
-              aETH,
+              aETH!,
               holders['ETH'],
               side === SwapSide.SELL ? ethAmount : aETHAmount,
               side,
@@ -72,7 +66,7 @@ describe('AaveV1 E2E', () => {
           });
           it('aETH -> ETH', async () => {
             await testE2E(
-              aETH,
+              aETH!,
               ETH,
               holders[aETHSymbol],
               side === SwapSide.SELL ? aETHAmount : ethAmount,
@@ -86,9 +80,9 @@ describe('AaveV1 E2E', () => {
           it('USDT -> aUSDT', async () => {
             await testE2E(
               USDT,
-              aUSDT,
+              aUSDT!,
               holders[USDTSymbol],
-              side === SwapSide.SELL ? aUSDTAmount : aUSDTAmount,
+              side === SwapSide.SELL ? USDTAmount : aUSDTAmount,
               side,
               dexKey,
               contractMethod,
@@ -98,10 +92,10 @@ describe('AaveV1 E2E', () => {
           });
           it('aUSDT -> USDT', async () => {
             await testE2E(
-              aUSDT,
+              aUSDT!,
               USDT,
               holders[aUSDTSymbol],
-              side === SwapSide.SELL ? aUSDTAmount : aUSDTAmount,
+              side === SwapSide.SELL ? aUSDTAmount : USDTAmount,
               side,
               dexKey,
               contractMethod,

@@ -74,7 +74,6 @@ export class AaveV2
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {}
 
   // Returns the list of contract adapters (name and index)
@@ -150,7 +149,6 @@ export class AaveV2
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() couls be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -179,8 +177,6 @@ export class AaveV2
 
   // Encode call data used by simpleSwap like routers
   // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -288,7 +284,6 @@ export class AaveV2
   // called for multiple tokens. This can be helpful to
   // update common state required for calculating
   // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   updatePoolState(): Promise<void> {
     return Promise.resolve();
   }

@@ -28,14 +28,8 @@ describe('AaveV2 E2E', () => {
     const USDT = tokens['USDT'];
     const aUSDT = aaveV2GetToken(network, 'aUSDT');
 
-    if (!aWETH) {
-      expect(aWETH).not.toBe(null);
-      return;
-    }
-    if (!aUSDT) {
-      expect(aUSDT).not.toBe(null);
-      return;
-    }
+    expect(aWETH).not.toBe(null);
+    expect(aUSDT).not.toBe(null);
 
     const ethAmount = '1000000000000000000';
     const aUSDTAmount: string = '2000000000';
@@ -55,7 +49,7 @@ describe('AaveV2 E2E', () => {
           it('ETH -> WETH', async () => {
             await testE2E(
               ETH,
-              aWETH,
+              aWETH!,
               holders['ETH'],
               ethAmount,
               side,
@@ -67,7 +61,7 @@ describe('AaveV2 E2E', () => {
           });
           it('aWETH -> ETH', async () => {
             await testE2E(
-              aWETH,
+              aWETH!,
               ETH,
               holders['aWETH'],
               ethAmount,
@@ -81,7 +75,7 @@ describe('AaveV2 E2E', () => {
           it('USDT -> aUSDT', async () => {
             await testE2E(
               USDT,
-              aUSDT,
+              aUSDT!,
               holders['USDT'],
               aUSDTAmount,
               side,
@@ -93,7 +87,7 @@ describe('AaveV2 E2E', () => {
           });
           it('aWETH -> wETH', async () => {
             await testE2E(
-              aWETH,
+              aWETH!,
               WETH,
               holders['aWETH'],
               ethAmount,
