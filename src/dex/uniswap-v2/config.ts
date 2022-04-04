@@ -253,7 +253,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
     [Network.POLYGON]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/smartcookie0501/jetswap-subgraph-polygon',
-      factoryAddress: '0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7',
+      factoryAddress: '',
       initCode:
         '0x505c843b83f01afef714149e8b174427d552e1aca4834b4f9b4b525f426ff3c6',
       poolGasCost: 200 * 1000,
@@ -536,6 +536,23 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xc6b4cc64699496d0514c783d6aca5142c3b61e327524db01cabfa4248e430e49',
       poolGasCost: 120 * 1000,
       feeCode: 10,
+    },
+  },
+  Solidly: {
+    [Network.FANTOM]: {
+      factoryAddress: '0x3fAaB499b519fdC5819e3D7ed0C26111904cbc28',
+      initCode:
+        '0x57ae84018c47ebdaf7ddb2d1216c8c36389d12481309af65428eb6d460f747a4',
+      feeCode: 1,
+    },
+  },
+  Printy: {
+    [Network.AVALANCHE]: {
+      factoryAddress: '0xc62Ca231Cd2b0c530C622269dA02374134511a36',
+      initCode:
+        '0x96262ba85d1e33f4c9f8368149e7211436bc78c7058d43e303e73ffdfb9c0d8e',
+      poolGasCost: 100 * 1000,
+      feeCode: 1,
     },
   },
 };
