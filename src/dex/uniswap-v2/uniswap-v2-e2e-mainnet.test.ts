@@ -609,7 +609,7 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
     });
 
-    describe('Multiswap', () => {
+    describe('MultiSwap', () => {
       it('SushiSwap ETH -> TOKEN', async () => {
         await testE2E(
           tokens.ETH,
@@ -702,6 +702,47 @@ describe('UniswapV2 E2E Mainnet', () => {
           SwapSide.SELL,
           dexKey,
           ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> SAITAMA', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.SAITAMA,
+          holders.ETH,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('MegaSwap', () => {
+      it('SAITAMA -> ETH', async () => {
+        await testE2E(
+          tokens.SAITAMA,
+          tokens.ETH,
+          holders.SAITAMA,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> SAITAMA', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.SAITAMA,
+          holders.ETH,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
           network,
           provider,
         );
