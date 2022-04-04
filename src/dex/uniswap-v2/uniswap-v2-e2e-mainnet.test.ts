@@ -692,6 +692,21 @@ describe('UniswapV2 E2E Mainnet', () => {
         );
       });
     });
+    describe('swapOnUniswapV2Fork', () => {
+      it('SAITAMA -> ETH', async () => {
+        await testE2E(
+          tokens.SAITAMA,
+          tokens.ETH,
+          holders.SAITAMA,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+    });
   });
 
   describe('DefiSwap', () => {

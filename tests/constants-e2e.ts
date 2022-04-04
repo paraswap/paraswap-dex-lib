@@ -183,6 +183,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xa47c8bf37f92abed4a126bda807a7b7498661acd',
       decimals: 18,
     },
+    SAITAMA: {
+      address: '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f',
+      decimals: 9,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -449,6 +453,7 @@ export const Holders: {
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
     jEUR: '0x4f0CF2F63913524b85c1126AB7eE7957857f3482',
     UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
+    SAITAMA: '0x763d5d93f27615aac852b70549f5877b92193864',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
