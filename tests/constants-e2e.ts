@@ -265,6 +265,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xbd1463f02f61676d53fd183c2b19282bff93d099',
       decimals: 18,
     },
+    RADIO: {
+      address: '0x613a489785C95afEB3b404CC41565cCff107B6E0',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -308,6 +312,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     },
     USDC: {
       address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+      decimals: 18,
+    },
+    RADIO: {
+      address: '0x30807D3b851A31d62415B8bb7Af7dCa59390434a',
       decimals: 18,
     },
     BNB: { address: ETHER_ADDRESS, decimals: 18 },
@@ -462,6 +470,7 @@ export const Holders: {
     AMWETH: '0x6f1c28c40b5fed4fb546f85959ae2f7c16365cad',
     KNC: '0x41Af7fd16dFC29bdA8D8aAA4CeFfC0E8046992eC',
     jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
+    RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
@@ -477,6 +486,7 @@ export const Holders: {
     USDT: '0xEFDca55e4bCE6c1d535cb2D0687B5567eEF2AE83',
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
     USDC: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
+    RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
   },
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
