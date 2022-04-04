@@ -34,7 +34,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected adapters = Adapters[network],
     protected poolName: string = 'ThreePool',
     public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
       .poolConfigs[poolName],

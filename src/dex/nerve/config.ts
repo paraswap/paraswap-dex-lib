@@ -81,6 +81,8 @@ export const NerveConfig: DexConfigMap<DexParams> = {
   },
 };
 
+export const NERVE_CHUNKS = 10;
+
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.BSC]: {
     [SwapSide.SELL]: [{ name: 'BscAdapter01', index: 4 }],
