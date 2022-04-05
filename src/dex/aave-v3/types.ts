@@ -1,3 +1,5 @@
+import { Address } from 'paraswap-core';
+
 export type Data = {
   fromAToken: boolean;
   isV3: boolean;
@@ -32,4 +34,7 @@ export enum PoolAndWethFunctions {
 export type DexParam = {
   ethGasCost: number;
   lendingGasCost: number;
+  poolAddress: Address;
+  wethGatewayAddress: Address;
+  wethGatewayABI: any;
 };

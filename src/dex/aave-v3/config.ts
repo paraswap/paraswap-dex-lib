@@ -2,20 +2,33 @@ import { DexConfigMap } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { DexParam } from './types';
 
+import WETH_GATEWAY_ABI_POLYGON from '../../abi/aave-v3/weth-gateway-polygon.json';
+import WETH_GATEWAY_ABI_AVALANCHE from '../../abi/aave-v3/weth-gateway-avalanche.json';
+import WETH_GATEWAY_ABI_FANTOM from '../../abi/aave-v3/weth-gateway-fantom.json';
+
 // TODO: find vals for V3
 export const Config: DexConfigMap<DexParam> = {
   AaveV3: {
     [Network.FANTOM]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
+      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
+      wethGatewayAddress: '0x17d013C19FE25cf4D911CE85eD5f40FE8880F46f',
+      wethGatewayABI: WETH_GATEWAY_ABI_FANTOM,
     },
     [Network.POLYGON]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
+      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
+      wethGatewayAddress: '0x9bdb5fcc80a49640c7872ac089cc0e00a98451b6',
+      wethGatewayABI: WETH_GATEWAY_ABI_POLYGON,
     },
     [Network.AVALANCHE]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
+      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
+      wethGatewayAddress: '0xa938d8536aEed1Bd48f548380394Ab30Aa11B00E',
+      wethGatewayABI: WETH_GATEWAY_ABI_AVALANCHE,
     },
   },
 };
