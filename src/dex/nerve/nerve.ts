@@ -10,9 +10,10 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
+const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
 import { SwapSide, Network } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, isWeth } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -21,20 +22,24 @@ import {
   DexParams,
   EventPoolMappings,
   NotEventPoolMappings,
+  OptimizedNerveData,
+  NervePoolFunctions,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { NerveConfig, Adapters } from './config';
 import { NerveEventPool } from './nerve-pool';
+import { ETHER_ADDRESS } from 'paraswap';
+import { getManyPoolStates } from './getstate-multicall';
 
 export class Nerve
   extends SimpleExchange
-  implements IDex<PoolState, DexParams>
+  implements IDex<PoolState, DexParams, OptimizedNerveData>
 {
   protected eventPools: EventPoolMappings;
 
-  protected notEventPools: NotEventPoolMappings;
-
   readonly hasConstantPriceLargeAmounts = false;
+
+  readonly minConversionRate = '1';
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(NerveConfig);
@@ -54,37 +59,64 @@ export class Nerve
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     protected poolConfigs = NerveConfig[dexKey][network].poolConfigs,
+    protected nervePoolIface = new Interface(nervePoolABIDefault),
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
+  get allPools() {
+    return Object.values(this.eventPools);
+  }
+
   async initializePricing(blockNumber: number) {
     const allPoolKeys = Object.keys(Nerve.dexKeysWithNetwork);
-    for (const poolKey of allPoolKeys) {
-      const poolConfig = this.poolConfigs[poolKey];
-      const poolIdentifier = Nerve.getIdentifier(this.dexKey, poolConfig.coins);
 
-      // We don't support Metapool yet
-      if (!poolConfig.isMetapool) {
-        this.eventPools[poolIdentifier] = new NerveEventPool(
+    await Promise.all(
+      allPoolKeys.map(poolKey => {
+        const poolConfig = this.poolConfigs[poolKey];
+        const poolIdentifier = Nerve.getIdentifier(
           this.dexKey,
-          this.network,
-          this.dexHelper,
-          this.logger,
-          poolKey,
-          poolConfig,
+          poolConfig.coins,
         );
-        // Generate first state for the blockNumber
-        this.eventPools[poolIdentifier].setup(blockNumber);
-      } else {
-        this.notEventPools[poolIdentifier] = { config: poolConfig };
-      }
-    }
+
+        // We don't support Metapool yet
+        if (!poolConfig.isMetapool) {
+          this.eventPools[poolIdentifier] = new NerveEventPool(
+            this.dexKey,
+            this.network,
+            this.dexHelper,
+            this.logger,
+            poolKey,
+            poolConfig,
+          );
+          // Generate first state for the blockNumber
+          return this.eventPools[poolIdentifier].setup(blockNumber);
+        }
+      }),
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] || null;
+  }
+
+  async getStates(blockNumber: number): Promise<DeepReadonly<PoolState[]>> {
+    return Promise.all(
+      this.allPools.map(async eventPool => {
+        let state = eventPool.getState(blockNumber);
+        if (!state || !state.isValid) {
+          this.logger.info(
+            `State for ${this.dexKey} pool ${eventPool.name} is stale or invalid. Generating new one`,
+          );
+          const newState = await eventPool.generateState(blockNumber);
+          eventPool.setState(newState, blockNumber);
+          return newState;
+        } else {
+          return state;
+        }
+      }),
+    );
   }
 
   async getPoolIdentifiers(
@@ -93,7 +125,7 @@ export class Nerve
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const eventSupportedPools = Object.values(this.eventPools)
+    return this.allPools
       .filter(pool => {
         return (
           pool.poolCoins.includes(srcToken.address) &&
@@ -101,17 +133,6 @@ export class Nerve
         );
       })
       .map(pool => Nerve.getIdentifier(this.dexKey, pool.poolCoins));
-    const otherPools = Object.values(this.notEventPools)
-      .filter(pool => {
-        return (
-          pool.config.coins.includes(srcToken.address) &&
-          pool.config.coins.includes(destToken.address)
-        );
-      })
-      .map(({ config: poolConfig }) =>
-        Nerve.getIdentifier(this.dexKey, poolConfig.coins),
-      );
-    return eventSupportedPools.concat(otherPools);
   }
 
   // Returns pool prices for amounts.
@@ -143,8 +164,10 @@ export class Nerve
         _destToken.address,
       ]);
 
-      if (limitPools && limitPools.every(p => p !== poolIdentifier))
+      if (limitPools && limitPools.every(p => p.toLowerCase() !== poolIdentifier))
         return null;
+
+      
 
       // await this.batchCatchUpPairs([[from, to]], blockNumber);
 
@@ -204,9 +227,6 @@ export class Nerve
     }
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() couls be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -215,13 +235,26 @@ export class Nerve
     data: OptimizedNerveData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { i, j, deadline } = data;
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          i: 'int128',
+          j: 'int128',
+          deadline: 'uint256',
+        },
+      },
+      { i, j, deadline },
+    );
+    return {
+      targetExchange: data.exchange,
+      payload,
+      networkFee: '0',
+    };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -230,16 +263,23 @@ export class Nerve
     data: OptimizedNerveData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-  }
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    const { exchange, i, j, deadline } = data;
+
+    const swapData = this.nervePoolIface.encodeFunctionData(
+      NervePoolFunctions.swap,
+      [i, j, srcAmount, this.minConversionRate, deadline],
+    );
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      exchange,
+    );
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -248,6 +288,43 @@ export class Nerve
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
+    const _tokenAddress = isWeth(tokenAddress, this.network)
+      ? ETHER_ADDRESS
+      : tokenAddress;
+    // In general case a token can be in the coins or underlying
+    // In case of the metapool the token might be in both at the same time
+    // It is important to note that the connector tokens might not be
+    // compatible for exchange among themselves.
+
+    // When added Metapools, this should be updated
+
+    const selectedPool = this.allPools.reduce((acc, pool) => {
+      const inCoins = pool.poolCoins.some(
+        _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
+      );
+      const inUnderlying = pool.underlying.some(
+        _token => _token.address.toLowerCase() === _tokenAddress.toLowerCase(),
+      );
+      let connectorTokens = inCoins ? pool.coins : [];
+      connectorTokens = inUnderlying
+        ? _.concat(connectorTokens, pool.underlying)
+        : connectorTokens;
+      if (connectorTokens.length) {
+        acc.push({
+          exchange: this.dexKey,
+          address: pool.poolAddress,
+          liquidityUSD: pool.liquidityUSD,
+          connectorTokens: _(connectorTokens)
+            .uniqBy('address')
+            .filter(
+              _token =>
+                _token.address.toLowerCase() !== _tokenAddress.toLowerCase(),
+            )
+            .value(),
+        });
+      }
+      return acc;
+    }, []);
+    return selectedPool;
   }
 }
