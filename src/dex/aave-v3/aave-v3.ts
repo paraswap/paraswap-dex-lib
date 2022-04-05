@@ -172,18 +172,17 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
           [this.config.poolAddress, amount, this.augustusAddress],
         ];
 
-      if (data.fromAToken) {
+      if (data.fromAToken)
         return [
           this.pool,
           this.config.poolAddress,
           PoolAndWethFunctions.withdraw,
           [destToken, amount, this.augustusAddress],
         ];
-      }
 
       return [
         this.pool,
-        this.config.wethGatewayAddress,
+        this.config.poolAddress,
         PoolAndWethFunctions.supply,
         [srcToken, amount, this.augustusAddress, REF_CODE],
       ];

@@ -37,6 +37,8 @@ export function getATokenIfAaveV3Pair(
   const _src = TokensByAddress[network][srcAddr];
   const _dst = TokensByAddress[network][dstAddr];
 
+  // supposing _src / _dst .address is lowercase
+
   if (_src && _src.address == dstAddr) {
     return src;
   }
