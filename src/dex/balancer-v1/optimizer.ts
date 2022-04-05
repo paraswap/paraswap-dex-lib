@@ -40,7 +40,7 @@ export function balancerV1Merge(or: UnoptimizedRate): UnoptimizedRate {
           .plus(s.data.gasUSD)
           .toFixed();
         newBalancer.data.swaps.push({
-          pool: s.data.pool,
+          pool: s.data.poolId,
           tokenInParam: s.srcAmount,
           tokenOutParam: side === SwapSide.SELL ? '0' : s.destAmount,
           maxPrice: MAX_UINT256,

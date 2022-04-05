@@ -55,8 +55,8 @@ import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { AxiosResponse } from 'axios';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
-import { typecastReadOnlyPool } from './utils';
-import { parsePoolPairData } from './sor-overload';
+import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
+import { parsePoolPairData, updatePoolState } from './sor-overload';
 
 const balancerV1Interface = new Interface(BalancerV1ABI);
 
@@ -231,12 +231,11 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // the state should be passed to the setup function call.
     // const allPoolsNonZeroBalances: SubGraphPools = await getAllPublicPools(blockNumber);
     // const poolsHelper = new SOR.POOLS();
-    const allPoolsNonZeroBalances = (
-      await this.dexHelper.httpRequest.get<AxiosResponse<PoolStates>>(
+    const allPoolsNonZeroBalances =
+      await this.dexHelper.httpRequest.get<PoolStates>(
         poolUrls[this.network],
         POOL_FETCH_TIMEOUT,
-      )
-    ).data;
+      );
 
     // It is important to the onchain query as the subgraph pool might not contain the
     // latest balance because of slow block processing time
@@ -244,6 +243,8 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       allPoolsNonZeroBalances,
       blockNumber,
     );
+
+    this.allPools = allPoolsNonZeroBalancesChain.pools;
 
     let poolStateMap: PoolStateMap = {};
     allPoolsNonZeroBalancesChain.pools.forEach(
@@ -282,6 +283,54 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
             pool.swapFee,
           );
     return BigInt(res.toFixed(0));
+  }
+
+  async getTopPools(
+    from: Token,
+    to: Token,
+    side: SwapSide,
+    pools: PoolState[],
+    minBalance: bigint,
+    isStale: boolean,
+    blockNumber: number,
+    limit: number = 10,
+  ) {
+    const _minBalance = new BigNumber(minBalance.toString());
+    // Limits are from MAX_IN_RATIO/MAX_OUT_RATIO in the pool contracts
+    const checkBalance = (p: OldPool) =>
+      (side === SwapSide.SELL ? p.balanceIn.div(2) : p.balanceOut.div(3)).gt(
+        _minBalance,
+      );
+    const selectedPools = pools
+      .map(p => parsePoolPairData(p, from.address, to.address))
+      .sort(
+        (p1, p2) =>
+          parseFloat(
+            p2!.balanceOut.times(1e18).idiv(p2!.weightOut).toFixed(0),
+          ) -
+          parseFloat(p1!.balanceOut.times(1e18).idiv(p1!.weightOut).toFixed(0)),
+      )
+      .slice(0, limit) as OldPool[];
+
+    if (!selectedPools || !selectedPools.length) return null;
+    // This function mapFromOldPoolToPoolState is very extensive as it iterates
+    // pools.length * selectedPools.length. But it shouldn't be a problem since
+    // we limit to 10 before this
+    if (!isStale) return mapFromOldPoolToPoolState(selectedPools, pools);
+
+    const rawSelectedPools = pools.filter(p =>
+      selectedPools.some(sp => p.id.toLowerCase() === sp.id.toLowerCase()),
+    );
+    await updatePoolState(
+      rawSelectedPools,
+      this.balancerMulticall,
+      blockNumber,
+    );
+    const topOldPools = rawSelectedPools
+      .map(p => parsePoolPairData(p, from.address, to.address))
+      .filter(p => !!p && checkBalance(p));
+
+    return mapFromOldPoolToPoolState(topOldPools, rawSelectedPools);
   }
 }
 
@@ -356,23 +405,48 @@ export class BalancerV1
     const _from = wrapETH(srcToken, this.network);
     const _to = wrapETH(destToken, this.network);
 
-    const pools = this.getPools(_from, _to);
+    const poolsWithTokens = this.eventPools.allPools.filter(pool => {
+      const tokenAddresses = pool.tokens.map(token => token.address);
 
-    return pools.map(({ id }) => BalancerV1.getIdentifier(this.dexKey, id));
-  }
+      return (
+        tokenAddresses.includes(_from.address) &&
+        tokenAddresses.includes(_to.address)
+      );
+    });
 
-  getPools(from: Token, to: Token, limit: number = 10): PoolState[] {
-    return this.eventPools.allPools
-      .filter(
-        p =>
-          p.tokens.some(
-            token => token.address.toLowerCase() === from.address.toLowerCase(),
-          ) &&
-          p.tokens.some(
-            token => token.address.toLowerCase() === to.address.toLowerCase(),
-          ),
-      )
-      .slice(0, limit);
+    let poolStates = this.eventPools.getState(blockNumber);
+    let isStale = false;
+    if (!poolStates) {
+      poolStates = this.eventPools.getStaleState();
+      if (!poolStates) {
+        this.logger.error(
+          'Error_getPrices: Neither updated nor stale state found',
+        );
+        return poolsWithTokens
+          .slice(0, 10)
+          .map(({ id }) => BalancerV1.getIdentifier(this.dexKey, id));
+      }
+      isStale = true;
+      this.logger.warn('Warning_getPrices: Stale state being used');
+    }
+
+    const unitVolume = BigInt(
+      10 ** (side === SwapSide.SELL ? _from : _to).decimals,
+    );
+
+    const topPools = await this.eventPools.getTopPools(
+      _from,
+      _to,
+      side,
+      poolsWithTokens,
+      unitVolume,
+      isStale,
+      blockNumber,
+    );
+
+    if (!topPools) return [];
+
+    return topPools.map(({ id }) => BalancerV1.getIdentifier(this.dexKey, id));
   }
 
   async getPoolPrices(
@@ -427,74 +501,96 @@ export class BalancerV1
       const _from = wrapETH(srcToken, this.network);
       const _to = wrapETH(destToken, this.network);
 
-      const allPools = this.getPools(_from, _to);
-      const allowedPools = limitPools
-        ? allPools.filter(({ id }) =>
-            limitPools.includes(BalancerV1.getIdentifier(this.dexKey, id)),
-          )
-        : allPools;
-
-      if (!allowedPools.length) return null;
+      let poolStates = this.eventPools.getState(blockNumber);
+      let isStale = false;
+      if (!poolStates) {
+        poolStates = this.eventPools.getStaleState();
+        if (!poolStates) {
+          this.logger.error(
+            'Error_getPrices: Neither updated nor stale state found',
+          );
+          return null;
+        }
+        isStale = true;
+        this.logger.warn('Warning_getPrices: Stale state being used');
+      }
 
       const unitVolume = BigInt(
         10 ** (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const poolStates = this.eventPools.getState(blockNumber);
-      if (!poolStates) {
-        this.logger.error(`getState returned null`);
-        return null;
-      }
+      const allPools = Object.values(poolStates).map(typecastReadOnlyPool);
+      let minBalance = amounts[amounts.length - 1];
+      if (unitVolume > minBalance) minBalance = unitVolume;
 
-      const poolPrices = allowedPools
-        .map(async pool => {
-          const poolAddress = pool.id.toLowerCase();
-          const poolState = poolStates[poolAddress];
-          if (!poolState) {
-            this.logger.error(`Unable to find the poolState ${poolAddress}`);
-            return null;
-          }
-          const parsedOldPool = parsePoolPairData(
-            pool,
-            _from.address,
-            _to.address,
+      const allowedPools = limitPools
+        ? this.eventPools.allPools.filter(({ id }) =>
+            limitPools.includes(BalancerV1.getIdentifier(this.dexKey, id)),
+          )
+        : await this.eventPools.getTopPools(
+            _from,
+            _to,
+            side,
+            allPools,
+            minBalance,
+            isStale,
+            blockNumber,
           );
 
-          // TODO: re-check what should be the current block time stamp
-          try {
-            const res = await this.getPoolPrices(
-              amounts,
-              side,
-              unitVolume,
-              this.exchangeProxy,
-              parsedOldPool,
+      if (!allowedPools || !allowedPools.length) return null;
+
+      const poolPrices = await Promise.all(
+        allowedPools
+          .map(async pool => {
+            const poolAddress = pool.id.toLowerCase();
+            const poolState = poolStates![poolAddress];
+            if (!poolState) {
+              this.logger.error(`Unable to find the poolState ${poolAddress}`);
+              return null;
+            }
+            const parsedOldPool = parsePoolPairData(
+              typecastReadOnlyPool(poolState),
+              _from.address,
+              _to.address,
             );
-            if (!res) return;
-            return {
-              unit: res.unit,
-              prices: res.prices,
-              data: {
-                poolId: pool.id,
-              },
-              poolAddresses: [poolAddress],
-              exchange: this.dexKey,
-              gasCost: BALANCER_SWAP_GAS_COST,
-              poolIdentifier: BalancerV1.getIdentifier(
-                this.dexKey,
-                poolAddress,
-              ),
-            };
-          } catch (e) {
-            this.logger.error(
-              `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
-                destToken.symbol || destToken.address
-              }, ${side}, ${pool.id}:`,
-              e,
-            );
-            return null;
-          }
-        })
-        .filter(p => !!p);
+
+            // TODO: re-check what should be the current block time stamp
+            try {
+              const res = await this.getPoolPrices(
+                amounts,
+                side,
+                unitVolume,
+                this.exchangeProxy,
+                parsedOldPool,
+              );
+              if (!res) return;
+              return {
+                unit: res.unit,
+                prices: res.prices,
+                data: {
+                  poolId: pool.id,
+                  exchangeProxy: this.exchangeProxy,
+                },
+                poolAddresses: [poolAddress],
+                exchange: this.dexKey,
+                gasCost: BALANCER_SWAP_GAS_COST,
+                poolIdentifier: BalancerV1.getIdentifier(
+                  this.dexKey,
+                  poolAddress,
+                ),
+              };
+            } catch (e) {
+              this.logger.error(
+                `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
+                  destToken.symbol || destToken.address
+                }, ${side}, ${pool.id}:`,
+                e,
+              );
+              return null;
+            }
+          })
+          .filter(p => !!p),
+      );
       return poolPrices as unknown as ExchangePrices<BalancerV1Data>;
     } catch (e) {
       this.logger.error(
