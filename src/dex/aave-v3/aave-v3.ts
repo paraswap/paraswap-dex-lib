@@ -14,9 +14,13 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Data, Param, PoolAndWethFunctions } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { Adapters, Config } from './config';
+import { Adapters, Config, WethGatewayConfigs } from './config';
 
-import POOL_ABI from '../../abi/aave-v3/pool.json';
+import WETH_GATEWAY_ABI_FANTOM from '../../abi/aave-weth-gateway-fantom.json';
+import WETH_GATEWAY_ABI_POLYGON from '../../abi/aave-weth-gateway-polygon.json';
+import WETH_GATEWAY_ABI_AVALANCHE from '../../abi/aave-weth-gateway-avalanche.json';
+
+import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
 import { getATokenIfAaveV3Pair } from './tokens';
 
 const REF_CODE = 1;
@@ -37,10 +41,11 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     protected dexHelper: IDexHelper,
     protected config = Config[dexKey][network],
     protected adapters = Adapters[network],
+    protected wethGatewayConfig = WethGatewayConfigs[network],
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.wethGateway = new Interface(config.wethGatewayABI);
+    this.wethGateway = new Interface(wethGatewayConfig.abi);
     this.pool = new Interface(POOL_ABI);
   }
 
@@ -87,12 +92,7 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
 
     const aToken = getATokenIfAaveV3Pair(this.network, _src, _dst);
 
-    if (
-      !aToken ||
-      (limitPools &&
-        !limitPools.includes(this._getPoolIdentifier(srcToken, destToken)))
-    )
-      return null;
+    if (!aToken) return null;
 
     const fromAToken = aToken == _src;
 
@@ -159,7 +159,7 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
       if (isETHAddress(srcToken))
         return [
           this.wethGateway,
-          this.config.wethGatewayAddress,
+          this.wethGatewayConfig.address,
           PoolAndWethFunctions.depositETH,
           [this.config.poolAddress, this.augustusAddress, REF_CODE],
         ];
@@ -167,7 +167,7 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
       if (isETHAddress(destToken))
         return [
           this.wethGateway,
-          this.config.wethGatewayAddress,
+          this.wethGatewayConfig.address,
           PoolAndWethFunctions.withdrawETH,
           [this.config.poolAddress, amount, this.augustusAddress],
         ];

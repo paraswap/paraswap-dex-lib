@@ -41,6 +41,12 @@ describe('AaveV3 E2E', () => {
         amount: '1000000000000000000',
         aToken: getTokenFromASymbol(network, 'aWMATIC'),
       },
+      {
+        tokenSymbol: 'WMATIC',
+        aTokenSymbol: 'aPolWMATIC',
+        amount: '1000000000000000000',
+        aToken: getTokenFromASymbol(network, 'aWMATIC'),
+      },
     ];
 
     const sideToContractMethods = new Map([
@@ -118,6 +124,12 @@ describe('AaveV3 E2E', () => {
         amount: '1000000000000000000',
         aToken: getTokenFromASymbol(network, 'aWFTM'),
       },
+      {
+        tokenSymbol: 'WFTM',
+        aTokenSymbol: 'aFanWFTM',
+        amount: '1000000000000000000',
+        aToken: getTokenFromASymbol(network, 'aWFTM'),
+      },
     ];
 
     const sideToContractMethods = new Map([
@@ -191,6 +203,12 @@ describe('AaveV3 E2E', () => {
       },
       {
         tokenSymbol: 'AVAX',
+        aTokenSymbol: 'aAvaWAVAX',
+        amount: '1000000000000000000',
+        aToken: getTokenFromASymbol(network, 'aWAVAX'),
+      },
+      {
+        tokenSymbol: 'WAVAX',
         aTokenSymbol: 'aAvaWAVAX',
         amount: '1000000000000000000',
         aToken: getTokenFromASymbol(network, 'aWAVAX'),
