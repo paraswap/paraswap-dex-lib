@@ -1,6 +1,45 @@
 import * as bmath from '@balancer-labs/sor/dist/bmath';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
+import type { Contract } from 'web3-eth-contract';
+import { bignumberify } from '../../utils';
 import { PoolState } from './types';
+
+// Has almost the same logic as getAllPoolDataOnChain
+// Modifies the balance of pools according to the on chain state
+// at a certain blockNumber
+export async function updatePoolState(
+  pools: PoolState[], // Warning the token balances of pools are modified
+  balancerMulti: Contract,
+  blockNumber: number,
+): Promise<void> {
+  if (pools.length === 0) throw Error('There are no pools.');
+
+  let addresses: string[][] = [];
+  let total = 0;
+
+  for (let i = 0; i < pools.length; i++) {
+    let pool = pools[i];
+
+    addresses.push([pool.id]);
+    total++;
+    pool.tokens.forEach(token => {
+      addresses[i].push(token.address);
+      total++;
+    });
+  }
+
+  let results = await balancerMulti.methods
+    .getPoolInfo(addresses, total)
+    .call({}, blockNumber);
+
+  let j = 0;
+  for (let i = 0; i < pools.length; i++) {
+    pools[i].tokens.forEach(token => {
+      token.balance = bignumberify(bmath.bnum(results[j]));
+      j++;
+    });
+  }
+}
 
 // Original Implementation: https://github.com/balancer-labs/balancer-sor/blob/v1.0.0-1/src/helpers.ts
 // No change has been made. This function doesn't exist in older SOR and is needed to convert the new SOR Pool
