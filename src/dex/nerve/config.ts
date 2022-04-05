@@ -43,39 +43,39 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           lpTokenAddress: '0x0d283BF16A9bdE49cfC48d8dc050AF28b71bdD90',
           trackCoins: false,
         },
-        fUSDT: {
-          name: 'fUSDT',
-          address: '0xd0fBF0A224563D5fFc8A57e4fdA6Ae080EbCf3D3',
-          coins: [
-            '0x049d68029688eAbF473097a2fC38ef61633A3C7A', // 0 - fUSDT
-            '0xf2511b5E4FB0e5E2d123004b672BA14850478C14', // 1 - 3Pool-LP
-          ],
-          isMetapool: true,
-          lpTokenAddress: '0x2e91A0CECf28c5E518bB2E7fdcd9F8e2cd511c10',
-          trackCoins: false,
-        },
-        UST: {
-          name: 'UST',
-          address: '0x2dcCe1586b1664f41C72206900e404Ec3cA130e0',
-          coins: [
-            '0x23396cF899Ca06c4472205fC903bDB4de249D6fC', // 0 - wUST
-            '0xf2511b5E4FB0e5E2d123004b672BA14850478C14', // 1 - 3Pool-LP
-          ],
-          isMetapool: true,
-          lpTokenAddress: '0x35Ce243e0DC9eD77e3C348Bb2742095F78e1Cb70',
-          trackCoins: false,
-        },
-        rUSD: {
-          name: 'rUSD',
-          address: '0x0eafaa7ed9866c1f08ac21dd0ef3395e910f7114',
-          coins: [
-            '0x07663837218A003e66310a01596af4bf4e44623D', // 0 - rUSD
-            '0xf2511b5E4FB0e5E2d123004b672BA14850478C14', // 1 - 3Pool-LP
-          ],
-          isMetapool: true,
-          lpTokenAddress: '0x870ee4d19c12A789c61de69E3E5eFb42383E4434',
-          trackCoins: false,
-        },
+        // fUSDT: {
+        //   name: 'fUSDT',
+        //   address: '0xd0fBF0A224563D5fFc8A57e4fdA6Ae080EbCf3D3',
+        //   coins: [
+        //     '0x049d68029688eAbF473097a2fC38ef61633A3C7A', // 0 - fUSDT
+        //     '0xf2511b5E4FB0e5E2d123004b672BA14850478C14', // 1 - 3Pool-LP
+        //   ],
+        //   isMetapool: true,
+        //   lpTokenAddress: '0x2e91A0CECf28c5E518bB2E7fdcd9F8e2cd511c10',
+        //   trackCoins: false,
+        // },
+        // UST: {
+        //   name: 'UST',
+        //   address: '0x2dcCe1586b1664f41C72206900e404Ec3cA130e0',
+        //   coins: [
+        //     '0x23396cF899Ca06c4472205fC903bDB4de249D6fC', // 0 - wUST
+        //     '0xf2511b5E4FB0e5E2d123004b672BA14850478C14', // 1 - 3Pool-LP
+        //   ],
+        //   isMetapool: true,
+        //   lpTokenAddress: '0x35Ce243e0DC9eD77e3C348Bb2742095F78e1Cb70',
+        //   trackCoins: false,
+        // },
+        // rUSD: {
+        //   name: 'rUSD',
+        //   address: '0x0eafaa7ed9866c1f08ac21dd0ef3395e910f7114',
+        //   coins: [
+        //     '0x07663837218A003e66310a01596af4bf4e44623D', // 0 - rUSD
+        //     '0xf2511b5E4FB0e5E2d123004b672BA14850478C14', // 1 - 3Pool-LP
+        //   ],
+        //   isMetapool: true,
+        //   lpTokenAddress: '0x870ee4d19c12A789c61de69E3E5eFb42383E4434',
+        //   trackCoins: false,
+        // },
       },
     },
   },
