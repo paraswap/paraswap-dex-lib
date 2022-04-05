@@ -1,50 +1,50 @@
 [
   {
     "aSymbol": "aWETH",
-    "aAddress": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8",
+    "aAddress": "0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8",
     "address": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
     "decimals": 18
   },
   {
     "aSymbol": "aDAI",
-    "aAddress": "0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE",
-    "address": "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70",
+    "aAddress": "0x82e64f49ed5ec1bc6e43dad4fc8af9bb3a2312ee",
+    "address": "0xd586e7f844cea2f87f50152665bcbc2c279d8d70",
     "decimals": 18
   },
   {
     "aSymbol": "aLINK",
-    "aAddress": "0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530",
-    "address": "0x5947BB275c521040051D82396192181b413227A3",
+    "aAddress": "0x191c10aa4af7c30e871e70c95db0e4eb77237530",
+    "address": "0x5947bb275c521040051d82396192181b413227a3",
     "decimals": 6
   },
   {
     "aSymbol": "aUSDT",
-    "aAddress": "0x6ab707Aca953eDAeFBc4fD23bA73294241490620",
-    "address": "0xc7198437980c041c805A1EDcbA50c1Ce5db95118",
+    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
+    "address": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
     "decimals": 6
   },
   {
     "aSymbol": "aUSDC",
-    "aAddress": "0x625E7708f30cA75bfd92586e17077590C60eb4cD",
-    "address": "0x8b2f3e2851815B4ef4De78153210ff6C01234CF1",
+    "aAddress": "0x625e7708f30ca75bfd92586e17077590c60eb4cd",
+    "address": "0x8b2f3e2851815b4ef4de78153210ff6c01234cf1",
     "decimals": 6
   },
   {
     "aSymbol": "aAAVE",
-    "aAddress": "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375",
-    "address": "0x63a72806098Bd3D9520cC43356dD78afe5D386D9",
+    "aAddress": "0xf329e36c7bf6e5e86ce2150875a84ce77f477375",
+    "address": "0x63a72806098bd3d9520cc43356dd78afe5d386d9",
     "decimals": 18
   },
   {
     "aSymbol": "aWBTC",
-    "aAddress": "0x078f358208685046a11C85e8ad32895DED33A249",
-    "address": "0x50b7545627a5162F82A992c33b87aDc75187B218",
+    "aAddress": "0x078f358208685046a11c85e8ad32895ded33a249",
+    "address": "0x50b7545627a5162f82a992c33b87adc75187b218",
     "decimals": 8
   },
   {
     "aSymbol": "aWAVAX",
-    "aAddress": "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97",
-    "address": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    "aAddress": "0x6d80113e533a2c0fe82eabd35f1875dcea89ea97",
+    "address": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
     "decimals": 18
   }
 ]

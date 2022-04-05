@@ -325,6 +325,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xde3A24028580884448a5397872046a019649b084',
       decimals: 6,
     },
+    USDt: {
+      address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
+      decimals: 6,
+    },
     WAVAX: {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
@@ -474,12 +478,16 @@ export const Holders: {
     KNC: '0x41Af7fd16dFC29bdA8D8aAA4CeFfC0E8046992eC',
     jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
     aUSDT: '0x027ffd3c119567e85998f4e6b9c3d83d5702660c',
+    aPolUSDT: '0x941da3d6759147736456cee36647213183079337',
+    aPolWMATIC: '0x7d96a6f41fd31c7624f7069415be58b5e3576d34',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
     WFTM: '0x4901C740607E415685b4d09E4Aa960329cd183Ca',
     USDC: '0xA2bB859a42D6E7f658a82c37702489b442f34b85',
     FUSDT: '0xca436e14855323927d6e6264470ded36455fc8bd',
+    aFanUSDT: '0xb0c9c5b5211de3a75b61bb798887b76accd64193',
+    aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
   },
   [Network.BSC]: {
     DAI: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
@@ -509,6 +517,9 @@ export const Holders: {
     MIM: '0xad8f72a7612bb91b2dfab09e54464aaa5150914e',
     TSD: '0x691A89db352B72dDb249bFe16503494eC0D920A4',
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
+    aAvaUSDT: '0x4cf82fe8e0072d546729d005b08faeeab8528cb7',
+    USDt: '0x876eabf441b2ee5b5b0554fd502a8e0600950cfa',
+    aAvaWAVAX: '0xd3117031ed778fe1cf2b153b7573173c7565f33a',
   },
 };
 

@@ -1,62 +1,62 @@
 [
   {
     "aSymbol": "aUSDT",
-    "aAddress": "0x6ab707Aca953eDAeFBc4fD23bA73294241490620    ",
-    "address": "0x940F41F0ec9ba1A34CF001cc03347ac092F5F6B5",
+    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
+    "address": "0x049d68029688eabf473097a2fc38ef61633a3c7a",
     "decimals": 6
   },
   {
     "aSymbol": "aWBTC",
-    "aAddress": "0x078f358208685046a11C85e8ad32895DED33A249",
-    "address": "0x321162Cd933E2Be498Cd2267a90534A804051b11",
+    "aAddress": "0x078f358208685046a11c85e8ad32895ded33a249",
+    "address": "0x321162cd933e2be498cd2267a90534a804051b11",
     "decimals": 8
   },
   {
     "aSymbol": "aWETH",
-    "aAddress": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8",
-    "address": "0x74b23882a30290451A17c44f4F05243b6b58C76d",
+    "aAddress": "0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8",
+    "address": "0x74b23882a30290451a17c44f4f05243b6b58c76d",
     "decimals": 18
   },
   {
     "aSymbol": "aAAVE",
-    "aAddress": "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375",
-    "address": "0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B",
+    "aAddress": "0xf329e36c7bf6e5e86ce2150875a84ce77f477375",
+    "address": "0x6a07a792ab2965c72a5b8088d3a069a7ac3a993b",
     "decimals": 18
   },
   {
     "aSymbol": "aWFTM",
-    "aAddress": "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97",
-    "address": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
+    "aAddress": "0x6d80113e533a2c0fe82eabd35f1875dcea89ea97",
+    "address": "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83",
     "decimals": 18
   },
   {
     "aSymbol": "aDAI",
-    "aAddress": "0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE",
-    "address": "0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E",
+    "aAddress": "0x82e64f49ed5ec1bc6e43dad4fc8af9bb3a2312ee",
+    "address": "0x8d11ec38a3eb5e956b052f67da8bdc9bef8abf3e",
     "decimals": 18
   },
   {
     "aSymbol": "aLINK",
-    "aAddress": "0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530",
-    "address": "0xb3654dc3D10Ea7645f8319668E8F54d2574FBdC8",
+    "aAddress": "0x191c10aa4af7c30e871e70c95db0e4eb77237530",
+    "address": "0xb3654dc3d10ea7645f8319668e8f54d2574fbdc8",
     "decimals": 18
   },
   {
     "aSymbol": "aUSDC",
-    "aAddress": "0x625E7708f30cA75bfd92586e17077590C60eb4cD",
-    "address": "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
+    "aAddress": "0x625e7708f30ca75bfd92586e17077590c60eb4cd",
+    "address": "0x04068da6c83afcfa0e13ba15a6696662335d5b75",
     "decimals": 6
   },
   {
     "aSymbol": "aCRV",
-    "aAddress": "0x513c7E3a9c69cA3e22550eF58AC1C0088e918FFf",
-    "address": "0x1E4F97b9f9F913c46F1632781732927B9019C68b",
+    "aAddress": "0x513c7e3a9c69ca3e22550ef58ac1c0088e918fff",
+    "address": "0x1e4f97b9f9f913c46f1632781732927b9019c68b",
     "decimals": 18
   },
   {
     "aSymbol": "aSUSHI",
-    "aAddress": "0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA",
-    "address": "0xae75A438b2E0cB8Bb01Ec1E1e376De11D44477CC",
+    "aAddress": "0xc45a479877e1e9dfe9fcd4056c699575a1045daa",
+    "address": "0xae75a438b2e0cb8bb01ec1e1e376de11d44477cc",
     "decimals": 18
   }
 ]
