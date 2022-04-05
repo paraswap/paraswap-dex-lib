@@ -19,17 +19,9 @@ export function checkPoolPrices(
       const prevMarginalPrice =
         poolPrice.prices[i - 1] - poolPrice.prices[i - 2];
       const currMarginalPrice = poolPrice.prices[i] - poolPrice.prices[i - 1];
-      /*
-       TO DO - This test can as price (confirmed on EVM) is sometimes same or better for Linear/PhantomStable.
-       Example:
-        Linear Pool: DAI>BBADAI
-        prices: [ 0n, 995228262579897289n, 1990456525159794578n ] (995228262579897289, 995228262579897289)
-        PhantomStable Pool: DAI>BBADAI
-        prices: [ 0n, 1002063220340675582n, 2004126440858960874n ] (1002063220340675582, 1002063220518285292)
-       Not sure how best to handle?
-      */
+
       if (side === SwapSide.SELL)
-        expect(currMarginalPrice).toBeLessThan(prevMarginalPrice);
+        expect(currMarginalPrice).toBeLessThanOrEqual(prevMarginalPrice);
       else expect(currMarginalPrice).toBeGreaterThan(prevMarginalPrice);
     }
 
