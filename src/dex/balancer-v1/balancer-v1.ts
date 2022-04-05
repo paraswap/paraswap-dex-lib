@@ -318,7 +318,6 @@ export class BalancerV1
       network,
       dexHelper,
       this.logger,
-      adapters,
     );
     this.exchangeRouterInterface = new Interface(BalancerV1ABI);
   }
