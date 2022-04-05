@@ -101,16 +101,26 @@ export class Nerve
     return this.adapters[side] || null;
   }
 
-  async getStates(blockNumber: number): Promise<DeepReadonly<PoolState[]>> {
+  async getStates(
+    pools?: NerveEventPool[],
+    blockNumber?: number,
+  ): Promise<DeepReadonly<PoolState[]>> {
+    const _pools = pools === undefined ? this.allPools : pools;
+
+    const _blockNumber =
+      blockNumber === undefined
+        ? await this.dexHelper.provider.getBlockNumber()
+        : blockNumber;
+
     return Promise.all(
-      this.allPools.map(async eventPool => {
-        let state = eventPool.getState(blockNumber);
+      _pools.map(async eventPool => {
+        let state = eventPool.getState(_blockNumber);
         if (!state || !state.isValid) {
           this.logger.info(
-            `State for ${this.dexKey} pool ${eventPool.name} is stale or invalid. Generating new one`,
+            `State for ${this.dexKey} pool ${eventPool.name} is stale or invalid on block ${_blockNumber}. Generating new one`,
           );
-          const newState = await eventPool.generateState(blockNumber);
-          eventPool.setState(newState, blockNumber);
+          const newState = await eventPool.generateState(_blockNumber);
+          eventPool.setState(newState, _blockNumber);
           return newState;
         } else {
           return state;
@@ -164,10 +174,11 @@ export class Nerve
         _destToken.address,
       ]);
 
-      if (limitPools && limitPools.every(p => p.toLowerCase() !== poolIdentifier))
+      if (
+        limitPools &&
+        limitPools.every(p => p.toLowerCase() !== poolIdentifier)
+      )
         return null;
-
-      
 
       // await this.batchCatchUpPairs([[from, to]], blockNumber);
 
@@ -282,8 +293,6 @@ export class Nerve
     );
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
@@ -291,40 +300,41 @@ export class Nerve
     const _tokenAddress = isWeth(tokenAddress, this.network)
       ? ETHER_ADDRESS
       : tokenAddress;
-    // In general case a token can be in the coins or underlying
-    // In case of the metapool the token might be in both at the same time
-    // It is important to note that the connector tokens might not be
-    // compatible for exchange among themselves.
 
-    // When added Metapools, this should be updated
+    const selectedPools = this.allPools
+      .filter(pool => pool.poolCoins.includes(tokenAddress))
+      .slice(0, limit);
 
-    const selectedPool = this.allPools.reduce((acc, pool) => {
-      const inCoins = pool.poolCoins.some(
-        _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
-      );
-      const inUnderlying = pool.underlying.some(
-        _token => _token.address.toLowerCase() === _tokenAddress.toLowerCase(),
-      );
-      let connectorTokens = inCoins ? pool.coins : [];
-      connectorTokens = inUnderlying
-        ? _.concat(connectorTokens, pool.underlying)
-        : connectorTokens;
-      if (connectorTokens.length) {
-        acc.push({
-          exchange: this.dexKey,
-          address: pool.poolAddress,
-          liquidityUSD: pool.liquidityUSD,
-          connectorTokens: _(connectorTokens)
-            .uniqBy('address')
-            .filter(
-              _token =>
-                _token.address.toLowerCase() !== _tokenAddress.toLowerCase(),
-            )
-            .value(),
-        });
-      }
-      return acc;
-    }, []);
-    return selectedPool;
-  }
+    const sortedStates = [...await this.getStates(selectedPools)].sort((a, b) => );
+
+
+  //   const selectedPool = this.allPools.reduce((acc, pool) => {
+  //     const inCoins = pool.poolCoins.some(
+  //       _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
+  //     );
+  //     const inUnderlying = pool.underlying.some(
+  //       _token => _token.address.toLowerCase() === _tokenAddress.toLowerCase(),
+  //     );
+  //     let connectorTokens = inCoins ? pool.coins : [];
+  //     connectorTokens = inUnderlying
+  //       ? _.concat(connectorTokens, pool.underlying)
+  //       : connectorTokens;
+  //     if (connectorTokens.length) {
+  //       acc.push({
+  //         exchange: this.dexKey,
+  //         address: pool.poolAddress,
+  //         liquidityUSD: pool.liquidityUSD,
+  //         connectorTokens: _(connectorTokens)
+  //           .uniqBy('address')
+  //           .filter(
+  //             _token =>
+  //               _token.address.toLowerCase() !== _tokenAddress.toLowerCase(),
+  //           )
+  //           .value(),
+  //       });
+  //     }
+  //     return acc;
+  //   }, []);
+  //   return selectedPool;
+  // }
 }
