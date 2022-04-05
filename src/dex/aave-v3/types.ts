@@ -35,4 +35,5 @@ export type DexParam = {
   ethGasCost: number;
   lendingGasCost: number;
   poolAddress: Address;
+  wethGatewayAddress: Address;
 };
