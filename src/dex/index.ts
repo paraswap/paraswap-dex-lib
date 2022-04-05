@@ -36,6 +36,7 @@ import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
+import { Excalibur } from './uniswap-v2/excalibur';
 
 const LegacyDexes = [
   Curve,
@@ -71,6 +72,7 @@ const Dexes = [
   AaveV1,
   AaveV2,
   AaveV3,
+  Excalibur,
 ];
 
 const AdapterNameAddressMap: {
