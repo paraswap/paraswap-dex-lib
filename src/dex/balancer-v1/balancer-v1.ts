@@ -78,7 +78,6 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected adapters = Adapters[network] || {},
     protected factoryAddress: Address = defaultfactoryAddress,
     protected multicallAddress: Address = defaultMulticallAddress,
   ) {
