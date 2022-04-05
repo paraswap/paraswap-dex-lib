@@ -35,10 +35,18 @@ export interface NervePoolConfig {
 }
 
 export type NerveData = {
-  // TODO: NerveData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
+  i: String;
+  j: String;
+  dx: String;
+  min_dy: String;
+  deadline?: string;
+};
+
+export type OptimizedNerveData = {
+  exchange: string;
+  i: string;
+  j: string;
+  deadline: string;
 };
 
 export type DexParams = {
@@ -65,3 +73,7 @@ export type EventPoolMappings = { [pool: string]: EventPoolOrMetapool };
 export type NotEventPoolMappings = {
   [pool: string]: { state?: PoolOrMetapoolState; config: NervePoolConfig };
 };
+
+export enum NervePoolFunctions {
+  swap = 'swap',
+}
