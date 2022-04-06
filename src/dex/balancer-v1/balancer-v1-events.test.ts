@@ -77,59 +77,97 @@ async function fetchPoolState(
   return poolStateMap;
 }
 
-describe('BalancerV1 Event', function () {
+export async function executeFullEventTest(
+  blockNumber: number,
+  poolAddress: string,
+) {
+  const dexHelper = new DummyDexHelper(network);
+  const logger = dexHelper.getLogger(dexKey);
+
+  const balancerV1Pools = new BalancerV1EventPool(
+    dexKey,
+    network,
+    dexHelper,
+    logger,
+  );
+  await balancerV1Pools.generateState(blockNumber - 1);
+  await testEventSubscriber(
+    balancerV1Pools,
+    balancerV1Pools.addressesSubscribed,
+    (_blockNumber: number) =>
+      fetchPoolState(balancerV1Pools, _blockNumber, poolAddress),
+    blockNumber,
+    BalancerV1.getIdentifier(dexKey, poolAddress),
+    dexHelper.provider,
+  );
+}
+
+describe('BalancerV1 EventPool MAINNET', function () {
   const testPoolAddress = '0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5';
-  const blockNumbers: { [event: string]: [number, string][] } = {
-    LOG_JOIN: [
-      [11379497, testPoolAddress],
-      [11379555, testPoolAddress],
-      [11380893, testPoolAddress],
-      [11380933, testPoolAddress],
-      [11381493, testPoolAddress],
-      [11382001, testPoolAddress],
-    ],
-    LOG_EXIT: [
-      [11376152, testPoolAddress],
-      [11376280, testPoolAddress],
-      [11377349, testPoolAddress],
-      [11377998, testPoolAddress],
-    ],
-    LOG_SWAP: [
-      [11376453, testPoolAddress],
-      [11376550, testPoolAddress],
-      [11378762, testPoolAddress],
-      [11378773, testPoolAddress],
-      [11378776, testPoolAddress],
-      [11378856, testPoolAddress],
-      [11378870, testPoolAddress],
-    ],
-  };
 
-  describe('BalancerV1EventPool', function () {
-    Object.keys(blockNumbers).forEach((event: string) => {
-      blockNumbers[event].forEach(([blockNumber, poolAddress]) => {
-        it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
-          const dexHelper = new DummyDexHelper(network);
-          const logger = dexHelper.getLogger(dexKey);
+  describe('LOG_JOIN', function () {
+    const event = 'LOG_JOIN';
 
-          const balancerV1Pools = new BalancerV1EventPool(
-            dexKey,
-            network,
-            dexHelper,
-            logger,
-          );
+    it(`Return correct state after 11379497`, async function () {
+      await executeFullEventTest(11379497, testPoolAddress);
+    });
+    it(`Return correct state after 11379555`, async function () {
+      await executeFullEventTest(11379555, testPoolAddress);
+    });
+    it(`Return correct state after 11380893`, async function () {
+      await executeFullEventTest(11380893, testPoolAddress);
+    });
+    it(`Return correct state after 11380933`, async function () {
+      await executeFullEventTest(11380933, testPoolAddress);
+    });
+    it(`Return correct state after 11381493`, async function () {
+      await executeFullEventTest(11381493, testPoolAddress);
+    });
+    it(`Return correct state after 11382001`, async function () {
+      await executeFullEventTest(11382001, testPoolAddress);
+    });
+  });
 
-          await testEventSubscriber(
-            balancerV1Pools,
-            balancerV1Pools.addressesSubscribed,
-            (_blockNumber: number) =>
-              fetchPoolState(balancerV1Pools, _blockNumber, poolAddress),
-            blockNumber,
-            BalancerV1.getIdentifier(dexKey, poolAddress),
-            dexHelper.provider,
-          );
-        });
-      });
+  describe('LOG_EXIT', function () {
+    const event = 'LOG_EXIT';
+
+    it(`Return correct state after 11376152`, async function () {
+      await executeFullEventTest(11376152, testPoolAddress);
+    });
+    it(`Return correct state after 11376280`, async function () {
+      await executeFullEventTest(11376280, testPoolAddress);
+    });
+    it(`Return correct state after 11377349`, async function () {
+      await executeFullEventTest(11377349, testPoolAddress);
+    });
+    it(`Return correct state after 11377998`, async function () {
+      await executeFullEventTest(11377998, testPoolAddress);
+    });
+  });
+
+  describe('LOG_SWAP', function () {
+    const event = 'LOG_SWAP';
+
+    it(`Return correct state after 11376453`, async function () {
+      await executeFullEventTest(11376453, testPoolAddress);
+    });
+    it(`Return correct state after 11376550`, async function () {
+      await executeFullEventTest(11376550, testPoolAddress);
+    });
+    it(`Return correct state after 11378762`, async function () {
+      await executeFullEventTest(11378762, testPoolAddress);
+    });
+    it(`Return correct state after 11378773`, async function () {
+      await executeFullEventTest(11378773, testPoolAddress);
+    });
+    it(`Return correct state after 11378776`, async function () {
+      await executeFullEventTest(11378776, testPoolAddress);
+    });
+    it(`Return correct state after 11378856`, async function () {
+      await executeFullEventTest(11378856, testPoolAddress);
+    });
+    it(`Return correct state after 11378870`, async function () {
+      await executeFullEventTest(11378870, testPoolAddress);
     });
   });
 });
