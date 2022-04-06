@@ -25,7 +25,7 @@ const amounts = [
   BigInt('700000000000000000'),
   BigInt('800000000000000000'),
   BigInt('900000000000000000'),
-  BigInt('990000000000000000'),
+  BigInt('1000000000000000000'),
 ];
 
 const dexKey = 'BalancerV1';
