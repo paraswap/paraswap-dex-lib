@@ -33,8 +33,9 @@ export function checkPoolPrices(
       const prevMarginalPrice =
         poolPrice.prices[i - 1] - poolPrice.prices[i - 2];
       const currMarginalPrice = poolPrice.prices[i] - poolPrice.prices[i - 1];
+
       if (side === SwapSide.SELL)
-        expect(currMarginalPrice).toBeLessThan(prevMarginalPrice);
+        expect(currMarginalPrice).toBeLessThanOrEqual(prevMarginalPrice);
       else expect(currMarginalPrice).toBeGreaterThan(prevMarginalPrice);
     }
 

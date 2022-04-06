@@ -67,6 +67,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
       decimals: 6,
     },
+    waUSDT: {
+      address: '0xf8Fd466F12e236f4c96F7Cce6c79EAdB819abF58',
+      decimals: 6,
+    },
     ALUSD: {
       address: '0xbc6da0fe9ad5f3b0d58160288917aa56653660e9',
       decimals: 18,
@@ -185,6 +189,20 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     },
     UST: {
       address: '0xa47c8bf37f92abed4a126bda807a7b7498661acd',
+      decimals: 18,
+    },
+    BBAUSDT: {
+      // bpt of USDT Linear Pool
+      address: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
+      decimals: 18,
+    },
+    BBADAI: {
+      // bpt of DAI Linear Pool
+      address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
+      decimals: 18,
+    },
+    BBAUSD: {
+      address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
       decimals: 18,
     },
   },
@@ -464,6 +482,7 @@ export const Holders: {
     aETH: '0xc03c4476fbe25138bf724fa1b95551c6e6b8fd2c',
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
+    BBAUSD: '0x9888e846bCb0a14e0fCB2f66368A69d1d04bd5F0',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
