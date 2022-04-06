@@ -51,6 +51,7 @@ import {
   BALANCER_SWAP_GAS_COST,
 } from './config';
 const BalancerV1PoolABI = require('../../abi/BalancerV1Pool.json');
+const BalancerV1ExchangeProxyABI = require('../../abi/BalancerV1ExchangeProxy.json');
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { AxiosResponse } from 'axios';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
@@ -58,7 +59,7 @@ import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
 import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
 import { parsePoolPairData, updatePoolState } from './sor-overload';
 
-const balancerV1PoolInterface = new Interface(BalancerV1PoolABI);
+const balancerV1PoolIface = new Interface(BalancerV1PoolABI);
 
 export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -83,7 +84,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ) {
     super(parentName, logger);
 
-    this.logDecoder = (log: Log) => balancerV1PoolInterface.parseLog(log);
+    this.logDecoder = (log: Log) => balancerV1PoolIface.parseLog(log);
     this.addressesSubscribed = []; // Will be filled in generateState function
     this.balancerMulticall = new dexHelper.web3Provider.eth.Contract(
       BalancerCustomMulticallABI as any,
@@ -371,7 +372,7 @@ export class BalancerV1
       dexHelper,
       this.logger,
     );
-    this.exchangeRouterInterface = new Interface(BalancerV1PoolABI);
+    this.exchangeRouterInterface = new Interface(BalancerV1ExchangeProxyABI);
   }
 
   async setupEventPools(blockNumber: number) {
