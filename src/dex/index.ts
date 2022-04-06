@@ -4,7 +4,6 @@ import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
-import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
 import { Weth } from './weth';
 import { ZeroX } from './zerox';
@@ -35,6 +34,7 @@ import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
+import { KyberDmm } from './kyberdmm/kyberdmm';
 
 const LegacyDexes = [
   Curve,
@@ -55,7 +55,6 @@ const LegacyDexes = [
   DodoV2,
   UniswapV3,
   Weth,
-  KyberDmm,
   Jarvis,
   Lido,
 ];
@@ -69,6 +68,7 @@ const Dexes = [
   Excalibur,
   AaveV1,
   AaveV2,
+  KyberDmm,
 ];
 
 const AdapterNameAddressMap: {
