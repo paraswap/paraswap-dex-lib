@@ -4,7 +4,6 @@ import {
   Token,
   Address,
   ExchangePrices,
-  Log,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -12,8 +11,7 @@ import {
 } from '../../types';
 const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
 import { SwapSide, Network } from '../../constants';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork, isWeth } from '../../utils';
+import { wrapETH, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -21,15 +19,13 @@ import {
   PoolState,
   DexParams,
   EventPoolMappings,
-  NotEventPoolMappings,
   OptimizedNerveData,
   NervePoolFunctions,
+  EventPoolOrMetapool,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { NerveConfig, Adapters } from './config';
 import { NerveEventPool } from './nerve-pool';
-import { ETHER_ADDRESS } from 'paraswap';
-import { getManyPoolStates } from './getstate-multicall';
 
 export class Nerve
   extends SimpleExchange
@@ -104,7 +100,7 @@ export class Nerve
   async getStates(
     pools?: NerveEventPool[],
     blockNumber?: number,
-  ): Promise<DeepReadonly<PoolState[]>> {
+  ): Promise<DeepReadonly<{ state: PoolState; pool: EventPoolOrMetapool }[]>> {
     const _pools = pools === undefined ? this.allPools : pools;
 
     const _blockNumber =
@@ -121,9 +117,9 @@ export class Nerve
           );
           const newState = await eventPool.generateState(_blockNumber);
           eventPool.setState(newState, _blockNumber);
-          return newState;
+          return { state: newState, pool: eventPool };
         } else {
-          return state;
+          return { state, pool: eventPool };
         }
       }),
     );
@@ -297,44 +293,56 @@ export class Nerve
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const _tokenAddress = isWeth(tokenAddress, this.network)
-      ? ETHER_ADDRESS
-      : tokenAddress;
+    // The decimals number is not used in wrapETH, so it is not matter
+    // what we pass
+    const _tokenAddress = wrapETH(
+      { address: tokenAddress, decimals: 18 },
+      this.network,
+    );
 
-    const selectedPools = this.allPools
-      .filter(pool => pool.poolCoins.includes(tokenAddress))
+    const selectedPools = this.allPools.filter(pool =>
+      pool.poolCoins.includes(tokenAddress),
+    );
+
+    const sortedStates = [...(await this.getStates(selectedPools))]
+      .sort((a, b) => b.state.lpToken_supply - a.state.lpToken_supply)
       .slice(0, limit);
 
-    const sortedStates = [...await this.getStates(selectedPools)].sort((a, b) => );
+    // .map(({ pool }) => {
+    // exchange: pool.name,
+    // address: pool.poolAddress,
+    // connectorTokens: Token[],
+    // liquidityUSD: number,
+    //   })
 
-
-  //   const selectedPool = this.allPools.reduce((acc, pool) => {
-  //     const inCoins = pool.poolCoins.some(
-  //       _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
-  //     );
-  //     const inUnderlying = pool.underlying.some(
-  //       _token => _token.address.toLowerCase() === _tokenAddress.toLowerCase(),
-  //     );
-  //     let connectorTokens = inCoins ? pool.coins : [];
-  //     connectorTokens = inUnderlying
-  //       ? _.concat(connectorTokens, pool.underlying)
-  //       : connectorTokens;
-  //     if (connectorTokens.length) {
-  //       acc.push({
-  //         exchange: this.dexKey,
-  //         address: pool.poolAddress,
-  //         liquidityUSD: pool.liquidityUSD,
-  //         connectorTokens: _(connectorTokens)
-  //           .uniqBy('address')
-  //           .filter(
-  //             _token =>
-  //               _token.address.toLowerCase() !== _tokenAddress.toLowerCase(),
-  //           )
-  //           .value(),
-  //       });
-  //     }
-  //     return acc;
-  //   }, []);
-  //   return selectedPool;
-  // }
+    //   const selectedPool = this.allPools.reduce((acc, pool) => {
+    //     const inCoins = pool.poolCoins.some(
+    //       _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
+    //     );
+    //     const inUnderlying = pool.underlying.some(
+    //       _token => _token.address.toLowerCase() === _tokenAddress.toLowerCase(),
+    //     );
+    //     let connectorTokens = inCoins ? pool.coins : [];
+    //     connectorTokens = inUnderlying
+    //       ? _.concat(connectorTokens, pool.underlying)
+    //       : connectorTokens;
+    //     if (connectorTokens.length) {
+    //       acc.push({
+    //         exchange: this.dexKey,
+    //         address: pool.poolAddress,
+    //         liquidityUSD: pool.liquidityUSD,
+    //         connectorTokens: _(connectorTokens)
+    //           .uniqBy('address')
+    //           .filter(
+    //             _token =>
+    //               _token.address.toLowerCase() !== _tokenAddress.toLowerCase(),
+    //           )
+    //           .value(),
+    //       });
+    //     }
+    //     return acc;
+    //   }, []);
+    //   return selectedPool;
+    // }
+  }
 }

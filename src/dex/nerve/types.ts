@@ -70,10 +70,6 @@ export type PoolOrMetapoolState = PoolState | MetapoolState;
 
 export type EventPoolMappings = { [pool: string]: EventPoolOrMetapool };
 
-export type NotEventPoolMappings = {
-  [pool: string]: { state?: PoolOrMetapoolState; config: NervePoolConfig };
-};
-
 export enum NervePoolFunctions {
   swap = 'swap',
 }
