@@ -16,8 +16,16 @@ const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
   BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
+  BigInt('100000000000000000'),
+  BigInt('200000000000000000'),
+  BigInt('300000000000000000'),
+  BigInt('400000000000000000'),
+  BigInt('500000000000000000'),
+  BigInt('600000000000000000'),
+  BigInt('700000000000000000'),
+  BigInt('800000000000000000'),
+  BigInt('900000000000000000'),
+  BigInt('990000000000000000'),
 ];
 
 const dexKey = 'BalancerV1';
