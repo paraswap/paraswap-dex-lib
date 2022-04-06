@@ -36,7 +36,7 @@ import axios from 'axios';
   added.  
 
   You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-events.tests.ts`
+  `npx jest src/dex/<dex-name>/<dex-name>-events.test.ts`
 
   (This comment should be removed from the final implementation)
 */

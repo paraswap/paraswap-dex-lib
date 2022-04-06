@@ -13,10 +13,11 @@ export const MIN_INT =
   '-57896044618658097711785492504343953926634992332820282019728792003956564819967';
 
 export const MAX_BLOCKS_HISTORY = 7;
+export const MAX_UINT_BIGINT = BigInt(2) ** BigInt(256) - BigInt(1);
 
 export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 
-export const FETCH_POOL_INDENTIFIER_TIMEOUT = 500; // 0.5s
+export const FETCH_POOL_INDENTIFIER_TIMEOUT = 1 * 1000; // 1s
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
 export const MAX_UINT_BIGINT = BigInt(2) ** BigInt(256) - BigInt(1);

@@ -7,6 +7,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    REQ: {
+      address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
+      decimals: 18,
+    },
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
@@ -61,6 +65,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     },
     aUSDT: {
       address: '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
+      decimals: 6,
+    },
+    waUSDT: {
+      address: '0xf8Fd466F12e236f4c96F7Cce6c79EAdB819abF58',
       decimals: 6,
     },
     ALUSD: {
@@ -183,6 +191,20 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xa47c8bf37f92abed4a126bda807a7b7498661acd',
       decimals: 18,
     },
+    BBAUSDT: {
+      // bpt of USDT Linear Pool
+      address: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
+      decimals: 18,
+    },
+    BBADAI: {
+      // bpt of DAI Linear Pool
+      address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
+      decimals: 18,
+    },
+    BBAUSD: {
+      address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -265,6 +287,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xbd1463f02f61676d53fd183c2b19282bff93d099',
       decimals: 18,
     },
+    RADIO: {
+      address: '0x613a489785C95afEB3b404CC41565cCff107B6E0',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -308,6 +334,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     },
     USDC: {
       address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+      decimals: 18,
+    },
+    RADIO: {
+      address: '0x30807D3b851A31d62415B8bb7Af7dCa59390434a',
       decimals: 18,
     },
     BNB: { address: ETHER_ADDRESS, decimals: 18 },
@@ -398,6 +428,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       decimals: 18,
     },
     AVAX: { address: ETHER_ADDRESS, decimals: 18 },
+    aETH: {
+      address: '0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04',
+      decimals: 18,
+    },
+    aUSDT: {
+      address: '0x71fc860f7d3a592a4a98740e39db31d25db65ae8',
+      decimals: 6,
+    },
   },
 };
 
@@ -441,6 +479,10 @@ export const Holders: {
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
     jEUR: '0x4f0CF2F63913524b85c1126AB7eE7957857f3482',
     UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
+    aETH: '0xc03c4476fbe25138bf724fa1b95551c6e6b8fd2c',
+    aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
+    aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
+    BBAUSD: '0x9888e846bCb0a14e0fCB2f66368A69d1d04bd5F0',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -449,7 +491,7 @@ export const Holders: {
   },
   [Network.POLYGON]: {
     MATIC: '0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245',
-    DAI: '0x97F3A94B2cd2484E46Bc36ea668823F60b6cf137',
+    DAI: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
     WETH: '0xd3d176F7e4b43C70a68466949F6C64F06Ce75BB9',
     WMATIC: '0xFffbCD322cEace527C8ec6Da8de2461C6D9d4e6e',
     AMWMATIC: '0x730dfedff1e4f4ca2c02b3bfc5aa11ee7ad0872f',
@@ -462,6 +504,7 @@ export const Holders: {
     AMWETH: '0x6f1c28c40b5fed4fb546f85959ae2f7c16365cad',
     KNC: '0x41Af7fd16dFC29bdA8D8aAA4CeFfC0E8046992eC',
     jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
+    RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
@@ -477,6 +520,7 @@ export const Holders: {
     USDT: '0xEFDca55e4bCE6c1d535cb2D0687B5567eEF2AE83',
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
     USDC: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
+    RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
   },
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
@@ -498,4 +542,11 @@ export const Holders: {
     TSD: '0x691A89db352B72dDb249bFe16503494eC0D920A4',
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
   },
+};
+
+export const NativeTokenSymbols: { [network: number]: string } = {
+  [Network.MAINNET]: 'ETH',
+  [Network.POLYGON]: 'MATIC',
+  [Network.BSC]: 'BNB',
+  [Network.AVALANCHE]: 'AVAX',
 };

@@ -18,6 +18,12 @@ export const WethMap: { [network: number]: Address } = {
   250: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
 };
 
+export const isETHAddress = (address: string) =>
+  address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
+
+export const isWETH = (address: Address, network = 1) =>
+  WethMap[network].toLowerCase() === address.toLowerCase();
+
 export const wrapETH = (token: Token, network: number): Token =>
   isETHAddress(token.address) && WethMap[network]
     ? { address: WethMap[network], decimals: 18 }

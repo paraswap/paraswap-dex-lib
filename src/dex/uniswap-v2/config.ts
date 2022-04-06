@@ -415,6 +415,24 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  RadioShack: {
+    [Network.POLYGON]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/radioshackcreator/radioshack-polygon',
+      factoryAddress: '0xB581D0A3b7Ea5cDc029260e989f768Ae167Ef39B',
+      initCode:
+        '0x3eef69365a159891ca18b545ccaf0d6aca9b22c988b8deb7a3e4fa2fc2418596',
+      feeCode: 10,
+    },
+    [Network.BSC]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/radioshackcreator/radioshack-bsc',
+      factoryAddress: '0x98957ab49b8bc9f7ddbCfD8BcC83728085ecb238',
+      initCode:
+        '0x3eef69365a159891ca18b545ccaf0d6aca9b22c988b8deb7a3e4fa2fc2418596',
+      feeCode: 10,
+    },
+  },
   StreetSwap: {
     [Network.BSC]: {
       subgraphURL:
