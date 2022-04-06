@@ -367,7 +367,7 @@ export class KyberDmm
         pools: [
           {
             address: pool.poolAddress,
-            fee: tradeInfo.feeInPrecision,
+            fee: tradeInfo.feeInPrecision.toString(),
             direction,
           },
         ],

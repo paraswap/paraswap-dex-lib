@@ -81,8 +81,10 @@ export class PricingHelper {
             if (
               filterConstantPricePool &&
               dexInstance.hasConstantPriceLargeAmounts
-            )
-              return null;
+            ) {
+              clearTimeout(timer);
+              return resolve(null);
+            }
 
             dexInstance
               .getPoolIdentifiers(from, to, side, blockNumber)
