@@ -142,7 +142,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   handleExitPool(event: any, pool: PoolState, log: Log): PoolState {
     const tokenOut = event.args.tokenOut.toLowerCase();
-    const tokenAmountOut = event.args.tokenAmountOut.toString();
+    const tokenAmountOut = biginterify(event.args.tokenAmountOut.toString());
     pool.tokens = pool.tokens.map(token => {
       if (token.address.toLowerCase() === tokenOut)
         token.balance = token.balance - tokenAmountOut;
@@ -153,9 +153,9 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   handleSwap(event: any, pool: PoolState, log: Log): PoolState {
     const tokenIn = event.args.tokenIn.toLowerCase();
-    const tokenAmountIn = event.args.tokenAmountIn.toString();
+    const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
     const tokenOut = event.args.tokenOut.toLowerCase();
-    const tokenAmountOut = event.args.tokenAmountOut.toString();
+    const tokenAmountOut = biginterify(event.args.tokenAmountOut.toString());
     pool.tokens = pool.tokens.map(token => {
       if (token.address.toLowerCase() === tokenIn)
         token.balance = token.balance + tokenAmountIn;
