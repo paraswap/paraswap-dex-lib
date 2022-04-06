@@ -51,7 +51,7 @@ describe('BalancerV1 E2E Mainnet', () => {
         tokens.USDC,
         tokens.LINK,
         holders.USDC,
-        '20000000',
+        '2000000',
         SwapSide.SELL,
         dexKey,
         ContractMethod.simpleSwap,
