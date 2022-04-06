@@ -245,46 +245,47 @@ describe('BalancerV2 E2E', () => {
       });
     });
 
-    describe('SimpleBuy', () => {
-      it('ETH -> TOKEN buy', async () => {
-        await testE2E(
-          tokens['ETH'],
-          tokens['WBTC'],
-          holders['ETH'],
-          '35000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-      it('TOKEN -> ETH buy', async () => {
-        await testE2E(
-          tokens['USDC'],
-          tokens['ETH'],
-          holders['USDC'],
-          '1000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-      it('TOKEN -> TOKEN buy', async () => {
-        await testE2E(
-          tokens['USDC'],
-          tokens['WETH'],
-          holders['USDC'],
-          '1000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-    });
+    //BUY is not currently supported for BalancerV2
+    //describe('SimpleBuy', () => {
+    //  it('ETH -> TOKEN buy', async () => {
+    //    await testE2E(
+    //      tokens['ETH'],
+    //      tokens['WBTC'],
+    //      holders['ETH'],
+    //      '35000000',
+    //      SwapSide.BUY,
+    //      dexKey,
+    //      ContractMethod.simpleBuy,
+    //      network,
+    //      provider,
+    //    );
+    //  });
+    //  it('TOKEN -> ETH buy', async () => {
+    //    await testE2E(
+    //      tokens['USDC'],
+    //      tokens['ETH'],
+    //      holders['USDC'],
+    //      '1000000000000000000',
+    //      SwapSide.BUY,
+    //      dexKey,
+    //      ContractMethod.simpleBuy,
+    //      network,
+    //      provider,
+    //    );
+    //  });
+    //  it('TOKEN -> TOKEN buy', async () => {
+    //    await testE2E(
+    //      tokens['USDC'],
+    //      tokens['WETH'],
+    //      holders['USDC'],
+    //      '1000000000000000000',
+    //      SwapSide.BUY,
+    //      dexKey,
+    //      ContractMethod.simpleBuy,
+    //      network,
+    //      provider,
+    //    );
+    //  });
+    //});
   });
 });

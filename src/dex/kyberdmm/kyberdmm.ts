@@ -114,6 +114,7 @@ export class KyberDmm
       query ($token: Bytes!, $count: Int) {
           pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token}) {
               id
+              reserveUSD
               token0{
                   id
                   decimals
@@ -125,6 +126,7 @@ export class KyberDmm
           }
           pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token}) {
               id
+              reserveUSD
               token1{
                   id
                   decimals
@@ -157,7 +159,10 @@ export class KyberDmm
       connectorTokens: [pool.token0, pool.token1].reduce(
         (acc, { decimals, id }) => {
           if (id.toLowerCase() != tokenAddress.toLowerCase())
-            acc.push({ decimals, address: id.toLowerCase() });
+            acc.push({
+              decimals: parseInt(decimals),
+              address: id.toLowerCase(),
+            });
           return acc;
         },
         [],

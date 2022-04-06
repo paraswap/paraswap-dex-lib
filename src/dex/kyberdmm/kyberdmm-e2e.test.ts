@@ -116,6 +116,7 @@ describe('KyberDmm E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -188,6 +189,7 @@ describe('KyberDmm E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -260,6 +262,7 @@ describe('KyberDmm E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
