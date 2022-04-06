@@ -1,6 +1,20 @@
 import { PoolPrices, PoolLiquidity, Address } from '../src/types';
 import { SwapSide } from '../src/constants';
 
+export function checkConstantPoolPrices(
+  poolPrices: PoolPrices<any>[],
+  amounts: bigint[],
+  dexKey: string,
+) {
+  for (const poolPrice of poolPrices) {
+    expect(poolPrice.exchange).toEqual(dexKey);
+    expect(poolPrice.prices.length).toEqual(amounts.length);
+    for (let i = 0; i < poolPrice.prices.length; ++i) {
+      expect(poolPrice.prices[i]).toEqual(amounts[i]);
+    }
+  }
+}
+
 // Assuming that the amounts are increasing at same interval, and start with 0
 export function checkPoolPrices(
   poolPrices: PoolPrices<any>[],

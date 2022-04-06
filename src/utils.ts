@@ -1,9 +1,6 @@
 import { ETHER_ADDRESS, Network } from './constants';
 import { Address, Token, DexConfigMap } from './types';
 
-export const isETHAddress = (address: string) =>
-  address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
-
 export const WethMap: { [network: number]: Address } = {
   1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
   3: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
@@ -14,6 +11,12 @@ export const WethMap: { [network: number]: Address } = {
   43114: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
   250: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
 };
+
+export const isETHAddress = (address: string) =>
+  address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
+
+export const isWETH = (address: Address, network = 1) =>
+  WethMap[network].toLowerCase() === address.toLowerCase();
 
 export const wrapETH = (token: Token, network: number): Token =>
   isETHAddress(token.address) && WethMap[network]

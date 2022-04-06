@@ -5,7 +5,7 @@ import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { StablePool } from './stable-pool';
-import { Weth } from './weth';
+import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
@@ -42,7 +42,6 @@ const LegacyDexes = [
   StablePool,
   Smoothy,
   ZeroX,
-  Weth,
   Balancer,
   Bancor,
   BProtocol,
@@ -54,7 +53,6 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   UniswapV3,
-  Weth,
   Jarvis,
   Lido,
 ];
@@ -69,6 +67,7 @@ const Dexes = [
   AaveV1,
   AaveV2,
   KyberDmm,
+  Weth,
 ];
 
 const AdapterNameAddressMap: {
