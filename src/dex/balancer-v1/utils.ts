@@ -1,21 +1,21 @@
 import { PoolState, Token as SORToken } from './types';
-import { bignumberify } from '../../utils';
+import { biginterify } from '../../utils';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 
 export function typecastReadOnlyToken(readOnlyToken: any): SORToken {
   return {
     address: readOnlyToken.address,
-    balance: bignumberify(readOnlyToken.balance),
+    balance: biginterify(readOnlyToken.balance),
     decimals: readOnlyToken.decimals,
-    denormWeight: bignumberify(readOnlyToken.denormWeight),
+    denormWeight: biginterify(readOnlyToken.denormWeight),
   };
 }
 
 export function typecastReadOnlyPool(readOnlyPool: any): PoolState {
   return {
     id: readOnlyPool.id,
-    swapFee: bignumberify(readOnlyPool.swapFee),
-    totalWeight: bignumberify(readOnlyPool.totalWeight),
+    swapFee: biginterify(readOnlyPool.swapFee),
+    totalWeight: biginterify(readOnlyPool.totalWeight),
     tokens: readOnlyPool.tokens.map(typecastReadOnlyToken),
     tokensList: readOnlyPool.tokensList,
   };

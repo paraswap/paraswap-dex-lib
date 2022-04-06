@@ -1,7 +1,7 @@
 import * as bmath from '@balancer-labs/sor/dist/bmath';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 import type { Contract } from 'web3-eth-contract';
-import { bignumberify } from '../../utils';
+import { biginterify } from '../../utils';
 import { PoolState } from './types';
 
 // Has almost the same logic as getAllPoolDataOnChain
@@ -35,7 +35,7 @@ export async function updatePoolState(
   let j = 0;
   for (let i = 0; i < pools.length; i++) {
     pools[i].tokens.forEach(token => {
-      token.balance = bignumberify(bmath.bnum(results[j]));
+      token.balance = biginterify(bmath.bnum(results[j]));
       j++;
     });
   }

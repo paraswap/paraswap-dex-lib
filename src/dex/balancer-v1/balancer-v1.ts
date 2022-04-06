@@ -22,7 +22,7 @@ import {
   getDexKeysWithNetwork,
   isETHAddress,
   interpolate,
-  bignumberify,
+  biginterify,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -50,7 +50,7 @@ import {
   BALANCER_CHUNKS,
   BALANCER_SWAP_GAS_COST,
 } from './config';
-import BalancerV1ABI from '../../abi/BalancerV1.json';
+const BalancerV1PoolABI = require('../../abi/BalancerV1Pool.json');
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { AxiosResponse } from 'axios';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
@@ -58,7 +58,7 @@ import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
 import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
 import { parsePoolPairData, updatePoolState } from './sor-overload';
 
-const balancerV1Interface = new Interface(BalancerV1ABI);
+const balancerV1PoolInterface = new Interface(BalancerV1PoolABI);
 
 export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -83,7 +83,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ) {
     super(parentName, logger);
 
-    this.logDecoder = (log: Log) => balancerV1Interface.parseLog(log);
+    this.logDecoder = (log: Log) => balancerV1PoolInterface.parseLog(log);
     this.addressesSubscribed = []; // Will be filled in generateState function
     this.balancerMulticall = new dexHelper.web3Provider.eth.Contract(
       BalancerCustomMulticallABI as any,
@@ -131,10 +131,10 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   handleJoinPool(event: any, pool: PoolState, log: Log): PoolState {
     const tokenIn = event.args.tokenIn.toLowerCase();
-    const tokenAmountIn = event.args.tokenAmountIn.toString();
+    const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
     pool.tokens = pool.tokens.map(token => {
       if (token.address.toLowerCase() === tokenIn)
-        token.balance = token.balance.plus(tokenAmountIn);
+        token.balance = token.balance + tokenAmountIn;
       return token;
     });
     return pool;
@@ -145,7 +145,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const tokenAmountOut = event.args.tokenAmountOut.toString();
     pool.tokens = pool.tokens.map(token => {
       if (token.address.toLowerCase() === tokenOut)
-        token.balance = token.balance.minus(tokenAmountOut);
+        token.balance = token.balance - tokenAmountOut;
       return token;
     });
     return pool;
@@ -158,9 +158,9 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const tokenAmountOut = event.args.tokenAmountOut.toString();
     pool.tokens = pool.tokens.map(token => {
       if (token.address.toLowerCase() === tokenIn)
-        token.balance = token.balance.plus(tokenAmountIn);
+        token.balance = token.balance + tokenAmountIn;
       else if (token.address.toLowerCase() === tokenOut)
-        token.balance = token.balance.minus(tokenAmountOut);
+        token.balance = token.balance - tokenAmountOut;
       return token;
     });
     return pool;
@@ -198,10 +198,10 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
       let p: PoolState = {
         id: pools.pools[i].id,
-        swapFee: bignumberify(
+        swapFee: biginterify(
           bmath.scale(bmath.bnum(pools.pools[i].swapFee.toString()), 18),
         ),
-        totalWeight: bignumberify(
+        totalWeight: biginterify(
           bmath.scale(bmath.bnum(pools.pools[i].totalWeight.toString()), 18),
         ),
         tokens: tokens,
@@ -213,9 +213,9 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
         j++;
         p.tokens.push({
           address: token.address,
-          balance: bignumberify(bal),
+          balance: biginterify(bal),
           decimals: Number(token.decimals),
-          denormWeight: bignumberify(
+          denormWeight: biginterify(
             bmath.scale(bmath.bnum(token.denormWeight.toString()), 18),
           ),
         });
@@ -330,6 +330,9 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       .map(p => parsePoolPairData(p, from.address, to.address))
       .filter(p => !!p && checkBalance(p));
 
+    // This function mapFromOldPoolToPoolState is very extensive as it iterates
+    // pools.length * selectedPools.length. But it shouldn't be a problem since
+    // we limit to 10 before this
     return mapFromOldPoolToPoolState(topOldPools, rawSelectedPools);
   }
 }
@@ -368,7 +371,7 @@ export class BalancerV1
       dexHelper,
       this.logger,
     );
-    this.exchangeRouterInterface = new Interface(BalancerV1ABI);
+    this.exchangeRouterInterface = new Interface(BalancerV1PoolABI);
   }
 
   async setupEventPools(blockNumber: number) {
@@ -748,7 +751,7 @@ export class BalancerV1
 
     const pools = _.map(data.pools, (pool: any) => ({
       exchange: this.dexKey,
-      address: pool.address.toLowerCase(),
+      address: pool.id.toLowerCase(),
       connectorTokens: pool.tokens.reduce(
         (
           acc: Token[],
@@ -760,7 +763,7 @@ export class BalancerV1
         },
         [],
       ),
-      liquidityUSD: parseFloat(pool.totalLiquidity),
+      liquidityUSD: parseFloat(pool.liquidity),
     }));
 
     return pools;

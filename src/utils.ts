@@ -133,6 +133,6 @@ export function interpolate(
   });
 }
 
-export function bignumberify(val: any) {
-  return new BigNumber(val);
+export function biginterify(val: any) {
+  return BigInt(val);
 }

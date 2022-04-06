@@ -3,15 +3,15 @@ import BigNumber from 'bignumber.js';
 
 export interface Token {
   address: string;
-  balance: BigNumber;
+  balance: bigint;
   decimals: number;
-  denormWeight: BigNumber;
+  denormWeight: bigint;
 }
 
 export type PoolState = {
   id: string;
-  swapFee: BigNumber;
-  totalWeight: BigNumber;
+  swapFee: bigint;
+  totalWeight: bigint;
   tokens: Token[];
   tokensList: string[];
   publicSwap?: string;
