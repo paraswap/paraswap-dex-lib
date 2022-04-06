@@ -4,9 +4,8 @@ import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
-import { KyberDmm } from './kyberdmm';
 import { StablePool } from './stable-pool';
-import { Weth } from './weth';
+import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3';
 import { Balancer } from './balancer';
@@ -24,18 +23,18 @@ import { MStable } from './mStable';
 import { Shell } from './shell';
 import { Onebit } from './onebit';
 import { Compound } from './compound';
-import { AaveV1 } from './aave-v1';
-import { AaveV2 } from './aave-v2';
+import { AaveV1 } from './aave-v1/aave-v1';
+import { AaveV2 } from './aave-v2/aave-v2';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
-import { Kyber } from './kyber';
 import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
+import { KyberDmm } from './kyberdmm/kyberdmm';
 
 const LegacyDexes = [
   Curve,
@@ -43,28 +42,33 @@ const LegacyDexes = [
   StablePool,
   Smoothy,
   ZeroX,
-  Weth,
   Balancer,
   Bancor,
-  Kyber,
   BProtocol,
   MStable,
   Shell,
   Onebit,
   Compound,
-  AaveV1,
-  AaveV2,
   OneInchLp,
   DodoV1,
   DodoV2,
   UniswapV3,
-  Weth,
-  KyberDmm,
   Jarvis,
   Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn, Excalibur];
+const Dexes = [
+  BalancerV2,
+  UniswapV2,
+  BiSwap,
+  MDEX,
+  Dfyn,
+  Excalibur,
+  AaveV1,
+  AaveV2,
+  KyberDmm,
+  Weth,
+];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };

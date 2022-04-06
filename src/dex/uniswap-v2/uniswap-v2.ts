@@ -39,13 +39,13 @@ import {
   getDexKeysWithNetwork,
   isETHAddress,
   prependWithOx,
+  WethMap,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
-import { WETHAddresses } from '../weth';
 import { UniswapV2Config, Adapters } from './config';
 
 const MAX_UINT_BIGINT = BigInt(MAX_UINT);
@@ -720,7 +720,7 @@ export class UniswapV2
   getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
     if (!isETHAddress(srcToken) && !isETHAddress(destToken))
       return NULL_ADDRESS;
-    return weth || WETHAddresses[this.network];
+    return weth || WethMap[this.network];
   }
 
   getAdapterParam(

@@ -150,6 +150,13 @@ export type Token = {
   symbol?: string;
 };
 
+export type aToken = {
+  aSymbol: string;
+  aAddress: string;
+  address: string;
+  decimals: number;
+};
+
 export type ExchangePrices<T> = PoolPrices<T>[];
 
 export type PoolPrices<T> = {
