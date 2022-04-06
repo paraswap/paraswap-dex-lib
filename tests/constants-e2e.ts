@@ -406,6 +406,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       decimals: 18,
     },
     AVAX: { address: ETHER_ADDRESS, decimals: 18 },
+    aETH: {
+      address: '0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04',
+      decimals: 18,
+    },
+    aUSDT: {
+      address: '0x71fc860f7d3a592a4a98740e39db31d25db65ae8',
+      decimals: 6,
+    },
   },
 };
 
@@ -449,6 +457,9 @@ export const Holders: {
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
     jEUR: '0x4f0CF2F63913524b85c1126AB7eE7957857f3482',
     UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
+    aETH: '0xc03c4476fbe25138bf724fa1b95551c6e6b8fd2c',
+    aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
+    aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',

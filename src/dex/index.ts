@@ -24,8 +24,8 @@ import { MStable } from './mStable';
 import { Shell } from './shell';
 import { Onebit } from './onebit';
 import { Compound } from './compound';
-import { AaveV1 } from './aave-v1';
-import { AaveV2 } from './aave-v2';
+import { AaveV1 } from './aave-v1/aave-v1';
+import { AaveV2 } from './aave-v2/aave-v2';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
@@ -50,8 +50,6 @@ const LegacyDexes = [
   Shell,
   Onebit,
   Compound,
-  AaveV1,
-  AaveV2,
   OneInchLp,
   DodoV1,
   DodoV2,
@@ -62,7 +60,16 @@ const LegacyDexes = [
   Lido,
 ];
 
-const Dexes = [BalancerV2, UniswapV2, BiSwap, MDEX, Dfyn, Excalibur];
+const Dexes = [
+  BalancerV2,
+  UniswapV2,
+  BiSwap,
+  MDEX,
+  Dfyn,
+  Excalibur,
+  AaveV1,
+  AaveV2,
+];
 
 const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
