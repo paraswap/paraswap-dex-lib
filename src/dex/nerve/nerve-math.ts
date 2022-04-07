@@ -1,11 +1,12 @@
 import { biginterify, ZERO, ONE, MathUtil } from './utils';
 import { Logger } from '../../types';
-import { PoolState } from './types';
+import { PoolState, ReadonlyOrWritable } from './types';
 
 export class NervePoolMath {
   readonly FEE_DENOMINATOR = biginterify(10 ** 10);
   readonly A_PRECISION = biginterify(100);
   readonly MAX_LOOP_LIMIT = biginterify(256);
+  readonly POOL_PRECISION_DECIMALS = biginterify(18);
 
   constructor(protected name: string, protected logger: Logger) {}
 
@@ -302,7 +303,7 @@ export class NervePoolMath {
     return undefined;
   }
 
-  protected _xp(state: PoolState) {
+  _xp(state: ReadonlyOrWritable<PoolState>) {
     return state.balances.map(
       (balanceValue, i) => balanceValue * state.tokenPrecisionMultipliers[i],
     );
