@@ -14,6 +14,7 @@ export const MIN_INT =
 
 export const MAX_BLOCKS_HISTORY = 7;
 export const MAX_UINT_BIGINT = BigInt(2) ** BigInt(256) - BigInt(1);
+export const ZERO_UINT = BigInt('0');
 
 export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 
