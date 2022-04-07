@@ -13,34 +13,67 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           name: threePoolName,
           address: '0x1B3771a66ee31180906972580adE9b81AFc5fCDc',
           coins: [
-            '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', // 0 - BUSD
-            '0x55d398326f99059fF775485246999027B3197955', // 1 - USDT
-            '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', // 2 - USDC
+            {
+              address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', // 0 - BUSD
+              decimals: 18,
+            },
+            {
+              address: '0x55d398326f99059fF775485246999027B3197955', // 1 - USDT
+              decimals: 18,
+            },
+            {
+              address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', // 2 - USDC
+              decimals: 18,
+            },
           ],
           isMetapool: false,
-          lpTokenAddress: '0xf2511b5E4FB0e5E2d123004b672BA14850478C14',
+          isUSDPool: true,
+          lpToken: {
+            address: '0xf2511b5E4FB0e5E2d123004b672BA14850478C14',
+            decimals: 18,
+          },
           trackCoins: false,
         },
         BTC: {
           name: 'BTC',
           address: '0x6C341938bB75dDe823FAAfe7f446925c66E6270c',
           coins: [
-            '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', // 0 - bBTC
-            '0x54261774905f3e6E9718f2ABb10ed6555cae308a', // 1 - anyBTC
+            {
+              address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', // 0 - bBTC
+              decimals: 18,
+            },
+            {
+              address: '0x54261774905f3e6E9718f2ABb10ed6555cae308a', // 1 - anyBTC
+              decimals: 8,
+            },
           ],
           isMetapool: false,
-          lpTokenAddress: '0xD1D5Af92C606C6F2eC59D453f57A6FCc188D7dB5',
+          isUSDPool: false,
+          lpToken: {
+            address: '0xD1D5Af92C606C6F2eC59D453f57A6FCc188D7dB5',
+            decimals: 18,
+          },
           trackCoins: false,
         },
         ETH: {
           name: 'ETH',
           address: '0x146CD24dCc9f4EB224DFd010c5Bf2b0D25aFA9C0',
           coins: [
-            '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', // 0 - bETH
-            '0x6F817a0cE8F7640Add3bC0c1C2298635043c2423', // 1 - anyETH
+            {
+              address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', // 0 - bETH
+              decimals: 18,
+            },
+            {
+              address: '0x6F817a0cE8F7640Add3bC0c1C2298635043c2423', // 1 - anyETH
+              decimals: 18,
+            },
           ],
           isMetapool: false,
-          lpTokenAddress: '0x0d283BF16A9bdE49cfC48d8dc050AF28b71bdD90',
+          isUSDPool: false,
+          lpToken: {
+            address: '0x0d283BF16A9bdE49cfC48d8dc050AF28b71bdD90',
+            decimals: 18,
+          },
           trackCoins: false,
         },
         // fUSDT: {
