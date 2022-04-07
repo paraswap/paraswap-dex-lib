@@ -26,6 +26,8 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { NerveConfig, Adapters } from './config';
 import { NerveEventPool } from './nerve-pool';
+import _ from 'lodash';
+import { biginterify, ZERO } from './utils';
 
 export class Nerve
   extends SimpleExchange
@@ -42,11 +44,11 @@ export class Nerve
 
   logger: Logger;
 
-  static getIdentifier(dexKey: string, tokens: string[]) {
-    const tokenSorted = tokens
+  static getIdentifier(dexKey: string, tokenAddresses: string[]) {
+    const processedTokens = tokenAddresses
       .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1))
       .join('_');
-    return `${dexKey}_${tokenSorted}`;
+    return `${dexKey}_${processedTokens}`;
   }
 
   constructor(
@@ -73,7 +75,7 @@ export class Nerve
         const poolConfig = this.poolConfigs[poolKey];
         const poolIdentifier = Nerve.getIdentifier(
           this.dexKey,
-          poolConfig.coins,
+          poolConfig.coins.map(token => token.address),
         );
 
         // We don't support Metapool yet
@@ -134,11 +136,11 @@ export class Nerve
     return this.allPools
       .filter(pool => {
         return (
-          pool.poolCoins.includes(srcToken.address) &&
-          pool.poolCoins.includes(destToken.address)
+          pool.tokenAddresses.includes(srcToken.address) &&
+          pool.tokenAddresses.includes(destToken.address)
         );
       })
-      .map(pool => Nerve.getIdentifier(this.dexKey, pool.poolCoins));
+      .map(pool => Nerve.getIdentifier(this.dexKey, pool.tokenAddresses));
   }
 
   // Returns pool prices for amounts.
@@ -293,56 +295,66 @@ export class Nerve
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    // The decimals number is not used in wrapETH, so it is not matter
-    // what we pass
-    const _tokenAddress = wrapETH(
-      { address: tokenAddress, decimals: 18 },
-      this.network,
-    );
+    // Currently we don't need to wrap or unwrap tokens
+    // as there are no pools with native tokens
 
     const selectedPools = this.allPools.filter(pool =>
-      pool.poolCoins.includes(tokenAddress),
+      pool.tokenAddresses.includes(tokenAddress),
     );
 
-    const sortedStates = [...(await this.getStates(selectedPools))]
-      .sort((a, b) => b.state.lpToken_supply - a.state.lpToken_supply)
-      .slice(0, limit);
+    return Promise.all(
+      // As the state is readonly we spread it to receive a copy,
+      // It is not a deep copy, so we shouldn't alter the nested objects
+      [...(await this.getStates(selectedPools))]
+        .sort((a, b) => {
+          const diff = b.state.lpToken_supply - a.state.lpToken_supply;
+          if (diff === BigInt(0)) {
+            return 0;
+          } else if (diff.toString().startsWith('-')) {
+            return -1;
+          } else {
+            return 1;
+          }
+        })
+        .slice(0, limit)
+        .map(async ({ state, pool }) => {
+          const normalisedBalances = pool.math._xp(state);
+          const totalLiquidity = normalisedBalances.reduce(
+            (prev, acc, i) => prev + acc,
+            ZERO,
+          );
 
-    // .map(({ pool }) => {
-    // exchange: pool.name,
-    // address: pool.poolAddress,
-    // connectorTokens: Token[],
-    // liquidityUSD: number,
-    //   })
+          let priceInUSD = 0;
+          if (pool.poolConfig.isUSDPool) {
+            // We force here precision to be 0
+            priceInUSD = Number(
+              totalLiquidity /
+                biginterify(10) ** pool.math.POOL_PRECISION_DECIMALS,
+            );
+          } else {
+            priceInUSD = this.dexHelper.getTokenUSDPrice(
+              {
+                // I assume that the first indexed token is the most popular
+                address: pool.tokens[0].address,
+                decimals: Number(pool.math.POOL_PRECISION_DECIMALS),
+              },
+              totalLiquidity,
+            );
+          }
 
-    //   const selectedPool = this.allPools.reduce((acc, pool) => {
-    //     const inCoins = pool.poolCoins.some(
-    //       _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
-    //     );
-    //     const inUnderlying = pool.underlying.some(
-    //       _token => _token.address.toLowerCase() === _tokenAddress.toLowerCase(),
-    //     );
-    //     let connectorTokens = inCoins ? pool.coins : [];
-    //     connectorTokens = inUnderlying
-    //       ? _.concat(connectorTokens, pool.underlying)
-    //       : connectorTokens;
-    //     if (connectorTokens.length) {
-    //       acc.push({
-    //         exchange: this.dexKey,
-    //         address: pool.poolAddress,
-    //         liquidityUSD: pool.liquidityUSD,
-    //         connectorTokens: _(connectorTokens)
-    //           .uniqBy('address')
-    //           .filter(
-    //             _token =>
-    //               _token.address.toLowerCase() !== _tokenAddress.toLowerCase(),
-    //           )
-    //           .value(),
-    //       });
-    //     }
-    //     return acc;
-    //   }, []);
-    //   return selectedPool;
-    // }
+          return {
+            exchange: pool.name,
+            address: pool.address,
+            connectorTokens: _(pool.tokens)
+              .uniqBy('address')
+              .filter(
+                token =>
+                  token.address.toLowerCase() !== tokenAddress.toLowerCase(),
+              )
+              .value(),
+            liquidityUSD: priceInUSD,
+          };
+        }),
+    );
   }
 }
