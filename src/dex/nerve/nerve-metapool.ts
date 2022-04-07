@@ -50,7 +50,6 @@ export class NerveEventMetapool extends NerveEventPool {
       network,
       dexHelper,
       logger,
-      adapters,
       poolName,
       poolConfig,
       poolABI,
@@ -65,10 +64,10 @@ export class NerveEventMetapool extends NerveEventPool {
       threePoolName,
     );
 
-    this.metapoolAddressesSubscribed = [this.poolAddress];
+    this.metapoolAddressesSubscribed = [this.address];
     if (this.poolConfig.trackCoins) {
       this.metapoolAddressesSubscribed = _.concat(
-        this.poolCoins,
+        this.tokenAddresses,
         this.metapoolAddressesSubscribed,
       );
     }
@@ -141,9 +140,7 @@ export class NerveEventMetapool extends NerveEventPool {
     return state;
   }
 
-  handleTokenSwapUnderlying(event: any, state: PoolState) {
-    
-  }
+  handleTokenSwapUnderlying(event: any, state: PoolState) {}
 
   handleBasePoolTokenSwap(
     event: any,
@@ -191,7 +188,7 @@ export class NerveEventMetapool extends NerveEventPool {
   }
 
   protected _isEventFromMetapool(event: any): boolean {
-    return event.args.provider.toLowerCase() === this.poolAddress.toLowerCase();
+    return event.args.provider.toLowerCase() === this.address.toLowerCase();
   }
 
   protected _handleHelperIfNotFromMetapool(
