@@ -147,26 +147,36 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleNewAdminFee(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     state.adminFee = biginterify(event.args.newAdminFee);
     return state;
   }
 
   handleNewSwapFee(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     state.swapFee = biginterify(event.args.newSwapFee);
     return state;
   }
 
   handleNewDepositFee(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     state.defaultDepositFee = biginterify(event.args.newDepositFee);
     return state;
   }
 
   handleNewWithdrawFee(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     state.defaultWithdrawFee = biginterify(event.args.newWithdrawFee);
     return state;
   }
 
   handleRampA(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     state.initialA = biginterify(event.args.oldA);
     state.futureA = biginterify(event.args.newA);
     state.initialATime = biginterify(event.args.initialTime);
@@ -175,6 +185,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleStopRampA(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     const finalA = biginterify(event.args.currentA);
     const finalTime = biginterify(event.args.time);
 
@@ -191,6 +203,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     _2: Log,
     blockHeader: BlockHeader,
   ) {
+    if (!state.isValid) return null;
     const blockTimestamp = biginterify(blockHeader.timestamp);
 
     const transferredDx = biginterify(event.args.tokensSold);
@@ -206,9 +219,9 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       blockTimestamp,
     );
 
-    if (swap === undefined) {
+    if (swap === null) {
       state.isValid = false;
-      return state;
+      return null;
     }
 
     const { dy, dyFee } = swap;
@@ -226,12 +239,15 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
         `For ${this.parentName}_${this.poolConfig.name} _calculateSwap value ${dy} is not equal to ${dyEvent} event value`,
       );
       state.isValid = false;
+      return null;
     }
 
     return state;
   }
 
   handleAddLiquidity(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
     const fees = event.args.fees.map(biginterify) as bigint[];
     const lpTokenSupply = biginterify(event.args.lpTokenSupply);
@@ -247,6 +263,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleRemoveLiquidity(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
     const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
     const lpTokenSupply = biginterify(event.args.lpTokenSupply);
 

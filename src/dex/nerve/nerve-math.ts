@@ -33,9 +33,9 @@ export class NervePoolMath {
       blockTimestamp,
     );
 
-    if (y === undefined) {
+    if (y === null) {
       state.isValid = false;
-      return undefined;
+      return null;
     }
 
     // dy = xp[tokenIndexTo].sub(y).sub(1);
@@ -187,7 +187,7 @@ export class NervePoolMath {
 
     this.logger.error(`Event pool ${this.name} method _getYD did not converge`);
     state.isValid = false;
-    return undefined;
+    return null;
   }
 
   protected _getY(
@@ -240,7 +240,7 @@ export class NervePoolMath {
       `Event pool ${this.name} parsing function _getY approximation did not converge`,
     );
     state.isValid = false;
-    return undefined;
+    return null;
   }
 
   protected _getAPrecise(state: PoolState, blockTimestamp: bigint) {
@@ -300,7 +300,7 @@ export class NervePoolMath {
     // with the pool.
     this.logger.error(`Event pool ${this.name} method _getD did not converge`);
     state.isValid = false;
-    return undefined;
+    return null;
   }
 
   _xp(state: ReadonlyOrWritable<PoolState>) {

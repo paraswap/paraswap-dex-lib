@@ -36,19 +36,21 @@ export interface NervePoolConfig {
 }
 
 export type NerveData = {
-  i: String;
-  j: String;
-  dx: String;
-  min_dy: String;
-  deadline?: string;
-};
-
-export type OptimizedNerveData = {
   exchange: string;
   i: string;
   j: string;
   deadline: string;
 };
+
+export type OptimizedNerveData = NerveData;
+
+export type NervePoolSwapParams = [
+  i: string,
+  j: string,
+  dx: string,
+  min_dy: string,
+  deadline?: string,
+];
 
 export type DexParams = {
   poolConfigs: Record<string, NervePoolConfig>;
