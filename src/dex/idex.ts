@@ -129,7 +129,7 @@ export interface IDexPooltracker {
 // a single interface
 export interface IDex<
   ExchangeData,
-  DirectParam,
+  DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > extends IDexTxBuilder<OptimizedExchangeData, DirectParam>,
     IDexPricing<ExchangeData>,

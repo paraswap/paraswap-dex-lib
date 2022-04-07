@@ -3,49 +3,36 @@ dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { __DexName__ } from './__DexNameParam__';
+import { MakerPsm } from './maker-psm';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-/*
-  README
-  ======
-
-  This test script adds tests for __DexName__ general integration 
-  with the DEX interface. The test cases below are example tests. 
-  It is recommended to add tests which cover __DexName__ specific
-  logic. 
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 const network = Network.MAINNET;
-const TokenASymbol = 'TokenASymbol';
+const TokenASymbol = 'USDC';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'TokenBSymbol';
+const TokenBSymbol = 'DAI';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [
+const tokenAAmounts = [BigInt('0'), BigInt('100000000'), BigInt('200000000')];
+
+const tokenBAmounts = [
   BigInt('0'),
   BigInt('1000000000000000000'),
   BigInt('2000000000000000000'),
 ];
 
-const dexKey = '__DexName__';
+const dexKey = 'MakerPsm';
 
-describe('__DexName__', function () {
+describe('MakerPsm', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.provider.getBlockNumber();
-    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
+    const makerPsm = new MakerPsm(network, dexKey, dexHelper);
 
-    await __DexNameCamel__.initializePricing(blocknumber);
+    await makerPsm.initializePricing(blocknumber);
 
-    const pools = await __DexNameCamel__.getPoolIdentifiers(
+    const pools = await makerPsm.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
@@ -55,10 +42,10 @@ describe('__DexName__', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await __DexNameCamel__.getPricesVolume(
+    const poolPrices = await makerPsm.getPricesVolume(
       TokenA,
       TokenB,
-      amounts,
+      tokenAAmounts,
       SwapSide.SELL,
       blocknumber,
       pools,
@@ -66,17 +53,17 @@ describe('__DexName__', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    checkPoolPrices(poolPrices!, tokenAAmounts, SwapSide.SELL, dexKey);
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.provider.getBlockNumber();
-    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
+    const makerPsm = new MakerPsm(network, dexKey, dexHelper);
 
-    await __DexNameCamel__.initializePricing(blocknumber);
+    await makerPsm.initializePricing(blocknumber);
 
-    const pools = await __DexNameCamel__.getPoolIdentifiers(
+    const pools = await makerPsm.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.BUY,
@@ -86,10 +73,10 @@ describe('__DexName__', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await __DexNameCamel__.getPricesVolume(
+    const poolPrices = await makerPsm.getPricesVolume(
       TokenA,
       TokenB,
-      amounts,
+      tokenBAmounts,
       SwapSide.BUY,
       blocknumber,
       pools,
@@ -97,14 +84,14 @@ describe('__DexName__', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+    checkPoolPrices(poolPrices!, tokenBAmounts, SwapSide.BUY, dexKey);
   });
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
+    const makerPsm = new MakerPsm(network, dexKey, dexHelper);
 
-    const poolLiquidity = await __DexNameCamel__.getTopPoolsForToken(
+    const poolLiquidity = await makerPsm.getTopPoolsForToken(
       TokenA.address,
       10,
     );
