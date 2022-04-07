@@ -7,7 +7,12 @@ const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { EventHandler, NervePoolConfig, PoolOrMetapoolState, PoolState } from './types';
+import {
+  EventHandler,
+  NervePoolConfig,
+  PoolOrMetapoolState,
+  PoolState,
+} from './types';
 import { Adapters, NerveConfig } from './config';
 import { getManyPoolStates } from './getstate-multicall';
 import { BlockHeader } from 'web3-eth';
@@ -15,7 +20,7 @@ import { biginterify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
-  protected nervePoolMath: NervePoolMath;
+  readonly math: NervePoolMath;
 
   handlers: {
     [event: string]: EventHandler<PoolOrMetapoolState>;
@@ -29,6 +34,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   lpTokenIface: Interface;
 
+  private _tokenAddresses?: string[];
+
   constructor(
     protected parentName: string,
     protected network: number,
@@ -40,13 +47,13 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     protected poolABI: AbiItem[] = nervePoolABIDefault,
   ) {
     super(`${parentName}_${poolConfig.name}`, logger);
-    this.nervePoolMath = new NervePoolMath(this.name, this.logger);
+    this.math = new NervePoolMath(this.name, this.logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = [poolConfig.address];
     if (poolConfig.trackCoins) {
       this.addressesSubscribed = _.concat(
-        this.poolCoins,
+        this.tokenAddresses,
         this.addressesSubscribed,
       );
     }
@@ -73,8 +80,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       if (
         this.poolConfig.trackCoins &&
         _.findIndex(
-          this.poolCoins,
-          c => c.toLowerCase() === log.address.toLowerCase(),
+          this.tokens,
+          c => c.address.toLowerCase() === log.address.toLowerCase(),
         ) != -1
       )
         return this.lpTokenIface.parseLog(log);
@@ -83,20 +90,27 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     };
   }
 
-  get poolAddress() {
+  get tokenAddresses() {
+    if (this._tokenAddresses === undefined) {
+      this._tokenAddresses = this.tokens.map(token => token.address);
+    }
+    return this._tokenAddresses;
+  }
+
+  get address() {
     return this.poolConfig.address;
   }
 
-  get lpTokenAddress() {
-    return this.poolConfig.lpTokenAddress;
+  get lpToken() {
+    return this.poolConfig.lpToken;
   }
 
-  get poolCoins() {
+  get tokens() {
     return this.poolConfig.coins;
   }
 
   get numTokens() {
-    return this.poolCoins.length;
+    return this.tokens.length;
   }
 
   processLog(
@@ -184,7 +198,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     const tokenIndexFrom = event.args.soldId.toNumber();
     const tokenIndexTo = event.args.boughtId.toNumber();
 
-    const swap = this.nervePoolMath.calculateSwap(
+    const swap = this.math.calculateSwap(
       state,
       tokenIndexFrom,
       tokenIndexTo,
@@ -201,7 +215,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
     const dyAdminFee =
       (dyFee * state.adminFee) /
-      this.nervePoolMath.FEE_DENOMINATOR /
+      this.math.FEE_DENOMINATOR /
       state.tokenPrecisionMultipliers[tokenIndexFrom];
 
     state.balances[tokenIndexFrom] += transferredDx;
@@ -227,7 +241,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       // We receive the real transferred amount. No need to check it
       state.balances[i] += tokenAmount;
       state.balances[i] -=
-        (fees[i] * state.adminFee) / this.nervePoolMath.FEE_DENOMINATOR;
+        (fees[i] * state.adminFee) / this.math.FEE_DENOMINATOR;
     }
     return state;
   }
@@ -262,7 +276,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     for (const [i, tokenAmount] of tokenAmounts.entries()) {
       state.balances[i] -= tokenAmount;
       state.balances[i] -=
-        (fees[i] * state.adminFee) / this.nervePoolMath.FEE_DENOMINATOR;
+        (fees[i] * state.adminFee) / this.math.FEE_DENOMINATOR;
     }
 
     return state;
