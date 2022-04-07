@@ -65,12 +65,6 @@ export class NerveEventMetapool extends NerveEventPool {
     );
 
     this.metapoolAddressesSubscribed = [this.address];
-    if (this.poolConfig.trackCoins) {
-      this.metapoolAddressesSubscribed = _.concat(
-        this.tokenAddresses,
-        this.metapoolAddressesSubscribed,
-      );
-    }
 
     this.addressesSubscribed = _.concat(
       this.metapoolAddressesSubscribed,

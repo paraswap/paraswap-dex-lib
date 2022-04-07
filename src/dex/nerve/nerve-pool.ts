@@ -2,7 +2,6 @@ import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import type { AbiItem } from 'web3-utils';
-const erc20ABI = require('../../abi/erc20.json');
 const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
@@ -13,7 +12,7 @@ import {
   PoolOrMetapoolState,
   PoolState,
 } from './types';
-import { Adapters, NerveConfig } from './config';
+import { NerveConfig } from './config';
 import { getManyPoolStates } from './getstate-multicall';
 import { BlockHeader } from 'web3-eth';
 import { biginterify, typeCastPoolState } from './utils';
@@ -32,8 +31,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   poolIface: Interface;
 
-  lpTokenIface: Interface;
-
   private _tokenAddresses?: string[];
 
   constructor(
@@ -51,12 +48,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = [poolConfig.address];
-    if (poolConfig.trackCoins) {
-      this.addressesSubscribed = _.concat(
-        this.tokenAddresses,
-        this.addressesSubscribed,
-      );
-    }
 
     // Add handlers
     this.handlers['TokenSwap'] = this.handleTokenSwap.bind(this);
@@ -74,20 +65,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['StopRampA'] = this.handleStopRampA.bind(this);
 
     this.poolIface = new Interface(JSON.stringify(this.poolABI));
-    this.lpTokenIface = new Interface(JSON.stringify(erc20ABI));
 
-    this.logDecoder = (log: Log) => {
-      if (
-        this.poolConfig.trackCoins &&
-        _.findIndex(
-          this.tokens,
-          c => c.address.toLowerCase() === log.address.toLowerCase(),
-        ) != -1
-      )
-        return this.lpTokenIface.parseLog(log);
-
-      return this.poolIface.parseLog(log);
-    };
+    this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
   }
 
   get tokenAddresses() {

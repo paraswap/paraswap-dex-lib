@@ -32,7 +32,6 @@ export interface NervePoolConfig {
   isMetapool: boolean;
   isUSDPool: boolean;
   lpToken: Token;
-  trackCoins: boolean;
 }
 
 export type NerveData = {
