@@ -32,7 +32,6 @@ export const NerveConfig: DexConfigMap<DexParams> = {
             address: '0xf2511b5E4FB0e5E2d123004b672BA14850478C14',
             decimals: 18,
           },
-          trackCoins: false,
         },
         BTC: {
           name: 'BTC',
@@ -53,7 +52,6 @@ export const NerveConfig: DexConfigMap<DexParams> = {
             address: '0xD1D5Af92C606C6F2eC59D453f57A6FCc188D7dB5',
             decimals: 18,
           },
-          trackCoins: false,
         },
         ETH: {
           name: 'ETH',
@@ -74,7 +72,6 @@ export const NerveConfig: DexConfigMap<DexParams> = {
             address: '0x0d283BF16A9bdE49cfC48d8dc050AF28b71bdD90',
             decimals: 18,
           },
-          trackCoins: false,
         },
         // fUSDT: {
         //   name: 'fUSDT',
@@ -85,7 +82,6 @@ export const NerveConfig: DexConfigMap<DexParams> = {
         //   ],
         //   isMetapool: true,
         //   lpTokenAddress: '0x2e91A0CECf28c5E518bB2E7fdcd9F8e2cd511c10',
-        //   trackCoins: false,
         // },
         // UST: {
         //   name: 'UST',
@@ -96,7 +92,6 @@ export const NerveConfig: DexConfigMap<DexParams> = {
         //   ],
         //   isMetapool: true,
         //   lpTokenAddress: '0x35Ce243e0DC9eD77e3C348Bb2742095F78e1Cb70',
-        //   trackCoins: false,
         // },
         // rUSD: {
         //   name: 'rUSD',
@@ -107,15 +102,134 @@ export const NerveConfig: DexConfigMap<DexParams> = {
         //   ],
         //   isMetapool: true,
         //   lpTokenAddress: '0x870ee4d19c12A789c61de69E3E5eFb42383E4434',
-        //   trackCoins: false,
         // },
       },
     },
   },
+
+  Axial: {
+    [Network.AVALANCHE]: {
+      poolConfigs: {
+        AS4D: {
+          name: 'AS4D',
+          address: '0x2a716c4933A20Cd8B9f9D9C39Ae7196A85c24228',
+          coins: [
+            {
+              address: '0x1C20E891Bab6b1727d14Da358FAe2984Ed9B59EB', // 0 - TUSD
+              decimals: 18,
+            },
+            {
+              address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664', // 1 - USDC.e
+              decimals: 6,
+            },
+            {
+              address: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70', // 2 - DAI.e
+              decimals: 18,
+            },
+            {
+              address: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118', // 3 - USDT.e
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0x3a7387f8ba3ebffa4a0eccb1733e940ce2275d3f',
+            decimals: 18,
+          },
+        },
+        AC4D: {
+          name: 'AC4D',
+          address: '0x8c3c1C6F971C01481150CA7942bD2bbB9Bc27bC7',
+          coins: [
+            {
+              address: '0x4fbf0429599460D327BD5F55625E30E4fC066095', // 0 - TSD
+              decimals: 18,
+            },
+            {
+              address: '0x130966628846BFd36ff31a822705796e8cb8C18D', // 1 - MIM
+              decimals: 18,
+            },
+            {
+              address: '0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64', // 2 - FRAX
+              decimals: 18,
+            },
+            {
+              address: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70', // 3 - DAI.e
+              decimals: 18,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0x4da067E13974A4d32D342d86fBBbE4fb0f95f382',
+            decimals: 18,
+          },
+        },
+        AM3D: {
+          name: 'AM3D',
+          address: '0x90c7b96AD2142166D001B27b5fbc128494CDfBc8',
+          coins: [
+            {
+              address: '0x130966628846BFd36ff31a822705796e8cb8C18D', // 0 - MIM
+              decimals: 18,
+            },
+            {
+              address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664', // 1 - USDC.e
+              decimals: 6,
+            },
+            {
+              address: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70', // 2 - DAI.e
+              decimals: 18,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0xc161E4B11FaF62584EFCD2100cCB461A2DdE64D1',
+            decimals: 18,
+          },
+        },
+        AA3D: {
+          name: 'AA3D',
+          address: '0x6EfbC734D91b229BE29137cf9fE531C1D3bf4Da6',
+          coins: [
+            {
+              address: '0x346A59146b9b4a77100D369a3d18E8007A9F46a6', // 0 - AVAI
+              decimals: 18,
+            },
+            {
+              address: '0x130966628846BFd36ff31a822705796e8cb8C18D', // 1 - MIM
+              decimals: 18,
+            },
+            {
+              address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664', // 2 - USDC.e
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0xaD556e7dc377d9089C6564f9E8d275f5EE4da22d',
+            decimals: 18,
+          },
+        },
+      },
+    },
+  },
+  IronV2: {
+    [Network.AVALANCHE]: { poolConfigs: {} },
+  },
+  Saddle: {
+    [Network.AVALANCHE]: { poolConfigs: {} },
+  },
+  Snowball: {
+    [Network.AVALANCHE]: { poolConfigs: {} },
+  },
 };
 
 export const NERVE_CHUNKS = 10;
-export const NERVE_GAS_COST = 200 * 1000
+export const NERVE_GAS_COST = 200 * 1000;
 
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.BSC]: {
