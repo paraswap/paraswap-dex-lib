@@ -1,6 +1,6 @@
 import type { DeepReadonly } from 'ts-essentials';
 import type { BlockHeader } from 'web3-eth';
-import type { Address, Log } from '../../types';
+import type { Address, Log, Token } from '../../types';
 import type { NerveEventMetapool } from './nerve-metapool';
 import type { NerveEventPool } from './nerve-pool';
 
@@ -26,11 +26,12 @@ export type MetapoolState = PoolState & {
 };
 
 export interface NervePoolConfig {
-  coins: Address[];
+  coins: Token[];
   address: Address;
   name: string;
   isMetapool: boolean;
-  lpTokenAddress: string;
+  isUSDPool: boolean;
+  lpToken: Token;
   trackCoins: boolean;
 }
 
@@ -73,3 +74,5 @@ export type EventPoolMappings = { [pool: string]: EventPoolOrMetapool };
 export enum NervePoolFunctions {
   swap = 'swap',
 }
+
+export type ReadonlyOrWritable<T> = T | DeepReadonly<T> | Readonly<T>;
