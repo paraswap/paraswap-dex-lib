@@ -467,6 +467,7 @@ export class KyberDmm
       this.logger.error(
         `${this.dexKey}_getManyPoolReserves didn't get any pool reserves`,
       );
+      return;
     }
 
     // Filter out pools
@@ -474,7 +475,7 @@ export class KyberDmm
       poolsState = Object.fromEntries(
         Object.entries(poolsState)
           .sort(([, stateA], [, stateB]) =>
-            stateA.reserves.vReserves0 < stateB.reserves.reserves0 ? 1 : -1,
+            stateA.reserves.reserves0 < stateB.reserves.reserves0 ? 1 : -1,
           )
           .slice(0, MAX_TRACKED_PAIR_POOLS),
       );
