@@ -115,6 +115,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
 };
 
 export const NERVE_CHUNKS = 10;
+export const NERVE_GAS_COST = 200 * 1000
 
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.BSC]: {
