@@ -11,7 +11,7 @@ import {
 } from '../../types';
 const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
 import { SwapSide, Network } from '../../constants';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -22,16 +22,17 @@ import {
   OptimizedNerveData,
   NervePoolFunctions,
   EventPoolOrMetapool,
+  NervePoolSwapParams,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { NerveConfig, Adapters } from './config';
+import { NerveConfig, Adapters, NERVE_GAS_COST, NERVE_CHUNKS } from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
 import { biginterify, ZERO } from './utils';
 
 export class Nerve
   extends SimpleExchange
-  implements IDex<PoolState, DexParams, OptimizedNerveData>
+  implements IDex<NerveData, DexParams, OptimizedNerveData>
 {
   protected eventPools: EventPoolMappings;
 
@@ -44,11 +45,8 @@ export class Nerve
 
   logger: Logger;
 
-  static getIdentifier(dexKey: string, tokenAddresses: string[]) {
-    const processedTokens = tokenAddresses
-      .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1))
-      .join('_');
-    return `${dexKey}_${processedTokens}`;
+  static getIdentifier(dexKey: string, poolAddress: string) {
+    return `${dexKey.toLowerCase()}_${poolAddress.toLowerCase()}`;
   }
 
   constructor(
@@ -75,7 +73,7 @@ export class Nerve
         const poolConfig = this.poolConfigs[poolKey];
         const poolIdentifier = Nerve.getIdentifier(
           this.dexKey,
-          poolConfig.coins.map(token => token.address),
+          poolConfig.address,
         );
 
         // We don't support Metapool yet
@@ -140,13 +138,9 @@ export class Nerve
           pool.tokenAddresses.includes(destToken.address)
         );
       })
-      .map(pool => Nerve.getIdentifier(this.dexKey, pool.tokenAddresses));
+      .map(pool => Nerve.getIdentifier(this.dexKey, pool.address));
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -167,65 +161,96 @@ export class Nerve
         return null;
       }
 
-      const poolIdentifier = Nerve.getIdentifier(this.dexKey, [
-        _srcToken.address,
-        _destToken.address,
-      ]);
+      function filterPoolsByIdentifiers(
+        identifiers,
+        pools: EventPoolOrMetapool[],
+      ) {
+        return pools.filter(pool =>
+          identifiers.includes(Nerve.getIdentifier(this.dexKey, pool.address)),
+        );
+      }
 
-      if (
-        limitPools &&
-        limitPools.every(p => p.toLowerCase() !== poolIdentifier)
-      )
-        return null;
+      const selectedPools = !limitPools
+        ? filterPoolsByIdentifiers(
+            this.getPoolIdentifiers(_srcToken, _destToken, side, blockNumber),
+            this.allPools,
+          )
+        : filterPoolsByIdentifiers(limitPools, this.allPools);
 
-      // await this.batchCatchUpPairs([[from, to]], blockNumber);
+      const statePoolPair = await this.getStates(selectedPools, blockNumber);
 
-      // const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
+      // here side === SwapSide.SELL
+      const unitVolume = BigInt(10 ** _srcToken.decimals);
+      const chunks = amounts.length - 1;
 
-      // if (!pairParam) return null;
+      const _width = Math.floor(chunks / NERVE_CHUNKS);
+      const _amounts = [unitVolume].concat(
+        Array.from(Array(NERVE_CHUNKS).keys()).map(
+          i => amounts[(i + 1) * _width],
+        ),
+      );
 
-      // const unitAmount = BigInt(
-      //   10 ** (side == SwapSide.BUY ? to.decimals : from.decimals),
-      // );
-      // const unit =
-      //   side == SwapSide.BUY
-      //     ? await this.getBuyPricePath(unitAmount, [pairParam])
-      //     : await this.getSellPricePath(unitAmount, [pairParam]);
+      const result: ExchangePrices<NerveData> = [];
+      for (const { pool, state } of statePoolPair) {
+        // To be able to update state property isValid if calculations receive error
+        const _state = _.cloneDeep(state) as PoolState;
 
-      // const prices =
-      //   side == SwapSide.BUY
-      //     ? await Promise.all(
-      //         amounts.map(amount => this.getBuyPricePath(amount, [pairParam])),
-      //       )
-      //     : await Promise.all(
-      //         amounts.map(amount => this.getSellPricePath(amount, [pairParam])),
-      //       );
+        const srcIndex = pool.tokens.findIndex(
+          token =>
+            token.address.toLowerCase() === _srcToken.address.toLowerCase(),
+        );
+        const destIndex = pool.tokens.findIndex(
+          token =>
+            token.address.toLowerCase() === _destToken.address.toLowerCase(),
+        );
 
-      // // As uniswapv2 just has one pool per token pair
-      // return [
-      //   {
-      //     prices: prices,
-      //     unit: unit,
-      //     data: {
-      //       router: this.router,
-      //       path: [from.address.toLowerCase(), to.address.toLowerCase()],
-      //       factory: this.factoryAddress,
-      //       initCode: this.initCode,
-      //       feeFactor: this.feeFactor,
-      //       pools: [
-      //         {
-      //           address: pairParam.exchange,
-      //           fee: parseInt(pairParam.fee),
-      //           direction: pairParam.direction,
-      //         },
-      //       ],
-      //     },
-      //     exchange: this.dexKey,
-      //     poolIdentifier,
-      //     gasCost: this.poolGasCost,
-      //     poolAddresses: [pairParam.exchange],
-      //   },
-      // ];
+        const _rates: (bigint | null)[] = [];
+        for (const _amount of _amounts) {
+          const out = pool.math.calculateSwap(
+            _state,
+            srcIndex,
+            destIndex,
+            _amount,
+            // Actually we need here block timestamp, but +- 15 seconds shouldn't
+            // affect the calculations
+            biginterify((Date.now() / 1000).toFixed(0)),
+          );
+          if (out === null) {
+            // Something unexpected happen, so set invalidated state.
+            // Later it will regenerated
+            pool.setState(_state, blockNumber);
+            this.logger.error(
+              `${this.dexKey} protocol ${pool.name} (${pool.address}) pool can not calculate out swap for amount ${_amount}`,
+            );
+            return null;
+          }
+          _rates.push(out.dy);
+        }
+
+        const unit = _rates[0];
+        const prices = interpolate(
+          _amounts.slice(1),
+          _rates.slice(1),
+          amounts,
+          side,
+        );
+
+        result.push({
+          prices,
+          unit,
+          data: {
+            i: srcIndex.toString(),
+            j: destIndex.toString(),
+            exchange: this.dexKey,
+            deadline: (Math.floor(Date.now() / 1000) + 10 * 60).toString(),
+          },
+          poolIdentifier: Nerve.getIdentifier(this.dexKey, pool.address),
+          exchange: this.dexKey,
+          gasCost: NERVE_GAS_COST,
+          poolAddresses: [pool.address],
+        });
+      }
+      return result;
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
@@ -276,9 +301,17 @@ export class Nerve
 
     const { exchange, i, j, deadline } = data;
 
+    const swapFunctionParam: NervePoolSwapParams = [
+      i,
+      j,
+      srcAmount,
+      this.minConversionRate,
+      deadline,
+    ];
+
     const swapData = this.nervePoolIface.encodeFunctionData(
       NervePoolFunctions.swap,
-      [i, j, srcAmount, this.minConversionRate, deadline],
+      swapFunctionParam,
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
