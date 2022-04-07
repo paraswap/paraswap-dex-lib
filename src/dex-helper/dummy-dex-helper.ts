@@ -6,7 +6,7 @@ import {
   IRequestWrapper,
 } from './index';
 import axios from 'axios';
-import { Address, LoggerConstructor } from '../types';
+import { Address, LoggerConstructor, Token } from '../types';
 import { MULTI_V2, ProviderURL, AugustusAddress } from '../constants';
 // import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider } from '@ethersproject/providers';
@@ -97,6 +97,7 @@ export class DummyDexHelper implements IDexHelper {
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
   web3Provider: Web3;
+  getTokenUSDPrice: (token: Token, amount: bigint) => number;
 
   constructor(network: number) {
     this.cache = new DummyCache();
@@ -110,5 +111,8 @@ export class DummyDexHelper implements IDexHelper {
     );
     this.blockManager = new DummyBlockManager();
     this.getLogger = name => log4js.getLogger(name);
+    // For testing use only full parts like 1, 2, 3 ETH, not 0.1 ETH etc
+    this.getTokenUSDPrice = (token, amount) =>
+      Number(amount / BigInt(10 ** token.decimals));
   }
 }
