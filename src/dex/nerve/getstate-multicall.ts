@@ -16,15 +16,15 @@ async function _getManyPoolStates(
   const calldata = _(pools)
     .map((pool: EventPoolOrMetapool) => [
       {
-        target: pool.poolAddress,
+        target: pool.address,
         callData: pool.poolIface.encodeFunctionData('swapStorage', []),
       },
       {
-        target: pool.lpTokenAddress,
+        target: pool.lpToken,
         callData: pool.lpTokenIface.encodeFunctionData('totalSupply', []),
       },
       _.range(0, pool.numTokens).map(poolIndex => ({
-        target: pool.poolAddress,
+        target: pool.address,
         callData: pool.poolIface.encodeFunctionData('getTokenBalance', [
           poolIndex,
         ]),
@@ -32,7 +32,7 @@ async function _getManyPoolStates(
       (pool as NerveEventMetapool).basePool
         ? [
             {
-              target: pool.poolAddress,
+              target: pool.address,
               callData: pool.poolIface.encodeFunctionData(
                 'metaSwapStorage',
                 [],
@@ -88,9 +88,9 @@ export async function getManyPoolStates(
       acc: { [key: string]: EventPoolOrMetapool },
       pool: EventPoolOrMetapool,
     ) => {
-      acc[pool.poolAddress.toLowerCase()] = pool;
+      acc[pool.address.toLowerCase()] = pool;
       const _basepool = (pool as NerveEventMetapool).basePool;
-      if (_basepool) acc[_basepool.poolAddress] = _basepool;
+      if (_basepool) acc[_basepool.address] = _basepool;
       return acc;
     },
     {},
@@ -113,12 +113,12 @@ export async function getManyPoolStates(
   return _.map(pools, (pool: EventPoolOrMetapool) =>
     (pool as NerveEventMetapool).basePool
       ? ({
-          ..._poolStatesMap[pool.poolAddress.toLowerCase()],
+          ..._poolStatesMap[pool.address.toLowerCase()],
           basePool:
             _poolStatesMap[
-              (pool as NerveEventMetapool).basePool.poolAddress.toLowerCase()
+              (pool as NerveEventMetapool).basePool.address.toLowerCase()
             ],
         } as MetapoolState)
-      : (_poolStatesMap[pool.poolAddress.toLowerCase()] as PoolState),
+      : (_poolStatesMap[pool.address.toLowerCase()] as PoolState),
   ) as DeepReadonly<PoolOrMetapoolState>[];
 }
