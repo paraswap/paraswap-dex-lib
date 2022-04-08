@@ -484,6 +484,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    const _tokenAddress = tokenAddress.toLowerCase();
     // Liquidity depends on the swapping side hence we simply use the min
     // Its always in terms of stable coin hence liquidityUSD = liquidity
     const minLiq = (poolState: PoolState) => {
@@ -498,12 +499,12 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       );
     };
 
-    const isDai = tokenAddress.toLowerCase() === this.dai.address;
+    const isDai = _tokenAddress === this.dai.address;
 
     const validPoolConfigs = isDai
       ? this.poolConfigs
-      : this.eventPools[tokenAddress.toLowerCase()]
-      ? [this.eventPools[tokenAddress.toLowerCase()].poolConfig]
+      : this.eventPools[_tokenAddress]
+      ? [this.eventPools[_tokenAddress].poolConfig]
       : [];
     if (!validPoolConfigs.length) return [];
 
