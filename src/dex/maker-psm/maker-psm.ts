@@ -26,9 +26,11 @@ const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
 const WAD = BigInt(10 ** 18);
 const BN0 = BigInt(0);
+const BN1 = BigInt(1);
 const BN1E18 = BigInt(1e18);
 
 const bigIntify = (b: any) => BigInt(b.toString());
+const ceilDiv = (a: bigint, b: bigint) => (a + b - BN1) / b;
 
 async function getOnChainState(
   multiContract: Contract,
@@ -397,7 +399,10 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       if (isSrcDai) {
         return { isGemSell: false, gemAmount: destAmount };
       } else {
-        const gemAmt18 = (BigInt(destAmount) * WAD) / (WAD - BigInt(data.toll));
+        const gemAmt18 = ceilDiv(
+          BigInt(destAmount) * WAD,
+          WAD - BigInt(data.toll),
+        );
         return {
           isGemSell: true,
           gemAmount: (gemAmt18 / to18ConversionFactor).toString(),
