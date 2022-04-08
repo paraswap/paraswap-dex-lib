@@ -399,13 +399,13 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       if (isSrcDai) {
         return { isGemSell: false, gemAmount: destAmount };
       } else {
-        const gemAmt18 = ceilDiv(
+        const gemAmt = ceilDiv(
           BigInt(destAmount) * WAD,
-          WAD - BigInt(data.toll),
+          (WAD - BigInt(data.toll)) * to18ConversionFactor,
         );
         return {
           isGemSell: true,
-          gemAmount: (gemAmt18 / to18ConversionFactor).toString(),
+          gemAmount: gemAmt.toString(),
         };
       }
     }
