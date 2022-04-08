@@ -41,7 +41,7 @@ describe('BalancerV2', function () {
       const blocknumber = await dexHelper.provider.getBlockNumber();
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
-      await balancerV2.setupEventPools(blocknumber);
+      await balancerV2.initializePricing(blocknumber);
 
       const pools = await balancerV2.getPoolIdentifiers(
         WETH,
@@ -87,7 +87,7 @@ describe('BalancerV2', function () {
       const blocknumber = await dexHelper.provider.getBlockNumber();
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
-      await balancerV2.setupEventPools(blocknumber);
+      await balancerV2.initializePricing(blocknumber);
 
       const pools = await balancerV2.getPoolIdentifiers(
         DAI,
@@ -140,7 +140,7 @@ describe('BalancerV2', function () {
     //   const blocknumber = await dexHelper.provider.getBlockNumber();
     //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
-    //   await balancerV2.setupEventPools(blocknumber);
+    //   await balancerV2.initializePricing(blocknumber);
 
     //   const pools = await balancerV2.getPoolIdentifiers(
     //     BBAUSD,

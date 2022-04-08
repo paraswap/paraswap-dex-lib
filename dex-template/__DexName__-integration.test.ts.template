@@ -47,7 +47,7 @@ describe('__DexName__', function () {
     const blocknumber = await dexHelper.provider.getBlockNumber();
     const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
 
-    await __DexNameCamel__.setupEventPools(blocknumber);
+    await __DexNameCamel__.initializePricing(blocknumber);
 
     const pools = await __DexNameCamel__.getPoolIdentifiers(
       TokenA,
@@ -67,7 +67,7 @@ describe('__DexName__', function () {
       blocknumber,
       pools,
     );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     if (__DexNameCamel__.hasConstantPriceLargeAmounts) {
@@ -82,7 +82,7 @@ describe('__DexName__', function () {
     const blocknumber = await dexHelper.provider.getBlockNumber();
     const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
 
-    await __DexNameCamel__.setupEventPools(blocknumber);
+    await __DexNameCamel__.initializePricing(blocknumber);
 
     const pools = await __DexNameCamel__.getPoolIdentifiers(
       TokenA,
@@ -102,7 +102,7 @@ describe('__DexName__', function () {
       blocknumber,
       pools,
     );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     if (__DexNameCamel__.hasConstantPriceLargeAmounts) {

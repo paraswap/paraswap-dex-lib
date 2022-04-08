@@ -34,6 +34,7 @@ import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
+import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 
 const LegacyDexes = [
@@ -68,6 +69,7 @@ const Dexes = [
   AaveV2,
   KyberDmm,
   Weth,
+  MakerPsm,
 ];
 
 const AdapterNameAddressMap: {
@@ -76,8 +78,8 @@ const AdapterNameAddressMap: {
   [Network.MAINNET]: {
     Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
     Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-    Adapter03: '0xe6A36F977844EB6AE1609686682698D20e4B0C26',
-    BuyAdapter: '0xd8b2760230BbF3aA9777E175eC1c9720EB499ebA',
+    Adapter03: '0x9Cf0b60C2133f67443fdf8a1bB952E2e6783d5DF',
+    BuyAdapter: '0x8D562A7D63248Ebfdd19B26665161cf867e5c10A',
   },
   [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
