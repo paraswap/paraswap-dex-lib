@@ -5,6 +5,7 @@ import { SwapSide } from 'paraswap-core';
 
 export const threePoolName = 'ThreePool';
 
+// The order of the coins must be places with the same indexes as in contracts
 export const NerveConfig: DexConfigMap<DexParams> = {
   Nerve: {
     [Network.BSC]: {
@@ -441,5 +442,14 @@ export const NERVE_GAS_COST = 200 * 1000;
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.BSC]: {
     [SwapSide.SELL]: [{ name: 'BscAdapter01', index: 4 }],
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter01', index: 3 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 7 }],
+  },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter02', index: 8 }],
   },
 };
