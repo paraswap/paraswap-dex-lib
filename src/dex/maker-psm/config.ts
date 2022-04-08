@@ -49,5 +49,11 @@ export const Adapters: {
         index: 9,
       },
     ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BuyAdapter',
+        index: 5,
+      },
+    ],
   },
 };
