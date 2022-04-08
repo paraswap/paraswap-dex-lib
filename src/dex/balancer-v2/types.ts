@@ -12,6 +12,12 @@ export type PoolState = {
   };
   swapFee: bigint;
   amp?: bigint;
+  // Linear Pools
+  mainIndex?: number;
+  wrappedIndex?: number;
+  bptIndex?: number;
+  lowerTarget?: bigint;
+  upperTarget?: bigint;
 };
 
 export type SubgraphToken = {
@@ -24,6 +30,8 @@ export interface SubgraphPoolBase {
   address: string;
   poolType: string;
   tokens: SubgraphToken[];
+  mainIndex: number;
+  wrappedIndex: number;
 }
 
 export type BalancerSwapV2 = {
@@ -74,4 +82,8 @@ export type DexParams = {
   vaultAddress: Address;
 };
 
+export interface callData {
+  target: string;
+  callData: string;
+}
 export type PoolStateMap = { [address: string]: PoolState };

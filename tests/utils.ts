@@ -19,12 +19,33 @@ export function checkPoolPrices(
       const prevMarginalPrice =
         poolPrice.prices[i - 1] - poolPrice.prices[i - 2];
       const currMarginalPrice = poolPrice.prices[i] - poolPrice.prices[i - 1];
+
+      //This check has 1% fudge factor to avoid slight differences causing error
       if (side === SwapSide.SELL)
-        expect(currMarginalPrice).toBeLessThan(prevMarginalPrice);
-      else expect(currMarginalPrice).toBeGreaterThan(prevMarginalPrice);
+        expect(
+          (currMarginalPrice * BigInt(99)) / BigInt(100),
+        ).toBeLessThanOrEqual(prevMarginalPrice);
+      else
+        expect((currMarginalPrice * BigInt(101)) / BigInt(100)).toBeGreaterThan(
+          prevMarginalPrice,
+        );
     }
 
     expect(poolPrice.exchange).toEqual(dexKey);
+  }
+}
+
+export function checkConstantPoolPrices(
+  poolPrices: PoolPrices<any>[],
+  amounts: bigint[],
+  dexKey: string,
+) {
+  for (const poolPrice of poolPrices) {
+    expect(poolPrice.exchange).toEqual(dexKey);
+    expect(poolPrice.prices.length).toEqual(amounts.length);
+    for (let i = 0; i < poolPrice.prices.length; ++i) {
+      expect(poolPrice.prices[i]).toEqual(amounts[i]);
+    }
   }
 }
 
