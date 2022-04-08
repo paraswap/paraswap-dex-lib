@@ -40,11 +40,6 @@ export class NerveEventMetapool extends NerveEventPool {
       poolName: string,
     ) => NerveEventPool,
   ) {
-    if (poolName === undefined)
-      throw new Error(
-        `Parameter poolName is required for NerveEventMetapool ${parentName}`,
-      );
-
     super(
       parentName,
       network,
@@ -54,6 +49,10 @@ export class NerveEventMetapool extends NerveEventPool {
       poolConfig,
       poolABI,
     );
+    if (poolName === undefined)
+      throw new Error(
+        `Parameter poolName is required for NerveEventMetapool ${parentName}`,
+      );
 
     this.basePool = new BasePool(
       parentName,
@@ -134,7 +133,9 @@ export class NerveEventMetapool extends NerveEventPool {
     return state;
   }
 
-  handleTokenSwapUnderlying(event: any, state: PoolState) {}
+  handleTokenSwapUnderlying(event: any, state: PoolState) {
+    return state;
+  }
 
   handleBasePoolTokenSwap(
     event: any,
@@ -169,7 +170,12 @@ export class NerveEventMetapool extends NerveEventPool {
     return this._handleHelperIfNotFromMetapool(
       event,
       state,
-      this.basePool.handleRemoveLiquidityOne.bind(this, event, state),
+      this.basePool.handleRemoveLiquidityOne.bind(
+        this,
+        event,
+        state,
+        undefined,
+      ),
     );
   }
 
@@ -188,7 +194,7 @@ export class NerveEventMetapool extends NerveEventPool {
   protected _handleHelperIfNotFromMetapool(
     event: any,
     state: PoolState,
-    handler: () => PoolState,
+    handler: () => PoolState | null,
   ) {
     return this._isEventFromMetapool(event) ? state : handler();
   }

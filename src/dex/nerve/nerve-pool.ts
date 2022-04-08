@@ -3,11 +3,13 @@ import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import type { AbiItem } from 'web3-utils';
 const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
+const erc20ABI = require('../../abi/erc20.json');
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   EventHandler,
+  EventPoolOrMetapool,
   NervePoolConfig,
   PoolOrMetapoolState,
   PoolState,
@@ -17,6 +19,7 @@ import { getManyPoolStates } from './getstate-multicall';
 import { BlockHeader } from 'web3-eth';
 import { biginterify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
+import { NerveEventMetapool } from './nerve-metapool';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   readonly math: NervePoolMath;
@@ -30,6 +33,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   addressesSubscribed: Address[];
 
   poolIface: Interface;
+
+  lpTokenIface: Interface;
 
   private _tokenAddresses?: string[];
 
@@ -65,13 +70,16 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['StopRampA'] = this.handleStopRampA.bind(this);
 
     this.poolIface = new Interface(JSON.stringify(this.poolABI));
+    this.lpTokenIface = new Interface(JSON.stringify(erc20ABI));
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
   }
 
   get tokenAddresses() {
     if (this._tokenAddresses === undefined) {
-      this._tokenAddresses = this.tokens.map(token => token.address);
+      this._tokenAddresses = this.tokens.map(token =>
+        token.address.toLowerCase(),
+      );
     }
     return this._tokenAddresses;
   }
@@ -86,6 +94,14 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   get tokens() {
     return this.poolConfig.coins;
+  }
+
+  get tokenPrecisionMultipliers() {
+    return this.tokens.map(
+      token =>
+        biginterify(10) **
+        (this.math.POOL_PRECISION_DECIMALS - biginterify(token.decimals)),
+    );
   }
 
   get numTokens() {
@@ -120,9 +136,61 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<PoolState>> {
-    return (
-      await getManyPoolStates([this], this.dexHelper.multiContract, blockNumber)
-    )[0];
+    const calldata = _.flattenDeep([
+      {
+        target: this.address,
+        callData: this.poolIface.encodeFunctionData('swapStorage', []),
+      },
+      {
+        target: this.lpToken.address,
+        callData: this.lpTokenIface.encodeFunctionData('totalSupply', []),
+      },
+      _.range(0, this.numTokens).map(poolIndex => ({
+        target: this.address,
+        callData: this.poolIface.encodeFunctionData('getTokenBalance', [
+          poolIndex,
+        ]),
+      })),
+    ]);
+
+    const data = await this.dexHelper.multiContract.methods
+      .aggregate(calldata)
+      .call({}, blockNumber);
+
+    const [swapStorage, lpToken_supply, balances] = [
+      this.poolIface.decodeFunctionResult('swapStorage', data.returnData[0]),
+      biginterify(
+        this.lpTokenIface.decodeFunctionResult(
+          'totalSupply',
+          data.returnData[1],
+        )[0]._hex,
+      ),
+      _.flatten(
+        _.range(2, this.numTokens + 2).map(i =>
+          biginterify(
+            this.poolIface.decodeFunctionResult(
+              'getTokenBalance',
+              data.returnData[i],
+            )[0]._hex,
+          ),
+        ),
+      ),
+    ];
+
+    return {
+      initialA: biginterify(swapStorage.initialA._hex),
+      futureA: biginterify(swapStorage.futureA._hex),
+      initialATime: biginterify(swapStorage.initialATime._hex),
+      futureATime: biginterify(swapStorage.futureATime._hex),
+      swapFee: biginterify(swapStorage.swapFee._hex),
+      adminFee: biginterify(swapStorage.adminFee._hex),
+      defaultDepositFee: biginterify(swapStorage.defaultDepositFee._hex),
+      defaultWithdrawFee: biginterify(swapStorage.defaultWithdrawFee._hex),
+      lpToken_supply,
+      balances,
+      tokenPrecisionMultipliers: this.tokenPrecisionMultipliers,
+      isValid: true,
+    };
   }
 
   handleNewAdminFee(event: any, state: PoolState) {
@@ -252,6 +320,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       // We receive the real transferred amount. No need to check it
       state.balances[i] -= tokenAmount;
     }
+    return state;
   }
 
   handleRemoveLiquidityOne(_0: any, state: PoolState, _2: Log) {

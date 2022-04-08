@@ -34,7 +34,7 @@ export class Nerve
   extends SimpleExchange
   implements IDex<NerveData, DexParams, OptimizedNerveData>
 {
-  protected eventPools: EventPoolMappings;
+  protected eventPools: EventPoolMappings = {};
 
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -66,11 +66,8 @@ export class Nerve
   }
 
   async initializePricing(blockNumber: number) {
-    const allPoolKeys = Object.keys(Nerve.dexKeysWithNetwork);
-
     await Promise.all(
-      allPoolKeys.map(poolKey => {
-        const poolConfig = this.poolConfigs[poolKey];
+      Object.values(this.poolConfigs).map(poolConfig => {
         const poolIdentifier = Nerve.getIdentifier(
           this.dexKey,
           poolConfig.address,
@@ -83,7 +80,7 @@ export class Nerve
             this.network,
             this.dexHelper,
             this.logger,
-            poolKey,
+            poolConfig.name,
             poolConfig,
           );
           // Generate first state for the blockNumber
@@ -134,8 +131,8 @@ export class Nerve
     return this.allPools
       .filter(pool => {
         return (
-          pool.tokenAddresses.includes(srcToken.address) &&
-          pool.tokenAddresses.includes(destToken.address)
+          pool.tokenAddresses.includes(srcToken.address.toLowerCase()) &&
+          pool.tokenAddresses.includes(destToken.address.toLowerCase())
         );
       })
       .map(pool => Nerve.getIdentifier(this.dexKey, pool.address));
@@ -161,18 +158,23 @@ export class Nerve
         return null;
       }
 
-      function filterPoolsByIdentifiers(
-        identifiers,
+      const filterPoolsByIdentifiers = (
+        identifiers: string[],
         pools: EventPoolOrMetapool[],
-      ) {
+      ) => {
         return pools.filter(pool =>
           identifiers.includes(Nerve.getIdentifier(this.dexKey, pool.address)),
         );
-      }
+      };
 
       const selectedPools = !limitPools
         ? filterPoolsByIdentifiers(
-            this.getPoolIdentifiers(_srcToken, _destToken, side, blockNumber),
+            await this.getPoolIdentifiers(
+              _srcToken,
+              _destToken,
+              side,
+              blockNumber,
+            ),
             this.allPools,
           )
         : filterPoolsByIdentifiers(limitPools, this.allPools);
@@ -204,7 +206,7 @@ export class Nerve
             token.address.toLowerCase() === _destToken.address.toLowerCase(),
         );
 
-        const _rates: (bigint | null)[] = [];
+        const _rates: bigint[] = [];
         for (const _amount of _amounts) {
           const out = pool.math.calculateSwap(
             _state,
@@ -241,7 +243,7 @@ export class Nerve
           data: {
             i: srcIndex.toString(),
             j: destIndex.toString(),
-            exchange: this.dexKey,
+            exchange: pool.address,
             deadline: (Math.floor(Date.now() / 1000) + 10 * 60).toString(),
           },
           poolIdentifier: Nerve.getIdentifier(this.dexKey, pool.address),
@@ -328,11 +330,15 @@ export class Nerve
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    // Currently we don't need to wrap or unwrap tokens
-    // as there are no pools with native tokens
+    // We set decimals to default as we don't really care of actual number.
+    // We use here only address
+    const wrappedTokenAddress = wrapETH(
+      { address: tokenAddress, decimals: 18 },
+      this.network,
+    );
 
     const selectedPools = this.allPools.filter(pool =>
-      pool.tokenAddresses.includes(tokenAddress),
+      pool.tokenAddresses.includes(wrappedTokenAddress.address),
     );
 
     return Promise.all(
@@ -382,7 +388,8 @@ export class Nerve
               .uniqBy('address')
               .filter(
                 token =>
-                  token.address.toLowerCase() !== tokenAddress.toLowerCase(),
+                  token.address.toLowerCase() !==
+                  wrappedTokenAddress.address.toLowerCase(),
               )
               .value(),
             liquidityUSD: priceInUSD,
