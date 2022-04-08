@@ -55,12 +55,14 @@ export class NervePoolMath {
     tokenIndex: number,
     blockTimeStamp: bigint,
   ) {
-    let { dy, newY } = this._calculateWithdrawOneTokenDY(
+    const out = this._calculateWithdrawOneTokenDY(
       state,
       tokenIndex,
       tokenAmount,
       blockTimeStamp,
     );
+    if (out === null) return null;
+    let { dy, newY } = out;
 
     // uint256 dySwapFee = _xp(self)[tokenIndex].sub(newY)
     //  .div(self.tokenPrecisionMultipliers[tokenIndex]).sub(dy)
@@ -100,11 +102,15 @@ export class NervePoolMath {
       preciseA: ZERO,
     };
     v.preciseA = this._getAPrecise(state, blockTimestamp);
-    v.d0 = this._getD(state, xp, v.preciseA);
+    const d0 = this._getD(state, xp, v.preciseA);
+    if (d0 === null) return null;
+    else v.d0 = d0;
 
     // v.d1 = v.d0.sub(tokenAmount.mul(v.d0).div(self.lpToken.totalSupply()));
     v.d1 = v.d0 - (tokenAmount * v.d0) / state.lpToken_supply;
-    v.newY = this._getYD(state, v.preciseA, tokenIndex, xp, v.d1);
+    const newY = this._getYD(state, v.preciseA, tokenIndex, xp, v.d1);
+    if (newY === null) return null;
+    else v.newY = newY;
 
     const xpReduced: bigint[] = [];
 
@@ -122,10 +128,10 @@ export class NervePoolMath {
       xpReduced[i] -= (dxExpected * v.feePerToken) / this.FEE_DENOMINATOR;
     }
 
+    const yd = this._getYD(state, v.preciseA, tokenIndex, xpReduced, v.d1);
+    if (yd === null) return null;
     // uint256 dy = xpReduced[tokenIndex].sub(getYD(v.preciseA, tokenIndex, xpReduced, v.d1));
-    let dy =
-      xpReduced[tokenIndex] -
-      this._getYD(state, v.preciseA, tokenIndex, xpReduced, v.d1);
+    let dy = xpReduced[tokenIndex] - yd;
 
     // dy = dy.sub(1).div(self.tokenPrecisionMultipliers[tokenIndex]);
     dy = (dy - ONE) / state.tokenPrecisionMultipliers[tokenIndex];
@@ -155,7 +161,7 @@ export class NervePoolMath {
     const numTokens = biginterify(xp.length);
 
     let c = d;
-    let s: bigint;
+    let s: bigint = ZERO;
     const nA = a * numTokens;
 
     for (let i = 0; i < numTokens; i++) {
@@ -201,8 +207,9 @@ export class NervePoolMath {
     const numTokens = this._getNumTokens(state);
     const a = this._getAPrecise(state, blockTimestamp);
     const d = this._getD(state, xp, a);
+    if (d === null) return null;
     let c = d;
-    let s: bigint;
+    let s: bigint = ZERO;
     const nA = numTokens * a;
 
     let _x: bigint;
@@ -264,7 +271,7 @@ export class NervePoolMath {
 
   protected _getD(state: PoolState, xp: bigint[], a: bigint) {
     const numTokens = biginterify(xp.length);
-    let s: bigint;
+    let s: bigint = ZERO;
     for (let i = 0; i < numTokens; i++) {
       s = s + xp[i];
     }
@@ -287,10 +294,9 @@ export class NervePoolMath {
       //    nA.sub(A_PRECISION).mul(d).div(A_PRECISION).add(
       //      numTokens.add(1).mul(dP)));
       d =
-        (nA * s) / this.A_PRECISION +
-        (dP * numTokens * d) /
-          (((nA - this.A_PRECISION) * d) /
-            (this.A_PRECISION + (numTokens + ONE) * dP));
+        (((nA * s) / this.A_PRECISION + dP * numTokens) * d) /
+        (((nA - this.A_PRECISION) * d) / this.A_PRECISION +
+          (numTokens + ONE) * dP);
       if (MathUtil.within1(d, prevD)) {
         return d;
       }
