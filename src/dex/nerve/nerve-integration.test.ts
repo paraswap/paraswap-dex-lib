@@ -7,43 +7,35 @@ import { Nerve } from './nerve';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-/*
-  README
-  ======
+describe('Nerve BSC', function () {
+  const dexKey = 'Nerve';
+  const network = Network.BSC;
+  const TokenASymbol = 'USDC';
+  const TokenA = Tokens[network][TokenASymbol];
 
-  This test script adds tests for Nerve general integration 
-  with the DEX interface. The test cases below are example tests. 
-  It is recommended to add tests which cover Nerve specific
-  logic. 
+  const TokenBSymbol = 'BUSD';
+  const TokenB = Tokens[network][TokenBSymbol];
 
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
+  const amounts = [
+    BigInt('0'),
+    BigInt('111000000'),
+    BigInt('222000000'),
+    BigInt('333000000'),
+    BigInt('444000000'),
+    BigInt('555000000'),
+    BigInt('666000000'),
+    BigInt('777000000'),
+    BigInt('888000000'),
+    BigInt('999000000'),
+    BigInt('1111000000'),
+  ];
 
-  (This comment should be removed from the final implementation)
-*/
-
-const network = Network.MAINNET;
-const TokenASymbol = 'TokenASymbol';
-const TokenA = Tokens[network][TokenASymbol];
-
-const TokenBSymbol = 'TokenBSymbol';
-const TokenB = Tokens[network][TokenBSymbol];
-
-const amounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
-
-const dexKey = 'Nerve';
-
-describe('Nerve', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.provider.getBlockNumber();
     const nerve = new Nerve(network, dexKey, dexHelper);
 
-    await nerve.setupEventPools(blocknumber);
+    await nerve.initializePricing(blocknumber);
 
     const pools = await nerve.getPoolIdentifiers(
       TokenA,
@@ -51,7 +43,7 @@ describe('Nerve', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -69,45 +61,11 @@ describe('Nerve', function () {
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
 
-  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const nerve = new Nerve(network, dexKey, dexHelper);
-
-    await nerve.setupEventPools(blocknumber);
-
-    const pools = await nerve.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.BUY,
-      blocknumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
-
-    expect(pools.length).toBeGreaterThan(0);
-
-    const poolPrices = await nerve.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.BUY,
-      blocknumber,
-      pools,
-    );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
-
-    expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
-  });
-
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
     const nerve = new Nerve(network, dexKey, dexHelper);
 
-    const poolLiquidity = await nerve.getTopPoolsForToken(
-      TokenA.address,
-      10,
-    );
+    const poolLiquidity = await nerve.getTopPoolsForToken(TokenA.address, 10);
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
