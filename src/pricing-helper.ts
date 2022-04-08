@@ -73,7 +73,7 @@ export class PricingHelper {
         try {
           return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
-              () => reject(new Error(`Timout`)),
+              () => reject(new Error(`Timeout`)),
               FETCH_POOL_INDENTIFIER_TIMEOUT,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
@@ -132,7 +132,7 @@ export class PricingHelper {
           return await new Promise<PoolPrices<any>[] | null>(
             (resolve, reject) => {
               const timer = setTimeout(
-                () => reject(new Error(`Timout`)),
+                () => reject(new Error(`Timeout`)),
                 FETCH_POOL_PRICES_TIMEOUT,
               );
 
