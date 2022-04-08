@@ -340,6 +340,11 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
 
     const isSrcDai = srcToken.address.toLowerCase() === this.dai.address;
     const gem = isSrcDai ? destToken : srcToken;
+    const toll =
+      (side === SwapSide.SELL && isSrcDai) ||
+      (side === SwapSide.BUY && !isSrcDai)
+        ? poolState.tout
+        : poolState.tin;
 
     const [unit, ...prices] = this.computePrices(
       isSrcDai,
@@ -354,8 +359,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
         prices,
         unit,
         data: {
-          tin: poolState.tin.toString(),
-          tout: poolState.tout.toString(),
+          toll: toll.toString(),
           psmAddress: eventPool.poolConfig.psmAddress,
           gemJoinAddress: eventPool.poolConfig.gemJoinAddress,
           gemDecimals: gem.decimals,
@@ -379,7 +383,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     const to18ConversionFactor = BigInt(10) ** BigInt(18 - data.gemDecimals);
     if (side === SwapSide.SELL) {
       if (isSrcDai) {
-        const gemAmt18 = (BigInt(srcAmount) * WAD) / (WAD + BigInt(data.tout));
+        const gemAmt18 = (BigInt(srcAmount) * WAD) / (WAD + BigInt(data.toll));
         return {
           isGemSell: false,
           gemAmount: (gemAmt18 / to18ConversionFactor).toString(),
@@ -391,7 +395,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       if (isSrcDai) {
         return { isGemSell: false, gemAmount: destAmount };
       } else {
-        const gemAmt18 = (BigInt(destAmount) * WAD) / (WAD - BigInt(data.tin));
+        const gemAmt18 = (BigInt(destAmount) * WAD) / (WAD - BigInt(data.toll));
         return {
           isGemSell: true,
           gemAmount: (gemAmt18 / to18ConversionFactor).toString(),
@@ -410,14 +414,19 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     data: MakerPsmData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    const to18ConversionFactor = BigInt(10) ** BigInt(18 - data.gemDecimals);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           gemJoinAddress: 'address',
+          toll: 'uint256',
+          to18ConversionFactor: 'uint256',
         },
       },
       {
         gemJoinAddress: data.gemJoinAddress,
+        toll: data.toll,
+        to18ConversionFactor,
       },
     );
 

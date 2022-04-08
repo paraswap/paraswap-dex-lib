@@ -12,8 +12,7 @@ export type MakerPsmData = {
   psmAddress: Address;
   gemJoinAddress: Address;
   gemDecimals: number;
-  tin: string;
-  tout: string;
+  toll: string;
 };
 
 export type PoolConfig = {
