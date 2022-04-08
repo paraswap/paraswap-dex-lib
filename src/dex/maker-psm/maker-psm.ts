@@ -276,7 +276,9 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
   ): Promise<PoolState> {
     const eventState = pool.getState(blockNumber);
     if (eventState) return eventState;
-    return await pool.generateState(blockNumber);
+    const onChainState = await pool.generateState(blockNumber);
+    pool.setState(onChainState, blockNumber);
+    return onChainState;
   }
 
   computePrices(
