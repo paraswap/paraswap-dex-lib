@@ -35,17 +35,11 @@ describe('MakerPsm E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap,
-          // ContractMethod.megaSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
         ],
       ],
-      [
-        SwapSide.BUY,
-        [
-          ContractMethod.simpleBuy,
-          // ContractMethod.buy
-        ],
-      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
