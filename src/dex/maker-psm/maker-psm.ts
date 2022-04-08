@@ -502,7 +502,9 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
 
     const validPoolConfigs = isDai
       ? this.poolConfigs
-      : [this.eventPools[tokenAddress.toLowerCase()].poolConfig] || [];
+      : this.eventPools[tokenAddress.toLowerCase()]
+      ? [this.eventPools[tokenAddress.toLowerCase()].poolConfig]
+      : [];
     if (!validPoolConfigs.length) return [];
 
     const poolStates = await getOnChainState(
