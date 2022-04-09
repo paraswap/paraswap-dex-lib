@@ -547,6 +547,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  Printy: {
+    [Network.AVALANCHE]: {
+      factoryAddress: '0xc62Ca231Cd2b0c530C622269dA02374134511a36',
+      initCode:
+        '0x96262ba85d1e33f4c9f8368149e7211436bc78c7058d43e303e73ffdfb9c0d8e',
+      poolGasCost: 80 * 1000,
+      feeCode: 1,
+    },
+  },
   Thorus: {
     [Network.AVALANCHE]: {
       factoryAddress: '0xa98ea6356A316b44Bf710D5f9b6b4eA0081409Ef',
