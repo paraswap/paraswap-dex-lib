@@ -8,6 +8,7 @@ import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import { typeCastPoolState } from './utils';
 import { Nerve } from './nerve';
+import { NerveConfig, threePoolName } from './config';
 
 jest.setTimeout(50 * 1000);
 
@@ -24,12 +25,18 @@ async function fetchPoolState(
 describe('Nerve Event Pool BSC', async () => {
   const dexKey = 'Nerve';
   const network = Network.BSC;
-
+  const config = NerveConfig[dexKey][network];
   const testPoolAddress = '0x1B3771a66ee31180906972580adE9b81AFc5fCDc'; // 3Pool
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
 
-  const nervePool = new NerveEventPool(dexKey, network, dexHelper, logger);
+  const nervePool = new NerveEventPool(
+    dexKey,
+    network,
+    dexHelper,
+    logger,
+    config.poolConfigs[threePoolName].name,
+  );
 
   // AddLiquidity: [[1, test3PoolAddress]],
   // RemoveLiquidity: [[1, test3PoolAddress]],
