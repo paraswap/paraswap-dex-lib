@@ -55,7 +55,7 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xa44E5137293E855B1b7bC7E2C6f8cD796fFCB037',
       decimals: 8,
     },
-    FRAX: {
+    oldFRAX: {
       address: '0x853d955acef822db058eb8505911ed77f175b99e',
       decimals: 18,
     },
@@ -194,6 +194,7 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     SAITAMA: {
       address: '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f',
       decimals: 9,
+    },
     BBAUSDT: {
       // bpt of USDT Linear Pool
       address: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
@@ -210,6 +211,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     },
     BBFDAI: {
       address: '0x8f4063446f5011bc1c9f79a819efe87776f23704',
+      decimals: 18,
+    },
+    FEI: {
+      address: '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
+      decimals: 18,
+    },
+    newFRAX: {
+      address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
       decimals: 18,
     },
   },
@@ -348,6 +357,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       decimals: 18,
     },
     BNB: { address: ETHER_ADDRESS, decimals: 18 },
+    bBTC: {
+      address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
+      decimals: 18,
+    },
+    anyBTC: {
+      address: '0x54261774905f3e6E9718f2ABb10ed6555cae308a',
+      decimals: 8,
+    },
   },
   [Network.AVALANCHE]: {
     USDCe: {
@@ -390,8 +407,12 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x1c20e891bab6b1727d14da358fae2984ed9b59eb',
       decimals: 18,
     },
-    FRAX: {
+    oldFRAX: {
       address: '0xdc42728b0ea910349ed3c6e1c9dc06b5fb591f98',
+      decimals: 18,
+    },
+    newFRAX: {
+      address: '0xd24c2ad096400b6fbcd2ad8b24e7acbc21a1da64',
       decimals: 18,
     },
     DAIE: {
@@ -466,7 +487,9 @@ export const Holders: {
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
     AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
     DAI: '0x0f4ee9631f4be0a63756515141281a3e2b293bbe',
-    FRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
+    oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
+    newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
+    FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
     BAL: '0x7514f531ef3721b8d2ff8d3a841d7c05011eecca',
     WISE: '0x25c315e0758beeab30ee048a4e2080e7084b64b3',
     DDIM: '0x229cbd1955fee93ab6e7876c1b17f6d0b859e953',
@@ -538,6 +561,8 @@ export const Holders: {
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
     USDC: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
+    bBTC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
+    anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',
   },
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
@@ -561,6 +586,8 @@ export const Holders: {
     aAvaUSDT: '0x4cf82fe8e0072d546729d005b08faeeab8528cb7',
     USDt: '0x876eabf441b2ee5b5b0554fd502a8e0600950cfa',
     aAvaWAVAX: '0xd3117031ed778fe1cf2b153b7573173c7565f33a',
+    oldFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
+    newFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
   },
 };
 
