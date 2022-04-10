@@ -30,8 +30,10 @@ export function typeCastPoolState(state: DeepReadonly<PoolState>): PoolState {
     futureATime: biginterify(state.futureATime),
     swapFee: biginterify(state.swapFee),
     adminFee: biginterify(state.adminFee),
-    defaultDepositFee: biginterify(state.defaultDepositFee),
-    defaultWithdrawFee: biginterify(state.defaultWithdrawFee),
+    defaultDepositFee:
+      state.defaultDepositFee && biginterify(state.defaultDepositFee),
+    defaultWithdrawFee:
+      state.defaultWithdrawFee && biginterify(state.defaultWithdrawFee),
     lpToken_supply: biginterify(state.lpToken_supply),
     balances: state.balances.map(biginterify),
     tokenPrecisionMultipliers: state.tokenPrecisionMultipliers.map(biginterify),
