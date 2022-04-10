@@ -2,24 +2,21 @@ import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import type { AbiItem } from 'web3-utils';
-const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
+const nervePoolABI = require('../../abi/nerve/nerve-pool.json');
 const erc20ABI = require('../../abi/erc20.json');
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   EventHandler,
-  EventPoolOrMetapool,
   NervePoolConfig,
   PoolOrMetapoolState,
   PoolState,
 } from './types';
 import { NerveConfig } from './config';
-import { getManyPoolStates } from './getstate-multicall';
 import { BlockHeader } from 'web3-eth';
 import { biginterify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
-import { NerveEventMetapool } from './nerve-metapool';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   readonly math: NervePoolMath;
@@ -43,10 +40,10 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected poolName: string = 'ThreePool',
+    protected poolName: string,
     public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
       .poolConfigs[poolName],
-    protected poolABI: AbiItem[] = nervePoolABIDefault,
+    protected poolABI: AbiItem[] = nervePoolABI,
   ) {
     super(`${parentName}_${poolConfig.name}`, logger);
     this.math = new NervePoolMath(this.name, this.logger);
@@ -184,8 +181,12 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       futureATime: biginterify(swapStorage.futureATime._hex),
       swapFee: biginterify(swapStorage.swapFee._hex),
       adminFee: biginterify(swapStorage.adminFee._hex),
-      defaultDepositFee: biginterify(swapStorage.defaultDepositFee._hex),
-      defaultWithdrawFee: biginterify(swapStorage.defaultWithdrawFee._hex),
+      defaultDepositFee:
+        swapStorage.defaultDepositFee &&
+        biginterify(swapStorage.defaultDepositFee._hex),
+      defaultWithdrawFee:
+        swapStorage.defaultWithdrawFee &&
+        biginterify(swapStorage.defaultWithdrawFee._hex),
       lpToken_supply,
       balances,
       tokenPrecisionMultipliers: this.tokenPrecisionMultipliers,

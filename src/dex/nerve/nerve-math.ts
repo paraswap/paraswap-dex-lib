@@ -148,7 +148,7 @@ export class NervePoolMath {
   protected _calculateCurrentWithdrawFee(state: PoolState) {
     // It is not correct. We should calculate user withdrawFeeMultiplier by
     // the time passed since the liquidity was added
-    return state.defaultWithdrawFee;
+    return state.defaultWithdrawFee ? state.defaultWithdrawFee : ZERO;
   }
 
   protected _getYD(

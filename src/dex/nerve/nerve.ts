@@ -25,7 +25,13 @@ import {
   NervePoolSwapParams,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { NerveConfig, Adapters, NERVE_GAS_COST, NERVE_CHUNKS } from './config';
+import {
+  NerveConfig,
+  Adapters,
+  NERVE_GAS_COST,
+  NERVE_CHUNKS,
+  dexKeyToABIMap,
+} from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
 import { biginterify, ZERO } from './utils';
@@ -82,6 +88,7 @@ export class Nerve
             this.logger,
             poolConfig.name,
             poolConfig,
+            dexKeyToABIMap[this.dexKey],
           );
           // Generate first state for the blockNumber
           return this.eventPools[poolIdentifier].setup(blockNumber);

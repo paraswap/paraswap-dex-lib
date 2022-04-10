@@ -11,8 +11,8 @@ export interface PoolState {
   futureATime: bigint;
   swapFee: bigint;
   adminFee: bigint;
-  defaultDepositFee: bigint;
-  defaultWithdrawFee: bigint;
+  defaultDepositFee?: bigint;
+  defaultWithdrawFee?: bigint;
   lpToken_supply: bigint;
   balances: bigint[];
   tokenPrecisionMultipliers: bigint[];
