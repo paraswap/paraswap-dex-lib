@@ -13,9 +13,9 @@ import {
   PoolOrMetapoolState,
   PoolState,
 } from './types';
-import { NerveConfig } from './config';
+import { dexKeyToABIMap, NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
-import { biginterify, typeCastPoolState, ZERO } from './utils';
+import { biginterify, ONE, typeCastPoolState, ZERO } from './utils';
 import { NervePoolMath } from './nerve-math';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
@@ -43,7 +43,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     protected poolName: string,
     public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
       .poolConfigs[poolName],
-    protected poolABI: AbiItem[] = nervePoolABI,
+    protected poolABI: AbiItem[] = dexKeyToABIMap[parentName],
   ) {
     super(`${parentName}_${poolConfig.name}`, logger);
     this.math = new NervePoolMath(this.name, this.logger);
@@ -65,6 +65,10 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['NewWithdrawFee'] = this.handleNewWithdrawFee.bind(this);
     this.handlers['RampA'] = this.handleRampA.bind(this);
     this.handlers['StopRampA'] = this.handleStopRampA.bind(this);
+
+    // IronV2 events support
+    this.handlers['TokenExchange'] = this.handleTokenExchange.bind(this);
+    this.handlers['NewFee'] = this.handleNewFee.bind(this);
 
     this.poolIface = new Interface(JSON.stringify(this.poolABI));
     this.lpTokenIface = new Interface(JSON.stringify(erc20ABI));
@@ -198,6 +202,16 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     };
   }
 
+  handleNewFee(event: any, state: PoolState) {
+    if (!state.isValid) return null;
+
+    state.swapFee = biginterify(event.args.fee);
+    state.adminFee = biginterify(event.args.adminFee);
+    state.defaultWithdrawFee = biginterify(event.args.withdrawFee);
+
+    return state;
+  }
+
   handleNewAdminFee(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
@@ -239,8 +253,9 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   handleStopRampA(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    const finalA = biginterify(event.args.currentA);
-    const finalTime = biginterify(event.args.time);
+    // To support IronV2 variable names I use "or" expression
+    const finalA = biginterify(event.args.currentA || event.args.A);
+    const finalTime = biginterify(event.args.time || event.args.timestamp);
 
     state.initialA = finalA;
     state.futureA = finalA;
@@ -297,14 +312,75 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
+  // Variation for IronV2. Almost the same as handleTokenSwap
+  handleTokenExchange(
+    event: any,
+    state: PoolState,
+    _2: Log,
+    blockHeader: BlockHeader,
+  ) {
+    if (!state.isValid) return null;
+    const blockTimestamp = biginterify(blockHeader.timestamp);
+
+    const transferredDx = biginterify(event.args.tokensSold);
+    const dyEvent = biginterify(event.args.tokensBought);
+    const i = event.args.soldId.toNumber();
+    const j = event.args.boughtId.toNumber();
+
+    const normalizedBalances = this.math._xp(state);
+    const x =
+      normalizedBalances[i] + transferredDx * this.tokenPrecisionMultipliers[i];
+    const y = this.math._getY(
+      state,
+      i,
+      j,
+      x,
+      normalizedBalances,
+      blockTimestamp,
+    );
+
+    if (y === null) {
+      state.isValid = false;
+      return null;
+    }
+
+    let dy = normalizedBalances[j] - y - ONE;
+    const dy_fee = (dy * state.swapFee) / this.math.FEE_DENOMINATOR;
+    dy = (dy - dy_fee) / this.tokenPrecisionMultipliers[j];
+    const _adminFee =
+      (dy_fee * state.adminFee) /
+      this.math.FEE_DENOMINATOR /
+      this.tokenPrecisionMultipliers[j];
+
+    state.balances[i] += transferredDx;
+    state.balances[j] -= dy + _adminFee;
+
+    if (dyEvent !== dy) {
+      this.logger.error(
+        `For ${this.parentName}_${this.poolConfig.name} _calculateSwap value ${dy} is not equal to ${dyEvent} event value`,
+      );
+      state.isValid = false;
+      return null;
+    }
+
+    return state;
+  }
+
   handleAddLiquidity(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
     const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
     const fees = event.args.fees.map(biginterify) as bigint[];
-    const lpTokenSupply = biginterify(event.args.lpTokenSupply);
+    const lpTokenSupply = biginterify(
+      event.args.lpTokenSupply || event.args.tokenSupply,
+    );
 
-    state.lpToken_supply = lpTokenSupply;
+    // Original Nerve emits total supply, but IronV2 the difference between supplies
+    state.lpToken_supply =
+      event.args.lpTokenSupply !== undefined
+        ? lpTokenSupply
+        : state.lpToken_supply + lpTokenSupply;
+
     for (const [i, tokenAmount] of tokenAmounts.entries()) {
       // We receive the real transferred amount. No need to check it
       state.balances[i] += tokenAmount;
@@ -318,7 +394,9 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     if (!state.isValid) return null;
 
     const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
-    const lpTokenSupply = biginterify(event.args.lpTokenSupply);
+    const lpTokenSupply = biginterify(
+      event.args.lpTokenSupply || event.args.tokenSupply,
+    );
 
     state.lpToken_supply = lpTokenSupply;
     for (const [i, tokenAmount] of tokenAmounts.entries()) {
@@ -341,7 +419,9 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   handleRemoveLiquidityImbalance(event: any, state: PoolState) {
     const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
     const fees = event.args.fees.map(biginterify) as bigint[];
-    const lpTokenSupply = biginterify(event.args.lpTokenSupply);
+    const lpTokenSupply = biginterify(
+      event.args.lpTokenSupply || event.args.tokenSupply,
+    );
 
     state.lpToken_supply = lpTokenSupply;
     for (const [i, tokenAmount] of tokenAmounts.entries()) {
