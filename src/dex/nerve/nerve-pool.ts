@@ -284,7 +284,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       state.tokenPrecisionMultipliers[tokenIndexFrom];
 
     state.balances[tokenIndexFrom] += transferredDx;
-    state.balances[tokenIndexTo] -= dy - dyAdminFee;
+    state.balances[tokenIndexTo] -= dy + dyAdminFee;
 
     if (dyEvent !== dy) {
       this.logger.error(
