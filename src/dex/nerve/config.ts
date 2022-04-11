@@ -258,11 +258,11 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           address: '0x952BDA8A83c3D5F398a686bb4e8C6DD90072d523',
           coins: [
             {
-              address: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118', // 0 - USDT.e
+              address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664', // 0 - USDC.e
               decimals: 6,
             },
             {
-              address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664', // 1 - USDC
+              address: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118', // 1 - USDT.e
               decimals: 6,
             },
             {
