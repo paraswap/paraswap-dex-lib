@@ -15,7 +15,7 @@ import {
 } from './types';
 import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
-import { biginterify, typeCastPoolState } from './utils';
+import { biginterify, typeCastPoolState, ZERO } from './utils';
 import { NervePoolMath } from './nerve-math';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
@@ -179,7 +179,11 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       futureA: biginterify(swapStorage.futureA._hex),
       initialATime: biginterify(swapStorage.initialATime._hex),
       futureATime: biginterify(swapStorage.futureATime._hex),
-      swapFee: biginterify(swapStorage.swapFee._hex),
+      // If we have swapFee or fee, use these values, otherwise set to zero
+      swapFee:
+        ((swapStorage.swapFee || swapStorage.fee) &&
+          biginterify((swapStorage.swapFee || swapStorage.fee)._hex)) ||
+        ZERO,
       adminFee: biginterify(swapStorage.adminFee._hex),
       defaultDepositFee:
         swapStorage.defaultDepositFee &&
