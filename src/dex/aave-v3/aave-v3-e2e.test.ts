@@ -188,7 +188,7 @@ describe('AaveV3 E2E', () => {
     });
   });
 
-  describe('AaveV3 AVAX', () => {
+  describe('AaveV3 AVALANCHE', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
