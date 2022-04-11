@@ -196,7 +196,7 @@ export class NervePoolMath {
     return null;
   }
 
-  protected _getY(
+  _getY(
     state: PoolState,
     tokenIndexFrom: number,
     tokenIndexTo: number,
