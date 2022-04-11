@@ -54,10 +54,6 @@ export class AaveV1
     this.aContract = new Interface(ERC20 as JsonFragment[]);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {}
 
   // Returns the list of contract adapters (name and index)
@@ -80,15 +76,7 @@ export class AaveV1
     if (aToken === null) {
       return [];
     }
-    const tokenAddress = [
-      srcToken.address.toLowerCase(),
-      destToken.address.toLowerCase(),
-    ]
-      .sort((a, b) => (a > b ? 1 : -1))
-      .join('_');
-
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    return [poolIdentifier];
+    return [`${this.dexKey}_${aToken.address}`];
   }
 
   // Returns pool prices for amounts.
@@ -127,7 +115,6 @@ export class AaveV1
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() couls be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,

@@ -77,7 +77,7 @@ describe('__DexName__ E2E', () => {
         ContractMethod.multiSwap,
         ContractMethod.megaSwap,
       ]],
-      [SwapSide.BUY: [
+      [SwapSide.BUY, [
         ContractMethod.simpleBuy, 
         ContractMethod.buy
       ]],

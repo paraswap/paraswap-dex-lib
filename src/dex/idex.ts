@@ -74,7 +74,7 @@ export interface IDexPricing<ExchangeData> {
   readonly hasConstantPriceLargeAmounts: boolean;
 
   // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifers must be unique
+  // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
   getPoolIdentifiers(
@@ -129,7 +129,7 @@ export interface IDexPooltracker {
 // a single interface
 export interface IDex<
   ExchangeData,
-  DirectParam,
+  DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > extends IDexTxBuilder<OptimizedExchangeData, DirectParam>,
     IDexPricing<ExchangeData>,

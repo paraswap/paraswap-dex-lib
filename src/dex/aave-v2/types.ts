@@ -3,7 +3,10 @@ export type AaveV2Data = {
   isV2: boolean;
 };
 
-export type AaveV2DepositETHParams_MAINNET = [onBehalfOf: string, referralCode: number];
+export type AaveV2DepositETHParams_MAINNET = [
+  onBehalfOf: string,
+  referralCode: number,
+];
 
 export type AaveV2DepositETHParams_POLYGON = [
   lendingPool: string,

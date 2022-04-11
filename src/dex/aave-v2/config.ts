@@ -6,7 +6,7 @@ export const AaveV2Config: DexConfigMap<any> = {
     [Network.MAINNET]: {},
     [Network.POLYGON]: {},
     [Network.AVALANCHE]: {},
-  }
+  },
 };
 
 export const Adapters: {

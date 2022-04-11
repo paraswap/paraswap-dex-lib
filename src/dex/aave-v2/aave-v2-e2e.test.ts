@@ -28,14 +28,8 @@ describe('AaveV2 E2E', () => {
     const USDT = tokens['USDT'];
     const aUSDT = aaveV2GetToken(network, 'aUSDT');
 
-    if (!aWETH) {
-      expect(aWETH).not.toBe(null);
-      return;
-    }
-    if (!aUSDT) {
-      expect(aUSDT).not.toBe(null);
-      return;
-    }
+    expect(aWETH).not.toBe(null);
+    expect(aUSDT).not.toBe(null);
 
     const ethAmount = '1000000000000000000';
     const aUSDTAmount: string = '2000000000';
@@ -52,10 +46,10 @@ describe('AaveV2 E2E', () => {
     [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>
       contractMethods[side].forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it('ETH -> WETH', async () => {
+          it('ETH -> aWETH', async () => {
             await testE2E(
               ETH,
-              aWETH,
+              aWETH!,
               holders['ETH'],
               ethAmount,
               side,
@@ -67,7 +61,7 @@ describe('AaveV2 E2E', () => {
           });
           it('aWETH -> ETH', async () => {
             await testE2E(
-              aWETH,
+              aWETH!,
               ETH,
               holders['aWETH'],
               ethAmount,
@@ -81,7 +75,7 @@ describe('AaveV2 E2E', () => {
           it('USDT -> aUSDT', async () => {
             await testE2E(
               USDT,
-              aUSDT,
+              aUSDT!,
               holders['USDT'],
               aUSDTAmount,
               side,
@@ -93,10 +87,184 @@ describe('AaveV2 E2E', () => {
           });
           it('aWETH -> wETH', async () => {
             await testE2E(
-              aWETH,
+              aWETH!,
               WETH,
               holders['aWETH'],
               ethAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+        });
+      }),
+    );
+  });
+  describe('AaveV2 POLYGON', () => {
+    const dexKey = 'AaveV2';
+    const network = Network.POLYGON;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new JsonRpcProvider(ProviderURL[network]);
+
+    const MATIC = tokens['MATIC'];
+    const amWMATIC = aaveV2GetToken(network, 'amWMATIC');
+    const WMATIC = tokens['WMATIC'];
+    const USDT = tokens['USDT'];
+    const amUSDT = aaveV2GetToken(network, 'amUSDT');
+
+    expect(amWMATIC).not.toBe(null);
+    expect(amUSDT).not.toBe(null);
+
+    const maticAmount = '1000000000000000000';
+    const amUSDTAmount: string = '2000000000';
+
+    const contractMethods: { [side in SwapSide]: ContractMethod[] } = {
+      [SwapSide.SELL]: [
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+      [SwapSide.BUY]: [ContractMethod.simpleBuy],
+    };
+
+    [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>
+      contractMethods[side].forEach((contractMethod: ContractMethod) => {
+        describe(`${contractMethod}`, () => {
+          it('MATIC -> amWMATIC', async () => {
+            await testE2E(
+              MATIC,
+              amWMATIC!,
+              holders['MATIC'],
+              maticAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('amWMATIC -> MATIC', async () => {
+            await testE2E(
+              amWMATIC!,
+              MATIC,
+              holders['AMWMATIC'],
+              maticAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('USDT -> amUSDT', async () => {
+            await testE2E(
+              USDT,
+              amUSDT!,
+              holders['USDT'],
+              amUSDTAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('amWMATIC -> WMATIC', async () => {
+            await testE2E(
+              amWMATIC!,
+              WMATIC,
+              holders['AMWMATIC'],
+              maticAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+        });
+      }),
+    );
+  });
+  describe('AaveV2 AVALANCHE', () => {
+    const dexKey = 'AaveV2';
+    const network = Network.AVALANCHE;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new JsonRpcProvider(ProviderURL[network]);
+
+    const AVAX = tokens['AVAX'];
+    const avWAVAX = aaveV2GetToken(network, 'avWAVAX');
+    const WAVAX = tokens['WAVAX'];
+    const USDTe = tokens['USDTe'];
+    const avUSDT = aaveV2GetToken(network, 'avUSDT');
+
+    expect(avWAVAX).not.toBe(null);
+    expect(avUSDT).not.toBe(null);
+
+    const avaxAmount = '1000000000000000000';
+    const avUSDTAmount: string = '2000000000';
+
+    const contractMethods: { [side in SwapSide]: ContractMethod[] } = {
+      [SwapSide.SELL]: [
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+      [SwapSide.BUY]: [ContractMethod.simpleBuy],
+    };
+
+    [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>
+      contractMethods[side].forEach((contractMethod: ContractMethod) => {
+        describe(`${contractMethod}`, () => {
+          it('AVAX -> avWAVAX', async () => {
+            await testE2E(
+              AVAX,
+              avWAVAX!,
+              holders['AVAX'],
+              avaxAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('avWAVAX -> AVAX', async () => {
+            await testE2E(
+              avWAVAX!,
+              AVAX,
+              holders['avWAVAX'],
+              avaxAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('USDTe -> avUSDT', async () => {
+            await testE2E(
+              USDTe,
+              avUSDT!,
+              holders['USDTe'],
+              avUSDTAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('avWAVAX -> WAVAX', async () => {
+            await testE2E(
+              avWAVAX!,
+              WAVAX,
+              holders['avWAVAX'],
+              avaxAmount,
               side,
               dexKey,
               contractMethod,

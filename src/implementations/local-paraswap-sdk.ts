@@ -89,6 +89,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       poolIdentifiers,
     );
 
+    if (!poolPrices || poolPrices.length == 0)
+      throw new Error('Fail to get price for ' + this.dexKey);
+
     const finalPrice = poolPrices[0];
     const quoteAmount = finalPrice.prices[chunks];
     const srcAmount = (
