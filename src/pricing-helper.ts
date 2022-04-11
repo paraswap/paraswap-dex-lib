@@ -86,14 +86,12 @@ export class PricingHelper {
               return resolve(null);
             }
 
-            const a = dexInstance
+            return dexInstance
               .getPoolIdentifiers(from, to, side, blockNumber)
               .then(resolve, reject)
               .finally(() => {
                 clearTimeout(timer);
               });
-
-            return a;
           });
         } catch (e) {
           this.logger.error(`Error_${key}_getPoolIdentifiers:`, e);
