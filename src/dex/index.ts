@@ -85,7 +85,7 @@ const AdapterNameAddressMap: {
   },
   [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-    PolygonAdapter02: '', // TODO
+    PolygonAdapter02: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
     PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
   },
   [Network.BSC]: {
@@ -97,11 +97,11 @@ const AdapterNameAddressMap: {
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
   [Network.AVALANCHE]: {
-    AvalancheAdapter01: '', // TODO
+    AvalancheAdapter01: '0x2DF17455B96Dde3618FD6B1C3a9AA06D6aB89347',
     AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
   [Network.FANTOM]: {
-    FantomAdapter01: '', // TODO
+    FantomAdapter01: '0x7EE3C983cA38c370F296FE14a31bEaC5b1c9a9FE',
     FantomBuyAdapter: '0x3032B8c9CF91C791A8EcC2c7831A11279f419386',
   },
 };
