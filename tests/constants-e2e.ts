@@ -205,6 +205,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
       decimals: 18,
     },
+    BBFDAI: {
+      address: '0x8f4063446f5011bc1c9f79a819efe87776f23704',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
