@@ -44,6 +44,11 @@ const bbadai = {
   decimals: 18,
 };
 
+const bbfdai = {
+  address: '0x8f4063446f5011bc1c9f79a819efe87776f23704',
+  decimals: 18,
+};
+
 const amounts = [
   BigInt('0'),
   BigInt('1000000000000000000'),
@@ -58,8 +63,8 @@ async function main() {
 
   await balancerV2.setupEventPools(blocknumber);
 
-  const from = bbausd;
-  const to = bbadai;
+  const from = DAI;
+  const to = bbfdai;
 
   const pools = await balancerV2.getPoolIdentifiers(
     from,
