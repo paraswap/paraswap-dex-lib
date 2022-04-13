@@ -15,7 +15,7 @@
     "aSymbol": "aLINK",
     "aAddress": "0x191c10aa4af7c30e871e70c95db0e4eb77237530",
     "address": "0x5947bb275c521040051d82396192181b413227a3",
-    "decimals": 6
+    "decimals": 18
   },
   {
     "aSymbol": "aUSDT",
@@ -26,7 +26,7 @@
   {
     "aSymbol": "aUSDC",
     "aAddress": "0x625e7708f30ca75bfd92586e17077590c60eb4cd",
-    "address": "0x8b2f3e2851815b4ef4de78153210ff6c01234cf1",
+    "address": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
     "decimals": 6
   },
   {
