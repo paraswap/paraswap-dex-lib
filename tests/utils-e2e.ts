@@ -31,6 +31,7 @@ const DEPLOYER_ADDRESS: { [nid: number]: string } = {
   [Network.MAINNET]: '0xbe0eb53f46cd790cd13851d5eff43d12404d33e8',
   [Network.BSC]: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
   [Network.POLYGON]: '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
+  [Network.FANTOM]: '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
   [Network.AVALANCHE]: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
 };
 
@@ -38,7 +39,8 @@ const MULTISIG: { [nid: number]: string } = {
   [Network.MAINNET]: '0x36fEDC70feC3B77CAaf50E6C524FD7e5DFBD629A',
   [Network.BSC]: '0xf14bed2cf725E79C46c0Ebf2f8948028b7C49659',
   [Network.POLYGON]: '0x46DF4eb6f7A3B0AdF526f6955b15d3fE02c618b7',
-  [Network.AVALANCHE]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
+  [Network.FANTOM]: '0xECaB2dac955b94e49Ec09D6d68672d3B397BbdAd',
+  [Network.AVALANCHE]: '0x1e2ECA5e812D08D2A7F8664D69035163ff5BfEC2',
 };
 
 class APIParaswapSDK implements IParaSwapSDK {
@@ -180,6 +182,7 @@ export async function testE2E(
     const deployTx = await ts.simulate(
       deployAdapterParams(adapterBytecode, network),
     );
+
     expect(deployTx.success).toEqual(true);
     const adapterAddress =
       deployTx.transaction.transaction_info.contract_address;
