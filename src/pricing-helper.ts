@@ -86,7 +86,7 @@ export class PricingHelper {
               return resolve(null);
             }
 
-            dexInstance
+            return dexInstance
               .getPoolIdentifiers(from, to, side, blockNumber)
               .then(resolve, reject)
               .finally(() => {
@@ -99,6 +99,7 @@ export class PricingHelper {
         }
       }),
     );
+
     return dexKeys.reduce(
       (
         acc: { [dexKey: string]: string[] | null },
