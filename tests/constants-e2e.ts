@@ -291,6 +291,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x613a489785C95afEB3b404CC41565cCff107B6E0',
       decimals: 18,
     },
+    TETU: {
+      address: '0x255707B70BF90aa112006E1b07B9AeA6De021424',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -505,6 +509,7 @@ export const Holders: {
     KNC: '0x41Af7fd16dFC29bdA8D8aAA4CeFfC0E8046992eC',
     jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
     RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
+    TETU: '0x25864a712c80d33ba1ad7c23cffa18b46f2fc00c',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
