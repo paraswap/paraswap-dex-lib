@@ -309,6 +309,61 @@ describe('IronV2', () => {
       });
     });
   });
+
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new JsonRpcProvider(ProviderURL[network]);
+    describe('simpleSwap', () => {
+      const contractMethod = ContractMethod.simpleSwap;
+      it('SELL USDC -> FUSDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.FUSDT,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('multiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+      it('SELL USDC -> fUSDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.fUSDT,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('megaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+      it('SELL USDC -> fUSDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.fUSDT,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });
 
 describe('Saddle', () => {
@@ -321,7 +376,7 @@ describe('Saddle', () => {
     const provider = new JsonRpcProvider(ProviderURL[network]);
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
-      it('SELL FEI -> FRAX', async () => {
+      it('SELL FEI -> newFRAX', async () => {
         await testE2E(
           tokens.FEI,
           tokens.newFRAX,
@@ -398,6 +453,61 @@ describe('Saddle', () => {
           tokens.renBTC,
           holders.WBTC,
           '100000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new JsonRpcProvider(ProviderURL[network]);
+    describe('simpleSwap', () => {
+      const contractMethod = ContractMethod.simpleSwap;
+      it('SELL USDC -> FRAX', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.FRAX,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('multiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+      it('SELL USDC -> FRAX', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.FRAX,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('megaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+      it('SELL USDC -> FRAX', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.FRAX,
+          holders.USDC,
+          '111000000',
           SwapSide.SELL,
           dexKey,
           contractMethod,

@@ -279,34 +279,34 @@ export const NerveConfig: DexConfigMap<DexParams> = {
         },
       },
     },
-    // [Network.FANTOM]: {
-    //   poolConfigs: {
-    //     IS3USD_FANTOM: {
-    //       name: 'IS3USD_FANTOM',
-    //       address: '0x952BDA8A83c3D5F398a686bb4e8C6DD90072d523',
-    //       coins: [
-    //         {
-    //           address: '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', // 0 - USDC
-    //           decimals: 6,
-    //         },
-    //         {
-    //           address: '0x049d68029688eAbF473097a2fC38ef61633A3C7A', // 0 - fUSDT
-    //           decimals: 6,
-    //         },
-    //         {
-    //           address: '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E', // 0 - DAI
-    //           decimals: 18,
-    //         },
-    //       ],
-    //       isMetapool: false,
-    //       isUSDPool: true,
-    //       lpToken: {
-    //         address: '0x260b3e40c714ce8196465ec824cd8bb915081812',
-    //         decimals: 18,
-    //       },
-    //     },
-    //   },
-    // },
+    [Network.FANTOM]: {
+      poolConfigs: {
+        IS3USD_FANTOM: {
+          name: 'IS3USD_FANTOM',
+          address: '0x952BDA8A83c3D5F398a686bb4e8C6DD90072d523',
+          coins: [
+            {
+              address: '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', // 0 - USDC
+              decimals: 6,
+            },
+            {
+              address: '0x049d68029688eAbF473097a2fC38ef61633A3C7A', // 0 - fUSDT
+              decimals: 6,
+            },
+            {
+              address: '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E', // 0 - DAI
+              decimals: 18,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0x260b3e40c714ce8196465ec824cd8bb915081812',
+            decimals: 18,
+          },
+        },
+      },
+    },
   },
   Saddle: {
     [Network.MAINNET]: {
@@ -413,30 +413,30 @@ export const NerveConfig: DexConfigMap<DexParams> = {
         },
       },
     },
-    // [Network.FANTOM]: {
-    //   poolConfigs: {
-    //     FtmUSD: {
-    //       name: 'FtmUSD',
-    //       address: '0xBea9F78090bDB9e662d8CB301A00ad09A5b756e9',
-    //       coins: [
-    //         {
-    //           address: '0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355', // 0 - FRAX
-    //           decimals: 18,
-    //         },
-    //         {
-    //           address: '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', // 1 - USDC
-    //           decimals: 6,
-    //         },
-    //       ],
-    //       isMetapool: false,
-    //       isUSDPool: true,
-    //       lpToken: {
-    //         address: '0xc969dd0a7ab0f8a0c5a69c0839db39b6c928bc08',
-    //         decimals: 18,
-    //       },
-    //     },
-    //   },
-    // },
+    [Network.FANTOM]: {
+      poolConfigs: {
+        FtmUSD: {
+          name: 'FtmUSD',
+          address: '0xBea9F78090bDB9e662d8CB301A00ad09A5b756e9',
+          coins: [
+            {
+              address: '0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355', // 0 - FRAX
+              decimals: 18,
+            },
+            {
+              address: '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', // 1 - USDC
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0xc969dd0a7ab0f8a0c5a69c0839db39b6c928bc08',
+            decimals: 18,
+          },
+        },
+      },
+    },
   },
 };
 
@@ -463,5 +463,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter02', index: 8 }],
+  },
+  [Network.FANTOM]: {
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 7 }],
   },
 };

@@ -322,6 +322,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x049d68029688eabf473097a2fc38ef61633a3c7a',
       decimals: 6,
     },
+    FRAX: {
+      address: '0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355',
+      decimals: 18,
+    },
   },
   [Network.BSC]: {
     DAI: {
@@ -551,6 +555,7 @@ export const Holders: {
     FUSDT: '0xca436e14855323927d6e6264470ded36455fc8bd',
     aFanUSDT: '0xb0c9c5b5211de3a75b61bb798887b76accd64193',
     aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
+    FRAX: '0x4423ac71f53ca92e2f2be5917a9c2468e7412f4a',
   },
   [Network.BSC]: {
     DAI: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
