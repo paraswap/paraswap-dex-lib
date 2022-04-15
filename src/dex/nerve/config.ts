@@ -1,11 +1,11 @@
 import { SwapSide } from 'paraswap-core';
-import type { AbiItem } from 'web3-utils';
 import { AdapterMappings, DexParams } from './types';
 import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
-const nervePoolABI = require('../../abi/nerve/nerve-pool.json');
-const axialPoolABI = require('../../abi/nerve/axial-pool.json');
-const ironV2PoolABI = require('../../abi/nerve/iron-v2-pool.json');
+import nervePoolABI from '../../abi/nerve/nerve-pool.json';
+import axialPoolABI from '../../abi/nerve/axial-pool.json';
+import ironV2PoolABI from '../../abi/nerve/iron-v2-pool.json';
+import { JsonFragment } from '@ethersproject/abi';
 
 export const threePoolName = 'ThreePool';
 
@@ -440,7 +440,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
   },
 };
 
-export const dexKeyToABIMap: Record<string, AbiItem[]> = {
+export const dexKeyToABIMap: Record<string, JsonFragment[]> = {
   Nerve: nervePoolABI,
   Axial: axialPoolABI,
   IronV2: ironV2PoolABI,

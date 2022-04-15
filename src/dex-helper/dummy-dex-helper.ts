@@ -97,7 +97,7 @@ export class DummyDexHelper implements IDexHelper {
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
   web3Provider: Web3;
-  getTokenUSDPrice: (token: Token, amount: bigint) => number;
+  getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
   constructor(network: number) {
     this.cache = new DummyCache();
@@ -112,7 +112,7 @@ export class DummyDexHelper implements IDexHelper {
     this.blockManager = new DummyBlockManager();
     this.getLogger = name => log4js.getLogger(name);
     // For testing use only full parts like 1, 2, 3 ETH, not 0.1 ETH etc
-    this.getTokenUSDPrice = (token, amount) =>
+    this.getTokenUSDPrice = async (token, amount) =>
       Number(amount / BigInt(10 ** token.decimals));
   }
 }

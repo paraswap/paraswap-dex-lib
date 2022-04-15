@@ -17,5 +17,5 @@ export interface IDexHelper {
   web3Provider: Web3;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
-  getTokenUSDPrice: (token: Token, amount: bigint) => number;
+  getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 }

@@ -9,7 +9,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-const nervePoolABIDefault = require('../../abi/nerve/nerve-pool.json');
+import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
 import { wrapETH, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -94,7 +94,7 @@ export class Nerve
   }
 
   async getStates(
-    pools?: NerveEventPool[],
+    pools?: EventPoolOrMetapool[],
     blockNumber?: number,
   ): Promise<DeepReadonly<{ state: PoolState; pool: EventPoolOrMetapool }[]>> {
     const _pools = pools === undefined ? this.allPools : pools;
@@ -370,7 +370,7 @@ export class Nerve
                 biginterify(10) ** pool.math.POOL_PRECISION_DECIMALS,
             );
           } else {
-            priceInUSD = this.dexHelper.getTokenUSDPrice(
+            priceInUSD = await this.dexHelper.getTokenUSDPrice(
               {
                 // I assume that the first indexed token is the most popular
                 address: pool.tokens[0].address,

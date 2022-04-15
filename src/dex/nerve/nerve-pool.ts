@@ -1,9 +1,8 @@
 import _ from 'lodash';
-import { Interface } from '@ethersproject/abi';
+import { Interface, JsonFragment } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import type { AbiItem } from 'web3-utils';
-const nervePoolABI = require('../../abi/nerve/nerve-pool.json');
-const erc20ABI = require('../../abi/erc20.json');
+import erc20ABI from '../../abi/erc20.json';
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -43,7 +42,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     protected poolName: string,
     public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
       .poolConfigs[poolName],
-    protected poolABI: AbiItem[] = dexKeyToABIMap[parentName],
+    protected poolABI: JsonFragment[] = dexKeyToABIMap[parentName],
   ) {
     super(`${parentName}_${poolConfig.name}`, logger);
     this.math = new NervePoolMath(this.name, this.logger);

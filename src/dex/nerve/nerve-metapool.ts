@@ -14,7 +14,8 @@ import { Adapters, NerveConfig, threePoolName } from './config';
 import { BlockHeader } from 'web3-eth';
 import { DeepReadonly } from 'ts-essentials';
 import { typeCastMetapoolState } from './utils';
-const nerveMetapoolABIDefault = require('../../abi/nerve/nerve-metapool.json');
+import nerveMetapoolABIDefault from '../../abi/nerve/nerve-metapool.json';
+import { JsonFragment } from '@ethersproject/abi';
 
 export class NerveEventMetapool extends NerveEventPool {
   basePool: NerveEventPool;
@@ -30,7 +31,7 @@ export class NerveEventMetapool extends NerveEventPool {
     protected poolName: string,
     public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
       .poolConfigs[poolName],
-    protected poolABI: AbiItem[] = nerveMetapoolABIDefault,
+    protected poolABI: JsonFragment[] = nerveMetapoolABIDefault,
     BasePool: new (
       parentName: string,
       network: number,
