@@ -111,7 +111,6 @@ export const NerveConfig: DexConfigMap<DexParams> = {
       },
     },
   },
-
   Axial: {
     [Network.AVALANCHE]: {
       poolConfigs: {
