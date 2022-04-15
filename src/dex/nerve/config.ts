@@ -109,6 +109,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
         //   lpTokenAddress: '0x870ee4d19c12A789c61de69E3E5eFb42383E4434',
         // },
       },
+      abi: nervePoolABI,
     },
   },
   Axial: {
@@ -219,6 +220,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
       },
+      abi: axialPoolABI,
     },
   },
   IronV2: {
@@ -249,6 +251,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
       },
+      abi: ironV2PoolABI,
     },
     [Network.AVALANCHE]: {
       poolConfigs: {
@@ -277,6 +280,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
       },
+      abi: ironV2PoolABI,
     },
     [Network.FANTOM]: {
       poolConfigs: {
@@ -305,6 +309,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
       },
+      abi: ironV2PoolABI,
     },
   },
   Saddle: {
@@ -411,6 +416,8 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
       },
+      // The same as axial
+      abi: axialPoolABI,
     },
     [Network.FANTOM]: {
       poolConfigs: {
@@ -435,16 +442,10 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
       },
+      // The same as axial
+      abi: axialPoolABI,
     },
   },
-};
-
-export const dexKeyToABIMap: Record<string, JsonFragment[]> = {
-  Nerve: nervePoolABI,
-  Axial: axialPoolABI,
-  IronV2: ironV2PoolABI,
-  // The same as axial
-  Saddle: axialPoolABI,
 };
 
 export const NERVE_CHUNKS = 10;

@@ -12,7 +12,7 @@ import {
   PoolOrMetapoolState,
   PoolState,
 } from './types';
-import { dexKeyToABIMap, NerveConfig } from './config';
+import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
 import { biginterify, ONE, typeCastPoolState, ZERO } from './utils';
 import { NervePoolMath } from './nerve-math';
@@ -42,7 +42,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     protected poolName: string,
     public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
       .poolConfigs[poolName],
-    protected poolABI: JsonFragment[] = dexKeyToABIMap[parentName],
+    protected poolABI: JsonFragment[] = NerveConfig[parentName][network].abi,
   ) {
     super(`${parentName}_${poolConfig.name}`, logger);
     this.math = new NervePoolMath(this.name, this.logger);

@@ -1,3 +1,4 @@
+import { JsonFragment } from '@ethersproject/abi';
 import type { DeepReadonly } from 'ts-essentials';
 import type { BlockHeader } from 'web3-eth';
 import type { Address, Log, Token } from '../../types';
@@ -53,6 +54,7 @@ export type NervePoolSwapParams = [
 
 export type DexParams = {
   poolConfigs: Record<string, NervePoolConfig>;
+  abi: JsonFragment[];
 };
 
 export type AdapterMappings = {
