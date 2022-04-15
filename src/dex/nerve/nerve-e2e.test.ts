@@ -336,7 +336,7 @@ describe('IronV2', () => {
       it('SELL USDC -> fUSDT', async () => {
         await testE2E(
           tokens.USDC,
-          tokens.fUSDT,
+          tokens.FUSDT,
           holders.USDC,
           '111000000',
           SwapSide.SELL,
@@ -352,7 +352,7 @@ describe('IronV2', () => {
       it('SELL USDC -> fUSDT', async () => {
         await testE2E(
           tokens.USDC,
-          tokens.fUSDT,
+          tokens.FUSDT,
           holders.USDC,
           '111000000',
           SwapSide.SELL,
