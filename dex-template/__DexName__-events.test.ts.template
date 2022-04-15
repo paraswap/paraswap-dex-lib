@@ -6,6 +6,7 @@ import { __DexName__Config } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
+import { PoolState } from './types';
 import axios from 'axios';
 
 /*
@@ -50,7 +51,7 @@ async function fetchPoolState(
   __DexNameCamel__Pools: __DexName__EventPool,
   blockNumber: number,
   poolAddress: string,
-): Promise<PoolStateType> {
+): Promise<PoolState> {
   // TODO: complete me!
 }
 
@@ -61,7 +62,7 @@ describe('__DexName__ Event', function () {
 
   describe('__DexName__EventPool', function () {
     Object.keys(blockNumbers).forEach((event: string) => {
-      blockNumbers[event].forEach(([blockNumber, poolAddress]) => {
+      blockNumbers[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
           const logger = dexHelper.getLogger(dexKey);
@@ -69,8 +70,6 @@ describe('__DexName__ Event', function () {
           const __DexNameCamel__Pools = new __DexName__EventPool(
             dexKey,
             network,
-            config.vaultAddress,
-            config.subgraphURL,
             dexHelper,
             logger,
           );

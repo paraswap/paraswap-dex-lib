@@ -232,8 +232,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   JulSwap: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/subgraph',
+      // subgraphURL:
+      //   'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/subgraph',
       factoryAddress: '0x553990f2cba90272390f62c5bdb1681ffc899675',
       initCode:
         '0xb1e98e21a5335633815a8cfb3b580071c2e4561c50afd57a8746def9ed890b18',
@@ -435,8 +435,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   StreetSwap: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
+      // subgraphURL:
+      //   'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
       factoryAddress: '0xaC653cE27E04C6ac565FD87F18128aD33ca03Ba2',
       initCode:
         '0x0b3961eeccfbf746d2d5c59ee3c8ae3a5dcf8dc9b0dfb6f89e1e8ca0b32b544b',

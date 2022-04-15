@@ -1,0 +1,44 @@
+[
+  {
+    "aSymbol": "avWETH",
+    "aAddress": "0x53f7c5869a859f0aec3d334ee8b4cf01e3492f21",
+    "address": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "avDAI",
+    "aAddress": "0x47afa96cdc9fab46904a55a6ad4bf6660b53c38a",
+    "address": "0xd586e7f844cea2f87f50152665bcbc2c279d8d70",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "avUSDT",
+    "aAddress": "0x532e6537fea298397212f09a61e03311686f548e",
+    "address": "0xc7198437980c041c805a1edcba50c1ce5db95118",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "avUSDC",
+    "aAddress": "0x46a51127c3ce23fb7ab1de06226147f446e4a857",
+    "address": "0xa7d7079b0fead91f3e65f86e8915cb59c1a4c664",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "avAAVE",
+    "aAddress": "0xd45b7c061016102f9fa220502908f2c0f1add1d7",
+    "address": "0x63a72806098bd3d9520cc43356dd78afe5d386d9",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "avWBTC",
+    "aAddress": "0x686bef2417b6dc32c50a3cbfbcc3bb60e1e9a15d",
+    "address": "0x50b7545627a5162f82a992c33b87adc75187b218",
+    "decimals": 8
+  },
+  {
+    "aSymbol": "avWAVAX",
+    "aAddress": "0xdfe521292ece2a4f44242efbcd66bc594ca9714b",
+    "address": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+    "decimals": 18
+  }
+]
