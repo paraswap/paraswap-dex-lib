@@ -191,6 +191,9 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xa47c8bf37f92abed4a126bda807a7b7498661acd',
       decimals: 18,
     },
+    SAITAMA: {
+      address: '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f',
+      decimals: 9,
     BBAUSDT: {
       // bpt of USDT Linear Pool
       address: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
@@ -487,6 +490,7 @@ export const Holders: {
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
     jEUR: '0x4f0CF2F63913524b85c1126AB7eE7957857f3482',
     UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
+    SAITAMA: '0x763d5d93f27615aac852b70549f5877b92193864',
     aETH: '0xc03c4476fbe25138bf724fa1b95551c6e6b8fd2c',
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
