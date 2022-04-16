@@ -63,7 +63,7 @@ interface UniswapV2PoolOrderedParams {
   exchange: string;
 }
 
-interface UniswapV2PoolState {
+export interface UniswapV2PoolState {
   reserves0: string;
   reserves1: string;
   feeCode: number;

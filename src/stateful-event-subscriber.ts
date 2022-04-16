@@ -180,7 +180,7 @@ export abstract class StatefulEventSubscriber<State>
     return null;
   }
 
-  // Returs the last set state. The state might be invalid or not updated.
+  // Returns the last set state. The state might be invalid or not updated.
   getStaleState(): DeepReadonly<State> | null {
     return this.state;
   }

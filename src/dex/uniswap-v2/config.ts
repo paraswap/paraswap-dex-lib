@@ -556,14 +556,4 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 10,
     },
   },
-  TetuSwap: {
-    [Network.POLYGON]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/tetu-io/tetu-swap',
-      factoryAddress: '0x684d8c187be836171a1Af8D533e4724893031828',
-      initCode:
-        '0x9dd68abe415b704148c6c3d8eb18d3d1bdce7546a0b4710eadacb3dbb8392014',
-      poolGasCost: 1000 * 1000, // TetuSwap use SmartVault deposits / withdrawals during swap, so its costly
-      feeCode: 10,
-    },
-  },
 };

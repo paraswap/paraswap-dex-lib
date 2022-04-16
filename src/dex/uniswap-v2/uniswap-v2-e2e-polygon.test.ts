@@ -1236,11 +1236,12 @@ describe('UniswapV2 E2E Polygon', () => {
     });
   });
 
-  // TODO remove skip, only
-  describe.only('TetuSwap', () => {
-    // describe('TetuSwap', () => {
+  describe('TetuSwap', () => {
     const dexKey = 'TetuSwap';
     jest.setTimeout(30000);
+
+    const MATIC_amount = '100000000000000000000'; // 100 MATIC
+    const TETU_amount = '1000000000000000000000'; // 1000 TETU
 
     describe('simpleSwap', () => {
       it('MATIC -> TOKEN', async () => {
@@ -1248,7 +1249,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.MATIC,
           tokens.TETU,
           holders.MATIC,
-          '100000000000000000000',
+          MATIC_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1262,7 +1263,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.TETU,
           tokens.MATIC,
           holders.TETU,
-          '1000000000000000000',
+          TETU_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1274,9 +1275,9 @@ describe('UniswapV2 E2E Polygon', () => {
       it('Token -> Token', async () => {
         await testE2E(
           tokens.TETU,
-          tokens.DAI,
+          tokens.USDC,
           holders.TETU,
-          '1000000000',
+          TETU_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1291,7 +1292,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.MATIC,
           tokens.TETU,
           holders.MATIC,
-          '100000000000000000000',
+          MATIC_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -1305,7 +1306,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.TETU,
           tokens.MATIC,
           holders.TETU,
-          '1000000000000000000',
+          TETU_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -1317,9 +1318,9 @@ describe('UniswapV2 E2E Polygon', () => {
       it('Token -> Token', async () => {
         await testE2E(
           tokens.TETU,
-          tokens.DAI,
+          tokens.USDC,
           holders.TETU,
-          '1000000000',
+          TETU_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -1334,7 +1335,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.MATIC,
           tokens.TETU,
           holders.MATIC,
-          '100000000000000000000',
+          MATIC_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,
@@ -1348,7 +1349,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.TETU,
           tokens.MATIC,
           holders.TETU,
-          '1000000000000000000',
+          TETU_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,
@@ -1360,9 +1361,9 @@ describe('UniswapV2 E2E Polygon', () => {
       it('Token -> Token', async () => {
         await testE2E(
           tokens.TETU,
-          tokens.DAI,
+          tokens.USDC,
           holders.TETU,
-          '1000000000',
+          TETU_amount,
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,

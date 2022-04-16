@@ -36,6 +36,7 @@ import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
+import { TetuSwap } from './uniswap-v2/tetuswap';
 
 const LegacyDexes = [
   Curve,
@@ -70,6 +71,7 @@ const Dexes = [
   KyberDmm,
   Weth,
   MakerPsm,
+  TetuSwap,
 ];
 
 const AdapterNameAddressMap: {
