@@ -16,9 +16,13 @@ export const TetuSwapConfig: DexConfigMap<DexParams> = {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/tetu-io/tetu-swap',
       factoryAddress: '0x684d8c187be836171a1Af8D533e4724893031828',
       router: '0xBCA055F25c3670fE0b1463e8d470585Fe15Ca819',
+      // To PR reviewer:
+      // init code changed after pair #14 at TetuSwap due proxy updates
+      // can it brake any features and how to do the best with it?
       initCode:
-        '0x9dd68abe415b704148c6c3d8eb18d3d1bdce7546a0b4710eadacb3dbb8392014', // Create2 feature might be broken at TetuSwap due proxy updates
-      poolGasCost: 2000 * 1000, // TetuSwap use SmartVault deposits / withdrawals during swap, so its costly
+        '0x9dd68abe415b704148c6c3d8eb18d3d1bdce7546a0b4710eadacb3dbb8392014', // init code for pairs #0-#14 and up
+      // initCode: 'e056de145445a04a03aec762fdf145d748a50b3219721fa209c4c69db5c6cb7a', // init code for pairs #15 and up
+      poolGasCost: 1000 * 1000, // TetuSwap use SmartVault deposits / withdrawals during swap, so its costly
       feeCode: 10,
     },
   },
