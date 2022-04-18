@@ -191,6 +191,9 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xa47c8bf37f92abed4a126bda807a7b7498661acd',
       decimals: 18,
     },
+    SAITAMA: {
+      address: '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f',
+      decimals: 9,
     BBAUSDT: {
       // bpt of USDT Linear Pool
       address: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
@@ -203,6 +206,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     },
     BBAUSD: {
       address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+      decimals: 18,
+    },
+    BBFDAI: {
+      address: '0x8f4063446f5011bc1c9f79a819efe87776f23704',
       decimals: 18,
     },
   },
@@ -359,6 +366,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xde3A24028580884448a5397872046a019649b084',
       decimals: 6,
     },
+    USDt: {
+      address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
+      decimals: 6,
+    },
     WAVAX: {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
@@ -483,6 +494,7 @@ export const Holders: {
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
     jEUR: '0x4f0CF2F63913524b85c1126AB7eE7957857f3482',
     UST: '0xf16e9b0d03470827a95cdfd0cb8a8a3b46969b91',
+    SAITAMA: '0x763d5d93f27615aac852b70549f5877b92193864',
     aETH: '0xc03c4476fbe25138bf724fa1b95551c6e6b8fd2c',
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
@@ -508,6 +520,9 @@ export const Holders: {
     AMWETH: '0x6f1c28c40b5fed4fb546f85959ae2f7c16365cad',
     KNC: '0x41Af7fd16dFC29bdA8D8aAA4CeFfC0E8046992eC',
     jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
+    aUSDT: '0x027ffd3c119567e85998f4e6b9c3d83d5702660c',
+    aPolUSDT: '0x941da3d6759147736456cee36647213183079337',
+    aPolWMATIC: '0x7d96a6f41fd31c7624f7069415be58b5e3576d34',
     RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
     TETU: '0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c',
   },
@@ -516,6 +531,8 @@ export const Holders: {
     WFTM: '0x4901C740607E415685b4d09E4Aa960329cd183Ca',
     USDC: '0xA2bB859a42D6E7f658a82c37702489b442f34b85',
     FUSDT: '0xca436e14855323927d6e6264470ded36455fc8bd',
+    aFanUSDT: '0xb0c9c5b5211de3a75b61bb798887b76accd64193',
+    aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
   },
   [Network.BSC]: {
     DAI: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
@@ -546,6 +563,9 @@ export const Holders: {
     MIM: '0xad8f72a7612bb91b2dfab09e54464aaa5150914e',
     TSD: '0x691A89db352B72dDb249bFe16503494eC0D920A4',
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
+    aAvaUSDT: '0x4cf82fe8e0072d546729d005b08faeeab8528cb7',
+    USDt: '0x876eabf441b2ee5b5b0554fd502a8e0600950cfa',
+    aAvaWAVAX: '0xd3117031ed778fe1cf2b153b7573173c7565f33a',
   },
 };
 

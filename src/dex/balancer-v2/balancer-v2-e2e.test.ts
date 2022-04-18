@@ -160,6 +160,19 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+      it('MAIN TOKEN -> BPT, ERC4626 Linear Pool', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['BBFDAI'],
+          holders['DAI'],
+          '20000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
     });
 
     describe('Multiswap', () => {
@@ -235,6 +248,19 @@ describe('BalancerV2 E2E', () => {
           tokens['BBAUSD'],
           tokens['BBAUSDT'],
           holders['BBAUSD'],
+          '20000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('MAIN TOKEN -> BPT, ERC4626 Linear Pool', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['BBFDAI'],
+          holders['DAI'],
           '20000000000',
           SwapSide.SELL,
           dexKey,
