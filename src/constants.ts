@@ -12,8 +12,63 @@ export const MAX_INT =
 export const MIN_INT =
   '-57896044618658097711785492504343953926634992332820282019728792003956564819967';
 
+// BIs - BigIntegers
+export const BIs = {
+  '-1': BigInt(-1),
+  '0': BigInt(0),
+  '2': BigInt(2),
+  '3': BigInt(3),
+  '4': BigInt(4),
+  '5': BigInt(5),
+  '6': BigInt(6),
+  '7': BigInt(7),
+  '8': BigInt(8),
+  '9': BigInt(9),
+  '11': BigInt(11),
+  '12': BigInt(12),
+  '13': BigInt(13),
+  '14': BigInt(14),
+  '15': BigInt(15),
+  '20': BigInt(20),
+  '30': BigInt(30),
+  '93': BigInt(93),
+  '99': BigInt(99),
+  '101': BigInt(101),
+  '107': BigInt(107),
+  '160': BigInt(160),
+  '161': BigInt(161),
+  '248': BigInt(248),
+  POWS: {
+    0: BigInt(10 ** 0),
+    1: BigInt(10 ** 1),
+    2: BigInt(10 ** 2),
+    3: BigInt(10 ** 3),
+    4: BigInt(10 ** 4),
+    5: BigInt(10 ** 5),
+    6: BigInt(10 ** 6),
+    7: BigInt(10 ** 7),
+    8: BigInt(10 ** 8),
+    9: BigInt(10 ** 9),
+    10: BigInt(10 ** 10),
+    11: BigInt(10 ** 11),
+    12: BigInt(10 ** 12),
+    13: BigInt(10 ** 13),
+    14: BigInt(10 ** 14),
+    15: BigInt(10 ** 15),
+    16: BigInt(10 ** 16),
+    17: BigInt(10 ** 17),
+    18: BigInt(10 ** 18),
+
+    // The last two are used in the BalancerV2 math
+    19: BigInt(10 ** 19),
+    20: BigInt(10 ** 20),
+    36: BigInt('1' + '0000000000' + '0000000000' + '0000000000' + '000000'),
+  },
+  MAX_INT: BigInt(MAX_INT),
+  MAX_UINT: BigInt(2) ** BigInt(256) - BigInt(1),
+};
+
 export const MAX_BLOCKS_HISTORY = 7;
-export const MAX_UINT_BIGINT = BigInt(2) ** BigInt(256) - BigInt(1);
 
 export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 
