@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Network, SwapSide } from '../src/constants';
+import { Network, SwapSide, BIs } from '../src/constants';
 import { BalancerV2 } from '../src/dex/balancer-v2/balancer-v2';
 import { DummyDexHelper } from '../src/dex-helper/index';
 
@@ -44,11 +44,7 @@ const bbadai = {
   decimals: 18,
 };
 
-const amounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
+const amounts = [BIs[0], BIs.POWS[18], BigInt('2000000000000000000')];
 
 async function main() {
   const dexHelper = new DummyDexHelper(Network.MAINNET);
@@ -67,7 +63,7 @@ async function main() {
     SwapSide.SELL,
     blocknumber,
   );
-  console.log('WETH <> DAI Pool Ideintifiers: ', pools);
+  console.log('WETH <> DAI Pool Identifiers: ', pools);
 
   const prices = await balancerV2.getPricesVolume(
     from,
