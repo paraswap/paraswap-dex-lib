@@ -65,3 +65,11 @@ export function getDexKeysWithNetwork<T>(
     networks: Object.keys(dValue).map(n => parseInt(n)),
   }));
 }
+
+// This is needed in order to not modify existing logic and use this wrapper
+// to be safe if we receive not cached decimals
+export function getBigIntPow(decimals: number): bigint {
+  const value = (BIs.POWS as Record<number, bigint | undefined>)[decimals];
+  // It is not accurate to create 10 ** 23 and more decimals from number type
+  return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
+}
