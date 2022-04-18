@@ -1,4 +1,4 @@
-import { ETHER_ADDRESS, Network } from './constants';
+import { ETHER_ADDRESS, Network, BIs } from './constants';
 import { Address, Token, DexConfigMap } from './types';
 
 export const WethMap: { [network: number]: Address } = {

@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { Network, SwapSide, BIs } from '../../constants';
 import { BalancerV2 } from './balancer-v2';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 
@@ -26,11 +26,7 @@ const BBAUSD = {
   decimals: 18,
 };
 
-const amounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
+const amounts = [BIs[0], BIs.POWS[18], BigInt('2000000000000000000')];
 
 const dexKey = 'BalancerV2';
 
@@ -49,7 +45,7 @@ describe('BalancerV2', function () {
         SwapSide.SELL,
         blocknumber,
       );
-      console.log('WETH <> DAI Pool Ideintifiers: ', pools);
+      console.log('WETH <> DAI Pool Identifiers: ', pools);
 
       expect(pools.length).toBeGreaterThan(0);
 
@@ -95,7 +91,7 @@ describe('BalancerV2', function () {
         SwapSide.SELL,
         blocknumber,
       );
-      console.log('DAI <> BBADAI Pool Ideintifiers: ', pools);
+      console.log('DAI <> BBADAI Pool Identifiers: ', pools);
 
       expect(pools.length).toBeGreaterThan(0);
 
@@ -148,7 +144,7 @@ describe('BalancerV2', function () {
     //     SwapSide.SELL,
     //     blocknumber,
     //   );
-    //   console.log('BBAUSD <> BBADAI Pool Ideintifiers: ', pools);
+    //   console.log('BBAUSD <> BBADAI Pool Identifiers: ', pools);
 
     //   expect(pools.length).toBeGreaterThan(0);
 

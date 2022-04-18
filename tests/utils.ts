@@ -1,5 +1,5 @@
 import { PoolPrices, PoolLiquidity, Address } from '../src/types';
-import { SwapSide } from '../src/constants';
+import { BIs, SwapSide } from '../src/constants';
 
 // Assuming that the amounts are increasing at same interval, and start with 0
 export function checkPoolPrices(
@@ -10,7 +10,7 @@ export function checkPoolPrices(
 ) {
   for (const poolPrice of poolPrices) {
     expect(poolPrice.prices.length).toBe(amounts.length);
-    expect(poolPrice.prices[0]).toEqual(BigInt(0));
+    expect(poolPrice.prices[0]).toEqual(BIs[0]);
 
     poolPrice.prices.forEach(p => expect(p).toBeGreaterThanOrEqual(0));
     expect(poolPrice.unit).toBeGreaterThanOrEqual(0);
@@ -22,11 +22,11 @@ export function checkPoolPrices(
 
       //This check has 1% fudge factor to avoid slight differences causing error
       if (side === SwapSide.SELL)
-        expect(
-          (currMarginalPrice * BigInt(99)) / BigInt(100),
-        ).toBeLessThanOrEqual(prevMarginalPrice);
+        expect((currMarginalPrice * BIs[99]) / BIs.POWS[2]).toBeLessThanOrEqual(
+          prevMarginalPrice,
+        );
       else
-        expect((currMarginalPrice * BigInt(101)) / BigInt(100)).toBeGreaterThan(
+        expect((currMarginalPrice * BIs[101]) / BIs.POWS[2]).toBeGreaterThan(
           prevMarginalPrice,
         );
     }

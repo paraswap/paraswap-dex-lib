@@ -7,7 +7,7 @@ import ZRX_V2_ABI from '../../abi/zrx.v2.json';
 import ZRX_V3_ABI from '../../abi/zrx.v3.json';
 import ZRX_V4_ABI from '../../abi/zrx.v4.json';
 
-import { SwapSide } from '../../constants';
+import { BIs, SwapSide } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { ZeroXOrder } from './order';
 
@@ -228,7 +228,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAmount) +
             BigInt(order.makerAmount) -
-            BigInt(1)) /
+            BIs.POWS[0]) /
           BigInt(order.makerAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
@@ -244,7 +244,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAssetAmount) +
             BigInt(order.makerAssetAmount) -
-            BigInt(1)) /
+            BIs.POWS[0]) /
           BigInt(order.makerAssetAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);

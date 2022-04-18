@@ -25,12 +25,7 @@ import {
   UniswapV2Functions,
 } from './types';
 import { IDex } from '../../dex/idex';
-import {
-  ETHER_ADDRESS,
-  MAX_UINT,
-  Network,
-  NULL_ADDRESS,
-} from '../../constants';
+import { BIs, ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -40,6 +35,7 @@ import {
   isETHAddress,
   prependWithOx,
   WethMap,
+  getBigIntPow,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
@@ -48,8 +44,7 @@ import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 
-const MAX_UINT_BIGINT = BigInt(MAX_UINT);
-const RESERVE_LIMIT = BigInt(2) ** BigInt(112) - BigInt(1);
+const RESERVE_LIMIT = BIs[2] ** BigInt(112) - BIs.POWS[0];
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -199,8 +194,8 @@ export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
 function encodePools(pools: UniswapPool[]): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000 - fee) << BigInt(161)) +
-      (BigInt(direction ? 0 : 1) << BigInt(160)) +
+      (BigInt(10000 - fee) << BIs[161]) +
+      (BigInt(direction ? 0 : 1) << BIs[160]) +
       BigInt(address)
     ).toString();
   });
@@ -312,8 +307,8 @@ export class UniswapV2
       (BigInt(this.feeFactor) - BigInt(fee)) *
       (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= BigInt(0)) return MAX_UINT_BIGINT;
-    return BigInt(1) + numerator / denominator;
+    if (denominator <= BIs[0]) return BIs.MAX_UINT;
+    return BIs.POWS[0] + numerator / denominator;
   }
 
   async getSellPrice(
@@ -323,7 +318,7 @@ export class UniswapV2
     const { reservesIn, reservesOut, fee } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return BigInt(0);
+      return BIs[0];
     }
 
     const amountInWithFee = srcAmount * BigInt(this.feeFactor - parseInt(fee));
@@ -333,7 +328,7 @@ export class UniswapV2
     const denominator =
       BigInt(reservesIn) * BigInt(this.feeFactor) + amountInWithFee;
 
-    return denominator === BigInt(0) ? BigInt(0) : numerator / denominator;
+    return denominator === BIs[0] ? BIs[0] : numerator / denominator;
   }
 
   async getBuyPricePath(
@@ -573,8 +568,8 @@ export class UniswapV2
 
       if (!pairParam) return null;
 
-      const unitAmount = BigInt(
-        10 ** (side == SwapSide.BUY ? to.decimals : from.decimals),
+      const unitAmount = getBigIntPow(
+        side == SwapSide.BUY ? to.decimals : from.decimals,
       );
       const unit =
         side == SwapSide.BUY

@@ -12,6 +12,7 @@ import {
   SETUP_RETRY_TIMEOUT,
   FETCH_POOL_INDENTIFIER_TIMEOUT,
   FETCH_POOL_PRICES_TIMEOUT,
+  BIs,
 } from './constants';
 import { DexAdapterService } from './dex';
 import { IRouteOptimizer } from './dex/idex';
@@ -172,7 +173,7 @@ export class PricingHelper {
           return false;
         }
 
-        if (p.prices.every(pi => pi === BigInt(0))) {
+        if (p.prices.every(pi => pi === BIs[0])) {
           return false;
         }
         return true;

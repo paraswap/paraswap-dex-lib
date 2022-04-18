@@ -1,6 +1,6 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { SwapSide } from '../constants';
+import { SwapSide, BIs } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
@@ -132,7 +132,7 @@ export class Balancer
       const _srcAmount = BigInt(srcAmount);
       const totalInParam = swaps.reduce(
         (acc, swap) => acc + BigInt(swap.tokenInParam),
-        BigInt(0),
+        BIs[0],
       );
       swaps.forEach(swap => {
         swap.tokenInParam = (

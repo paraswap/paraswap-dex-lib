@@ -15,6 +15,7 @@ import {
   AugustusAddress,
   ProviderURL,
   ContractMethod,
+  BIs,
 } from '../src/constants';
 import { OptimalRate, TxObject, Address, Token } from '../src/types';
 import Erc20ABI from '../src/abi/erc20.json';
@@ -221,8 +222,8 @@ export async function testE2E(
   // Slippage to be 7%
   const minMaxAmount =
     (swapSide === SwapSide.SELL
-      ? BigInt(priceRoute.destAmount) * BigInt(93)
-      : BigInt(priceRoute.srcAmount) * BigInt(107)) / BigInt(100);
+      ? BigInt(priceRoute.destAmount) * BIs[93]
+      : BigInt(priceRoute.srcAmount) * BIs[107]) / BIs.POWS[2];
   const swapParams = await paraswap.buildTransaction(
     priceRoute,
     minMaxAmount,

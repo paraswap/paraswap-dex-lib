@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { BIs, Network, SwapSide } from '../../constants';
 import { KyberDmm } from './kyberdmm';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
@@ -14,7 +14,7 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'WBTC';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [BigInt('0'), BigInt('1000000'), BigInt('2000000')];
+const amounts = [BIs[0], BIs.POWS[6], BigInt('2000000')];
 
 const dexKey = 'KyberDmm';
 
@@ -30,10 +30,7 @@ describe('KyberDmm', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(
-      `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
-      pools,
-    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -62,10 +59,7 @@ describe('KyberDmm', function () {
       SwapSide.BUY,
       blocknumber,
     );
-    console.log(
-      `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
-      pools,
-    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 

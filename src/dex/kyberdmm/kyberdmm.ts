@@ -2,7 +2,7 @@ import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../../dex/idex';
 import _ from 'lodash';
-import { Network, SwapSide } from '../../constants';
+import { BIs, Network, SwapSide } from '../../constants';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -34,7 +34,7 @@ import { Contract } from 'web3-eth-contract';
 import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
-import { getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 import { BigNumber } from '@0x/utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
@@ -333,8 +333,8 @@ export class KyberDmm
     //   to.address.toLowerCase(),
     // ].sort((a, b) => (a > b ? 1 : -1));
 
-    const unitAmount = (
-      BigInt(10) ** BigInt(side == SwapSide.BUY ? to.decimals : from.decimals)
+    const unitAmount = getBigIntPow(
+      side == SwapSide.BUY ? to.decimals : from.decimals,
     ).toString();
 
     const tradeInfo = getTradeInfo(pool.state, blockNumber, direction);
@@ -557,15 +557,15 @@ export class KyberDmm
       feeInPrecision,
     } = priceParams;
     if (amountOut <= 0) return 0;
-    if (reserveIn <= BigInt(0) || reserveOut <= amountOut) return 0;
+    if (reserveIn <= BIs[0] || reserveOut <= amountOut) return 0;
 
     let numerator = vReserveIn * amountOut;
     let denominator = vReserveOut - amountOut;
-    const amountIn = numerator / denominator + BigInt(1);
+    const amountIn = numerator / denominator + BIs.POWS[0];
     // amountIn = floor(amountIN *PRECISION / (PRECISION - feeInPrecision));
     numerator = amountIn * PRECISION;
     denominator = PRECISION - feeInPrecision;
-    return (numerator + denominator - BigInt(1)) / denominator;
+    return (numerator + denominator - BIs.POWS[0]) / denominator;
   }
 
   private async getSellPrice(priceParams: TradeInfo, amountIn: bigint) {

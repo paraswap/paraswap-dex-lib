@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { Network, SwapSide, BIs } from '../../constants';
 import { AaveV2 } from './aave-v2';
 import {
   checkPoolsLiquidity,
@@ -20,11 +20,7 @@ describe('AaveV2', function () {
     const aUSDTSymbol = 'aUSDT';
     const aUSDT = aaveV2GetToken(network, aUSDTSymbol);
 
-    const amounts = [
-      BigInt('0'),
-      BigInt('1000000000000000000'),
-      BigInt('2000000000000000000'),
-    ];
+    const amounts = [BIs[0], BIs.POWS[18], BigInt('2000000000000000000')];
 
     const dexKey = 'AaveV2';
     if (!aUSDT) {
@@ -43,7 +39,7 @@ describe('AaveV2', function () {
         SwapSide.SELL,
         blocknumber,
       );
-      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 
@@ -72,7 +68,7 @@ describe('AaveV2', function () {
         SwapSide.BUY,
         blocknumber,
       );
-      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 

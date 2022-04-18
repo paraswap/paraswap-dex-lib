@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { BIs, Network, SwapSide } from '../../constants';
 import { MakerPsm } from './maker-psm';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
@@ -14,13 +14,9 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'DAI';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const tokenAAmounts = [BigInt('0'), BigInt('100000000'), BigInt('200000000')];
+const tokenAAmounts = [BIs[0], BIs.POWS[8], BigInt('200000000')];
 
-const tokenBAmounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
+const tokenBAmounts = [BIs[0], BIs.POWS[18], BigInt('2000000000000000000')];
 
 const dexKey = 'MakerPsm';
 

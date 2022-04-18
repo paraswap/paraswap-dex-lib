@@ -9,12 +9,12 @@ import {
   Address,
   Adapters,
 } from '../types';
-import { SwapSide } from '../constants';
+import { BIs, SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
 
-const OneShift14 = BigInt(1) << BigInt(14);
-const OneShift248 = BigInt(1) << BigInt(248);
+const OneShift14 = BIs.POWS[0] << BIs[14];
+const OneShift248 = BIs.POWS[0] << BIs[248];
 
 export function encodeFeePercent(
   partnerFeePercent: string,
@@ -45,7 +45,7 @@ export class PayloadEncoder {
     paths: ContractPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BigInt(0);
+    let totalNetworkFee = BIs[0];
     const paths = swaps.map(s => {
       const adapters = this.getAdapters(
         s.srcToken,
@@ -54,7 +54,7 @@ export class PayloadEncoder {
       );
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
-        BigInt(0),
+        BIs[0],
       );
       totalNetworkFee += totalPathNetworkFee;
       return {
@@ -70,7 +70,7 @@ export class PayloadEncoder {
     megaSwapPaths: ContractMegaSwapPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BigInt(0);
+    let totalNetworkFee = BIs[0];
     const megaSwapPaths = routes.map(r => {
       const { paths, networkFee } = this.getContractPathsWithNetworkFee(
         r.swaps,
@@ -96,7 +96,7 @@ export class PayloadEncoder {
       SwapSide.BUY,
     );
     let adapter = '';
-    let networkFee = BigInt(0);
+    let networkFee = BIs[0];
     let route: ContractRoute[] = [];
     swapExchanges.forEach((se: OptimalSwapExchange<any>) => {
       const [adapterAddress, index] =
@@ -180,7 +180,7 @@ export class PayloadEncoder {
     });
   }
 
-  // Find the best adapter, assign exhanges that use best adapter, filter out the
+  // Find the best adapter, assign exchanges that use best adapter, filter out the
   // exchanges that were not assigned with the best adapter, recursively call
   // getOptimalExchangeAdapterMap until swapExchanges is empty (except for BUY)
   getOptimalExchangeAdapterMap(

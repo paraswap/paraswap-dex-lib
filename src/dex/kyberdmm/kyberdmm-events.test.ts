@@ -3,7 +3,7 @@ dotenv.config();
 
 import { KyberDmmPool, KyberDmmPoolState } from './pool';
 import { KyberDmmConfig } from './config';
-import { Network } from '../../constants';
+import { BIs, Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { Tokens } from './../../../tests/constants-e2e';
@@ -38,7 +38,7 @@ const poolsParams: PoolParam[] = [
   },
   {
     address: '0xA97642500517C728cE1339A466DE0F10C19034CD',
-    ampBps: BigInt(10000),
+    ampBps: BIs.POWS[4],
     token0Symbol: 'REQ',
     token1Symbol: 'WETH',
   },

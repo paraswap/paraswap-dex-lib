@@ -9,7 +9,12 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import { isETHAddress, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import {
+  isETHAddress,
+  getDexKeysWithNetwork,
+  wrapETH,
+  getBigIntPow,
+} from '../../utils';
 import { AaveV2Data, AaveV2Param, AaveV2PoolAndWethFunctions } from './types';
 
 import WETH_GATEWAY_ABI_MAINNET from '../../abi/aave-weth-gateway.json';
@@ -131,8 +136,8 @@ export class AaveV2
     return [
       {
         prices: amounts,
-        unit: BigInt(
-          10 ** (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        unit: getBigIntPow(
+          (side === SwapSide.SELL ? destToken : srcToken).decimals,
         ),
         gasCost: isETHAddress(srcToken.address)
           ? Aave2ETHGasCost

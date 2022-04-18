@@ -2,11 +2,10 @@ import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as LinearMath from './LinearMath';
-import { BZERO } from './balancer-v2-math';
 import { BasePool } from './balancer-v2-pool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
-import { SwapSide } from '../../constants';
+import { BIs, SwapSide } from '../../constants';
 
 export enum PairTypes {
   BptToMainToken,
@@ -33,12 +32,12 @@ type LinearPoolPairData = {
 };
 
 /*
-Linear (Boosted) Pools are designed to facilitate trades between stablecoins while simultaneously forwarding much of the pool's 
-liquidity to external protocols, such as Aave. 
-One of the key features that makes trades through Boosted Pools so simple is the use of Phantom BPT. Normally when a Liquidity 
-Provider joins/exits a pool, the pool mints/burns pool tokens as needed. This is gas intensive and requires users to execute a join or exit. 
-In pools that use Phantom BPT, however, all pool tokens are minted at the time of pool creation and are held by the pool itself. 
-With Phantom BPT, Liquidity Providers use a swap (or more likely a batchSwap) to trade to or from a pool token to join or exit, respectively. 
+Linear (Boosted) Pools are designed to facilitate trades between stablecoins while simultaneously forwarding much of the pool's
+liquidity to external protocols, such as Aave.
+One of the key features that makes trades through Boosted Pools so simple is the use of Phantom BPT. Normally when a Liquidity
+Provider joins/exits a pool, the pool mints/burns pool tokens as needed. This is gas intensive and requires users to execute a join or exit.
+In pools that use Phantom BPT, however, all pool tokens are minted at the time of pool creation and are held by the pool itself.
+With Phantom BPT, Liquidity Providers use a swap (or more likely a batchSwap) to trade to or from a pool token to join or exit, respectively.
 */
 export class LinearPool extends BasePool {
   // This is the maximum token amount the Vault can hold. In regular operation, the total BPT supply remains constant
@@ -60,7 +59,7 @@ export class LinearPool extends BasePool {
   /*
     scaling factors should include rate:
     The wrapped token's scaling factor is not constant, but increases over time as the wrapped token increases in value.
-    i.e. 
+    i.e.
     scalingFactors: pool.tokens.map(({ decimals, priceRate }) =>
         MathSol.mulDownFixed(getTokenScalingFactor(decimals), priceRate)
     )
@@ -96,7 +95,7 @@ export class LinearPool extends BasePool {
     lowerTarget: bigint,
     upperTarget: bigint,
   ): bigint[] {
-    /* 
+    /*
         Linear pools allow trading between:
         wrappedToken <> mainToken
         wrappedToken <> BPT
@@ -179,7 +178,7 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = BIs[0];
           }
           amountsOut.push(amt);
         });
@@ -200,7 +199,7 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = BIs[0];
           }
           amountsOut.push(amt);
         });
@@ -215,7 +214,7 @@ export class LinearPool extends BasePool {
               upperTarget: upperTarget,
             });
           } catch (err) {
-            amt = BZERO;
+            amt = BIs[0];
           }
           amountsOut.push(amt);
         });
@@ -230,7 +229,7 @@ export class LinearPool extends BasePool {
               upperTarget: upperTarget,
             });
           } catch (err) {
-            amt = BZERO;
+            amt = BIs[0];
           }
           amountsOut.push(amt);
         });
@@ -251,7 +250,7 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = BIs[0];
           }
           amountsOut.push(amt);
         });
@@ -272,13 +271,13 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = BIs[0];
           }
           amountsOut.push(amt);
         });
         break;
       default:
-        amountsOut.push(BZERO);
+        amountsOut.push(BIs[0]);
     }
     return amountsOut;
   }
@@ -305,7 +304,7 @@ export class LinearPool extends BasePool {
 
       balances.push(poolState.tokens[t.address.toLowerCase()].balance);
       scalingFactors.push(
-        poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
+        poolState.tokens[t.address.toLowerCase()].scalingFactor || BIs[0],
       );
       return t.address;
     });
@@ -317,11 +316,11 @@ export class LinearPool extends BasePool {
       scalingFactors,
       bptIndex,
       swapFee: poolState.swapFee,
-      amp: poolState.amp || BigInt(0),
+      amp: poolState.amp || BIs[0],
       wrappedIndex: poolState.wrappedIndex || 0,
       mainIndex: poolState.mainIndex || 0,
-      lowerTarget: poolState.lowerTarget || BigInt(0),
-      upperTarget: poolState.upperTarget || BigInt(0),
+      lowerTarget: poolState.lowerTarget || BIs[0],
+      upperTarget: poolState.upperTarget || BIs[0],
     };
     return poolPairData;
   }
@@ -438,8 +437,8 @@ export class LinearPool extends BasePool {
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
-        BigInt(99)) /
-      BigInt(100);
+        BIs[99]) /
+      BIs.POWS[2];
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

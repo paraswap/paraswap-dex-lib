@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { Network, SwapSide, BIs } from '../../constants';
 import { AaveV3 } from './aave-v3';
 import {
   checkConstantPoolPrices,
@@ -15,10 +15,10 @@ import { getTokenFromASymbol } from './tokens';
   README
   ======
 
-  This test script adds tests for AaveV3 general integration 
-  with the DEX interface. The test cases below are example tests. 
+  This test script adds tests for AaveV3 general integration
+  with the DEX interface. The test cases below are example tests.
   It is recommended to add tests which cover AaveV3 specific
-  logic. 
+  logic.
 
   You can run this individual test script by running:
   `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
@@ -33,7 +33,7 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'aUSDT';
 const TokenB = getTokenFromASymbol(network, TokenBSymbol);
 
-const amounts = [BigInt('0'), BigInt('1000000'), BigInt('2000000')];
+const amounts = [BIs[0], BIs.POWS[6], BigInt('2000000')];
 
 const dexKey = 'AaveV3';
 
@@ -52,7 +52,7 @@ describe('AaveV3', function () {
           blocknumber,
         );
         console.log(
-          `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
           pools,
         );
 
@@ -87,7 +87,7 @@ describe('AaveV3', function () {
           blocknumber,
         );
         console.log(
-          `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
           pools,
         );
 
