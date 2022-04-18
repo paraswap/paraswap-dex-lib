@@ -14,7 +14,6 @@ import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { getBigIntPow } from '../utils';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
