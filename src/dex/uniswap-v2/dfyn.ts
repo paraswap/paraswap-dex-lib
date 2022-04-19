@@ -11,8 +11,6 @@ export const DfynConfig: DexConfigMap<DexParams> = {
     [Network.POLYGON]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/ss-sonic/dfyn-v4',
       factoryAddress: '0xE7Fb3e833eFE5F9c441105EB65Ef8b261266423B',
-      initCode:
-        '0xf187ed688403aa4f7acfada758d8d53698753b998a3071b06f1b777f4330eaf3',
       feeCode: 30,
     },
   },
@@ -44,7 +42,6 @@ export class Dfyn extends UniswapV2 {
       false,
       DfynConfig[dexKey][network].factoryAddress,
       DfynConfig[dexKey][network].subgraphURL,
-      DfynConfig[dexKey][network].initCode,
       DfynConfig[dexKey][network].feeCode,
       DfynConfig[dexKey][network].poolGasCost,
     );
