@@ -38,6 +38,8 @@ export const BIs = {
   '160': BigInt(160),
   '161': BigInt(161),
   '248': BigInt(248),
+  // Used on API side
+  '200000': BigInt(200 * 1000),
   POWS: {
     0: BigInt(10 ** 0),
     1: BigInt(10 ** 1),
