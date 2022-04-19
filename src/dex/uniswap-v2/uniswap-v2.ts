@@ -97,16 +97,16 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   constructor(
     protected parentName: string,
     protected dexHelper: IDexHelper,
-    private poolAddress: Address,
+    protected poolAddress: Address,
     private token0: Token,
     private token1: Token,
     // feeCode is ignored if DynamicFees is set to true
-    private feeCode: number,
+    protected feeCode: number,
     logger: Logger,
-    private dynamicFees = false,
+    protected dynamicFees = false,
     // feesMultiCallData is only used if dynamicFees is set to true
-    private feesMultiCallEntry?: { target: Address; callData: string },
-    private feesMultiCallDecoder?: (values: any[]) => number,
+    protected feesMultiCallEntry?: { target: Address; callData: string },
+    protected feesMultiCallDecoder?: (values: any[]) => number,
   ) {
     super(
       parentName +
@@ -270,27 +270,32 @@ export class UniswapV2
     return undefined;
   }
 
-  private async addPool(
+  protected async addPool(
     pair: UniswapV2Pair,
     reserves0: string,
     reserves1: string,
     feeCode: number,
     blockNumber: number,
+    eventPool?: UniswapV2EventPool,
   ) {
-    const { callEntry, callDecoder } =
-      this.getFeesMultiCallData(pair.exchange!) || {};
-    pair.pool = new UniswapV2EventPool(
-      this.dexKey,
-      this.dexHelper,
-      pair.exchange!,
-      pair.token0,
-      pair.token1,
-      feeCode,
-      this.logger,
-      this.isDynamicFees,
-      callEntry,
-      callDecoder,
-    );
+    if (eventPool) {
+      pair.pool = eventPool;
+    } else {
+      const { callEntry, callDecoder } =
+        this.getFeesMultiCallData(pair.exchange!) || {};
+      pair.pool = new UniswapV2EventPool(
+        this.dexKey,
+        this.dexHelper,
+        pair.exchange!,
+        pair.token0,
+        pair.token1,
+        feeCode,
+        this.logger,
+        this.isDynamicFees,
+        callEntry,
+        callDecoder,
+      );
+    }
 
     if (blockNumber)
       pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
