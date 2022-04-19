@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
-import { BasePool } from './balancer-v2-pool';
+import { BasePool } from './BasePool';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as StableMath from './StableMath';
 import { BZERO } from './balancer-v2-math';

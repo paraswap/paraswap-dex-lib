@@ -19,7 +19,8 @@ import {
   MAX_UINT,
   Network,
 } from '../../constants';
-import { StablePool, WeightedPool } from './balancer-v2-pool';
+import { WeightedPool } from './WeightedPool';
+import { StablePool } from './StablePool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';

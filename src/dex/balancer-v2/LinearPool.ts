@@ -3,7 +3,7 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as LinearMath from './LinearMath';
 import { BZERO } from './balancer-v2-math';
-import { BasePool } from './balancer-v2-pool';
+import { BasePool } from './BasePool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { SwapSide } from '../../constants';
