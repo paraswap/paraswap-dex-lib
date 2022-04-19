@@ -31,7 +31,7 @@ export const BI_248 = BigInt(248);
 // Used only on API side
 export const BI_200_000 = BigInt(200 * 1000);
 
-// Index represents the number of zeros after 1
+// Indexes represents the number of zeros after 1
 // We use as much as 36 zeros
 export const BI_POWS = new Array(37)
   .fill(undefined)
