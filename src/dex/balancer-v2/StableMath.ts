@@ -1,7 +1,7 @@
-import { BI_0, BI_1, BI_2, BI_POW_3 } from '../../bigint-constants';
+import { BI_0, BI_1, BI_2, BI_POWS } from '../../bigint-constants';
 import { MathSol } from './balancer-v2-math';
 
-const AMP_PRECISION = BI_POW_3;
+const AMP_PRECISION = BI_POWS[3];
 
 export function _calculateInvariant(
   amp: bigint,

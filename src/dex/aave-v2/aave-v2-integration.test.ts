@@ -10,7 +10,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { aaveV2GetToken } from './tokens';
-import { BI_0, BI_POW_18 } from '../../bigint-constants';
+import { BI_0, BI_POWS } from '../../bigint-constants';
 
 describe('AaveV2', function () {
   describe('AaveV2 MAINNET', () => {
@@ -21,7 +21,7 @@ describe('AaveV2', function () {
     const aUSDTSymbol = 'aUSDT';
     const aUSDT = aaveV2GetToken(network, aUSDTSymbol);
 
-    const amounts = [BI_0, BI_POW_18, BigInt('2000000000000000000')];
+    const amounts = [BI_0, BI_POWS[18], BigInt('2000000000000000000')];
 
     const dexKey = 'AaveV2';
     if (!aUSDT) {

@@ -13,7 +13,7 @@ import {
   BI_2,
   BI_3,
   BI_99,
-  BI_POW_3,
+  BI_POWS,
 } from '../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
@@ -184,7 +184,7 @@ abstract class BaseMinimalSwapInfoPool extends BasePool {
 }
 
 class StableMath {
-  static _AMP_PRECISION = BI_POW_3;
+  static _AMP_PRECISION = BI_POWS[3];
 
   static _calculateInvariant(
     amplificationParameter: bigint,

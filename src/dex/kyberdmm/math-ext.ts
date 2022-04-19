@@ -1,6 +1,6 @@
-import { BI_0, BI_2, BI_POW_18 } from '../../bigint-constants';
+import { BI_0, BI_2, BI_POWS } from '../../bigint-constants';
 
-const PRECISION = BI_POW_18;
+const PRECISION = BI_POWS[18];
 
 /// @dev Returns x*y in precision
 export const mulInPrecision = (x: bigint, y: bigint): bigint => {

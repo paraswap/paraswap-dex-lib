@@ -6,25 +6,23 @@ import {
   BI_3,
   BI_5,
   BI_9,
-  BI_POW_18,
-  BI_POW_3,
-  BI_POW_4,
+  BI_POWS,
 } from '../../bigint-constants';
 import { mulInPrecision, unsafePowInPrecision } from './math-ext';
 
-export const PRECISION = BI_POW_18;
+export const PRECISION = BI_POWS[18];
 const R0 = BigInt('1477405064814996100'); // 1.4774050648149961
 
-const C0 = (BigInt(60) * PRECISION) / BI_POW_4;
+const C0 = (BigInt(60) * PRECISION) / BI_POWS[4];
 
 const A = (PRECISION * BigInt(20000)) / BigInt(27);
 const B = (PRECISION * BigInt(250)) / BI_9;
 const C1 = (PRECISION * BigInt(985)) / BigInt(27);
 const U = (BigInt(120) * PRECISION) / BI_100;
 
-const G = (BigInt(836) * PRECISION) / BI_POW_3;
+const G = (BigInt(836) * PRECISION) / BI_POWS[3];
 const F = BI_5 * PRECISION;
-const L = (BI_2 * PRECISION) / BI_POW_4;
+const L = (BI_2 * PRECISION) / BI_POWS[4];
 // C2 = 25 * PRECISION - (F * (PRECISION - G)**2) / ((PRECISION - G)**2 + L * PRECISION)
 const C2 = BigInt('20036905816356657810');
 
@@ -39,11 +37,15 @@ export const getFee = (rFactorInPrecision: bigint): bigint => {
     if (rFactorInPrecision > U) {
       const tmp = rFactorInPrecision - U;
       const tmp3 = unsafePowInPrecision(tmp, BI_3);
-      return (C1 + mulInPrecision(A, tmp3) + mulInPrecision(B, tmp)) / BI_POW_4;
+      return (
+        (C1 + mulInPrecision(A, tmp3) + mulInPrecision(B, tmp)) / BI_POWS[4]
+      );
     } else {
       const tmp = U - rFactorInPrecision;
       const tmp3 = unsafePowInPrecision(tmp, BI_3);
-      return (C1 - mulInPrecision(A, tmp3) - mulInPrecision(B, tmp)) / BI_POW_4;
+      return (
+        (C1 - mulInPrecision(A, tmp3) - mulInPrecision(B, tmp)) / BI_POWS[4]
+      );
     }
   } else {
     // [ C2 + sign(r - G) *  F * (r-G) ^2 / (L + (r-G) ^2) ] / 10000
@@ -52,9 +54,9 @@ export const getFee = (rFactorInPrecision: bigint): bigint => {
     tmp = unsafePowInPrecision(tmp, BI_2);
     const tmp2 = (F * tmp) / (tmp + L);
     if (rFactorInPrecision > G) {
-      return (C2 + tmp2) / BI_POW_4;
+      return (C2 + tmp2) / BI_POWS[4];
     } else {
-      return (C2 - tmp2) / BI_POW_4;
+      return (C2 - tmp2) / BI_POWS[4];
     }
   }
 };

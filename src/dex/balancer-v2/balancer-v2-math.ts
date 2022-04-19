@@ -17,11 +17,7 @@ import {
   BI_9,
   BI_MAX_INT,
   BI_MINUS_ONE,
-  BI_POW_17,
-  BI_POW_18,
-  BI_POW_20,
-  BI_POW_36,
-  BI_POW_4,
+  BI_POWS,
 } from '../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
@@ -105,8 +101,8 @@ export class MathSol {
   }
 
   // Modification: Taken from the fixed point class
-  static ONE = BI_POW_18; // 18 decimal places
-  static MAX_POW_RELATIVE_ERROR = BI_POW_4; // 10 000
+  static ONE = BI_POWS[18]; // 18 decimal places
+  static MAX_POW_RELATIVE_ERROR = BI_POWS[4]; // 10 000
 
   static mulUpFixed(a: bigint, b: bigint): bigint {
     const product = a * b;
@@ -187,12 +183,12 @@ class LogExpMath {
   // two numbers, and multiply by ONE when dividing them.
 
   // All arguments and return values are 18 decimal fixed point numbers.
-  static ONE_18: bigint = BI_POW_18;
+  static ONE_18: bigint = BI_POWS[18];
 
   // Internally, intermediate values are computed with higher precision as 20 decimal fixed point numbers, and in the
   // case of ln36, 36 decimals.
-  static ONE_20: bigint = BI_POW_20;
-  static ONE_36: bigint = BI_POW_36;
+  static ONE_20: bigint = BI_POWS[20];
+  static ONE_36: bigint = BI_POWS[36];
 
   // The domain of natural exponentiation is bound by the word size and number of decimals used.
   //
@@ -206,8 +202,8 @@ class LogExpMath {
 
   // Bounds for ln_36's argument. Both ln(0.9) and ln(1.1) can be represented with 36 decimal places in a fixed point
   // 256 bit integer.
-  static LN_36_LOWER_BOUND: bigint = LogExpMath.ONE_18 - BI_POW_17;
-  static LN_36_UPPER_BOUND: bigint = LogExpMath.ONE_18 + BI_POW_17;
+  static LN_36_LOWER_BOUND: bigint = LogExpMath.ONE_18 - BI_POWS[17];
+  static LN_36_UPPER_BOUND: bigint = LogExpMath.ONE_18 + BI_POWS[17];
 
   static MILD_EXPONENT_BOUND: bigint =
     BigInt(2) ** BigInt(254) / LogExpMath.ONE_20;
