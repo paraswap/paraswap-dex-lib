@@ -1,11 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { SwapSide, BIs } from '../constants';
+import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BalancerABI from '../abi/Balancer.json';
 import { isETHAddress } from '../utils';
+import { BI_0 } from '../bigint-constants';
 
 type BalancerSwaps = {
   pool: Address;
@@ -132,7 +133,7 @@ export class Balancer
       const _srcAmount = BigInt(srcAmount);
       const totalInParam = swaps.reduce(
         (acc, swap) => acc + BigInt(swap.tokenInParam),
-        BIs[0],
+        BI_0,
       );
       swaps.forEach(swap => {
         swap.tokenInParam = (

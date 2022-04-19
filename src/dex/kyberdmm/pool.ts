@@ -6,7 +6,7 @@ import { KyberDmmAbiEvents, TradeInfo } from './types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BIs } from '../../constants';
+import { BI_10, BI_20, BI_30, BI_4, BI_POW_4 } from '../../bigint-constants';
 
 export type KyberDmmPools = { [poolAddress: string]: KyberDmmPool };
 
@@ -183,17 +183,17 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   }
 }
 
-const BPS = BIs.POWS[4];
+const BPS = BI_POW_4;
 
 const getFinalFee = (feeInPrecision: bigint, _ampBps: bigint): bigint => {
   if (_ampBps <= 20000) {
     return feeInPrecision;
   } else if (_ampBps <= 50000) {
-    return (feeInPrecision * BIs[20]) / BIs[30];
+    return (feeInPrecision * BI_20) / BI_30;
   } else if (_ampBps <= 200000) {
-    return (feeInPrecision * BIs.POWS[1]) / BIs[30];
+    return (feeInPrecision * BI_10) / BI_30;
   } else {
-    return (feeInPrecision * BIs[4]) / BIs[30];
+    return (feeInPrecision * BI_4) / BI_30;
   }
 };
 

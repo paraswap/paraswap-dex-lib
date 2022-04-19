@@ -25,7 +25,7 @@ import {
   UniswapV2Functions,
 } from './types';
 import { IDex } from '../../dex/idex';
-import { BIs, ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -43,8 +43,16 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
+import {
+  BI_0,
+  BI_1,
+  BI_160,
+  BI_161,
+  BI_2,
+  BI_MAX_UINT,
+} from '../../bigint-constants';
 
-const RESERVE_LIMIT = BIs[2] ** BigInt(112) - BIs.POWS[0];
+const RESERVE_LIMIT = BI_2 ** BigInt(112) - BI_1;
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -194,8 +202,8 @@ export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
 function encodePools(pools: UniswapPool[]): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000 - fee) << BIs[161]) +
-      (BigInt(direction ? 0 : 1) << BIs[160]) +
+      (BigInt(10000 - fee) << BI_161) +
+      (BigInt(direction ? 0 : 1) << BI_160) +
       BigInt(address)
     ).toString();
   });
@@ -307,8 +315,8 @@ export class UniswapV2
       (BigInt(this.feeFactor) - BigInt(fee)) *
       (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= BIs[0]) return BIs.MAX_UINT;
-    return BIs.POWS[0] + numerator / denominator;
+    if (denominator <= BI_0) return BI_MAX_UINT;
+    return BI_1 + numerator / denominator;
   }
 
   async getSellPrice(
@@ -318,7 +326,7 @@ export class UniswapV2
     const { reservesIn, reservesOut, fee } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return BIs[0];
+      return BI_0;
     }
 
     const amountInWithFee = srcAmount * BigInt(this.feeFactor - parseInt(fee));
@@ -328,7 +336,7 @@ export class UniswapV2
     const denominator =
       BigInt(reservesIn) * BigInt(this.feeFactor) + amountInWithFee;
 
-    return denominator === BIs[0] ? BIs[0] : numerator / denominator;
+    return denominator === BI_0 ? BI_0 : numerator / denominator;
   }
 
   async getBuyPricePath(

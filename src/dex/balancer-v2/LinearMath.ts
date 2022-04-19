@@ -1,4 +1,4 @@
-import { BIs } from '../../constants';
+import { BI_0 } from '../../bigint-constants';
 import { MathSol } from './balancer-v2-math';
 
 /*
@@ -23,7 +23,7 @@ export function _calcBptOutPerMainIn(
 ): bigint {
   // Amount out, so we round down overall.
 
-  if (bptSupply == BIs[0]) {
+  if (bptSupply == BI_0) {
     return _toNominal(mainIn, params);
   }
 
@@ -98,7 +98,7 @@ export function _calcMainInPerBptOut(
   params: Params,
 ): bigint {
   // Amount in, so we round up overall.
-  if (bptSupply == BIs[0]) {
+  if (bptSupply == BI_0) {
     return _fromNominal(bptOut, params);
   }
   const previousNominalMain = _toNominal(mainBalance, params);
@@ -163,7 +163,7 @@ export function _calcBptOutPerWrappedIn(
   params: Params,
 ): bigint {
   // Amount out, so we round down overall.
-  if (bptSupply == BIs[0]) {
+  if (bptSupply == BI_0) {
     // Return nominal DAI
     return wrappedIn;
   }
@@ -187,7 +187,7 @@ export function _calcWrappedInPerBptOut(
   params: Params,
 ): bigint {
   // Amount in, so we round up overall.
-  if (bptSupply == BIs[0]) {
+  if (bptSupply == BI_0) {
     // Return nominal DAI
     return bptOut;
   }

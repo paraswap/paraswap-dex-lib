@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide, BIs } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { AaveV3 } from './aave-v3';
 import {
   checkConstantPoolPrices,
@@ -10,6 +10,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { getTokenFromASymbol } from './tokens';
+import { BI_0, BI_POW_6 } from '../../bigint-constants';
 
 /*
   README
@@ -33,7 +34,7 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'aUSDT';
 const TokenB = getTokenFromASymbol(network, TokenBSymbol);
 
-const amounts = [BIs[0], BIs.POWS[6], BigInt('2000000')];
+const amounts = [BI_0, BI_POW_6, BigInt('2000000')];
 
 const dexKey = 'AaveV3';
 

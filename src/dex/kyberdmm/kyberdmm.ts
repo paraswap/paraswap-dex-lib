@@ -2,7 +2,7 @@ import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../../dex/idex';
 import _ from 'lodash';
-import { BIs, Network, SwapSide } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -36,6 +36,7 @@ import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 import { BigNumber } from '@0x/utils';
+import { BI_0, BI_1 } from '../../bigint-constants';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -557,15 +558,15 @@ export class KyberDmm
       feeInPrecision,
     } = priceParams;
     if (amountOut <= 0) return 0;
-    if (reserveIn <= BIs[0] || reserveOut <= amountOut) return 0;
+    if (reserveIn <= BI_0 || reserveOut <= amountOut) return 0;
 
     let numerator = vReserveIn * amountOut;
     let denominator = vReserveOut - amountOut;
-    const amountIn = numerator / denominator + BIs.POWS[0];
+    const amountIn = numerator / denominator + BI_1;
     // amountIn = floor(amountIN *PRECISION / (PRECISION - feeInPrecision));
     numerator = amountIn * PRECISION;
     denominator = PRECISION - feeInPrecision;
-    return (numerator + denominator - BIs.POWS[0]) / denominator;
+    return (numerator + denominator - BI_1) / denominator;
   }
 
   private async getSellPrice(priceParams: TradeInfo, amountIn: bigint) {

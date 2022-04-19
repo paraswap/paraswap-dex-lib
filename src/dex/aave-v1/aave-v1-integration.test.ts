@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide, BIs } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { AaveV1 } from './aave-v1';
 import {
   checkPoolsLiquidity,
@@ -10,6 +10,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { aaveV1GetToken } from './tokens';
+import { BI_0, BI_POW_18 } from '../../bigint-constants';
 
 describe('AaveV1', function () {
   describe('AaveV1 MAINNET', () => {
@@ -24,7 +25,7 @@ describe('AaveV1', function () {
       return;
     }
 
-    const amounts = [BIs[0], BIs.POWS[18], BigInt('2000000000000000000')];
+    const amounts = [BI_0, BI_POW_18, BigInt('2000000000000000000')];
 
     const dexKey = 'AaveV1';
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {

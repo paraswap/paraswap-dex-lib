@@ -7,7 +7,7 @@ import {
   TxInfo,
   SimpleExchangeParam,
 } from '../types';
-import { BIs, SwapSide } from '../constants';
+import { SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress, uuidToBytes16 } from '../utils';
@@ -17,6 +17,7 @@ import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
 import { encodeFeePercent } from './payload-encoder';
+import { BI_0 } from '../bigint-constants';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -102,9 +103,9 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       swap.swapExchanges.map(async se => {
         const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
         let _src = swap.srcToken;
-        let wethDeposit = BIs[0];
+        let wethDeposit = BI_0;
         let _dest = swap.destToken;
-        let wethWithdraw = BIs[0];
+        let wethWithdraw = BI_0;
 
         if (dex.needWrapNative) {
           if (isETHAddress(swap.srcToken)) {
@@ -168,8 +169,8 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       },
       {
         simpleExchangeDataList: [],
-        srcAmountWethToDeposit: BIs[0],
-        destAmountWethToWithdraw: BIs[0],
+        srcAmountWethToDeposit: BI_0,
+        destAmountWethToWithdraw: BI_0,
       },
     );
 
@@ -243,7 +244,7 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     destAmountWeth: bigint,
     swap: OptimalSwap,
   ) {
-    if (srcAmountWeth === BIs[0] && destAmountWeth === BIs[0]) return;
+    if (srcAmountWeth === BI_0 && destAmountWeth === BI_0) return;
 
     return (
       this.dexAdapterService.getTxBuilderDexByKey(

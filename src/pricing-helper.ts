@@ -12,10 +12,10 @@ import {
   SETUP_RETRY_TIMEOUT,
   FETCH_POOL_INDENTIFIER_TIMEOUT,
   FETCH_POOL_PRICES_TIMEOUT,
-  BIs,
 } from './constants';
 import { DexAdapterService } from './dex';
 import { IRouteOptimizer } from './dex/idex';
+import { BI_0 } from './bigint-constants';
 
 export class PricingHelper {
   logger: Logger;
@@ -74,7 +74,7 @@ export class PricingHelper {
         try {
           return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
-              () => reject(new Error(`Timout`)),
+              () => reject(new Error(`Timeout`)),
               FETCH_POOL_INDENTIFIER_TIMEOUT,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
@@ -133,7 +133,7 @@ export class PricingHelper {
           return await new Promise<PoolPrices<any>[] | null>(
             (resolve, reject) => {
               const timer = setTimeout(
-                () => reject(new Error(`Timout`)),
+                () => reject(new Error(`Timeout`)),
                 FETCH_POOL_PRICES_TIMEOUT,
               );
 
@@ -173,7 +173,7 @@ export class PricingHelper {
           return false;
         }
 
-        if (p.prices.every(pi => pi === BIs[0])) {
+        if (p.prices.every(pi => pi === BI_0)) {
           return false;
         }
         return true;

@@ -2,9 +2,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { BIs, Network, SwapSide } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { UniswapV2 } from './uniswap-v2';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
+import { BI_0, BI_POW_18 } from '../../bigint-constants';
 
 const WETH = {
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
@@ -16,7 +17,7 @@ const DAI = {
   decimals: 18,
 };
 
-const amounts = [BIs[0], BIs.POWS[18], BigInt('2000000000000000000')];
+const amounts = [BI_0, BI_POW_18, BigInt('2000000000000000000')];
 
 const dexKey = 'UniswapV2';
 

@@ -2,11 +2,12 @@ import { Interface } from '@ethersproject/abi';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
-import { ETHER_ADDRESS, BIs } from '../constants';
+import { ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 import ERC20ABI from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
 import { MAX_UINT, NULL_ADDRESS } from '../constants';
+import { BI_0 } from '../bigint-constants';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
@@ -89,7 +90,7 @@ export class SimpleExchange {
       srcAmount,
     );
     const swapValue = (
-      BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : BIs[0])
+      BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : BI_0)
     ).toString();
 
     return {

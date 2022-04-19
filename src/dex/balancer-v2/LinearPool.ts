@@ -5,7 +5,8 @@ import * as LinearMath from './LinearMath';
 import { BasePool } from './balancer-v2-pool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
-import { BIs, SwapSide } from '../../constants';
+import { SwapSide } from '../../constants';
+import { BI_0, BI_100, BI_99 } from '../../bigint-constants';
 
 export enum PairTypes {
   BptToMainToken,
@@ -178,7 +179,7 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BIs[0];
+            amt = BI_0;
           }
           amountsOut.push(amt);
         });
@@ -199,7 +200,7 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BIs[0];
+            amt = BI_0;
           }
           amountsOut.push(amt);
         });
@@ -214,7 +215,7 @@ export class LinearPool extends BasePool {
               upperTarget: upperTarget,
             });
           } catch (err) {
-            amt = BIs[0];
+            amt = BI_0;
           }
           amountsOut.push(amt);
         });
@@ -229,7 +230,7 @@ export class LinearPool extends BasePool {
               upperTarget: upperTarget,
             });
           } catch (err) {
-            amt = BIs[0];
+            amt = BI_0;
           }
           amountsOut.push(amt);
         });
@@ -250,7 +251,7 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BIs[0];
+            amt = BI_0;
           }
           amountsOut.push(amt);
         });
@@ -271,13 +272,13 @@ export class LinearPool extends BasePool {
               },
             );
           } catch (err) {
-            amt = BIs[0];
+            amt = BI_0;
           }
           amountsOut.push(amt);
         });
         break;
       default:
-        amountsOut.push(BIs[0]);
+        amountsOut.push(BI_0);
     }
     return amountsOut;
   }
@@ -304,7 +305,7 @@ export class LinearPool extends BasePool {
 
       balances.push(poolState.tokens[t.address.toLowerCase()].balance);
       scalingFactors.push(
-        poolState.tokens[t.address.toLowerCase()].scalingFactor || BIs[0],
+        poolState.tokens[t.address.toLowerCase()].scalingFactor || BI_0,
       );
       return t.address;
     });
@@ -316,11 +317,11 @@ export class LinearPool extends BasePool {
       scalingFactors,
       bptIndex,
       swapFee: poolState.swapFee,
-      amp: poolState.amp || BIs[0],
+      amp: poolState.amp || BI_0,
       wrappedIndex: poolState.wrappedIndex || 0,
       mainIndex: poolState.mainIndex || 0,
-      lowerTarget: poolState.lowerTarget || BIs[0],
-      upperTarget: poolState.upperTarget || BIs[0],
+      lowerTarget: poolState.lowerTarget || BI_0,
+      upperTarget: poolState.upperTarget || BI_0,
     };
     return poolPairData;
   }
@@ -437,8 +438,8 @@ export class LinearPool extends BasePool {
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
-        BIs[99]) /
-      BIs.POWS[2];
+        BI_99) /
+     BI_100;
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

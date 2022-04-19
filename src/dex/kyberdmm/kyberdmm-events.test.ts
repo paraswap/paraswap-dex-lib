@@ -3,11 +3,12 @@ dotenv.config();
 
 import { KyberDmmPool, KyberDmmPoolState } from './pool';
 import { KyberDmmConfig } from './config';
-import { BIs, Network } from '../../constants';
+import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { Tokens } from './../../../tests/constants-e2e';
 import { DeepReadonly } from 'ts-essentials';
+import { BI_POW_4 } from '../../bigint-constants';
 
 jest.setTimeout(50 * 1000);
 
@@ -38,7 +39,7 @@ const poolsParams: PoolParam[] = [
   },
   {
     address: '0xA97642500517C728cE1339A466DE0F10C19034CD',
-    ampBps: BIs.POWS[4],
+    ampBps: BI_POW_4,
     token0Symbol: 'REQ',
     token1Symbol: 'WETH',
   },

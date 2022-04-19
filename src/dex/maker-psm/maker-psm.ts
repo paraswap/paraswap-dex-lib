@@ -11,7 +11,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network, BIs } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -21,13 +21,14 @@ import { SimpleExchange } from '../simple-exchange';
 import { MakerPsmConfig, Adapters } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
+import { BI_0, BI_1, BI_POW_18 } from '../../bigint-constants';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
-const WAD = BIs.POWS[18];
-const BN0 = BIs[0];
-const BN1 = BIs.POWS[0];
-const BN1E18 = BIs.POWS[18];
+const WAD = BI_POW_18;
+const BN0 = BI_0;
+const BN1 = BI_1;
+const BN1E18 = BI_POW_18;
 
 const bigIntify = (b: any) => BigInt(b.toString());
 const ceilDiv = (a: bigint, b: bigint) => (a + b - BN1) / b;

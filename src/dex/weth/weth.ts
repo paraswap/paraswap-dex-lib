@@ -7,7 +7,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network, BIs } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import {
   getDexKeysWithNetwork,
   isETHAddress,
@@ -25,6 +25,7 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, WethConfig } from './config';
+import { BI_POW_18 } from '../../bigint-constants';
 
 export class Weth
   extends SimpleExchange
@@ -46,7 +47,7 @@ export class Weth
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    protected unitPrice = BIs.POWS[18],
+    protected unitPrice = BI_POW_18,
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);

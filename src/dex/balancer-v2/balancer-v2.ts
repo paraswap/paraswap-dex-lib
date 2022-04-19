@@ -18,7 +18,6 @@ import {
   MAX_INT,
   MAX_UINT,
   Network,
-  BIs,
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
@@ -41,6 +40,7 @@ import {
 import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
+import { BI_0 } from '../../bigint-constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
@@ -293,7 +293,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       _amounts,
       poolPairData as any,
     );
-    return { unit: _prices[0], prices: [BIs[0], ..._prices.slice(1)] };
+    return { unit: _prices[0], prices: [BI_0, ..._prices.slice(1)] };
   }
 
   async getOnChainState(
@@ -308,7 +308,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       })
       .flat();
 
-    // 500 is an arbitary number choosed based on the blockGasLimit
+    // 500 is an arbitrary number chosen based on the blockGasLimit
     const slicedMultiCallData = _.chunk(multiCallData, 500);
 
     const returnData = (
@@ -477,7 +477,7 @@ export class BalancerV2
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
           }
-          // TODO: re-chech what should be the current block time stamp
+          // TODO: re-check what should be the current block time stamp
           try {
             const res = this.eventPools.getPricesPool(
               _from,
@@ -661,9 +661,9 @@ export class BalancerV2
     };
 
     const query = `query ($tokens: [Bytes!], $count: Int) {
-      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, 
-           where: {tokensList_contains: $tokens, 
-                   swapEnabled: true, 
+      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
+           where: {tokensList_contains: $tokens,
+                   swapEnabled: true,
                    totalLiquidity_gt: 0}) {
         address
         totalLiquidity
