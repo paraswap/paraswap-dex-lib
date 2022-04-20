@@ -39,7 +39,7 @@ const poolsParams: PoolParam[] = [
   },
   {
     address: '0xA97642500517C728cE1339A466DE0F10C19034CD',
-    ampBps: BI_POWS[4],
+    ampBps: 10000n,
     token0Symbol: 'REQ',
     token1Symbol: 'WETH',
   },

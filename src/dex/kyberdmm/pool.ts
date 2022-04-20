@@ -183,7 +183,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   }
 }
 
-const BPS = BI_POWS[4];
+const BPS = 10000n;
 
 const getFinalFee = (feeInPrecision: bigint, _ampBps: bigint): bigint => {
   if (_ampBps <= 20000) {
