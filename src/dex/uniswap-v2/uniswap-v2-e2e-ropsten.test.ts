@@ -228,6 +228,174 @@ describe('UniswapV2 E2E Ropsten', () => {
     });
   });
 
+  describe('DirectSwapOnUniswap', () => {
+    it('ETH -> TOKEN', async () => {
+      await testE2E(
+        tokens.ETH,
+        tokens.DAI,
+        holders.ETH,
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapOnUniswap,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> ETH', async () => {
+      await testE2E(
+        tokens.DAI,
+        tokens.ETH,
+        holders.DAI,
+        '400000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapOnUniswap,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> TOKEN', async () => {
+      await testE2E(
+        tokens.WETH,
+        tokens.DAI,
+        holders.WETH,
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapOnUniswap,
+        network,
+        provider,
+      );
+    });
+  });
+
+  describe('DirectSwapOnUniswapFork', () => {
+    it('ETH -> TOKEN', async () => {
+      await testE2E(
+        tokens.ETH,
+        tokens.DAI,
+        holders.ETH,
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapOnUniswapFork,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> ETH', async () => {
+      await testE2E(
+        tokens.DAI,
+        tokens.ETH,
+        holders.DAI,
+        '400000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapOnUniswapFork,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> TOKEN', async () => {
+      await testE2E(
+        tokens.WETH,
+        tokens.DAI,
+        holders.WETH,
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapOnUniswapFork,
+        network,
+        provider,
+      );
+    });
+  });
+
+  describe('DirectBuyOnUniswap', () => {
+    it('ETH -> TOKEN', async () => {
+      await testE2E(
+        tokens.ETH,
+        tokens.DAI,
+        holders.ETH,
+        '400000000000000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.buyOnUniswap,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> ETH', async () => {
+      await testE2E(
+        tokens.DAI,
+        tokens.ETH,
+        holders.DAI,
+        '1000000000000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.buyOnUniswap,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> TOKEN', async () => {
+      await testE2E(
+        tokens.WETH,
+        tokens.DAI,
+        holders.WETH,
+        '400000000000000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.buyOnUniswap,
+        network,
+        provider,
+      );
+    });
+  });
+
+  describe('DirectBuyOnUniswapFork', () => {
+    it('ETH -> TOKEN', async () => {
+      await testE2E(
+        tokens.ETH,
+        tokens.DAI,
+        holders.ETH,
+        '400000000000000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.buyOnUniswapFork,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> ETH', async () => {
+      await testE2E(
+        tokens.DAI,
+        tokens.ETH,
+        holders.DAI,
+        '1000000000000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.buyOnUniswapFork,
+        network,
+        provider,
+      );
+    });
+    it('TOKEN -> TOKEN', async () => {
+      await testE2E(
+        tokens.WETH,
+        tokens.DAI,
+        holders.WETH,
+        '400000000000000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.buyOnUniswapFork,
+        network,
+        provider,
+      );
+    });
+  });
+
   describe('DirectSwapOnUniswapV2Fork', () => {
     it('ETH -> TOKEN', async () => {
       await testE2E(
