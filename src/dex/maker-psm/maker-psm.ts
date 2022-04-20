@@ -26,12 +26,9 @@ import { BI_POWS } from '../../bigint-constants';
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
 const WAD = BI_POWS[18];
-const BN0 = 0n;
-const BN1 = 1n;
-const BN1E18 = BI_POWS[18];
 
 const bigIntify = (b: any) => BigInt(b.toString());
-const ceilDiv = (a: bigint, b: bigint) => (a + b - BN1) / b;
+const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b;
 
 async function getOnChainState(
   multiContract: Contract,
@@ -314,7 +311,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
           if (sellGemCheck(gemAmt18)) return gemAmt18 / to18ConversionFactor;
         }
       }
-      return BN0;
+      return 0n;
     });
   }
 
@@ -494,7 +491,9 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       return (
         2 *
         parseInt(
-          ((buyLimit > sellLimit ? sellLimit : buyLimit) / BN1E18).toString(),
+          (
+            (buyLimit > sellLimit ? sellLimit : buyLimit) / BI_POWS[18]
+          ).toString(),
         )
       );
     };
