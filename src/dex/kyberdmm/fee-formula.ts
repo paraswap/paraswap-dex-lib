@@ -4,16 +4,16 @@ import { mulInPrecision, unsafePowInPrecision } from './math-ext';
 export const PRECISION = BI_POWS[18];
 const R0 = 1477405064814996100n; // 1.4774050648149961
 
-const C0 = (60n * PRECISION) / BI_POWS[4];
+const C0 = (60n * PRECISION) / 10000n;
 
 const A = (PRECISION * 20000n) / 27n;
 const B = (PRECISION * 250n) / 9n;
 const C1 = (PRECISION * 985n) / 27n;
 const U = (120n * PRECISION) / 100n;
 
-const G = (836n * PRECISION) / BI_POWS[3];
+const G = (836n * PRECISION) / 1000n;
 const F = 5n * PRECISION;
-const L = (2n * PRECISION) / BI_POWS[4];
+const L = (2n * PRECISION) / 10000n;
 // C2 = 25 * PRECISION - (F * (PRECISION - G)**2) / ((PRECISION - G)**2 + L * PRECISION)
 const C2 = 20036905816356657810n;
 
@@ -28,15 +28,11 @@ export const getFee = (rFactorInPrecision: bigint): bigint => {
     if (rFactorInPrecision > U) {
       const tmp = rFactorInPrecision - U;
       const tmp3 = unsafePowInPrecision(tmp, 3n);
-      return (
-        (C1 + mulInPrecision(A, tmp3) + mulInPrecision(B, tmp)) / BI_POWS[4]
-      );
+      return (C1 + mulInPrecision(A, tmp3) + mulInPrecision(B, tmp)) / 10000n;
     } else {
       const tmp = U - rFactorInPrecision;
       const tmp3 = unsafePowInPrecision(tmp, 3n);
-      return (
-        (C1 - mulInPrecision(A, tmp3) - mulInPrecision(B, tmp)) / BI_POWS[4]
-      );
+      return (C1 - mulInPrecision(A, tmp3) - mulInPrecision(B, tmp)) / 10000n;
     }
   } else {
     // [ C2 + sign(r - G) *  F * (r-G) ^2 / (L + (r-G) ^2) ] / 10000
@@ -45,9 +41,9 @@ export const getFee = (rFactorInPrecision: bigint): bigint => {
     tmp = unsafePowInPrecision(tmp, 2n);
     const tmp2 = (F * tmp) / (tmp + L);
     if (rFactorInPrecision > G) {
-      return (C2 + tmp2) / BI_POWS[4];
+      return (C2 + tmp2) / 10000n;
     } else {
-      return (C2 - tmp2) / BI_POWS[4];
+      return (C2 - tmp2) / 10000n;
     }
   }
 };
