@@ -9,7 +9,7 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 jest.setTimeout(50 * 1000);
 
@@ -19,7 +19,7 @@ describe('BalancerV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[Network.MAINNET];
     const holders = Holders[Network.MAINNET];
-    const provider = new JsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     describe('Simpleswap', () => {
       it('ETH -> TOKEN', async () => {

@@ -13,7 +13,7 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 jest.setTimeout(50 * 1000);
 
@@ -24,7 +24,7 @@ describe('KyberDmm E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'WBTC';
@@ -97,7 +97,7 @@ describe('KyberDmm E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const tokenASymbol: string = 'DAI';
     const tokenBSymbol: string = 'USDC';
@@ -170,7 +170,7 @@ describe('KyberDmm E2E', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'BUSD';
@@ -243,7 +243,7 @@ describe('KyberDmm E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const tokenASymbol: string = 'USDCe';
     const tokenBSymbol: string = 'USDTe';

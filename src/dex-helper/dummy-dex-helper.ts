@@ -9,7 +9,7 @@ import axios from 'axios';
 import { Address, LoggerConstructor } from '../types';
 import { MULTI_V2, ProviderURL, AugustusAddress } from '../constants';
 // import { Contract } from '@ethersproject/contracts';
-import { JsonRpcProvider, Provider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
 import Web3 from 'web3';
@@ -102,7 +102,7 @@ export class DummyDexHelper implements IDexHelper {
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.augustusAddress = AugustusAddress[network];
-    this.provider = new JsonRpcProvider(ProviderURL[network], network);
+    this.provider = new StaticJsonRpcProvider(ProviderURL[network], network);
     this.web3Provider = new Web3(ProviderURL[network]);
     this.multiContract = new this.web3Provider.eth.Contract(
       multiABIV2 as any,

@@ -9,13 +9,13 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 describe('UniswapV2 E2E Mainnet', () => {
   const network = Network.MAINNET;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network], network);
+  const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
   describe('UniswapV2', () => {
     const dexKey = 'UniswapV2';
