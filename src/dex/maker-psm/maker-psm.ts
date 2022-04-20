@@ -21,13 +21,13 @@ import { SimpleExchange } from '../simple-exchange';
 import { MakerPsmConfig, Adapters } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
-import { BI_0, BI_1, BI_POWS } from '../../bigint-constants';
+import { BI_POWS } from '../../bigint-constants';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
 const WAD = BI_POWS[18];
-const BN0 = BI_0;
-const BN1 = BI_1;
+const BN0 = 0n;
+const BN1 = 1n;
 const BN1E18 = BI_POWS[18];
 
 const bigIntify = (b: any) => BigInt(b.toString());

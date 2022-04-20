@@ -7,7 +7,6 @@ import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 import ERC20ABI from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
 import { MAX_UINT, NULL_ADDRESS } from '../constants';
-import { BI_0 } from '../bigint-constants';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
@@ -90,7 +89,7 @@ export class SimpleExchange {
       srcAmount,
     );
     const swapValue = (
-      BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : BI_0)
+      BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : 0n)
     ).toString();
 
     return {

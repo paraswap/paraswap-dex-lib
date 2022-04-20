@@ -19,7 +19,6 @@ import {
 import { OptimalRate, TxObject, Address, Token } from '../src/types';
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
-import { BI_100, BI_107, BI_93 } from '../src/bigint-constants';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -222,8 +221,8 @@ export async function testE2E(
   // Slippage to be 7%
   const minMaxAmount =
     (swapSide === SwapSide.SELL
-      ? BigInt(priceRoute.destAmount) * BI_93
-      : BigInt(priceRoute.srcAmount) * BI_107) / BI_100;
+      ? BigInt(priceRoute.destAmount) * 93n
+      : BigInt(priceRoute.srcAmount) * 107n) / 100n;
   const swapParams = await paraswap.buildTransaction(
     priceRoute,
     minMaxAmount,

@@ -6,7 +6,6 @@ import * as StableMath from './StableMath';
 import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
 import { SwapSide } from '../../constants';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
-import { BI_0, BI_100, BI_99 } from '../../bigint-constants';
 
 enum PairTypes {
   BptToToken,
@@ -186,7 +185,7 @@ export class PhantomStablePool extends BasePool {
       tokenAmountsIn.forEach(amountIn => {
         let amt: bigint;
         try {
-          const amountsInBigInt = Array(balances.length).fill(BI_0);
+          const amountsInBigInt = Array(balances.length).fill(0n);
           amountsInBigInt[indexIn] = amountIn;
 
           amt = StableMath._calcBptOutGivenExactTokensIn(
@@ -197,7 +196,7 @@ export class PhantomStablePool extends BasePool {
             invariant,
           );
         } catch (err) {
-          amt = BI_0;
+          amt = 0n;
         }
         amountsOut.push(amt);
       });
@@ -214,7 +213,7 @@ export class PhantomStablePool extends BasePool {
             invariant,
           );
         } catch (err) {
-          amt = BI_0;
+          amt = 0n;
         }
         amountsOut.push(amt);
       });
@@ -231,7 +230,7 @@ export class PhantomStablePool extends BasePool {
             invariant,
           );
         } catch (err) {
-          amt = BI_0;
+          amt = 0n;
         }
         amountsOut.push(amt);
       });
@@ -261,7 +260,7 @@ export class PhantomStablePool extends BasePool {
 
       balances.push(poolState.tokens[t.address.toLowerCase()].balance);
       scalingFactors.push(
-        poolState.tokens[t.address.toLowerCase()].scalingFactor || BI_0,
+        poolState.tokens[t.address.toLowerCase()].scalingFactor || 0n,
       );
       return t.address;
     });
@@ -274,7 +273,7 @@ export class PhantomStablePool extends BasePool {
       scalingFactors,
       bptIndex,
       swapFee: poolState.swapFee,
-      amp: poolState.amp ? poolState.amp : BI_0,
+      amp: poolState.amp ? poolState.amp : 0n,
     };
     return poolPairData;
   }
@@ -389,8 +388,8 @@ export class PhantomStablePool extends BasePool {
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
-       BI_99) /
-      BI_100;
+        99n) /
+      100n;
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

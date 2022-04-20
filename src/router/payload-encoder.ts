@@ -12,10 +12,9 @@ import {
 import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
-import { BI_0, BI_1, BI_14, BI_248 } from '../bigint-constants';
 
-const OneShift14 = BI_1 << BI_14;
-const OneShift248 = BI_1 << BI_248;
+const OneShift14 = 1n << 14n;
+const OneShift248 = 1n << 248n;
 
 export function encodeFeePercent(
   partnerFeePercent: string,
@@ -46,7 +45,7 @@ export class PayloadEncoder {
     paths: ContractPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BI_0;
+    let totalNetworkFee = 0n;
     const paths = swaps.map(s => {
       const adapters = this.getAdapters(
         s.srcToken,
@@ -55,7 +54,7 @@ export class PayloadEncoder {
       );
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
-        BI_0,
+        0n,
       );
       totalNetworkFee += totalPathNetworkFee;
       return {
@@ -71,7 +70,7 @@ export class PayloadEncoder {
     megaSwapPaths: ContractMegaSwapPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BI_0;
+    let totalNetworkFee = 0n;
     const megaSwapPaths = routes.map(r => {
       const { paths, networkFee } = this.getContractPathsWithNetworkFee(
         r.swaps,
@@ -97,7 +96,7 @@ export class PayloadEncoder {
       SwapSide.BUY,
     );
     let adapter = '';
-    let networkFee = BI_0;
+    let networkFee = 0n;
     let route: ContractRoute[] = [];
     swapExchanges.forEach((se: OptimalSwapExchange<any>) => {
       const [adapterAddress, index] =

@@ -35,8 +35,6 @@ import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
-import { BigNumber } from '@0x/utils';
-import { BI_0, BI_1 } from '../../bigint-constants';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -558,15 +556,15 @@ export class KyberDmm
       feeInPrecision,
     } = priceParams;
     if (amountOut <= 0) return 0;
-    if (reserveIn <= BI_0 || reserveOut <= amountOut) return 0;
+    if (reserveIn <= 0n || reserveOut <= amountOut) return 0;
 
     let numerator = vReserveIn * amountOut;
     let denominator = vReserveOut - amountOut;
-    const amountIn = numerator / denominator + BI_1;
+    const amountIn = numerator / denominator + 1n;
     // amountIn = floor(amountIN *PRECISION / (PRECISION - feeInPrecision));
     numerator = amountIn * PRECISION;
     denominator = PRECISION - feeInPrecision;
-    return (numerator + denominator - BI_1) / denominator;
+    return (numerator + denominator - 1n) / denominator;
   }
 
   private async getSellPrice(priceParams: TradeInfo, amountIn: bigint) {

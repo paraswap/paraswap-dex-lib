@@ -15,7 +15,6 @@ import {
 } from './constants';
 import { DexAdapterService } from './dex';
 import { IRouteOptimizer } from './dex/idex';
-import { BI_0 } from './bigint-constants';
 
 export class PricingHelper {
   logger: Logger;
@@ -173,7 +172,7 @@ export class PricingHelper {
           return false;
         }
 
-        if (p.prices.every(pi => pi === BI_0)) {
+        if (p.prices.every(pi => pi === 0n)) {
           return false;
         }
         return true;

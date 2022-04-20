@@ -6,7 +6,7 @@ import { Network, SwapSide } from '../../constants';
 import { MakerPsm } from './maker-psm';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { BI_0, BI_POWS } from '../../bigint-constants';
+import { BI_POWS } from '../../bigint-constants';
 
 const network = Network.MAINNET;
 const TokenASymbol = 'USDC';
@@ -15,9 +15,9 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'DAI';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const tokenAAmounts = [BI_0, BI_POWS[8], BigInt('200000000')];
+const tokenAAmounts = [0n, BI_POWS[8], 200000000n];
 
-const tokenBAmounts = [BI_0, BI_POWS[18], BigInt('2000000000000000000')];
+const tokenBAmounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = 'MakerPsm';
 

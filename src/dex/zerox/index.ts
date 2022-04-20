@@ -24,7 +24,6 @@ import type {
   ZeroXSignedOrderV2,
   ZeroXSignedOrderV4,
 } from './types';
-import { BI_1 } from '../../bigint-constants';
 
 const ZRX_EXCHANGE: any = {
   1: {
@@ -229,7 +228,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAmount) +
             BigInt(order.makerAmount) -
-            BI_1) /
+            1n) /
           BigInt(order.makerAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
@@ -245,7 +244,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAssetAmount) +
             BigInt(order.makerAssetAmount) -
-            BI_1) /
+            1n) /
           BigInt(order.makerAssetAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);

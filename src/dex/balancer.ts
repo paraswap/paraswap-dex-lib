@@ -6,7 +6,6 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BalancerABI from '../abi/Balancer.json';
 import { isETHAddress } from '../utils';
-import { BI_0 } from '../bigint-constants';
 
 type BalancerSwaps = {
   pool: Address;
@@ -133,7 +132,7 @@ export class Balancer
       const _srcAmount = BigInt(srcAmount);
       const totalInParam = swaps.reduce(
         (acc, swap) => acc + BigInt(swap.tokenInParam),
-        BI_0,
+        0n,
       );
       swaps.forEach(swap => {
         swap.tokenInParam = (

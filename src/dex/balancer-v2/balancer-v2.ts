@@ -40,7 +40,6 @@ import {
 import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
-import { BI_0 } from '../../bigint-constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
@@ -293,7 +292,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       _amounts,
       poolPairData as any,
     );
-    return { unit: _prices[0], prices: [BI_0, ..._prices.slice(1)] };
+    return { unit: _prices[0], prices: [0n, ..._prices.slice(1)] };
   }
 
   async getOnChainState(

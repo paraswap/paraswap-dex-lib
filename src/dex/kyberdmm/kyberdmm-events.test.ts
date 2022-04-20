@@ -27,13 +27,13 @@ type PoolParam = {
 const poolsParams: PoolParam[] = [
   {
     address: '0xD343d5dba2FBa55EEF58189619c05e33CAB95cA1',
-    ampBps: BigInt(15000),
+    ampBps: 15000n,
     token0Symbol: 'WBTC',
     token1Symbol: 'USDT',
   },
   {
     address: '0x1cf68Bbc2b6D3C6CfE1BD3590CF0E10b06a05F17',
-    ampBps: BigInt(20000),
+    ampBps: 20000n,
     token0Symbol: 'WBTC',
     token1Symbol: 'WETH',
   },

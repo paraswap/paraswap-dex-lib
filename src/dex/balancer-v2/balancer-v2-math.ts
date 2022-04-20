@@ -1,24 +1,4 @@
-import {
-  BI_0,
-  BI_1,
-  BI_10,
-  BI_100,
-  BI_11,
-  BI_12,
-  BI_13,
-  BI_15,
-  BI_2,
-  BI_3,
-  BI_4,
-  BI_5,
-  BI_6,
-  BI_7,
-  BI_8,
-  BI_9,
-  BI_MAX_INT,
-  BI_MINUS_ONE,
-  BI_POWS,
-} from '../../bigint-constants';
+import { BI_MAX_INT, BI_POWS } from '../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
@@ -77,7 +57,7 @@ export class MathSol {
 
   static mul(a: bigint, b: bigint): bigint {
     const c = a * b;
-    _require(a == BI_0 || c / a == b, 'Errors.MUL_OVERFLOW');
+    _require(a == 0n || c / a == b, 'Errors.MUL_OVERFLOW');
     return c;
   }
 
@@ -86,17 +66,17 @@ export class MathSol {
   }
 
   static divDown(a: bigint, b: bigint): bigint {
-    _require(b != BI_0, 'Errors.ZERO_DIVISION');
+    _require(b != 0n, 'Errors.ZERO_DIVISION');
     return a / b;
   }
 
   static divUp(a: bigint, b: bigint): bigint {
-    _require(b != BI_0, 'Errors.ZERO_DIVISION');
+    _require(b != 0n, 'Errors.ZERO_DIVISION');
 
-    if (a == BI_0) {
-      return BI_0;
+    if (a == 0n) {
+      return 0n;
     } else {
-      return BI_1 + (a - BI_1) / b;
+      return 1n + (a - 1n) / b;
     }
   }
 
@@ -106,10 +86,10 @@ export class MathSol {
 
   static mulUpFixed(a: bigint, b: bigint): bigint {
     const product = a * b;
-    _require(a == BI_0 || product / a == b, 'Errors.MUL_OVERFLOW');
+    _require(a == 0n || product / a == b, 'Errors.MUL_OVERFLOW');
 
-    if (product == BI_0) {
-      return BI_0;
+    if (product == 0n) {
+      return 0n;
     } else {
       // The traditional divUp formula is:
       // divUp(x, y) := (x + y - 1) / y
@@ -117,15 +97,15 @@ export class MathSol {
       // divUp(x, y) := (x - 1) / y + 1
       // Note that this requires x != 0, which we already tested for.
 
-      return (product - BI_1) / this.ONE + BI_1;
+      return (product - 1n) / this.ONE + 1n;
     }
   }
 
   // Modification: Taken from the fixed point class
   static divDownFixed(a: bigint, b: bigint): bigint {
-    _require(b != BI_0, 'Errors.ZERO_DIVISION');
-    if (a == BI_0) {
-      return BI_0;
+    _require(b != 0n, 'Errors.ZERO_DIVISION');
+    if (a == 0n) {
+      return 0n;
     } else {
       const aInflated = a * this.ONE;
       // _require(aInflated / a == ONE, Errors.DIV_INTERNAL); // mul overflow
@@ -136,10 +116,10 @@ export class MathSol {
 
   // Modification: Taken from the fixed point class
   static divUpFixed(a: bigint, b: bigint): bigint {
-    _require(b != BI_0, 'Errors.ZERO_DIVISION');
+    _require(b != 0n, 'Errors.ZERO_DIVISION');
 
-    if (a == BI_0) {
-      return BI_0;
+    if (a == 0n) {
+      return 0n;
     } else {
       const aInflated = a * this.ONE;
       _require(aInflated / a == this.ONE, 'Errors.DIV_INTERNAL'); // mul overflow
@@ -150,7 +130,7 @@ export class MathSol {
       // divUp(x, y) := (x - 1) / y + 1
       // Note that this requires x != 0, which we already tested for.
 
-      return (aInflated - BI_1) / b + BI_1;
+      return (aInflated - 1n) / b + 1n;
     }
   }
 
@@ -159,7 +139,7 @@ export class MathSol {
     const raw = LogExpMath.pow(x, y);
     const maxError = this.add(
       this.mulUpFixed(raw, this.MAX_POW_RELATIVE_ERROR),
-      BI_1,
+      1n,
     );
 
     return this.add(raw, maxError);
@@ -167,12 +147,12 @@ export class MathSol {
 
   // Modification: Taken from the fixed point class
   static complementFixed(x: bigint): bigint {
-    return x < this.ONE ? this.ONE - x : BI_0;
+    return x < this.ONE ? this.ONE - x : 0n;
   }
 
   static mulDownFixed(a: bigint, b: bigint): bigint {
     const product = a * b;
-    _require(a == BI_0 || product / a == b, 'Errors.MUL_OVERFLOW');
+    _require(a == 0n || product / a == b, 'Errors.MUL_OVERFLOW');
 
     return product / this.ONE;
   }
@@ -197,56 +177,53 @@ class LogExpMath {
   // The smallest possible result is 10^(-18), which makes largest negative argument
   // ln(10^(-18)) = -41.446531673892822312.
   // We use 130.0 and -41.0 to have some safety margin.
-  static MAX_NATURAL_EXPONENT: bigint = BigInt('130000000000000000000');
-  static MIN_NATURAL_EXPONENT: bigint = BigInt('-41000000000000000000');
+  static MAX_NATURAL_EXPONENT: bigint = 130000000000000000000n;
+  static MIN_NATURAL_EXPONENT: bigint = -41000000000000000000n;
 
   // Bounds for ln_36's argument. Both ln(0.9) and ln(1.1) can be represented with 36 decimal places in a fixed point
   // 256 bit integer.
   static LN_36_LOWER_BOUND: bigint = LogExpMath.ONE_18 - BI_POWS[17];
   static LN_36_UPPER_BOUND: bigint = LogExpMath.ONE_18 + BI_POWS[17];
 
-  static MILD_EXPONENT_BOUND: bigint =
-    BigInt(2) ** BigInt(254) / LogExpMath.ONE_20;
+  static MILD_EXPONENT_BOUND: bigint = 2n ** 254n / LogExpMath.ONE_20;
 
   // 18 decimal constants
-  static x0: bigint = BigInt('128000000000000000000'); // 2ˆ7
-  static a0: bigint = BigInt(
-    '38877084059945950922200000000000000000000000000000000000',
-  ); // eˆ(x0) (no decimals)
-  static x1: bigint = BigInt('64000000000000000000'); // 2ˆ6
-  static a1: bigint = BigInt('6235149080811616882910000000'); // eˆ(x1) (no decimals)
+  static x0: bigint = 128000000000000000000n; // 2ˆ7
+  static a0: bigint = 38877084059945950922200000000000000000000000000000000000n; // eˆ(x0) (no decimals)
+  static x1: bigint = 64000000000000000000n; // 2ˆ6
+  static a1: bigint = 6235149080811616882910000000n; // eˆ(x1) (no decimals)
 
   // 20 decimal constants
-  static x2: bigint = BigInt('3200000000000000000000'); // 2ˆ5
-  static a2: bigint = BigInt('7896296018268069516100000000000000'); // eˆ(x2)
-  static x3: bigint = BigInt('1600000000000000000000'); // 2ˆ4
-  static a3: bigint = BigInt('888611052050787263676000000'); // eˆ(x3)
-  static x4: bigint = BigInt('800000000000000000000'); // 2ˆ3
-  static a4: bigint = BigInt('298095798704172827474000'); // eˆ(x4)
-  static x5: bigint = BigInt('400000000000000000000'); // 2ˆ2
-  static a5: bigint = BigInt('5459815003314423907810'); // eˆ(x5)
-  static x6: bigint = BigInt('200000000000000000000'); // 2ˆ1
-  static a6: bigint = BigInt('738905609893065022723'); // eˆ(x6)
-  static x7: bigint = BigInt('100000000000000000000'); // 2ˆ0
-  static a7: bigint = BigInt('271828182845904523536'); // eˆ(x7)
-  static x8: bigint = BigInt('50000000000000000000'); // 2ˆ-1
-  static a8: bigint = BigInt('164872127070012814685'); // eˆ(x8)
-  static x9: bigint = BigInt('25000000000000000000'); // 2ˆ-2
-  static a9: bigint = BigInt('128402541668774148407'); // eˆ(x9)
-  static x10: bigint = BigInt('12500000000000000000'); // 2ˆ-3
-  static a10: bigint = BigInt('113314845306682631683'); // eˆ(x10)
-  static x11: bigint = BigInt('6250000000000000000'); // 2ˆ-4
-  static a11: bigint = BigInt('106449445891785942956'); // eˆ(x11)
+  static x2: bigint = 3200000000000000000000n; // 2ˆ5
+  static a2: bigint = 7896296018268069516100000000000000n; // eˆ(x2)
+  static x3: bigint = 1600000000000000000000n; // 2ˆ4
+  static a3: bigint = 888611052050787263676000000n; // eˆ(x3)
+  static x4: bigint = 800000000000000000000n; // 2ˆ3
+  static a4: bigint = 298095798704172827474000n; // eˆ(x4)
+  static x5: bigint = 400000000000000000000n; // 2ˆ2
+  static a5: bigint = 5459815003314423907810n; // eˆ(x5)
+  static x6: bigint = 200000000000000000000n; // 2ˆ1
+  static a6: bigint = 738905609893065022723n; // eˆ(x6)
+  static x7: bigint = 100000000000000000000n; // 2ˆ0
+  static a7: bigint = 271828182845904523536n; // eˆ(x7)
+  static x8: bigint = 50000000000000000000n; // 2ˆ-1
+  static a8: bigint = 164872127070012814685n; // eˆ(x8)
+  static x9: bigint = 25000000000000000000n; // 2ˆ-2
+  static a9: bigint = 128402541668774148407n; // eˆ(x9)
+  static x10: bigint = 12500000000000000000n; // 2ˆ-3
+  static a10: bigint = 113314845306682631683n; // eˆ(x10)
+  static x11: bigint = 6250000000000000000n; // 2ˆ-4
+  static a11: bigint = 106449445891785942956n; // eˆ(x11)
 
   // All arguments and return values are 18 decimal fixed point numbers.
   static pow(x: bigint, y: bigint): bigint {
-    if (y === BI_0) {
+    if (y === 0n) {
       // We solve the 0^0 indetermination by making it equal one.
       return this.ONE_18;
     }
 
-    if (x == BI_0) {
-      return BI_0;
+    if (x == 0n) {
+      return 0n;
     }
 
     // Instead of computing x^y directly, we instead rely on the properties of logarithms and exponentiation to
@@ -304,7 +281,7 @@ class LogExpMath {
       // We only handle positive exponents: e^(-x) is computed as 1 / e^x. We can safely make x positive since it
       // fits in the signed 256 bit range (as it is larger than MIN_NATURAL_EXPONENT).
       // Fixed point division requires multiplying by ONE_18.
-      return (this.ONE_18 * this.ONE_18) / this.exp(BI_MINUS_ONE * x);
+      return (this.ONE_18 * this.ONE_18) / this.exp(-1n * x);
     }
 
     // First, we use the fact that e^(x+y) = e^x * e^y to decompose x into a sum of powers of two, which we call x_n,
@@ -332,12 +309,12 @@ class LogExpMath {
       x -= this.x1;
       firstAN = this.a1;
     } else {
-      firstAN = BI_1; // One with no decimal places
+      firstAN = 1n; // One with no decimal places
     }
 
     // We now transform x into a 20 decimal fixed point number, to have enhanced precision when computing the
     // smaller terms.
-    x *= BI_100;
+    x *= 100n;
 
     // `product` is the accumulated product of all a_n (except a0 and a1), which starts at 20 decimal fixed point
     // one. Recall that fixed point multiplication requires dividing by ONE_20.
@@ -391,37 +368,37 @@ class LogExpMath {
     // Each term (x^n / n!) equals the previous one times x, divided by n. Since x is a fixed point number,
     // multiplying by it requires dividing by this.ONE_20, but dividing by the non-fixed point n values does not.
 
-    term = (term * x) / this.ONE_20 / BI_2;
+    term = (term * x) / this.ONE_20 / 2n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_3;
+    term = (term * x) / this.ONE_20 / 3n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_4;
+    term = (term * x) / this.ONE_20 / 4n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_5;
+    term = (term * x) / this.ONE_20 / 5n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_6;
+    term = (term * x) / this.ONE_20 / 6n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_7;
+    term = (term * x) / this.ONE_20 / 7n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_8;
+    term = (term * x) / this.ONE_20 / 8n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_9;
+    term = (term * x) / this.ONE_20 / 9n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_10;
+    term = (term * x) / this.ONE_20 / 10n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_11;
+    term = (term * x) / this.ONE_20 / 11n;
     seriesSum += term;
 
-    term = (term * x) / this.ONE_20 / BI_12;
+    term = (term * x) / this.ONE_20 / 12n;
     seriesSum += term;
 
     // 12 Taylor terms are sufficient for 18 decimal precision.
@@ -431,7 +408,7 @@ class LogExpMath {
     // all three (one 20 decimal fixed point multiplication, dividing by this.ONE_20, and one integer multiplication),
     // and then drop two digits to return an 18 decimal value.
 
-    return (((product * seriesSum) / this.ONE_20) * firstAN) / BI_100;
+    return (((product * seriesSum) / this.ONE_20) * firstAN) / 100n;
   }
 
   static _ln_36(x: bigint): bigint {
@@ -457,30 +434,30 @@ class LogExpMath {
 
     // In each step, the numerator is multiplied by z^2
     num = (num * z_squared) / this.ONE_36;
-    seriesSum += num / BI_3;
+    seriesSum += num / 3n;
 
     num = (num * z_squared) / this.ONE_36;
-    seriesSum += num / BI_5;
+    seriesSum += num / 5n;
 
     num = (num * z_squared) / this.ONE_36;
-    seriesSum += num / BI_7;
+    seriesSum += num / 7n;
 
     num = (num * z_squared) / this.ONE_36;
-    seriesSum += num / BI_9;
+    seriesSum += num / 9n;
 
     num = (num * z_squared) / this.ONE_36;
-    seriesSum += num / BI_11;
+    seriesSum += num / 11n;
 
     num = (num * z_squared) / this.ONE_36;
-    seriesSum += num / BI_13;
+    seriesSum += num / 13n;
 
     num = (num * z_squared) / this.ONE_36;
-    seriesSum += num / BI_15;
+    seriesSum += num / 15n;
 
     // 8 Taylor terms are sufficient for 36 decimal precision.
 
     // All that remains is multiplying by 2 (non fixed point).
-    return seriesSum * BI_2;
+    return seriesSum * 2n;
   }
 
   /**
@@ -491,7 +468,7 @@ class LogExpMath {
       // Since ln(a^k) = k * ln(a), we can compute ln(a) as ln(a) = ln((1/a)^(-1)) = - ln((1/a)). If a is less
       // than one, 1/a will be greater than one, and this if statement will not be entered in the recursive call.
       // Fixed point division requires multiplying by this.ONE_18.
-      return BI_MINUS_ONE * this._ln((this.ONE_18 * this.ONE_18) / a);
+      return -1n * this._ln((this.ONE_18 * this.ONE_18) / a);
     }
 
     // First, we use the fact that ln^(a * b) = ln(a) + ln(b) to decompose ln(a) into a sum of powers of two, which
@@ -509,7 +486,7 @@ class LogExpMath {
     // For each a_n, we test if that term is present in the decomposition (if a is larger than it), and if so divide
     // by it and compute the accumulated sum.
 
-    let sum = BI_0;
+    let sum = 0n;
     if (a >= this.a0 * this.ONE_18) {
       a /= this.a0; // Integer, not fixed point division
       sum += this.x0;
@@ -521,8 +498,8 @@ class LogExpMath {
     }
 
     // All other a_n and x_n are stored as 20 digit fixed point numbers, so we convert the sum and a to this format.
-    sum *= BI_100;
-    a *= BI_100;
+    sum *= 100n;
+    a *= 100n;
 
     // Because further a_n are  20 digit fixed point numbers, we multiply by ONE_20 when dividing by them.
 
@@ -594,29 +571,29 @@ class LogExpMath {
 
     // In each step, the numerator is multiplied by z^2
     num = (num * z_squared) / this.ONE_20;
-    seriesSum += num / BI_3;
+    seriesSum += num / 3n;
 
     num = (num * z_squared) / this.ONE_20;
-    seriesSum += num / BI_5;
+    seriesSum += num / 5n;
 
     num = (num * z_squared) / this.ONE_20;
-    seriesSum += num / BI_7;
+    seriesSum += num / 7n;
 
     num = (num * z_squared) / this.ONE_20;
-    seriesSum += num / BI_9;
+    seriesSum += num / 9n;
 
     num = (num * z_squared) / this.ONE_20;
-    seriesSum += num / BI_11;
+    seriesSum += num / 11n;
 
     // 6 Taylor terms are sufficient for 36 decimal precision.
 
     // Finally, we multiply by 2 (non fixed point) to compute ln(remainder)
-    seriesSum *= BI_2;
+    seriesSum *= 2n;
 
     // We now have the sum of all x_n present, and the Taylor approximation of the logarithm of the remainder (both
     // with 20 decimals). All that remains is to sum these two, and then drop two digits to return a 18 decimal
     // value.
 
-    return (sum + seriesSum) / BI_100;
+    return (sum + seriesSum) / 100n;
   }
 }

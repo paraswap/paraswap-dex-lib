@@ -5,16 +5,7 @@ import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import { getTokenScalingFactor, decodeThrowError } from './utils';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
-import {
-  BI_0,
-  BI_1,
-  BI_10,
-  BI_100,
-  BI_2,
-  BI_3,
-  BI_99,
-  BI_POWS,
-} from '../../bigint-constants';
+import { BI_POWS } from '../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
@@ -202,16 +193,16 @@ class StableMath {
 
     // We support rounding up or down.
 
-    let sum = BI_0;
+    let sum = 0n;
     const numTokens = balances.length;
     for (let i = 0; i < numTokens; i++) {
       sum = sum + balances[i];
     }
-    if (sum == BI_0) {
-      return BI_0;
+    if (sum == 0n) {
+      return 0n;
     }
 
-    let prevInvariant = BI_0;
+    let prevInvariant = 0n;
     let invariant = sum;
     const ampTimesTotal = amplificationParameter * BigInt(numTokens);
 
@@ -298,7 +289,7 @@ class StableMath {
       // No need to use checked arithmetic since `tokenAmountIn` was actually added to the same balance right before
       // calling `_getTokenBalanceGivenInvariantAndAllOtherBalances` which doesn't alter the balances array.
       // balances[tokenIndexIn] = balances[tokenIndexIn] - tokenAmountIn;
-      return balances[tokenIndexOut] - finalBalanceOut - BI_1;
+      return balances[tokenIndexOut] - finalBalanceOut - 1n;
     });
   }
 
@@ -340,7 +331,7 @@ class StableMath {
       );
 
     // We iterate to find the balance
-    let prevTokenBalance = BI_0;
+    let prevTokenBalance = 0n;
     // We multiply the first iteration outside the loop with the invariant to set the value of the
     // initial approximation.
     let tokenBalance = MathSol.divUp(inv2 + c, invariant + b);
@@ -350,7 +341,7 @@ class StableMath {
 
       tokenBalance = MathSol.divUp(
         MathSol.mul(tokenBalance, tokenBalance) + c,
-        MathSol.mul(tokenBalance, BI_2) + b - invariant,
+        MathSol.mul(tokenBalance, 2n) + b - invariant,
       );
 
       if (tokenBalance > prevTokenBalance) {
@@ -411,7 +402,7 @@ export class StablePool extends BaseGeneralPool {
       if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
       if (pool.poolType === 'MetaStable')
         scalingFactors.push(
-          poolState.tokens[t.address.toLowerCase()].scalingFactor || BI_0,
+          poolState.tokens[t.address.toLowerCase()].scalingFactor || 0n,
         );
       else scalingFactors.push(getTokenScalingFactor(t.decimals));
       return poolState.tokens[t.address.toLowerCase()].balance;
@@ -423,7 +414,7 @@ export class StablePool extends BaseGeneralPool {
       indexOut,
       scalingFactors,
       swapFee: poolState.swapFee,
-      amp: poolState.amp ? poolState.amp : BI_0,
+      amp: poolState.amp ? poolState.amp : 0n,
     };
     return poolPairData;
   }
@@ -521,8 +512,8 @@ export class StablePool extends BaseGeneralPool {
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
-        BI_99) /
-      BI_100;
+        99n) /
+      100n;
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]
@@ -532,8 +523,8 @@ export class StablePool extends BaseGeneralPool {
 }
 
 export class WeightedMath {
-  static _MAX_IN_RATIO = BigInt(300000000000000000);
-  static _MAX_OUT_RATIO = BigInt(300000000000000000);
+  static _MAX_IN_RATIO = 300000000000000000n;
+  static _MAX_OUT_RATIO = 300000000000000000n;
   // Computes how many tokens can be taken out of a pool if `amountIn` are sent, given the
   // current balances and weights.
   static _calcOutGivenIn(
@@ -622,8 +613,8 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
 
     const tokenInBalance = poolState.tokens[inAddress].balance;
     const tokenOutBalance = poolState.tokens[outAddress].balance;
-    const tokenInWeight = poolState.tokens[inAddress].weight || BI_0;
-    const tokenOutWeight = poolState.tokens[outAddress].weight || BI_0;
+    const tokenInWeight = poolState.tokens[inAddress].weight || 0n;
+    const tokenOutWeight = poolState.tokens[outAddress].weight || 0n;
     const tokenInScalingFactor = getTokenScalingFactor(tIn.decimals);
     const tokenOutScalingFactor = getTokenScalingFactor(tOut.decimals);
 
@@ -728,8 +719,8 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
       ((side === SwapSide.SELL
         ? poolPairData.tokenInBalance
         : poolPairData.tokenOutBalance) *
-        BI_3) /
-      BI_10;
+        3n) /
+      10n;
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

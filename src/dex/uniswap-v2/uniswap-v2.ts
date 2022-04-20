@@ -43,16 +43,9 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
-import {
-  BI_0,
-  BI_1,
-  BI_160,
-  BI_161,
-  BI_2,
-  BI_MAX_UINT,
-} from '../../bigint-constants';
+import { BI_MAX_UINT } from '../../bigint-constants';
 
-const RESERVE_LIMIT = BI_2 ** BigInt(112) - BI_1;
+const RESERVE_LIMIT = 2n ** 112n - 1n;
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -202,8 +195,8 @@ export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
 function encodePools(pools: UniswapPool[]): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000 - fee) << BI_161) +
-      (BigInt(direction ? 0 : 1) << BI_160) +
+      (BigInt(10000 - fee) << 161n) +
+      ((direction ? 0n : 1n) << 160n) +
       BigInt(address)
     ).toString();
   });
@@ -315,8 +308,8 @@ export class UniswapV2
       (BigInt(this.feeFactor) - BigInt(fee)) *
       (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= BI_0) return BI_MAX_UINT;
-    return BI_1 + numerator / denominator;
+    if (denominator <= 0n) return BI_MAX_UINT;
+    return 1n + numerator / denominator;
   }
 
   async getSellPrice(
@@ -326,7 +319,7 @@ export class UniswapV2
     const { reservesIn, reservesOut, fee } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return BI_0;
+      return 0n;
     }
 
     const amountInWithFee = srcAmount * BigInt(this.feeFactor - parseInt(fee));
@@ -336,7 +329,7 @@ export class UniswapV2
     const denominator =
       BigInt(reservesIn) * BigInt(this.feeFactor) + amountInWithFee;
 
-    return denominator === BI_0 ? BI_0 : numerator / denominator;
+    return denominator === 0n ? 0n : numerator / denominator;
   }
 
   async getBuyPricePath(
