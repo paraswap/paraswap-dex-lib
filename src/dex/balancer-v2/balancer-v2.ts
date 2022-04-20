@@ -307,7 +307,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       })
       .flat();
 
-    // 500 is an arbitary number choosed based on the blockGasLimit
+    // 500 is an arbitrary number chosen based on the blockGasLimit
     const slicedMultiCallData = _.chunk(multiCallData, 500);
 
     const returnData = (
@@ -476,7 +476,7 @@ export class BalancerV2
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
           }
-          // TODO: re-chech what should be the current block time stamp
+          // TODO: re-check what should be the current block time stamp
           try {
             const res = this.eventPools.getPricesPool(
               _from,
@@ -660,9 +660,9 @@ export class BalancerV2
     };
 
     const query = `query ($tokens: [Bytes!], $count: Int) {
-      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, 
-           where: {tokensList_contains: $tokens, 
-                   swapEnabled: true, 
+      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
+           where: {tokensList_contains: $tokens,
+                   swapEnabled: true,
                    totalLiquidity_gt: 0}) {
         address
         totalLiquidity
