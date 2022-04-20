@@ -15,7 +15,7 @@ describe('UniswapV2 E2E Avalanche', () => {
   const network = Network.AVALANCHE;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new JsonRpcProvider(ProviderURL[network], network);
 
   describe('PangolinSwap', () => {
     const dexKey = 'PangolinSwap';

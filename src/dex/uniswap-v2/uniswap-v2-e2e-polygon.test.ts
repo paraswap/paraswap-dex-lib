@@ -15,7 +15,7 @@ describe('UniswapV2 E2E Polygon', () => {
   const network = Network.POLYGON;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new JsonRpcProvider(ProviderURL[network], network);
 
   describe('QuickSwap', () => {
     const dexKey = 'QuickSwap';

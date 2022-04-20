@@ -19,7 +19,7 @@ describe('BalancerV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[Network.MAINNET];
     const holders = Holders[Network.MAINNET];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     describe('Simpleswap', () => {
       it('ETH -> TOKEN', async () => {

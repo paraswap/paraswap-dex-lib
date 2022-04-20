@@ -20,7 +20,7 @@ describe('AaveV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const ETH = tokens['ETH'];
     const aWETH = aaveV2GetToken(network, 'aWETH');
@@ -107,7 +107,7 @@ describe('AaveV2 E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const MATIC = tokens['MATIC'];
     const amWMATIC = aaveV2GetToken(network, 'amWMATIC');
@@ -194,7 +194,7 @@ describe('AaveV2 E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const AVAX = tokens['AVAX'];
     const avWAVAX = aaveV2GetToken(network, 'avWAVAX');

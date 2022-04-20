@@ -19,7 +19,7 @@ describe('AaveV1 E2E', () => {
     const dexKey = 'AaveV1';
     const network = Network.MAINNET;
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
     // TODO: Modify the USDTSymbol, aUSDTSymbol, aETHAmount;
 
     const aETHSymbol: string = 'aETH';

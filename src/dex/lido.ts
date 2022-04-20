@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
@@ -25,7 +25,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: JsonRpcProvider,
+    provider: Provider,
   ) {
     this.stETHInterface = new Interface(stETHAbi as JsonFragment[]);
   }

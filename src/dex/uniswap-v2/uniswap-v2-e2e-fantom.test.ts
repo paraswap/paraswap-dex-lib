@@ -15,7 +15,7 @@ describe('UniswapV2 E2E Fantom', () => {
   const network = Network.FANTOM;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new JsonRpcProvider(ProviderURL[network], network);
 
   describe('SpookySwap', () => {
     const dexKey = 'SpookySwap';

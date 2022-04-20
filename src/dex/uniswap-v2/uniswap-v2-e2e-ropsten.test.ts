@@ -16,7 +16,7 @@ describe('UniswapV2 E2E Ropsten', () => {
   const network = Network.ROPSTEN;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new JsonRpcProvider(ProviderURL[network], network);
 
   describe('SimpleSwap', () => {
     it('ETH -> TOKEN', async () => {

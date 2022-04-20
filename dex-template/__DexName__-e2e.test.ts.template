@@ -57,7 +57,7 @@ describe('__DexName__ E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const tokenASymbol: string = 'tokenASymbol';

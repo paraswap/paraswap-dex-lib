@@ -24,7 +24,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -140,7 +140,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -256,7 +256,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -372,7 +372,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -488,7 +488,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new JsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];

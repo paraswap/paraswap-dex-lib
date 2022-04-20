@@ -15,7 +15,7 @@ describe('UniswapV2 E2E Mainnet', () => {
   const network = Network.MAINNET;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new JsonRpcProvider(ProviderURL[network], network);
 
   describe('UniswapV2', () => {
     const dexKey = 'UniswapV2';
