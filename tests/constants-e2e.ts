@@ -194,7 +194,6 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     SAITAMA: {
       address: '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f',
       decimals: 9,
-    },
     BBAUSDT: {
       // bpt of USDT Linear Pool
       address: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',

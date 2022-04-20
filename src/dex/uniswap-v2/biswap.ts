@@ -11,6 +11,8 @@ export const BiSwapConfig: DexConfigMap<DexParams> = {
   BiSwap: {
     [Network.BSC]: {
       factoryAddress: '0x858e3312ed3a876947ea49d572a7c42de08af7ee',
+      initCode:
+        '0xfea293c909d87cd4153593f077b76bb7e94340200f4ee84211ae8e4f9bd7ffdf',
       poolGasCost: 120 * 1000,
       feeCode: 0, // this is ingored as BiSwap uses dynamic fees
     },
@@ -35,6 +37,7 @@ export class BiSwap extends UniswapV2 {
       true,
       BiSwapConfig[dexKey][network].factoryAddress,
       BiSwapConfig[dexKey][network].subgraphURL,
+      BiSwapConfig[dexKey][network].initCode,
       BiSwapConfig[dexKey][network].feeCode,
       BiSwapConfig[dexKey][network].poolGasCost,
     );
