@@ -44,7 +44,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
     id
     address
     poolType
@@ -67,6 +67,7 @@ enum BalancerPoolTypes {
   AaveLinear = 'AaveLinear',
   StablePhantom = 'StablePhantom',
   VirtualBoosted = 'VirtualBoosted',
+  ERC4626Linear = 'ERC4626Linear',
 }
 
 const subgraphTimeout = 1000 * 10;
@@ -125,10 +126,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.vaultAddress,
       this.vaultInterface,
     );
-    const aaveLinearPool = new LinearPool(
-      this.vaultAddress,
-      this.vaultInterface,
-    );
+    const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
 
     const virtualBoostedPool = new VirtualBoostedPool(
       this.vaultAddress,
@@ -141,7 +139,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.MetaStable] = stablePool;
     this.pools[BalancerPoolTypes.LiquidityBootstrapping] = weightedPool;
     this.pools[BalancerPoolTypes.Investment] = weightedPool;
-    this.pools[BalancerPoolTypes.AaveLinear] = aaveLinearPool;
+    this.pools[BalancerPoolTypes.AaveLinear] = linearPool;
+    // ERC4626Linear has the same maths and ABI as AaveLinear (has different factory)
+    this.pools[BalancerPoolTypes.ERC4626Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
     this.pools[BalancerPoolTypes.VirtualBoosted] = virtualBoostedPool;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);

@@ -17,8 +17,6 @@ import {
 } from '../../types';
 import {
   DexParams,
-  UniswapData,
-  UniswapDataLegacy,
   UniswapParam,
   UniswapPool,
   UniswapV2Data,
@@ -39,13 +37,13 @@ import {
   getDexKeysWithNetwork,
   isETHAddress,
   prependWithOx,
+  WethMap,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
-import { WETHAddresses } from '../weth';
 import { UniswapV2Config, Adapters } from './config';
 
 const MAX_UINT_BIGINT = BigInt(MAX_UINT);
@@ -74,10 +72,6 @@ const erc20iface = new Interface(erc20ABI);
 const coder = new AbiCoder();
 
 export const directUniswapFunctionName = [
-  UniswapV2Functions.swapOnUniswap,
-  UniswapV2Functions.buyOnUniswap,
-  UniswapV2Functions.swapOnUniswapFork,
-  UniswapV2Functions.buyOnUniswapFork,
   UniswapV2Functions.swapOnUniswapV2Fork,
   UniswapV2Functions.buyOnUniswapV2Fork,
 ];
@@ -193,6 +187,7 @@ export const UniswapV2ExchangeRouter: { [network: number]: Address } = {
 export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
   // stETH - uses balances based on shares which causes rounding errors
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 1,
+  '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f': 200,
 };
 
 function encodePools(pools: UniswapPool[]): NumberAsString[] {
@@ -233,7 +228,6 @@ export class UniswapV2
       .factoryAddress,
     protected subgraphURL: string | undefined = UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].subgraphURL,
-    protected initCode: string = UniswapV2Config[dexKey][network].initCode,
     // feeCode is ignored when isDynamicFees is set to true
     protected feeCode: number = UniswapV2Config[dexKey][network].feeCode,
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
@@ -596,10 +590,6 @@ export class UniswapV2
           unit: unit,
           data: {
             router: this.router,
-            path: [from.address.toLowerCase(), to.address.toLowerCase()],
-            factory: this.factoryAddress,
-            initCode: this.initCode,
-            feeFactor: this.feeFactor,
             pools: [
               {
                 address: pairParam.exchange,
@@ -717,10 +707,10 @@ export class UniswapV2
     });
   }
 
-  getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
+  getWETHAddress(srcToken: Address, destToken: Address) {
     if (!isETHAddress(srcToken) && !isETHAddress(destToken))
       return NULL_ADDRESS;
-    return weth || WETHAddresses[this.network];
+    return WethMap[this.network];
   }
 
   getAdapterParam(
@@ -728,11 +718,11 @@ export class UniswapV2
     destToken: Address,
     srcAmount: NumberAsString,
     toAmount: NumberAsString, // required for buy case
-    data: UniswapData,
+    data: UniswapV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
     const pools = encodePools(data.pools);
-    const weth = this.getWETHAddress(srcToken, destToken, data.weth);
+    const weth = this.getWETHAddress(srcToken, destToken);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -754,11 +744,11 @@ export class UniswapV2
     dest: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: UniswapData,
+    data: UniswapV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const pools = encodePools(data.pools);
-    const weth = this.getWETHAddress(src, dest, data.weth);
+    const weth = this.getWETHAddress(src, dest);
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
       [src, srcAmount, destAmount, weth, pools],
@@ -779,7 +769,7 @@ export class UniswapV2
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    _data: UniswapData,
+    data: UniswapV2Data,
     side: SwapSide,
     permit: string,
     contractMethod?: string,
@@ -788,32 +778,15 @@ export class UniswapV2
     if (permit !== '0x') contractMethod += 'WithPermit';
 
     const swapParams = ((): UniswapParam => {
-      const data = _data as unknown as UniswapDataLegacy;
-      const path = this.fixPath(data.path, srcToken, destToken);
-
       switch (contractMethod) {
-        case UniswapV2Functions.swapOnUniswap:
-        case UniswapV2Functions.buyOnUniswap:
-          return [srcAmount, destAmount, path];
-
-        case UniswapV2Functions.swapOnUniswapFork:
-        case UniswapV2Functions.buyOnUniswapFork:
-          return [
-            data.factory,
-            prependWithOx(data.initCode),
-            srcAmount,
-            destAmount,
-            path,
-          ];
-
         case UniswapV2Functions.swapOnUniswapV2Fork:
         case UniswapV2Functions.buyOnUniswapV2Fork:
           return [
             srcToken,
             srcAmount,
             destAmount,
-            this.getWETHAddress(srcToken, destToken, _data.weth),
-            encodePools(_data.pools),
+            this.getWETHAddress(srcToken, destToken),
+            encodePools(data.pools),
           ];
 
         case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
@@ -822,8 +795,8 @@ export class UniswapV2
             srcToken,
             srcAmount,
             destAmount,
-            this.getWETHAddress(srcToken, destToken, _data.weth),
-            encodePools(_data.pools),
+            this.getWETHAddress(srcToken, destToken),
+            encodePools(data.pools),
             permit,
           ];
 

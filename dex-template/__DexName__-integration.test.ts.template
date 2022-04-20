@@ -4,17 +4,21 @@ dotenv.config();
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { __DexName__ } from './__DexNameParam__';
-import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
+import {
+  checkPoolPrices,
+  checkPoolsLiquidity,
+  checkConstantPoolPrices,
+} from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
 /*
   README
   ======
 
-  This test script adds tests for __DexName__ general integration 
-  with the DEX interface. The test cases below are example tests. 
+  This test script adds tests for __DexName__ general integration
+  with the DEX interface. The test cases below are example tests.
   It is recommended to add tests which cover __DexName__ specific
-  logic. 
+  logic.
 
   You can run this individual test script by running:
   `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
@@ -43,7 +47,7 @@ describe('__DexName__', function () {
     const blocknumber = await dexHelper.provider.getBlockNumber();
     const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
 
-    await __DexNameCamel__.setupEventPools(blocknumber);
+    await __DexNameCamel__.initializePricing(blocknumber);
 
     const pools = await __DexNameCamel__.getPoolIdentifiers(
       TokenA,
@@ -51,7 +55,7 @@ describe('__DexName__', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -63,10 +67,14 @@ describe('__DexName__', function () {
       blocknumber,
       pools,
     );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    if (__DexNameCamel__.hasConstantPriceLargeAmounts) {
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    } else {
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    }
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
@@ -74,7 +82,7 @@ describe('__DexName__', function () {
     const blocknumber = await dexHelper.provider.getBlockNumber();
     const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
 
-    await __DexNameCamel__.setupEventPools(blocknumber);
+    await __DexNameCamel__.initializePricing(blocknumber);
 
     const pools = await __DexNameCamel__.getPoolIdentifiers(
       TokenA,
@@ -82,7 +90,7 @@ describe('__DexName__', function () {
       SwapSide.BUY,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `, pools);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -94,10 +102,14 @@ describe('__DexName__', function () {
       blocknumber,
       pools,
     );
-    console.log('${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ', poolPrices);
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+    if (__DexNameCamel__.hasConstantPriceLargeAmounts) {
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    } else {
+      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+    }
   });
 
   it('getTopPoolsForToken', async function () {
@@ -110,6 +122,8 @@ describe('__DexName__', function () {
     );
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
-    checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+    if (!__DexNameCamel__.hasConstantPriceLargeAmounts) {
+      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+    }
   });
 });

@@ -11,8 +11,6 @@ export const MDEXConfig: DexConfigMap<DexParams> = {
   MDEX: {
     [Network.BSC]: {
       factoryAddress: '0x3cd1c46068daea5ebb0d3f55f6915b10648062b8',
-      initCode:
-        '0x0d994d996174b05cfc7bed897dc1b20b4c458fc8d64fe98bc78b3c64a6b4d093',
       poolGasCost: 80 * 1000,
       feeCode: 0, // feeCode is ignored as dynamic fees is set to true
     },
@@ -37,7 +35,6 @@ export class MDEX extends UniswapV2 {
       true,
       MDEXConfig[dexKey][network].factoryAddress,
       MDEXConfig[dexKey][network].subgraphURL,
-      MDEXConfig[dexKey][network].initCode,
       MDEXConfig[dexKey][network].feeCode,
       MDEXConfig[dexKey][network].poolGasCost,
     );
