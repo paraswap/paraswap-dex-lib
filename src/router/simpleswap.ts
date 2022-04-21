@@ -31,7 +31,6 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
 
   constructor(
     protected dexAdapterService: DexAdapterService,
-    adapters: Adapters,
     protected side: SwapSide,
 
     // prepare mapping: network -> wrapped exchange key
@@ -261,14 +260,14 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
 
 export class SimpleSwap extends SimpleRouter {
   static isBuy = false;
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters, SwapSide.SELL);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService, SwapSide.SELL);
   }
 }
 
 export class SimpleBuy extends SimpleRouter {
   static isBuy = true;
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters, SwapSide.BUY);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService, SwapSide.BUY);
   }
 }
