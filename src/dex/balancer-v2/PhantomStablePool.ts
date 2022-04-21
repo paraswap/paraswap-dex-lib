@@ -3,10 +3,8 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { BasePool } from './balancer-v2-pool';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as StableMath from './StableMath';
-import { BZERO } from './balancer-v2-math';
 import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
 import { SwapSide } from '../../constants';
-
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 
 enum PairTypes {
@@ -77,7 +75,7 @@ export class PhantomStablePool extends BasePool {
   }
 
   // StablePool's `_onSwapGivenIn` and `_onSwapGivenOut` handlers are meant to process swaps between Pool tokens.
-  // Since one of the Pool's tokens is the preminted BPT, we neeed to a) handle swaps where that tokens is involved
+  // Since one of the Pool's tokens is the preminted BPT, we need to a) handle swaps where that tokens is involved
   // separately (as they are effectively single-token joins or exits), and b) remove BPT from the balances array when
   // processing regular swaps before delegating those to StablePool's handler.
   removeBPT(
@@ -187,7 +185,7 @@ export class PhantomStablePool extends BasePool {
       tokenAmountsIn.forEach(amountIn => {
         let amt: bigint;
         try {
-          const amountsInBigInt = Array(balances.length).fill(BZERO);
+          const amountsInBigInt = Array(balances.length).fill(0n);
           amountsInBigInt[indexIn] = amountIn;
 
           amt = StableMath._calcBptOutGivenExactTokensIn(
@@ -198,7 +196,7 @@ export class PhantomStablePool extends BasePool {
             invariant,
           );
         } catch (err) {
-          amt = BZERO;
+          amt = 0n;
         }
         amountsOut.push(amt);
       });
@@ -215,7 +213,7 @@ export class PhantomStablePool extends BasePool {
             invariant,
           );
         } catch (err) {
-          amt = BZERO;
+          amt = 0n;
         }
         amountsOut.push(amt);
       });
@@ -232,7 +230,7 @@ export class PhantomStablePool extends BasePool {
             invariant,
           );
         } catch (err) {
-          amt = BZERO;
+          amt = 0n;
         }
         amountsOut.push(amt);
       });
@@ -262,7 +260,7 @@ export class PhantomStablePool extends BasePool {
 
       balances.push(poolState.tokens[t.address.toLowerCase()].balance);
       scalingFactors.push(
-        poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
+        poolState.tokens[t.address.toLowerCase()].scalingFactor || 0n,
       );
       return t.address;
     });
@@ -275,7 +273,7 @@ export class PhantomStablePool extends BasePool {
       scalingFactors,
       bptIndex,
       swapFee: poolState.swapFee,
-      amp: poolState.amp ? poolState.amp : BigInt(0),
+      amp: poolState.amp ? poolState.amp : 0n,
     };
     return poolPairData;
   }
@@ -390,8 +388,8 @@ export class PhantomStablePool extends BasePool {
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
-        BigInt(99)) /
-      BigInt(100);
+        99n) /
+      100n;
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

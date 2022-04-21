@@ -24,7 +24,7 @@ import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -292,7 +292,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       _amounts,
       poolPairData as any,
     );
-    return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
+    return { unit: _prices[0], prices: [0n, ..._prices.slice(1)] };
   }
 
   async getOnChainState(
@@ -307,7 +307,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       })
       .flat();
 
-    // 500 is an arbitary number choosed based on the blockGasLimit
+    // 500 is an arbitrary number chosen based on the blockGasLimit
     const slicedMultiCallData = _.chunk(multiCallData, 500);
 
     const returnData = (
@@ -445,12 +445,12 @@ export class BalancerV2
 
       if (!allowedPools.length) return null;
 
-      const unitVolume = BigInt(
-        10 ** (side === SwapSide.SELL ? _from : _to).decimals,
+      const unitVolume = getBigIntPow(
+        (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const quoteUnitVolume = BigInt(
-        10 ** (side === SwapSide.SELL ? _to : _from).decimals,
+      const quoteUnitVolume = getBigIntPow(
+        (side === SwapSide.SELL ? _to : _from).decimals,
       );
 
       const poolStates = await this.eventPools.getState(blockNumber);
@@ -476,7 +476,7 @@ export class BalancerV2
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
           }
-          // TODO: re-chech what should be the current block time stamp
+          // TODO: re-check what should be the current block time stamp
           try {
             const res = this.eventPools.getPricesPool(
               _from,
@@ -660,9 +660,9 @@ export class BalancerV2
     };
 
     const query = `query ($tokens: [Bytes!], $count: Int) {
-      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, 
-           where: {tokensList_contains: $tokens, 
-                   swapEnabled: true, 
+      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
+           where: {tokensList_contains: $tokens,
+                   swapEnabled: true,
                    totalLiquidity_gt: 0}) {
         address
         totalLiquidity

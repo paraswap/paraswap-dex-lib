@@ -132,7 +132,7 @@ export class Balancer
       const _srcAmount = BigInt(srcAmount);
       const totalInParam = swaps.reduce(
         (acc, swap) => acc + BigInt(swap.tokenInParam),
-        BigInt(0),
+        0n,
       );
       swaps.forEach(swap => {
         swap.tokenInParam = (

@@ -86,7 +86,7 @@ export class SimpleExchange {
       srcAmount,
     );
     const swapValue = (
-      BigInt(networkFee) + BigInt(isETHAddress(src) ? srcAmount : '0')
+      BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : 0n)
     ).toString();
 
     return {

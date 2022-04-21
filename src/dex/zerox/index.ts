@@ -228,7 +228,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAmount) +
             BigInt(order.makerAmount) -
-            BigInt(1)) /
+            1n) /
           BigInt(order.makerAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
@@ -244,7 +244,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAssetAmount) +
             BigInt(order.makerAssetAmount) -
-            BigInt(1)) /
+            1n) /
           BigInt(order.makerAssetAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);

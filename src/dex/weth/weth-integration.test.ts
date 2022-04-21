@@ -6,6 +6,7 @@ import { Network, SwapSide } from '../../constants';
 import { Weth } from './weth';
 import { checkConstantPoolPrices } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { BI_POWS } from '../../bigint-constants';
 
 const network = Network.MAINNET;
 const EthSymbol = 'ETH';
@@ -14,11 +15,7 @@ const EthToken = Tokens[network][EthSymbol];
 const WethSymbol = 'WETH';
 const WethToken = Tokens[network][WethSymbol];
 
-const amounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
+const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = 'Weth';
 

@@ -6,6 +6,7 @@ import { Network, SwapSide } from '../../constants';
 import { KyberDmm } from './kyberdmm';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { BI_POWS } from '../../bigint-constants';
 
 const network = Network.MAINNET;
 const TokenASymbol = 'USDT';
@@ -14,7 +15,7 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'WBTC';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [BigInt('0'), BigInt('1000000'), BigInt('2000000')];
+const amounts = [0n, BI_POWS[6], 2000000n];
 
 const dexKey = 'KyberDmm';
 
@@ -30,10 +31,7 @@ describe('KyberDmm', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(
-      `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
-      pools,
-    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -62,10 +60,7 @@ describe('KyberDmm', function () {
       SwapSide.BUY,
       blocknumber,
     );
-    console.log(
-      `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
-      pools,
-    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 

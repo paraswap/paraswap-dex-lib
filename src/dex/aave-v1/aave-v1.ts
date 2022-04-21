@@ -9,7 +9,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AaveV1Data, AaveV1Param } from './types';
@@ -63,7 +63,7 @@ export class AaveV1
   }
 
   // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifers must be unique
+  // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
@@ -99,8 +99,8 @@ export class AaveV1
     return [
       {
         prices: amounts,
-        unit: BigInt(
-          10 ** (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        unit: getBigIntPow(
+          (side === SwapSide.SELL ? destToken : srcToken).decimals,
         ),
         gasCost: AaveGasCost,
         exchange: this.dexKey,
