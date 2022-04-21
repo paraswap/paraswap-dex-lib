@@ -1,5 +1,5 @@
 import { Interface } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { ParaSwap, NetworkID } from 'paraswap';
 import {
   IParaSwapSDK,
@@ -163,7 +163,7 @@ export async function testE2E(
   dexKey: string,
   contractMethod: ContractMethod,
   network: Network = Network.MAINNET,
-  provider: JsonRpcProvider,
+  provider: Provider,
   poolIdentifiers?: string[],
 ) {
   const amount = BigInt(_amount);
@@ -221,8 +221,8 @@ export async function testE2E(
   // Slippage to be 7%
   const minMaxAmount =
     (swapSide === SwapSide.SELL
-      ? BigInt(priceRoute.destAmount) * BigInt(93)
-      : BigInt(priceRoute.srcAmount) * BigInt(107)) / BigInt(100);
+      ? BigInt(priceRoute.destAmount) * 93n
+      : BigInt(priceRoute.srcAmount) * 107n) / 100n;
   const swapParams = await paraswap.buildTransaction(
     priceRoute,
     minMaxAmount,

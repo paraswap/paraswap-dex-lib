@@ -13,7 +13,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MakerPsmData, PoolState, PoolConfig } from './types';
@@ -21,16 +21,14 @@ import { SimpleExchange } from '../simple-exchange';
 import { MakerPsmConfig, Adapters } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
+import { BI_POWS } from '../../bigint-constants';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
-const WAD = BigInt(10 ** 18);
-const BN0 = BigInt(0);
-const BN1 = BigInt(1);
-const BN1E18 = BigInt(1e18);
+const WAD = BI_POWS[18];
 
 const bigIntify = (b: any) => BigInt(b.toString());
-const ceilDiv = (a: bigint, b: bigint) => (a + b - BN1) / b;
+const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b;
 
 async function getOnChainState(
   multiContract: Contract,
@@ -107,8 +105,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];
-    this.to18ConversionFactor =
-      BigInt(10) ** BigInt(18 - poolConfig.gem.decimals);
+    this.to18ConversionFactor = getBigIntPow(18 - poolConfig.gem.decimals);
 
     // Add handlers
     this.handlers['File'] = this.handleFile.bind(this);
@@ -135,12 +132,12 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
     return pool;
   }
 
-  getIdentifer(): string {
+  getIdentifier(): string {
     return `${this.parentName}_${this.poolConfig.psmAddress}`.toLowerCase();
   }
 
   /**
-   * The function is called everytime any of the subscribed
+   * The function is called every time any of the subscribed
    * addresses release log. The function accepts the current
    * state, updates the state according to the log, and returns
    * the updated state.
@@ -169,12 +166,12 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
 
   /**
    * The function generates state using on-chain calls. This
-   * function is called to regenrate state if the event based
+   * function is called to regenerate state if the event based
    * system fails to fetch events and the local state is no
    * more correct.
    * @param blockNumber - Blocknumber for which the state should
    * should be generated
-   * @returns state of the event subsriber at blocknumber
+   * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     return (
@@ -259,7 +256,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
   }
 
   // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifers must be unique
+  // for a given swap. poolIdentifiers must be unique
   // across DEXes.
   async getPoolIdentifiers(
     srcToken: Token,
@@ -269,7 +266,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
   ): Promise<string[]> {
     const eventPool = this.getEventPool(srcToken, destToken);
     if (!eventPool) return [];
-    return [eventPool.getIdentifer()];
+    return [eventPool.getIdentifier()];
   }
 
   async getPoolState(
@@ -314,7 +311,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
           if (sellGemCheck(gemAmt18)) return gemAmt18 / to18ConversionFactor;
         }
       }
-      return BN0;
+      return 0n;
     });
   }
 
@@ -333,13 +330,13 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     const eventPool = this.getEventPool(srcToken, destToken);
     if (!eventPool) return null;
 
-    const poolIdentifier = eventPool.getIdentifer();
+    const poolIdentifier = eventPool.getIdentifier();
     if (limitPools && !limitPools.includes(poolIdentifier)) return null;
 
     const poolState = await this.getPoolState(eventPool, blockNumber);
 
-    const unitVolume = BigInt(
-      10 ** (side === SwapSide.SELL ? srcToken : destToken).decimals,
+    const unitVolume = getBigIntPow(
+      (side === SwapSide.SELL ? srcToken : destToken).decimals,
     );
 
     const isSrcDai = srcToken.address.toLowerCase() === this.dai.address;
@@ -384,7 +381,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     side: SwapSide,
   ): { isGemSell: boolean; gemAmount: string } {
     const isSrcDai = srcToken.toLowerCase() === this.dai.address;
-    const to18ConversionFactor = BigInt(10) ** BigInt(18 - data.gemDecimals);
+    const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
     if (side === SwapSide.SELL) {
       if (isSrcDai) {
         const gemAmt18 = (BigInt(srcAmount) * WAD) / (WAD + BigInt(data.toll));
@@ -421,7 +418,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     data: MakerPsmData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const to18ConversionFactor = BigInt(10) ** BigInt(18 - data.gemDecimals);
+    const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -494,7 +491,9 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       return (
         2 *
         parseInt(
-          ((buyLimit > sellLimit ? sellLimit : buyLimit) / BN1E18).toString(),
+          (
+            (buyLimit > sellLimit ? sellLimit : buyLimit) / BI_POWS[18]
+          ).toString(),
         )
       );
     };

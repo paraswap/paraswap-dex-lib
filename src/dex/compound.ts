@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
@@ -26,7 +26,7 @@ export class Compound
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: JsonRpcProvider,
+    provider: Provider,
   ) {
     super(augustusAddress, provider);
     this.cethInterface = new Interface(Ceth as JsonFragment[]);

@@ -11,7 +11,7 @@
     "sourceMap": true,
     "declaration": true,
     "skipLibCheck": true,
-    "target": "es2019",
+    "target": "es2020",
     "resolveJsonModule": true,
     "allowJs": true,
     "typeRoots": ["node_modules/@types"],

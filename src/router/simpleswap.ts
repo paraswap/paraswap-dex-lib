@@ -101,9 +101,9 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       swap.swapExchanges.map(async se => {
         const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
         let _src = swap.srcToken;
-        let wethDeposit = BigInt(0);
+        let wethDeposit = 0n;
         let _dest = swap.destToken;
-        let wethWithdraw = BigInt(0);
+        let wethWithdraw = 0n;
 
         if (dex.needWrapNative) {
           if (isETHAddress(swap.srcToken)) {
@@ -167,8 +167,8 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       },
       {
         simpleExchangeDataList: [],
-        srcAmountWethToDeposit: BigInt(0),
-        destAmountWethToWithdraw: BigInt(0),
+        srcAmountWethToDeposit: 0n,
+        destAmountWethToWithdraw: 0n,
       },
     );
 
@@ -242,7 +242,7 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     destAmountWeth: bigint,
     swap: OptimalSwap,
   ) {
-    if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
+    if (srcAmountWeth === 0n && destAmountWeth === 0n) return;
 
     return (
       this.dexAdapterService.getTxBuilderDexByKey(

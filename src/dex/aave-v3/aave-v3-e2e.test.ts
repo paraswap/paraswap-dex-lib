@@ -13,7 +13,7 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { getTokenFromASymbol } from './tokens';
 import { Token } from '../../types';
 
@@ -26,7 +26,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const pairs = [
       {
@@ -109,7 +109,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const pairs = [
       {
@@ -192,7 +192,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const pairs = [
       {
