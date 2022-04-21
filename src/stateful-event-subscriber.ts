@@ -67,14 +67,18 @@ export abstract class StatefulEventSubscriber<State>
     blockNumber?: number | 'latest',
   ): AsyncOrSync<DeepReadonly<State>>;
 
-  restart(blockNumber: number): void {
+  //Returns true if the state was updated
+  restart(blockNumber: number): boolean {
+    let updated = false;
     for (const bn in this.stateHistory) {
       if (+bn >= blockNumber) break;
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
       this.state = null;
+      updated = true;
     }
+    return updated;
   }
 
   //Implementation must call setState() for every block in which the state
@@ -84,10 +88,12 @@ export abstract class StatefulEventSubscriber<State>
   //all logs with that block number and then proceed as normal for the remaining
   //logs.  Remember to clear the invalid flag, even if there are no logs!
   //A default implementation is provided here, but could be overridden.
+  //Returns true if the state was updated
   async update(
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [blockNumber: number]: Readonly<BlockHeader> }>,
-  ): Promise<void> {
+  ): Promise<boolean> {
+    let updated = false;
     let index = 0;
     let lastBlockNumber: number | undefined;
     while (index < logs.length) {
@@ -113,7 +119,7 @@ export abstract class StatefulEventSubscriber<State>
       }
       if (!this.state) {
         const freshState = await this.generateState(blockNumber);
-        this.setState(freshState, blockNumber);
+        updated = updated || this.setState(freshState, blockNumber);
       }
       //Find the last state before the blockNumber of the logs
       let stateBeforeLog: DeepReadonly<State> | undefined;
@@ -128,18 +134,26 @@ export abstract class StatefulEventSubscriber<State>
           logs.slice(index, indexBlockEnd),
           blockHeader,
         );
-        if (nextState) this.setState(nextState, blockNumber);
+        if (nextState) {
+          updated = updated || this.setState(nextState, blockNumber);
+        }
       }
       lastBlockNumber = blockNumber;
       index = indexBlockEnd;
     }
-    this.invalid = false;
+    if (this.invalid) {
+      this.invalid = false;
+      updated = true;
+    }
+    return updated;
   }
 
   //Removes all states that are beyond the given block number and sets the
   //current state to the latest one that is left, if any, unless the invalid
   //flag is not set, in which case the most recent state can be kept.
-  rollback(blockNumber: number): void {
+  //Returns true if the state was updated
+  rollback(blockNumber: number): boolean {
+    let updated = false;
     if (this.invalid) {
       for (const bn in this.stateHistory) {
         if (+bn > blockNumber) {
@@ -147,10 +161,12 @@ export abstract class StatefulEventSubscriber<State>
         } else {
           this.state = this.stateHistory[bn];
           this.stateBlockNumber = +bn;
+          updated = true;
         }
       }
       if (this.state && this.stateBlockNumber > blockNumber) {
         this.state = null;
+        updated = true;
       }
     } else {
       //Keep the current state in this.state and in the history
@@ -160,10 +176,15 @@ export abstract class StatefulEventSubscriber<State>
         }
       }
     }
+    return updated;
   }
 
-  invalidate(): void {
-    this.invalid = true;
+  invalidate(): boolean {
+    if (this.invalid) return false;
+    else {
+      this.invalid = true;
+      return true;
+    }
   }
 
   //May return a state that is more recent than the block number specified, or
@@ -188,17 +209,19 @@ export abstract class StatefulEventSubscriber<State>
   //Saves the state into the stateHistory, and cleans up any old state that is
   //no longer needed.  If the blockNumber is greater than or equal to the
   //current state, then the current state will be updated and the invalid flag
-  //can be reset.
-  setState(state: DeepReadonly<State>, blockNumber: number): void {
+  //can be reset. Returns true if state is updated
+  setState(state: DeepReadonly<State>, blockNumber: number): boolean {
+    let updated = false;
     if (!blockNumber) {
       this.logger.error('setState() with blockNumber', blockNumber);
-      return;
+      return updated;
     }
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
       this.state = state;
       this.stateBlockNumber = blockNumber;
       this.invalid = false;
+      updated = true;
     }
     const minBlockNumberToKeep = this.stateBlockNumber - MAX_BLOCKS_HISTORY;
     let lastBlockNumber: number | undefined;
@@ -209,5 +232,6 @@ export abstract class StatefulEventSubscriber<State>
       if (+bn >= minBlockNumberToKeep) break;
       lastBlockNumber = +bn;
     }
+    return updated;
   }
 }
