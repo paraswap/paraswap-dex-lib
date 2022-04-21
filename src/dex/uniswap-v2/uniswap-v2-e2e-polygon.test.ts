@@ -1238,7 +1238,6 @@ describe('UniswapV2 E2E Polygon', () => {
 
   describe('TetuSwap', () => {
     const dexKey = 'TetuSwap';
-    jest.setTimeout(30000); // Sometimes tests fails with timeout
 
     const MATIC_amount = '100000000000000000000'; // 100 MATIC
     const TETU_amount = '1000000000000000000000'; // 1000 TETU
