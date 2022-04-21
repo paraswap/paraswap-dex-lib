@@ -9,7 +9,7 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { aaveV1GetToken } from './tokens';
 
 jest.setTimeout(1000 * 60 * 3);
@@ -19,7 +19,7 @@ describe('AaveV1 E2E', () => {
     const dexKey = 'AaveV1';
     const network = Network.MAINNET;
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
     // TODO: Modify the USDTSymbol, aUSDTSymbol, aETHAmount;
 
     const aETHSymbol: string = 'aETH';

@@ -25,6 +25,7 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, WethConfig } from './config';
+import { BI_POWS } from '../../bigint-constants';
 
 export class Weth
   extends SimpleExchange
@@ -46,7 +47,7 @@ export class Weth
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    protected unitPrice = BigInt(1e18),
+    protected unitPrice = BI_POWS[18],
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);

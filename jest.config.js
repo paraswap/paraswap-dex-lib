@@ -6,5 +6,5 @@ module.exports = {
     '/src/dex/.*\\.(test|spec)\\.(ts)$',
   ],
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
-  testTimeout: 30000,
+  testTimeout: 30 * 1000,
 };

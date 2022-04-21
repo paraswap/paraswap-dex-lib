@@ -1,3 +1,4 @@
+import { BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { Address, Token, DexConfigMap } from './types';
 
@@ -64,4 +65,12 @@ export function getDexKeysWithNetwork<T>(
     key: dKey,
     networks: Object.keys(dValue).map(n => parseInt(n)),
   }));
+}
+
+// This is needed in order to not modify existing logic and use this wrapper
+// to be safe if we receive not cached decimals
+export function getBigIntPow(decimals: number): bigint {
+  const value = BI_POWS[decimals];
+  // It is not accurate to create 10 ** 23 and more decimals from number type
+  return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
 }
