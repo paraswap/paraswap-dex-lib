@@ -22,8 +22,8 @@ export class MultiSwap
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'multiSwap';
   }

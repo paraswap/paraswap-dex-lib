@@ -36,10 +36,7 @@ export function encodeFeePercent(
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
-  constructor(
-    protected dexAdapterService: DexAdapterService,
-    protected adapters: Adapters,
-  ) {}
+  constructor(protected dexAdapterService: DexAdapterService) {}
   // Should have function for optimally choosing the Adapters
   getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
     paths: ContractPath[];
@@ -193,8 +190,7 @@ export class PayloadEncoder {
 
     const adapterPoints: { [adapter: string]: number } = {};
     swapExchanges.forEach(se => {
-      const dexKey = this.dexAdapterService.getDexKeySpecial(se.exchange);
-      const adapters = this.adapters[dexKey];
+      const adapters = this.dexAdapterService.getAdapter(se.exchange, side);
       if (!adapters.length)
         throw new Error(`No adapter found for ${se.exchange}`);
       adapters.forEach(a => {
@@ -214,12 +210,14 @@ export class PayloadEncoder {
     const leftSwapExchange: OptimalSwapExchange<any>[] = [];
 
     swapExchanges.forEach(se => {
-      const dexKey = this.dexAdapterService.getDexKeySpecial(se.exchange);
-      const adapterConfig = this.adapters[dexKey].find(
-        ({ adapter }) => adapter.toLowerCase() === bestAdapter,
-      );
+      const adapterConfig = this.dexAdapterService
+        .getAdapter(se.exchange, side)
+        .find(({ adapter }) => adapter.toLowerCase() === bestAdapter);
       if (adapterConfig) {
-        optimalAdapters[dexKey] = [adapterConfig.adapter, adapterConfig.index];
+        optimalAdapters[se.exchange.toLowerCase()] = [
+          adapterConfig.adapter,
+          adapterConfig.index,
+        ];
       } else {
         if (side === SwapSide.BUY)
           throw new Error('No adapter found containing all exchanges');

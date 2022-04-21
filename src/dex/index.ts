@@ -250,4 +250,11 @@ export class DexAdapterService {
     }
     return dexKey;
   }
+
+  getAdapter(dexKey: string, side: SwapSide) {
+    const specialDexKey = this.getDexKeySpecial(dexKey);
+    return side === SwapSide.SELL
+      ? this.sellAdapters[specialDexKey]
+      : this.buyAdapters[specialDexKey];
+  }
 }
