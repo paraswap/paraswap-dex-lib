@@ -1,6 +1,6 @@
 import { AbiEncoder } from '@0x/utils';
 import { Interface } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 
 import IParaswapAbi from '../../abi/IParaswap.json';
 import ZRX_V2_ABI from '../../abi/zrx.v2.json';
@@ -104,7 +104,7 @@ export class ZeroX
   constructor(
     augustusAddress: Address,
     public network: number,
-    provider: JsonRpcProvider,
+    provider: Provider,
   ) {
     super(augustusAddress, provider);
     this.routerInterface = new Interface(IParaswapAbi);

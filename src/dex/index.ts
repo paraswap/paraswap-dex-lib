@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
@@ -109,7 +109,7 @@ const AdapterNameAddressMap: {
 export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
-  provider: JsonRpcProvider,
+  provider: Provider,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
