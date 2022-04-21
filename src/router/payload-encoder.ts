@@ -193,7 +193,8 @@ export class PayloadEncoder {
 
     const adapterPoints: { [adapter: string]: number } = {};
     swapExchanges.forEach(se => {
-      const adapters = this.adapters[se.exchange.toLowerCase()];
+      const dexKey = this.dexAdapterService.getDexKeySpecial(se.exchange);
+      const adapters = this.adapters[dexKey];
       if (!adapters.length)
         throw new Error(`No adapter found for ${se.exchange}`);
       adapters.forEach(a => {
@@ -213,15 +214,12 @@ export class PayloadEncoder {
     const leftSwapExchange: OptimalSwapExchange<any>[] = [];
 
     swapExchanges.forEach(se => {
-      const exchangeKey = se.exchange.toLowerCase();
-      const adapterConfig = this.adapters[exchangeKey].find(
+      const dexKey = this.dexAdapterService.getDexKeySpecial(se.exchange);
+      const adapterConfig = this.adapters[dexKey].find(
         ({ adapter }) => adapter.toLowerCase() === bestAdapter,
       );
       if (adapterConfig) {
-        optimalAdapters[exchangeKey] = [
-          adapterConfig.adapter,
-          adapterConfig.index,
-        ];
+        optimalAdapters[dexKey] = [adapterConfig.adapter, adapterConfig.index];
       } else {
         if (side === SwapSide.BUY)
           throw new Error('No adapter found containing all exchanges');
