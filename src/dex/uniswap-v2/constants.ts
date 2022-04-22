@@ -46,10 +46,10 @@ export const UniswapForksWithNetwork = transformToNetworkMap({
 
 // These are exchanges used for swapOnUniswap method
 export const UniswapV2Alias: { [network: number]: string } = {
-  [Network.MAINNET]: 'UniswapV2',
-  [Network.ROPSTEN]: 'UniswapV2',
-  [Network.BSC]: 'PancakeSwap',
-  [Network.POLYGON]: 'QuickSwap',
-  [Network.AVALANCHE]: 'PangolinSwap',
-  [Network.FANTOM]: 'SpookySwap',
+  [Network.MAINNET]: 'uniswapv2',
+  [Network.ROPSTEN]: 'uniswapv2',
+  [Network.BSC]: 'pancakeswap',
+  [Network.POLYGON]: 'quickswap',
+  [Network.AVALANCHE]: 'pangolinswap',
+  [Network.FANTOM]: 'spookyswap',
 };
