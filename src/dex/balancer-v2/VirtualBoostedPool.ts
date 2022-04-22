@@ -37,6 +37,12 @@ export type VirtualBoostedPools = {
   [id: string]: VirtualBoostedPoolInfo;
 };
 
+export type SwapData = {
+  swaps: BalancerSwap[];
+  assets: string[];
+  limits: string[];
+};
+
 type VirtualBoostedPoolPairData = {
   tokenIn: string;
   tokenOut: string;
@@ -547,7 +553,7 @@ export class VirtualBoostedPool {
     tokenOut: string,
     boostedPoolId: string,
     amount: string,
-  ): { swaps: BalancerSwap[]; assets: string[]; limits: string[] } {
+  ): SwapData {
     // this function could easily return swap data for a token pair
     // i.e. for DAI>USDC it would return tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut in correct swap format
     const actualId = boostedPoolId.split('-virtualBoostedPool')[0];

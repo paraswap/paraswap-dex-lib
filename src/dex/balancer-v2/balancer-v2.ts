@@ -22,7 +22,7 @@ import {
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
-import { VirtualBoostedPool } from './VirtualBoostedPool';
+import { VirtualBoostedPool, SwapData } from './VirtualBoostedPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork } from '../../utils';
@@ -595,7 +595,28 @@ export class BalancerV2
     };
   }
 
-  private getBalancerParam(
+  updateSwapAsset(tokenIndex: number, swapAssets: string[], currentAssets: string[]): number {
+    const token = swapAssets[tokenIndex];
+    const currentIndex = currentAssets.indexOf(token);
+    if (currentIndex === -1) {
+      currentAssets.push(token);
+      return currentAssets.length - 1;
+    } else {
+      return currentIndex;
+    }
+  }
+
+  updateSwapAssets(swapData: SwapData, currentAssets: string[]): SwapData {
+    // Update currentAssets. By the end it will contain all assets from all swaps.
+    // Update each swap index to match currentAsset
+    swapData.swaps.forEach(swap => {
+      swap.assetInIndex = this.updateSwapAsset(swap.assetInIndex, swapData.assets, currentAssets);
+      swap.assetOutIndex = this.updateSwapAsset(swap.assetOutIndex, swapData.assets, currentAssets);
+    })
+    return swapData;
+  }
+
+  getBalancerParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
@@ -603,36 +624,44 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): BalancerParam {
-    let assets: string[] = [];
+    // assets array will contain list of all assets used in all swaps
+    let assets: string[] = [srcToken, destToken];
+    // swap asset indices will be match to assets array
     let swaps: BalancerSwap[] = [];
-    let limits: string[] = [];
-    if (data.swaps[0].poolId.includes('virtualBoostedPool')) {
-      // VirtualBoostedPools swaps will consist of multihops.
-      // getSwapData will construct the relevant swaps, assets and limits
-      const swapData = VirtualBoostedPool.getSwapData(
-        srcToken,
-        destToken,
-        data.swaps[0].poolId,
-        data.swaps[0].amount,
-      );
-      assets = swapData.assets;
-      swaps = swapData.swaps;
-      limits = swapData.limits;
-    } else {
-      // BalancerV2 Uses Address(0) as ETH
-      assets = [srcToken, destToken].map(t =>
-        t.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? NULL_ADDRESS : t,
-      );
-      swaps = data.swaps.map(s => ({
-        poolId: s.poolId,
-        assetInIndex: 0,
-        assetOutIndex: 1,
-        amount: s.amount,
-        userData: '0x',
-      }));
 
-      limits = [MAX_INT, MAX_INT];
-    }
+    // swaps contains poolId and amount data
+    data.swaps.forEach(swap => {
+      if (swap.poolId.includes('virtualBoostedPool')) {
+        // VirtualBoostedPools swaps will consist of multihops.
+        // getSwapData will construct the relevant swaps, assets and limits
+        const swapData = VirtualBoostedPool.getSwapData(
+          srcToken,
+          destToken,
+          swap.poolId,
+          swap.amount,
+        );
+        
+        // Update assets and swaps with any new assets or indices
+        const updatedSwaps = this.updateSwapAssets(swapData, assets);
+        swaps = [...swaps, ...updatedSwaps.swaps];     
+      } else {
+        // Non-virtual pools will be a direct swap src>dst
+        swaps.push({
+          poolId: swap.poolId,
+          assetInIndex: 0,
+          assetOutIndex: 1,
+          amount: swap.amount,
+          userData: '0x',
+        });
+      }
+    })
+
+    // BalancerV2 Uses Address(0) as ETH
+    assets = assets.map(t =>
+      t.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? NULL_ADDRESS : t,
+    );
+
+    const limits: string[] = Array(assets.length).fill(MAX_INT);
 
     const funds = {
       sender: this.augustusAddress,
