@@ -595,7 +595,11 @@ export class BalancerV2
     };
   }
 
-  updateSwapAsset(tokenIndex: number, swapAssets: string[], currentAssets: string[]): number {
+  updateSwapAsset(
+    tokenIndex: number,
+    swapAssets: string[],
+    currentAssets: string[],
+  ): number {
     const token = swapAssets[tokenIndex];
     const currentIndex = currentAssets.indexOf(token);
     if (currentIndex === -1) {
@@ -610,9 +614,17 @@ export class BalancerV2
     // Update currentAssets. By the end it will contain all assets from all swaps.
     // Update each swap index to match currentAsset
     swapData.swaps.forEach(swap => {
-      swap.assetInIndex = this.updateSwapAsset(swap.assetInIndex, swapData.assets, currentAssets);
-      swap.assetOutIndex = this.updateSwapAsset(swap.assetOutIndex, swapData.assets, currentAssets);
-    })
+      swap.assetInIndex = this.updateSwapAsset(
+        swap.assetInIndex,
+        swapData.assets,
+        currentAssets,
+      );
+      swap.assetOutIndex = this.updateSwapAsset(
+        swap.assetOutIndex,
+        swapData.assets,
+        currentAssets,
+      );
+    });
     return swapData;
   }
 
@@ -640,10 +652,10 @@ export class BalancerV2
           swap.poolId,
           swap.amount,
         );
-        
+
         // Update assets and swaps with any new assets or indices
         const updatedSwaps = this.updateSwapAssets(swapData, assets);
-        swaps = [...swaps, ...updatedSwaps.swaps];     
+        swaps = [...swaps, ...updatedSwaps.swaps];
       } else {
         // Non-virtual pools will be a direct swap src>dst
         swaps.push({
@@ -654,7 +666,7 @@ export class BalancerV2
           userData: '0x',
         });
       }
-    })
+    });
 
     // BalancerV2 Uses Address(0) as ETH
     assets = assets.map(t =>
