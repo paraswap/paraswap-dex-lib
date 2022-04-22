@@ -88,13 +88,15 @@ class DummyBlockManager implements IBlockManager {
   subscribeToLogs(
     subscriberInfo: SubscriberInfo<any>,
     isActive: boolean,
-  ): EventSubscriber {
+  ): EventSubscriber<any> {
     if (!this.getEventSubscriber) throw new Error('getEventSubscriber not set');
     console.log(
       `Subscribed to logs ${subscriberInfo.dexKey}:${subscriberInfo.identifier} ${subscriberInfo.addressSubscribed} ${subscriberInfo.afterBlockNumber}`,
     );
     return this.getEventSubscriber(subscriberInfo);
   }
+
+  lazyUpdate<T>(identifier: string, update: T | null, blockNumber: number) {}
 }
 
 export class DummyDexHelper implements IDexHelper {

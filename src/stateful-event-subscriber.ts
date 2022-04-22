@@ -6,7 +6,7 @@ import { EventSubscriber } from './dex-helper/iblock-manager';
 import { MAX_BLOCKS_HISTORY } from './constants';
 
 export abstract class StatefulEventSubscriber<State>
-  implements EventSubscriber
+  implements EventSubscriber<State>
 {
   //The current state and its block number
   //Derived classes should not set these directly, and instead use setState()
@@ -233,5 +233,17 @@ export abstract class StatefulEventSubscriber<State>
       lastBlockNumber = +bn;
     }
     return updated;
+  }
+
+  setLazyUpdate(update: DeepReadonly<State> | null, blockNumber: number) {
+    this.state = update;
+    this.stateBlockNumber = blockNumber;
+  }
+
+  getLazyUpdate() {
+    return {
+      update: this.state,
+      blockNumber: this.stateBlockNumber,
+    };
   }
 }

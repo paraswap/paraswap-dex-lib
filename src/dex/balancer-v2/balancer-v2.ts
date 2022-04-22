@@ -341,7 +341,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements IDex<BalancerV2Data, null, BalancerParam, OptimizedBalancerV2Data>
+  implements
+    IDex<BalancerV2Data, null, null, BalancerParam, OptimizedBalancerV2Data>
 {
   protected eventPools: BalancerV2EventPool;
 

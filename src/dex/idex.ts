@@ -124,8 +124,10 @@ export interface IDexPooltracker {
   ): AsyncOrSync<PoolLiquidity[]>;
 }
 
-export interface IEventsSubscriberFactory<SubscriberInitData> {
-  getEventSubscriber?(subscriberInitData: SubscriberInitData): EventSubscriber;
+export interface IEventsSubscriberFactory<SubscriberInitData, SubscriberState> {
+  getEventSubscriber?(
+    subscriberInitData: SubscriberInitData,
+  ): EventSubscriber<SubscriberState>;
 }
 
 // Combine IDexTxBuilder, IDexPricing & IDexPooltracker in
@@ -133,23 +135,26 @@ export interface IEventsSubscriberFactory<SubscriberInitData> {
 export interface IDex<
   ExchangeData,
   SubscriberInitData = null,
+  SubscriberState = null,
   DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > extends IDexTxBuilder<OptimizedExchangeData, DirectParam>,
     IDexPricing<ExchangeData>,
     IDexPooltracker,
-    IEventsSubscriberFactory<SubscriberInitData> {}
+    IEventsSubscriberFactory<SubscriberInitData, SubscriberState> {}
 
 // Defines the static objects of the IDex class
 export interface DexContructor<
   ExchangeData,
   SubscriberInitData = null,
+  SubscriberState = null,
   DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > {
   new (network: Network, dexKey: string, dexHelper: IDexHelper): IDex<
     ExchangeData,
     SubscriberInitData,
+    SubscriberState,
     DirectParam,
     OptimizedExchangeData
   >;

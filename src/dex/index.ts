@@ -204,7 +204,9 @@ export class DexAdapterService {
     );
   }
 
-  getEventSubscriber(subscriberInfo: SubscriberInfo<any>): EventSubscriber {
+  getEventSubscriber(
+    subscriberInfo: SubscriberInfo<any>,
+  ): EventSubscriber<any> {
     const dex = this.getDexByKey(subscriberInfo.dexKey);
     if (!dex.getEventSubscriber)
       throw new Error(

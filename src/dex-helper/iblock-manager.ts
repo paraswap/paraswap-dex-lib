@@ -1,7 +1,7 @@
 import { Address, Log, BlockHeader } from '../types';
-import { AsyncOrSync } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 
-export interface EventSubscriber {
+export interface EventSubscriber<LazyUpdate> {
   //Contains a descriptive name for this subscriber, to be shown in logs etc.
   readonly name: string;
 
@@ -44,6 +44,16 @@ export interface EventSubscriber {
   //logs, or otherwise when update() is called.
   //Returns true if the invalidate was updated
   invalidate(): boolean;
+
+  setLazyUpdate(
+    update: DeepReadonly<LazyUpdate> | null,
+    blockNumber: number,
+  ): void;
+
+  getLazyUpdate(): {
+    blockNumber: number;
+    update: DeepReadonly<LazyUpdate> | null;
+  };
 }
 
 // Currently the subscriber info is specific to dex pools but this can
@@ -58,13 +68,19 @@ export type SubscriberInfo<T> = {
 
 export type SubscriberFetcher = (
   subscriberInfo: SubscriberInfo<any>,
-) => EventSubscriber;
+) => EventSubscriber<any>;
 
 export interface IBlockManager {
   attachGetSubscriber(getSubscriber: SubscriberFetcher): void;
 
   subscribeToLogs(
     subscriberInfo: SubscriberInfo<any>,
-    isActive: boolean,
-  ): EventSubscriber;
+    isLazy: boolean,
+  ): EventSubscriber<any>;
+
+  lazyUpdate<T>(
+    identifier: string,
+    update: T | null,
+    blockNumber: number,
+  ): void;
 }

@@ -206,7 +206,8 @@ function encodePools(pools: UniswapPool[]): NumberAsString[] {
 
 export class UniswapV2
   extends SimpleExchange
-  implements IDex<UniswapV2Data, PoolInitData, UniswapParam>
+  implements
+    IDex<UniswapV2Data, PoolInitData, UniswapV2PoolState, UniswapParam>
 {
   pairs: { [key: string]: UniswapV2Pair } = {};
   feeFactor = 10000;
@@ -284,7 +285,7 @@ export class UniswapV2
 
     const subscriberInfo = {
       dexKey: this.dexKey,
-      identifier: pair.exchange!.toLowerCase(),
+      identifier: `${this.dexKey}_${pair.exchange!}`.toLowerCase(),
       initParams: poolInitData,
       addressSubscribed: pair.exchange!,
       afterBlockNumber: blockNumber,
@@ -292,7 +293,7 @@ export class UniswapV2
 
     pair.pool = this.dexHelper.blockManager.subscribeToLogs(
       subscriberInfo,
-      false,
+      true,
     ) as UniswapV2EventPool;
 
     if (blockNumber)
@@ -536,7 +537,7 @@ export class UniswapV2
     return [poolIdentifier];
   }
 
-  getEventSubscriber(poolInitData: PoolInitData): EventSubscriber {
+  getEventSubscriber(poolInitData: PoolInitData): UniswapV2EventPool {
     const { callEntry, callDecoder } =
       this.getFeesMultiCallData(poolInitData.poolAddress) || {};
     return new UniswapV2EventPool(
