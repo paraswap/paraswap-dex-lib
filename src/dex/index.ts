@@ -238,9 +238,9 @@ export class DexAdapterService {
     return side === SwapSide.SELL ? this.sellAdapters : this.buyAdapters;
   }
 
-  getDexKeySpecial(dexKey: string) {
+  getDexKeySpecial(dexKey: string, isAdapters: boolean = false) {
     dexKey = dexKey.toLowerCase();
-    if (/^paraswappool(.*)/i.test(dexKey)) return 'zerox';
+    if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
     else if ('uniswapforkoptimized' === dexKey) {
       if (!this.uniswapV2Alias)
         throw new Error(
@@ -252,7 +252,7 @@ export class DexAdapterService {
   }
 
   getAdapter(dexKey: string, side: SwapSide) {
-    const specialDexKey = this.getDexKeySpecial(dexKey);
+    const specialDexKey = this.getDexKeySpecial(dexKey, true);
     return side === SwapSide.SELL
       ? this.sellAdapters[specialDexKey]
       : this.buyAdapters[specialDexKey];
