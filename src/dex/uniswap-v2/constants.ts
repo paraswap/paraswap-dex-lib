@@ -29,7 +29,7 @@ const transformToNetworkMap = (config: {
       Object.keys(networkConfig).forEach((_n: string) => {
         const n = parseInt(_n);
         if (!(n in acc)) acc[n] = [];
-        acc[n].push(dexKey);
+        acc[n].push(dexKey.toLowerCase());
       });
       return acc;
     },
