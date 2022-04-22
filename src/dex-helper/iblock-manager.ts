@@ -46,10 +46,25 @@ export interface EventSubscriber {
   invalidate(): boolean;
 }
 
+// Currently the subscriber info is specific to dex pools but this can
+// be extended general subscriber
+export type SubscriberInfo<T> = {
+  dexKey: string;
+  identifier: string;
+  initParams: T;
+  addressSubscribed: Address | Address[];
+  afterBlockNumber: number;
+};
+
+export type SubscriberFetcher = (
+  subscriberInfo: SubscriberInfo<any>,
+) => EventSubscriber;
+
 export interface IBlockManager {
+  attachGetSubscriber(getSubscriber: SubscriberFetcher): void;
+
   subscribeToLogs(
-    subscriber: EventSubscriber,
-    contractAddress: Address | Address[],
-    afterBlockNumber: number,
-  ): void;
+    subscriberInfo: SubscriberInfo<any>,
+    isActive: boolean,
+  ): EventSubscriber;
 }

@@ -37,6 +37,7 @@ import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
+import { SubscriberInfo, EventSubscriber } from '../dex-helper';
 
 const LegacyDexes = [
   Curve,
@@ -59,19 +60,20 @@ const LegacyDexes = [
   Lido,
 ];
 
+// TODO: uncomment the rest of the DEXes once they follow IEventsSubscriberFactory
 const Dexes = [
-  BalancerV2,
+  // BalancerV2,
   UniswapV2,
-  BiSwap,
-  MDEX,
-  Dfyn,
-  Excalibur,
-  AaveV1,
-  AaveV2,
-  AaveV3,
-  KyberDmm,
-  Weth,
-  MakerPsm,
+  // BiSwap,
+  // MDEX,
+  // Dfyn,
+  // Excalibur,
+  // AaveV1,
+  // AaveV2,
+  // AaveV3,
+  // KyberDmm,
+  // Weth,
+  // MakerPsm,
 ];
 
 const AdapterNameAddressMap: {
@@ -196,6 +198,15 @@ export class DexAdapterService {
       this.network in UniswapV2Alias
         ? UniswapV2Alias[this.network].toLowerCase()
         : null;
+  }
+
+  getEventSubscriber(subscriberInfo: SubscriberInfo<any>): EventSubscriber {
+    const dex = this.getDexByKey(subscriberInfo.dexKey);
+    if (!dex.getEventSubscriber)
+      throw new Error(
+        'Requested subscriber for dex without getEventSubscriber',
+      );
+    return dex.getEventSubscriber(subscriberInfo);
   }
 
   getTxBuilderDexByKey(dexKey: string): IDexTxBuilder<any, any> {

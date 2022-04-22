@@ -1,4 +1,5 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
+import { EventSubscriber } from '../../dex-helper/iblock-manager';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
@@ -23,6 +24,7 @@ import {
   UniswapPool,
   UniswapV2Data,
   UniswapV2Functions,
+  PoolInitData,
 } from './types';
 import { IDex } from '../../dex/idex';
 import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
@@ -204,7 +206,7 @@ function encodePools(pools: UniswapPool[]): NumberAsString[] {
 
 export class UniswapV2
   extends SimpleExchange
-  implements IDex<UniswapV2Data, UniswapParam>
+  implements IDex<UniswapV2Data, PoolInitData, UniswapParam>
 {
   pairs: { [key: string]: UniswapV2Pair } = {};
   feeFactor = 10000;
@@ -273,28 +275,28 @@ export class UniswapV2
     feeCode: number,
     blockNumber: number,
   ) {
-    const { callEntry, callDecoder } =
-      this.getFeesMultiCallData(pair.exchange!) || {};
-    pair.pool = new UniswapV2EventPool(
-      this.dexKey,
-      this.dexHelper,
-      pair.exchange!,
-      pair.token0,
-      pair.token1,
-      feeCode,
-      this.logger,
-      this.isDynamicFees,
-      callEntry,
-      callDecoder,
-    );
+    const poolInitData: PoolInitData = {
+      token0: pair.token0,
+      token1: pair.token1,
+      feeCode: feeCode,
+      poolAddress: pair.exchange!,
+    };
+
+    const subscriberInfo = {
+      dexKey: this.dexKey,
+      identifier: pair.exchange!.toLowerCase(),
+      initParams: poolInitData,
+      addressSubscribed: pair.exchange!,
+      afterBlockNumber: blockNumber,
+    };
+
+    pair.pool = this.dexHelper.blockManager.subscribeToLogs(
+      subscriberInfo,
+      false,
+    ) as UniswapV2EventPool;
 
     if (blockNumber)
       pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      pair.pool,
-      pair.exchange!,
-      blockNumber,
-    );
   }
 
   async getBuyPrice(
@@ -532,6 +534,23 @@ export class UniswapV2
 
     const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
     return [poolIdentifier];
+  }
+
+  getEventSubscriber(poolInitData: PoolInitData): EventSubscriber {
+    const { callEntry, callDecoder } =
+      this.getFeesMultiCallData(poolInitData.poolAddress) || {};
+    return new UniswapV2EventPool(
+      this.dexKey,
+      this.dexHelper,
+      poolInitData.poolAddress,
+      poolInitData.token0,
+      poolInitData.token1,
+      poolInitData.feeCode,
+      this.logger,
+      this.isDynamicFees,
+      callEntry,
+      callDecoder,
+    );
   }
 
   async getPricesVolume(

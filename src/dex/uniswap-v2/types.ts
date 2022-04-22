@@ -129,3 +129,10 @@ export type DexParams = {
   router?: Address;
   adapters?: { [side: string]: { name: string; index: number }[] | null };
 };
+
+export type PoolInitData = {
+  token0: Token;
+  token1: Token;
+  poolAddress: Address;
+  feeCode: number;
+};

@@ -341,7 +341,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements IDex<BalancerV2Data, null, BalancerParam, OptimizedBalancerV2Data>
 {
   protected eventPools: BalancerV2EventPool;
 
@@ -376,11 +376,13 @@ export class BalancerV2
   async setupEventPools(blockNumber: number) {
     const poolState = await this.eventPools.generateState(blockNumber);
     this.eventPools.setState(poolState, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.eventPools,
-      this.eventPools.addressesSubscribed,
-      blockNumber,
-    );
+
+    // TODO: fix me
+    // this.dexHelper.blockManager.subscribeToLogs(
+    //   this.eventPools,
+    //   this.eventPools.addressesSubscribed,
+    //   blockNumber,
+    // );
   }
 
   async initializePricing(blockNumber: number) {

@@ -231,11 +231,12 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     this.poolConfigs.forEach((p, i) => {
       const eventPool = this.eventPools[p.gem.address.toLowerCase()];
       eventPool.setState(poolStates[i], blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        eventPool,
-        eventPool.addressesSubscribed,
-        blockNumber,
-      );
+      // TODO: fix me
+      // this.dexHelper.blockManager.subscribeToLogs(
+      //   eventPool,
+      //   eventPool.addressesSubscribed,
+      //   blockNumber,
+      // );
     });
   }
 

@@ -4,6 +4,8 @@ import {
   IBlockManager,
   EventSubscriber,
   IRequestWrapper,
+  SubscriberInfo,
+  SubscriberFetcher,
 } from './index';
 import axios from 'axios';
 import { Address, LoggerConstructor } from '../types';
@@ -77,14 +79,21 @@ class DummyRequestWrapper implements IRequestWrapper {
 }
 
 class DummyBlockManager implements IBlockManager {
+  getEventSubscriber: SubscriberFetcher | null = null;
+
+  attachGetSubscriber(getSubscriber: SubscriberFetcher) {
+    this.getEventSubscriber = getSubscriber;
+  }
+
   subscribeToLogs(
-    subscriber: EventSubscriber,
-    contractAddress: Address | Address[],
-    afterBlockNumber: number,
-  ): void {
+    subscriberInfo: SubscriberInfo<any>,
+    isActive: boolean,
+  ): EventSubscriber {
+    if (!this.getEventSubscriber) throw new Error('getEventSubscriber not set');
     console.log(
-      `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
+      `Subscribed to logs ${subscriberInfo.dexKey}:${subscriberInfo.identifier} ${subscriberInfo.addressSubscribed} ${subscriberInfo.afterBlockNumber}`,
     );
+    return this.getEventSubscriber(subscriberInfo);
   }
 }
 

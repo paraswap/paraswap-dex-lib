@@ -55,7 +55,6 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     protected parentName: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
-
     token0: Token,
     token1: Token,
     public ampBps: bigint,

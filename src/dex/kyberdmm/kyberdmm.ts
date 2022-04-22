@@ -43,10 +43,7 @@ const subgraphTimeout = 10 * 1000;
 const iface = new Interface(kyberDmmPoolABI);
 const coder = new AbiCoder();
 
-export class KyberDmm
-  extends SimpleExchange
-  implements IDex<KyberDmmData, KyberDmmParam>
-{
+export class KyberDmm extends SimpleExchange implements IDex<KyberDmmData> {
   pairs: { [key: string]: KyberDmmPair } = {};
   needWrapNative = true;
   factory: Contract;
@@ -251,11 +248,12 @@ export class KyberDmm
       );
       pair.pools[poolAddress] = pool;
       if (blockNumber) pool.setState(poolData, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        poolAddress,
-        blockNumber,
-      );
+      // TODO: fix me
+      // this.dexHelper.blockManager.subscribeToLogs(
+      //   pool,
+      //   poolAddress,
+      //   blockNumber,
+      // );
     }
   }
 
