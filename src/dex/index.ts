@@ -198,6 +198,10 @@ export class DexAdapterService {
       this.network in UniswapV2Alias
         ? UniswapV2Alias[this.network].toLowerCase()
         : null;
+
+    this.dexHelper.blockManager.attachGetSubscriber(
+      this.getEventSubscriber.bind(this),
+    );
   }
 
   getEventSubscriber(subscriberInfo: SubscriberInfo<any>): EventSubscriber {
