@@ -78,6 +78,8 @@ export interface IBlockManager {
     isLazy: boolean,
   ): EventSubscriber<any>;
 
+  isAlreadySubscribedToLogs<T>(subscriberInfo: SubscriberInfo<T>): boolean;
+
   lazyUpdate<T>(
     identifier: string,
     update: T | null,

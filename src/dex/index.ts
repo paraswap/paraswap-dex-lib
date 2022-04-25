@@ -212,7 +212,7 @@ export class DexAdapterService {
       throw new Error(
         'Requested subscriber for dex without getEventSubscriber',
       );
-    return dex.getEventSubscriber(subscriberInfo);
+    return dex.getEventSubscriber(subscriberInfo.initParams);
   }
 
   getTxBuilderDexByKey(dexKey: string): IDexTxBuilder<any, any> {

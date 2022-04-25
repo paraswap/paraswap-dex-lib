@@ -11,6 +11,8 @@ export {
   IBlockManager,
   IRequestWrapper,
   EventSubscriber,
+  SubscriberFetcher,
+  SubscriberInfo,
 } from './dex-helper';
 
 export { StatefulEventSubscriber } from './stateful-event-subscriber';

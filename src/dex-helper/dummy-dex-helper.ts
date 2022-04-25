@@ -85,6 +85,10 @@ class DummyBlockManager implements IBlockManager {
     this.getEventSubscriber = getSubscriber;
   }
 
+  isAlreadySubscribedToLogs<T>(subscriberInfo: SubscriberInfo<T>): boolean {
+    return false;
+  }
+
   subscribeToLogs(
     subscriberInfo: SubscriberInfo<any>,
     isActive: boolean,
