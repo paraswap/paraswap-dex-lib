@@ -128,7 +128,7 @@ export class VirtualBoostedPool {
       if (this.virtualBoostedPools[pool.id])
         virtualBoostedPools.push({
           id: pool.id + '-virtualBoostedPool',
-          address: pool.address,
+          address: pool.address + '-virtualboostedpool',
           poolType: 'VirtualBoosted',
           tokens: this.virtualBoostedPools[pool.id].mainTokens,
           mainIndex: 0,
@@ -149,6 +149,7 @@ export class VirtualBoostedPool {
     // Add calls for PhantomStable Pool
     const poolCallData: callData[] = [];
     // Add pool tokens for upper PhantomStablePool
+    const poolAddress = pool.address.split('-virtualboostedpool')[0];
     poolCallData.push({
       target: this.vaultAddress,
       callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
@@ -157,20 +158,20 @@ export class VirtualBoostedPool {
     });
     // Add swap fee for upper PhantomStablePool
     poolCallData.push({
-      target: pool.address,
+      target: poolAddress,
       callData: this.phantomStablePoolInterface.encodeFunctionData(
         'getSwapFeePercentage',
       ),
     });
     // Add scaling factors for upper PhantomStablePool
     poolCallData.push({
-      target: pool.address,
+      target: poolAddress,
       callData:
         this.phantomStablePoolInterface.encodeFunctionData('getScalingFactors'),
     });
     // Add amp parameter for upper PhantomStable Pool
     poolCallData.push({
-      target: pool.address,
+      target: poolAddress,
       callData: this.phantomStablePoolInterface.encodeFunctionData(
         'getAmplificationParameter',
       ),
@@ -272,6 +273,8 @@ export class VirtualBoostedPool {
     poolState.amp = BigInt(amp.value.toString());
 
     pools[pool.address.toLowerCase()] = poolState;
+    pools[pool.address.split('-virtualboostedpool')[0].toLowerCase()] =
+      poolState;
 
     VirtualBoostedPool.virtualBoostedPools[
       pool.id.split('-virtualBoostedPool')[0]

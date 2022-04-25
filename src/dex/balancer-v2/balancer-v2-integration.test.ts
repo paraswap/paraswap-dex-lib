@@ -16,6 +16,11 @@ const DAI = {
   decimals: 18,
 };
 
+const USDC = {
+  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  decimals: 6,
+};
+
 const BBADAI = {
   address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
   decimals: 18,
@@ -177,6 +182,74 @@ describe('BalancerV2', function () {
       console.log('BBAUSD Top Pools:', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
+    });
+  });
+
+  describe('VirtualBoosted Pools', () => {
+    it('getPoolIdentifiers and getPricesVolume', async function () {
+      const dexHelper = new DummyDexHelper(Network.MAINNET);
+      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+
+      await balancerV2.initializePricing(blocknumber);
+
+      const pools = await balancerV2.getPoolIdentifiers(
+        DAI,
+        USDC,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log('DAI <> USDC Pool Ideintifiers: ', pools);
+
+      expect(pools.length).toBeGreaterThan(0);
+      expect(pools).toContain(
+        'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+      );
+
+      const poolPrices = await balancerV2.getPricesVolume(
+        DAI,
+        USDC,
+        amounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
+      console.log('DAI <> USDC Pool Prices: ', poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      const virtualPoolIdentifier = poolPrices?.find(
+        p =>
+          p.poolIdentifier ===
+          'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+      );
+      expect(virtualPoolIdentifier).not.toBeUndefined();
+      expect(virtualPoolIdentifier?.poolAddresses).toEqual([
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+      ]);
+      expect(virtualPoolIdentifier?.data.poolId).toEqual(
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe-virtualBoostedPool',
+      );
+      expect(virtualPoolIdentifier?.gasCost).toBe(12);
+    });
+    it('getTopPoolsForToken', async function () {
+      const dexHelper = new DummyDexHelper(Network.MAINNET);
+      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+
+      const poolLiquidity = await balancerV2.getTopPoolsForToken(
+        DAI.address,
+        10,
+      );
+      console.log('DAI Top Pools:', poolLiquidity);
+
+      const virtualPool = poolLiquidity?.find(
+        p =>
+          p.address ===
+          '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+      );
+      expect(virtualPool).not.toBeUndefined();
+
+      checkPoolsLiquidity(poolLiquidity, DAI.address, dexKey);
     });
   });
 });
