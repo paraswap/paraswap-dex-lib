@@ -39,6 +39,8 @@ const amounts = [
 
 const dexKey = 'BalancerV2';
 
+jest.setTimeout(50 * 1000);
+
 describe('BalancerV2', function () {
   describe('Weighted', () => {
     it('getPoolIdentifiers and getPricesVolume', async function () {
@@ -67,9 +69,9 @@ describe('BalancerV2', function () {
         pools,
       );
       console.log('WETH <> DAI Pool Prices: ', poolPrices);
-
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      expect(poolPrices?.[0].gasCost).toBe(25); // TO DO
     });
 
     it('getTopPoolsForToken', async function () {
@@ -116,6 +118,7 @@ describe('BalancerV2', function () {
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      expect(poolPrices?.[0].gasCost).toBe(25); // TO DO
     });
 
     it('getTopPoolsForToken', async function () {
@@ -230,7 +233,7 @@ describe('BalancerV2', function () {
       expect(virtualPoolIdentifier?.data.poolId).toEqual(
         '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe-virtualBoostedPool',
       );
-      expect(virtualPoolIdentifier?.gasCost).toBe(12);
+      expect(virtualPoolIdentifier?.gasCost).toBe(25); // TO DO 2 * Linear + 1 * Phantom
     });
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
@@ -247,7 +250,7 @@ describe('BalancerV2', function () {
           p.address ===
           '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
       );
-      expect(virtualPool).not.toBeUndefined();
+      expect(virtualPool).not.toBeUndefined(); // TO DO - Fix getTopPools
 
       checkPoolsLiquidity(poolLiquidity, DAI.address, dexKey);
     });

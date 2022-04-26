@@ -4,7 +4,13 @@ import { isSameAddress, decodeThrowError } from './utils';
 import * as LinearMath from './LinearMath';
 import { BZERO } from './balancer-v2-math';
 import { BasePool } from './balancer-v2-pool';
-import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import {
+  callData,
+  SubgraphPoolBase,
+  PoolState,
+  TokenState,
+  PoolBase,
+} from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { SwapSide } from '../../constants';
 
@@ -40,12 +46,13 @@ Provider joins/exits a pool, the pool mints/burns pool tokens as needed. This is
 In pools that use Phantom BPT, however, all pool tokens are minted at the time of pool creation and are held by the pool itself. 
 With Phantom BPT, Liquidity Providers use a swap (or more likely a batchSwap) to trade to or from a pool token to join or exit, respectively. 
 */
-export class LinearPool extends BasePool {
+export class LinearPool extends BasePool implements PoolBase {
   // This is the maximum token amount the Vault can hold. In regular operation, the total BPT supply remains constant
   // and equal to _INITIAL_BPT_SUPPLY, but most of it remains in the Pool, waiting to be exchanged for tokens. The
   // actual amount of BPT in circulation is the total supply minus the amount held by the Pool, and is known as the
   // 'virtual supply'.
   MAX_TOKEN_BALANCE = BigNumber.from('2').pow('112').sub('1');
+  gasCost = 60000;
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
@@ -417,6 +424,7 @@ export class LinearPool extends BasePool {
         },
         {},
       ),
+      gasCost: this.gasCost,
     };
 
     pools[pool.address] = poolState;

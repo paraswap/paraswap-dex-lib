@@ -1,5 +1,9 @@
 import { Address } from '../../types';
 
+export interface PoolBase {
+  gasCost: number;
+}
+
 export type TokenState = {
   balance: bigint;
   scalingFactor?: bigint; // It includes the token priceRate
@@ -11,6 +15,7 @@ export type PoolState = {
     [address: string]: TokenState;
   };
   swapFee: bigint;
+  gasCost: number;
   amp?: bigint;
   // Linear Pools
   mainIndex?: number;

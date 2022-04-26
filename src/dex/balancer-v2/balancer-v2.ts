@@ -515,7 +515,7 @@ export class BalancerV2
               },
               poolAddresses: [poolAddress],
               exchange: this.dexKey,
-              gasCost: 150 * 1000,
+              gasCost: poolState.gasCost,
               poolIdentifier: `${this.dexKey}_${poolAddress}`,
             };
           } catch (e) {

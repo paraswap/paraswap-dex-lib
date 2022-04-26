@@ -1,7 +1,13 @@
 import { Interface } from '@ethersproject/abi';
 import { MathSol, BZERO } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
-import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import {
+  callData,
+  SubgraphPoolBase,
+  PoolState,
+  TokenState,
+  PoolBase,
+} from './types';
 import { getTokenScalingFactor, decodeThrowError } from './utils';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
@@ -356,10 +362,11 @@ class StableMath {
   }
 }
 
-export class StablePool extends BaseGeneralPool {
+export class StablePool extends BaseGeneralPool implements PoolBase {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
+  gasCost = 150000; // TO DO - Get accurate
 
   constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
@@ -487,6 +494,7 @@ export class StablePool extends BaseGeneralPool {
         },
         {},
       ),
+      gasCost: this.gasCost,
     };
 
     if (amp) {
@@ -566,10 +574,11 @@ export class WeightedMath {
   }
 }
 
-export class WeightedPool extends BaseMinimalSwapInfoPool {
+export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
+  gasCost = 150000; // TO DO
 
   constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
@@ -700,6 +709,7 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
         },
         {},
       ),
+      gasCost: this.gasCost,
     };
 
     pools[pool.address] = poolState;

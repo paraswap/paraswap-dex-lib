@@ -230,6 +230,14 @@ export class VirtualBoostedPool {
     data: { success: boolean; returnData: any }[],
     startIndex: number,
   ): [{ [address: string]: PoolState }, number] {
+    const linearPool = new LinearPool(
+      this.vaultAddress,
+      this.linearPoolInterface,
+    );
+    const phantomStablePool = new PhantomStablePool(
+      this.vaultAddress,
+      this.phantomStablePoolInterface,
+    );
     // TO DO - Change to use decodeThrowError
     const pools: { [address: string]: PoolState } = {};
     const poolTokens = this.vaultInterface.decodeFunctionResult(
@@ -268,17 +276,22 @@ export class VirtualBoostedPool {
         },
         {},
       ),
+      gasCost: linearPool.gasCost * 2 + phantomStablePool.gasCost, // Linear <> Phantom <> Linear
     };
 
     poolState.amp = BigInt(amp.value.toString());
 
     pools[pool.address.toLowerCase()] = poolState;
-    pools[pool.address.split('-virtualboostedpool')[0].toLowerCase()] =
-      poolState;
+    // Save PhantomStable pool state
+    const phantomStableAddr = pool.address
+      .split('-virtualboostedpool')[0]
+      .toLowerCase();
+    pools[phantomStableAddr] = poolState;
+    pools[phantomStableAddr].gasCost = phantomStablePool.gasCost;
 
     VirtualBoostedPool.virtualBoostedPools[
       pool.id.split('-virtualBoostedPool')[0]
-    ].linearPools.forEach(linearPool => {
+    ].linearPools.forEach(lp => {
       const poolTokens = this.vaultInterface.decodeFunctionResult(
         'getPoolTokens',
         data[startIndex++].returnData,
@@ -336,9 +349,10 @@ export class VirtualBoostedPool {
           },
           {},
         ),
+        gasCost: linearPool.gasCost,
       };
 
-      pools[linearPool.address] = poolState;
+      pools[lp.address] = poolState;
     });
 
     return [pools, startIndex];
@@ -534,13 +548,17 @@ export class VirtualBoostedPool {
         linearOut.lowerTarget,
         linearOut.upperTarget,
       );
+      poolStates[boostedPoolAddr + '-virtualboostedpool'].gasCost =
+        linearPool.gasCost * 2 + phantomStablePool.gasCost;
       return amtOutLinearTwo;
     } else if (poolIn.type === 'Linear' && poolOut.type === 'StablePhantom') {
       // i.e. DAI>bbaUSD
+      // poolStates[boostedPoolAddr + '-virtualboostedpool'].gasCost = linearPool.gasCost * 2 + phantomStablePool.gasCost;
       console.log(`tokenIn[Linear]inBpt[PhantomStable]tokenOut`);
       // TO DO - Add this implementation when agreed that VirtualPools are useful
     } else if (poolIn.type === 'StablePhantom' && poolOut.type === 'Linear') {
       // i.e. bbaUSD>DAI
+      // poolStates[boostedPoolAddr + '-virtualboostedpool'].gasCost = linearPool.gasCost * 2 + phantomStablePool.gasCost;
       console.log(`tokenIn[PhantomStable]outBpt[Linear]tokenOut`);
       // TO DO - Add this implementation when agreed that VirtualPools are useful
     } else {
