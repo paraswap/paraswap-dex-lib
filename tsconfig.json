@@ -4,7 +4,8 @@
     "lib": ["es2019"],
     "module": "commonjs",
     "noImplicitAny": true,
-    "outDir": "./build/",
+    "outDir": "build",
+    "rootDir": "src",
     "preserveConstEnums": true,
     "strictNullChecks": true,
     "strict": true,
@@ -17,5 +18,6 @@
     "typeRoots": ["node_modules/@types"],
     "esModuleInterop": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["**/*.test.ts"]
 }
