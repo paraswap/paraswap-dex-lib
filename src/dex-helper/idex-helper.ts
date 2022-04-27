@@ -7,6 +7,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 
 export interface IDexHelper {
+  network: number;
   cache: ICache;
   httpRequest: IRequestWrapper;
   augustusAddress: Address;

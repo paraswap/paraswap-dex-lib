@@ -131,6 +131,7 @@ export type DexParams = {
 };
 
 export type PoolInitData = {
+  identifier: string;
   token0: Token;
   token1: Token;
   poolAddress: Address;

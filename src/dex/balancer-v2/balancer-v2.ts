@@ -100,14 +100,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ];
 
   constructor(
+    protected dexHelper: IDexHelper,
     protected parentName: string,
     protected network: number,
     protected vaultAddress: Address,
     protected subgraphURL: string,
-    protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, logger);
+    super(parentName, logger, dexHelper);
     this.vaultInterface = new Interface(VaultABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
@@ -365,11 +365,11 @@ export class BalancerV2
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
+      this.dexHelper,
       dexKey,
       network,
       vaultAddress,
       subgraphURL,
-      dexHelper,
       this.logger,
     );
   }

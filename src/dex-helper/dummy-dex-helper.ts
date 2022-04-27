@@ -19,6 +19,10 @@ import { Contract } from 'web3-eth-contract';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
+  async getKey(key: string): Promise<string | null> {
+    return null;
+  }
+
   async get(
     dexKey: string,
     network: number,
@@ -104,6 +108,7 @@ class DummyBlockManager implements IBlockManager {
 }
 
 export class DummyDexHelper implements IDexHelper {
+  network: number;
   cache: ICache;
   httpRequest: IRequestWrapper;
   augustusAddress: Address;
@@ -114,6 +119,7 @@ export class DummyDexHelper implements IDexHelper {
   web3Provider: Web3;
 
   constructor(network: number) {
+    this.network = network;
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.augustusAddress = AugustusAddress[network];

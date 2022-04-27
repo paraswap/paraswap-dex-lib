@@ -69,6 +69,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
         (token1.symbol || token1.address) +
         ' pool',
       logger,
+      dexHelper,
     );
   }
 

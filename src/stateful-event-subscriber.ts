@@ -4,6 +4,14 @@ import { BlockHeader } from 'web3-eth';
 import { EventSubscriber } from './dex-helper/iblock-manager';
 
 import { MAX_BLOCKS_HISTORY } from './constants';
+import { IDexHelper } from './dex-helper';
+
+type EventUpdateMessage = {
+  network: number;
+  identifier: string;
+  state: any;
+  blockNumber: number;
+};
 
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber<State>
@@ -21,7 +29,11 @@ export abstract class StatefulEventSubscriber<State>
 
   isTracking: () => boolean = () => false;
 
-  constructor(public readonly name: string, protected logger: Logger) {}
+  constructor(
+    public readonly name: string,
+    protected logger: Logger,
+    protected dexHelper?: IDexHelper,
+  ) {}
 
   getStateBlockNumber(): Readonly<number> {
     return this.stateBlockNumber;
@@ -193,8 +205,20 @@ export abstract class StatefulEventSubscriber<State>
   //number), possibly using generateState(), and set it on this object using
   //setState.  In case isTracking() returns true, it is assumed that the stored
   //state is current and so the minBlockNumber will be disregarded.
-  getState(minBlockNumber: number): DeepReadonly<State> | null {
-    if (!this.state || this.invalid) return null;
+  async getState(minBlockNumber: number): Promise<DeepReadonly<State> | null> {
+    if (this.invalid) return null;
+
+    if (!this.state && this.dexHelper) {
+      const key = `${this.name}`;
+      const stateAsString = await this.dexHelper.cache.getKey(key);
+      if (!stateAsString) {
+        return null;
+      }
+      const state: EventUpdateMessage = JSON.parse(stateAsString);
+      this.logger.info(`Successfully load the state for ${this.name}`);
+      this.setLazyUpdate(state.state, state.blockNumber);
+      return this.state;
+    }
     if (this.isTracking() || this.stateBlockNumber >= minBlockNumber) {
       return this.state;
     }
