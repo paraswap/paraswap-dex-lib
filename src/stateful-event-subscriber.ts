@@ -209,7 +209,7 @@ export abstract class StatefulEventSubscriber<State>
     if (this.invalid) return null;
 
     if (!this.state && this.dexHelper) {
-      const key = `${this.name}`;
+      const key = `ep_${this.name}`;
       const stateAsString = await this.dexHelper.cache.getKey(key);
       if (!stateAsString) {
         return null;
@@ -260,6 +260,7 @@ export abstract class StatefulEventSubscriber<State>
   }
 
   setLazyUpdate(update: DeepReadonly<State> | null, blockNumber: number) {
+    // this.logger.info(`${this.name} got lazy updated`);
     this.state = update;
     this.stateBlockNumber = blockNumber;
   }
