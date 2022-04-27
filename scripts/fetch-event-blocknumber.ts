@@ -3,7 +3,7 @@ dotenv.config();
 
 import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import VaultABI from '../src/abi/balancer-v2/vault.json';
+import ABI from '../src/abi/balancer-v2/vault.json';
 import { ProviderURL, Network } from '../src/constants';
 import { Address } from '../src/types';
 
@@ -13,15 +13,22 @@ async function getBlockNumbersForEvents(
   contractAddress: Address,
   contractABI: any,
   eventNames: string[],
+  blocksBack: number,
   blocksToCheck: number,
   provider: JsonRpcProvider,
 ) {
-  const blockNumber = await provider.getBlockNumber();
+  const blockNumber = (await provider.getBlockNumber()) - blocksBack;
   const contract = new Contract(contractAddress, contractABI, provider);
   for (let eventName of eventNames) {
+    console.log(
+      eventName,
+      'topic',
+      contract.interface.getEventTopic(eventName),
+    );
     const logs = await contract.queryFilter(
       contract.filters[eventName](),
       blockNumber - blocksToCheck,
+      blockNumber,
     );
     console.log(
       eventName,
@@ -32,7 +39,7 @@ async function getBlockNumbersForEvents(
 
 const network = Network.MAINNET;
 const eventNames = ['Swap', 'PoolBalanceChanged'];
-const vaultAddress = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
+const address = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
 const provider = new JsonRpcProvider(ProviderURL[network]);
 
-getBlockNumbersForEvents(vaultAddress, VaultABI, eventNames, 3000, provider);
+getBlockNumbersForEvents(address, ABI, eventNames, 0, 2000, provider);

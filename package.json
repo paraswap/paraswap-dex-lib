@@ -40,6 +40,7 @@
     "@ethersproject/abi": "5.4.0",
     "@ethersproject/contracts": "5.4.1",
     "@ethersproject/providers": "5.4.1",
+    "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
     "log4js": "6.3.0",
     "paraswap": "5.1.0",
