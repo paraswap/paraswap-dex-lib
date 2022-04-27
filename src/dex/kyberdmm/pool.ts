@@ -123,6 +123,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<KyberDmmPoolState>> {
+    super.generateState();
     const data: { returnData: any[] } =
       await this.dexHelper.multiContract.methods
         .aggregate([

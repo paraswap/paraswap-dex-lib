@@ -215,6 +215,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+    super.generateState();
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
     const eventSupportedPools = allPools.filter(pool =>

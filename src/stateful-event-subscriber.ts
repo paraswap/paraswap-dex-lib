@@ -75,9 +75,12 @@ export abstract class StatefulEventSubscriber<State>
   //provided, in which case one should be generated for latest block.  This
   //function should not use any previous states to derive a new state, it should
   //generate one from scratch.
-  abstract generateState(
+  generateState(
     blockNumber?: number | 'latest',
-  ): AsyncOrSync<DeepReadonly<State>>;
+  ): AsyncOrSync<DeepReadonly<State>> {
+    this.logger.warn(`Fallback to rpc for ${this.name}`);
+    return this.state!;
+  }
 
   //Returns true if the state was updated
   restart(blockNumber: number): boolean {
@@ -260,7 +263,7 @@ export abstract class StatefulEventSubscriber<State>
   }
 
   setLazyUpdate(update: DeepReadonly<State> | null, blockNumber: number) {
-    // this.logger.info(`${this.name} got lazy updated`);
+    this.logger.debug(`${this.name} got lazy updated`);
     this.state = update;
     this.stateBlockNumber = blockNumber;
   }

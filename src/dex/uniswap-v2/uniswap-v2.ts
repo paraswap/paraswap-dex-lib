@@ -141,7 +141,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<UniswapV2PoolState>> {
-    this.logger.warn(`Fallback to rpc for ${this.name}`);
+    super.generateState();
     let calldata = [
       {
         target: this.token0.address,

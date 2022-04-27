@@ -174,6 +174,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    super.generateState();
     return (
       await getOnChainState(
         this.dexHelper.multiContract,
