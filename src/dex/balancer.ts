@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
@@ -81,7 +81,7 @@ export class Balancer
   constructor(
     augustusAddress: Address,
     public network: number,
-    provider: JsonRpcProvider,
+    provider: Provider,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(BalancerABI as JsonFragment[]);
@@ -132,7 +132,7 @@ export class Balancer
       const _srcAmount = BigInt(srcAmount);
       const totalInParam = swaps.reduce(
         (acc, swap) => acc + BigInt(swap.tokenInParam),
-        BigInt(0),
+        0n,
       );
       swaps.forEach(swap => {
         swap.tokenInParam = (

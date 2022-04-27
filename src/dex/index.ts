@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
@@ -111,7 +111,7 @@ const AdapterNameAddressMap: {
 export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
-  provider: JsonRpcProvider,
+  provider: Provider,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -161,20 +161,22 @@ export class DexAdapterService {
             this.dexHelper,
           );
 
-          const sellAdapters = (
+          const sellAdaptersDex = (
             this.dexInstances[_key] as IDex<any, any, any>
           ).getAdapters(SwapSide.SELL);
-          if (sellAdapters)
-            this.sellAdapters[_key] = sellAdapters.map(({ name, index }) => ({
-              adapter: AdapterNameAddressMap[network][name],
-              index,
-            }));
+          if (sellAdaptersDex)
+            this.sellAdapters[_key] = sellAdaptersDex.map(
+              ({ name, index }) => ({
+                adapter: AdapterNameAddressMap[network][name],
+                index,
+              }),
+            );
 
-          const buyAdapters = (
+          const buyAdaptersDex = (
             this.dexInstances[_key] as IDex<any, any, any>
           ).getAdapters(SwapSide.BUY);
-          if (buyAdapters)
-            this.buyAdapters[_key] = buyAdapters.map(({ name, index }) => ({
+          if (buyAdaptersDex)
+            this.buyAdapters[_key] = buyAdaptersDex.map(({ name, index }) => ({
               adapter: AdapterNameAddressMap[network][name],
               index,
             }));
@@ -199,17 +201,7 @@ export class DexAdapterService {
   }
 
   getTxBuilderDexByKey(dexKey: string): IDexTxBuilder<any, any> {
-    let _dexKey = dexKey.toLowerCase();
-
-    if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
-
-    if ('uniswapforkoptimized' === _dexKey) {
-      if (!this.uniswapV2Alias)
-        throw new Error(
-          `${dexKey} dex is not supported for network(${this.network})!`,
-        );
-      _dexKey = this.uniswapV2Alias;
-    }
+    let _dexKey = this.getDexKeySpecial(dexKey);
 
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];
@@ -246,5 +238,25 @@ export class DexAdapterService {
 
   getAllDexAdapters(side: SwapSide = SwapSide.SELL) {
     return side === SwapSide.SELL ? this.sellAdapters : this.buyAdapters;
+  }
+
+  getDexKeySpecial(dexKey: string, isAdapters: boolean = false) {
+    dexKey = dexKey.toLowerCase();
+    if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
+    else if ('uniswapforkoptimized' === dexKey) {
+      if (!this.uniswapV2Alias)
+        throw new Error(
+          `${dexKey} dex is not supported for network(${this.network})!`,
+        );
+      return this.uniswapV2Alias;
+    }
+    return dexKey;
+  }
+
+  getAdapter(dexKey: string, side: SwapSide) {
+    const specialDexKey = this.getDexKeySpecial(dexKey, true);
+    return side === SwapSide.SELL
+      ? this.sellAdapters[specialDexKey]
+      : this.buyAdapters[specialDexKey];
   }
 }

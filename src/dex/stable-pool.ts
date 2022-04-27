@@ -1,5 +1,5 @@
 import { Interface } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -38,11 +38,7 @@ export class StablePool
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  constructor(
-    augustusAddress: Address,
-    network: number,
-    provider: JsonRpcProvider,
-  ) {
+  constructor(augustusAddress: Address, network: number, provider: Provider) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(StablePoolABI);
   }

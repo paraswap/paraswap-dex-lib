@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Contract } from '@ethersproject/contracts';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
 import ABI from '../src/abi/balancer-v2/vault.json';
 import { ProviderURL, Network } from '../src/constants';
 import { Address } from '../src/types';
@@ -15,7 +15,7 @@ async function getBlockNumbersForEvents(
   eventNames: string[],
   blocksBack: number,
   blocksToCheck: number,
-  provider: JsonRpcProvider,
+  provider: Provider,
 ) {
   const blockNumber = (await provider.getBlockNumber()) - blocksBack;
   const contract = new Contract(contractAddress, contractABI, provider);
@@ -40,6 +40,6 @@ async function getBlockNumbersForEvents(
 const network = Network.MAINNET;
 const eventNames = ['Swap', 'PoolBalanceChanged'];
 const address = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
-const provider = new JsonRpcProvider(ProviderURL[network]);
+const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
 getBlockNumbersForEvents(address, ABI, eventNames, 0, 2000, provider);

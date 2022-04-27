@@ -9,7 +9,7 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 describe('Weth E2E', () => {
   describe('Weth Mainnet', () => {
@@ -24,7 +24,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -140,7 +140,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -256,7 +256,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -372,7 +372,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -488,7 +488,7 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];

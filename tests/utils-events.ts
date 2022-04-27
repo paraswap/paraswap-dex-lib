@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { Log, BlockHeader, Address } from '../src/types';
 import { StatefulEventSubscriber } from '../src/stateful-event-subscriber';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { DeepReadonly } from 'ts-essentials';
 
 const configPath = './configs.json';
@@ -35,7 +35,7 @@ export async function testEventSubscriber<SubscriberState>(
   fetchState: (blocknumber: number) => Promise<SubscriberState>,
   blockNumber: number,
   cacheKey: string,
-  provider: JsonRpcProvider,
+  provider: Provider,
 ) {
   // Get state of the subscriber block before the event was released
   let poolState = getSavedState(blockNumber - 1, cacheKey);
