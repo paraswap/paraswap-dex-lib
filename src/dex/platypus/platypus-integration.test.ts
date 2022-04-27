@@ -20,7 +20,7 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'DAIE';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [BigInt('0'), BigInt('100000000000'), BigInt('200000000000')];
+const amounts = [0n, 100000000000n, 200000000000n];
 
 const dexKey = 'Platypus';
 

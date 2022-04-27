@@ -10,7 +10,7 @@ import {
   MultiCallInput,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -23,34 +23,35 @@ import { SimpleExchange } from '../simple-exchange';
 import { PlatypusConfig, Adapters } from './config';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { PlatypusPool } from './pool';
+import { BI_POWS } from '../../bigint-constants';
 import ERC20ABI from '../../abi/erc20.json';
 import PoolABI from '../../abi/platypus/pool.json';
 import AssetABI from '../../abi/platypus/asset.json';
 import OracleABI from '../../abi/platypus/oracle.json';
 
-const ETH_UNIT = BigInt(10 ** 18);
-const WAD = BigInt(10 ** 18);
-const RAY = BigInt(10) ** BigInt(27);
+const ETH_UNIT = BI_POWS[18];
+const WAD = BI_POWS[18];
+const RAY = BI_POWS[27];
 
 function wmul(x: bigint, y: bigint): bigint {
-  return (x * y + WAD / BigInt(2)) / WAD;
+  return (x * y + WAD / 2n) / WAD;
 }
 
 function wdiv(x: bigint, y: bigint): bigint {
-  return (x * WAD + y / BigInt(2)) / y;
+  return (x * WAD + y / 2n) / y;
 }
 
 function rmul(x: bigint, y: bigint): bigint {
-  return (x * y + RAY / BigInt(2)) / RAY;
+  return (x * y + RAY / 2n) / RAY;
 }
 
 function rpow(x: bigint, n: bigint): bigint {
-  let z = n % BigInt(2) !== BigInt(0) ? x : RAY;
+  let z = n % 2n !== 0n ? x : RAY;
 
-  for (n /= BigInt(2); n !== BigInt(0); n /= BigInt(2)) {
+  for (n /= 2n; n !== 0n; n /= 2n) {
     x = rmul(x, x);
 
-    if (n % BigInt(2) !== BigInt(0)) {
+    if (n % 2n !== 0n) {
       z = rmul(z, x);
     }
   }
@@ -90,7 +91,7 @@ function calcSlippage(
     covAfter = wdiv(cash - cashChange, liability);
   }
   if (covBefore === covAfter) {
-    return BigInt(0);
+    return 0n;
   }
 
   const slippageBefore = slippageFunc(k, n, c1, xThreshold, covBefore);
@@ -134,9 +135,8 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network],
-  ) // TODO: add any additional optional params to support other fork DEXes
-  {
+    protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
+  ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.config = PlatypusConfig[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
@@ -371,21 +371,21 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
         ((tokenBPrice - tokenAPrice) * ETH_UNIT) / tokenBPrice >
         state.params.maxPriceDeviation
       ) {
-        return Array(amounts.length).fill(BigInt(0));
+        return Array(amounts.length).fill(0n);
       }
     } else {
       if (
         ((tokenAPrice - tokenBPrice) * ETH_UNIT) / tokenAPrice >
         state.params.maxPriceDeviation
       ) {
-        return Array(amounts.length).fill(BigInt(0));
+        return Array(amounts.length).fill(0n);
       }
     }
     return amounts.map(fromAmount => {
       const idealToAmount =
-        (fromAmount * BigInt(10 ** destTokenDecimals)) /
-        BigInt(10 ** srcTokenDecimals);
-      if (state.asset[destTokenAddress].cash < idealToAmount) return BigInt(0);
+        (fromAmount * getBigIntPow(destTokenDecimals)) /
+        getBigIntPow(srcTokenDecimals);
+      if (state.asset[destTokenAddress].cash < idealToAmount) return 0n;
       const slippageFrom = calcSlippage(
         state.params.slippageParamK,
         state.params.slippageParamN,
@@ -458,7 +458,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
               destTokenAddress,
               this.cfgInfo!.pools[poolAddress].tokens[destTokenAddress]
                 .tokenDecimals,
-              [BigInt(10 ** srcToken.decimals), ...amounts],
+              [getBigIntPow(srcToken.decimals), ...amounts],
               state,
             );
             return {
