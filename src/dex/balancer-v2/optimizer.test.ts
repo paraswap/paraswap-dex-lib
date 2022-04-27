@@ -255,8 +255,8 @@ describe('BalancerV2 Optimizer', () => {
                     srcAmount: swap1SrcAmount,
                     destAmount: swap1DestAmount,
                     percent: swap1percent,
-                    data: { poolId: '0xFirst-virtualBoostedPool' },
-                    poolAddresses: ['0xFirst-virtualBoostedPool'],
+                    data: { poolId: '0xFirstvirtualboosted' },
+                    poolAddresses: ['0xFirstvirtualboosted'],
                   },
                 ],
               },
@@ -294,13 +294,13 @@ describe('BalancerV2 Optimizer', () => {
       ).toEqual(destAmount);
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].poolAddresses,
-      ).toEqual(['0xFirst-virtualBoostedPool']);
+      ).toEqual(['0xFirstvirtualboosted']);
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].data.swaps.length,
       ).toEqual(1);
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].data.swaps[0].poolId,
-      ).toEqual('0xFirst-virtualBoostedPool');
+      ).toEqual('0xFirstvirtualboosted');
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].data.swaps[0].amount,
       ).toEqual(swap1SrcAmount);
@@ -352,8 +352,8 @@ describe('BalancerV2 Optimizer', () => {
                     srcAmount: swap2SrcAmount,
                     destAmount: swap2DestAmount,
                     percent: swap2percent,
-                    data: { poolId: '0xSecond-virtualBoostedPool' },
-                    poolAddresses: ['0xSecond-virtualBoostedPool'],
+                    data: { poolId: '0xSecondvirtualboosted' },
+                    poolAddresses: ['0xSecondvirtualboosted'],
                   },
                 ],
               },
@@ -391,7 +391,7 @@ describe('BalancerV2 Optimizer', () => {
       ).toEqual(destAmount);
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].poolAddresses,
-      ).toEqual(['0xFirst', '0xSecond-virtualBoostedPool']);
+      ).toEqual(['0xFirst', '0xSecondvirtualboosted']);
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].data.swaps.length,
       ).toEqual(2);
@@ -403,7 +403,7 @@ describe('BalancerV2 Optimizer', () => {
       ).toEqual(swap1SrcAmount);
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].data.swaps[1].poolId,
-      ).toEqual('0xSecond-virtualBoostedPool');
+      ).toEqual('0xSecondvirtualboosted');
       expect(
         optimized.bestRoute[0].swaps[0].swapExchanges[0].data.swaps[1].amount,
       ).toEqual(swap2SrcAmount);

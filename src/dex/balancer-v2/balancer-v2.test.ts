@@ -68,7 +68,7 @@ describe('getBalancerParam, should create correct swap parameters', () => {
 
     it('With Virtual', () => {
       const poolId =
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe-virtualBoostedPool';
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted';
       const data: OptimizedBalancerV2Data = {
         swaps: [
           {
@@ -206,7 +206,7 @@ describe('getBalancerParam, should create correct swap parameters', () => {
       const poolId1 =
         '0x96646936b91d6b9d7d0c47c496afbf3d6ec7b6f8000200000000000000000019';
       const poolId2 =
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe-virtualBoostedPool';
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted';
       const data: OptimizedBalancerV2Data = {
         swaps: [
           {
@@ -280,9 +280,9 @@ describe('getBalancerParam, should create correct swap parameters', () => {
 
     it('With 2 Virtual', () => {
       const poolId1 =
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe-virtualBoostedPool';
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted';
       const poolId2 =
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe-virtualBoostedPool';
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted';
       const data: OptimizedBalancerV2Data = {
         swaps: [
           {

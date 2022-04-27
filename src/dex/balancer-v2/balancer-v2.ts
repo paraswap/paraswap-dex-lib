@@ -643,7 +643,7 @@ export class BalancerV2
 
     // swaps contains poolId and amount data
     data.swaps.forEach(swap => {
-      if (swap.poolId.includes('virtualBoostedPool')) {
+      if (swap.poolId.includes(VirtualBoostedPool.poolType.toLowerCase())) {
         // VirtualBoostedPools swaps will consist of multihops.
         // getSwapData will construct the relevant swaps, assets and limits
         const swapData = VirtualBoostedPool.getSwapData(

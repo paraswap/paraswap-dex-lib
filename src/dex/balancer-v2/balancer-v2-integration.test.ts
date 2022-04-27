@@ -206,7 +206,7 @@ describe('BalancerV2', function () {
 
       expect(pools.length).toBeGreaterThan(0);
       expect(pools).toContain(
-        'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+        'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
       );
 
       const poolPrices = await balancerV2.getPricesVolume(
@@ -224,14 +224,14 @@ describe('BalancerV2', function () {
       const virtualPoolIdentifier = poolPrices?.find(
         p =>
           p.poolIdentifier ===
-          'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+          'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
       );
       expect(virtualPoolIdentifier).not.toBeUndefined();
       expect(virtualPoolIdentifier?.poolAddresses).toEqual([
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
       ]);
       expect(virtualPoolIdentifier?.data.poolId).toEqual(
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe-virtualBoostedPool',
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted',
       );
       expect(virtualPoolIdentifier?.gasCost).toBe(25); // TO DO 2 * Linear + 1 * Phantom
     });
@@ -248,7 +248,7 @@ describe('BalancerV2', function () {
       const virtualPool = poolLiquidity?.find(
         p =>
           p.address ===
-          '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2-virtualboostedpool',
+          '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
       );
       expect(virtualPool).not.toBeUndefined(); // TO DO - Fix getTopPools
 

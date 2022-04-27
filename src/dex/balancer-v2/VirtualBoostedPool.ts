@@ -29,7 +29,7 @@ export type LinearPoolInfo = {
 
 export type VirtualBoostedPoolInfo = {
   mainTokens: MainToken[];
-  phantomStablePool: string;
+  phantomStablePoolAddr: string;
   linearPools: LinearPoolInfo[];
 };
 
@@ -46,7 +46,7 @@ export type SwapData = {
 type VirtualBoostedPoolPairData = {
   tokenIn: string;
   tokenOut: string;
-  boostedPoolId: any;
+  phantomPoolId: any;
   poolStates: { [address: string]: PoolState };
 };
 
@@ -89,7 +89,7 @@ export class VirtualBoostedPool {
             '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c0000000000000000000000fd',
         }, // USDT
       ],
-      phantomStablePool: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+      phantomStablePoolAddr: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
       linearPools: [
         {
           address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
@@ -107,6 +107,7 @@ export class VirtualBoostedPool {
     },
   };
 
+  static poolType = 'VirtualBoosted';
   vaultAddress: string;
   vaultInterface: Interface;
   linearPoolInterface: Interface;
@@ -121,15 +122,15 @@ export class VirtualBoostedPool {
 
   /*
     Create new 'VirtualBoosted' pool type from preconfigured info.
-    */
+  */
   static getVirtualBoostedPools(pools: SubgraphPoolBase[]): SubgraphPoolBase[] {
     const virtualBoostedPools: SubgraphPoolBase[] = [];
     pools.forEach(pool => {
       if (this.virtualBoostedPools[pool.id])
         virtualBoostedPools.push({
-          id: pool.id + '-virtualBoostedPool',
-          address: pool.address + '-virtualboostedpool',
-          poolType: 'VirtualBoosted',
+          id: pool.id + this.poolType.toLowerCase(),
+          address: pool.address + this.poolType.toLowerCase(),
+          poolType: this.poolType,
           tokens: this.virtualBoostedPools[pool.id].mainTokens,
           mainIndex: 0,
           wrappedIndex: 0,
@@ -149,11 +150,13 @@ export class VirtualBoostedPool {
     // Add calls for PhantomStable Pool
     const poolCallData: callData[] = [];
     // Add pool tokens for upper PhantomStablePool
-    const poolAddress = pool.address.split('-virtualboostedpool')[0];
+    const poolAddress = pool.address.split(
+      VirtualBoostedPool.poolType.toLowerCase(),
+    )[0];
     poolCallData.push({
       target: this.vaultAddress,
       callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
-        pool.id.split('-virtualBoostedPool')[0],
+        pool.id.split(VirtualBoostedPool.poolType.toLowerCase())[0],
       ]),
     });
     // Add swap fee for upper PhantomStablePool
@@ -179,7 +182,7 @@ export class VirtualBoostedPool {
 
     // Add calls for each linear pool
     VirtualBoostedPool.virtualBoostedPools[
-      pool.id.split('-virtualBoostedPool')[0]
+      pool.id.split(VirtualBoostedPool.poolType.toLowerCase())[0]
     ].linearPools.forEach(linearPool => {
       poolCallData.push({
         target: this.vaultAddress,
@@ -284,13 +287,13 @@ export class VirtualBoostedPool {
     pools[pool.address.toLowerCase()] = poolState;
     // Save PhantomStable pool state
     const phantomStableAddr = pool.address
-      .split('-virtualboostedpool')[0]
+      .split(VirtualBoostedPool.poolType.toLowerCase())[0]
       .toLowerCase();
     pools[phantomStableAddr] = poolState;
     pools[phantomStableAddr].gasCost = phantomStablePool.gasCost;
 
     VirtualBoostedPool.virtualBoostedPools[
-      pool.id.split('-virtualBoostedPool')[0]
+      pool.id.split(VirtualBoostedPool.poolType.toLowerCase())[0]
     ].linearPools.forEach(lp => {
       const poolTokens = this.vaultInterface.decodeFunctionResult(
         'getPoolTokens',
@@ -360,22 +363,22 @@ export class VirtualBoostedPool {
 
   // Finds the address and poolType the tokenAddr belongs to
   static getTokenPool(
-    boostedPoolAddr: string,
-    boostedPoolId: string,
+    phantomPoolAddr: string,
+    phantomPoolId: string,
     tokenAddr: string,
   ): {
     address: string;
     type: string;
     id: string;
   } {
-    if (getAddress(boostedPoolAddr) === getAddress(tokenAddr))
+    if (getAddress(phantomPoolAddr) === getAddress(tokenAddr))
       return {
-        address: boostedPoolAddr,
+        address: phantomPoolAddr,
         type: 'StablePhantom',
-        id: 'TODO',
+        id: 'TO DO',
       };
 
-    const boostedPool = VirtualBoostedPool.virtualBoostedPools[boostedPoolId];
+    const boostedPool = VirtualBoostedPool.virtualBoostedPools[phantomPoolId];
     const index = boostedPool.mainTokens.findIndex(
       t => getAddress(t.address) === getAddress(tokenAddr),
     );
@@ -400,7 +403,9 @@ export class VirtualBoostedPool {
     const poolPairData: VirtualBoostedPoolPairData = {
       tokenIn,
       tokenOut,
-      boostedPoolId: pool.id,
+      phantomPoolId: pool.id.split(
+        VirtualBoostedPool.poolType.toLowerCase(),
+      )[0],
       poolStates,
     };
     return poolPairData;
@@ -417,14 +422,6 @@ export class VirtualBoostedPool {
     return true;
   }
 
-  /*
-  scaling factors should include rate:
-  The wrapped token's scaling factor is not constant, but increases over time as the wrapped token increases in value.
-  i.e. 
-  scalingFactors: pool.tokens.map(({ decimals, priceRate }) =>
-      MathSol.mulDownFixed(getTokenScalingFactor(decimals), priceRate)
-  )
-  */
   onSell(
     amounts: bigint[],
     poolPairData: VirtualBoostedPoolPairData,
@@ -433,7 +430,7 @@ export class VirtualBoostedPool {
       amounts,
       poolPairData.tokenIn,
       poolPairData.tokenOut,
-      poolPairData.boostedPoolId,
+      poolPairData.phantomPoolId,
       poolPairData.poolStates,
     );
   }
@@ -442,23 +439,22 @@ export class VirtualBoostedPool {
     tokenAmountsIn: bigint[],
     tokenIn: string,
     tokenOut: string,
-    boostedPoolId: string,
+    phantomPoolId: string,
     poolStates: { [address: string]: PoolState },
   ): bigint[] {
-    const boostedPoolAddr =
-      VirtualBoostedPool.virtualBoostedPools[
-        boostedPoolId.split('-virtualBoostedPool')[0]
-      ].phantomStablePool;
-    if (!boostedPoolAddr) return [];
+    const phantomPoolAddr =
+      VirtualBoostedPool.virtualBoostedPools[phantomPoolId]
+        .phantomStablePoolAddr;
+    if (!phantomPoolAddr) return [];
 
     const poolIn = VirtualBoostedPool.getTokenPool(
-      boostedPoolAddr,
-      boostedPoolId.split('-virtualBoostedPool')[0],
+      phantomPoolAddr,
+      phantomPoolId,
       tokenIn,
     );
     const poolOut = VirtualBoostedPool.getTokenPool(
-      boostedPoolAddr,
-      boostedPoolId.split('-virtualBoostedPool')[0],
+      phantomPoolAddr,
+      phantomPoolId,
       tokenOut,
     );
     const linearPool = new LinearPool(
@@ -473,10 +469,10 @@ export class VirtualBoostedPool {
     // Find where tokenIn/Out fits, i.e. boosted or phantom
     if (poolIn.type === 'Linear' && poolOut.type === 'Linear') {
       // i.e. DAI > USDC
-      console.log(`tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut`);
+      // console.log(`tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut`);
       // Find pools of interest
       const linearIn = poolStates[poolIn.address];
-      const stablePhantom = poolStates[boostedPoolAddr];
+      const stablePhantom = poolStates[phantomPoolAddr];
       const linearOut = poolStates[poolOut.address];
       if (
         linearIn.bptIndex === undefined ||
@@ -525,7 +521,7 @@ export class VirtualBoostedPool {
         stablePhantomTokenAddrs.indexOf(
           linearOutTokenAddrs[linearOut.bptIndex],
         ), // indexOut
-        stablePhantomTokenAddrs.indexOf(boostedPoolAddr), // bptIndex
+        stablePhantomTokenAddrs.indexOf(phantomPoolAddr), // bptIndex
         stablePhantomTokens.map(t =>
           t.scalingFactor ? t.scalingFactor : BZERO,
         ),
@@ -548,25 +544,13 @@ export class VirtualBoostedPool {
         linearOut.lowerTarget,
         linearOut.upperTarget,
       );
-      poolStates[boostedPoolAddr + '-virtualboostedpool'].gasCost =
-        linearPool.gasCost * 2 + phantomStablePool.gasCost;
+      poolStates[
+        phantomPoolAddr + VirtualBoostedPool.poolType.toLowerCase()
+      ].gasCost = linearPool.gasCost * 2 + phantomStablePool.gasCost;
       return amtOutLinearTwo;
-    } else if (poolIn.type === 'Linear' && poolOut.type === 'StablePhantom') {
-      // i.e. DAI>bbaUSD
-      // poolStates[boostedPoolAddr + '-virtualboostedpool'].gasCost = linearPool.gasCost * 2 + phantomStablePool.gasCost;
-      console.log(`tokenIn[Linear]inBpt[PhantomStable]tokenOut`);
-      // TO DO - Add this implementation when agreed that VirtualPools are useful
-    } else if (poolIn.type === 'StablePhantom' && poolOut.type === 'Linear') {
-      // i.e. bbaUSD>DAI
-      // poolStates[boostedPoolAddr + '-virtualboostedpool'].gasCost = linearPool.gasCost * 2 + phantomStablePool.gasCost;
-      console.log(`tokenIn[PhantomStable]outBpt[Linear]tokenOut`);
-      // TO DO - Add this implementation when agreed that VirtualPools are useful
     } else {
-      console.error('Incorrect swap type');
       return [BZERO];
     }
-
-    return [BZERO];
   }
 
   static getSwapData(
@@ -577,15 +561,19 @@ export class VirtualBoostedPool {
   ): SwapData {
     // this function could easily return swap data for a token pair
     // i.e. for DAI>USDC it would return tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut in correct swap format
-    const actualId = boostedPoolId.split('-virtualBoostedPool')[0];
+    const actualId = boostedPoolId.split(
+      VirtualBoostedPool.poolType.toLowerCase(),
+    )[0];
     const virtualPoolInfo = this.virtualBoostedPools[actualId];
+    if (!virtualPoolInfo) throw Error('Invalid VirtualBoostedPool ID');
+
     const poolIn = this.getTokenPool(
-      virtualPoolInfo.phantomStablePool,
+      virtualPoolInfo.phantomStablePoolAddr,
       actualId,
       tokenIn,
     );
     const poolOut = this.getTokenPool(
-      virtualPoolInfo.phantomStablePool,
+      virtualPoolInfo.phantomStablePoolAddr,
       actualId,
       tokenOut,
     );
@@ -623,18 +611,8 @@ export class VirtualBoostedPool {
         limits,
         assets,
       };
-    } else if (poolIn.type === 'Linear' && poolOut.type === 'StablePhantom') {
-      // i.e. DAI>bbaUSD
-      console.log(`getSwapData: tokenIn[Linear]inBpt[PhantomStable]tokenOut`);
-      // TO DO - Add this implementation when agreed that VirtualPools are useful
-    } else if (poolIn.type === 'StablePhantom' && poolOut.type === 'Linear') {
-      // i.e. bbaUSD>DAI
-      console.log(`getSwapData: tokenIn[PhantomStable]outBpt[Linear]tokenOut`);
-      // TO DO - Add this implementation when agreed that VirtualPools are useful
     } else {
-      console.error('Incorrect swap type');
-      return {} as any;
+      return {} as SwapData;
     }
-    return {} as any;
   }
 }
