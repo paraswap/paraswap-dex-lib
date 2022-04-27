@@ -76,6 +76,7 @@ export interface IBlockManager {
   subscribeToLogs(
     subscriberInfo: SubscriberInfo<any>,
     isLazy: boolean,
+    fetchState: boolean,
   ): EventSubscriber<any>;
 
   isAlreadySubscribedToLogs<T>(subscriberInfo: SubscriberInfo<T>): boolean;

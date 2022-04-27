@@ -269,17 +269,10 @@ export class UniswapV2
     return undefined;
   }
 
-  private async addPool(
-    pair: UniswapV2Pair,
-    reserves0: string,
-    reserves1: string,
-    feeCode: number,
-    blockNumber: number,
-  ) {
+  private async addPool(pair: UniswapV2Pair, blockNumber: number) {
     const poolInitData: PoolInitData = {
       token0: pair.token0,
       token1: pair.token1,
-      feeCode: feeCode,
       poolAddress: pair.exchange!,
     };
 
@@ -294,10 +287,8 @@ export class UniswapV2
     pair.pool = this.dexHelper.blockManager.subscribeToLogs(
       subscriberInfo,
       false,
+      true,
     ) as UniswapV2EventPool;
-
-    if (blockNumber)
-      pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
   }
 
   async getBuyPrice(
@@ -435,41 +426,26 @@ export class UniswapV2
     }
   }
 
-  async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
+  async batchCatchUpPair(_pair: [Token, Token], blockNumber: number) {
     if (!blockNumber) return;
-    const pairsToFetch: UniswapV2Pair[] = [];
-    for (const _pair of pairs) {
-      const pair = await this.findPair(_pair[0], _pair[1]);
-      if (!(pair && pair.exchange)) continue;
-      if (!pair.pool) {
-        pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
-        pairsToFetch.push(pair);
-      }
+
+    // Get pair information. Fetch on chain address if we
+    // don't have anything locally
+    const pair = await this.findPair(_pair[0], _pair[1]);
+    // if the pair address was not found do nothing
+    if (!(pair && pair.exchange)) return;
+
+    // if we don't already have a stateful event subscriber
+    if (!pair.pool) {
+      await this.addPool(pair, blockNumber);
     }
 
-    if (!pairsToFetch.length) return;
-
-    const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
-
-    if (reserves.length !== pairsToFetch.length) {
-      this.logger.error(
-        `Error_getManyPoolReserves didn't get any pool reserves`,
-      );
-    }
-
-    for (let i = 0; i < pairsToFetch.length; i++) {
-      const pairState = reserves[i];
-      const pair = pairsToFetch[i];
-      if (!pair.pool) {
-        await this.addPool(
-          pair,
-          pairState.reserves0,
-          pairState.reserves1,
-          pairState.feeCode,
-          blockNumber,
-        );
-      } else pair.pool.setState(pairState, blockNumber);
+    // try to fetch the state from local subscriber
+    if (pair.pool && !pair.pool.getState(blockNumber)) {
+      // if the state is not available generate state
+      const state = await pair.pool.generateState(blockNumber);
+      // and set state such that it can be used locally
+      pair.pool.setState(state, blockNumber);
     }
   }
 
@@ -546,7 +522,7 @@ export class UniswapV2
       poolInitData.poolAddress,
       poolInitData.token0,
       poolInitData.token1,
-      poolInitData.feeCode,
+      this.feeCode,
       this.logger,
       this.isDynamicFees,
       callEntry,
@@ -583,7 +559,7 @@ export class UniswapV2
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
+      await this.batchCatchUpPair([from, to], blockNumber);
 
       const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
 

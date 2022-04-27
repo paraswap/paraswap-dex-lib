@@ -134,5 +134,4 @@ export type PoolInitData = {
   token0: Token;
   token1: Token;
   poolAddress: Address;
-  feeCode: number;
 };
