@@ -233,7 +233,8 @@ export class MakerPsm
 
   async initializePricing(blockNumber: number) {
     this.poolConfigs.forEach((p, i) => {
-      const identifier = `${this.network}_${this.dexKey}_${p.identifier}`;
+      const identifier =
+        `${this.network}_${this.dexKey}_${p.identifier}`.toLowerCase();
       const pool = this.dexHelper.blockManager.subscribeToLogs(
         {
           dexKey: this.dexKey,

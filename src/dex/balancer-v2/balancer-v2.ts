@@ -385,7 +385,7 @@ export class BalancerV2
   }
 
   async setupEventPools(blockNumber: number) {
-    const identifier = `${this.network}_${this.dexKey}_all_pools`;
+    const identifier = `${this.network}_${this.dexKey}_all_pools`.toLowerCase();
     this.eventPools = this.dexHelper.blockManager.subscribeToLogs(
       {
         dexKey: this.dexKey,
