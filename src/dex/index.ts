@@ -38,6 +38,7 @@ import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
+import { GMX } from './gmx/gmx';
 
 const LegacyDexes = [
   Curve,
