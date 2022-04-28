@@ -239,13 +239,13 @@ export class MakerPsm
       blockNumber,
     );
     this.poolConfigs.forEach((p, i) => {
-      const identifer = `${this.network}_${this.dexKey}_${p.identifier}`;
+      const identifier = `${this.network}_${this.dexKey}_${p.identifier}`;
       const pool = this.dexHelper.blockManager.subscribeToLogs(
         {
           dexKey: this.dexKey,
-          identifier: identifer,
+          identifier: identifier,
           initParams: {
-            identifier: identifer,
+            identifier: identifier,
             index: i,
           },
           addressSubscribed: p.psmAddress,
