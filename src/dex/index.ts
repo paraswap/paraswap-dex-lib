@@ -37,6 +37,7 @@ import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
+import { Platypus } from './platypus/platypus';
 
 const LegacyDexes = [
   Curve,
@@ -72,6 +73,7 @@ const Dexes = [
   KyberDmm,
   Weth,
   MakerPsm,
+  Platypus,
 ];
 
 const AdapterNameAddressMap: {
@@ -97,7 +99,7 @@ const AdapterNameAddressMap: {
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
   [Network.AVALANCHE]: {
-    AvalancheAdapter01: '0x2DF17455B96Dde3618FD6B1C3a9AA06D6aB89347',
+    AvalancheAdapter01: '0x23e9bB567D664Ac1F4f3b8f5F3Fede03Bf27e6B0',
     AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
   [Network.FANTOM]: {
