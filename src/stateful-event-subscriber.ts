@@ -6,6 +6,8 @@ import { EventSubscriber } from './dex-helper/iblock-manager';
 import { MAX_BLOCKS_HISTORY } from './constants';
 import { IDexHelper } from './dex-helper';
 
+const REDIS_PREFIX = 'ep';
+
 type EventUpdateMessage = {
   network: number;
   identifier: string;
@@ -212,7 +214,7 @@ export abstract class StatefulEventSubscriber<State>
     if (this.invalid) return null;
 
     if (!this.state && this.dexHelper) {
-      const key = `ep_${this.name}`;
+      const key = `${REDIS_PREFIX}_${this.name}`;
       const stateAsString = await this.dexHelper.cache.getByKey(key);
       if (!stateAsString) {
         return null;
