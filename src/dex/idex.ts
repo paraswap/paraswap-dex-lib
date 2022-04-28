@@ -10,7 +10,7 @@ import {
   PoolLiquidity,
 } from '../types';
 import { SwapSide, Network } from '../constants';
-import { IDexHelper } from '../dex-helper/idex-helper';
+import { IDexHelper, EventSubscriber } from '../dex-helper';
 
 export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   needWrapNative: boolean;
@@ -124,24 +124,37 @@ export interface IDexPooltracker {
   ): AsyncOrSync<PoolLiquidity[]>;
 }
 
+export interface IEventsSubscriberFactory<SubscriberInitData, SubscriberState> {
+  getEventSubscriber?(
+    subscriberInitData: SubscriberInitData,
+  ): EventSubscriber<SubscriberState>;
+}
+
 // Combine IDexTxBuilder, IDexPricing & IDexPooltracker in
 // a single interface
 export interface IDex<
   ExchangeData,
+  SubscriberInitData = null,
+  SubscriberState = null,
   DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > extends IDexTxBuilder<OptimizedExchangeData, DirectParam>,
     IDexPricing<ExchangeData>,
-    IDexPooltracker {}
+    IDexPooltracker,
+    IEventsSubscriberFactory<SubscriberInitData, SubscriberState> {}
 
 // Defines the static objects of the IDex class
 export interface DexContructor<
   ExchangeData,
+  SubscriberInitData = null,
+  SubscriberState = null,
   DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > {
   new (network: Network, dexKey: string, dexHelper: IDexHelper): IDex<
     ExchangeData,
+    SubscriberInitData,
+    SubscriberState,
     DirectParam,
     OptimizedExchangeData
   >;

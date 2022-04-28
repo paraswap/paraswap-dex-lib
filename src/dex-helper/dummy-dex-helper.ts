@@ -4,6 +4,8 @@ import {
   IBlockManager,
   EventSubscriber,
   IRequestWrapper,
+  SubscriberInfo,
+  SubscriberFetcher,
 } from './index';
 import axios from 'axios';
 import { Address, LoggerConstructor } from '../types';
@@ -17,6 +19,10 @@ import { Contract } from 'web3-eth-contract';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
+  async getByKey(key: string): Promise<string | null> {
+    return null;
+  }
+
   async get(
     dexKey: string,
     network: number,
@@ -77,18 +83,32 @@ class DummyRequestWrapper implements IRequestWrapper {
 }
 
 class DummyBlockManager implements IBlockManager {
-  subscribeToLogs(
-    subscriber: EventSubscriber,
-    contractAddress: Address | Address[],
-    afterBlockNumber: number,
-  ): void {
-    console.log(
-      `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
-    );
+  getEventSubscriber: SubscriberFetcher | null = null;
+
+  attachGetSubscriber(getSubscriber: SubscriberFetcher) {
+    this.getEventSubscriber = getSubscriber;
   }
+
+  isAlreadySubscribedToLogs<T>(subscriberInfo: SubscriberInfo<T>): boolean {
+    return false;
+  }
+
+  subscribeToLogs(
+    subscriberInfo: SubscriberInfo<any>,
+    isActive: boolean,
+  ): EventSubscriber<any> {
+    if (!this.getEventSubscriber) throw new Error('getEventSubscriber not set');
+    console.log(
+      `Subscribed to logs ${subscriberInfo.dexKey}:${subscriberInfo.identifier} ${subscriberInfo.addressSubscribed} ${subscriberInfo.afterBlockNumber}`,
+    );
+    return this.getEventSubscriber(subscriberInfo);
+  }
+
+  lazyUpdate<T>(identifier: string, update: T | null, blockNumber: number) {}
 }
 
 export class DummyDexHelper implements IDexHelper {
+  network: number;
   cache: ICache;
   httpRequest: IRequestWrapper;
   augustusAddress: Address;
@@ -99,6 +119,7 @@ export class DummyDexHelper implements IDexHelper {
   web3Provider: Web3;
 
   constructor(network: number) {
+    this.network = network;
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.augustusAddress = AugustusAddress[network];

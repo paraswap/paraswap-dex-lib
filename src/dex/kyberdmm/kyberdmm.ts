@@ -43,10 +43,7 @@ const subgraphTimeout = 10 * 1000;
 const iface = new Interface(kyberDmmPoolABI);
 const coder = new AbiCoder();
 
-export class KyberDmm
-  extends SimpleExchange
-  implements IDex<KyberDmmData, KyberDmmParam>
-{
+export class KyberDmm extends SimpleExchange implements IDex<KyberDmmData> {
   pairs: { [key: string]: KyberDmmPair } = {};
   needWrapNative = true;
   factory: Contract;
@@ -251,11 +248,12 @@ export class KyberDmm
       );
       pair.pools[poolAddress] = pool;
       if (blockNumber) pool.setState(poolData, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        poolAddress,
-        blockNumber,
-      );
+      // TODO: fix me
+      // this.dexHelper.blockManager.subscribeToLogs(
+      //   pool,
+      //   poolAddress,
+      //   blockNumber,
+      // );
     }
   }
 
@@ -497,13 +495,17 @@ export class KyberDmm
     if (!(pair && Object.keys(pair.pools).length && pair.exchanges.length))
       return null;
 
-    const pairState = Object.entries(pair.pools)
-      .map(([poolAddress, pool]) => ({
-        poolAddress,
-        state: pool.getState(blockNumber) as KyberDmmPoolState,
-        ampBps: pool.ampBps,
-      }))
-      .filter(s => s.state);
+    const pairStatePromiseResults = await Promise.all(
+      Object.entries(pair.pools).map(async ([poolAddress, pool]) => {
+        const state = (await pool.getState(blockNumber)) as KyberDmmPoolState;
+        return {
+          poolAddress,
+          state: state,
+          ampBps: pool.ampBps,
+        };
+      }),
+    );
+    const pairState = pairStatePromiseResults.filter(s => s.state);
 
     if (!pairState.length) {
       this.logger.error(

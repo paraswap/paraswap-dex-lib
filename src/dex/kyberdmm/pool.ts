@@ -55,7 +55,6 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     protected parentName: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
-
     token0: Token,
     token1: Token,
     public ampBps: bigint,
@@ -70,6 +69,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
         (token1.symbol || token1.address) +
         ' pool',
       logger,
+      dexHelper,
     );
   }
 
@@ -123,6 +123,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<KyberDmmPoolState>> {
+    super.generateState();
     const data: { returnData: any[] } =
       await this.dexHelper.multiContract.methods
         .aggregate([

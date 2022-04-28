@@ -1,4 +1,6 @@
 export interface ICache {
+  getByKey(key: string): Promise<string | null>;
+
   get(
     dexKey: string,
     network: number,

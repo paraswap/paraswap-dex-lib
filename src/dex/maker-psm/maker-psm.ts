@@ -101,7 +101,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
     public poolConfig: PoolConfig,
     protected vatAddress: Address,
   ) {
-    super(parentName, logger);
+    super(parentName, logger, dexHelper);
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];
@@ -174,6 +174,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    super.generateState();
     return (
       await getOnChainState(
         this.dexHelper.multiContract,
@@ -231,11 +232,12 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     this.poolConfigs.forEach((p, i) => {
       const eventPool = this.eventPools[p.gem.address.toLowerCase()];
       eventPool.setState(poolStates[i], blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        eventPool,
-        eventPool.addressesSubscribed,
-        blockNumber,
-      );
+      // TODO: fix me
+      // this.dexHelper.blockManager.subscribeToLogs(
+      //   eventPool,
+      //   eventPool.addressesSubscribed,
+      //   blockNumber,
+      // );
     });
   }
 
@@ -273,7 +275,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     pool: MakerPsmEventPool,
     blockNumber: number,
   ): Promise<PoolState> {
-    const eventState = pool.getState(blockNumber);
+    const eventState = await pool.getState(blockNumber);
     if (eventState) return eventState;
     const onChainState = await pool.generateState(blockNumber);
     pool.setState(onChainState, blockNumber);

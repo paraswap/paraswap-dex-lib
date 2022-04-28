@@ -100,14 +100,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ];
 
   constructor(
+    protected dexHelper: IDexHelper,
     protected parentName: string,
     protected network: number,
     protected vaultAddress: Address,
     protected subgraphURL: string,
-    protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, logger);
+    super(parentName, logger, dexHelper);
     this.vaultInterface = new Interface(VaultABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
@@ -215,6 +215,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+    super.generateState();
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
     const eventSupportedPools = allPools.filter(pool =>
@@ -341,7 +342,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements
+    IDex<BalancerV2Data, null, null, BalancerParam, OptimizedBalancerV2Data>
 {
   protected eventPools: BalancerV2EventPool;
 
@@ -364,11 +366,11 @@ export class BalancerV2
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
+      this.dexHelper,
       dexKey,
       network,
       vaultAddress,
       subgraphURL,
-      dexHelper,
       this.logger,
     );
   }
@@ -376,11 +378,13 @@ export class BalancerV2
   async setupEventPools(blockNumber: number) {
     const poolState = await this.eventPools.generateState(blockNumber);
     this.eventPools.setState(poolState, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.eventPools,
-      this.eventPools.addressesSubscribed,
-      blockNumber,
-    );
+
+    // TODO: fix me
+    // this.dexHelper.blockManager.subscribeToLogs(
+    //   this.eventPools,
+    //   this.eventPools.addressesSubscribed,
+    //   blockNumber,
+    // );
   }
 
   async initializePricing(blockNumber: number) {

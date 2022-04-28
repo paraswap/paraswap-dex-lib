@@ -1,4 +1,5 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
+import { EventSubscriber } from '../../dex-helper/iblock-manager';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
@@ -23,6 +24,7 @@ import {
   UniswapPool,
   UniswapV2Data,
   UniswapV2Functions,
+  PoolInitData,
 } from './types';
 import { IDex } from '../../dex/idex';
 import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
@@ -90,6 +92,8 @@ const subgraphTimeout = 10 * 1000;
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => iface.parseLog(log);
 
+  protected displayName: string;
+
   constructor(
     protected parentName: string,
     protected dexHelper: IDexHelper,
@@ -105,14 +109,17 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private feesMultiCallDecoder?: (values: any[]) => number,
   ) {
     super(
-      parentName +
-        ' ' +
-        (token0.symbol || token0.address) +
-        '-' +
-        (token1.symbol || token1.address) +
-        ' pool',
+      parentName,
+
       logger,
+      dexHelper,
     );
+    this.displayName = parentName;
+    ' ' +
+      (token0.symbol || token0.address) +
+      '-' +
+      (token1.symbol || token1.address) +
+      ' pool';
   }
 
   protected processLog(
@@ -134,6 +141,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<UniswapV2PoolState>> {
+    super.generateState();
     let calldata = [
       {
         target: this.token0.address,
@@ -204,7 +212,8 @@ function encodePools(pools: UniswapPool[]): NumberAsString[] {
 
 export class UniswapV2
   extends SimpleExchange
-  implements IDex<UniswapV2Data, UniswapParam>
+  implements
+    IDex<UniswapV2Data, PoolInitData, UniswapV2PoolState, UniswapParam>
 {
   pairs: { [key: string]: UniswapV2Pair } = {};
   feeFactor = 10000;
@@ -266,35 +275,31 @@ export class UniswapV2
     return undefined;
   }
 
-  private async addPool(
-    pair: UniswapV2Pair,
-    reserves0: string,
-    reserves1: string,
-    feeCode: number,
-    blockNumber: number,
-  ) {
-    const { callEntry, callDecoder } =
-      this.getFeesMultiCallData(pair.exchange!) || {};
-    pair.pool = new UniswapV2EventPool(
-      this.dexKey,
-      this.dexHelper,
-      pair.exchange!,
-      pair.token0,
-      pair.token1,
-      feeCode,
-      this.logger,
-      this.isDynamicFees,
-      callEntry,
-      callDecoder,
-    );
+  private async addPool(pair: UniswapV2Pair, blockNumber: number) {
+    const identifier = `${this.dexHelper.network}_${
+      this.dexKey
+    }_${pair.exchange!}`.toLowerCase();
 
-    if (blockNumber)
-      pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      pair.pool,
-      pair.exchange!,
-      blockNumber,
-    );
+    const poolInitData: PoolInitData = {
+      identifier,
+      token0: pair.token0,
+      token1: pair.token1,
+      poolAddress: pair.exchange!,
+    };
+
+    const subscriberInfo = {
+      dexKey: this.dexKey,
+      identifier,
+      initParams: poolInitData,
+      addressSubscribed: pair.exchange!,
+      afterBlockNumber: blockNumber,
+    };
+
+    pair.pool = this.dexHelper.blockManager.subscribeToLogs(
+      subscriberInfo,
+      false,
+      true,
+    ) as UniswapV2EventPool;
   }
 
   async getBuyPrice(
@@ -432,41 +437,30 @@ export class UniswapV2
     }
   }
 
-  async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
+  async batchCatchUpPair(_pair: [Token, Token], blockNumber: number) {
     if (!blockNumber) return;
-    const pairsToFetch: UniswapV2Pair[] = [];
-    for (const _pair of pairs) {
-      const pair = await this.findPair(_pair[0], _pair[1]);
-      if (!(pair && pair.exchange)) continue;
-      if (!pair.pool) {
-        pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
-        pairsToFetch.push(pair);
+
+    // Get pair information. Fetch on chain address if we
+    // don't have anything locally
+    const pair = await this.findPair(_pair[0], _pair[1]);
+    // if the pair address was not found do nothing
+    if (!(pair && pair.exchange)) return;
+
+    // if we don't already have a stateful event subscriber
+    if (!pair.pool) {
+      await this.addPool(pair, blockNumber);
+    }
+    // try to fetch the state from local subscriber
+
+    if (pair.pool) {
+      let state = await pair.pool.getState(blockNumber);
+      if (state) {
+        return;
       }
-    }
-
-    if (!pairsToFetch.length) return;
-
-    const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
-
-    if (reserves.length !== pairsToFetch.length) {
-      this.logger.error(
-        `Error_getManyPoolReserves didn't get any pool reserves`,
-      );
-    }
-
-    for (let i = 0; i < pairsToFetch.length; i++) {
-      const pairState = reserves[i];
-      const pair = pairsToFetch[i];
-      if (!pair.pool) {
-        await this.addPool(
-          pair,
-          pairState.reserves0,
-          pairState.reserves1,
-          pairState.feeCode,
-          blockNumber,
-        );
-      } else pair.pool.setState(pairState, blockNumber);
+      // if the state is not available generate state
+      const newState = await pair.pool.generateState(blockNumber);
+      // and set state such that it can be used locally
+      pair.pool.setState(newState, blockNumber);
     }
   }
 
@@ -477,7 +471,7 @@ export class UniswapV2
   ): Promise<UniswapV2PoolOrderedParams | null> {
     const pair = await this.findPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) return null;
-    const pairState = pair.pool.getState(blockNumber);
+    const pairState = await pair.pool.getState(blockNumber);
     if (!pairState) {
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
@@ -534,6 +528,23 @@ export class UniswapV2
     return [poolIdentifier];
   }
 
+  getEventSubscriber(poolInitData: PoolInitData): UniswapV2EventPool {
+    const { callEntry, callDecoder } =
+      this.getFeesMultiCallData(poolInitData.poolAddress) || {};
+    return new UniswapV2EventPool(
+      poolInitData.identifier,
+      this.dexHelper,
+      poolInitData.poolAddress,
+      poolInitData.token0,
+      poolInitData.token1,
+      this.feeCode,
+      this.logger,
+      this.isDynamicFees,
+      callEntry,
+      callDecoder,
+    );
+  }
+
   async getPricesVolume(
     _from: Token,
     _to: Token,
@@ -563,7 +574,7 @@ export class UniswapV2
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
+      await this.batchCatchUpPair([from, to], blockNumber);
 
       const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
 

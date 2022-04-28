@@ -1,7 +1,7 @@
 import { Address, Log, BlockHeader } from '../types';
-import { AsyncOrSync } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 
-export interface EventSubscriber {
+export interface EventSubscriber<LazyUpdate> {
   //Contains a descriptive name for this subscriber, to be shown in logs etc.
   readonly name: string;
 
@@ -17,35 +17,73 @@ export interface EventSubscriber {
   //Indicates that all events up to the given block number will be skipped.
   //When this is called, all states with block number less than the given block
   //number must be discarded.
-  restart(blockNumber: number): void;
+  //Returns true if the state was updated
+  restart(blockNumber: number): boolean;
 
   //Called to roll forward the state from log events and clear the invalid flag
   //if it has been set.  It is assumed that the logs are presented in
   //chronological order.  If there are no logs in the array, just clear the
   //invalid flag.
   //N.B. multiple blocks worth of logs may be passed into the same call.
+  //Returns true if the state was updated
   update(
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [blockNumber: number]: Readonly<BlockHeader> }>,
-  ): AsyncOrSync<void>;
+  ): AsyncOrSync<boolean>;
 
   //Will be called on a chain reorganisation prior to updating with new logs.
   //All state corresponding to blocks after the given number must be discarded,
   //except for the most recent state, if the invalid flag isn't still set.
-  rollback(blockNumber: number): void;
+  //Returns true if the state was updated
+  rollback(blockNumber: number): boolean;
 
   //This will be called to set an invalid flag, when the block manager cannot
   //guarantee that all previously derived states are valid.  When this flag is
   //set, it is not permitted to present any pre-existing state to any query.
   //This invalid flag can be cleared when a new state is derived without using
   //logs, or otherwise when update() is called.
-  invalidate(): void;
+  //Returns true if the invalidate was updated
+  invalidate(): boolean;
+
+  setLazyUpdate(
+    update: DeepReadonly<LazyUpdate> | null,
+    blockNumber: number,
+  ): void;
+
+  getLazyUpdate(): {
+    blockNumber: number;
+    update: DeepReadonly<LazyUpdate> | null;
+  };
 }
 
+// Currently the subscriber info is specific to dex pools but this can
+// be extended general subscriber
+export type SubscriberInfo<T> = {
+  dexKey: string;
+  identifier: string;
+  initParams: T;
+  addressSubscribed: Address | Address[];
+  afterBlockNumber: number;
+};
+
+export type SubscriberFetcher = (
+  subscriberInfo: SubscriberInfo<any>,
+) => EventSubscriber<any>;
+
 export interface IBlockManager {
+  attachGetSubscriber(getSubscriber: SubscriberFetcher): void;
+
   subscribeToLogs(
-    subscriber: EventSubscriber,
-    contractAddress: Address | Address[],
-    afterBlockNumber: number,
+    subscriberInfo: SubscriberInfo<any>,
+    isLazy: boolean,
+    fetchState: boolean,
+  ): EventSubscriber<any>;
+
+  isAlreadySubscribedToLogs<T>(subscriberInfo: SubscriberInfo<T>): boolean;
+
+  lazyUpdate<T>(
+    identifier: string,
+    update: T | null,
+    blockNumber: number,
   ): void;
 }

@@ -4,9 +4,19 @@ import { BlockHeader } from 'web3-eth';
 import { EventSubscriber } from './dex-helper/iblock-manager';
 
 import { MAX_BLOCKS_HISTORY } from './constants';
+import { IDexHelper } from './dex-helper';
+
+const REDIS_PREFIX = 'ep';
+
+type EventUpdateMessage = {
+  network: number;
+  identifier: string;
+  state: any;
+  blockNumber: number;
+};
 
 export abstract class StatefulEventSubscriber<State>
-  implements EventSubscriber
+  implements EventSubscriber<State>
 {
   //The current state and its block number
   //Derived classes should not set these directly, and instead use setState()
@@ -21,7 +31,11 @@ export abstract class StatefulEventSubscriber<State>
 
   isTracking: () => boolean = () => false;
 
-  constructor(public readonly name: string, protected logger: Logger) {}
+  constructor(
+    public readonly name: string,
+    protected logger: Logger,
+    protected dexHelper?: IDexHelper,
+  ) {}
 
   getStateBlockNumber(): Readonly<number> {
     return this.stateBlockNumber;
@@ -63,18 +77,25 @@ export abstract class StatefulEventSubscriber<State>
   //provided, in which case one should be generated for latest block.  This
   //function should not use any previous states to derive a new state, it should
   //generate one from scratch.
-  abstract generateState(
+  generateState(
     blockNumber?: number | 'latest',
-  ): AsyncOrSync<DeepReadonly<State>>;
+  ): AsyncOrSync<DeepReadonly<State>> {
+    this.logger.warn(`Fallback to rpc for ${this.name}`);
+    return this.state!;
+  }
 
-  restart(blockNumber: number): void {
+  //Returns true if the state was updated
+  restart(blockNumber: number): boolean {
+    let updated = false;
     for (const bn in this.stateHistory) {
       if (+bn >= blockNumber) break;
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
       this.state = null;
+      updated = true;
     }
+    return updated;
   }
 
   //Implementation must call setState() for every block in which the state
@@ -84,10 +105,12 @@ export abstract class StatefulEventSubscriber<State>
   //all logs with that block number and then proceed as normal for the remaining
   //logs.  Remember to clear the invalid flag, even if there are no logs!
   //A default implementation is provided here, but could be overridden.
+  //Returns true if the state was updated
   async update(
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [blockNumber: number]: Readonly<BlockHeader> }>,
-  ): Promise<void> {
+  ): Promise<boolean> {
+    let updated = false;
     let index = 0;
     let lastBlockNumber: number | undefined;
     while (index < logs.length) {
@@ -113,7 +136,7 @@ export abstract class StatefulEventSubscriber<State>
       }
       if (!this.state) {
         const freshState = await this.generateState(blockNumber);
-        this.setState(freshState, blockNumber);
+        updated = updated || this.setState(freshState, blockNumber);
       }
       //Find the last state before the blockNumber of the logs
       let stateBeforeLog: DeepReadonly<State> | undefined;
@@ -128,18 +151,26 @@ export abstract class StatefulEventSubscriber<State>
           logs.slice(index, indexBlockEnd),
           blockHeader,
         );
-        if (nextState) this.setState(nextState, blockNumber);
+        if (nextState) {
+          updated = updated || this.setState(nextState, blockNumber);
+        }
       }
       lastBlockNumber = blockNumber;
       index = indexBlockEnd;
     }
-    this.invalid = false;
+    if (this.invalid) {
+      this.invalid = false;
+      updated = true;
+    }
+    return updated;
   }
 
   //Removes all states that are beyond the given block number and sets the
   //current state to the latest one that is left, if any, unless the invalid
   //flag is not set, in which case the most recent state can be kept.
-  rollback(blockNumber: number): void {
+  //Returns true if the state was updated
+  rollback(blockNumber: number): boolean {
+    let updated = false;
     if (this.invalid) {
       for (const bn in this.stateHistory) {
         if (+bn > blockNumber) {
@@ -147,10 +178,12 @@ export abstract class StatefulEventSubscriber<State>
         } else {
           this.state = this.stateHistory[bn];
           this.stateBlockNumber = +bn;
+          updated = true;
         }
       }
       if (this.state && this.stateBlockNumber > blockNumber) {
         this.state = null;
+        updated = true;
       }
     } else {
       //Keep the current state in this.state and in the history
@@ -160,10 +193,15 @@ export abstract class StatefulEventSubscriber<State>
         }
       }
     }
+    return updated;
   }
 
-  invalidate(): void {
-    this.invalid = true;
+  invalidate(): boolean {
+    if (this.invalid) return false;
+    else {
+      this.invalid = true;
+      return true;
+    }
   }
 
   //May return a state that is more recent than the block number specified, or
@@ -172,8 +210,20 @@ export abstract class StatefulEventSubscriber<State>
   //number), possibly using generateState(), and set it on this object using
   //setState.  In case isTracking() returns true, it is assumed that the stored
   //state is current and so the minBlockNumber will be disregarded.
-  getState(minBlockNumber: number): DeepReadonly<State> | null {
-    if (!this.state || this.invalid) return null;
+  async getState(minBlockNumber: number): Promise<DeepReadonly<State> | null> {
+    if (this.invalid) return null;
+
+    if (!this.state && this.dexHelper) {
+      const key = `${REDIS_PREFIX}_${this.name}`;
+      const stateAsString = await this.dexHelper.cache.getByKey(key);
+      if (!stateAsString) {
+        return null;
+      }
+      const state: EventUpdateMessage = JSON.parse(stateAsString);
+      this.logger.info(`Successfully load the state for ${this.name}`);
+      this.setLazyUpdate(state.state, state.blockNumber);
+      return this.state;
+    }
     if (this.isTracking() || this.stateBlockNumber >= minBlockNumber) {
       return this.state;
     }
@@ -188,17 +238,19 @@ export abstract class StatefulEventSubscriber<State>
   //Saves the state into the stateHistory, and cleans up any old state that is
   //no longer needed.  If the blockNumber is greater than or equal to the
   //current state, then the current state will be updated and the invalid flag
-  //can be reset.
-  setState(state: DeepReadonly<State>, blockNumber: number): void {
+  //can be reset. Returns true if state is updated
+  setState(state: DeepReadonly<State>, blockNumber: number): boolean {
+    let updated = false;
     if (!blockNumber) {
       this.logger.error('setState() with blockNumber', blockNumber);
-      return;
+      return updated;
     }
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
       this.state = state;
       this.stateBlockNumber = blockNumber;
       this.invalid = false;
+      updated = true;
     }
     const minBlockNumberToKeep = this.stateBlockNumber - MAX_BLOCKS_HISTORY;
     let lastBlockNumber: number | undefined;
@@ -209,5 +261,19 @@ export abstract class StatefulEventSubscriber<State>
       if (+bn >= minBlockNumberToKeep) break;
       lastBlockNumber = +bn;
     }
+    return updated;
+  }
+
+  setLazyUpdate(update: DeepReadonly<State> | null, blockNumber: number) {
+    this.logger.debug(`${this.name} got lazy updated`);
+    this.state = update;
+    this.stateBlockNumber = blockNumber;
+  }
+
+  getLazyUpdate() {
+    return {
+      update: this.state,
+      blockNumber: this.stateBlockNumber,
+    };
   }
 }
