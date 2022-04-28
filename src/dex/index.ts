@@ -62,7 +62,7 @@ const LegacyDexes = [
 
 // TODO: uncomment the rest of the DEXes once they follow IEventsSubscriberFactory
 const Dexes = [
-  // BalancerV2,
+  BalancerV2,
   UniswapV2,
   // BiSwap,
   // MDEX,

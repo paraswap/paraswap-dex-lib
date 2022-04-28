@@ -343,7 +343,13 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 export class BalancerV2
   extends SimpleExchange
   implements
-    IDex<BalancerV2Data, null, null, BalancerParam, OptimizedBalancerV2Data>
+    IDex<
+      BalancerV2Data,
+      any,
+      PoolStateMap,
+      BalancerParam,
+      OptimizedBalancerV2Data
+    >
 {
   protected eventPools: BalancerV2EventPool;
 
@@ -375,16 +381,28 @@ export class BalancerV2
     );
   }
 
-  async setupEventPools(blockNumber: number) {
-    const poolState = await this.eventPools.generateState(blockNumber);
-    this.eventPools.setState(poolState, blockNumber);
+  getEventSubscriber(poolInitData: any): BalancerV2EventPool {
+    return new BalancerV2EventPool(
+      this.dexHelper,
+      this.dexKey,
+      this.network,
+      this.vaultAddress,
+      this.subgraphURL,
+      this.logger,
+    );
+  }
 
-    // TODO: fix me
-    // this.dexHelper.blockManager.subscribeToLogs(
-    //   this.eventPools,
-    //   this.eventPools.addressesSubscribed,
-    //   blockNumber,
-    // );
+  async setupEventPools(blockNumber: number) {
+    this.eventPools = this.dexHelper.blockManager.subscribeToLogs(
+      {
+        dexKey: this.dexKey,
+        identifier: `${this.dexKey}_all_pools`,
+        initParams: {},
+        addressSubscribed: this.vaultAddress,
+        afterBlockNumber: blockNumber,
+      },
+      false,
+    ) as BalancerV2EventPool;
   }
 
   async initializePricing(blockNumber: number) {
