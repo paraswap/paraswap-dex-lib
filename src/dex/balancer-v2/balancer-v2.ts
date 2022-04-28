@@ -395,6 +395,7 @@ export class BalancerV2
       },
       false,
     ) as BalancerV2EventPool;
+    this.eventPools.getState(blockNumber);
   }
 
   async initializePricing(blockNumber: number) {

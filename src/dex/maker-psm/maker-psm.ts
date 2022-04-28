@@ -232,12 +232,6 @@ export class MakerPsm
   }
 
   async initializePricing(blockNumber: number) {
-    const poolStates = await getOnChainState(
-      this.dexHelper.multiContract,
-      this.poolConfigs,
-      this.vatAddress,
-      blockNumber,
-    );
     this.poolConfigs.forEach((p, i) => {
       const identifier = `${this.network}_${this.dexKey}_${p.identifier}`;
       const pool = this.dexHelper.blockManager.subscribeToLogs(
@@ -253,7 +247,7 @@ export class MakerPsm
         false,
       ) as MakerPsmEventPool;
       this.eventPools[p.gem.address.toLowerCase()] = pool;
-      pool.setState(poolStates[i], blockNumber);
+      pool.getState(blockNumber);
     });
     this.logger.info(`MakerPsm: ${this.poolConfigs.length} pools enabled`);
   }
