@@ -19,7 +19,7 @@ import { Contract } from 'web3-eth-contract';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
-  async getKey(key: string): Promise<string | null> {
+  async getByKey(key: string): Promise<string | null> {
     return null;
   }
 

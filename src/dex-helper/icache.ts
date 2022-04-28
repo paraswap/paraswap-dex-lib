@@ -1,5 +1,5 @@
 export interface ICache {
-  getKey(key: string): Promise<string | null>;
+  getByKey(key: string): Promise<string | null>;
 
   get(
     dexKey: string,

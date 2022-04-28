@@ -213,7 +213,7 @@ export abstract class StatefulEventSubscriber<State>
 
     if (!this.state && this.dexHelper) {
       const key = `ep_${this.name}`;
-      const stateAsString = await this.dexHelper.cache.getKey(key);
+      const stateAsString = await this.dexHelper.cache.getByKey(key);
       if (!stateAsString) {
         return null;
       }
