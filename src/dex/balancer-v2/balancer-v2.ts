@@ -100,14 +100,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ];
 
   constructor(
-    protected dexHelper: IDexHelper,
-    protected parentName: string,
+    protected poolIdentifier: string,
     protected network: number,
+    protected dexHelper: IDexHelper,
     protected vaultAddress: Address,
     protected subgraphURL: string,
     logger: Logger,
   ) {
-    super(parentName, logger, dexHelper);
+    super(poolIdentifier, logger, dexHelper);
     this.vaultInterface = new Interface(VaultABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
@@ -163,7 +163,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       return _state;
     } catch (e) {
       this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
+        `Error_${this.poolIdentifier}_processLog could not parse the log with topic ${log.topics}:`,
         e,
       );
       return null;
@@ -173,20 +173,20 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
     const cacheKey = 'AllSubgraphPools';
     const cachedPools = await this.dexHelper.cache.get(
-      this.parentName,
+      this.poolIdentifier,
       this.network,
       cacheKey,
     );
     if (cachedPools) {
       const allPools = JSON.parse(cachedPools);
       this.logger.info(
-        `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
+        `Got ${allPools.length} ${this.poolIdentifier}_${this.network} pools from cache`,
       );
       return allPools;
     }
 
     this.logger.info(
-      `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
+      `Fetching ${this.poolIdentifier}_${this.network} Pools from subgraph`,
     );
     const variables = {
       count: MAX_POOL_CNT,
@@ -201,7 +201,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       throw new Error('Unable to fetch pools from the subgraph');
 
     this.dexHelper.cache.setex(
-      this.parentName,
+      this.poolIdentifier,
       this.network,
       cacheKey,
       POOL_CACHE_TTL,
@@ -209,7 +209,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     );
     const allPools = data.pools;
     this.logger.info(
-      `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
+      `Got ${allPools.length} ${this.poolIdentifier}_${this.network} pools from subgraph`,
     );
     return allPools;
   }
@@ -345,7 +345,7 @@ export class BalancerV2
   implements
     IDex<
       BalancerV2Data,
-      any,
+      string,
       PoolStateMap,
       BalancerParam,
       OptimizedBalancerV2Data
@@ -373,11 +373,11 @@ export class BalancerV2
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  getEventSubscriber(poolInitData: any): BalancerV2EventPool {
+  getEventSubscriber(poolInitData: string): BalancerV2EventPool {
     return new BalancerV2EventPool(
-      this.dexHelper,
-      this.dexKey,
+      poolInitData,
       this.network,
+      this.dexHelper,
       this.vaultAddress,
       this.subgraphURL,
       this.logger,
@@ -385,11 +385,12 @@ export class BalancerV2
   }
 
   async setupEventPools(blockNumber: number) {
+    const identifier = `${this.network}_${this.dexKey}_all_pools`;
     this.eventPools = this.dexHelper.blockManager.subscribeToLogs(
       {
         dexKey: this.dexKey,
-        identifier: `${this.network}_${this.dexKey}_all_pools`,
-        initParams: {},
+        identifier: identifier,
+        initParams: identifier,
         addressSubscribed: this.vaultAddress,
       },
       false,

@@ -95,7 +95,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   protected displayName: string;
 
   constructor(
-    protected parentName: string,
+    protected poolIdentifier: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
     private token0: Token,
@@ -108,13 +108,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private feesMultiCallEntry?: { target: Address; callData: string },
     private feesMultiCallDecoder?: (values: any[]) => number,
   ) {
-    super(
-      parentName,
-
-      logger,
-      dexHelper,
-    );
-    this.displayName = parentName;
+    super(poolIdentifier, logger, dexHelper);
+    this.displayName = poolIdentifier;
     ' ' +
       (token0.symbol || token0.address) +
       '-' +

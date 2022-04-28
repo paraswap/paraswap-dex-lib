@@ -95,14 +95,14 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
     '0x74696e0000000000000000000000000000000000000000000000000000000000'; // bytes32('tin')
 
   constructor(
-    protected parentName: string,
+    protected poolIdentifier: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
     protected vatAddress: Address,
   ) {
-    super(`${parentName}_${poolConfig.identifier}`, logger, dexHelper);
+    super(poolIdentifier, logger, dexHelper);
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];
@@ -134,7 +134,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   getIdentifier(): string {
-    return `${this.parentName}_${this.poolConfig.psmAddress}`.toLowerCase();
+    return `${this.poolIdentifier}_${this.poolConfig.psmAddress}`.toLowerCase();
   }
 
   /**
@@ -158,7 +158,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
       return state;
     } catch (e) {
       this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
+        `Error_${this.poolIdentifier}_processLog could not parse the log with topic ${log.topics}:`,
         e,
       );
       return null;
@@ -187,9 +187,14 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
   }
 }
 
+type MakerPsmInitData = {
+  identifier: string;
+  index: number;
+};
+
 export class MakerPsm
   extends SimpleExchange
-  implements IDex<MakerPsmData, number, PoolState, DexParam>
+  implements IDex<MakerPsmData, MakerPsmInitData, PoolState, DexParam>
 {
   protected eventPools: { [gemAddress: string]: MakerPsmEventPool };
 
@@ -215,13 +220,13 @@ export class MakerPsm
     this.eventPools = {};
   }
 
-  getEventSubscriber(poolInitData: number): MakerPsmEventPool {
+  getEventSubscriber(poolInitData: MakerPsmInitData): MakerPsmEventPool {
     return new MakerPsmEventPool(
-      this.dexKey,
+      poolInitData.identifier,
       this.network,
       this.dexHelper,
       this.logger,
-      this.poolConfigs[poolInitData],
+      this.poolConfigs[poolInitData.index],
       this.vatAddress,
     );
   }
@@ -234,11 +239,15 @@ export class MakerPsm
       blockNumber,
     );
     this.poolConfigs.forEach((p, i) => {
+      const identifer = `${this.network}_${this.dexKey}_${p.identifier}`;
       const pool = this.dexHelper.blockManager.subscribeToLogs(
         {
           dexKey: this.dexKey,
-          identifier: `${this.network}_${this.dexKey}_${p.identifier}`,
-          initParams: i,
+          identifier: identifer,
+          initParams: {
+            identifier: identifer,
+            index: i,
+          },
           addressSubscribed: p.psmAddress,
         },
         false,
