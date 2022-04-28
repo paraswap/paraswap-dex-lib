@@ -237,10 +237,9 @@ export class MakerPsm
       const pool = this.dexHelper.blockManager.subscribeToLogs(
         {
           dexKey: this.dexKey,
-          identifier: `${this.dexKey}_${p.identifier}`,
+          identifier: `${this.network}_${this.dexKey}_${p.identifier}`,
           initParams: i,
           addressSubscribed: p.psmAddress,
-          afterBlockNumber: blockNumber,
         },
         false,
       ) as MakerPsmEventPool;

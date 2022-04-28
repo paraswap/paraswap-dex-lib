@@ -351,7 +351,7 @@ export class BalancerV2
       OptimizedBalancerV2Data
     >
 {
-  protected eventPools: BalancerV2EventPool;
+  protected eventPools?: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -371,14 +371,6 @@ export class BalancerV2
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new BalancerV2EventPool(
-      this.dexHelper,
-      dexKey,
-      network,
-      vaultAddress,
-      subgraphURL,
-      this.logger,
-    );
   }
 
   getEventSubscriber(poolInitData: any): BalancerV2EventPool {
@@ -396,10 +388,9 @@ export class BalancerV2
     this.eventPools = this.dexHelper.blockManager.subscribeToLogs(
       {
         dexKey: this.dexKey,
-        identifier: `${this.dexKey}_all_pools`,
+        identifier: `${this.network}_${this.dexKey}_all_pools`,
         initParams: {},
         addressSubscribed: this.vaultAddress,
-        afterBlockNumber: blockNumber,
       },
       false,
     ) as BalancerV2EventPool;
@@ -410,17 +401,15 @@ export class BalancerV2
   }
 
   getPools(from: Token, to: Token): SubgraphPoolBase[] {
-    return this.eventPools.allPools
-      .filter(
-        p =>
-          p.tokens.some(
-            token => token.address.toLowerCase() === from.address.toLowerCase(),
-          ) &&
-          p.tokens.some(
-            token => token.address.toLowerCase() === to.address.toLowerCase(),
-          ),
-      )
-      .slice(0, 10);
+    return this.eventPools!.allPools.filter(
+      p =>
+        p.tokens.some(
+          token => token.address.toLowerCase() === from.address.toLowerCase(),
+        ) &&
+        p.tokens.some(
+          token => token.address.toLowerCase() === to.address.toLowerCase(),
+        ),
+    ).slice(0, 10);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -475,7 +464,7 @@ export class BalancerV2
         (side === SwapSide.SELL ? _to : _from).decimals,
       );
 
-      const poolStates = await this.eventPools.getState(blockNumber);
+      const poolStates = await this.eventPools!.getState(blockNumber);
       if (!poolStates) {
         this.logger.error(`getState returned null`);
         return null;
@@ -486,7 +475,7 @@ export class BalancerV2
       );
 
       const missingPoolsStateMap = missingPools.length
-        ? await this.eventPools.getOnChainState(missingPools, blockNumber)
+        ? await this.eventPools!.getOnChainState(missingPools, blockNumber)
         : {};
 
       const poolPrices = allowedPools
@@ -500,7 +489,7 @@ export class BalancerV2
           }
           // TODO: re-check what should be the current block time stamp
           try {
-            const res = this.eventPools.getPricesPool(
+            const res = this.eventPools!.getPricesPool(
               _from,
               _to,
               pool,
@@ -657,7 +646,7 @@ export class BalancerV2
       side,
     );
 
-    const swapData = this.eventPools.vaultInterface.encodeFunctionData(
+    const swapData = this.eventPools!.vaultInterface.encodeFunctionData(
       'batchSwap',
       params,
     );

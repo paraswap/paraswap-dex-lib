@@ -99,7 +99,7 @@ class DummyBlockManager implements IBlockManager {
   ): EventSubscriber<any> {
     if (!this.getEventSubscriber) throw new Error('getEventSubscriber not set');
     console.log(
-      `Subscribed to logs ${subscriberInfo.dexKey}:${subscriberInfo.identifier} ${subscriberInfo.addressSubscribed} ${subscriberInfo.afterBlockNumber}`,
+      `Subscribed to logs ${subscriberInfo.dexKey}:${subscriberInfo.identifier} ${subscriberInfo.addressSubscribed}`,
     );
     return this.getEventSubscriber(subscriberInfo);
   }

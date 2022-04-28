@@ -292,7 +292,6 @@ export class UniswapV2
       identifier,
       initParams: poolInitData,
       addressSubscribed: pair.exchange!,
-      afterBlockNumber: blockNumber,
     };
 
     pair.pool = this.dexHelper.blockManager.subscribeToLogs(

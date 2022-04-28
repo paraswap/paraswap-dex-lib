@@ -63,7 +63,6 @@ export type SubscriberInfo<T> = {
   identifier: string;
   initParams: T;
   addressSubscribed: Address | Address[];
-  afterBlockNumber: number;
 };
 
 export type SubscriberFetcher = (
