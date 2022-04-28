@@ -73,7 +73,7 @@ const Dexes = [
   // AaveV3,
   // KyberDmm,
   // Weth,
-  // MakerPsm,
+  MakerPsm,
 ];
 
 const AdapterNameAddressMap: {

@@ -298,7 +298,6 @@ export class UniswapV2
     pair.pool = this.dexHelper.blockManager.subscribeToLogs(
       subscriberInfo,
       false,
-      true,
     ) as UniswapV2EventPool;
   }
 

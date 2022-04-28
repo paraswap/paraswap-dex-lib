@@ -22,6 +22,7 @@ import { MakerPsmConfig, Adapters } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
 import { BI_POWS } from '../../bigint-constants';
+import { DexParam } from '../aave-v3/types';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
@@ -101,7 +102,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
     public poolConfig: PoolConfig,
     protected vatAddress: Address,
   ) {
-    super(parentName, logger, dexHelper);
+    super(`${parentName}_${poolConfig.identifier}`, logger, dexHelper);
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];
@@ -186,7 +187,10 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
   }
 }
 
-export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
+export class MakerPsm
+  extends SimpleExchange
+  implements IDex<MakerPsmData, number, PoolState, DexParam>
+{
   protected eventPools: { [gemAddress: string]: MakerPsmEventPool };
 
   // warning: There is limit on swap
@@ -209,16 +213,16 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
-    poolConfigs.forEach(
-      p =>
-        (this.eventPools[p.gem.address.toLowerCase()] = new MakerPsmEventPool(
-          dexKey,
-          network,
-          dexHelper,
-          this.logger,
-          p,
-          this.vatAddress,
-        )),
+  }
+
+  getEventSubscriber(poolInitData: number): MakerPsmEventPool {
+    return new MakerPsmEventPool(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      this.logger,
+      this.poolConfigs[poolInitData],
+      this.vatAddress,
     );
   }
 
@@ -230,15 +234,20 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       blockNumber,
     );
     this.poolConfigs.forEach((p, i) => {
-      const eventPool = this.eventPools[p.gem.address.toLowerCase()];
-      eventPool.setState(poolStates[i], blockNumber);
-      // TODO: fix me
-      // this.dexHelper.blockManager.subscribeToLogs(
-      //   eventPool,
-      //   eventPool.addressesSubscribed,
-      //   blockNumber,
-      // );
+      const pool = this.dexHelper.blockManager.subscribeToLogs(
+        {
+          dexKey: this.dexKey,
+          identifier: `${this.dexKey}_${p.identifier}`,
+          initParams: i,
+          addressSubscribed: p.psmAddress,
+          afterBlockNumber: blockNumber,
+        },
+        false,
+      ) as MakerPsmEventPool;
+      this.eventPools[p.gem.address.toLowerCase()] = pool;
+      pool.setState(poolStates[i], blockNumber);
     });
+    this.logger.info(`MakerPsm: ${this.poolConfigs.length} pools enabled`);
   }
 
   // Returns the list of contract adapters (name and index)
