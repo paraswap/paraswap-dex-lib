@@ -92,7 +92,7 @@ export class NerveEventMetapool extends NerveEventPool {
     state: DeepReadonly<MetapoolState>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
-  ): DeepReadonly<PoolOrMetapoolState> | null {
+  ): DeepReadonly<PoolOrMetapoolState> {
     // To handle logs of metapool and the base pool the following architecture is followed
     // If the logs are for base pool, look out if the msg.sender of the function that generated
     // the log is the metapool if so ignore the log. This is done by overloading the
@@ -195,7 +195,7 @@ export class NerveEventMetapool extends NerveEventPool {
   protected _handleHelperIfNotFromMetapool(
     event: any,
     state: PoolState,
-    handler: () => PoolState | null,
+    handler: () => PoolState,
   ) {
     return this._isEventFromMetapool(event) ? state : handler();
   }

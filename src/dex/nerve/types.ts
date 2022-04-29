@@ -66,7 +66,7 @@ export type EventHandler<S> = (
   pool: S,
   log: Log,
   blockHeader: BlockHeader,
-) => DeepReadonly<S> | null;
+) => DeepReadonly<S>;
 
 export type EventPoolOrMetapool = NerveEventPool | NerveEventMetapool;
 
