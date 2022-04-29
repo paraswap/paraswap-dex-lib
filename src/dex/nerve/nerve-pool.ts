@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import type { AbiItem } from 'web3-utils';
 import erc20ABI from '../../abi/erc20.json';
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
@@ -14,7 +13,7 @@ import {
 } from './types';
 import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
-import { biginterify, typeCastPoolState } from './utils';
+import { bigIntify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
@@ -99,8 +98,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   get tokenPrecisionMultipliers() {
     return this.tokens.map(
       token =>
-        biginterify(10) **
-        (this.math.POOL_PRECISION_DECIMALS - biginterify(token.decimals)),
+        bigIntify(10) **
+        (this.math.POOL_PRECISION_DECIMALS - bigIntify(token.decimals)),
     );
   }
 
@@ -120,7 +119,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
         return this.handlers[event.name](event, _state, log, blockHeader);
       return _state;
     } catch (e) {
-      this.logger.error(`Error: unexpected error handling log:`, e);
+      this.logger.error(`Unexpected error handling log:`, e);
     }
     return state;
   }
@@ -159,7 +158,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
     const [swapStorage, lpToken_supply, balances] = [
       this.poolIface.decodeFunctionResult('swapStorage', data.returnData[0]),
-      biginterify(
+      bigIntify(
         this.lpTokenIface.decodeFunctionResult(
           'totalSupply',
           data.returnData[1],
@@ -167,7 +166,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       ),
       _.flatten(
         _.range(2, this.numTokens + 2).map(i =>
-          biginterify(
+          bigIntify(
             this.poolIface.decodeFunctionResult(
               'getTokenBalance',
               data.returnData[i],
@@ -178,22 +177,22 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     ];
 
     return {
-      initialA: biginterify(swapStorage.initialA._hex),
-      futureA: biginterify(swapStorage.futureA._hex),
-      initialATime: biginterify(swapStorage.initialATime._hex),
-      futureATime: biginterify(swapStorage.futureATime._hex),
+      initialA: bigIntify(swapStorage.initialA._hex),
+      futureA: bigIntify(swapStorage.futureA._hex),
+      initialATime: bigIntify(swapStorage.initialATime._hex),
+      futureATime: bigIntify(swapStorage.futureATime._hex),
       // If we have swapFee or fee, use these values, otherwise set to zero
       swapFee:
         ((swapStorage.swapFee || swapStorage.fee) &&
-          biginterify((swapStorage.swapFee || swapStorage.fee)._hex)) ||
+          bigIntify((swapStorage.swapFee || swapStorage.fee)._hex)) ||
         0n,
-      adminFee: biginterify(swapStorage.adminFee._hex),
+      adminFee: bigIntify(swapStorage.adminFee._hex),
       defaultDepositFee:
         swapStorage.defaultDepositFee &&
-        biginterify(swapStorage.defaultDepositFee._hex),
+        bigIntify(swapStorage.defaultDepositFee._hex),
       defaultWithdrawFee:
         swapStorage.defaultWithdrawFee &&
-        biginterify(swapStorage.defaultWithdrawFee._hex),
+        bigIntify(swapStorage.defaultWithdrawFee._hex),
       lpToken_supply,
       balances,
       tokenPrecisionMultipliers: this.tokenPrecisionMultipliers,
@@ -204,9 +203,9 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   handleNewFee(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    state.swapFee = biginterify(event.args.fee);
-    state.adminFee = biginterify(event.args.adminFee);
-    state.defaultWithdrawFee = biginterify(event.args.withdrawFee);
+    state.swapFee = bigIntify(event.args.fee);
+    state.adminFee = bigIntify(event.args.adminFee);
+    state.defaultWithdrawFee = bigIntify(event.args.withdrawFee);
 
     return state;
   }
@@ -214,38 +213,38 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   handleNewAdminFee(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    state.adminFee = biginterify(event.args.newAdminFee);
+    state.adminFee = bigIntify(event.args.newAdminFee);
     return state;
   }
 
   handleNewSwapFee(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    state.swapFee = biginterify(event.args.newSwapFee);
+    state.swapFee = bigIntify(event.args.newSwapFee);
     return state;
   }
 
   handleNewDepositFee(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    state.defaultDepositFee = biginterify(event.args.newDepositFee);
+    state.defaultDepositFee = bigIntify(event.args.newDepositFee);
     return state;
   }
 
   handleNewWithdrawFee(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    state.defaultWithdrawFee = biginterify(event.args.newWithdrawFee);
+    state.defaultWithdrawFee = bigIntify(event.args.newWithdrawFee);
     return state;
   }
 
   handleRampA(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    state.initialA = biginterify(event.args.oldA);
-    state.futureA = biginterify(event.args.newA);
-    state.initialATime = biginterify(event.args.initialTime);
-    state.futureATime = biginterify(event.args.futureTime);
+    state.initialA = bigIntify(event.args.oldA);
+    state.futureA = bigIntify(event.args.newA);
+    state.initialATime = bigIntify(event.args.initialTime);
+    state.futureATime = bigIntify(event.args.futureTime);
     return state;
   }
 
@@ -253,8 +252,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     if (!state.isValid) return null;
 
     // To support IronV2 variable names I use "or" expression
-    const finalA = biginterify(event.args.currentA || event.args.A);
-    const finalTime = biginterify(event.args.time || event.args.timestamp);
+    const finalA = bigIntify(event.args.currentA || event.args.A);
+    const finalTime = bigIntify(event.args.time || event.args.timestamp);
 
     state.initialA = finalA;
     state.futureA = finalA;
@@ -270,45 +269,44 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     blockHeader: BlockHeader,
   ) {
     if (!state.isValid) return null;
-    const blockTimestamp = biginterify(blockHeader.timestamp);
+    const blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    const transferredDx = biginterify(event.args.tokensSold);
-    const dyEvent = biginterify(event.args.tokensBought);
+    const transferredDx = bigIntify(event.args.tokensSold);
+    const dyEvent = bigIntify(event.args.tokensBought);
     const tokenIndexFrom = event.args.soldId.toNumber();
     const tokenIndexTo = event.args.boughtId.toNumber();
 
-    const swap = this.math.calculateSwap(
-      state,
-      tokenIndexFrom,
-      tokenIndexTo,
-      transferredDx,
-      blockTimestamp,
-    );
-
-    if (swap === null) {
-      state.isValid = false;
-      return null;
-    }
-
-    const { dy, dyFee } = swap;
-
-    const dyAdminFee =
-      (dyFee * state.adminFee) /
-      this.math.FEE_DENOMINATOR /
-      state.tokenPrecisionMultipliers[tokenIndexFrom];
-
-    state.balances[tokenIndexFrom] += transferredDx;
-    state.balances[tokenIndexTo] -= dy + dyAdminFee;
-
-    if (dyEvent !== dy) {
-      this.logger.error(
-        `For ${this.parentName}_${this.poolConfig.name} _calculateSwap value ${dy} is not equal to ${dyEvent} event value`,
+    try {
+      const swap = this.math.calculateSwap(
+        state,
+        tokenIndexFrom,
+        tokenIndexTo,
+        transferredDx,
+        blockTimestamp,
       );
+      const { dy, dyFee } = swap;
+
+      const dyAdminFee =
+        (dyFee * state.adminFee) /
+        this.math.FEE_DENOMINATOR /
+        state.tokenPrecisionMultipliers[tokenIndexFrom];
+
+      state.balances[tokenIndexFrom] += transferredDx;
+      state.balances[tokenIndexTo] -= dy + dyAdminFee;
+
+      if (dyEvent !== dy) {
+        this.logger.error(
+          `For ${this.parentName}_${this.poolConfig.name} _calculateSwap value ${dy} is not equal to ${dyEvent} event value`,
+        );
+        state.isValid = false;
+        return null;
+      }
+
+      return state;
+    } catch (e) {
       state.isValid = false;
       return null;
     }
-
-    return state;
   }
 
   // Variation for IronV2. Almost the same as handleTokenSwap
@@ -319,16 +317,18 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     blockHeader: BlockHeader,
   ) {
     if (!state.isValid) return null;
-    const blockTimestamp = biginterify(blockHeader.timestamp);
+    const blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    const transferredDx = biginterify(event.args.tokensSold);
-    const dyEvent = biginterify(event.args.tokensBought);
+    const transferredDx = bigIntify(event.args.tokensSold);
+    const dyEvent = bigIntify(event.args.tokensBought);
     const i = event.args.soldId.toNumber();
     const j = event.args.boughtId.toNumber();
 
     const normalizedBalances = this.math._xp(state);
     const x =
       normalizedBalances[i] + transferredDx * this.tokenPrecisionMultipliers[i];
+
+    try {
     const y = this.math._getY(
       state,
       i,
@@ -337,12 +337,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       normalizedBalances,
       blockTimestamp,
     );
-
-    if (y === null) {
-      state.isValid = false;
-      return null;
-    }
-
     let dy = normalizedBalances[j] - y - 1n;
     const dy_fee = (dy * state.swapFee) / this.math.FEE_DENOMINATOR;
     dy = (dy - dy_fee) / this.tokenPrecisionMultipliers[j];
@@ -363,14 +357,19 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     }
 
     return state;
+    } catch (e) {
+      state.isValid = false;
+      return null;
+    }
+
   }
 
   handleAddLiquidity(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
-    const fees = event.args.fees.map(biginterify) as bigint[];
-    const lpTokenSupply = biginterify(
+    const tokenAmounts = event.args.tokenAmounts.map(bigIntify) as bigint[];
+    const fees = event.args.fees.map(bigIntify) as bigint[];
+    const lpTokenSupply = bigIntify(
       event.args.lpTokenSupply || event.args.tokenSupply,
     );
 
@@ -392,8 +391,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   handleRemoveLiquidity(event: any, state: PoolState) {
     if (!state.isValid) return null;
 
-    const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
-    const lpTokenSupply = biginterify(
+    const tokenAmounts = event.args.tokenAmounts.map(bigIntify) as bigint[];
+    const lpTokenSupply = bigIntify(
       event.args.lpTokenSupply || event.args.tokenSupply,
     );
 
@@ -416,9 +415,9 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleRemoveLiquidityImbalance(event: any, state: PoolState) {
-    const tokenAmounts = event.args.tokenAmounts.map(biginterify) as bigint[];
-    const fees = event.args.fees.map(biginterify) as bigint[];
-    const lpTokenSupply = biginterify(
+    const tokenAmounts = event.args.tokenAmounts.map(bigIntify) as bigint[];
+    const fees = event.args.fees.map(bigIntify) as bigint[];
+    const lpTokenSupply = bigIntify(
       event.args.lpTokenSupply || event.args.tokenSupply,
     );
 

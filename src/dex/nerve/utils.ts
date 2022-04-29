@@ -1,7 +1,7 @@
 import { DeepReadonly } from 'ts-essentials';
 import { MetapoolState, PoolState } from './types';
 
-export const biginterify = (val: any) => BigInt(val);
+export const bigIntify = (val: any) => BigInt(val);
 
 export const stringify = (val: any) => val.toString();
 
@@ -20,19 +20,19 @@ export class MathUtil {
 
 export function typeCastPoolState(state: DeepReadonly<PoolState>): PoolState {
   return {
-    initialA: biginterify(state.initialA),
-    futureA: biginterify(state.futureA),
-    initialATime: biginterify(state.initialATime),
-    futureATime: biginterify(state.futureATime),
-    swapFee: biginterify(state.swapFee),
-    adminFee: biginterify(state.adminFee),
+    initialA: bigIntify(state.initialA),
+    futureA: bigIntify(state.futureA),
+    initialATime: bigIntify(state.initialATime),
+    futureATime: bigIntify(state.futureATime),
+    swapFee: bigIntify(state.swapFee),
+    adminFee: bigIntify(state.adminFee),
     defaultDepositFee:
-      state.defaultDepositFee && biginterify(state.defaultDepositFee),
+      state.defaultDepositFee && bigIntify(state.defaultDepositFee),
     defaultWithdrawFee:
-      state.defaultWithdrawFee && biginterify(state.defaultWithdrawFee),
-    lpToken_supply: biginterify(state.lpToken_supply),
-    balances: state.balances.map(biginterify),
-    tokenPrecisionMultipliers: state.tokenPrecisionMultipliers.map(biginterify),
+      state.defaultWithdrawFee && bigIntify(state.defaultWithdrawFee),
+    lpToken_supply: bigIntify(state.lpToken_supply),
+    balances: state.balances.map(bigIntify),
+    tokenPrecisionMultipliers: state.tokenPrecisionMultipliers.map(bigIntify),
     isValid: state.isValid,
   };
 }

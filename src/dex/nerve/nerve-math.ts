@@ -1,12 +1,12 @@
-import { biginterify, MathUtil } from './utils';
+import { bigIntify, MathUtil } from './utils';
 import { Logger } from '../../types';
 import { PoolState, ReadonlyOrWritable } from './types';
 
 export class NervePoolMath {
-  readonly FEE_DENOMINATOR = biginterify(10 ** 10);
-  readonly A_PRECISION = biginterify(100);
-  readonly MAX_LOOP_LIMIT = biginterify(256);
-  readonly POOL_PRECISION_DECIMALS = biginterify(18);
+  readonly FEE_DENOMINATOR = bigIntify(10 ** 10);
+  readonly A_PRECISION = bigIntify(100);
+  readonly MAX_LOOP_LIMIT = bigIntify(256);
+  readonly POOL_PRECISION_DECIMALS = bigIntify(18);
 
   constructor(protected name: string, protected logger: Logger) {}
 
@@ -33,11 +33,6 @@ export class NervePoolMath {
       blockTimestamp,
     );
 
-    if (y === null) {
-      state.isValid = false;
-      return null;
-    }
-
     // dy = xp[tokenIndexTo].sub(y).sub(1);
     let dy = xp[tokenIndexTo] - y - 1n;
 
@@ -55,14 +50,12 @@ export class NervePoolMath {
     tokenIndex: number,
     blockTimeStamp: bigint,
   ) {
-    const out = this._calculateWithdrawOneTokenDY(
+    let { dy, newY } = this._calculateWithdrawOneTokenDY(
       state,
       tokenIndex,
       tokenAmount,
       blockTimeStamp,
     );
-    if (out === null) return null;
-    let { dy, newY } = out;
 
     // uint256 dySwapFee = _xp(self)[tokenIndex].sub(newY)
     //  .div(self.tokenPrecisionMultipliers[tokenIndex]).sub(dy)
@@ -80,10 +73,8 @@ export class NervePoolMath {
     return { dy, dyFee: dySwapFee };
   }
 
-  swapUnderlying(state: PoolState) {}
-
   protected _getNumTokens(state: PoolState) {
-    return biginterify(state.tokenPrecisionMultipliers.length);
+    return bigIntify(state.tokenPrecisionMultipliers.length);
   }
 
   protected _calculateWithdrawOneTokenDY(
@@ -102,34 +93,29 @@ export class NervePoolMath {
       preciseA: 0n,
     };
     v.preciseA = this._getAPrecise(state, blockTimestamp);
-    const d0 = this._getD(state, xp, v.preciseA);
-    if (d0 === null) return null;
-    else v.d0 = d0;
+    v.d0 = this._getD(state, xp, v.preciseA);
 
     // v.d1 = v.d0.sub(tokenAmount.mul(v.d0).div(self.lpToken.totalSupply()));
     v.d1 = v.d0 - (tokenAmount * v.d0) / state.lpToken_supply;
-    const newY = this._getYD(state, v.preciseA, tokenIndex, xp, v.d1);
-    if (newY === null) return null;
-    else v.newY = newY;
+    v.newY = this._getYD(state, v.preciseA, tokenIndex, xp, v.d1);
 
     const xpReduced: bigint[] = [];
 
     v.feePerToken = this._feePerToken(state);
     for (let i = 0; i < numTokens; i++) {
       const xpi = xp[i];
-      // if i == tokenIndex, dxExpected = xp[i] * d1 / d0 - newY
-      // else dxExpected = xp[i] - (xp[i] * d1 / d0)
-      // xpReduced[i] -= dxExpected * fee / FEE_DENOMINATOR
-
+      // if i == tokenIndex, dxExpected = xpi.mul(v.d1).div(v.d0).sub(v.newY)
+      // else dxExpected = xpi.sub(xpi.mul(v.d1).div(v.d0))
       const dxExpected =
         i === tokenIndex
           ? (xpi * v.d1) / v.d0 - v.newY
           : xpi - (xpi * v.d1) / v.d0;
-      xpReduced[i] -= (dxExpected * v.feePerToken) / this.FEE_DENOMINATOR;
+
+      // xpReduced[i] = xpi.sub(dxExpected.mul(v.feePerToken).div(FEE_DENOMINATOR))
+      xpReduced[i] = xpi - (dxExpected * v.feePerToken) / this.FEE_DENOMINATOR;
     }
 
     const yd = this._getYD(state, v.preciseA, tokenIndex, xpReduced, v.d1);
-    if (yd === null) return null;
     // uint256 dy = xpReduced[tokenIndex].sub(getYD(v.preciseA, tokenIndex, xpReduced, v.d1));
     let dy = xpReduced[tokenIndex] - yd;
 
@@ -142,7 +128,7 @@ export class NervePoolMath {
   protected _feePerToken(state: PoolState) {
     const numTokens = this._getNumTokens(state);
     // self.swapFee.mul(self.pooledTokens.length).div(self.pooledTokens.length.sub(1).mul(4));
-    return (state.swapFee * numTokens) / ((numTokens - 1n) * biginterify(4));
+    return (state.swapFee * numTokens) / ((numTokens - 1n) * bigIntify(4));
   }
 
   protected _calculateCurrentWithdrawFee(state: PoolState) {
@@ -158,7 +144,7 @@ export class NervePoolMath {
     xp: bigint[],
     d: bigint,
   ) {
-    const numTokens = biginterify(xp.length);
+    const numTokens = bigIntify(xp.length);
 
     let c = d;
     let s: bigint = 0n;
@@ -185,15 +171,18 @@ export class NervePoolMath {
       yPrev = y;
 
       // y = y.mul(y).add(c).div(y.mul(2).add(b).sub(d));
-      y = (y * y + c) / (y * biginterify(2) + b - d);
+      y = (y * y + c) / (y * bigIntify(2) + b - d);
       if (MathUtil.within1(y, yPrev)) {
         return y;
       }
     }
 
-    this.logger.error(`Event pool ${this.name} method _getYD did not converge`);
     state.isValid = false;
-    return null;
+    const error = new Error(
+      `Event pool ${this.name} method _getYD did not converge`,
+    );
+    this.logger.error(error);
+    throw error;
   }
 
   _getY(
@@ -207,7 +196,6 @@ export class NervePoolMath {
     const numTokens = this._getNumTokens(state);
     const a = this._getAPrecise(state, blockTimestamp);
     const d = this._getD(state, xp, a);
-    if (d === null) return null;
     let c = d;
     let s: bigint = 0n;
     const nA = numTokens * a;
@@ -236,18 +224,19 @@ export class NervePoolMath {
     for (let i = 0; i < this.MAX_LOOP_LIMIT; i++) {
       yPrev = y;
       // y = y.mul(y).add(c).div(y.mul(2).add(b).sub(d));
-      y = (y * y + c) / (y * biginterify(2) + b - d);
+      y = (y * y + c) / (y * bigIntify(2) + b - d);
 
       if (MathUtil.within1(y, yPrev)) {
         return y;
       }
     }
 
-    this.logger.error(
+    state.isValid = false;
+    const error = new Error(
       `Event pool ${this.name} parsing function _getY approximation did not converge`,
     );
-    state.isValid = false;
-    return null;
+    this.logger.error(error);
+    throw error;
   }
 
   protected _getAPrecise(state: PoolState, blockTimestamp: bigint) {
@@ -270,7 +259,7 @@ export class NervePoolMath {
   }
 
   protected _getD(state: PoolState, xp: bigint[], a: bigint) {
-    const numTokens = biginterify(xp.length);
+    const numTokens = bigIntify(xp.length);
     let s: bigint = 0n;
     for (let i = 0; i < numTokens; i++) {
       s = s + xp[i];
@@ -304,9 +293,12 @@ export class NervePoolMath {
 
     // Convergence should occur in 4 loops or less. If this is reached, there may be something wrong
     // with the pool.
-    this.logger.error(`Event pool ${this.name} method _getD did not converge`);
     state.isValid = false;
-    return null;
+    const error = new Error(
+      `Event pool ${this.name} method _getD did not converge`,
+    );
+    this.logger.error(error);
+    throw error;
   }
 
   _xp(state: ReadonlyOrWritable<PoolState>) {

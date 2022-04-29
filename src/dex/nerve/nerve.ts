@@ -28,7 +28,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { NerveConfig, Adapters, NERVE_GAS_COST, NERVE_CHUNKS } from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
-import { biginterify } from './utils';
+import { bigIntify } from './utils';
 
 export class Nerve
   extends SimpleExchange
@@ -214,7 +214,7 @@ export class Nerve
             _amount,
             // Actually we need here block timestamp, but +- 15 seconds shouldn't
             // affect the calculations
-            biginterify((Date.now() / 1000).toFixed(0)),
+            bigIntify((Date.now() / 1000).toFixed(0)),
           );
           if (out === null) {
             // Something unexpected happen, so set invalidated state.
@@ -367,7 +367,7 @@ export class Nerve
             // We force here precision to be 0
             priceInUSD = Number(
               totalLiquidity /
-                biginterify(10) ** pool.math.POOL_PRECISION_DECIMALS,
+                bigIntify(10) ** pool.math.POOL_PRECISION_DECIMALS,
             );
           } else {
             priceInUSD = await this.dexHelper.getTokenUSDPrice(
