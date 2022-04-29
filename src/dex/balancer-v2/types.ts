@@ -37,6 +37,7 @@ export interface SubgraphPoolBase {
   tokens: SubgraphToken[];
   mainIndex: number;
   wrappedIndex: number;
+  totalLiquidity: string;
 }
 
 export type BalancerSwapV2 = {

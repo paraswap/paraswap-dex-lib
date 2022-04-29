@@ -65,19 +65,19 @@ export class VirtualBoostedPool {
   static createPools(pools: SubgraphPoolBase[]): VirtualBoostedPools {
     const subgraph: SubgraphPoolBase[] = [];
     const boostedPools: BoostedPools = {};
-    const phantomDict: SubgraphPoolBase[] = [];
+    const phantomPools: SubgraphPoolBase[] = [];
     const linearDict: { [address: string]: SubgraphPoolBase } = {};
     // Create an initial list of phantom pools and dictionary of Linear pools.
     pools.forEach(p => {
       // Covers ERC4626 & Aave Linear Pools
       if (p.poolType.includes('Linear')) linearDict[p.address] = p;
       else if (p.poolType === BalancerPoolTypes.StablePhantom) {
-        phantomDict.push(p);
+        phantomPools.push(p);
       }
     });
 
     // Create a boostedPool for each phantom that consists of Linear BPTs.
-    phantomDict.forEach(phantomPool => {
+    phantomPools.forEach(phantomPool => {
       const mainTokens: MainToken[] = [];
       const isBoosted = phantomPool.tokens.every(t => {
         if (t.address === phantomPool.address) return true;
@@ -112,6 +112,7 @@ export class VirtualBoostedPool {
           tokens: mainTokens,
           mainIndex: 0,
           wrappedIndex: 0,
+          totalLiquidity: phantomPool.totalLiquidity,
         });
       }
     });

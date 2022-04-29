@@ -58,6 +58,7 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
+    totalLiquidity
   }
 }`;
 
@@ -744,19 +745,34 @@ export class BalancerV2
       count,
     };
 
-    const query = `query ($tokens: [Bytes!], $count: Int) {
-      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, 
+    const query = `
+      query ($tokens: [Bytes!], $count: Int) {
+          pools: pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, 
            where: {tokensList_contains: $tokens, 
                    swapEnabled: true, 
                    totalLiquidity_gt: 0}) {
-        address
-        totalLiquidity
-        tokens {
-          address
-          decimals
-        }
-      }
-    }`;
+            address
+            totalLiquidity
+            tokens {
+              address
+              decimals
+            }
+          }
+
+          poolsAll: pools(first: 1000, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
+            id
+            address
+            poolType
+            tokens {
+              address
+              decimals
+            }
+            mainIndex
+            wrappedIndex
+            totalLiquidity
+          }
+      }`;
+
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       {
@@ -766,12 +782,26 @@ export class BalancerV2
       subgraphTimeout,
     );
 
-    if (!(data && data.pools))
+    if (!(data && data.pools && data.poolsAll))
       throw new Error(
         `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
       );
 
-    const pools = _.map(data.pools, (pool: any) => ({
+    // Create virtual pool info
+    const virtualBoostedPools = VirtualBoostedPool.createPools(data.poolsAll);
+    // Check each virtualPool for token and add if present
+    const virtualPoolsWithToken = virtualBoostedPools.subgraph.filter(p => {
+      return p.tokens.some(
+        token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+      );
+    });
+
+    // Combine virtual pools with sg pools and order by liquidity
+    const allPools = [...data.pools, ...virtualPoolsWithToken].sort(
+      (a, b) => b.totalLiquidity - a.totalLiquidity,
+    );
+
+    const pools = _.map(allPools, (pool: any) => ({
       exchange: this.dexKey,
       address: pool.address.toLowerCase(),
       connectorTokens: pool.tokens.reduce(

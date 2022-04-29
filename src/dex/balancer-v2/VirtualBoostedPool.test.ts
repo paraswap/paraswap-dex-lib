@@ -53,6 +53,7 @@ const bbausdBoostedPools = [
     ],
     mainIndex: 0,
     wrappedIndex: 0,
+    totalLiquidity: '293579915.2360696657206036962084216',
   },
   {
     id: '0x9210f1204b5a24742eba12f710636d76240df3d00000000000000000000000fc',
@@ -74,6 +75,7 @@ const bbausdBoostedPools = [
     ],
     mainIndex: 1,
     wrappedIndex: 2,
+    totalLiquidity: '104733467.1251596380810596006678668',
   },
   {
     id: '0x804cdb9116a10bb78768d3252355a1b18067bf8f0000000000000000000000fb',
@@ -95,6 +97,7 @@ const bbausdBoostedPools = [
     ],
     mainIndex: 1,
     wrappedIndex: 0,
+    totalLiquidity: '104733467.1251596380810596006678668',
   },
   {
     id: '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c0000000000000000000000fd',
@@ -116,6 +119,7 @@ const bbausdBoostedPools = [
     ],
     mainIndex: 1,
     wrappedIndex: 2,
+    totalLiquidity: '104733467.1251596380810596006678668',
   },
 ];
 
@@ -196,6 +200,9 @@ describe('VirtualBoostedPools', () => {
         bbausdId + VirtualBoostedPool.poolType.toLowerCase(),
       );
       expect(subgraphPools[0].poolType).toBe('VirtualBoosted');
+      expect(subgraphPools[0].totalLiquidity).toBe(
+        '293579915.2360696657206036962084216',
+      );
       expect(subgraphPools[0].tokens.length).toBe(3);
       expect(subgraphPools[0].tokens[0].address).toBe(tokens['USDT'].address);
       expect(subgraphPools[0].tokens[0].decimals).toBe(tokens['USDT'].decimals);
