@@ -13,8 +13,8 @@ import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
 
-const OneShift14 = BigInt(1) << BigInt(14);
-const OneShift248 = BigInt(1) << BigInt(248);
+const OneShift14 = 1n << 14n;
+const OneShift248 = 1n << 248n;
 
 export function encodeFeePercent(
   partnerFeePercent: string,
@@ -36,16 +36,13 @@ export function encodeFeePercent(
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
-  constructor(
-    protected dexAdapterService: DexAdapterService,
-    protected adapters: Adapters,
-  ) {}
+  constructor(protected dexAdapterService: DexAdapterService) {}
   // Should have function for optimally choosing the Adapters
   getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
     paths: ContractPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BigInt(0);
+    let totalNetworkFee = 0n;
     const paths = swaps.map(s => {
       const adapters = this.getAdapters(
         s.srcToken,
@@ -54,7 +51,7 @@ export class PayloadEncoder {
       );
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
-        BigInt(0),
+        0n,
       );
       totalNetworkFee += totalPathNetworkFee;
       return {
@@ -70,7 +67,7 @@ export class PayloadEncoder {
     megaSwapPaths: ContractMegaSwapPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BigInt(0);
+    let totalNetworkFee = 0n;
     const megaSwapPaths = routes.map(r => {
       const { paths, networkFee } = this.getContractPathsWithNetworkFee(
         r.swaps,
@@ -96,7 +93,7 @@ export class PayloadEncoder {
       SwapSide.BUY,
     );
     let adapter = '';
-    let networkFee = BigInt(0);
+    let networkFee = 0n;
     let route: ContractRoute[] = [];
     swapExchanges.forEach((se: OptimalSwapExchange<any>) => {
       const [adapterAddress, index] =
@@ -180,7 +177,7 @@ export class PayloadEncoder {
     });
   }
 
-  // Find the best adapter, assign exhanges that use best adapter, filter out the
+  // Find the best adapter, assign exchanges that use best adapter, filter out the
   // exchanges that were not assigned with the best adapter, recursively call
   // getOptimalExchangeAdapterMap until swapExchanges is empty (except for BUY)
   getOptimalExchangeAdapterMap(
@@ -193,7 +190,7 @@ export class PayloadEncoder {
 
     const adapterPoints: { [adapter: string]: number } = {};
     swapExchanges.forEach(se => {
-      const adapters = this.adapters[se.exchange.toLowerCase()];
+      const adapters = this.dexAdapterService.getAdapter(se.exchange, side);
       if (!adapters.length)
         throw new Error(`No adapter found for ${se.exchange}`);
       adapters.forEach(a => {
@@ -213,12 +210,11 @@ export class PayloadEncoder {
     const leftSwapExchange: OptimalSwapExchange<any>[] = [];
 
     swapExchanges.forEach(se => {
-      const exchangeKey = se.exchange.toLowerCase();
-      const adapterConfig = this.adapters[exchangeKey].find(
-        ({ adapter }) => adapter.toLowerCase() === bestAdapter,
-      );
+      const adapterConfig = this.dexAdapterService
+        .getAdapter(se.exchange, side)
+        .find(({ adapter }) => adapter.toLowerCase() === bestAdapter);
       if (adapterConfig) {
-        optimalAdapters[exchangeKey] = [
+        optimalAdapters[se.exchange.toLowerCase()] = [
           adapterConfig.adapter,
           adapterConfig.index,
         ];

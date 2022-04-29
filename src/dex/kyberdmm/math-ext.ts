@@ -1,4 +1,6 @@
-const PRECISION = BigInt(10) ** BigInt(18);
+import { BI_POWS } from '../../bigint-constants';
+
+const PRECISION = BI_POWS[18];
 
 /// @dev Returns x*y in precision
 export const mulInPrecision = (x: bigint, y: bigint): bigint => {
@@ -14,12 +16,12 @@ export const unsafePowInPrecision = (
 ): bigint => {
   if (xInPrecision > PRECISION) throw new Error(`MathExt: x > PRECISION`);
 
-  let zInPrecision = k % BigInt(2) == BigInt(0) ? PRECISION : xInPrecision;
+  let zInPrecision = k % 2n == 0n ? PRECISION : xInPrecision;
 
-  for (let c = k / BigInt(2); c != BigInt(0); c = c / BigInt(2)) {
+  for (let c = k / 2n; c != 0n; c = c / 2n) {
     xInPrecision = mulInPrecision(xInPrecision, xInPrecision);
 
-    if (c % BigInt(2) != BigInt(0)) {
+    if (c % 2n != 0n) {
       zInPrecision = mulInPrecision(zInPrecision, xInPrecision);
     }
   }

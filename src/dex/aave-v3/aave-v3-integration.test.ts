@@ -10,15 +10,16 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { getTokenFromASymbol } from './tokens';
+import { BI_POWS } from '../../bigint-constants';
 
 /*
   README
   ======
 
-  This test script adds tests for AaveV3 general integration 
-  with the DEX interface. The test cases below are example tests. 
+  This test script adds tests for AaveV3 general integration
+  with the DEX interface. The test cases below are example tests.
   It is recommended to add tests which cover AaveV3 specific
-  logic. 
+  logic.
 
   You can run this individual test script by running:
   `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
@@ -33,7 +34,7 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'aUSDT';
 const TokenB = getTokenFromASymbol(network, TokenBSymbol);
 
-const amounts = [BigInt('0'), BigInt('1000000'), BigInt('2000000')];
+const amounts = [0n, BI_POWS[6], 2000000n];
 
 const dexKey = 'AaveV3';
 
@@ -52,7 +53,7 @@ describe('AaveV3', function () {
           blocknumber,
         );
         console.log(
-          `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
           pools,
         );
 
@@ -87,7 +88,7 @@ describe('AaveV3', function () {
           blocknumber,
         );
         console.log(
-          `${TokenASymbol} <> ${TokenBSymbol} Pool Ideintifiers: `,
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
           pools,
         );
 
