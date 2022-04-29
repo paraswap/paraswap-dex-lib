@@ -3,6 +3,7 @@ dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
+import { BI_POWS } from '../../bigint-constants';
 import { __DexName__ } from './__DexNameParam__';
 import {
   checkPoolPrices,
@@ -33,11 +34,7 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'TokenBSymbol';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
+const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = '__DexName__';
 

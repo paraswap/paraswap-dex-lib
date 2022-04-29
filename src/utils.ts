@@ -1,5 +1,6 @@
 import { SwapSide } from 'paraswap-core';
-import { ETHER_ADDRESS, MAX_UINT_BIGINT, Network, ZERO_UINT } from './constants';
+import { BI_MAX_UINT, BI_POWS } from './bigint-constants';
+import { ETHER_ADDRESS, Network } from './constants';
 import { Address, Token, DexConfigMap } from './types';
 
 export const WethMap: { [network: number]: Address } = {
@@ -95,29 +96,29 @@ export function interpolate(
 
   let i = 0;
   return newVolume.map(v => {
-    if (v === ZERO_UINT) return ZERO_UINT;
+    if (v === 0n) return 0n;
 
     while (i < oldVolume.length && v > oldVolume[i]) i++;
 
     // if we dont have any more prices for a bigger volume return last price for sell and infinity for buy
     if (i >= oldVolume.length) {
       return !isValid[oldPrices.length - 1]
-        ? ZERO_UINT
+        ? 0n
         : side === SwapSide.SELL
         ? oldPrices[oldPrices.length - 1]
-        : MAX_UINT_BIGINT;
+        : BI_MAX_UINT;
     }
 
-    if (!isValid[i]) return ZERO_UINT;
+    if (!isValid[i]) return 0n;
 
     // if the current volume is equal to oldVolume then just use that
     if (oldVolume[i] === v) return oldPrices[i];
 
-    if (i > 0 && !isValid[i - 1]) return ZERO_UINT;
+    if (i > 0 && !isValid[i - 1]) return 0n;
 
     // As we know that derivative of the prices can't go up we apply a linear interpolation
-    const lastOldVolume = i > 0 ? oldVolume[i - 1] : ZERO_UINT;
-    const lastOldPrice = i > 0 ? oldPrices[i - 1] : ZERO_UINT;
+    const lastOldVolume = i > 0 ? oldVolume[i - 1] : 0n;
+    const lastOldPrice = i > 0 ? oldPrices[i - 1] : 0n;
 
     // Old code - this doesn't work because slope can be very small and gets
     // rounded badly in bignumber.js, so need to do the division later
@@ -132,4 +133,12 @@ export function interpolate(
         (oldVolume[i] - lastOldVolume)
     );
   });
+}
+
+// This is needed in order to not modify existing logic and use this wrapper
+// to be safe if we receive not cached decimals
+export function getBigIntPow(decimals: number): bigint {
+  const value = BI_POWS[decimals];
+  // It is not accurate to create 10 ** 23 and more decimals from number type
+  return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
 }

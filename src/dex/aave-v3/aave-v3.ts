@@ -9,7 +9,12 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import { wrapETH, getDexKeysWithNetwork, isETHAddress } from '../../utils';
+import {
+  wrapETH,
+  getDexKeysWithNetwork,
+  isETHAddress,
+  getBigIntPow,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Data, Param, PoolAndWethFunctions } from './types';
@@ -95,8 +100,8 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     return [
       {
         prices: amounts,
-        unit: BigInt(
-          10 ** (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        unit: getBigIntPow(
+          (side === SwapSide.SELL ? destToken : srcToken).decimals,
         ),
         gasCost: isETHAddress(srcToken.address)
           ? this.config.ethGasCost

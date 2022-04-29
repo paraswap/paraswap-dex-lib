@@ -24,7 +24,7 @@ import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -292,7 +292,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       _amounts,
       poolPairData as any,
     );
-    return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
+    return { unit: _prices[0], prices: [0n, ..._prices.slice(1)] };
   }
 
   async getOnChainState(
@@ -445,12 +445,12 @@ export class BalancerV2
 
       if (!allowedPools.length) return null;
 
-      const unitVolume = BigInt(
-        10 ** (side === SwapSide.SELL ? _from : _to).decimals,
+      const unitVolume = getBigIntPow(
+        (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const quoteUnitVolume = BigInt(
-        10 ** (side === SwapSide.SELL ? _to : _from).decimals,
+      const quoteUnitVolume = getBigIntPow(
+        (side === SwapSide.SELL ? _to : _from).decimals,
       );
 
       const poolStates = await this.eventPools.getState(blockNumber);

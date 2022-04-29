@@ -172,7 +172,7 @@ export class PricingHelper {
           return false;
         }
 
-        if (p.prices.every(pi => pi === BigInt(0))) {
+        if (p.prices.every(pi => pi === 0n)) {
           return false;
         }
         return true;

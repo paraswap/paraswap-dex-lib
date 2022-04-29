@@ -1,5 +1,4 @@
 import { AsyncOrSync } from 'ts-essentials';
-import { JsonRpcProvider } from '@ethersproject/providers';
 import {
   Address,
   SimpleExchangeParam,

@@ -8,6 +8,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { Tokens } from './../../../tests/constants-e2e';
 import { DeepReadonly } from 'ts-essentials';
+import { BI_POWS } from '../../bigint-constants';
 
 jest.setTimeout(50 * 1000);
 
@@ -26,19 +27,19 @@ type PoolParam = {
 const poolsParams: PoolParam[] = [
   {
     address: '0xD343d5dba2FBa55EEF58189619c05e33CAB95cA1',
-    ampBps: BigInt(15000),
+    ampBps: 15000n,
     token0Symbol: 'WBTC',
     token1Symbol: 'USDT',
   },
   {
     address: '0x1cf68Bbc2b6D3C6CfE1BD3590CF0E10b06a05F17',
-    ampBps: BigInt(20000),
+    ampBps: 20000n,
     token0Symbol: 'WBTC',
     token1Symbol: 'WETH',
   },
   {
     address: '0xA97642500517C728cE1339A466DE0F10C19034CD',
-    ampBps: BigInt(10000),
+    ampBps: 10000n,
     token0Symbol: 'REQ',
     token1Symbol: 'WETH',
   },
