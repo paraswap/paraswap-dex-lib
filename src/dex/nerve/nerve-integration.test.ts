@@ -17,17 +17,17 @@ describe('Nerve BSC', function () {
   const TokenB = Tokens[network][TokenBSymbol];
 
   const amounts = [
-    BigInt('0'),
-    BigInt('111000000'),
-    BigInt('222000000'),
-    BigInt('333000000'),
-    BigInt('444000000'),
-    BigInt('555000000'),
-    BigInt('666000000'),
-    BigInt('777000000'),
-    BigInt('888000000'),
-    BigInt('999000000'),
-    BigInt('1111000000'),
+    0n,
+    111000000n,
+    222000000n,
+    333000000n,
+    444000000n,
+    555000000n,
+    666000000n,
+    777000000n,
+    888000000n,
+    999000000n,
+    1111000000n,
   ];
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {

@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import { wrapETH, getDexKeysWithNetwork, interpolate } from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, interpolate, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -28,7 +28,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { NerveConfig, Adapters, NERVE_GAS_COST, NERVE_CHUNKS } from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
-import { biginterify, ZERO } from './utils';
+import { biginterify } from './utils';
 
 export class Nerve
   extends SimpleExchange
@@ -181,7 +181,7 @@ export class Nerve
       const statePoolPair = await this.getStates(selectedPools, blockNumber);
 
       // here side === SwapSide.SELL
-      const unitVolume = BigInt(10 ** _srcToken.decimals);
+      const unitVolume = getBigIntPow(10 ** _srcToken.decimals);
       const chunks = amounts.length - 1;
 
       const _width = Math.floor(chunks / NERVE_CHUNKS);
@@ -346,7 +346,7 @@ export class Nerve
       [...(await this.getStates(selectedPools))]
         .sort((a, b) => {
           const diff = b.state.lpToken_supply - a.state.lpToken_supply;
-          if (diff === BigInt(0)) {
+          if (diff === 0n) {
             return 0;
           } else if (diff.toString().startsWith('-')) {
             return -1;
@@ -359,7 +359,7 @@ export class Nerve
           const normalisedBalances = pool.math._xp(state);
           const totalLiquidity = normalisedBalances.reduce(
             (prev, acc, i) => prev + acc,
-            ZERO,
+            0n,
           );
 
           let priceInUSD = 0;

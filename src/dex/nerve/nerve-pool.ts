@@ -14,7 +14,7 @@ import {
 } from './types';
 import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
-import { biginterify, ONE, typeCastPoolState, ZERO } from './utils';
+import { biginterify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
@@ -186,7 +186,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       swapFee:
         ((swapStorage.swapFee || swapStorage.fee) &&
           biginterify((swapStorage.swapFee || swapStorage.fee)._hex)) ||
-        ZERO,
+        0n,
       adminFee: biginterify(swapStorage.adminFee._hex),
       defaultDepositFee:
         swapStorage.defaultDepositFee &&
@@ -343,7 +343,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       return null;
     }
 
-    let dy = normalizedBalances[j] - y - ONE;
+    let dy = normalizedBalances[j] - y - 1n;
     const dy_fee = (dy * state.swapFee) / this.math.FEE_DENOMINATOR;
     dy = (dy - dy_fee) / this.tokenPrecisionMultipliers[j];
     const _adminFee =

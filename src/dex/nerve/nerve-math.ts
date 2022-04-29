@@ -1,4 +1,4 @@
-import { biginterify, ZERO, ONE, MathUtil } from './utils';
+import { biginterify, MathUtil } from './utils';
 import { Logger } from '../../types';
 import { PoolState, ReadonlyOrWritable } from './types';
 
@@ -39,7 +39,7 @@ export class NervePoolMath {
     }
 
     // dy = xp[tokenIndexTo].sub(y).sub(1);
-    let dy = xp[tokenIndexTo] - y - ONE;
+    let dy = xp[tokenIndexTo] - y - 1n;
 
     // dyFee = dy.mul(self.swapFee).div(FEE_DENOMINATOR);
     const dyFee = (dy * state.swapFee) / this.FEE_DENOMINATOR;
@@ -95,11 +95,11 @@ export class NervePoolMath {
     const numTokens = this._getNumTokens(state);
     const xp = this._xp(state);
     const v = {
-      d0: ZERO,
-      d1: ZERO,
-      newY: ZERO,
-      feePerToken: ZERO,
-      preciseA: ZERO,
+      d0: 0n,
+      d1: 0n,
+      newY: 0n,
+      feePerToken: 0n,
+      preciseA: 0n,
     };
     v.preciseA = this._getAPrecise(state, blockTimestamp);
     const d0 = this._getD(state, xp, v.preciseA);
@@ -134,7 +134,7 @@ export class NervePoolMath {
     let dy = xpReduced[tokenIndex] - yd;
 
     // dy = dy.sub(1).div(self.tokenPrecisionMultipliers[tokenIndex]);
-    dy = (dy - ONE) / state.tokenPrecisionMultipliers[tokenIndex];
+    dy = (dy - 1n) / state.tokenPrecisionMultipliers[tokenIndex];
 
     return { dy, newY: v.newY };
   }
@@ -142,13 +142,13 @@ export class NervePoolMath {
   protected _feePerToken(state: PoolState) {
     const numTokens = this._getNumTokens(state);
     // self.swapFee.mul(self.pooledTokens.length).div(self.pooledTokens.length.sub(1).mul(4));
-    return (state.swapFee * numTokens) / ((numTokens - ONE) * biginterify(4));
+    return (state.swapFee * numTokens) / ((numTokens - 1n) * biginterify(4));
   }
 
   protected _calculateCurrentWithdrawFee(state: PoolState) {
     // It is not correct. We should calculate user withdrawFeeMultiplier by
     // the time passed since the liquidity was added
-    return state.defaultWithdrawFee ? state.defaultWithdrawFee : ZERO;
+    return state.defaultWithdrawFee ? state.defaultWithdrawFee : 0n;
   }
 
   protected _getYD(
@@ -161,7 +161,7 @@ export class NervePoolMath {
     const numTokens = biginterify(xp.length);
 
     let c = d;
-    let s: bigint = ZERO;
+    let s: bigint = 0n;
     const nA = a * numTokens;
 
     for (let i = 0; i < numTokens; i++) {
@@ -209,7 +209,7 @@ export class NervePoolMath {
     const d = this._getD(state, xp, a);
     if (d === null) return null;
     let c = d;
-    let s: bigint = ZERO;
+    let s: bigint = 0n;
     const nA = numTokens * a;
 
     let _x: bigint;
@@ -271,12 +271,12 @@ export class NervePoolMath {
 
   protected _getD(state: PoolState, xp: bigint[], a: bigint) {
     const numTokens = biginterify(xp.length);
-    let s: bigint = ZERO;
+    let s: bigint = 0n;
     for (let i = 0; i < numTokens; i++) {
       s = s + xp[i];
     }
-    if (s === ZERO) {
-      return ZERO;
+    if (s === 0n) {
+      return 0n;
     }
 
     let prevD: bigint;
@@ -296,7 +296,7 @@ export class NervePoolMath {
       d =
         (((nA * s) / this.A_PRECISION + dP * numTokens) * d) /
         (((nA - this.A_PRECISION) * d) / this.A_PRECISION +
-          (numTokens + ONE) * dP);
+          (numTokens + 1n) * dP);
       if (MathUtil.within1(d, prevD)) {
         return d;
       }
