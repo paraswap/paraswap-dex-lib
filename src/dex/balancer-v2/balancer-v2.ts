@@ -22,7 +22,11 @@ import {
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
-import { VirtualBoostedPool, SwapData } from './VirtualBoostedPool';
+import {
+  VirtualBoostedPool,
+  SwapData,
+  BoostedPools,
+} from './VirtualBoostedPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork } from '../../utils';
@@ -58,7 +62,7 @@ const fetchAllPools = `query ($count: Int) {
 }`;
 
 // These should match the Balancer Pool types available on Subgraph
-enum BalancerPoolTypes {
+export enum BalancerPoolTypes {
   Weighted = 'Weighted',
   Stable = 'Stable',
   MetaStable = 'MetaStable',
@@ -96,6 +100,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   };
 
   public allPools: SubgraphPoolBase[] = [];
+  public virtualBoostedPools: BoostedPools = {};
   vaultDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
@@ -230,11 +235,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
     const subgraphPools = await this.fetchAllSubgraphPools();
-    // Create the new 'VirtualBoosted' pool types from preconfigured info.
-    const virtualPools =
-      VirtualBoostedPool.getVirtualBoostedPools(subgraphPools);
+    const virtualBoostedPools = VirtualBoostedPool.createPools(subgraphPools);
+    this.virtualBoostedPools = virtualBoostedPools.dictionary;
     // Add the virtual pools to the list of all pools from the Subgraph
-    const allPools = [...virtualPools, ...subgraphPools];
+    const allPools = [...virtualBoostedPools.subgraph, ...subgraphPools];
     this.allPools = allPools;
     const eventSupportedPools = allPools.filter(pool =>
       this.eventSupportedPoolTypes.includes(pool.poolType),
@@ -295,6 +299,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       poolStates,
       from.address,
       to.address,
+      this.virtualBoostedPools,
     );
 
     if (
@@ -322,7 +327,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       .map(pool => {
         if (!this.isSupportedPool(pool.poolType)) return [];
 
-        return this.pools[pool.poolType].getOnChainCalls(pool);
+        return this.pools[pool.poolType].getOnChainCalls(
+          pool,
+          this.virtualBoostedPools,
+        );
       })
       .flat();
 
@@ -346,7 +354,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         const [decoded, newIndex] = this.pools[
           pool.poolType
-        ].decodeOnChainCalls(pool, returnData, i);
+        ].decodeOnChainCalls(pool, returnData, i, this.virtualBoostedPools);
         i = newIndex;
         acc = { ...acc, ...decoded };
         return acc;
@@ -651,6 +659,7 @@ export class BalancerV2
           destToken,
           swap.poolId,
           swap.amount,
+          this.eventPools.virtualBoostedPools,
         );
 
         // Update assets and swaps with any new assets or indices

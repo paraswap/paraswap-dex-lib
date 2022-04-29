@@ -1,29 +1,29 @@
 import dotenv from 'dotenv';
 dotenv.config();
-
 import { BalancerV2 } from './balancer-v2';
 import { DummyDexHelper } from '../../dex-helper';
 import { Tokens } from '../../../tests/constants-e2e';
 import { Network, SwapSide, MAX_UINT, MAX_INT } from '../../constants';
 import { OptimizedBalancerV2Data, SwapTypes } from './types';
 
-describe('getBalancerParam, should create correct swap parameters', () => {
-  describe('single swap', () => {
-    const dexHelper = new DummyDexHelper(Network.MAINNET);
-    const balancer = new BalancerV2(
-      Network.MAINNET,
-      'balancerV2',
-      dexHelper,
-      '',
-      '',
-    );
-    const side: SwapSide = SwapSide.SELL;
-    const tokens = Tokens[Network.MAINNET];
-    const srcAmount = '2000000000';
-    const srcToken = tokens['USDC'];
-    const destAmount = '4';
-    const destToken = tokens['DAI'];
+const network = Network.MAINNET;
+const tokens = Tokens[network];
+let balancer: BalancerV2;
+let dexHelper: DummyDexHelper;
+const side: SwapSide = SwapSide.SELL;
+const srcAmount = '2000000000';
+const srcToken = tokens['USDC'];
+const destAmount = '4';
+const destToken = tokens['DAI'];
 
+describe('getBalancerParam, should create correct swap parameters', () => {
+  beforeAll(async () => {
+    dexHelper = new DummyDexHelper(network);
+    const blocknumber = await dexHelper.provider.getBlockNumber();
+    balancer = new BalancerV2(network, 'BalancerV2', dexHelper);
+    await balancer.setupEventPools(blocknumber);
+  });
+  describe('single swap', () => {
     it('No Virtual', () => {
       const poolId =
         '0x96646936b91d6b9d7d0c47c496afbf3d6ec7b6f8000200000000000000000019';
@@ -66,7 +66,7 @@ describe('getBalancerParam, should create correct swap parameters', () => {
       expect(param[5]).toEqual(MAX_UINT);
     });
 
-    it('With Virtual', () => {
+    it('With VirtualBoosted', () => {
       const poolId =
         '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted';
       const data: OptimizedBalancerV2Data = {
@@ -133,19 +133,10 @@ describe('getBalancerParam, should create correct swap parameters', () => {
   describe('2 Swaps', () => {
     const srcAmount1 = '2000000000';
     const srcAmount2 = '3000000000';
-    const tokens = Tokens[Network.MAINNET];
     const srcToken = tokens['USDC'];
     const destAmount = '4';
     const destToken = tokens['DAI'];
     const side: SwapSide = SwapSide.SELL;
-    const dexHelper = new DummyDexHelper(Network.MAINNET);
-    const balancer = new BalancerV2(
-      Network.MAINNET,
-      'balancerV2',
-      dexHelper,
-      '',
-      '',
-    );
 
     it('No Virtual', () => {
       const poolId1 =
@@ -201,8 +192,7 @@ describe('getBalancerParam, should create correct swap parameters', () => {
       expect(param[4]).toEqual(Array(param[2].length).fill(MAX_INT)); // limits
       expect(param[5]).toEqual(MAX_UINT);
     });
-
-    it('With 1 Virtual', () => {
+    it('With 1 VirtualBoosted', () => {
       const poolId1 =
         '0x96646936b91d6b9d7d0c47c496afbf3d6ec7b6f8000200000000000000000019';
       const poolId2 =
@@ -277,8 +267,7 @@ describe('getBalancerParam, should create correct swap parameters', () => {
       expect(param[4]).toEqual(Array(param[2].length).fill(MAX_INT));
       expect(param[5]).toEqual(MAX_UINT);
     });
-
-    it('With 2 Virtual', () => {
+    it('With 2 VirtualBoosted', () => {
       const poolId1 =
         '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted';
       const poolId2 =
