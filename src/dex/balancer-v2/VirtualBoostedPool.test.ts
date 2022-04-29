@@ -225,28 +225,81 @@ describe('VirtualBoostedPools', () => {
       expect(poolPairData.phantomPoolId).toBe(bbausdId);
     });
 
-    it('checkBalance', () => {
-      const tokenInAddr = tokens['DAI'].address;
-      const tokenOutAddr = tokens['USDC'].address;
-      const vaultInterface = new Interface(VaultABI);
-      const virtualBoostedPool = new VirtualBoostedPool(
-        vaultAddress,
-        vaultInterface,
-      );
-      const poolPairData = virtualBoostedPool.parsePoolPairData(
-        virtualBoostedPools.subgraph[0],
-        {},
-        tokenInAddr,
-        tokenOutAddr,
-        virtualBoostedPools.dictionary,
-      );
-      const check = virtualBoostedPool.checkBalance(
-        [],
-        BigInt(0),
-        SwapSide.SELL,
-        poolPairData,
-      );
-      expect(check).toBeFalsy();
+    describe('checkBalance', () => {
+      const tokenOutBalanceScaled = BigInt(2900000000000000000000000);
+      const poolState = {
+        '0x9210f1204b5a24742eba12f710636d76240df3d0': {
+          swapFee: BigInt(200000000000000),
+          mainIndex: 1,
+          wrappedIndex: 2,
+          bptIndex: 0,
+          lowerTarget: BigInt(2900000000000000000000000),
+          upperTarget: BigInt(10000000000000000000000000),
+          tokens: {
+            '0x9210f1204b5a24742eba12f710636d76240df3d0': {
+              balance: BigInt(5192296754551644979080162077402160),
+              scalingFactor: BigInt(1000000000000000000),
+            },
+            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
+              balance: BigInt(2900000000000),
+              scalingFactor: BigInt(1000000000000000000000000000000),
+            },
+            '0xd093fa4fb80d09bb30817fdcd442d4d02ed3e5de': {
+              balance: BigInt(94861903431317),
+              scalingFactor: BigInt(1074097876816060575000000000000),
+            },
+          },
+          gasCost: 60000,
+        },
+      };
+
+      it('above limit', () => {
+        const tokenInAddr = tokens['DAI'].address;
+        const tokenOutAddr = tokens['USDC'].address;
+        const vaultInterface = new Interface(VaultABI);
+        const virtualBoostedPool = new VirtualBoostedPool(
+          vaultAddress,
+          vaultInterface,
+        );
+        const poolPairData = virtualBoostedPool.parsePoolPairData(
+          virtualBoostedPools.subgraph[0],
+          poolState,
+          tokenInAddr,
+          tokenOutAddr,
+          virtualBoostedPools.dictionary,
+        );
+        const check = virtualBoostedPool.checkBalance(
+          [tokenOutBalanceScaled],
+          BigInt(0),
+          SwapSide.SELL,
+          poolPairData,
+        );
+        expect(check).toBe(false);
+      });
+
+      it('below limit', () => {
+        const tokenInAddr = tokens['DAI'].address;
+        const tokenOutAddr = tokens['USDC'].address;
+        const vaultInterface = new Interface(VaultABI);
+        const virtualBoostedPool = new VirtualBoostedPool(
+          vaultAddress,
+          vaultInterface,
+        );
+        const poolPairData = virtualBoostedPool.parsePoolPairData(
+          virtualBoostedPools.subgraph[0],
+          poolState,
+          tokenInAddr,
+          tokenOutAddr,
+          virtualBoostedPools.dictionary,
+        );
+        const check = virtualBoostedPool.checkBalance(
+          [(tokenOutBalanceScaled * BigInt(98)) / BigInt(100)], // 98% of balance
+          BigInt(0),
+          SwapSide.SELL,
+          poolPairData,
+        );
+        expect(check).toBe(true);
+      });
     });
 
     it('getSwapData, invalid tokens', () => {

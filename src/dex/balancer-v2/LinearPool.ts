@@ -436,19 +436,22 @@ export class LinearPool extends BasePool implements PoolBase {
   Swapping to BPT allows for a very large amount as pre-minted.
   Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
+  swapLimit(balanceOut: bigint, scalingFactorOut: bigint): bigint {
+    const swapMax =
+      (this._upscale(balanceOut, scalingFactorOut) * BigInt(99)) / BigInt(100);
+    return swapMax;
+  }
+
   checkBalance(
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
     poolPairData: LinearPoolPairData,
   ): boolean {
-    const swapMax =
-      (this._upscale(
-        poolPairData.balances[poolPairData.indexOut],
-        poolPairData.scalingFactors[poolPairData.indexOut],
-      ) *
-        BigInt(99)) /
-      BigInt(100);
+    const swapMax = this.swapLimit(
+      poolPairData.balances[poolPairData.indexOut],
+      poolPairData.scalingFactors[poolPairData.indexOut],
+    );
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

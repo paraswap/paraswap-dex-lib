@@ -416,9 +416,38 @@ export class VirtualBoostedPool {
     side: SwapSide,
     poolPairData: BoostedPoolPairData,
   ): boolean {
-    // TO DO - Add this once agreed that VirtualPools are useful
-    console.log(`!!!!!!! TO DO checkBalance`);
-    return true;
+    // Limited by last Linear Pool main token balance. LinearIn > BPT is ~unlimited. PhantomStable has no swap limit.
+    const phantomPoolAddr =
+      poolPairData.boostedPools[poolPairData.phantomPoolId]
+        .phantomStablePoolAddr;
+    if (!phantomPoolAddr) false;
+
+    const poolOut = VirtualBoostedPool.getTokenPool(
+      phantomPoolAddr,
+      poolPairData.phantomPoolId,
+      poolPairData.tokenOut,
+      poolPairData.boostedPools,
+    );
+
+    const linearPool = new LinearPool(
+      this.vaultAddress,
+      this.linearPoolInterface,
+    );
+    const balanceOut =
+      poolPairData.poolStates[poolOut.address].tokens[
+        poolPairData.tokenOut.toLowerCase()
+      ].balance;
+    const scalingFactor =
+      poolPairData.poolStates[poolOut.address].tokens[
+        poolPairData.tokenOut.toLowerCase()
+      ].scalingFactor;
+    if (!scalingFactor) return false;
+    const poolOutLimit = linearPool.swapLimit(balanceOut, scalingFactor);
+    const swapAmount =
+      amounts[amounts.length - 1] > unitVolume
+        ? amounts[amounts.length - 1]
+        : unitVolume;
+    return poolOutLimit > swapAmount;
   }
 
   onSell(amounts: bigint[], poolPairData: BoostedPoolPairData): bigint[] {
