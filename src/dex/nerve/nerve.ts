@@ -11,7 +11,12 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import { wrapETH, getDexKeysWithNetwork, interpolate, getBigIntPow } from '../../utils';
+import {
+  wrapETH,
+  getDexKeysWithNetwork,
+  interpolate,
+  getBigIntPow,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -207,16 +212,18 @@ export class Nerve
 
         const _rates: bigint[] = [];
         for (const _amount of _amounts) {
-          const out = pool.math.calculateSwap(
-            _state,
-            srcIndex,
-            destIndex,
-            _amount,
-            // Actually we need here block timestamp, but +- 15 seconds shouldn't
-            // affect the calculations
-            bigIntify((Date.now() / 1000).toFixed(0)),
-          );
-          if (out === null) {
+          try {
+            const out = pool.math.calculateSwap(
+              _state,
+              srcIndex,
+              destIndex,
+              _amount,
+              // Actually we need here block timestamp, but +- 15 seconds shouldn't
+              // affect the calculations
+              bigIntify((Date.now() / 1000).toFixed(0)),
+            );
+            _rates.push(out.dy);
+          } catch (e) {
             // Something unexpected happen, so set invalidated state.
             // Later it will regenerated
             pool.setState(_state, blockNumber);
@@ -225,7 +232,6 @@ export class Nerve
             );
             return null;
           }
-          _rates.push(out.dy);
         }
 
         const unit = _rates[0];
