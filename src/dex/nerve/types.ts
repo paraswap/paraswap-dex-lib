@@ -2,7 +2,6 @@ import { JsonFragment } from '@ethersproject/abi';
 import type { DeepReadonly } from 'ts-essentials';
 import type { BlockHeader } from 'web3-eth';
 import type { Address, Log, Token } from '../../types';
-import type { NerveEventMetapool } from './nerve-metapool';
 import type { NerveEventPool } from './nerve-pool';
 
 export interface PoolState {
@@ -19,12 +18,6 @@ export interface PoolState {
   tokenPrecisionMultipliers: bigint[];
   isValid: boolean;
 }
-
-export type MetapoolState = PoolState & {
-  baseVirtualPrice: bigint;
-  baseCacheLastUpdated: bigint;
-  basePool: PoolState;
-};
 
 export interface NervePoolConfig {
   coins: Token[];
@@ -68,11 +61,7 @@ export type EventHandler<S> = (
   blockHeader: BlockHeader,
 ) => DeepReadonly<S>;
 
-export type EventPoolOrMetapool = NerveEventPool | NerveEventMetapool;
-
-export type PoolOrMetapoolState = PoolState | MetapoolState;
-
-export type EventPoolMappings = { [pool: string]: EventPoolOrMetapool };
+export type EventPoolMappings = { [pool: string]: NerveEventPool };
 
 export enum NervePoolFunctions {
   swap = 'swap',

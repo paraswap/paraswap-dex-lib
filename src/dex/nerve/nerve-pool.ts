@@ -5,12 +5,7 @@ import erc20ABI from '../../abi/erc20.json';
 import { Address, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import {
-  EventHandler,
-  NervePoolConfig,
-  PoolOrMetapoolState,
-  PoolState,
-} from './types';
+import { EventHandler, NervePoolConfig, PoolState } from './types';
 import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
 import { bigIntify, typeCastPoolState } from './utils';
@@ -20,7 +15,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   readonly math: NervePoolMath;
 
   handlers: {
-    [event: string]: EventHandler<PoolOrMetapoolState>;
+    [event: string]: EventHandler<PoolState>;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -408,6 +403,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleRemoveLiquidityImbalance(event: any, state: PoolState) {
+    if (!state.isValid) return state;
+
     const tokenAmounts = event.args.tokenAmounts.map(bigIntify) as bigint[];
     const fees = event.args.fees.map(bigIntify) as bigint[];
     const lpTokenSupply = bigIntify(

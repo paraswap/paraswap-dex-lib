@@ -26,11 +26,10 @@ import {
   EventPoolMappings,
   OptimizedNerveData,
   NervePoolFunctions,
-  EventPoolOrMetapool,
   NervePoolSwapParams,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { NerveConfig, Adapters, NERVE_GAS_COST, NERVE_CHUNKS } from './config';
+import { NerveConfig, Adapters, NERVE_GAS_COST } from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
 import { bigIntify } from './utils';
@@ -99,9 +98,9 @@ export class Nerve
   }
 
   async getStates(
-    pools?: EventPoolOrMetapool[],
+    pools?: NerveEventPool[],
     blockNumber?: number,
-  ): Promise<DeepReadonly<{ state: PoolState; pool: EventPoolOrMetapool }[]>> {
+  ): Promise<DeepReadonly<{ state: PoolState; pool: NerveEventPool }[]>> {
     const _pools = pools === undefined ? this.allPools : pools;
 
     const _blockNumber =
@@ -167,7 +166,7 @@ export class Nerve
 
       const filterPoolsByIdentifiers = (
         identifiers: string[],
-        pools: EventPoolOrMetapool[],
+        pools: NerveEventPool[],
       ) => {
         return pools.filter(pool =>
           identifiers.includes(Nerve.getIdentifier(this.dexKey, pool.address)),
@@ -355,7 +354,7 @@ export class Nerve
         .map(async ({ state, pool }) => {
           const normalisedBalances = pool.math._xp(state);
           const totalLiquidity = normalisedBalances.reduce(
-            (prev, acc, i) => prev + acc,
+            (prev, acc) => prev + acc,
             0n,
           );
 
