@@ -1,63 +1,43 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { GmxEventPool } from './gmx';
-import { GmxConfig } from './config';
+import { GMXEventPool } from './pool';
+import { GMXConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
-import axios from 'axios';
-
-/*
-  README
-  ======
-
-  This test script adds unit tests for Gmx event based 
-  system. This is done by fetching the state on-chain before the 
-  event block, manually pushing the block logs to the event-subsriber, 
-  comparing the local state with on-chain state. 
-
-  Most of the logic for testing is abstracted by `testEventSubscriber`.
-  You need to do two things to make the tests work: 
-  
-  1. Fetch the block numbers where certain events were released. You
-  can modify the `./scripts/fetch-event-blocknumber.ts` to get the 
-  blocknumbers for different events. Make sure to get sufficient
-  number of blockNumbers to cover all possible cases for the event
-  mutations. 
-
-  2. Complete the implementation for fetchPoolState function. The 
-  function should fetch the on-chain state of the event subscriber 
-  using just the blocknumber. 
-
-  The template tests only include the test for a single event 
-  subscriber. There can be cases where multiple event subscribers 
-  exist for a single DEX. In such cases additional tests should be 
-  added.  
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-events.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
 
 jest.setTimeout(50 * 1000);
-const dexKey = 'Gmx';
-const network = Network.MAINNET;
-const config = GmxConfig[dexKey][network];
+const dexKey = 'GMX';
+const network = Network.AVALANCHE;
+const params = GMXConfig[dexKey][network];
 
 async function fetchPoolState(
-  gmxPools: GmxEventPool,
+  gmxPool: GMXEventPool,
   blockNumber: number,
-  poolAddress: string,
 ): Promise<PoolState> {
-  // TODO: complete me!
+  return gmxPool.generateState(blockNumber);
 }
 
-describe('Gmx Event', function () {
+describe('GMX Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
-    // TODO: complete me!
+    IncreaseUsdgAmount: [
+      14181556, 14181609, 14181651, 14181679, 14181743, 14181795, 14181796,
+      14181803, 14181806, 14181809,
+    ],
+    DecreaseUsdgAmount: [
+      14181556, 14181609, 14181743, 14181795, 14181796, 14181803, 14181806,
+      14181809, 14181814, 14181819,
+    ],
+    Transfer: [
+      14186106, 14186126, 14186126, 14186171, 14187031, 14187301, 14187440,
+      14187955, 14187955, 14187991,
+    ],
+    PriceUpdate: [
+      14186352, 14186352, 14186352, 14186353, 14186353, 14186353, 14186336,
+      14186336, 14186336, 14186351, 14186351, 14186351,
+    ],
   };
 
   describe('GmxEventPool', function () {
@@ -67,15 +47,25 @@ describe('Gmx Event', function () {
           const dexHelper = new DummyDexHelper(network);
           const logger = dexHelper.getLogger(dexKey);
 
-          const gmxPools = new GmxEventPool(dexKey, network, dexHelper, logger);
+          const config = await GMXEventPool.getConfig(
+            params,
+            blockNumber,
+            dexHelper.multiContract,
+          );
+          const gmxPool = new GMXEventPool(
+            dexKey,
+            network,
+            dexHelper,
+            logger,
+            config,
+          );
 
           await testEventSubscriber(
-            gmxPools,
-            gmxPools.addressesSubscribed,
-            (_blockNumber: number) =>
-              fetchPoolState(gmxPools, _blockNumber, poolAddress),
+            gmxPool,
+            gmxPool.addressesSubscribed,
+            (_blockNumber: number) => fetchPoolState(gmxPool, _blockNumber),
             blockNumber,
-            `${dexKey}_${poolAddress}`,
+            `${dexKey}_${params.vault}`,
             dexHelper.provider,
           );
         });

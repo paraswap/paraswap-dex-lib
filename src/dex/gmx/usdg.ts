@@ -39,13 +39,14 @@ export class USDG<State> extends PartialEventSubscriber<State, USDGState> {
       const _state: USDGState = state;
       switch (parsed.name) {
         case 'Transfer': {
-          const fromAddress = parsed.args.from;
-          const toAddress = parsed.args.to;
+          const fromAddress = parsed.args.src;
+          const toAddress = parsed.args.dst;
           if (fromAddress === NULL_ADDRESS) {
-            _state.totalSupply += BigInt(parsed.args.value.toString());
+            _state.totalSupply += BigInt(parsed.args.wad.toString());
           } else if (toAddress === NULL_ADDRESS) {
-            _state.totalSupply -= BigInt(parsed.args.value.toString());
+            _state.totalSupply -= BigInt(parsed.args.wad.toString());
           }
+          return _state;
         }
         default:
           return null;
