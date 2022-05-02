@@ -108,6 +108,7 @@ export class Nerve
         ? await this.dexHelper.provider.getBlockNumber()
         : blockNumber;
 
+    // TODO: Need to batch this RPC calls in one multicall
     return Promise.all(
       _pools.map(async eventPool => {
         let state = eventPool.getState(_blockNumber);
