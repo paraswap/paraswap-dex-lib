@@ -5,6 +5,7 @@ import { IRequestWrapper } from './irequest-wrapper';
 import { IBlockManager } from './iblock-manager';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
+import { Token } from '../types';
 
 export interface IDexHelper {
   cache: ICache;
@@ -15,4 +16,5 @@ export interface IDexHelper {
   web3Provider: Web3;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
+  getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 }
