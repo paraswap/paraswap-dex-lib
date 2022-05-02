@@ -1,6 +1,7 @@
 import { bigIntify, MathUtil } from './utils';
 import { Logger } from '../../types';
-import { PoolState, ReadonlyOrWritable } from './types';
+import { PoolState } from './types';
+import { DeepReadonly } from 'ts-essentials';
 
 export class NervePoolMath {
   readonly FEE_DENOMINATOR = bigIntify(10 ** 10);
@@ -11,7 +12,7 @@ export class NervePoolMath {
   constructor(protected name: string, protected logger: Logger) {}
 
   calculateSwap(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     tokenIndexFrom: number,
     tokenIndexTo: number,
     dx: bigint,
@@ -45,7 +46,7 @@ export class NervePoolMath {
   }
 
   calculateWithdrawOneToken(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     tokenAmount: bigint,
     tokenIndex: number,
     blockTimeStamp: bigint,
@@ -73,12 +74,12 @@ export class NervePoolMath {
     return { dy, dyFee: dySwapFee };
   }
 
-  protected _getNumTokens(state: PoolState) {
+  protected _getNumTokens(state: DeepReadonly<PoolState>) {
     return bigIntify(state.tokenPrecisionMultipliers.length);
   }
 
   protected _calculateWithdrawOneTokenDY(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     tokenIndex: number,
     tokenAmount: bigint,
     blockTimestamp: bigint,
@@ -97,7 +98,7 @@ export class NervePoolMath {
 
     // v.d1 = v.d0.sub(tokenAmount.mul(v.d0).div(self.lpToken.totalSupply()));
     v.d1 = v.d0 - (tokenAmount * v.d0) / state.lpToken_supply;
-    v.newY = this._getYD(state, v.preciseA, tokenIndex, xp, v.d1);
+    v.newY = this._getYD(v.preciseA, tokenIndex, xp, v.d1);
 
     const xpReduced: bigint[] = [];
 
@@ -115,7 +116,7 @@ export class NervePoolMath {
       xpReduced[i] = xpi - (dxExpected * v.feePerToken) / this.FEE_DENOMINATOR;
     }
 
-    const yd = this._getYD(state, v.preciseA, tokenIndex, xpReduced, v.d1);
+    const yd = this._getYD(v.preciseA, tokenIndex, xpReduced, v.d1);
     // uint256 dy = xpReduced[tokenIndex].sub(getYD(v.preciseA, tokenIndex, xpReduced, v.d1));
     let dy = xpReduced[tokenIndex] - yd;
 
@@ -125,25 +126,19 @@ export class NervePoolMath {
     return { dy, newY: v.newY };
   }
 
-  protected _feePerToken(state: PoolState) {
+  protected _feePerToken(state: DeepReadonly<PoolState>) {
     const numTokens = this._getNumTokens(state);
     // self.swapFee.mul(self.pooledTokens.length).div(self.pooledTokens.length.sub(1).mul(4));
     return (state.swapFee * numTokens) / ((numTokens - 1n) * bigIntify(4));
   }
 
-  protected _calculateCurrentWithdrawFee(state: PoolState) {
+  protected _calculateCurrentWithdrawFee(state: DeepReadonly<PoolState>) {
     // It is not correct. We should calculate user withdrawFeeMultiplier by
     // the time passed since the liquidity was added
     return state.defaultWithdrawFee ? state.defaultWithdrawFee : 0n;
   }
 
-  protected _getYD(
-    state: PoolState,
-    a: bigint,
-    tokenIndex: number,
-    xp: bigint[],
-    d: bigint,
-  ) {
+  protected _getYD(a: bigint, tokenIndex: number, xp: bigint[], d: bigint) {
     const numTokens = bigIntify(xp.length);
 
     let c = d;
@@ -177,7 +172,6 @@ export class NervePoolMath {
       }
     }
 
-    state.isValid = false;
     const error = new Error(
       `Event pool ${this.name} method _getYD did not converge`,
     );
@@ -186,7 +180,7 @@ export class NervePoolMath {
   }
 
   _getY(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     tokenIndexFrom: number,
     tokenIndexTo: number,
     x: bigint,
@@ -231,7 +225,6 @@ export class NervePoolMath {
       }
     }
 
-    state.isValid = false;
     const error = new Error(
       `Event pool ${this.name} parsing function _getY approximation did not converge`,
     );
@@ -239,7 +232,10 @@ export class NervePoolMath {
     throw error;
   }
 
-  protected _getAPrecise(state: PoolState, blockTimestamp: bigint) {
+  protected _getAPrecise(
+    state: DeepReadonly<PoolState>,
+    blockTimestamp: bigint,
+  ) {
     const t1 = state.futureATime; // time when ramp is finished
     const a1 = state.futureA; // final A value when ramp is finished
 
@@ -258,7 +254,7 @@ export class NervePoolMath {
     }
   }
 
-  protected _getD(state: PoolState, xp: bigint[], a: bigint) {
+  protected _getD(state: DeepReadonly<PoolState>, xp: bigint[], a: bigint) {
     const numTokens = bigIntify(xp.length);
     let s: bigint = 0n;
     for (let i = 0; i < numTokens; i++) {
@@ -293,7 +289,6 @@ export class NervePoolMath {
 
     // Convergence should occur in 4 loops or less. If this is reached, there may be something wrong
     // with the pool.
-    state.isValid = false;
     const error = new Error(
       `Event pool ${this.name} method _getD did not converge`,
     );
@@ -301,7 +296,7 @@ export class NervePoolMath {
     throw error;
   }
 
-  _xp(state: ReadonlyOrWritable<PoolState>) {
+  _xp(state: DeepReadonly<PoolState>) {
     return state.balances.map(
       (balanceValue, i) => balanceValue * state.tokenPrecisionMultipliers[i],
     );

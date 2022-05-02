@@ -1,5 +1,5 @@
 import { DeepReadonly } from 'ts-essentials';
-import { MetapoolState, PoolState } from './types';
+import { PoolState } from './types';
 
 export const bigIntify = (val: any) => BigInt(val);
 
@@ -35,13 +35,4 @@ export function typeCastPoolState(state: DeepReadonly<PoolState>): PoolState {
     tokenPrecisionMultipliers: state.tokenPrecisionMultipliers.map(bigIntify),
     isValid: state.isValid,
   };
-}
-
-export function typeCastMetapoolState(
-  state: DeepReadonly<MetapoolState>,
-  basePool: DeepReadonly<PoolState>,
-): MetapoolState {
-  const generalState = typeCastPoolState(state);
-  (<MetapoolState>generalState).basePool = typeCastPoolState(basePool);
-  return generalState as MetapoolState;
 }

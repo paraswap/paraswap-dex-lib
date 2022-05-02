@@ -66,5 +66,3 @@ export type EventPoolMappings = { [pool: string]: NerveEventPool };
 export enum NervePoolFunctions {
   swap = 'swap',
 }
-
-export type ReadonlyOrWritable<T> = T | DeepReadonly<T> | Readonly<T>;

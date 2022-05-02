@@ -194,9 +194,6 @@ export class Nerve
 
       const result: ExchangePrices<NerveData> = [];
       for (const { pool, state } of statePoolPair) {
-        // To be able to update state property isValid if calculations receive error
-        const _state = _.cloneDeep(state) as PoolState;
-
         const srcIndex = pool.tokens.findIndex(
           token =>
             token.address.toLowerCase() === _srcToken.address.toLowerCase(),
@@ -210,7 +207,7 @@ export class Nerve
         for (const _amount of _amounts) {
           try {
             const out = pool.math.calculateSwap(
-              _state,
+              state,
               srcIndex,
               destIndex,
               _amount,
@@ -222,7 +219,7 @@ export class Nerve
           } catch (e) {
             // Something unexpected happen, so set invalidated state.
             // Later it will be regenerated
-            pool.setState(_state, blockNumber);
+            pool.setState({ ...state, isValid: false }, blockNumber);
             this.logger.error(
               `${this.dexKey} protocol ${pool.name} (${pool.address}) pool can not calculate out swap for amount ${_amount}`,
             );
