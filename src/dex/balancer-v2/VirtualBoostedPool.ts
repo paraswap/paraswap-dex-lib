@@ -372,7 +372,7 @@ export class VirtualBoostedPool {
       return {
         address: phantomPoolAddr,
         type: 'StablePhantom',
-        id: 'TO DO',
+        id: phantomPoolId,
       };
 
     const boostedPool = boostedPools[phantomPoolId];
@@ -578,6 +578,15 @@ export class VirtualBoostedPool {
     }
   }
 
+  /**
+   * Creates Balancer multihop swaps and asset info required to swap a pair of underlying tokens through the Boosted pools.
+   * @param tokenIn Underlying token in.
+   * @param tokenOut Underlying token out.
+   * @param boostedPoolId ID of the VirtualBoostedPool that tokenIn/Out belong to.
+   * @param amount Amount being traded.
+   * @param boostedPools Dictionary of boosted pools.
+   * @returns Swap, asset and limit info.
+   */
   static getSwapData(
     tokenIn: string,
     tokenOut: string,
@@ -585,7 +594,6 @@ export class VirtualBoostedPool {
     amount: string,
     boostedPools: BoostedPools,
   ): SwapData {
-    // this function could easily return swap data for a token pair
     // i.e. for DAI>USDC it would return tokenIn[Linear]inBpt[PhantomStable]outBpt[Linear]tokenOut in correct swap format
     const actualId = boostedPoolId.split(
       VirtualBoostedPool.poolType.toLowerCase(),
