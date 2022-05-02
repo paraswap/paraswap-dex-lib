@@ -383,7 +383,6 @@ describe('VirtualBoostedPools', () => {
           userData: '0x',
         },
       ]);
-      expect(swapData.limits).toEqual(Array(4).fill(MAX_INT));
     });
   });
 

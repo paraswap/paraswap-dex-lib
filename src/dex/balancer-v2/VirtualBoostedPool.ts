@@ -47,7 +47,6 @@ type BoostedPoolPairData = {
 export type SwapData = {
   swaps: BalancerSwap[];
   assets: string[];
-  limits: string[];
 };
 
 /*
@@ -585,7 +584,7 @@ export class VirtualBoostedPool {
    * @param boostedPoolId ID of the VirtualBoostedPool that tokenIn/Out belong to.
    * @param amount Amount being traded.
    * @param boostedPools Dictionary of boosted pools.
-   * @returns Swap, asset and limit info.
+   * @returns Swaps and assets.
    */
   static getSwapData(
     tokenIn: string,
@@ -640,11 +639,8 @@ export class VirtualBoostedPool {
           userData: '0x',
         },
       ];
-      // TO DO - Not safe?
-      const limits = Array(assets.length).fill(MAX_INT);
       return {
         swaps,
-        limits,
         assets,
       };
     } else {
