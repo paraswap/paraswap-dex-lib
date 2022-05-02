@@ -220,7 +220,9 @@ export abstract class StatefulEventSubscriber<State>
         return null;
       }
       const state: EventUpdateMessage = JSON.parse(stateAsString);
-      this.logger.info(`Successfully load the state for ${this.name}`);
+      if (this.logger.isDebugEnabled()) {
+        this.logger.debug(`Successfully load the state for ${this.name}`);
+      }
       this.setLazyUpdate(state.state, state.blockNumber);
       return this.state;
     }
@@ -265,7 +267,9 @@ export abstract class StatefulEventSubscriber<State>
   }
 
   setLazyUpdate(update: DeepReadonly<State> | null, blockNumber: number) {
-    this.logger.debug(`${this.name} got lazy updated`);
+    if (this.logger.isDebugEnabled()) {
+      this.logger.debug(`${this.name} got lazy updated`);
+    }
     this.state = update;
     this.stateBlockNumber = blockNumber;
   }
