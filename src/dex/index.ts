@@ -60,19 +60,18 @@ const LegacyDexes = [
   Lido,
 ];
 
-// TODO: uncomment the rest of the DEXes once they follow IEventsSubscriberFactory
 const Dexes = [
   BalancerV2,
   UniswapV2,
-  // BiSwap,
-  // MDEX,
-  // Dfyn,
-  // Excalibur,
-  // AaveV1,
-  // AaveV2,
-  // AaveV3,
-  // KyberDmm,
-  // Weth,
+  BiSwap,
+  MDEX,
+  Dfyn,
+  Excalibur,
+  AaveV1,
+  AaveV2,
+  AaveV3,
+  KyberDmm,
+  Weth,
   MakerPsm,
 ];
 

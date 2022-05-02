@@ -6,7 +6,6 @@ import { KyberDmmAbiEvents, TradeInfo } from './types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BI_POWS } from '../../bigint-constants';
 
 export type KyberDmmPools = { [poolAddress: string]: KyberDmmPool };
 
@@ -44,6 +43,14 @@ export interface KyberDmmPoolOrderedParams {
   exchanges: string[];
 }
 
+export type KyberDmmPoolInitData = {
+  identifier: string;
+  token0: Token;
+  token1: Token;
+  poolAddress: Address;
+  blockNumber: number;
+};
+
 const iface = new Interface(kyberDmmPoolABI);
 const coder = new AbiCoder();
 
@@ -51,26 +58,20 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   decoder: (log: Log) => KyberDmmAbiEvents = (log: Log) =>
     iface.parseLog(log) as any as KyberDmmAbiEvents;
 
+  private isInitalized: boolean = false;
+  public ampBps: bigint;
+
   constructor(
     protected parentName: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
     token0: Token,
     token1: Token,
-    public ampBps: bigint,
 
     logger: Logger,
   ) {
-    super(
-      parentName +
-        ' ' +
-        (token0.symbol || token0.address) +
-        '-' +
-        (token1.symbol || token1.address) +
-        ' pool',
-      logger,
-      dexHelper,
-    );
+    super(parentName, logger, dexHelper);
+    this.ampBps = BigInt(0);
   }
 
   protected async processLog(
@@ -124,18 +125,27 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<KyberDmmPoolState>> {
     super.generateState();
+    const functionCalls = [
+      {
+        target: this.poolAddress,
+        callData: iface.encodeFunctionData('getTradeInfo', []),
+      },
+      {
+        target: this.poolAddress,
+        callData: iface.encodeFunctionData('getVolumeTrendData', []),
+      },
+    ];
+
+    if (!this.isInitalized) {
+      functionCalls.push({
+        target: this.poolAddress,
+        callData: iface.encodeFunctionData('ampBps', []),
+      });
+    }
+
     const data: { returnData: any[] } =
       await this.dexHelper.multiContract.methods
-        .aggregate([
-          {
-            target: this.poolAddress,
-            callData: iface.encodeFunctionData('getTradeInfo', []),
-          },
-          {
-            target: this.poolAddress,
-            callData: iface.encodeFunctionData('getVolumeTrendData', []),
-          },
-        ])
+        .aggregate(functionCalls)
         .call({}, blockNumber);
 
     const [reserves0, reserves1, vReserves0, vReserves1] = coder
@@ -145,6 +155,12 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     const [shortEMA, longEMA, , lastTradeBlock] = coder
       .decode(['uint256', 'uint256', 'uint128', 'uint256'], data.returnData[1])
       .map(a => BigInt(a.toString()));
+
+    if (!this.isInitalized) {
+      this.ampBps = BigInt(
+        coder.decode(['uint256'], data.returnData[2]).toString(),
+      );
+    }
 
     if (blockNumber == 'latest')
       blockNumber = await this.dexHelper.provider.getBlockNumber();

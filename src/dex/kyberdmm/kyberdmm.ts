@@ -8,6 +8,7 @@ import {
   getTradeInfo,
   KyberDmmPair,
   KyberDmmPool,
+  KyberDmmPoolInitData,
   KyberDmmPoolOrderedParams,
   KyberDmmPoolState,
 } from './pool';
@@ -17,8 +18,6 @@ import {
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
-  TxInfo,
-  Address,
 } from '../../types';
 import {
   KyberDmmData,
@@ -32,18 +31,16 @@ import { Logger } from 'log4js';
 import { Contract } from 'web3-eth-contract';
 
 import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
-import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
-
-const MAX_TRACKED_PAIR_POOLS = 3;
+import { SubscriberInfo } from '../../dex-helper';
 
 const subgraphTimeout = 10 * 1000;
 
-const iface = new Interface(kyberDmmPoolABI);
-const coder = new AbiCoder();
-
-export class KyberDmm extends SimpleExchange implements IDex<KyberDmmData> {
+export class KyberDmm
+  extends SimpleExchange
+  implements IDex<KyberDmmData, KyberDmmPoolInitData, KyberDmmPoolState>
+{
   pairs: { [key: string]: KyberDmmPair } = {};
   needWrapNative = true;
   factory: Contract;
@@ -93,6 +90,19 @@ export class KyberDmm extends SimpleExchange implements IDex<KyberDmmData> {
 
       return z;
     } else return [];
+  }
+
+  getEventSubscriber(poolInitData: KyberDmmPoolInitData): KyberDmmPool {
+    const pool = new KyberDmmPool(
+      poolInitData.identifier,
+      this.dexHelper,
+      poolInitData.poolAddress,
+      poolInitData.token0,
+      poolInitData.token1,
+      this.logger,
+    );
+
+    return pool;
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -227,33 +237,29 @@ export class KyberDmm extends SimpleExchange implements IDex<KyberDmmData> {
     );
   }
 
-  private addPool(
-    pair: KyberDmmPair,
-    poolAddress: string,
-    poolData: KyberDmmPoolState,
-    blockNumber: number,
-  ) {
-    if (
-      pair.exchanges.find(p => p === poolAddress) &&
-      !(poolAddress in pair.pools)
-    ) {
-      const pool = new KyberDmmPool(
-        this.dexKey,
-        this.dexHelper,
+  private addPool(pair: KyberDmmPair, blockNumber: number) {
+    for (const poolAddress of pair.exchanges) {
+      const identifier =
+        `${this.dexHelper.network}_${this.dexKey}_${poolAddress}`.toLowerCase();
+      const poolInitData: KyberDmmPoolInitData = {
+        identifier,
+        token0: pair.token0,
+        token1: pair.token1,
         poolAddress,
-        pair.token0,
-        pair.token1,
-        poolData.ampBps,
-        this.logger,
+        blockNumber,
+      };
+
+      const subscriberInfo: SubscriberInfo<KyberDmmPoolInitData> = {
+        dexKey: this.dexKey,
+        identifier,
+        initParams: poolInitData,
+        addressSubscribed: poolAddress,
+      };
+      const pool = this.dexHelper.blockManager.subscribeToLogs(
+        subscriberInfo,
+        false,
       );
-      pair.pools[poolAddress] = pool;
-      if (blockNumber) pool.setState(poolData, blockNumber);
-      // TODO: fix me
-      // this.dexHelper.blockManager.subscribeToLogs(
-      //   pool,
-      //   poolAddress,
-      //   blockNumber,
-      // );
+      pair.pools[poolAddress] = pool as KyberDmmPool;
     }
   }
 
@@ -376,76 +382,6 @@ export class KyberDmm extends SimpleExchange implements IDex<KyberDmmData> {
     };
   }
 
-  private async getManyPoolReserves(
-    pair: KyberDmmPair,
-    blockNumber: number,
-  ): Promise<{ [poolAddress: string]: KyberDmmPoolState }> {
-    try {
-      const calldata = pair.exchanges
-        .map(poolAddress => [
-          {
-            target: poolAddress,
-            callData: iface.encodeFunctionData('getTradeInfo', []),
-          },
-          {
-            target: poolAddress,
-            callData: iface.encodeFunctionData('getVolumeTrendData', []),
-          },
-          {
-            target: poolAddress,
-            callData: iface.encodeFunctionData('ampBps', []),
-          },
-        ])
-        .flat();
-
-      const data: { returnData: any[] } =
-        await this.dexHelper.multiContract.methods
-          .aggregate(calldata)
-          .call({}, blockNumber);
-
-      return pair.exchanges.reduce(
-        (acc: { [key: string]: KyberDmmPoolState }, poolAddress, poolIndex) => {
-          const poolData = data.returnData.slice(
-            poolIndex * 3,
-            (poolIndex + 1) * 3,
-          );
-          const [reserves0, reserves1, vReserves0, vReserves1] = coder
-            .decode(['uint256', 'uint256', 'uint256', 'uint256'], poolData[0])
-            .map(n => BigInt(n.toString()));
-          const [shortEMA, longEMA, lastBlockVolume, lastTradeBlock] = coder
-            .decode(['uint256', 'uint256', 'uint128', 'uint256'], poolData[1])
-            .map(n => BigInt(n.toString()));
-          const ampBps = BigInt(
-            coder.decode(['uint256'], poolData[2]).toString(),
-          );
-          acc[poolAddress] = {
-            reserves: {
-              reserves0,
-              reserves1,
-              vReserves0,
-              vReserves1,
-            },
-            trendData: {
-              shortEMA,
-              longEMA,
-              lastBlockVolume,
-              lastTradeBlock,
-            },
-            ampBps,
-          };
-          return acc;
-        },
-        {},
-      );
-    } catch (e) {
-      this.logger.error(
-        `${this.dexKey}_getManyPoolReserves could not get reserves`,
-        e,
-      );
-      return {};
-    }
-  }
-
   private async catchUpPair(from: Token, to: Token, blockNumber: number) {
     if (!blockNumber) return;
 
@@ -458,32 +394,49 @@ export class KyberDmm extends SimpleExchange implements IDex<KyberDmmData> {
     )
       return;
 
-    let poolsState = await this.getManyPoolReserves(pair, blockNumber);
-
-    if (!Object.keys(poolsState).length) {
-      this.logger.error(
-        `${this.dexKey}_getManyPoolReserves didn't get any pool reserves`,
-      );
+    if (Object.keys(pair.pools).length !== 0) {
       return;
     }
 
-    // Filter out pools
-    if (pair.exchanges.length > MAX_TRACKED_PAIR_POOLS) {
-      poolsState = Object.fromEntries(
-        Object.entries(poolsState)
-          .sort(([, stateA], [, stateB]) =>
-            stateA.reserves.reserves0 < stateB.reserves.reserves0 ? 1 : -1,
-          )
-          .slice(0, MAX_TRACKED_PAIR_POOLS),
-      );
-      pair.exchanges = pair.exchanges.filter(pool => poolsState[pool]);
-    }
+    this.addPool(pair, blockNumber);
 
-    Object.entries(poolsState).forEach(([poolAddress, state]) => {
-      if (!pair.pools[poolAddress]) {
-        this.addPool(pair, poolAddress, state, blockNumber);
-      } else pair.pools[poolAddress].setState(state, blockNumber);
+    Object.keys(pair.pools).map(async poolAddress => {
+      const pool = pair.pools[poolAddress];
+      let state = await pool.getState(blockNumber);
+      if (state) {
+        return;
+      }
+
+      const newState = await pool.generateState();
+      pool.setState(newState, blockNumber);
     });
+    //
+    // let poolsState = await this.getManyPoolReserves(pair, blockNumber);
+    //
+    // if (!Object.keys(poolsState).length) {
+    //   this.logger.error(
+    //     `${this.dexKey}_getManyPoolReserves didn't get any pool reserves`,
+    //   );
+    //   return;
+    // }
+    //
+    // // Filter out pools
+    // if (pair.exchanges.length > MAX_TRACKED_PAIR_POOLS) {
+    //   poolsState = Object.fromEntries(
+    //     Object.entries(poolsState)
+    //       .sort(([, stateA], [, stateB]) =>
+    //         stateA.reserves.reserves0 < stateB.reserves.reserves0 ? 1 : -1,
+    //       )
+    //       .slice(0, MAX_TRACKED_PAIR_POOLS),
+    //   );
+    //   pair.exchanges = pair.exchanges.filter(pool => poolsState[pool]);
+    // }
+    //
+    // Object.entries(poolsState).forEach(([poolAddress, state]) => {
+    //   if (!pair.pools[poolAddress]) {
+    //     this.addPool(pair, poolAddress, state, blockNumber);
+    //   } else pair.pools[poolAddress].setState(state, blockNumber);
+    // });
   }
 
   private async getPairOrderedParams(
