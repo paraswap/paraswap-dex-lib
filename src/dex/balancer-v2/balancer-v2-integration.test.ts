@@ -250,7 +250,7 @@ describe('BalancerV2', function () {
           p.address ===
           '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
       );
-      expect(virtualPool).not.toBeUndefined(); // TO DO - Fix getTopPools
+      expect(virtualPool).not.toBeUndefined();
 
       checkPoolsLiquidity(poolLiquidity, DAI.address, dexKey);
     });
