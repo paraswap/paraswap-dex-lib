@@ -190,7 +190,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     // get tokens
     const getTokensCalldata = new Array(tokensCount).fill(0).map((_, i) => {
       return {
-        calldata: Vault.interface.encodeFunctionData('allWhitelistedTokens', [
+        callData: Vault.interface.encodeFunctionData('allWhitelistedTokens', [
           i,
         ]),
         target: dexParams.vault,
@@ -201,18 +201,17 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
         .aggregate(getTokensCalldata)
         .call({}, blockNumber)
     ).returnData;
-    const tokens = tokensResult.map((t: any) =>
+    const tokens: Address[] = tokensResult.map((t: any) =>
       Vault.interface
         .decodeFunctionResult('allWhitelistedTokens', t)[0]
-        .toString()
         .toLowerCase(),
     );
 
     // get price chainlink pricefeed
-    const getPriceFeedCalldata = new Array(tokensCount).fill(0).map((_, i) => {
+    const getPriceFeedCalldata = tokens.map(t => {
       return {
-        calldata: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [
-          i,
+        callData: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [
+          t,
         ]),
         target: dexParams.priceFeed,
       };
@@ -238,6 +237,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
         ChainLinkSubscriber.getReadAggregatorMultiCallInput(priceFeed);
       multiCallData.push(chainlinkConfigCallData);
       multicallSlices.push([i, i + 1]);
+      i += 1;
     }
 
     const fastPriceFeedConfigCallData = FastPriceFeed.getConfigMulticallInputs(
@@ -245,11 +245,13 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     );
     multiCallData.push(...fastPriceFeedConfigCallData);
     multicallSlices.push([i, i + fastPriceFeedConfigCallData.length]);
+    i += fastPriceFeedConfigCallData.length;
 
     const vaultPriceFeedConfigCallData =
       VaultPriceFeed.getConfigMulticallInputs(dexParams.priceFeed, tokens);
     multiCallData.push(...vaultPriceFeedConfigCallData);
     multicallSlices.push([i, i + vaultPriceFeedConfigCallData.length]);
+    i += vaultPriceFeedConfigCallData.length;
 
     const vaultConfigCallData = Vault.getConfigMulticallInputs(
       dexParams.vault,
@@ -257,6 +259,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     );
     multiCallData.push(...vaultConfigCallData);
     multicallSlices.push([i, i + vaultConfigCallData.length]);
+    i += vaultConfigCallData.length;
 
     const configResults = (
       await multiContract.methods.aggregate(multiCallData).call({}, blockNumber)

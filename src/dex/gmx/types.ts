@@ -55,7 +55,7 @@ export type VaultPriceFeedConfig = {
   strictStableTokens: { [address: string]: boolean };
   spreadBasisPoints: { [address: string]: bigint };
   adjustmentBasisPoints: { [address: string]: bigint };
-  isAdjustmentAdditive: { [address: string]: bigint };
+  isAdjustmentAdditive: { [address: string]: boolean };
   priceDecimals: { [address: string]: number };
   maxStrictPriceDeviation: bigint;
   useV2Pricing: boolean;

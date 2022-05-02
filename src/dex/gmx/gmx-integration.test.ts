@@ -4,7 +4,7 @@ dotenv.config();
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { Gmx } from './gmx';
+import { GMX } from './gmx';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -12,37 +12,22 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-/*
-  README
-  ======
-
-  This test script adds tests for Gmx general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Gmx specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
-const network = Network.MAINNET;
-const TokenASymbol = 'TokenASymbol';
+const network = Network.AVALANCHE;
+const TokenASymbol = 'USDCe';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'TokenBSymbol';
+const TokenBSymbol = 'WAVAX';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [0n, BI_POWS[18], 2000000000000000000n];
+const amounts = [0n, 1000000000n, 2000000000n];
 
-const dexKey = 'Gmx';
+const dexKey = 'GMX';
 
-describe('Gmx', function () {
+describe('GMX', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.provider.getBlockNumber();
-    const gmx = new Gmx(network, dexKey, dexHelper);
+    const gmx = new GMX(network, dexKey, dexHelper);
 
     await gmx.initializePricing(blocknumber);
 
@@ -77,7 +62,7 @@ describe('Gmx', function () {
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.provider.getBlockNumber();
-    const gmx = new Gmx(network, dexKey, dexHelper);
+    const gmx = new GMX(network, dexKey, dexHelper);
 
     await gmx.initializePricing(blocknumber);
 
@@ -111,7 +96,7 @@ describe('Gmx', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const gmx = new Gmx(network, dexKey, dexHelper);
+    const gmx = new GMX(network, dexKey, dexHelper);
 
     const poolLiquidity = await gmx.getTopPoolsForToken(TokenA.address, 10);
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);

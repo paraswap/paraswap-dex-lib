@@ -18,7 +18,7 @@ export class VaultPriceFeed<State> {
   protected strictStableTokens: { [address: string]: boolean };
   protected spreadBasisPoints: { [address: string]: bigint };
   protected adjustmentBasisPoints: { [address: string]: bigint };
-  protected isAdjustmentAdditive: { [address: string]: bigint };
+  protected isAdjustmentAdditive: { [address: string]: boolean };
   protected priceDecimals: { [address: string]: number };
   protected maxStrictPriceDeviation: bigint;
   protected useV2Pricing: boolean;
@@ -229,62 +229,62 @@ export class VaultPriceFeed<State> {
     return [
       {
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData('isAmmEnabled'),
+        callData: VaultPriceFeed.interface.encodeFunctionData('isAmmEnabled'),
       },
       {
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData(
+        callData: VaultPriceFeed.interface.encodeFunctionData(
           'isSecondaryPriceEnabled',
         ),
       },
       ...tokenAddresses.map(t => ({
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData(
+        callData: VaultPriceFeed.interface.encodeFunctionData(
           'strictStableTokens',
           [t],
         ),
       })),
       ...tokenAddresses.map(t => ({
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData(
+        callData: VaultPriceFeed.interface.encodeFunctionData(
           'spreadBasisPoints',
           [t],
         ),
       })),
       ...tokenAddresses.map(t => ({
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData(
+        callData: VaultPriceFeed.interface.encodeFunctionData(
           'isAdjustmentAdditive',
           [t],
         ),
       })),
       ...tokenAddresses.map(t => ({
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData(
+        callData: VaultPriceFeed.interface.encodeFunctionData(
           'adjustmentBasisPoints',
           [t],
         ),
       })),
       ...tokenAddresses.map(t => ({
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData('priceDecimals', [
+        callData: VaultPriceFeed.interface.encodeFunctionData('priceDecimals', [
           t,
         ]),
       })),
       {
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData(
+        callData: VaultPriceFeed.interface.encodeFunctionData(
           'maxStrictPriceDeviation',
         ),
       },
       {
         target: vaultPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData('useV2Pricing'),
+        callData: VaultPriceFeed.interface.encodeFunctionData('useV2Pricing'),
       },
       {
         target: vaultPriceFeedAddress,
         callData:
-          FastPriceFeed.interface.encodeFunctionData('priceSampleSpace'),
+          VaultPriceFeed.interface.encodeFunctionData('priceSampleSpace'),
       },
     ];
   }
@@ -295,17 +295,17 @@ export class VaultPriceFeed<State> {
   ): VaultPriceFeedConfig {
     let i = 0;
     return {
-      isAmmEnabled: FastPriceFeed.interface.decodeFunctionResult(
+      isAmmEnabled: VaultPriceFeed.interface.decodeFunctionResult(
         'isAmmEnabled',
         multicallOutputs[i++],
       )[0],
-      isSecondaryPriceEnabled: FastPriceFeed.interface.decodeFunctionResult(
+      isSecondaryPriceEnabled: VaultPriceFeed.interface.decodeFunctionResult(
         'isSecondaryPriceEnabled',
         multicallOutputs[i++],
       )[0],
       strictStableTokens: tokenAddress.reduce(
         (acc: { [address: string]: boolean }, t: Address) => {
-          acc[t] = FastPriceFeed.interface.decodeFunctionResult(
+          acc[t] = VaultPriceFeed.interface.decodeFunctionResult(
             'strictStableTokens',
             multicallOutputs[i++],
           )[0];
@@ -316,7 +316,7 @@ export class VaultPriceFeed<State> {
       spreadBasisPoints: tokenAddress.reduce(
         (acc: { [address: string]: bigint }, t: Address) => {
           acc[t] = BigInt(
-            FastPriceFeed.interface
+            VaultPriceFeed.interface
               .decodeFunctionResult(
                 'spreadBasisPoints',
                 multicallOutputs[i++],
@@ -328,15 +328,11 @@ export class VaultPriceFeed<State> {
         {},
       ),
       isAdjustmentAdditive: tokenAddress.reduce(
-        (acc: { [address: string]: bigint }, t: Address) => {
-          acc[t] = BigInt(
-            FastPriceFeed.interface
-              .decodeFunctionResult(
-                'isAdjustmentAdditive',
-                multicallOutputs[i++],
-              )[0]
-              .toString(),
-          );
+        (acc: { [address: string]: boolean }, t: Address) => {
+          acc[t] = VaultPriceFeed.interface.decodeFunctionResult(
+            'isAdjustmentAdditive',
+            multicallOutputs[i++],
+          )[0];
           return acc;
         },
         {},
@@ -344,7 +340,7 @@ export class VaultPriceFeed<State> {
       adjustmentBasisPoints: tokenAddress.reduce(
         (acc: { [address: string]: bigint }, t: Address) => {
           acc[t] = BigInt(
-            FastPriceFeed.interface
+            VaultPriceFeed.interface
               .decodeFunctionResult(
                 'adjustmentBasisPoints',
                 multicallOutputs[i++],
@@ -358,7 +354,7 @@ export class VaultPriceFeed<State> {
       priceDecimals: tokenAddress.reduce(
         (acc: { [address: string]: number }, t: Address) => {
           acc[t] = parseInt(
-            FastPriceFeed.interface
+            VaultPriceFeed.interface
               .decodeFunctionResult('priceDecimals', multicallOutputs[i++])[0]
               .toString(),
           );
@@ -367,19 +363,19 @@ export class VaultPriceFeed<State> {
         {},
       ),
       maxStrictPriceDeviation: BigInt(
-        FastPriceFeed.interface
+        VaultPriceFeed.interface
           .decodeFunctionResult(
             'maxStrictPriceDeviation',
             multicallOutputs[i++],
           )[0]
           .toString(),
       ),
-      useV2Pricing: FastPriceFeed.interface.decodeFunctionResult(
+      useV2Pricing: VaultPriceFeed.interface.decodeFunctionResult(
         'useV2Pricing',
         multicallOutputs[i++],
       )[0],
       priceSampleSpace: parseInt(
-        FastPriceFeed.interface
+        VaultPriceFeed.interface
           .decodeFunctionResult('priceSampleSpace', multicallOutputs[i++])[0]
           .toString(),
       ),
