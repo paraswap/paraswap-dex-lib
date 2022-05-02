@@ -186,15 +186,9 @@ export class Nerve
       const statePoolPair = await this.getStates(selectedPools, blockNumber);
 
       // here side === SwapSide.SELL
-      const unitVolume = getBigIntPow(10 ** _srcToken.decimals);
-      const chunks = amounts.length - 1;
+      const unitVolume = getBigIntPow(_srcToken.decimals);
 
-      const _width = Math.floor(chunks / NERVE_CHUNKS);
-      const _amounts = [unitVolume].concat(
-        Array.from(Array(NERVE_CHUNKS).keys()).map(
-          i => amounts[(i + 1) * _width],
-        ),
-      );
+      const _amounts = [unitVolume, ...amounts.slice(1)];
 
       const result: ExchangePrices<NerveData> = [];
       for (const { pool, state } of statePoolPair) {
@@ -210,7 +204,7 @@ export class Nerve
             token.address.toLowerCase() === _destToken.address.toLowerCase(),
         );
 
-        const _rates: bigint[] = [];
+        const _prices: bigint[] = [];
         for (const _amount of _amounts) {
           try {
             const out = pool.math.calculateSwap(
@@ -222,10 +216,10 @@ export class Nerve
               // affect the calculations
               bigIntify((Date.now() / 1000).toFixed(0)),
             );
-            _rates.push(out.dy);
+            _prices.push(out.dy);
           } catch (e) {
             // Something unexpected happen, so set invalidated state.
-            // Later it will regenerated
+            // Later it will be regenerated
             pool.setState(_state, blockNumber);
             this.logger.error(
               `${this.dexKey} protocol ${pool.name} (${pool.address}) pool can not calculate out swap for amount ${_amount}`,
@@ -234,17 +228,11 @@ export class Nerve
           }
         }
 
-        const unit = _rates[0];
-        const prices = interpolate(
-          _amounts.slice(1),
-          _rates.slice(1),
-          amounts,
-          side,
-        );
+        const unit = _prices[0];
 
         result.push({
-          prices,
           unit,
+          prices: [0n, ..._prices.slice(1)],
           data: {
             i: srcIndex.toString(),
             j: destIndex.toString(),
