@@ -3,8 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import { Log, BlockHeader, Address } from '../src/types';
 import { StatefulEventSubscriber } from '../src/stateful-event-subscriber';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { DeepReadonly } from 'ts-essentials';
+
+const configPath = './configs.json';
+const absConfigPath = path.join(__dirname, configPath);
+let configs: { [k: string]: any } = {};
+if (fs.existsSync(absConfigPath)) configs = require(configPath);
 
 const statePath = './states.json';
 const absStatePath = path.join(__dirname, statePath);
@@ -30,7 +35,7 @@ export async function testEventSubscriber<SubscriberState>(
   fetchState: (blocknumber: number) => Promise<SubscriberState>,
   blockNumber: number,
   cacheKey: string,
-  provider: JsonRpcProvider,
+  provider: Provider,
 ) {
   // Get state of the subscriber block before the event was released
   let poolState = getSavedState(blockNumber - 1, cacheKey);
@@ -59,7 +64,9 @@ export async function testEventSubscriber<SubscriberState>(
           }),
         ),
       )
-    ).flat();
+    )
+      .flat()
+      .sort((a, b) => a.logIndex - b.logIndex);
 
     blockInfo = {
       logs,
@@ -103,6 +110,31 @@ export function deepTypecast<T>(
         ? deepTypecast(val, checker, caster)
         : val),
   );
+}
+
+export function getSavedConfig<Config>(
+  blockNumber: number,
+  cacheKey: string,
+): Config | undefined {
+  const _config = configs[`${cacheKey}_${blockNumber}`];
+  if (_config) {
+    const checker = (obj: any) => _.isString(obj) && obj.includes('bi@');
+    const caster = (obj: string) => bigintify(obj.slice(3));
+    return deepTypecast<string>(_.cloneDeep(_config), checker, caster);
+  }
+  return undefined;
+}
+
+export function saveConfig<Config>(
+  blockNumber: number,
+  cacheKey: string,
+  config: Config,
+) {
+  const checker = (obj: any) => typeof obj === 'bigint';
+  const caster = (obj: bigint) => 'bi@'.concat(stringify(obj));
+  const _config = deepTypecast<bigint>(_.cloneDeep(config), checker, caster);
+  configs[`${cacheKey}_${blockNumber}`] = _config;
+  fs.writeFileSync(absConfigPath, JSON.stringify(configs, null, 2));
 }
 
 export function getSavedState<SubscriberState>(

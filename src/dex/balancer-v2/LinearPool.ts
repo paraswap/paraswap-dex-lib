@@ -2,7 +2,6 @@ import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as LinearMath from './LinearMath';
-import { BZERO } from './balancer-v2-math';
 import { BasePool } from './balancer-v2-pool';
 import {
   callData,
@@ -39,12 +38,12 @@ type LinearPoolPairData = {
 };
 
 /*
-Linear (Boosted) Pools are designed to facilitate trades between stablecoins while simultaneously forwarding much of the pool's 
-liquidity to external protocols, such as Aave. 
-One of the key features that makes trades through Boosted Pools so simple is the use of Phantom BPT. Normally when a Liquidity 
-Provider joins/exits a pool, the pool mints/burns pool tokens as needed. This is gas intensive and requires users to execute a join or exit. 
-In pools that use Phantom BPT, however, all pool tokens are minted at the time of pool creation and are held by the pool itself. 
-With Phantom BPT, Liquidity Providers use a swap (or more likely a batchSwap) to trade to or from a pool token to join or exit, respectively. 
+Linear (Boosted) Pools are designed to facilitate trades between stablecoins while simultaneously forwarding much of the pool's
+liquidity to external protocols, such as Aave.
+One of the key features that makes trades through Boosted Pools so simple is the use of Phantom BPT. Normally when a Liquidity
+Provider joins/exits a pool, the pool mints/burns pool tokens as needed. This is gas intensive and requires users to execute a join or exit.
+In pools that use Phantom BPT, however, all pool tokens are minted at the time of pool creation and are held by the pool itself.
+With Phantom BPT, Liquidity Providers use a swap (or more likely a batchSwap) to trade to or from a pool token to join or exit, respectively.
 */
 export class LinearPool extends BasePool implements PoolBase {
   // This is the maximum token amount the Vault can hold. In regular operation, the total BPT supply remains constant
@@ -67,7 +66,7 @@ export class LinearPool extends BasePool implements PoolBase {
   /*
     scaling factors should include rate:
     The wrapped token's scaling factor is not constant, but increases over time as the wrapped token increases in value.
-    i.e. 
+    i.e.
     scalingFactors: pool.tokens.map(({ decimals, priceRate }) =>
         MathSol.mulDownFixed(getTokenScalingFactor(decimals), priceRate)
     )
@@ -103,7 +102,7 @@ export class LinearPool extends BasePool implements PoolBase {
     lowerTarget: bigint,
     upperTarget: bigint,
   ): bigint[] {
-    /* 
+    /*
         Linear pools allow trading between:
         wrappedToken <> mainToken
         wrappedToken <> BPT
@@ -186,7 +185,7 @@ export class LinearPool extends BasePool implements PoolBase {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = 0n;
           }
           amountsOut.push(amt);
         });
@@ -207,7 +206,7 @@ export class LinearPool extends BasePool implements PoolBase {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = 0n;
           }
           amountsOut.push(amt);
         });
@@ -222,7 +221,7 @@ export class LinearPool extends BasePool implements PoolBase {
               upperTarget: upperTarget,
             });
           } catch (err) {
-            amt = BZERO;
+            amt = 0n;
           }
           amountsOut.push(amt);
         });
@@ -237,7 +236,7 @@ export class LinearPool extends BasePool implements PoolBase {
               upperTarget: upperTarget,
             });
           } catch (err) {
-            amt = BZERO;
+            amt = 0n;
           }
           amountsOut.push(amt);
         });
@@ -258,7 +257,7 @@ export class LinearPool extends BasePool implements PoolBase {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = 0n;
           }
           amountsOut.push(amt);
         });
@@ -279,13 +278,13 @@ export class LinearPool extends BasePool implements PoolBase {
               },
             );
           } catch (err) {
-            amt = BZERO;
+            amt = 0n;
           }
           amountsOut.push(amt);
         });
         break;
       default:
-        amountsOut.push(BZERO);
+        amountsOut.push(0n);
     }
     return amountsOut;
   }
@@ -313,7 +312,7 @@ export class LinearPool extends BasePool implements PoolBase {
 
       balances.push(poolState.tokens[t.address.toLowerCase()].balance);
       scalingFactors.push(
-        poolState.tokens[t.address.toLowerCase()].scalingFactor || BigInt(0),
+        poolState.tokens[t.address.toLowerCase()].scalingFactor || 0n,
       );
       return t.address;
     });
@@ -325,11 +324,11 @@ export class LinearPool extends BasePool implements PoolBase {
       scalingFactors,
       bptIndex,
       swapFee: poolState.swapFee,
-      amp: poolState.amp || BigInt(0),
+      amp: poolState.amp || 0n,
       wrappedIndex: poolState.wrappedIndex || 0,
       mainIndex: poolState.mainIndex || 0,
-      lowerTarget: poolState.lowerTarget || BigInt(0),
-      upperTarget: poolState.upperTarget || BigInt(0),
+      lowerTarget: poolState.lowerTarget || 0n,
+      upperTarget: poolState.upperTarget || 0n,
     };
     return poolPairData;
   }
@@ -437,8 +436,7 @@ export class LinearPool extends BasePool implements PoolBase {
   Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
   swapLimit(balanceOut: bigint, scalingFactorOut: bigint): bigint {
-    const swapMax =
-      (this._upscale(balanceOut, scalingFactorOut) * BigInt(99)) / BigInt(100);
+    const swapMax = (this._upscale(balanceOut, scalingFactorOut) * 99n) / 100n;
     return swapMax;
   }
 

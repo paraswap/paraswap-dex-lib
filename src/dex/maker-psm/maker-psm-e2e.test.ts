@@ -13,7 +13,7 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 describe('MakerPsm E2E', () => {
   const dexKey = 'MakerPsm';
@@ -22,7 +22,7 @@ describe('MakerPsm E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAI';

@@ -1,5 +1,5 @@
 import { Interface } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { ETHER_ADDRESS } from '../constants';
@@ -14,10 +14,7 @@ export class SimpleExchange {
   erc20Interface: Interface;
   needWrapNative = false;
 
-  constructor(
-    protected augustusAddress: Address,
-    private provider: JsonRpcProvider,
-  ) {
+  constructor(protected augustusAddress: Address, private provider: Provider) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
     this.abiCoder = Web3Abi as unknown as AbiCoder;
@@ -89,7 +86,7 @@ export class SimpleExchange {
       srcAmount,
     );
     const swapValue = (
-      BigInt(networkFee) + BigInt(isETHAddress(src) ? srcAmount : '0')
+      BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : 0n)
     ).toString();
 
     return {

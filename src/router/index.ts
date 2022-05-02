@@ -16,16 +16,10 @@ export class RouterService {
   directSwapRouter: DirectSwap<any>;
 
   constructor(private dexAdapterService: DexAdapterService) {
-    const adapters = dexAdapterService.getAllDexAdapters(SwapSide.SELL);
-    const buyAdapters = dexAdapterService.getAllDexAdapters(SwapSide.BUY);
-
     this.hybridRouterMap = this.hybridRouters.reduce<{
       [contractMethod: string]: IRouter<any>;
     }>((acc, Router) => {
-      const router = new Router(
-        this.dexAdapterService,
-        Router.isBuy ? buyAdapters : adapters,
-      );
+      const router = new Router(this.dexAdapterService);
       acc[router.getContractMethodName().toLowerCase()] = router;
       return acc;
     }, {});

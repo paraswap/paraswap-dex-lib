@@ -1,6 +1,5 @@
 import { getAddress } from '@ethersproject/address';
 import { Interface } from '@ethersproject/abi';
-import { BZERO } from './balancer-v2-math';
 import { LinearPool } from './LinearPool';
 import { PhantomStablePool } from './PhantomStablePool';
 import {
@@ -534,7 +533,7 @@ export class VirtualBoostedPool {
         linearIn.bptIndex, // bptIndex
         linearIn.wrappedIndex, // wrappedIndex
         linearIn.mainIndex, // mainIndex
-        linearInTokens.map(t => (t.scalingFactor ? t.scalingFactor : BZERO)),
+        linearInTokens.map(t => (t.scalingFactor ? t.scalingFactor : 0n)),
         linearIn.swapFee,
         linearIn.lowerTarget,
         linearIn.upperTarget,
@@ -550,9 +549,7 @@ export class VirtualBoostedPool {
           linearOutTokenAddrs[linearOut.bptIndex],
         ), // indexOut
         stablePhantomTokenAddrs.indexOf(phantomPoolAddr), // bptIndex
-        stablePhantomTokens.map(t =>
-          t.scalingFactor ? t.scalingFactor : BZERO,
-        ),
+        stablePhantomTokens.map(t => (t.scalingFactor ? t.scalingFactor : 0n)),
         stablePhantom.swapFee,
         stablePhantom.amp,
       );
@@ -567,7 +564,7 @@ export class VirtualBoostedPool {
         linearOut.bptIndex, // bptIndex
         linearOut.wrappedIndex,
         linearOut.mainIndex, // mainIndex
-        linearOutTokens.map(t => (t.scalingFactor ? t.scalingFactor : BZERO)),
+        linearOutTokens.map(t => (t.scalingFactor ? t.scalingFactor : 0n)),
         linearOut.swapFee,
         linearOut.lowerTarget,
         linearOut.upperTarget,
@@ -577,7 +574,7 @@ export class VirtualBoostedPool {
       ].gasCost = linearPool.gasCost * 2 + phantomStablePool.gasCost;
       return amtOutLinearTwo;
     } else {
-      return [BZERO];
+      return [0n];
     }
   }
 

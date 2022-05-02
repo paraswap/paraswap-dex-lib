@@ -10,6 +10,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { aaveV2GetToken } from './tokens';
+import { BI_POWS } from '../../bigint-constants';
 
 describe('AaveV2', function () {
   describe('AaveV2 MAINNET', () => {
@@ -20,11 +21,7 @@ describe('AaveV2', function () {
     const aUSDTSymbol = 'aUSDT';
     const aUSDT = aaveV2GetToken(network, aUSDTSymbol);
 
-    const amounts = [
-      BigInt('0'),
-      BigInt('1000000000000000000'),
-      BigInt('2000000000000000000'),
-    ];
+    const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
     const dexKey = 'AaveV2';
     if (!aUSDT) {
@@ -43,7 +40,7 @@ describe('AaveV2', function () {
         SwapSide.SELL,
         blocknumber,
       );
-      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 
@@ -72,7 +69,7 @@ describe('AaveV2', function () {
         SwapSide.BUY,
         blocknumber,
       );
-      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 

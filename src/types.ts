@@ -211,3 +211,10 @@ export type UnoptimizedRate = Omit<
   OptimalRate,
   'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
 >;
+
+export type MultiCallInput = {
+  target: Address;
+  callData: string;
+};
+
+export type MultiCallOutput = string;
