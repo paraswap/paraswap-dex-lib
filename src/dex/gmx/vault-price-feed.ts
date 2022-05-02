@@ -3,6 +3,8 @@ import { Address, MultiCallInput, MultiCallOutput } from '../../types';
 import { PoolState, VaultPriceFeedConfig } from './types';
 import { FastPriceFeed } from './fast-price-feed';
 import VaultPriceFeedAbi from '../../abi/gmx/vault-price-feed.json';
+import { ChainLinkSubscriber } from '../../lib/chainlink';
+import { DeepReadonly } from 'ts-essentials';
 
 export class VaultPriceFeed<State> {
   BASIS_POINTS_DIVISOR = 10000n;
@@ -24,6 +26,7 @@ export class VaultPriceFeed<State> {
 
   constructor(
     config: VaultPriceFeedConfig,
+    protected primaryPrices: { [token: string]: ChainLinkSubscriber<State> },
     protected secondaryPrice: FastPriceFeed<State>,
   ) {
     this.isAmmEnabled = config.isAmmEnabled;
@@ -39,7 +42,7 @@ export class VaultPriceFeed<State> {
   }
 
   getPrice(
-    state: PoolState,
+    state: DeepReadonly<State>,
     _token: Address,
     _maximise: boolean,
     _includeAmmPrice: boolean,
@@ -67,7 +70,7 @@ export class VaultPriceFeed<State> {
   }
 
   getPriceV2(
-    state: PoolState,
+    state: DeepReadonly<State>,
     _token: Address,
     _maximise: boolean,
     _includeAmmPrice: boolean,
@@ -78,7 +81,7 @@ export class VaultPriceFeed<State> {
   }
 
   getPriceV1(
-    state: PoolState,
+    state: DeepReadonly<State>,
     _token: Address,
     _maximise: boolean,
     _includeAmmPrice: boolean,
@@ -136,14 +139,14 @@ export class VaultPriceFeed<State> {
     );
   }
 
-  getAmmPrice(state: PoolState, token: Address): bigint {
+  getAmmPrice(state: DeepReadonly<State>, token: Address): bigint {
     throw new Error(
       'getAmmPrice implementation is not complete, devs should disable the dex or complete the implementation',
     );
   }
 
   getPrimaryPrice(
-    state: PoolState,
+    state: DeepReadonly<State>,
     _token: Address,
     _maximise: boolean,
   ): bigint {
@@ -160,38 +163,43 @@ export class VaultPriceFeed<State> {
 
     // IPriceFeed priceFeed = IPriceFeed(priceFeedAddress);
     let price = 0n;
-    const roundId = state.primaryPrices[_token].latestRound;
+    // const roundId = priceFeed.latestRound;
 
-    for (let i = 0; i < this.priceSampleSpace; i++) {
-      if (roundId <= i) {
-        break;
-      }
-      let p = state.primaryPrices[_token].roundData[roundId - i];
+    // for (let i = 0; i < this.priceSampleSpace; i++) {
+    //   if (roundId <= i) {
+    //     break;
+    //   }
 
-      // if (i == 0) {
-      //     const _p = priceFeed.latestAnswer();
-      //     require(_p > 0, "VaultPriceFeed: invalid price");
-      //     p = uint256(_p);
-      // } else {
-      //     (, int256 _p, , ,) = priceFeed.getRoundData(roundId - i);
-      //     require(_p > 0, "VaultPriceFeed: invalid price");
-      //     p = uint256(_p);
-      // }
+    //   if (i == 0) {
+    //       const _p = priceFeed.latestAnswer();
+    //       require(_p > 0, "VaultPriceFeed: invalid price");
+    //       p = uint256(_p);
+    //   } else {
+    //       (, int256 _p, , ,) = priceFeed.getRoundData(roundId - i);
+    //       require(_p > 0, "VaultPriceFeed: invalid price");
+    //       p = uint256(_p);
+    //   }
 
-      if (price == 0n) {
-        price = p;
-        continue;
-      }
+    //   if (price == 0n) {
+    //     price = p;
+    //     continue;
+    //   }
 
-      if (_maximise && p > price) {
-        price = p;
-        continue;
-      }
+    //   if (_maximise && p > price) {
+    //     price = p;
+    //     continue;
+    //   }
 
-      if (!_maximise && p < price) {
-        price = p;
-      }
+    //   if (!_maximise && p < price) {
+    //     price = p;
+    //   }
+    // }
+    if (this.priceSampleSpace > 1) {
+      throw new Error(
+        'Chainlink price feed is not implemented for historical prices',
+      );
     }
+    price = this.primaryPrices[_token].getLatestRoundData(state);
 
     // require(price > 0n, "VaultPriceFeed: could not fetch price");
     if (price <= 0n) throw new Error('VaultPriceFeed: could not fetch price');
@@ -201,13 +209,13 @@ export class VaultPriceFeed<State> {
   }
 
   getSecondaryPrice(
-    poolState: PoolState,
+    state: DeepReadonly<State>,
     _token: Address,
     _referencePrice: bigint,
     _maximise: boolean,
   ): bigint {
     return this.secondaryPrice.getPrice(
-      poolState,
+      state,
       _token,
       _referencePrice,
       _maximise,
@@ -296,7 +304,7 @@ export class VaultPriceFeed<State> {
         multicallOutputs[i++],
       )[0],
       strictStableTokens: tokenAddress.reduce(
-        (acc: { [address: Address]: boolean }, t: Address) => {
+        (acc: { [address: string]: boolean }, t: Address) => {
           acc[t] = FastPriceFeed.interface.decodeFunctionResult(
             'strictStableTokens',
             multicallOutputs[i++],
@@ -306,7 +314,7 @@ export class VaultPriceFeed<State> {
         {},
       ),
       spreadBasisPoints: tokenAddress.reduce(
-        (acc: { [address: Address]: bigint }, t: Address) => {
+        (acc: { [address: string]: bigint }, t: Address) => {
           acc[t] = BigInt(
             FastPriceFeed.interface
               .decodeFunctionResult(
@@ -320,7 +328,7 @@ export class VaultPriceFeed<State> {
         {},
       ),
       isAdjustmentAdditive: tokenAddress.reduce(
-        (acc: { [address: Address]: bigint }, t: Address) => {
+        (acc: { [address: string]: bigint }, t: Address) => {
           acc[t] = BigInt(
             FastPriceFeed.interface
               .decodeFunctionResult(
@@ -334,7 +342,7 @@ export class VaultPriceFeed<State> {
         {},
       ),
       adjustmentBasisPoints: tokenAddress.reduce(
-        (acc: { [address: Address]: bigint }, t: Address) => {
+        (acc: { [address: string]: bigint }, t: Address) => {
           acc[t] = BigInt(
             FastPriceFeed.interface
               .decodeFunctionResult(
@@ -348,8 +356,8 @@ export class VaultPriceFeed<State> {
         {},
       ),
       priceDecimals: tokenAddress.reduce(
-        (acc: { [address: Address]: bigint }, t: Address) => {
-          acc[t] = BigInt(
+        (acc: { [address: string]: number }, t: Address) => {
+          acc[t] = parseInt(
             FastPriceFeed.interface
               .decodeFunctionResult('priceDecimals', multicallOutputs[i++])[0]
               .toString(),

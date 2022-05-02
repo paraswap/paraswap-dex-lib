@@ -1,12 +1,12 @@
-import { PoolState } from './types';
 import { Vault } from './vault';
 import { Address } from '../../types';
+import { DeepReadonly } from 'ts-essentials';
 
-export class VaultUtils {
-  constructor(protected vault: Vault) {}
+export class VaultUtils<State> {
+  constructor(protected vault: Vault<State>) {}
 
   getFeeBasisPoints(
-    state: PoolState,
+    state: DeepReadonly<State>,
     _token: Address,
     _usdgDelta: bigint,
     _feeBasisPoints: bigint,
@@ -17,7 +17,7 @@ export class VaultUtils {
       return _feeBasisPoints;
     }
 
-    const initialAmount = state.vault.usdgAmounts[_token];
+    const initialAmount = this.vault.getUSDGAmount(state, _token);
     let nextAmount = initialAmount + _usdgDelta;
     if (!_increment) {
       nextAmount = _usdgDelta > initialAmount ? 0n : initialAmount - _usdgDelta;

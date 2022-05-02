@@ -51,10 +51,15 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
       const parsed = FastPriceFeed.fastPriceEventsInterface.parseLog(log);
       switch (parsed.name) {
         case 'emitPriceEvent': {
-          state.lastUpdatedAt = parseInt(blockHeader.timestamp);
+          const _state: FastPriceFeedState = state;
+          _state.lastUpdatedAt =
+            typeof blockHeader.timestamp === 'string'
+              ? parseInt(blockHeader.timestamp)
+              : blockHeader.timestamp;
           const tokenAddress = parsed.args._token.toLowerCase();
           if (tokenAddress in state.prices)
-            state.prices[tokenAddress] = BigInt(parsed.args._price.toString());
+            _state.prices[tokenAddress] = BigInt(parsed.args._price.toString());
+          return _state;
         }
         default:
           return null;
@@ -66,11 +71,13 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
   }
 
   getPrice(
-    state: FastPriceFeedState,
+    _state: DeepReadonly<State>,
     _token: Address,
     _refPrice: bigint,
     _maximise: boolean,
   ) {
+    const state = this.lens.get()(_state);
+
     const timestamp = Math.floor(Date.now() / 1000);
     if (timestamp > state.lastUpdatedAt + this.priceDuration) {
       return _refPrice;
@@ -203,13 +210,13 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
     this.tokenAddresses.forEach(
       (t: Address, i: number) =>
         (fastPriceFeedState.prices[t] = BigInt(
-          FastPriceFeedState.interface
+          FastPriceFeed.interface
             .decodeFunctionResult('prices', multicallOutputs[i])[0]
             .toString(),
         )),
     );
     fastPriceFeedState.lastUpdatedAt = parseInt(
-      FastPriceFeedState.interface
+      FastPriceFeed.interface
         .decodeFunctionResult(
           'lastUpdatedAt',
           multicallOutputs[this.tokenAddresses.length],

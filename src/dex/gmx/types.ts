@@ -5,7 +5,7 @@ export type PoolState = {
   primaryPrices: { [poolAddress: string]: ChainLinkState };
   secondaryPrices: FastPriceFeedState;
   vault: VaultState;
-  usdgTotalSupply: USDGState;
+  usdg: USDGState;
 };
 
 export type FastPriceFeedState = {
@@ -29,7 +29,7 @@ export type GMXData = {
 };
 
 export type DexParams = {
-  vaultAddress: Address;
+  vault: Address;
   priceFeed: Address;
   fastPriceFeed: Address;
   fastPriceEvents: Address;
@@ -39,6 +39,7 @@ export type DexParams = {
   // fastPriceFeed.fastPriceEvents() => fastPriceEvents
   // It is added as constants to avoid unnecessary
   // sequential onchain calls
+  usdg: Address;
 };
 
 export type FastPriceFeedConfig = {
@@ -73,4 +74,17 @@ export type VaultConfig = {
   includeAmmPrice: boolean;
   useSwapPricing: boolean;
   totalTokenWeights: bigint;
+};
+
+export type PoolConfig = {
+  vaultAddress: Address;
+  priceFeed: Address;
+  fastPriceFeed: Address;
+  fastPriceEvents: Address;
+  usdgAddress: Address;
+  tokenAddresses: Address[];
+  vaultConfig: VaultConfig;
+  vaultPriceFeedConfig: VaultPriceFeedConfig;
+  fastPriceFeedConfig: FastPriceFeedConfig;
+  chainlink: { [address: string]: { proxy: Address; aggregator: Address } };
 };

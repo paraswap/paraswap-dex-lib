@@ -1,33 +1,53 @@
 import { Interface } from '@ethersproject/abi';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { PartialEventSubscriber } from '../../composed-event-subscriber';
 import { Lens } from '../../lens';
 import VaultABI from '../../abi/gmx/vault.json';
 import { VaultUtils } from './vault-utils';
-import { VaultConfig, VaultState } from './types';
+import {
+  VaultConfig,
+  VaultState,
+  FastPriceFeedConfig,
+  PoolState,
+} from './types';
 import { VaultPriceFeed } from './vault-price-feed';
-import { MultiCallInput, MultiCallOutput, Address } from '../../types';
+import { USDG } from './usdg';
+import {
+  MultiCallInput,
+  MultiCallOutput,
+  Address,
+  Logger,
+  Log,
+} from '../../types';
+import { BlockHeader } from 'web3-eth';
 
-export class Vault<State> {
+export class Vault<State> extends PartialEventSubscriber<State, VaultState> {
   static readonly interface: Interface = new Interface(VaultABI);
 
-  protected vaultUtils: VaultUtils;
+  protected vaultUtils: VaultUtils<State>;
 
-  protected tokenDecimals: { [address: string]: number };
-  protected stableTokens: { [address: string]: boolean };
+  public tokenDecimals: { [address: string]: number };
+  public stableTokens: { [address: string]: boolean };
   protected tokenWeights: { [address: string]: bigint };
-  protected stableSwapFeeBasisPoints: bigint;
-  protected swapFeeBasisPoints: bigint;
-  protected stableTaxBasisPoints: bigint;
-  protected taxBasisPoints: bigint;
-  protected hasDynamicFees: bigint;
+  public stableSwapFeeBasisPoints: bigint;
+  public swapFeeBasisPoints: bigint;
+  public stableTaxBasisPoints: bigint;
+  public taxBasisPoints: bigint;
+  public hasDynamicFees: bigint;
   protected includeAmmPrice: boolean;
   protected useSwapPricing: boolean;
   protected totalTokenWeights: bigint;
 
   constructor(
+    protected vaultAddress: Address,
+    protected tokenAddresses: Address[],
     config: VaultConfig,
     protected vaultPriceFeed: VaultPriceFeed<State>,
+    protected usdg: USDG<State>,
+    lens: Lens<DeepReadonly<State>, DeepReadonly<VaultState>>,
+    logger: Logger,
   ) {
+    super([vaultAddress], lens, logger);
     this.vaultUtils = new VaultUtils(this);
     this.tokenDecimals = config.tokenDecimals;
     this.stableTokens = config.stableTokens;
@@ -42,7 +62,7 @@ export class Vault<State> {
     this.totalTokenWeights = config.totalTokenWeights;
   }
 
-  getMinPrice(state: VaultState, _token: Address): bigint {
+  getMinPrice(state: DeepReadonly<State>, _token: Address): bigint {
     return this.vaultPriceFeed.getPrice(
       state,
       _token,
@@ -52,7 +72,7 @@ export class Vault<State> {
     );
   }
 
-  getMaxPrice(state: VaultState, _token: Address): bigint {
+  getMaxPrice(state: DeepReadonly<State>, _token: Address): bigint {
     return this.vaultPriceFeed.getPrice(
       state,
       _token,
@@ -63,7 +83,7 @@ export class Vault<State> {
   }
 
   getFeeBasisPoints(
-    state: VaultState,
+    state: DeepReadonly<State>,
     _token: Address,
     _usdgDelta: bigint,
     _feeBasisPoints: bigint,
@@ -80,8 +100,8 @@ export class Vault<State> {
     );
   }
 
-  getTargetUsdgAmount(state: VaultState, _token: Address): bigint {
-    const supply = state.usdgTotalSupply;
+  getTargetUsdgAmount(state: DeepReadonly<State>, _token: Address): bigint {
+    const supply = this.usdg.getTotalSupply(state);
     if (supply == 0n) {
       return 0n;
     }
@@ -122,7 +142,148 @@ export class Vault<State> {
     ];
   }
 
-  static getConfig(multicallOutputs: MultiCallOutput[]): FastPriceFeedConfig {
-    throw new Error('fix me');
+  static getConfig(
+    multicallOutputs: MultiCallOutput[],
+    tokenAddresses: Address[],
+  ): VaultConfig {
+    let i = 0;
+    return {
+      tokenDecimals: tokenAddresses.reduce(
+        (acc: { [address: string]: number }, t: Address) => {
+          acc[t] = parseInt(
+            Vault.interface
+              .decodeFunctionResult('tokenDecimals', multicallOutputs[i++])[0]
+              .toString(),
+          );
+          return acc;
+        },
+        {},
+      ),
+      stableTokens: tokenAddresses.reduce(
+        (acc: { [address: string]: boolean }, t: Address) => {
+          acc[t] = Vault.interface.decodeFunctionResult(
+            'stableTokens',
+            multicallOutputs[i++],
+          )[0];
+          return acc;
+        },
+        {},
+      ),
+      tokenWeights: tokenAddresses.reduce(
+        (acc: { [address: string]: bigint }, t: Address) => {
+          acc[t] = BigInt(
+            Vault.interface
+              .decodeFunctionResult('tokenWeights', multicallOutputs[i++])[0]
+              .toString(),
+          );
+          return acc;
+        },
+        {},
+      ),
+      stableSwapFeeBasisPoints: BigInt(
+        Vault.interface
+          .decodeFunctionResult(
+            'stableSwapFeeBasisPoints',
+            multicallOutputs[i++],
+          )[0]
+          .toString(),
+      ),
+      swapFeeBasisPoints: BigInt(
+        Vault.interface
+          .decodeFunctionResult('swapFeeBasisPoints', multicallOutputs[i++])[0]
+          .toString(),
+      ),
+      stableTaxBasisPoints: BigInt(
+        Vault.interface
+          .decodeFunctionResult(
+            'stableTaxBasisPoints',
+            multicallOutputs[i++],
+          )[0]
+          .toString(),
+      ),
+      taxBasisPoints: BigInt(
+        Vault.interface
+          .decodeFunctionResult('taxBasisPoints', multicallOutputs[i++])[0]
+          .toString(),
+      ),
+      hasDynamicFees: Vault.interface.decodeFunctionResult(
+        'hasDynamicFees',
+        multicallOutputs[i++],
+      )[0],
+      includeAmmPrice: Vault.interface.decodeFunctionResult(
+        'includeAmmPrice',
+        multicallOutputs[i++],
+      )[0],
+      useSwapPricing: Vault.interface.decodeFunctionResult(
+        'useSwapPricing',
+        multicallOutputs[i++],
+      )[0],
+      totalTokenWeights: BigInt(
+        Vault.interface
+          .decodeFunctionResult('totalTokenWeights', multicallOutputs[i++])[0]
+          .toString(),
+      ),
+    };
+  }
+
+  public getGenerateStateMultiCallInputs(): MultiCallInput[] {
+    return this.tokenAddresses.map((t: Address) => ({
+      target: this.vaultAddress,
+      callData: Vault.interface.encodeFunctionData('usdgAmounts', [t]),
+    }));
+  }
+
+  public generateState(
+    multicallOutputs: MultiCallOutput[],
+    blockNumber?: number | 'latest',
+  ): DeepReadonly<VaultState> {
+    let vaultState: VaultState = {
+      usdgAmounts: {},
+    };
+    this.tokenAddresses.forEach(
+      (t: Address, i: number) =>
+        (vaultState.usdgAmounts[t] = BigInt(
+          Vault.interface
+            .decodeFunctionResult('usdgAmounts', multicallOutputs[i])[0]
+            .toString(),
+        )),
+    );
+    return vaultState;
+  }
+
+  public getUSDGAmount(state: DeepReadonly<State>, token: Address): bigint {
+    return this.lens.get()(state).usdgAmounts[token];
+  }
+
+  public processLog(
+    state: DeepReadonly<VaultState>,
+    log: Readonly<Log>,
+    blockHeader: Readonly<BlockHeader>,
+  ): AsyncOrSync<VaultState | null> {
+    try {
+      const parsed = Vault.interface.parseLog(log);
+      const _state: VaultState = state;
+      switch (parsed.name) {
+        case 'IncreaseUsdgAmount': {
+          const tokenAddress = parsed.args.token.toLowerCase();
+          const amount = BigInt(parsed.args.amount.toString());
+          if (tokenAddress in state.usdgAmounts)
+            _state.usdgAmounts[tokenAddress] += amount;
+          return _state;
+        }
+        case 'DecreaseUsdgAmount': {
+          const tokenAddress = parsed.args.token.toLowerCase();
+          const amount = BigInt(parsed.args.amount.toString());
+          if (tokenAddress in state.usdgAmounts)
+            _state.usdgAmounts[tokenAddress] -= amount;
+          return _state;
+        }
+        default:
+          return null;
+      }
+    } catch (e) {
+      this.logger.error('Failed to parse log', e);
+      return null;
+    }
   }
 }

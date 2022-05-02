@@ -10,16 +10,17 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { GMXData } from './types';
-import { GMXEventPool } from './pools';
+import { GMXData, DexParams } from './types';
+import { GMXEventPool } from './pool';
 import { SimpleExchange } from '../simple-exchange';
 import { GMXConfig, Adapters } from './config';
 
 export class GMX extends SimpleExchange implements IDex<GMXData> {
-  protected eventPools: GMXEventPool;
+  protected pool: GMXEventPool | null = null;
+  protected supportedTokens: { [address: string]: boolean } = {};
 
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -33,11 +34,10 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
-  ) // TODO: add any additional optional params to support other fork DEXes
-  {
+    protected params: DexParams = GMXConfig[dexKey][network],
+  ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new GMXEventPool(dexKey, network, dexHelper, this.logger);
   }
 
   // Initialize pricing is called once in the start of
@@ -45,7 +45,21 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    const config = await GMXEventPool.getConfig(
+      this.params,
+      blockNumber,
+      this.dexHelper.multiContract,
+    );
+    config.tokenAddresses.forEach(
+      (token: Address) => (this.supportedTokens[token] = true),
+    );
+    this.pool = new GMXEventPool(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      this.logger,
+      config,
+    );
   }
 
   // Returns the list of contract adapters (name and index)
@@ -64,8 +78,13 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    throw new Error('Fix me');
-    // TODO: complete me!
+    if (side === SwapSide.BUY || !this.pool) return [];
+    const srcAddress = srcToken.address.toLowerCase();
+    const destAddress = destToken.address.toLowerCase();
+    if (this.supportedTokens[srcAddress] && this.supportedTokens[destAddress]) {
+      return [`${this.dexKey}_${srcAddress}`, `${this.dexKey}_${destAddress}`];
+    }
+    return [];
   }
 
   // Returns pool prices for amounts.
@@ -80,8 +99,38 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<GMXData>> {
-    throw new Error('Fix me');
-    // TODO: complete me!
+    if (side === SwapSide.BUY || !this.pool) return null;
+    const srcAddress = srcToken.address.toLowerCase();
+    const destAddress = destToken.address.toLowerCase();
+    if (
+      !(this.supportedTokens[srcAddress] && this.supportedTokens[destAddress])
+    )
+      return null;
+    const srcPoolIdentifier = `${this.dexKey}_${srcAddress}`;
+    const destPoolIdentifier = `${this.dexKey}_${destAddress}`;
+    const pools = [srcPoolIdentifier, destPoolIdentifier];
+    if (limitPools && pools.some(p => !limitPools.includes(p))) return null;
+
+    const unitVolume = getBigIntPow(srcToken.decimals);
+    const prices = await this.pool.getAmountOut(
+      srcAddress,
+      destAddress,
+      [unitVolume, ...amounts],
+      blockNumber,
+    );
+
+    if (!prices) return null;
+
+    return [
+      {
+        prices: prices.slice(1),
+        unit: prices[0],
+        gasCost: 0, // TODO: fix gas cost
+        exchange: this.dexKey,
+        data: {},
+        poolAddresses: [this.params.vault],
+      },
+    ];
   }
 
   // Encode params required by the exchange adapter

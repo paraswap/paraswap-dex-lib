@@ -1,105 +1,92 @@
 import { DeepReadonly } from 'ts-essentials';
-import { Address, Log, Logger } from '../../types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import { Lens, lens } from '../../lens';
+import { Address, Log, Logger, MultiCallInput } from '../../types';
+import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState } from './types';
+import { PoolState, DexParams, PoolConfig } from './types';
+import { ChainLinkSubscriber } from '../../lib/chainlink';
+import { FastPriceFeed } from './fast-price-feed';
+import { VaultPriceFeed } from './vault-price-feed';
+import { Vault } from './vault';
+import { USDG } from './usdg';
+import { Contract } from 'web3-eth-contract';
 
-export class GMXEventPool extends StatefulEventSubscriber<PoolState> {
-  handlers: {
-    [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
-  } = {};
-
-  logDecoder: (log: Log) => any;
-
-  addressesSubscribed: string[];
-
+export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
   PRICE_PRECISION = 10n ** 30n;
   USDG_DECIMALS = 18;
   BASIS_POINTS_DIVISOR = 10000n;
+
+  vault: Vault<PoolState>;
 
   constructor(
     protected parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    // TODO: add any additional params required for event subscriber
+    config: PoolConfig,
   ) {
-    super(parentName, logger);
-
-    // TODO: make logDecoder decode logs that
-    // this.logDecoder = (log: Log) => this.interface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
-
-    // Add handlers
-    // this.handlers['myEvent'] = this.handleMyEvent.bind(this);
-  }
-
-  /**
-   * The function is called everytime any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
-  protected processLog(
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    try {
-      const event = this.logDecoder(log);
-      if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
-      }
-      return state;
-    } catch (e) {
-      this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
-        e,
-      );
-      return null;
-    }
-  }
-
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenrate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subsriber at blocknumber
-   */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    // TODO: complete me!
-    // Chainlink price (getPrimaryPrice)
-    // FastPriceFeed prices for all the tokens (tracked by FastPriceEvents)
-    // usdgAmounts for all the tokens (tracked by IncreaseUsdgAmount, DecreaseUsdgAmount)
-    // usdg total supply tracked by (mint and burn ERC20 events)
-    throw new Error('fix this');
-  }
-
-  async setupFixedState(blockNumber: number) {
-    // vault token addresses
-    // vault token decimals
-    // vault stable tokens
-    // vault stableSwapFeeBasisPoints and swapFeeBasisPoints
-    // vault stableTaxBasisPoints and taxBasisPoints
-    // vault hasDynamicFees
-    // vault tokenWeights for each token
-    // vaultPriceFeed isAMMEnabled (should throw error if it is)
-    // vaultPriceFeed isSecondaryPriceEnabled
-    // vaultPriceFeed strictStableTokens
-    // vaultPriceFeed maxStrictPriceDeviation
-    // vaultPriceFeed spreadBasisPoints for each token
-    // FastPriceFeed priceDuration
-    // FastPriceFeed maxDeviationBasisPoints
-    // FastPriceFeed favorFastPrice()
-    // FastPriceFeed volBasisPoints
-    // FastPriceFeed priceSampleSpace
+    const chainlinkMap = Object.entries(config.chainlink).reduce(
+      (
+        acc: { [address: string]: ChainLinkSubscriber<PoolState> },
+        [key, value],
+      ) => {
+        acc[key] = new ChainLinkSubscriber<PoolState>(
+          value.proxy,
+          value.aggregator,
+          lens<DeepReadonly<PoolState>>().primaryPrices[key],
+          dexHelper.getLogger(`${key} ChainLink for ${parentName}-${network}`),
+        );
+        return acc;
+      },
+      {},
+    );
+    const fastPriceFeed = new FastPriceFeed(
+      config.fastPriceFeed,
+      config.fastPriceEvents,
+      config.tokenAddresses,
+      config.fastPriceFeedConfig,
+      lens<DeepReadonly<PoolState>>().secondaryPrices,
+      dexHelper.getLogger(`${parentName}-${network} fastPriceFeed`),
+    );
+    const vaultPriceFeed = new VaultPriceFeed(
+      config.vaultPriceFeedConfig,
+      chainlinkMap,
+      fastPriceFeed,
+    );
+    const usdg = new USDG(
+      config.usdgAddress,
+      lens<DeepReadonly<PoolState>>().usdg,
+      dexHelper.getLogger(`${parentName}-${network} USDG`),
+    );
+    const vault = new Vault(
+      config.vaultAddress,
+      config.tokenAddresses,
+      config.vaultConfig,
+      vaultPriceFeed,
+      usdg,
+      lens<DeepReadonly<PoolState>>().vault,
+      dexHelper.getLogger(`${parentName}-${network} vault`),
+    );
+    super(
+      parentName,
+      dexHelper.getLogger(`${parentName}-${network}`),
+      dexHelper,
+      [...Object.values(chainlinkMap), fastPriceFeed, usdg, vault],
+      {
+        primaryPrices: {},
+        secondaryPrices: {
+          lastUpdatedAt: 0,
+          prices: {},
+        },
+        vault: {
+          usdgAmounts: {},
+        },
+        usdg: {
+          totalSupply: 0n,
+        },
+      },
+    );
+    this.vault = vault;
   }
 
   async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {
@@ -118,23 +105,21 @@ export class GMXEventPool extends StatefulEventSubscriber<PoolState> {
     _amountsIn: bigint[],
     blockNumber: number,
   ): Promise<bigint[] | null> {
-    if (!this.vault) return null;
-    const vault = this.vault!;
     const state = await this.getStateOrGenerate(blockNumber);
-    const priceIn = vault.getMinPrice(state, _tokenIn);
-    const priceOut = vault.getMaxPrice(state, _tokenOut);
+    const priceIn = this.vault.getMinPrice(state, _tokenIn);
+    const priceOut = this.vault.getMaxPrice(state, _tokenOut);
 
-    const tokenInDecimals = vault.tokenDecimals[_tokenIn];
-    const tokenOutDecimals = vault.tokenDecimals[_tokenOut];
+    const tokenInDecimals = this.vault.tokenDecimals[_tokenIn];
+    const tokenOutDecimals = this.vault.tokenDecimals[_tokenOut];
 
     const isStableSwap =
-      vault.stableTokens[_tokenIn] && vault.stableTokens[_tokenOut];
+      this.vault.stableTokens[_tokenIn] && this.vault.stableTokens[_tokenOut];
     const baseBps = isStableSwap
-      ? vault.stableSwapFeeBasisPoints
-      : vault.swapFeeBasisPoints;
+      ? this.vault.stableSwapFeeBasisPoints
+      : this.vault.swapFeeBasisPoints;
     const taxBps = isStableSwap
-      ? vault.stableTaxBasisPoints
-      : vault.taxBasisPoints;
+      ? this.vault.stableTaxBasisPoints
+      : this.vault.taxBasisPoints;
     const USDGUnit = BigInt(10 ** this.USDG_DECIMALS);
     const tokenInUnit = BigInt(10 ** tokenInDecimals);
     const tokenOutUnit = BigInt(10 ** tokenOutDecimals);
@@ -145,7 +130,7 @@ export class GMXEventPool extends StatefulEventSubscriber<PoolState> {
         let usdgAmount = (_amountIn * priceIn) / this.PRICE_PRECISION;
         usdgAmount = (usdgAmount * USDGUnit) / tokenInUnit;
 
-        const feesBasisPoints0 = vault.getFeeBasisPoints(
+        const feesBasisPoints0 = this.vault.getFeeBasisPoints(
           state,
           _tokenIn,
           usdgAmount,
@@ -153,7 +138,7 @@ export class GMXEventPool extends StatefulEventSubscriber<PoolState> {
           taxBps,
           true,
         );
-        const feesBasisPoints1 = vault.getFeeBasisPoints(
+        const feesBasisPoints1 = this.vault.getFeeBasisPoints(
           state,
           _tokenOut,
           usdgAmount,
@@ -176,5 +161,149 @@ export class GMXEventPool extends StatefulEventSubscriber<PoolState> {
         this.BASIS_POINTS_DIVISOR;
       return amountOutAfterFees;
     });
+  }
+
+  static async getConfig(
+    dexParams: DexParams,
+    blockNumber: number,
+    multiContract: Contract,
+  ): Promise<PoolConfig> {
+    // get tokens count
+    const tokenCountResult = (
+      await multiContract.methods
+        .aggregate([
+          {
+            callData: Vault.interface.encodeFunctionData(
+              'allWhitelistedTokensLength',
+            ),
+            target: dexParams.vault,
+          },
+        ])
+        .call({}, blockNumber)
+    ).returnData;
+    const tokensCount = parseInt(
+      Vault.interface
+        .decodeFunctionResult('allWhitelistedTokensLength', tokenCountResult[0])
+        .toString(),
+    );
+
+    // get tokens
+    const getTokensCalldata = new Array(tokensCount).fill(0).map((_, i) => {
+      return {
+        calldata: Vault.interface.encodeFunctionData('allWhitelistedTokens', [
+          i,
+        ]),
+        target: dexParams.vault,
+      };
+    });
+    const tokensResult = (
+      await multiContract.methods
+        .aggregate(getTokensCalldata)
+        .call({}, blockNumber)
+    ).returnData;
+    const tokens = tokensResult.map((t: any) =>
+      Vault.interface
+        .decodeFunctionResult('allWhitelistedTokens', t)[0]
+        .toString()
+        .toLowerCase(),
+    );
+
+    // get price chainlink pricefeed
+    const getPriceFeedCalldata = new Array(tokensCount).fill(0).map((_, i) => {
+      return {
+        calldata: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [
+          i,
+        ]),
+        target: dexParams.priceFeed,
+      };
+    });
+    const priceFeedResult = (
+      await multiContract.methods
+        .aggregate(getPriceFeedCalldata)
+        .call({}, blockNumber)
+    ).returnData;
+    const priceFeeds = priceFeedResult.map((p: any) =>
+      VaultPriceFeed.interface
+        .decodeFunctionResult('priceFeeds', p)[0]
+        .toString()
+        .toLowerCase(),
+    );
+
+    // get config for all event listeners
+    let multicallSlices: [number, number][] = [];
+    let multiCallData: MultiCallInput[] = [];
+    let i = 0;
+    for (let priceFeed of priceFeeds) {
+      const chainlinkConfigCallData =
+        ChainLinkSubscriber.getReadAggregatorMultiCallInput(priceFeed);
+      multiCallData.push(chainlinkConfigCallData);
+      multicallSlices.push([i, i + 1]);
+    }
+
+    const fastPriceFeedConfigCallData = FastPriceFeed.getConfigMulticallInputs(
+      dexParams.fastPriceFeed,
+    );
+    multiCallData.push(...fastPriceFeedConfigCallData);
+    multicallSlices.push([i, i + fastPriceFeedConfigCallData.length]);
+
+    const vaultPriceFeedConfigCallData =
+      VaultPriceFeed.getConfigMulticallInputs(dexParams.priceFeed, tokens);
+    multiCallData.push(...vaultPriceFeedConfigCallData);
+    multicallSlices.push([i, i + vaultPriceFeedConfigCallData.length]);
+
+    const vaultConfigCallData = Vault.getConfigMulticallInputs(
+      dexParams.vault,
+      tokens,
+    );
+    multiCallData.push(...vaultConfigCallData);
+    multicallSlices.push([i, i + vaultConfigCallData.length]);
+
+    const configResults = (
+      await multiContract.methods.aggregate(multiCallData).call({}, blockNumber)
+    ).returnData;
+
+    const chainlink: {
+      [address: string]: { proxy: Address; aggregator: Address };
+    } = {};
+    for (let token of tokens) {
+      const aggregator = ChainLinkSubscriber.readAggregator(
+        configResults.slice(...multicallSlices.shift()!)[0],
+      );
+      chainlink[token] = {
+        proxy: priceFeeds.shift(),
+        aggregator,
+      };
+    }
+
+    const fastPriceFeedConfigResults = configResults.slice(
+      ...multicallSlices.shift()!,
+    );
+    const fastPriceFeedConfig = FastPriceFeed.getConfig(
+      fastPriceFeedConfigResults,
+    );
+
+    const vaultPriceFeedConfigResults = configResults.slice(
+      ...multicallSlices.shift()!,
+    );
+    const vaultPriceFeedConfig = VaultPriceFeed.getConfig(
+      vaultPriceFeedConfigResults,
+      tokens,
+    );
+
+    const vaultConfigResults = configResults.slice(...multicallSlices.shift()!);
+    const vaultConfig = Vault.getConfig(vaultConfigResults, tokens);
+
+    return {
+      vaultAddress: dexParams.vault,
+      priceFeed: dexParams.priceFeed,
+      fastPriceFeed: dexParams.fastPriceFeed,
+      fastPriceEvents: dexParams.fastPriceEvents,
+      usdgAddress: dexParams.usdg,
+      tokenAddresses: tokens,
+      vaultConfig,
+      vaultPriceFeedConfig,
+      fastPriceFeedConfig,
+      chainlink,
+    };
   }
 }
