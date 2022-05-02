@@ -132,11 +132,14 @@ export class Nerve
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    const _srcToken = wrapETH(srcToken, this.network);
+    const _destToken = wrapETH(destToken, this.network);
+
     return this.allPools
       .filter(pool => {
         return (
-          pool.tokenAddresses.includes(srcToken.address.toLowerCase()) &&
-          pool.tokenAddresses.includes(destToken.address.toLowerCase())
+          pool.tokenAddresses.includes(_srcToken.address.toLowerCase()) &&
+          pool.tokenAddresses.includes(_destToken.address.toLowerCase())
         );
       })
       .map(pool => Nerve.getIdentifier(this.dexKey, pool.address));
