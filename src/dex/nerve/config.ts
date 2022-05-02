@@ -5,7 +5,6 @@ import { Network } from '../../constants';
 import nervePoolABI from '../../abi/nerve/nerve-pool.json';
 import axialPoolABI from '../../abi/nerve/axial-pool.json';
 import ironV2PoolABI from '../../abi/nerve/iron-v2-pool.json';
-import { JsonFragment } from '@ethersproject/abi';
 
 export const threePoolName = 'ThreePool';
 
@@ -448,7 +447,6 @@ export const NerveConfig: DexConfigMap<DexParams> = {
   },
 };
 
-export const NERVE_CHUNKS = 10;
 export const NERVE_GAS_COST = 200 * 1000;
 
 export const Adapters: Record<number, AdapterMappings> = {
