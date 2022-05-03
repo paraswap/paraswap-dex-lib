@@ -23,7 +23,7 @@ export const Adapters: {
     [SwapSide.SELL]: [
       {
         name: 'AvalancheAdapter01',
-        index: 0, // TODO: fix the index as per the latest adapter
+        index: 11,
       },
     ],
   },
