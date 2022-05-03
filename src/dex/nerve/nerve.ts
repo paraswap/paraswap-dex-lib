@@ -73,7 +73,6 @@ export class Nerve
   async setupEventPool(poolConfig: NervePoolConfig, blockNumber: number) {
     const poolIdentifier = Nerve.getIdentifier(this.dexKey, poolConfig.address);
 
-    // We don't support Metapool yet
     if (!poolConfig.isMetapool) {
       const newPool = new NerveEventPool(
         this.dexKey,
