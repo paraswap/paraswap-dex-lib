@@ -30,6 +30,7 @@ import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
+import { Nerve } from './nerve/nerve';
 import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
@@ -74,6 +75,7 @@ const Dexes = [
   KyberDmm,
   Weth,
   MakerPsm,
+  Nerve,
   Platypus,
   GMX,
 ];

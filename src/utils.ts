@@ -1,4 +1,5 @@
-import { BI_POWS } from './bigint-constants';
+import { SwapSide } from 'paraswap-core';
+import { BI_MAX_UINT, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { Address, Token, DexConfigMap } from './types';
 
@@ -65,6 +66,73 @@ export function getDexKeysWithNetwork<T>(
     key: dKey,
     networks: Object.keys(dValue).map(n => parseInt(n)),
   }));
+}
+
+// We assume that the rate always gets worse when be go bigger in volume.
+// Both oldVolume and newVolume are sorted
+// Considering these assumption, whenever we don't have a price we consider
+// the price for the next volume price available and interpolate linearly.
+// Interpolate can be useful in two cases
+// -> you have a smaller chunked prices and you want go to a higher chunked prices
+// -> you have a linear prices and you want go to a not skewed prices
+// -> could be used by the order book exchanges as an orderbook works almost with the same principles.
+// p = p[i-1] + (p[i] - p[i-1])/(q[i]-q[i-1])*(v-q[i-1])
+export function interpolate(
+  oldVolume: bigint[],
+  oldPrices: bigint[],
+  newVolume: bigint[],
+  side: SwapSide,
+): bigint[] {
+  let maxPrice = oldPrices[0];
+  let isValid = [true];
+  for (let p of oldPrices.slice(1)) {
+    if (p >= maxPrice) {
+      maxPrice = p;
+      isValid.push(true);
+    } else {
+      isValid.push(false);
+    }
+  }
+
+  let i = 0;
+  return newVolume.map(v => {
+    if (v === 0n) return 0n;
+
+    while (i < oldVolume.length && v > oldVolume[i]) i++;
+
+    // if we dont have any more prices for a bigger volume return last price for sell and infinity for buy
+    if (i >= oldVolume.length) {
+      return !isValid[oldPrices.length - 1]
+        ? 0n
+        : side === SwapSide.SELL
+        ? oldPrices[oldPrices.length - 1]
+        : BI_MAX_UINT;
+    }
+
+    if (!isValid[i]) return 0n;
+
+    // if the current volume is equal to oldVolume then just use that
+    if (oldVolume[i] === v) return oldPrices[i];
+
+    if (i > 0 && !isValid[i - 1]) return 0n;
+
+    // As we know that derivative of the prices can't go up we apply a linear interpolation
+    const lastOldVolume = i > 0 ? oldVolume[i - 1] : 0n;
+    const lastOldPrice = i > 0 ? oldPrices[i - 1] : 0n;
+
+    // Old code - this doesn't work because slope can be very small and gets
+    // rounded badly in bignumber.js, so need to do the division later
+    //const slope = oldPrices[i]
+    //  .minus(lastOldPrice)
+    //  .div(oldVolume[i].minus(lastOldVolume));
+    //return lastOldPrice.plus(slope.times(v.minus(lastOldVolume)));
+
+    return (
+      lastOldPrice +
+      ((oldPrices[i] - lastOldPrice) * (v - lastOldVolume)) /
+        (oldVolume[i] - lastOldVolume)
+    );
+  });
 }
 
 // This is needed in order to not modify existing logic and use this wrapper

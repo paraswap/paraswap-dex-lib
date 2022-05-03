@@ -133,7 +133,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
     [Network.AVALANCHE]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/baguette-exchange/baguette',
-      factoryAddress: '0x0841bd0b734e4f5853f0dd8d7ea041c241fb0da6',
+      factoryAddress: '0x3587b8c0136c2c3605a9e5b03ab54da3e4044b50',
       initCode:
         '0xf4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b',
       poolGasCost: 80 * 1000,
