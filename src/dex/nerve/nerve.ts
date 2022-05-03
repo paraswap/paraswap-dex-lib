@@ -94,9 +94,10 @@ export class Nerve
         blockNumber,
       );
     } else {
-      const message = `We don't support metapools for Nerve. Check config: ${poolConfig.name}`;
-      this.logger.error(message);
-      throw new Error(message);
+      this.logger.warn(
+        `We don't support metapools for Nerve. Check config: ${poolConfig.name}`,
+      );
+      // No need to throw because we want to initialize other pools
     }
   }
 
