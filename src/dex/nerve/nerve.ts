@@ -27,6 +27,7 @@ import {
   OptimizedNerveData,
   NervePoolFunctions,
   NervePoolSwapParams,
+  NervePoolConfig,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { NerveConfig, Adapters, NERVE_GAS_COST } from './config';
@@ -69,27 +70,41 @@ export class Nerve
     return Object.values(this.eventPools);
   }
 
+  async setupEventPool(poolConfig: NervePoolConfig, blockNumber: number) {
+    const poolIdentifier = Nerve.getIdentifier(this.dexKey, poolConfig.address);
+
+    // We don't support Metapool yet
+    if (!poolConfig.isMetapool) {
+      const newPool = new NerveEventPool(
+        this.dexKey,
+        this.network,
+        this.dexHelper,
+        this.logger,
+        poolConfig.name,
+      );
+      this.eventPools[poolIdentifier] = newPool;
+
+      // Generate first state for the blockNumber and subscribe to logs
+      const newPoolState = await newPool.generateState(blockNumber);
+      newPool.setState(newPoolState, blockNumber);
+
+      this.dexHelper.blockManager.subscribeToLogs(
+        newPool,
+        newPool.addressesSubscribed,
+        blockNumber,
+      );
+    } else {
+      const message = `We don't support metapools for Nerve. Check config: ${poolConfig.name}`;
+      this.logger.error(message);
+      throw new Error(message);
+    }
+  }
+
   async initializePricing(blockNumber: number) {
     await Promise.all(
-      Object.values(this.poolConfigs).map(poolConfig => {
-        const poolIdentifier = Nerve.getIdentifier(
-          this.dexKey,
-          poolConfig.address,
-        );
-
-        // We don't support Metapool yet
-        if (!poolConfig.isMetapool) {
-          this.eventPools[poolIdentifier] = new NerveEventPool(
-            this.dexKey,
-            this.network,
-            this.dexHelper,
-            this.logger,
-            poolConfig.name,
-          );
-          // Generate first state for the blockNumber
-          return this.eventPools[poolIdentifier].setup(blockNumber);
-        }
-      }),
+      Object.values(this.poolConfigs).map(
+        async poolConfig => await this.setupEventPool(poolConfig, blockNumber),
+      ),
     );
   }
 
