@@ -17,15 +17,25 @@ import { GMXData, DexParams } from './types';
 import { GMXEventPool } from './pool';
 import { SimpleExchange } from '../simple-exchange';
 import { GMXConfig, Adapters } from './config';
+import { wrapETH } from '../../utils';
+import { Vault } from './vault';
+import ERC20ABI from '../../abi/erc20.json';
 
 export class GMX extends SimpleExchange implements IDex<GMXData> {
   protected pool: GMXEventPool | null = null;
-  protected supportedTokens: { [address: string]: boolean } = {};
+  protected supportedTokensMap: { [address: string]: boolean } = {};
+  // supportedTokens is only used by the pooltracker
+  protected supportedTokens: Token[] = [];
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly needWrapNative = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(GMXConfig);
+
+  public static erc20Interface = new Interface(ERC20ABI);
+
+  vaultUSDBalance: number = 0;
 
   logger: Logger;
 
@@ -51,7 +61,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       this.dexHelper.multiContract,
     );
     config.tokenAddresses.forEach(
-      (token: Address) => (this.supportedTokens[token] = true),
+      (token: Address) => (this.supportedTokensMap[token] = true),
     );
     this.pool = new GMXEventPool(
       this.dexKey,
@@ -84,9 +94,12 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY || !this.pool) return [];
-    const srcAddress = srcToken.address.toLowerCase();
-    const destAddress = destToken.address.toLowerCase();
-    if (this.supportedTokens[srcAddress] && this.supportedTokens[destAddress]) {
+    const srcAddress = wrapETH(srcToken, this.network).address.toLowerCase();
+    const destAddress = wrapETH(destToken, this.network).address.toLowerCase();
+    if (
+      this.supportedTokensMap[srcAddress] &&
+      this.supportedTokensMap[destAddress]
+    ) {
       return [`${this.dexKey}_${srcAddress}`, `${this.dexKey}_${destAddress}`];
     }
     return [];
@@ -105,10 +118,13 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<GMXData>> {
     if (side === SwapSide.BUY || !this.pool) return null;
-    const srcAddress = srcToken.address.toLowerCase();
-    const destAddress = destToken.address.toLowerCase();
+    const srcAddress = wrapETH(srcToken, this.network).address.toLowerCase();
+    const destAddress = wrapETH(destToken, this.network).address.toLowerCase();
     if (
-      !(this.supportedTokens[srcAddress] && this.supportedTokens[destAddress])
+      !(
+        this.supportedTokensMap[srcAddress] &&
+        this.supportedTokensMap[destAddress]
+      )
     )
       return null;
     const srcPoolIdentifier = `${this.dexKey}_${srcAddress}`;
@@ -138,9 +154,6 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     ];
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() couls be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -149,43 +162,111 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     data: GMXData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    throw new Error('Fix me');
-    // TODO: complete me!
+    return {
+      targetExchange: this.params.vault,
+      payload: '0x',
+      networkFee: '0',
+    };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
-  async getSimpleParam(
+  getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
     data: GMXData,
     side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    throw new Error('Fix me');
-    // TODO: complete me!
+  ): SimpleExchangeParam {
+    return {
+      callees: [srcToken, this.params.vault],
+      calldata: [
+        GMX.erc20Interface.encodeFunctionData('transfer', [
+          this.params.vault,
+          srcAmount,
+        ]),
+        Vault.interface.encodeFunctionData('swap', [
+          srcToken,
+          destToken,
+          this.augustusAddress,
+        ]),
+      ],
+      values: ['0', '0'],
+      networkFee: '0',
+    };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  updatePoolState(): Promise<void> {
-    throw new Error('Fix me');
-    // TODO: complete me!
+  async updatePoolState(): Promise<void> {
+    if (!this.supportedTokens.length) {
+      const tokenAddresses = await GMXEventPool.getWhitelistedTokens(
+        this.params.vault,
+        'latest',
+        this.dexHelper.multiContract,
+      );
+
+      const decimalsCallData =
+        GMX.erc20Interface.encodeFunctionData('decimals');
+      const tokenBalanceMultiCall = tokenAddresses.map(t => ({
+        target: t,
+        callData: decimalsCallData,
+      }));
+      const res = (
+        await this.dexHelper.multiContract.methods
+          .aggregate(tokenBalanceMultiCall)
+          .call()
+      ).returnData;
+
+      const tokenDecimals = res.map((r: any) =>
+        parseInt(
+          GMX.erc20Interface.decodeFunctionResult('decimals', r)[0].toString(),
+        ),
+      );
+
+      this.supportedTokens = tokenAddresses.map((t, i) => ({
+        address: t,
+        decimals: tokenDecimals[i],
+      }));
+    }
+
+    const erc20BalanceCalldata = GMX.erc20Interface.encodeFunctionData(
+      'balanceOf',
+      [this.params.vault],
+    );
+    const tokenBalanceMultiCall = this.supportedTokens.map(t => ({
+      target: t.address,
+      callData: erc20BalanceCalldata,
+    }));
+    const res = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(tokenBalanceMultiCall)
+        .call()
+    ).returnData;
+    const tokenBalances = res.map((r: any) =>
+      BigInt(
+        GMX.erc20Interface.decodeFunctionResult('balanceOf', r)[0].toString(),
+      ),
+    );
+    // TODO: uncomment this if the DexHelper getTokenUSDPrice is added
+    // const tokenBalancesUSD = tokens.map((t, i) => this.dexHelper.getTokenUSDPrice(t.address, tokenBalances[i]));
+    // this.vaultUSDBalance = tokenBalancesUSD.reduce((sum: number, curr: number) => sum + curr);
   }
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
-    tokenAddress: Address,
+    _tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    throw new Error('Fix me');
-    //TODO: complete me!
+    const tokenAddress = _tokenAddress.toLowerCase();
+    if (!this.supportedTokens.some(t => t.address === tokenAddress)) return [];
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.params.vault,
+        connectorTokens: this.supportedTokens.filter(
+          t => t.address !== tokenAddress,
+        ),
+        liquidityUSD: this.vaultUSDBalance,
+      },
+    ];
   }
 }

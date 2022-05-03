@@ -163,11 +163,11 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     });
   }
 
-  static async getConfig(
-    dexParams: DexParams,
-    blockNumber: number,
+  static async getWhitelistedTokens(
+    vaultAddress: Address,
+    blockNumber: number | 'latest',
     multiContract: Contract,
-  ): Promise<PoolConfig> {
+  ) {
     // get tokens count
     const tokenCountResult = (
       await multiContract.methods
@@ -176,7 +176,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
             callData: Vault.interface.encodeFunctionData(
               'allWhitelistedTokensLength',
             ),
-            target: dexParams.vault,
+            target: vaultAddress,
           },
         ])
         .call({}, blockNumber)
@@ -193,7 +193,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
         callData: Vault.interface.encodeFunctionData('allWhitelistedTokens', [
           i,
         ]),
-        target: dexParams.vault,
+        target: vaultAddress,
       };
     });
     const tokensResult = (
@@ -205,6 +205,19 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       Vault.interface
         .decodeFunctionResult('allWhitelistedTokens', t)[0]
         .toLowerCase(),
+    );
+    return tokens;
+  }
+
+  static async getConfig(
+    dexParams: DexParams,
+    blockNumber: number | 'latest',
+    multiContract: Contract,
+  ): Promise<PoolConfig> {
+    const tokens = await this.getWhitelistedTokens(
+      dexParams.vault,
+      blockNumber,
+      multiContract,
     );
 
     // get price chainlink pricefeed

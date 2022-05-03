@@ -59,47 +59,16 @@ describe('GMX', function () {
     }
   });
 
-  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const gmx = new GMX(network, dexKey, dexHelper);
-
-    await gmx.initializePricing(blocknumber);
-
-    const pools = await gmx.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.BUY,
-      blocknumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
-
-    expect(pools.length).toBeGreaterThan(0);
-
-    const poolPrices = await gmx.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.BUY,
-      blocknumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
-
-    expect(poolPrices).not.toBeNull();
-    if (gmx.hasConstantPriceLargeAmounts) {
-      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-    } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
-    }
-  });
-
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
     const gmx = new GMX(network, dexKey, dexHelper);
 
+    await gmx.updatePoolState();
     const poolLiquidity = await gmx.getTopPoolsForToken(TokenA.address, 10);
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+    console.log(
+      `${TokenASymbol} Top Pools:`,
+      JSON.stringify(poolLiquidity, null, 2),
+    );
 
     if (!gmx.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);

@@ -75,6 +75,7 @@ const Dexes = [
   Weth,
   MakerPsm,
   Platypus,
+  GMX,
 ];
 
 const AdapterNameAddressMap: {
