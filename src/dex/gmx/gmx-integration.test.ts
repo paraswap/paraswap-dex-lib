@@ -1,16 +1,19 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { Interface } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { GMX } from './gmx';
+import { GMXConfig } from './config';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import ReaderABI from '../../abi/gmx/reader.json';
 
 const network = Network.AVALANCHE;
 const TokenASymbol = 'USDCe';
@@ -19,9 +22,19 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'WAVAX';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [0n, 1000000000n, 2000000000n];
+const amounts = [
+  0n,
+  1000000000n,
+  2000000000n,
+  3000000000n,
+  4000000000n,
+  5000000000n,
+];
 
 const dexKey = 'GMX';
+const params = GMXConfig[dexKey][network];
+const readerInterface = new Interface(ReaderABI);
+const readerAddress = '0x67b789D48c926006F5132BFCe4e976F0A7A63d5D';
 
 describe('GMX', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -57,6 +70,30 @@ describe('GMX', function () {
     } else {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     }
+
+    // Do on chain pricing based on reader to compare
+    const readerCallData = amounts.map(a => ({
+      target: readerAddress,
+      callData: readerInterface.encodeFunctionData('getAmountOut', [
+        params.vault,
+        TokenA.address,
+        TokenB.address,
+        a.toString(),
+      ]),
+    }));
+
+    const readerResult = (
+      await dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blocknumber)
+    ).returnData;
+    const expectedPrices = readerResult.map((p: any) =>
+      BigInt(
+        readerInterface.decodeFunctionResult('getAmountOut', p)[0].toString(),
+      ),
+    );
+
+    expect(poolPrices![0].prices).toEqual(expectedPrices);
   });
 
   it('getTopPoolsForToken', async function () {
