@@ -36,6 +36,10 @@ export async function testEventSubscriber<SubscriberState>(
   blockNumber: number,
   cacheKey: string,
   provider: Provider,
+  stateCompare?: (
+    state: SubscriberState,
+    expectedState: SubscriberState,
+  ) => void,
 ) {
   // Get state of the subscriber block before the event was released
   let poolState = getSavedState(blockNumber - 1, cacheKey);
@@ -93,7 +97,15 @@ export async function testEventSubscriber<SubscriberState>(
   const newPoolState = eventSubscriber.getState(blockNumber);
 
   // Expect the updated state to be same as the expected state
-  expect(newPoolState).toEqual(expectedNewPoolState);
+  if (stateCompare) {
+    expect(newPoolState).not.toBeNull();
+    stateCompare(
+      newPoolState as SubscriberState,
+      expectedNewPoolState as SubscriberState,
+    );
+  } else {
+    expect(newPoolState).toEqual(expectedNewPoolState);
+  }
 }
 
 export function deepTypecast<T>(

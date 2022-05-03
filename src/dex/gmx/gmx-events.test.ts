@@ -20,6 +20,23 @@ async function fetchPoolState(
   return gmxPool.generateState(blockNumber);
 }
 
+function compareState(state: PoolState, expectedState: PoolState) {
+  // timestamp can't be compared exactly as the event released
+  // doesn't have the timepstamp. It is safe to consider the
+  // timestamp as the blocktime as the max deviation is bounded
+  // on the contract.
+  const stateWitoutTimestamp = (state: PoolState) => ({
+    ...state,
+    secondaryPrices: {
+      prices: state.secondaryPrices.prices,
+      // timestamp (this is removed)
+    },
+  });
+  expect(stateWitoutTimestamp(state)).toEqual(
+    stateWitoutTimestamp(expectedState),
+  );
+}
+
 describe('GMX Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     IncreaseUsdgAmount: [
@@ -67,6 +84,7 @@ describe('GMX Event', function () {
             blockNumber,
             `${dexKey}_${params.vault}`,
             dexHelper.provider,
+            compareState,
           );
         });
       });
