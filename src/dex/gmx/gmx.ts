@@ -52,8 +52,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
+  // for pricing requests.
   async initializePricing(blockNumber: number) {
     const config = await GMXEventPool.getConfig(
       this.params,
@@ -85,8 +84,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
+  // across DEXes.
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
