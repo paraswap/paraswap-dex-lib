@@ -243,9 +243,14 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
         GMX.erc20Interface.decodeFunctionResult('balanceOf', r)[0].toString(),
       ),
     );
-    // TODO: uncomment this if the DexHelper getTokenUSDPrice is added
-    // const tokenBalancesUSD = tokens.map((t, i) => this.dexHelper.getTokenUSDPrice(t.address, tokenBalances[i]));
-    // this.vaultUSDBalance = tokenBalancesUSD.reduce((sum: number, curr: number) => sum + curr);
+    const tokenBalancesUSD = await Promise.all(
+      this.supportedTokens.map((t, i) =>
+        this.dexHelper.getTokenUSDPrice(t, tokenBalances[i]),
+      ),
+    );
+    this.vaultUSDBalance = tokenBalancesUSD.reduce(
+      (sum: number, curr: number) => sum + curr,
+    );
   }
 
   // Returns list of top pools based on liquidity. Max
