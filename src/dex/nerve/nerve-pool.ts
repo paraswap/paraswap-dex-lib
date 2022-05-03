@@ -119,14 +119,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
-  async setup(
-    blockNumber: number,
-    poolState: DeepReadonly<PoolState> | null = null,
-  ) {
-    if (!poolState) poolState = await this.generateState(blockNumber);
-    if (blockNumber) this.setState(poolState, blockNumber);
-  }
-
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<PoolState>> {
