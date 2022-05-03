@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { PartialEventSubscriber } from '../../composed-event-subscriber';
@@ -262,7 +263,7 @@ export class Vault<State> extends PartialEventSubscriber<State, VaultState> {
   ): AsyncOrSync<VaultState | null> {
     try {
       const parsed = Vault.interface.parseLog(log);
-      const _state: VaultState = state;
+      const _state: VaultState = _.cloneDeep(state);
       switch (parsed.name) {
         case 'IncreaseUsdgAmount': {
           const tokenAddress = parsed.args.token.toLowerCase();

@@ -21,6 +21,8 @@ import { wrapETH } from '../../utils';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
 
+const GMXGasCost = 300 * 1000;
+
 export class GMX extends SimpleExchange implements IDex<GMXData> {
   protected pool: GMXEventPool | null = null;
   protected supportedTokensMap: { [address: string]: boolean } = {};
@@ -144,7 +146,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       {
         prices: prices.slice(1),
         unit: prices[0],
-        gasCost: 0, // TODO: fix gas cost
+        gasCost: GMXGasCost,
         exchange: this.dexKey,
         data: {},
         poolAddresses: [this.params.vault],

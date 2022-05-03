@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { PartialEventSubscriber } from '../../composed-event-subscriber';
@@ -36,7 +37,7 @@ export class USDG<State> extends PartialEventSubscriber<State, USDGState> {
   ): DeepReadonly<USDGState> | null {
     try {
       const parsed = USDG.interface.parseLog(log);
-      const _state: USDGState = state;
+      const _state: USDGState = _.cloneDeep(state);
       switch (parsed.name) {
         case 'Transfer': {
           const fromAddress = parsed.args.src;

@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { PartialEventSubscriber } from '../../composed-event-subscriber';
@@ -51,7 +52,7 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
       const parsed = FastPriceFeed.fastPriceEventsInterface.parseLog(log);
       switch (parsed.name) {
         case 'PriceUpdate': {
-          const _state: FastPriceFeedState = state;
+          const _state: FastPriceFeedState = _.cloneDeep(state);
           _state.lastUpdatedAt =
             typeof blockHeader.timestamp === 'string'
               ? parseInt(blockHeader.timestamp)
