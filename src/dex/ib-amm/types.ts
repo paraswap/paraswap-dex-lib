@@ -1,13 +1,13 @@
-import { Address, NumberAsString } from '../../types';
+import { ChainLinkState } from '../../lib/chainlink';
+import { NumberAsString } from '../../types';
 
-export type PoolState = {
-  // TODO: poolState is the state of event
-  // subsrciber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+export type IbAmmPoolState = {
+  chainlink: { [underlyingAddress: string]: ChainLinkState };
 };
 
-export type IbAmmData = {};
+export type IbAmmData = {
+  unitPrice: bigint;
+};
 
 export type IbAmmParams = [
   token: string,
@@ -20,8 +20,16 @@ export enum IbAmmFunctions {
   sell = 'sell',
 }
 
-export type DexParams = {
-  IB_TOKENS: string[];
+export type IbTokensInfo = {
+  TOKEN_ADDRESS: string;
+  FEED_ADDRESS: string;
+  FEED_DECIMALS: number;
+  AGGREGATOR_ADDRESS: string;
+  TOKEN_SYMBOL: string;
+};
+
+export type IbAmmInfo = {
+  IB_TOKENS: IbTokensInfo[];
   DAI: string;
   MIM: string;
   IBAMM_ADDRESS: string;
