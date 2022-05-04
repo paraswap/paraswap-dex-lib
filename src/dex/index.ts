@@ -30,6 +30,7 @@ import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
+import { Nerve } from './nerve/nerve';
 import { IDexHelper } from '../dex-helper/idex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
@@ -39,6 +40,7 @@ import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { IbAmm } from './ib-amm/ib-amm';
 import { Platypus } from './platypus/platypus';
+import { GMX } from './gmx/gmx';
 
 const LegacyDexes = [
   Curve,
@@ -75,7 +77,9 @@ const Dexes = [
   Weth,
   MakerPsm,
   IbAmm,
+  Nerve,
   Platypus,
+  GMX,
 ];
 
 const AdapterNameAddressMap: {
@@ -101,7 +105,7 @@ const AdapterNameAddressMap: {
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
   [Network.AVALANCHE]: {
-    AvalancheAdapter01: '0x23e9bB567D664Ac1F4f3b8f5F3Fede03Bf27e6B0',
+    AvalancheAdapter01: '0xaaD116D3b51893bD00bFBAf337824A15796eD97a',
     AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
   [Network.FANTOM]: {

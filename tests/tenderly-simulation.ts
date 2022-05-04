@@ -35,7 +35,7 @@ export class TenderlySimulation {
       this.forkId = res.data.simulation_fork.id;
       this.lastTx = res.data.root_transaction.id;
     } catch (e) {
-      console.error(`TenderlySimulation_setup: ${e.message}`, e.trace);
+      console.error(`TenderlySimulation_setup:`, e);
       throw e;
     }
   }
@@ -78,10 +78,9 @@ export class TenderlySimulation {
         };
       }
     } catch (e) {
-      console.error(`TenderlySimulation_simulate: ${e.message}`, e.trace);
+      console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
-        error: e.message,
         tenderlyUrl: '',
       };
     }
