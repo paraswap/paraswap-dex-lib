@@ -53,7 +53,7 @@ export const TokenTransferProxyAddress: { [nid: number]: Address } = {
   [Network.MAINNET]: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
   [Network.ROPSTEN]: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
   [Network.BSC]: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
-  [Network.POLYGON]: '0xa77310091d2836e9f8fdbb103c0f6318c6bf41a9',
+  [Network.POLYGON]: '0x43c185c9b19887491640703358ca55b97d2a282e',
   [Network.AVALANCHE]: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
   [Network.FANTOM]: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
 };
@@ -62,7 +62,7 @@ export const AugustusAddress: { [nid: number]: Address } = {
   [Network.MAINNET]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.ROPSTEN]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.BSC]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-  [Network.POLYGON]: '0xbd09504819a604ca503F30D2Cc9D0Ef4C76dac33',
+  [Network.POLYGON]: '0x64f72FcFd9C624E3e471223F043060981C83AaFc',
   [Network.AVALANCHE]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.FANTOM]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
 };

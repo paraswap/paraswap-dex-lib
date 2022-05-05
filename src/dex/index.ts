@@ -90,9 +90,9 @@ const AdapterNameAddressMap: {
     BuyAdapter: '0x8D562A7D63248Ebfdd19B26665161cf867e5c10A',
   },
   [Network.POLYGON]: {
-    PolygonAdapter01: '',
-    PolygonAdapter02: '',
-    PolygonBuyAdapter: '',
+    PolygonAdapter01: '0x88d392140498DEd539C3b2a5A8aA428d1e0B5244',
+    PolygonAdapter02: '0xC69849F77644d4629260E00E494D8CC8bB543299',
+    PolygonBuyAdapter: '0x9aA1b161Ddb7775DCD94a370ED7611182FeE3ac3',
   },
   [Network.BSC]: {
     BscAdapter01: '0xcEC935682c0b510fb91c0A12275Bb7e14EEBE87c',
