@@ -9,13 +9,13 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 describe('UniswapV2 E2E Polygon', () => {
   const network = Network.POLYGON;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
   describe('QuickSwap', () => {
     const dexKey = 'QuickSwap';
@@ -1091,6 +1091,140 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.USDT,
           tokens.DAI,
           holders.USDT,
+          '1000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
+  describe('RadioShack', () => {
+    const dexKey = 'RadioShack';
+
+    describe('simpleSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.RADIO,
+          holders.MATIC,
+          '100000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.RADIO,
+          tokens.MATIC,
+          holders.RADIO,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.RADIO,
+          tokens.DAI,
+          holders.RADIO,
+          '1000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('multiSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.RADIO,
+          holders.MATIC,
+          '100000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.RADIO,
+          tokens.MATIC,
+          holders.RADIO,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.RADIO,
+          tokens.DAI,
+          holders.RADIO,
+          '1000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('megaSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.RADIO,
+          holders.MATIC,
+          '100000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.RADIO,
+          tokens.MATIC,
+          holders.RADIO,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.RADIO,
+          tokens.DAI,
+          holders.RADIO,
           '1000000000',
           SwapSide.SELL,
           dexKey,

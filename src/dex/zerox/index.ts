@@ -1,15 +1,14 @@
 import { AbiEncoder } from '@0x/utils';
 import { Interface } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 
 import IParaswapAbi from '../../abi/IParaswap.json';
 import ZRX_V2_ABI from '../../abi/zrx.v2.json';
 import ZRX_V3_ABI from '../../abi/zrx.v3.json';
 import ZRX_V4_ABI from '../../abi/zrx.v4.json';
 
-import { ETHER_ADDRESS, SwapSide } from '../../constants';
+import { SwapSide } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
-import { Weth } from '../weth';
 import { ZeroXOrder } from './order';
 
 import type { IDexTxBuilder } from '../idex';
@@ -105,7 +104,7 @@ export class ZeroX
   constructor(
     augustusAddress: Address,
     public network: number,
-    provider: JsonRpcProvider,
+    provider: Provider,
   ) {
     super(augustusAddress, provider);
     this.routerInterface = new Interface(IParaswapAbi);
@@ -172,7 +171,7 @@ export class ZeroX
                 'orders[]': {
                   makerAddress: 'address', // Address that created the order.
                   takerAddress: 'address', // Address that is allowed to fill the order. If set to 0, any address is allowed to fill the order.
-                  feeRecipientAddress: 'address', // Address that will recieve fees when order is filled.
+                  feeRecipientAddress: 'address', // Address that will receive fees when order is filled.
                   senderAddress: 'address', // Address that is allowed to call Exchange contract methods that affect this order. If set to 0, any address is allowed to call these methods.
                   makerAssetAmount: 'uint256', // Amount of makerAsset being offered by maker. Must be greater than 0.
                   takerAssetAmount: 'uint256', // Amount of takerAsset being bid on by maker. Must be greater than 0.
@@ -229,7 +228,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAmount) +
             BigInt(order.makerAmount) -
-            BigInt(1)) /
+            1n) /
           BigInt(order.makerAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
@@ -245,7 +244,7 @@ export class ZeroX
         const calc =
           (BigInt(destAmount) * BigInt(order.takerAssetAmount) +
             BigInt(order.makerAssetAmount) -
-            BigInt(1)) /
+            1n) /
           BigInt(order.makerAssetAmount);
         if (calc > BigInt(srcAmount)) {
           throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);

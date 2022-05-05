@@ -2,7 +2,7 @@ import { IRouter } from './irouter';
 import {
   PayloadEncoder,
   encodeFeePercent,
-  feePercentForReferrer,
+  encodeFeePercentForReferrer,
 } from './payload-encoder';
 import {
   Address,
@@ -15,6 +15,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
 import { uuidToBytes16 } from '../utils';
+import { SwapSide } from '../constants';
 
 type MultiSwapParam = [ContractSellData];
 
@@ -26,8 +27,8 @@ export class MultiSwap
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'multiSwap';
   }
@@ -69,8 +70,12 @@ export class MultiSwap
       path: paths,
       partner: referrerAddress || partnerAddress,
       feePercent: referrerAddress
-        ? feePercentForReferrer
-        : encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+        ? encodeFeePercentForReferrer(SwapSide.SELL)
+        : encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.SELL,
+          ),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

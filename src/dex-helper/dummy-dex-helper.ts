@@ -6,10 +6,10 @@ import {
   IRequestWrapper,
 } from './index';
 import axios from 'axios';
-import { Address, LoggerConstructor } from '../types';
+import { Address, LoggerConstructor, Token } from '../types';
 import { MULTI_V2, ProviderURL, AugustusAddress } from '../constants';
 // import { Contract } from '@ethersproject/contracts';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
 import Web3 from 'web3';
@@ -92,17 +92,18 @@ export class DummyDexHelper implements IDexHelper {
   cache: ICache;
   httpRequest: IRequestWrapper;
   augustusAddress: Address;
-  provider: JsonRpcProvider;
+  provider: Provider;
   multiContract: Contract;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
   web3Provider: Web3;
+  getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
   constructor(network: number) {
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.augustusAddress = AugustusAddress[network];
-    this.provider = new JsonRpcProvider(ProviderURL[network]);
+    this.provider = new StaticJsonRpcProvider(ProviderURL[network], network);
     this.web3Provider = new Web3(ProviderURL[network]);
     this.multiContract = new this.web3Provider.eth.Contract(
       multiABIV2 as any,
@@ -110,5 +111,8 @@ export class DummyDexHelper implements IDexHelper {
     );
     this.blockManager = new DummyBlockManager();
     this.getLogger = name => log4js.getLogger(name);
+    // For testing use only full parts like 1, 2, 3 ETH, not 0.1 ETH etc
+    this.getTokenUSDPrice = async (token, amount) =>
+      Number(amount / BigInt(10 ** token.decimals));
   }
 }

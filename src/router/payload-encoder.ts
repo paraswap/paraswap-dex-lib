@@ -13,27 +13,28 @@ import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
 
-const OneShift14 = BigInt(1) << BigInt(14);
-const OneShift16 = BigInt(1) << BigInt(16);
-const OneShift248 = BigInt(1) << BigInt(248);
+const OneShift14 = 1n << 14n;
+const OneShift15 = 1n << 15n;
+const OneShift16 = 1n << 16n;
+const OneShift248 = 1n << 248n;
 
 // Referrer gets 50% of what ParaSwap takes i.e. 25% of positive slippage
-export const feePercentForReferrer = (
-  BigInt(5000) |
-  OneShift14 |
-  OneShift16 |
-  OneShift248
-).toString();
+// Set 16th bit to indicate referral program
+const REFERRER_FEE = 5000n | OneShift14 | OneShift16 | OneShift248;
 
 export function encodeFeePercent(
   partnerFeePercent: string,
   positiveSlippageToUser: boolean,
+  side: SwapSide,
 ) {
   let fee = BigInt(partnerFeePercent);
   if (fee > 10000) throw new Error('fee bps should be less than 10000');
 
   // Set 14th bit if positiveSlippageToUser is true
   if (positiveSlippageToUser) fee |= OneShift14;
+
+  // Set 15th bit to take fee from srcToken
+  if (side === SwapSide.BUY) fee |= OneShift15;
 
   // Bits 248 - 255 is used for version;
   // Set version = 1;
@@ -42,19 +43,25 @@ export function encodeFeePercent(
   return fee.toString();
 }
 
+export function encodeFeePercentForReferrer(side: SwapSide) {
+  let fee = REFERRER_FEE;
+
+  // Set 15th bit to take fee from srcToken
+  if (side === SwapSide.BUY) fee |= OneShift15;
+
+  return fee.toString();
+}
+
 // This class can be used commonly by all the router
 // that will use the adapters.
 export class PayloadEncoder {
-  constructor(
-    protected dexAdapterService: DexAdapterService,
-    protected adapters: Adapters,
-  ) {}
+  constructor(protected dexAdapterService: DexAdapterService) {}
   // Should have function for optimally choosing the Adapters
   getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
     paths: ContractPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BigInt(0);
+    let totalNetworkFee = 0n;
     const paths = swaps.map(s => {
       const adapters = this.getAdapters(
         s.srcToken,
@@ -63,7 +70,7 @@ export class PayloadEncoder {
       );
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
-        BigInt(0),
+        0n,
       );
       totalNetworkFee += totalPathNetworkFee;
       return {
@@ -79,7 +86,7 @@ export class PayloadEncoder {
     megaSwapPaths: ContractMegaSwapPath[];
     networkFee: bigint;
   } {
-    let totalNetworkFee = BigInt(0);
+    let totalNetworkFee = 0n;
     const megaSwapPaths = routes.map(r => {
       const { paths, networkFee } = this.getContractPathsWithNetworkFee(
         r.swaps,
@@ -105,7 +112,7 @@ export class PayloadEncoder {
       SwapSide.BUY,
     );
     let adapter = '';
-    let networkFee = BigInt(0);
+    let networkFee = 0n;
     let route: ContractRoute[] = [];
     swapExchanges.forEach((se: OptimalSwapExchange<any>) => {
       const [adapterAddress, index] =
@@ -189,7 +196,7 @@ export class PayloadEncoder {
     });
   }
 
-  // Find the best adapter, assign exhanges that use best adapter, filter out the
+  // Find the best adapter, assign exchanges that use best adapter, filter out the
   // exchanges that were not assigned with the best adapter, recursively call
   // getOptimalExchangeAdapterMap until swapExchanges is empty (except for BUY)
   getOptimalExchangeAdapterMap(
@@ -202,7 +209,7 @@ export class PayloadEncoder {
 
     const adapterPoints: { [adapter: string]: number } = {};
     swapExchanges.forEach(se => {
-      const adapters = this.adapters[se.exchange.toLowerCase()];
+      const adapters = this.dexAdapterService.getAdapter(se.exchange, side);
       if (!adapters.length)
         throw new Error(`No adapter found for ${se.exchange}`);
       adapters.forEach(a => {
@@ -222,12 +229,11 @@ export class PayloadEncoder {
     const leftSwapExchange: OptimalSwapExchange<any>[] = [];
 
     swapExchanges.forEach(se => {
-      const exchangeKey = se.exchange.toLowerCase();
-      const adapterConfig = this.adapters[exchangeKey].find(
-        ({ adapter }) => adapter.toLowerCase() === bestAdapter,
-      );
+      const adapterConfig = this.dexAdapterService
+        .getAdapter(se.exchange, side)
+        .find(({ adapter }) => adapter.toLowerCase() === bestAdapter);
       if (adapterConfig) {
-        optimalAdapters[exchangeKey] = [
+        optimalAdapters[se.exchange.toLowerCase()] = [
           adapterConfig.adapter,
           adapterConfig.index,
         ];

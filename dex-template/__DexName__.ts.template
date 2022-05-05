@@ -41,7 +41,6 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected adapters = Adapters[network],
     // TODO: add any additional params required for event subscriber
   ) {
     super(parentName, logger);
@@ -55,10 +54,10 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   /**
-   * The function is called everytime any of the subscribed 
+   * The function is called everytime any of the subscribed
    * addresses release log. The function accepts the current
    * state, updates the state according to the log, and returns
-   * the updated state. 
+   * the updated state.
    * @param state - Current state of event subscriber
    * @param log - Log released by one of the subscribed addresses
    * @returns Updates state of the event subscriber after the log
@@ -88,9 +87,9 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
 
   /**
    * The function generates state using on-chain calls. This
-   * function is called to regenrate state if the event based 
-   * system fails to fetch events and the local state is no 
-   * more correct. 
+   * function is called to regenrate state if the event based
+   * system fails to fetch events and the local state is no
+   * more correct.
    * @param blockNumber - Blocknumber for which the state should
    * should be generated
    * @returns state of the event subsriber at blocknumber
@@ -117,6 +116,7 @@ export class __DexName__
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
+    protected adapters = Adapters[network],
     // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
@@ -129,9 +129,9 @@ export class __DexName__
     );
   }
 
-  // Initialize pricing is called once in the start of 
+  // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to 
+  // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
     // TODO: complete me!
@@ -143,10 +143,10 @@ export class __DexName__
     return this.adapters[side];
   }
 
-  // Returns list of pool identifiers that can be used 
+  // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifers must be unique
-  // across DEXes. It is recommended to use 
-  // ${dexKey}_${poolAddress} as a poolIdentifier 
+  // across DEXes. It is recommended to use
+  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -159,7 +159,7 @@ export class __DexName__
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
-  // any pools can be used. 
+  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -179,7 +179,7 @@ export class __DexName__
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: Optimized__DexName__Data,
+    data: __DexName__Data,
     side: SwapSide,
   ): AdapterExchangeParam {
     // TODO: complete me!
@@ -187,30 +187,30 @@ export class __DexName__
 
   // Encode call data used by simpleSwap like routers
   // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion 
+  // Hint: this.buildSimpleParamWithoutWETHConversion
   // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: Optimized__DexName__Data,
+    data: __DexName__Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     // TODO: complete me!
   }
 
-  // This is called once before getTopPoolsForToken is 
-  // called for multiple tokens. This can be helpful to 
-  // update common state required for calculating 
-  // getTopPoolsForToken. It is optional for a DEX 
+  // This is called once before getTopPoolsForToken is
+  // called for multiple tokens. This can be helpful to
+  // update common state required for calculating
+  // getTopPoolsForToken. It is optional for a DEX
   // to implement this
-  updatePoolState(): Promise<void> {
+  async updatePoolState(): Promise<void> {
     // TODO: complete me!
   }
 
   // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned. 
+  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,

@@ -133,7 +133,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
     [Network.AVALANCHE]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/baguette-exchange/baguette',
-      factoryAddress: '0x0841bd0b734e4f5853f0dd8d7ea041c241fb0da6',
+      factoryAddress: '0x3587b8c0136c2c3605a9e5b03ab54da3e4044b50',
       initCode:
         '0xf4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b',
       poolGasCost: 80 * 1000,
@@ -232,8 +232,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   JulSwap: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/subgraph',
+      // subgraphURL:
+      //   'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/subgraph',
       factoryAddress: '0x553990f2cba90272390f62c5bdb1681ffc899675',
       initCode:
         '0xb1e98e21a5335633815a8cfb3b580071c2e4561c50afd57a8746def9ed890b18',
@@ -415,10 +415,28 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
-  StreetSwap: {
+  RadioShack: {
+    [Network.POLYGON]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/radioshackcreator/radioshack-polygon',
+      factoryAddress: '0xB581D0A3b7Ea5cDc029260e989f768Ae167Ef39B',
+      initCode:
+        '0x3eef69365a159891ca18b545ccaf0d6aca9b22c988b8deb7a3e4fa2fc2418596',
+      feeCode: 10,
+    },
     [Network.BSC]: {
       subgraphURL:
-        'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
+        'https://api.thegraph.com/subgraphs/name/radioshackcreator/radioshack-bsc',
+      factoryAddress: '0x98957ab49b8bc9f7ddbCfD8BcC83728085ecb238',
+      initCode:
+        '0x3eef69365a159891ca18b545ccaf0d6aca9b22c988b8deb7a3e4fa2fc2418596',
+      feeCode: 10,
+    },
+  },
+  StreetSwap: {
+    [Network.BSC]: {
+      // subgraphURL:
+      //   'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
       factoryAddress: '0xaC653cE27E04C6ac565FD87F18128aD33ca03Ba2',
       initCode:
         '0x0b3961eeccfbf746d2d5c59ee3c8ae3a5dcf8dc9b0dfb6f89e1e8ca0b32b544b',

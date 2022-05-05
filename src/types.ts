@@ -53,6 +53,7 @@ export type ContractBuyData = {
   toToken: string;
   fromAmount: string;
   toAmount: string;
+  expectedAmount: string;
   beneficiary: string;
   route: ContractRoute[];
   partner: string;
@@ -150,6 +151,13 @@ export type Token = {
   symbol?: string;
 };
 
+export type aToken = {
+  aSymbol: string;
+  aAddress: string;
+  address: string;
+  decimals: number;
+};
+
 export type ExchangePrices<T> = PoolPrices<T>[];
 
 export type PoolPrices<T> = {
@@ -204,3 +212,10 @@ export type UnoptimizedRate = Omit<
   OptimalRate,
   'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
 >;
+
+export type MultiCallInput = {
+  target: Address;
+  callData: string;
+};
+
+export type MultiCallOutput = string;

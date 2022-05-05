@@ -121,6 +121,151 @@
       {
         "indexed": false,
         "internalType": "address",
+        "name": "partner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "feePercent",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "initiator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beneficiary",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "srcToken",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "toToken",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toTokenID",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct UtilsNFT.ToTokenNFTDetails[]",
+        "name": "destTokenDetails",
+        "type": "tuple[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "srcAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "expectedAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BoughtNFTV3",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes16",
+        "name": "uuid",
+        "type": "bytes16"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "partner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "feePercent",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "initiator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beneficiary",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "srcToken",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "destToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "srcAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "expectedAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BoughtV3",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes16",
+        "name": "uuid",
+        "type": "bytes16"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "initiator",
         "type": "address"
       },
@@ -232,6 +377,73 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes16",
+        "name": "uuid",
+        "type": "bytes16"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "partner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "feePercent",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "initiator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beneficiary",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "srcToken",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "destToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "srcAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "expectedAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "SwappedV3",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "components": [
@@ -258,6 +470,11 @@
           {
             "internalType": "uint256",
             "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedAmount",
             "type": "uint256"
           },
           {
@@ -759,6 +976,336 @@
         "type": "uint256"
       }
     ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "address",
+            "name": "makerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "takerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.Order",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "makerPermit",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "partialSwapOnAugustusRFQ",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderNFT",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "makerPermit",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "partialSwapOnAugustusRFQNFT",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderNFT",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "makerPermit",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "partialSwapOnAugustusRFQNFTWithPermit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "address",
+            "name": "makerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "takerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.Order",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "makerPermit",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "partialSwapOnAugustusRFQWithPermit",
+    "outputs": [],
     "stateMutability": "payable",
     "type": "function"
   },
@@ -1344,6 +1891,108 @@
             "type": "address"
           },
           {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "toToken",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "toTokenID",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "toAmount",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct UtilsNFT.ToTokenNFTDetails[]",
+            "name": "toTokenDetails",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "callees",
+            "type": "address[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "exchangeData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "startIndexes",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "values",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "address payable",
+            "name": "beneficiary",
+            "type": "address"
+          },
+          {
+            "internalType": "address payable",
+            "name": "partner",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feePercent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permit",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
+          }
+        ],
+        "internalType": "struct UtilsNFT.SimpleBuyNFTData",
+        "name": "data",
+        "type": "tuple"
+      }
+    ],
+    "name": "simpleBuyNFT",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "fromToken",
+            "type": "address"
+          },
+          {
             "internalType": "address",
             "name": "toToken",
             "type": "address"
@@ -1427,6 +2076,296 @@
         "type": "uint256"
       }
     ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "address",
+            "name": "makerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "takerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.Order",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      }
+    ],
+    "name": "swapOnAugustusRFQ",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderNFT",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      }
+    ],
+    "name": "swapOnAugustusRFQNFT",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAsset",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAssetId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderNFT",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapOnAugustusRFQNFTWithPermit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonceAndMeta",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "expiry",
+            "type": "uint128"
+          },
+          {
+            "internalType": "address",
+            "name": "makerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "takerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.Order",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapOnAugustusRFQWithPermit",
+    "outputs": [],
     "stateMutability": "payable",
     "type": "function"
   },
