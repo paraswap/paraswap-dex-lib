@@ -16,7 +16,10 @@ import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
 
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
-import { encodeFeePercent, feePercentForReferrer } from './payload-encoder';
+import {
+  encodeFeePercent,
+  encodeFeePercentForReferrer,
+} from './payload-encoder';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -220,8 +223,12 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       beneficiary,
       partner: referrerAddress || partnerAddress,
       feePercent: referrerAddress
-        ? feePercentForReferrer
-        : encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+        ? encodeFeePercentForReferrer(this.side)
+        : encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            this.side,
+          ),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

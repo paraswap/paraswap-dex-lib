@@ -14,20 +14,18 @@ import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
 
 const OneShift14 = 1n << 14n;
+const OneShift15 = 1n << 15n;
 const OneShift16 = 1n << 16n;
 const OneShift248 = 1n << 248n;
 
 // Referrer gets 50% of what ParaSwap takes i.e. 25% of positive slippage
-export const feePercentForReferrer = (
-  5000n |
-  OneShift14 |
-  OneShift16 |
-  OneShift248
-).toString();
+// Set 16th bit to indicate referral program
+const REFERRER_FEE = 5000n | OneShift14 | OneShift16 | OneShift248;
 
 export function encodeFeePercent(
   partnerFeePercent: string,
   positiveSlippageToUser: boolean,
+  side: SwapSide,
 ) {
   let fee = BigInt(partnerFeePercent);
   if (fee > 10000) throw new Error('fee bps should be less than 10000');
@@ -35,9 +33,21 @@ export function encodeFeePercent(
   // Set 14th bit if positiveSlippageToUser is true
   if (positiveSlippageToUser) fee |= OneShift14;
 
+  // Set 15th bit to take fee from srcToken
+  if (side === SwapSide.BUY) fee |= OneShift15;
+
   // Bits 248 - 255 is used for version;
   // Set version = 1;
   fee |= OneShift248;
+
+  return fee.toString();
+}
+
+export function encodeFeePercentForReferrer(side: SwapSide) {
+  let fee = REFERRER_FEE;
+
+  // Set 15th bit to take fee from srcToken
+  if (side === SwapSide.BUY) fee |= OneShift15;
 
   return fee.toString();
 }

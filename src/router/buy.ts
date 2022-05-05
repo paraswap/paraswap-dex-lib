@@ -2,7 +2,7 @@ import { IRouter } from './irouter';
 import {
   PayloadEncoder,
   encodeFeePercent,
-  feePercentForReferrer,
+  encodeFeePercentForReferrer,
 } from './payload-encoder';
 import {
   Address,
@@ -15,6 +15,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
 import { uuidToBytes16 } from '../utils';
+import { SwapSide } from '../constants';
 
 type BuyParam = [ContractBuyData];
 
@@ -70,8 +71,12 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       route,
       partner: referrerAddress || partnerAddress,
       feePercent: referrerAddress
-        ? feePercentForReferrer
-        : encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+        ? encodeFeePercentForReferrer(SwapSide.BUY)
+        : encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.BUY,
+          ),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),
