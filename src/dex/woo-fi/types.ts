@@ -1,10 +1,23 @@
-import { Address } from '../../types';
+import { Address, Token } from '../../types';
+
+export type TokenInfo = {
+  reserve: bigint;
+  threshold: bigint;
+  lastResetTimestamp: number;
+  R: bigint;
+  target: bigint;
+};
+
+export type TokenState = {
+  priceNow: bigint;
+  spreadNow: bigint;
+  coeffNow: bigint;
+};
 
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  feeRates: Record<string, bigint>;
+  tokenInfos: Record<string, TokenInfo>;
+  tokenStates: Record<string, TokenState>;
 };
 
 export type WooFiData = {
@@ -16,7 +29,8 @@ export type WooFiData = {
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  wooPPAddress: string;
+  woOracleAddress: string;
+  quoteToken: Token;
+  baseTokens: Record<string, Token>;
 };
