@@ -11,7 +11,9 @@ import { SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress, uuidToBytes16 } from '../utils';
-import { IWethDepositorWithdrawer, Weth, WethFunctions } from '../dex/weth';
+import { Weth } from '../dex/weth/weth';
+import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
+
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
 import { encodeFeePercent, feePercentForReferrer } from './payload-encoder';
@@ -29,8 +31,18 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
 
   constructor(
     protected dexAdapterService: DexAdapterService,
-    adapters: Adapters,
     protected side: SwapSide,
+
+    // prepare mapping: network -> wrapped exchange key
+    // It assumes that no network has more than one wrapped exchange
+    protected wExchangeNetworkToKey = Weth.dexKeysWithNetwork.reduce<
+      Record<number, string>
+    >((prev, current) => {
+      for (const network of current.networks) {
+        prev[network] = current.key;
+      }
+      return prev;
+    }, {}),
   ) {
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName =
@@ -90,9 +102,9 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       swap.swapExchanges.map(async se => {
         const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
         let _src = swap.srcToken;
-        let wethDeposit = BigInt(0);
+        let wethDeposit = 0n;
         let _dest = swap.destToken;
-        let wethWithdraw = BigInt(0);
+        let wethWithdraw = 0n;
 
         if (dex.needWrapNative) {
           if (isETHAddress(swap.srcToken)) {
@@ -156,8 +168,8 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       },
       {
         simpleExchangeDataList: [],
-        srcAmountWethToDeposit: BigInt(0),
-        destAmountWethToWithdraw: BigInt(0),
+        srcAmountWethToDeposit: 0n,
+        destAmountWethToWithdraw: 0n,
       },
     );
 
@@ -233,11 +245,11 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     destAmountWeth: bigint,
     swap: OptimalSwap,
   ) {
-    if (srcAmountWeth === BigInt('0') && destAmountWeth === BigInt('0')) return;
+    if (srcAmountWeth === 0n && destAmountWeth === 0n) return;
 
     return (
       this.dexAdapterService.getTxBuilderDexByKey(
-        'weth',
+        this.wExchangeNetworkToKey[this.dexAdapterService.network],
       ) as unknown as IWethDepositorWithdrawer
     ).getDepositWithdrawParam(
       swap.srcToken,
@@ -251,14 +263,14 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
 
 export class SimpleSwap extends SimpleRouter {
   static isBuy = false;
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters, SwapSide.SELL);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService, SwapSide.SELL);
   }
 }
 
 export class SimpleBuy extends SimpleRouter {
   static isBuy = true;
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters, SwapSide.BUY);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService, SwapSide.BUY);
   }
 }

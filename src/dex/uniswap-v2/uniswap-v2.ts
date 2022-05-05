@@ -25,12 +25,7 @@ import {
   UniswapV2Functions,
 } from './types';
 import { IDex } from '../../dex/idex';
-import {
-  ETHER_ADDRESS,
-  MAX_UINT,
-  Network,
-  NULL_ADDRESS,
-} from '../../constants';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -39,17 +34,18 @@ import {
   getDexKeysWithNetwork,
   isETHAddress,
   prependWithOx,
+  WethMap,
+  getBigIntPow,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
-import { WETHAddresses } from '../weth';
 import { UniswapV2Config, Adapters } from './config';
+import { BI_MAX_UINT } from '../../bigint-constants';
 
-const MAX_UINT_BIGINT = BigInt(MAX_UINT);
-const RESERVE_LIMIT = BigInt(2) ** BigInt(112) - BigInt(1);
+const RESERVE_LIMIT = 2n ** 112n - 1n;
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -193,13 +189,14 @@ export const UniswapV2ExchangeRouter: { [network: number]: Address } = {
 export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
   // stETH - uses balances based on shares which causes rounding errors
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 1,
+  '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f': 200,
 };
 
 function encodePools(pools: UniswapPool[]): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000 - fee) << BigInt(161)) +
-      (BigInt(direction ? 0 : 1) << BigInt(160)) +
+      (BigInt(10000 - fee) << 161n) +
+      ((direction ? 0n : 1n) << 160n) +
       BigInt(address)
     ).toString();
   });
@@ -311,8 +308,8 @@ export class UniswapV2
       (BigInt(this.feeFactor) - BigInt(fee)) *
       (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= BigInt(0)) return MAX_UINT_BIGINT;
-    return BigInt(1) + numerator / denominator;
+    if (denominator <= 0n) return BI_MAX_UINT;
+    return 1n + numerator / denominator;
   }
 
   async getSellPrice(
@@ -322,7 +319,7 @@ export class UniswapV2
     const { reservesIn, reservesOut, fee } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return BigInt(0);
+      return 0n;
     }
 
     const amountInWithFee = srcAmount * BigInt(this.feeFactor - parseInt(fee));
@@ -332,7 +329,7 @@ export class UniswapV2
     const denominator =
       BigInt(reservesIn) * BigInt(this.feeFactor) + amountInWithFee;
 
-    return denominator === BigInt(0) ? BigInt(0) : numerator / denominator;
+    return denominator === 0n ? 0n : numerator / denominator;
   }
 
   async getBuyPricePath(
@@ -572,8 +569,8 @@ export class UniswapV2
 
       if (!pairParam) return null;
 
-      const unitAmount = BigInt(
-        10 ** (side == SwapSide.BUY ? to.decimals : from.decimals),
+      const unitAmount = getBigIntPow(
+        side == SwapSide.BUY ? to.decimals : from.decimals,
       );
       const unit =
         side == SwapSide.BUY
@@ -720,7 +717,7 @@ export class UniswapV2
   getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
     if (!isETHAddress(srcToken) && !isETHAddress(destToken))
       return NULL_ADDRESS;
-    return weth || WETHAddresses[this.network];
+    return weth || WethMap[this.network];
   }
 
   getAdapterParam(

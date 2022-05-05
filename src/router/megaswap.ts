@@ -23,8 +23,8 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'megaSwap';
   }

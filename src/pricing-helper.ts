@@ -73,7 +73,7 @@ export class PricingHelper {
         try {
           return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
-              () => reject(new Error(`Timout`)),
+              () => reject(new Error(`Timeout`)),
               FETCH_POOL_INDENTIFIER_TIMEOUT,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
@@ -81,10 +81,12 @@ export class PricingHelper {
             if (
               filterConstantPricePool &&
               dexInstance.hasConstantPriceLargeAmounts
-            )
-              return null;
+            ) {
+              clearTimeout(timer);
+              return resolve(null);
+            }
 
-            dexInstance
+            return dexInstance
               .getPoolIdentifiers(from, to, side, blockNumber)
               .then(resolve, reject)
               .finally(() => {
@@ -97,6 +99,7 @@ export class PricingHelper {
         }
       }),
     );
+
     return dexKeys.reduce(
       (
         acc: { [dexKey: string]: string[] | null },
@@ -129,7 +132,7 @@ export class PricingHelper {
           return await new Promise<PoolPrices<any>[] | null>(
             (resolve, reject) => {
               const timer = setTimeout(
-                () => reject(new Error(`Timout`)),
+                () => reject(new Error(`Timeout`)),
                 FETCH_POOL_PRICES_TIMEOUT,
               );
 
@@ -169,7 +172,7 @@ export class PricingHelper {
           return false;
         }
 
-        if (p.prices.every(pi => pi === BigInt(0))) {
+        if (p.prices.every(pi => pi === 0n)) {
           return false;
         }
         return true;

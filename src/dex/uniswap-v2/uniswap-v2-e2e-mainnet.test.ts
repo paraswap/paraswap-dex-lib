@@ -9,13 +9,13 @@ import {
   ContractMethod,
   SwapSide,
 } from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 describe('UniswapV2 E2E Mainnet', () => {
   const network = Network.MAINNET;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
   describe('UniswapV2', () => {
     const dexKey = 'UniswapV2';
@@ -609,7 +609,7 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
     });
 
-    describe('Multiswap', () => {
+    describe('MultiSwap', () => {
       it('SushiSwap ETH -> TOKEN', async () => {
         await testE2E(
           tokens.ETH,
@@ -687,6 +687,62 @@ describe('UniswapV2 E2E Mainnet', () => {
           SwapSide.SELL,
           dexKey,
           ContractMethod.swapOnUniswapFork,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('swapOnUniswapV2Fork', () => {
+      it('SAITAMA -> ETH', async () => {
+        await testE2E(
+          tokens.SAITAMA,
+          tokens.ETH,
+          holders.SAITAMA,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> SAITAMA', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.SAITAMA,
+          holders.ETH,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('buyOnUniswapV2Fork', () => {
+      it('SAITAMA -> ETH', async () => {
+        await testE2E(
+          tokens.SAITAMA,
+          tokens.ETH,
+          holders.SAITAMA,
+          '60000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> SAITAMA', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.SAITAMA,
+          holders.ETH,
+          '11111111111000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
           network,
           provider,
         );

@@ -28,7 +28,7 @@ export class PoolsHelper {
   ): Promise<PoolLiquidity[]> {
     try {
       const dex = this.dexAdapterService.getDexByKey(dexKey);
-      return dex.getTopPoolsForToken(tokenAddress, count);
+      return await dex.getTopPoolsForToken(tokenAddress, count);
     } catch (e) {
       this.logger.error(`getTopPools_${dexKey}`, e);
       return [];
