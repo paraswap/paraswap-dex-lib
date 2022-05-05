@@ -222,7 +222,10 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
               (BigInt(priceRoute.destAmount) * BigInt(95)) /
               BigInt(100)
             ).toString()
-          : priceRoute.srcAmount,
+          : (
+              (BigInt(priceRoute.srcAmount) * BigInt(105)) /
+              BigInt(100)
+            ).toString(),
       beneficiary,
       partner: referrerAddress || partnerAddress,
       feePercent: referrerAddress
