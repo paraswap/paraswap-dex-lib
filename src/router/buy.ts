@@ -67,6 +67,7 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       toToken: priceRoute.destToken,
       fromAmount: minMaxAmount,
       toAmount: priceRoute.destAmount,
+      expectedAmount: priceRoute.srcAmount,
       beneficiary,
       route,
       partner: referrerAddress || partnerAddress,

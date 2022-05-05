@@ -53,6 +53,7 @@ export type ContractBuyData = {
   toToken: string;
   fromAmount: string;
   toAmount: string;
+  expectedAmount: string;
   beneficiary: string;
   route: ContractRoute[];
   partner: string;
