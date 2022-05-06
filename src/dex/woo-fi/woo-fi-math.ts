@@ -11,15 +11,18 @@ class WooFiPoolMath {
     baseTokenAddress: string,
     baseAmount: bigint,
   ): bigint {
+    const _quoteTokenAddress = quoteTokenAddress.toLowerCase();
+    const _baseTokenAddress = baseTokenAddress.toLowerCase();
+
     const quoteAmount = this._getQuoteAmountSellBase(
       state,
-      quoteTokenAddress,
-      baseTokenAddress,
+      _quoteTokenAddress,
+      _baseTokenAddress,
       baseAmount,
     );
     const lpFee = this.dMath.mulCeil(
       quoteAmount,
-      state.feeRates[baseTokenAddress],
+      state.feeRates[_baseTokenAddress],
     );
     return quoteAmount - lpFee;
   }
@@ -30,15 +33,18 @@ class WooFiPoolMath {
     baseTokenAddress: string,
     quoteAmount: bigint,
   ): bigint {
+    const _quoteTokenAddress = quoteTokenAddress.toLowerCase();
+    const _baseTokenAddress = baseTokenAddress.toLowerCase();
+
     const lpFee = this.dMath.mulCeil(
       quoteAmount,
-      state.feeRates[baseTokenAddress],
+      state.feeRates[_baseTokenAddress],
     );
     quoteAmount -= lpFee;
     return this._getBaseAmountSellQuote(
       state,
-      quoteTokenAddress,
-      baseTokenAddress,
+      _quoteTokenAddress,
+      _baseTokenAddress,
       quoteAmount,
     );
   }
@@ -61,7 +67,7 @@ class WooFiPoolMath {
     // price: p * (1 - s / 2)
     p = this.dMath.mulFloor(
       p,
-      this.dMath.divCeil(this.dMath.ONE - s, this.dMath.TWO),
+      this.dMath.ONE - this.dMath.divCeil(s, this.dMath.TWO),
     );
     const { baseBought, quoteBought } = this._getBoughtAmount(
       baseInfo,
@@ -213,7 +219,7 @@ class WooFiPoolMath {
       this.dMath.ONE,
       quoteSold,
     );
-    if (isSellBase == virtualBaseBought < baseBought) {
+    if (isSellBase === virtualBaseBought < baseBought) {
       baseBought = virtualBaseBought;
     }
     const virtualQuoteBought = this._getQuoteAmountLowQuoteSide(
@@ -222,7 +228,7 @@ class WooFiPoolMath {
       this.dMath.ONE,
       baseSold,
     );
-    if (isSellBase == virtualQuoteBought > quoteBought) {
+    if (isSellBase === virtualQuoteBought > quoteBought) {
       quoteBought = virtualQuoteBought;
     }
 
@@ -253,11 +259,11 @@ class WooFiPoolMath {
     r: bigint,
     baseAmount: bigint,
   ) {
-    // priceFactor = 1 - k * baseAmount * p * r;
+    // priceFactor = 1 + k * baseAmount * p * r;
     const priceFactor =
-      this.dMath.ONE -
-      this.dMath.mulFloor(
-        this.dMath.mulFloor(this.dMath.mulFloor(k, baseAmount), p),
+      this.dMath.ONE +
+      this.dMath.mulCeil(
+        this.dMath.mulCeil(this.dMath.mulCeil(k, baseAmount), p),
         r,
       );
 
