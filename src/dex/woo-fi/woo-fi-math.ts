@@ -193,17 +193,19 @@ class WooFiPoolMath {
     let quoteBought = 0n;
 
     let baseSold = 0n;
-    if (baseInfo.reserve < baseInfo.target) {
-      baseBought = baseInfo.target - baseInfo.reserve;
+    const baseTarget = baseInfo.reserve > 0n ? baseInfo.reserve : 0n;
+    if (baseInfo.reserve < baseTarget) {
+      baseBought = baseTarget - baseInfo.reserve;
     } else {
-      baseSold = baseInfo.reserve - baseInfo.target;
+      baseSold = baseInfo.reserve - baseTarget;
     }
 
     let quoteSold = 0n;
-    if (quoteInfo.reserve < quoteInfo.target) {
-      quoteBought = quoteInfo.target - quoteInfo.reserve;
+    const quoteTarget = quoteInfo.reserve > 0n ? quoteInfo.reserve : 0n;
+    if (quoteInfo.reserve < quoteTarget) {
+      quoteBought = quoteTarget - quoteInfo.reserve;
     } else {
-      quoteSold = quoteInfo.reserve - quoteInfo.target;
+      quoteSold = quoteInfo.reserve - quoteTarget;
     }
 
     if (this.dMath.mulCeil(baseSold, p) > quoteSold) {

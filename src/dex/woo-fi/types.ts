@@ -2,10 +2,7 @@ import { Address, Token } from '../../types';
 
 export type TokenInfo = {
   reserve: bigint;
-  threshold: bigint;
-  lastResetTimestamp: number;
   R: bigint;
-  target: bigint;
 };
 
 export type TokenState = {
@@ -15,9 +12,9 @@ export type TokenState = {
 };
 
 export type PoolState = {
-  feeRates: Record<string, bigint>;
-  tokenInfos: Record<string, TokenInfo>;
-  tokenStates: Record<string, TokenState>;
+  feeRates: Record<Address, bigint>;
+  tokenInfos: Record<Address, TokenInfo>;
+  tokenStates: Record<Address, TokenState>;
 };
 
 export type WooFiData = {
@@ -25,13 +22,13 @@ export type WooFiData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
-  exchange: string;
+  exchange: Address;
 };
 
 export type DexParams = {
-  wooPPAddress: string;
-  woOracleAddress: string;
-  wooFeeManagerAddress: string;
+  wooPPAddress: Address;
+  woOracleAddress: Address;
+  wooFeeManagerAddress: Address;
   quoteToken: Token;
-  baseTokens: Record<string, Token>;
+  baseTokens: Record<Address, Token>;
 };

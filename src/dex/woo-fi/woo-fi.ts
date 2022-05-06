@@ -74,10 +74,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ) {
     state.tokenInfos[address.toLowerCase()] = {
       reserve: BigInt(values.reserve._hex),
-      threshold: BigInt(values.threshold._hex),
-      lastResetTimestamp: values.lastResetTimestamp,
       R: BigInt(values.R._hex),
-      target: BigInt(values.target._hex),
     };
   }
 
