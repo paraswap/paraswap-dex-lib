@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { Result, Interface } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
@@ -11,46 +12,60 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
+import { Token } from '../../types';
 
-/*
-  README
-  ======
-
-  This test script adds tests for WooFi general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover WooFi specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
-const network = Network.MAINNET;
-const TokenASymbol = 'TokenASymbol';
+const network = Network.BSC;
+const TokenASymbol = 'WBNB';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'TokenBSymbol';
+const TokenBSymbol = 'USDT';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [0n, BI_POWS[18], 2000000000000000000n];
+const amounts = [0n, BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 
 const dexKey = 'WooFi';
+const dexHelper = new DummyDexHelper(network);
+
+function getReaderCalldata(
+  exchangeAddress: string,
+  readerIface: Interface,
+  amounts: bigint[],
+  funcName: string,
+  baseToken: Token,
+) {
+  return amounts.map(amount => ({
+    target: exchangeAddress,
+    callData: readerIface.encodeFunctionData(funcName, [
+      baseToken.address,
+      amount,
+    ]),
+  }));
+}
+
+function decodeReaderResult(
+  results: Result,
+  readerIface: Interface,
+  funcName: string,
+) {
+  return results.map(result => {
+    const parsed = readerIface.decodeFunctionResult(funcName, result);
+    return BigInt(parsed[0]._hex);
+  });
+}
 
 describe('WooFi', function () {
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const wooFi = new WooFi(network, dexKey, dexHelper);
+  it('getPoolIdentifiers and getPricesVolume SELL Base', async function () {
+    const blockNumber = await dexHelper.provider.getBlockNumber();
 
-    await wooFi.initializePricing(blocknumber);
+    const wooFi = new WooFi(network, dexKey, dexHelper);
+    await wooFi.initializePricing(blockNumber);
 
     const pools = await wooFi.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
-      blocknumber,
+      blockNumber,
     );
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
@@ -61,7 +76,7 @@ describe('WooFi', function () {
       TokenB,
       amounts,
       SwapSide.SELL,
-      blocknumber,
+      blockNumber,
       pools,
     );
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
@@ -72,20 +87,92 @@ describe('WooFi', function () {
     } else {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     }
+
+    // Check if onchain pricing equals to calculated ones
+    const funcName = 'querySellBase';
+    const readerCallData = getReaderCalldata(
+      wooFi.config.wooPPAddress,
+      wooFi.wooIfaces.PP,
+      amounts.slice(1),
+      funcName,
+      TokenA,
+    );
+    const readerResult = (
+      await dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+    const expectedPrices = [0n].concat(
+      decodeReaderResult(readerResult, wooFi.wooIfaces.PP, funcName),
+    );
+
+    expect(poolPrices![0].prices).toEqual(expectedPrices);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL Quote', async function () {
+    const blockNumber = await dexHelper.provider.getBlockNumber();
+    const wooFi = new WooFi(network, dexKey, dexHelper);
+    await wooFi.initializePricing(blockNumber);
+
+    const pools = await wooFi.getPoolIdentifiers(
+      TokenB,
+      TokenA,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await wooFi.getPricesVolume(
+      TokenB,
+      TokenA,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    if (wooFi.hasConstantPriceLargeAmounts) {
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    } else {
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    }
+
+    // Check if onchain pricing equals to calculated ones
+    const funcName = 'querySellQuote';
+    const readerCallData = getReaderCalldata(
+      wooFi.config.wooPPAddress,
+      wooFi.wooIfaces.PP,
+      amounts.slice(1),
+      funcName,
+      TokenA,
+    );
+    const readerResult = (
+      await dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+    const expectedPrices = [0n].concat(
+      decodeReaderResult(readerResult, wooFi.wooIfaces.PP, funcName),
+    );
+
+    expect(poolPrices![0].prices).toEqual(expectedPrices);
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const wooFi = new WooFi(network, dexKey, dexHelper);
+    const blockNumber = await dexHelper.provider.getBlockNumber();
 
-    await wooFi.initializePricing(blocknumber);
+    const wooFi = new WooFi(network, dexKey, dexHelper);
+    await wooFi.initializePricing(blockNumber);
 
     const pools = await wooFi.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.BUY,
-      blocknumber,
+      blockNumber,
     );
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
@@ -96,7 +183,7 @@ describe('WooFi', function () {
       TokenB,
       amounts,
       SwapSide.BUY,
-      blocknumber,
+      blockNumber,
       pools,
     );
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
@@ -113,10 +200,7 @@ describe('WooFi', function () {
     const dexHelper = new DummyDexHelper(network);
     const wooFi = new WooFi(network, dexKey, dexHelper);
 
-    const poolLiquidity = await wooFi.getTopPoolsForToken(
-      TokenA.address,
-      10,
-    );
+    const poolLiquidity = await wooFi.getTopPoolsForToken(TokenA.address, 10);
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
     if (!wooFi.hasConstantPriceLargeAmounts) {
