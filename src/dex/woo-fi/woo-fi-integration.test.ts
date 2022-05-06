@@ -12,7 +12,6 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
 import { Token } from '../../types';
 
 const network = Network.BSC;
