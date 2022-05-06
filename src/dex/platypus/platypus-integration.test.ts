@@ -61,7 +61,7 @@ describe('Platypus', function () {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     }
 
-    //Reprice each pool using on chain calculation to check it's correct
+    // Reprice each pool using on chain calculation to check it's correct
     for (const poolPrice of poolPrices!) {
       const pricesFromContract = (
         await dexHelper.multiContract.methods

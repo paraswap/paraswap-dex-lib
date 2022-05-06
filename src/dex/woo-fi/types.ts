@@ -31,6 +31,7 @@ export type WooFiData = {
 export type DexParams = {
   wooPPAddress: string;
   woOracleAddress: string;
+  wooFeeManagerAddress: string;
   quoteToken: Token;
   baseTokens: Record<string, Token>;
 };

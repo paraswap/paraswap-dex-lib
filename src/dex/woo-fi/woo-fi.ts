@@ -1,3 +1,5 @@
+import _ from 'lodash';
+import { Interface, Result } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -16,6 +18,9 @@ import { SimpleExchange } from '../simple-exchange';
 import { WooFiConfig, Adapters } from './config';
 import { wooFiMath } from './woo-fi-math';
 import { WOO_FI_GAS_COST } from './ constants';
+import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
+import wooFeeManagerABI from '../../abi/woo-fi/WooFeeManager.abi.json';
+import woOracleABI from '../../abi/woo-fi/Wooracle.abi.json';
 
 export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   readonly math: typeof wooFiMath = wooFiMath;
@@ -23,6 +28,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   latestState: PoolState | null = null;
 
   latestBlockNumber: number = 0;
+
+  tokenByAddress: Record<string, Token> | null = null;
+
+  readonly wooIfaces = {
+    PP: new Interface(wooPPABI),
+    fee: new Interface(wooFeeManagerABI),
+    oracle: new Interface(woOracleABI),
+  };
 
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -36,7 +49,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    protected config = WooFiConfig[dexKey][network],
+    readonly config = WooFiConfig[dexKey][network],
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -54,21 +67,126 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return this.config.woOracleAddress;
   }
 
+  protected _fillTokenInfoState(
+    state: PoolState,
+    address: string,
+    values: Result,
+  ) {
+    state.tokenInfos[address.toLowerCase()] = {
+      reserve: BigInt(values.reserve._hex),
+      threshold: BigInt(values.threshold._hex),
+      lastResetTimestamp: values.lastResetTimestamp,
+      R: BigInt(values.R._hex),
+      target: BigInt(values.target._hex),
+    };
+  }
+
   async fetchStateForBlockNumber(blockNumber: number): Promise<PoolState> {
-    return {
+    const calldata = _.flattenDeep(
+      this.baseTokens.map(t => [
+        {
+          target: this.config.wooFeeManagerAddress,
+          callData: this.wooIfaces.fee.encodeFunctionData('feeRate', [
+            t.address,
+          ]),
+        },
+        {
+          target: this.config.woOracleAddress,
+          callData: this.wooIfaces.oracle.encodeFunctionData('infos', [
+            t.address,
+          ]),
+        },
+        {
+          target: this.config.wooPPAddress,
+          callData: this.wooIfaces.PP.encodeFunctionData('tokenInfo', [
+            t.address,
+          ]),
+        },
+      ]),
+    );
+
+    calldata.push({
+      target: this.config.wooPPAddress,
+      callData: this.wooIfaces.PP.encodeFunctionData('tokenInfo', [
+        this.config.quoteToken.address,
+      ]),
+    });
+
+    const data = await this.dexHelper.multiContract.methods
+      .aggregate(calldata)
+      .call({}, blockNumber);
+
+    // Last request is standalone
+    const maxNumber = calldata.length - 1;
+
+    const [baseFeeRates, baseInfos, baseTokenInfos, quoteTokenInfo] = [
+      // Skip two as they are infos abd tokenInfo
+      _.range(0, maxNumber, 3).map(index =>
+        this.wooIfaces.fee.decodeFunctionResult(
+          'feeRate',
+          data.returnData[index],
+        ),
+      ),
+      _.range(1, maxNumber, 3).map(index =>
+        this.wooIfaces.oracle.decodeFunctionResult(
+          'infos',
+          data.returnData[index],
+        ),
+      ),
+      _.range(2, maxNumber, 3).map(index =>
+        this.wooIfaces.PP.decodeFunctionResult(
+          'tokenInfo',
+          data.returnData[index],
+        ),
+      ),
+      this.wooIfaces.PP.decodeFunctionResult(
+        'tokenInfo',
+        data.returnData[maxNumber],
+      ),
+    ];
+
+    const state: PoolState = {
       feeRates: {},
       tokenInfos: {},
       tokenStates: {},
     };
+    this._fillTokenInfoState(
+      state,
+      this.config.quoteToken.address,
+      quoteTokenInfo,
+    );
+
+    baseFeeRates.map((value, index) => {
+      const tokenAddress = this.baseTokens[index].address.toLowerCase();
+      state.feeRates[tokenAddress] = BigInt(value[0]._hex);
+    });
+    baseInfos.map((value, index) => {
+      const tokenAddress = this.baseTokens[index].address.toLowerCase();
+      state.tokenStates[tokenAddress] = {
+        priceNow: BigInt(value.price._hex),
+        coeffNow: BigInt(value.coeff._hex),
+        spreadNow: BigInt(value.spread._hex),
+      };
+    });
+    baseTokenInfos.map((values, index) => {
+      this._fillTokenInfoState(state, this.baseTokens[index].address, values);
+    });
+
+    return state;
   }
 
   async initializePricing(blockNumber: number) {
     this.latestState = await this.fetchStateForBlockNumber(blockNumber);
     this.latestBlockNumber = blockNumber;
+
+    this.tokenByAddress = {};
+    this.tokenByAddress[this.config.quoteToken.address.toLowerCase()] =
+      this.config.quoteToken;
+    for (const baseToken of this.baseTokens) {
+      this.tokenByAddress[baseToken.address.toLowerCase()] = baseToken;
+    }
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
@@ -77,24 +195,49 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return `${dexKey.toLowerCase()}_${baseTokenAddress.toLowerCase()}`;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const _srcToken = wrapETH(srcToken, this.network);
+    const _destToken = wrapETH(destToken, this.network);
+
+    if (_srcToken.address.toLowerCase() === _destToken.address.toLowerCase()) {
+      return [];
+    }
+    const quoteTokenAddress = this.config.quoteToken.address.toLowerCase();
+
+    let tokenToSearch: string;
+    if (_srcToken.address.toLowerCase() === quoteTokenAddress) {
+      tokenToSearch = _destToken.address.toLowerCase();
+    } else if (_destToken.address.toLowerCase() === quoteTokenAddress) {
+      tokenToSearch = _srcToken.address.toLowerCase();
+    } else {
+      return [];
+    }
+    const baseToken = this.baseTokens.find(
+      token => token.address.toLowerCase() === tokenToSearch,
+    );
+    return baseToken === undefined
+      ? []
+      : [WooFi.getIdentifier(this.dexKey, baseToken.address)];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
+  getPairFromIdentifier(identifier: string) {
+    if (this.tokenByAddress === null)
+      throw new Error(
+        'tokenByAddress was not properly initialized. Check if initializePricing was called',
+      );
+
+    const baseTokenAddress = identifier.split('_')[1];
+    return {
+      baseToken: this.tokenByAddress[baseTokenAddress.toLowerCase()],
+      quoteToken: this.config.quoteToken,
+    };
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -114,17 +257,20 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       }
 
       // Because all pools are made in the form of: baseToken / quoteToken
-      // where quoteToken is always the same, I use only baseToken.
-      // Currently on Woo Fi there are only 2 token pools without intersections
-      // So we need only to find the second token
-      const baseToken =
+      // where quoteToken is always the same, the difference only in baseToken.
+      const allowedPairIdentifiers =
         limitPools !== undefined
-          ? this.baseTokens.filter(t =>
-              limitPools.includes(WooFi.getIdentifier(this.dexKey, t.address)),
-            )
-          : this.baseTokens;
+          ? this.baseTokens
+              .map(token => WooFi.getIdentifier(this.dexKey, token.address))
+              .filter(identifier => limitPools.includes(identifier))
+          : await this.getPoolIdentifiers(
+              _srcToken,
+              _destToken,
+              side,
+              blockNumber,
+            );
 
-      if (!allowedTokens.length) return null;
+      if (!allowedPairIdentifiers.length) return null;
 
       let state: PoolState;
       if (this.latestBlockNumber === blockNumber && this.latestState !== null) {
@@ -141,11 +287,12 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           : getBigIntPow(_destToken.decimals);
 
       const _amounts = [unitVolume, ...amounts.slice(1)];
-      const { quoteToken } = this.config;
 
       const result: ExchangePrices<WooFiData> = [];
-      for (const baseToken of allowedTokens) {
-
+      for (const allowedPairIdentifier of allowedPairIdentifiers) {
+        const { baseToken, quoteToken } = this.getPairFromIdentifier(
+          allowedPairIdentifier,
+        );
         const _prices: bigint[] = [];
         for (const _amount of _amounts) {
           if (_amount === 0n) {
@@ -155,10 +302,34 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
               _srcToken.address.toLowerCase() ===
               quoteToken.address.toLowerCase()
             ) {
-              _prices.push(this.math.querySellQuote(state, quoteToken.address, baseToken.address))
+              _prices.push(
+                this.math.querySellQuote(
+                  state,
+                  quoteToken.address,
+                  baseToken.address,
+                  _amount,
+                ),
+              );
+            } else if (
+              _destToken.address.toLowerCase() ===
+              quoteToken.address.toLowerCase()
+            ) {
+              _prices.push(
+                this.math.querySellBase(
+                  state,
+                  quoteToken.address,
+                  baseToken.address,
+                  _amount,
+                ),
+              );
+            } else {
+              // Either of them must be quoteToken
+              return null;
             }
           }
         }
+
+        const unit = _prices[0];
 
         result.push({
           unit,
@@ -166,10 +337,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           data: {
             exchange: this.exchangeAddress,
           },
-          poolIdentifier: WooFi.getIdentifier(this.dexKey, token.address),
+          poolIdentifier: WooFi.getIdentifier(this.dexKey, baseToken.address),
           exchange: this.dexKey,
           gasCost: WOO_FI_GAS_COST,
-          // Is it actually ok if I put here WooPP address?
           poolAddresses: [this.exchangeAddress],
         });
       }
@@ -186,9 +356,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return null;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -210,10 +377,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -238,8 +401,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     );
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
