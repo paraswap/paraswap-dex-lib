@@ -1,10 +1,15 @@
-import { UniswapV2 } from './uniswap-v2';
+import {
+  UniswapV2,
+  UniswapV2PoolOrderedParams,
+  RESERVE_LIMIT,
+} from './uniswap-v2';
 import { Network, NULL_ADDRESS } from '../../constants';
 import { DexConfigMap, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import { DexParams } from './types';
 import { getDexKeysWithNetwork } from '../../utils';
 import dystopiaFactoryABI from '../../abi/dystopia/DystFactory.json';
+import { BI_MAX_UINT } from '../../bigint-constants';
 
 export const DystopiaConfig: DexConfigMap<DexParams> = {
   Dystopia: {
@@ -22,6 +27,9 @@ export const DystopiaConfig: DexConfigMap<DexParams> = {
 };
 
 export class Dystopia extends UniswapV2 {
+  /// 0.05% swap fee
+  private static SWAP_FEE_FACTOR: bigint = BigInt(2000);
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DystopiaConfig);
 
@@ -63,12 +71,12 @@ export class Dystopia extends UniswapV2 {
       .getPair(token0.address, token1.address, false)
       .call();
 
-    // if non-stable is not found then try to get stable pair
-    if (exchange === NULL_ADDRESS) {
-      exchange = await this.factory.methods
-        .getPair(token0.address, token1.address, true)
-        .call();
-    }
+    // // if non-stable is not found then try to get stable pair
+    // if (exchange === NULL_ADDRESS) {
+    //   exchange = await this.factory.methods
+    //     .getPair(token0.address, token1.address, true)
+    //     .call();
+    // }
 
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
@@ -77,5 +85,40 @@ export class Dystopia extends UniswapV2 {
     }
     this.pairs[key] = pair;
     return pair;
+  }
+
+  async getSellPrice(
+    priceParams: UniswapV2PoolOrderedParams,
+    srcAmount: bigint,
+  ): Promise<bigint> {
+    const { reservesIn, reservesOut } = priceParams;
+
+    if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
+      return 0n;
+    }
+
+    const amountInWithFee = srcAmount - srcAmount / Dystopia.SWAP_FEE_FACTOR;
+
+    const numerator = amountInWithFee * BigInt(reservesOut);
+
+    const denominator =
+      BigInt(reservesIn) * Dystopia.SWAP_FEE_FACTOR + amountInWithFee;
+
+    return denominator === 0n ? 0n : numerator / denominator;
+  }
+
+  async getBuyPrice(
+    priceParams: UniswapV2PoolOrderedParams,
+    destAmount: bigint,
+  ): Promise<bigint> {
+    const { reservesIn, reservesOut } = priceParams;
+
+    const numerator =
+      BigInt(reservesIn) * destAmount * Dystopia.SWAP_FEE_FACTOR;
+    const denominator =
+      (Dystopia.SWAP_FEE_FACTOR - 1n) * (BigInt(reservesOut) - destAmount);
+
+    if (denominator <= 0n) return BI_MAX_UINT;
+    return 1n + numerator / denominator;
   }
 }

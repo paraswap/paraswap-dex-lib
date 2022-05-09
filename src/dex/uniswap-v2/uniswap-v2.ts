@@ -45,11 +45,11 @@ import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 import { BI_MAX_UINT } from '../../bigint-constants';
 
-const RESERVE_LIMIT = 2n ** 112n - 1n;
+export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
-interface UniswapV2PoolOrderedParams {
+export interface UniswapV2PoolOrderedParams {
   tokenIn: string;
   tokenOut: string;
   reservesIn: string;
