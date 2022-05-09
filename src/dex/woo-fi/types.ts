@@ -3,6 +3,7 @@ import { Address, Token } from '../../types';
 export type TokenInfo = {
   reserve: bigint;
   R: bigint;
+  threshold: bigint;
 };
 
 export type TokenState = {

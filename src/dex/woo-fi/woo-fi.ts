@@ -17,7 +17,7 @@ import { PoolState, WooFiData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WooFiConfig, Adapters } from './config';
 import { wooFiMath } from './woo-fi-math';
-import { WOO_FI_GAS_COST } from './ constants';
+import { USD_PRECISION, WOO_FI_GAS_COST } from './ constants';
 import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
 import wooFeeManagerABI from '../../abi/woo-fi/WooFeeManager.abi.json';
 import woOracleABI from '../../abi/woo-fi/Wooracle.abi.json';
@@ -75,10 +75,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     state.tokenInfos[address.toLowerCase()] = {
       reserve: BigInt(values.reserve._hex),
       R: BigInt(values.R._hex),
+      threshold: BigInt(values.threshold._hex),
     };
   }
 
-  async fetchStateForBlockNumber(blockNumber: number): Promise<PoolState> {
+  async fetchStateForBlockNumber(blockNumber?: number): Promise<PoolState> {
     const calldata = _.flattenDeep(
       this.baseTokens.map(t => [
         {
@@ -111,7 +112,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
     const data = await this.dexHelper.multiContract.methods
       .aggregate(calldata)
-      .call({}, blockNumber);
+      .call({}, blockNumber || 'latest');
 
     // Last request is standalone
     const maxNumber = calldata.length - 1;
@@ -177,10 +178,16 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     this.latestBlockNumber = blockNumber;
 
     this.tokenByAddress = {};
-    this.tokenByAddress[this.config.quoteToken.address.toLowerCase()] =
-      this.config.quoteToken;
+
+    const quoteTokenAddress = this.config.quoteToken.address.toLowerCase();
+    // Normalising to toLowerCase()
+    this.config.quoteToken.address = quoteTokenAddress;
+    this.tokenByAddress[quoteTokenAddress] = this.config.quoteToken;
+
     for (const baseToken of this.baseTokens) {
-      this.tokenByAddress[baseToken.address.toLowerCase()] = baseToken;
+      const baseTokenAddress = baseToken.address.toLowerCase();
+      baseToken.address = baseTokenAddress;
+      this.tokenByAddress[baseTokenAddress] = baseToken;
     }
   }
 
@@ -269,21 +276,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       if (!allowedPairIdentifiers.length) return null;
 
-      let state: PoolState;
-      if (this.latestBlockNumber === blockNumber && this.latestState !== null) {
-        state = this.latestState;
-      } else {
-        this.latestState = await this.fetchStateForBlockNumber(blockNumber);
-        this.latestBlockNumber = blockNumber;
-        state = this.latestState;
-      }
-
       const unitVolume =
         side === SwapSide.SELL
           ? getBigIntPow(_srcToken.decimals)
           : getBigIntPow(_destToken.decimals);
 
       const _amounts = [unitVolume, ...amounts.slice(1)];
+
+      const state = await this.getState(blockNumber);
 
       const result: ExchangePrices<WooFiData> = [];
       for (const allowedPairIdentifier of allowedPairIdentifiers) {
@@ -402,7 +402,103 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    const wrappedTokenAddress = wrapETH(
+      // We set decimals to default as we don't really care of actual number.
+      // Using only address
+      { address: tokenAddress, decimals: 18 },
+      this.network,
+    ).address.toLowerCase();
+
+    const filteredToken = Object.values(this.tokenByAddress!).filter(
+      token => token.address === wrappedTokenAddress,
+    );
+
+    if (filteredToken.length === 0) return [];
+
+    const quoteTokenAddress = this.config.quoteToken.address.toLowerCase();
+    const selected =
+      wrappedTokenAddress === quoteTokenAddress
+        ? this.baseTokens
+        : [this.tokenByAddress![quoteTokenAddress]];
+
+    // If we knew current blockNumber, we wouldn't need to fetch the state
+    // each time we query this function
+    const state = await this.fetchStateForBlockNumber();
+
+    return (
+      selected
+        .map(token => {
+          const loweredTokenAddress = token.address.toLowerCase();
+
+          let liquidityBigInt: bigint;
+
+          // If currentToken is quote, it means we want to sellQuote and buy baseToken.
+          // To calculate liquidity, we need to convert baseReserve to quote and use that value
+          if (this._isQuote(loweredTokenAddress)) {
+            const baseReserve = state.tokenInfos[wrappedTokenAddress].reserve;
+            liquidityBigInt = this.math.querySellBase(
+              state,
+              loweredTokenAddress,
+              wrappedTokenAddress,
+              baseReserve,
+            );
+          } else {
+            // If current token is the base, we just use the reserve of quote as liquidity
+            liquidityBigInt = state.tokenInfos[loweredTokenAddress].reserve;
+          }
+
+          const liquidityUSD = this._bigIntToNumberWithPrecision(
+            liquidityBigInt,
+            this.config.quoteToken.decimals,
+            USD_PRECISION,
+          );
+
+          return {
+            // We don't have pool names as usual. Maybe its better to add symbol?
+            exchange: this.dexKey,
+            address: this.exchangeAddress,
+            connectorTokens: [token],
+            liquidityUSD,
+          };
+        })
+        // Sorting done before slicing because the number of tokens is very small
+        // And its not expected to increase much
+        .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+        .slice(0, limit)
+    );
+  }
+
+  private _isQuote(a: string): boolean {
+    return this.config.quoteToken.address.toLowerCase() === a.toLowerCase();
+  }
+
+  // I think this function is quite strange. Is there more simple way to achieve the same?
+  // I want to convert bigint to number and keep the precision
+  private _bigIntToNumberWithPrecision(
+    value: bigint,
+    decimals: number,
+    precision: number = 2,
+  ) {
+    if (precision > decimals)
+      throw new Error(
+        `precision ${precision} must be <= decimals ${decimals} in _convertToNumberWithPrecision`,
+      );
+
+    const slashed = (value / getBigIntPow(decimals - precision)).toString();
+
+    const indToInt = slashed.length - precision;
+    return (
+      Number(slashed.slice(0, indToInt)) +
+      Number(`0.${slashed.slice(indToInt, slashed.length)}`)
+    );
+  }
+
+  async getState(blockNumber: number): Promise<PoolState> {
+    if (this.latestBlockNumber === blockNumber && this.latestState !== null) {
+      return this.latestState;
+    }
+    this.latestState = await this.fetchStateForBlockNumber(blockNumber);
+    this.latestBlockNumber = blockNumber;
+    return this.latestState;
   }
 }

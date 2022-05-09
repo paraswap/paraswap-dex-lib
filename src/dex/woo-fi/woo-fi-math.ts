@@ -193,7 +193,10 @@ class WooFiPoolMath {
     let quoteBought = 0n;
 
     let baseSold = 0n;
-    const baseTarget = baseInfo.reserve > 0n ? baseInfo.reserve : 0n;
+    const baseTarget =
+      baseInfo.reserve > baseInfo.threshold
+        ? baseInfo.reserve
+        : baseInfo.threshold;
     if (baseInfo.reserve < baseTarget) {
       baseBought = baseTarget - baseInfo.reserve;
     } else {
@@ -201,14 +204,17 @@ class WooFiPoolMath {
     }
 
     let quoteSold = 0n;
-    const quoteTarget = quoteInfo.reserve > 0n ? quoteInfo.reserve : 0n;
+    const quoteTarget =
+      quoteInfo.reserve > baseInfo.threshold
+        ? quoteInfo.reserve
+        : baseInfo.threshold;
     if (quoteInfo.reserve < quoteTarget) {
       quoteBought = quoteTarget - quoteInfo.reserve;
     } else {
       quoteSold = quoteInfo.reserve - quoteTarget;
     }
 
-    if (this.dMath.mulCeil(baseSold, p) > quoteSold) {
+    if (this.dMath.mulCeil(baseSold, p) < quoteSold) {
       baseSold = baseSold - this.dMath.divFloor(quoteSold, p);
       quoteSold = 0n;
     } else {
