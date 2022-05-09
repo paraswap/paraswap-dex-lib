@@ -354,7 +354,7 @@ export class UniswapV2
     return price;
   }
 
-  private async findPair(from: Token, to: Token) {
+  async findPair(from: Token, to: Token) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
