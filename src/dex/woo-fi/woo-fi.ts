@@ -485,8 +485,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
             liquidityUSD,
           };
         })
-        // Sorting done before slicing because the number of tokens is very small
-        // And its not expected to increase much
         .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
         .slice(0, limit)
     );
