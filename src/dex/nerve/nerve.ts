@@ -14,7 +14,6 @@ import { SwapSide, Network } from '../../constants';
 import {
   wrapETH,
   getDexKeysWithNetwork,
-  interpolate,
   getBigIntPow,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
