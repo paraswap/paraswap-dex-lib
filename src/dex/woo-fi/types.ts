@@ -18,13 +18,7 @@ export type PoolState = {
   tokenStates: Record<Address, TokenState>;
 };
 
-export type WooFiData = {
-  // TODO: WooFiData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
-  exchange: Address;
-};
+export type WooFiData = {};
 
 export type DexParams = {
   wooPPAddress: Address;
