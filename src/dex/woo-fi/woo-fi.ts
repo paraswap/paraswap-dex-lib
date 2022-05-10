@@ -21,7 +21,7 @@ import {
   MIN_CONVERSION_RATE,
   USD_PRECISION,
   WOO_FI_GAS_COST,
-} from './ constants';
+} from './constants';
 import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
 import wooFeeManagerABI from '../../abi/woo-fi/WooFeeManager.abi.json';
 import woOracleABI from '../../abi/woo-fi/Wooracle.abi.json';
