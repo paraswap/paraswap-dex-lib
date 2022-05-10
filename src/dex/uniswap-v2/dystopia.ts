@@ -11,18 +11,20 @@ import { getDexKeysWithNetwork } from '../../utils';
 import dystopiaFactoryABI from '../../abi/dystopia/DystFactory.json';
 import { BI_MAX_UINT } from '../../bigint-constants';
 
+export const DystopiaSharedPolygonConfig: DexParams = {
+  subgraphURL:
+    'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia',
+  factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
+  router: '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e',
+  initCode:
+    '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
+  feeCode: 5,
+  poolGasCost: 350 * 1000, // TODO check swap max gas cost
+};
+
 export const DystopiaConfig: DexConfigMap<DexParams> = {
   Dystopia: {
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia',
-      factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
-      router: '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e',
-      initCode:
-        '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
-      feeCode: 5,
-      poolGasCost: 350 * 1000, // TODO check swap max gas cost
-    },
+    [Network.POLYGON]: DystopiaSharedPolygonConfig,
   },
 };
 
@@ -66,17 +68,13 @@ export class Dystopia extends UniswapV2 {
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     if (pair) return pair;
-    // try to find non-stable pair first
+
     let exchange = await this.factory.methods
+      // Dystopia has additional boolean parameter "StablePool"
+      // At this Dystopia implementation we're looking for
+      // non-stable (uniswap2-like) pools only
       .getPair(token0.address, token1.address, false)
       .call();
-
-    // // if non-stable is not found then try to get stable pair
-    // if (exchange === NULL_ADDRESS) {
-    //   exchange = await this.factory.methods
-    //     .getPair(token0.address, token1.address, true)
-    //     .call();
-    // }
 
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
@@ -87,6 +85,9 @@ export class Dystopia extends UniswapV2 {
     return pair;
   }
 
+  // Dystopia non-stable pools has almost same formula like uniswap2,
+  // but little changed in contract.
+  // So we repeat formulas here to have same output.
   async getSellPrice(
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,

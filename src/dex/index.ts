@@ -41,6 +41,7 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { Dystopia } from './uniswap-v2/dystopia';
+import { DystopiaStable } from './uniswap-v2/dystopia-stable';
 
 const LegacyDexes = [
   Curve,
@@ -80,6 +81,7 @@ const Dexes = [
   Platypus,
   GMX,
   Dystopia,
+  DystopiaStable,
 ];
 
 const AdapterNameAddressMap: {

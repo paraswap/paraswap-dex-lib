@@ -5,6 +5,7 @@ import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
 import { DystopiaConfig } from './dystopia';
+import { DystopiaStableConfig } from './dystopia-stable';
 
 // BakerySwap is removed from AllUniswapForks and UniswapForksWithNetwork
 // as it has a modified pool implementation which is not compatible with
@@ -17,6 +18,7 @@ export const AllUniswapForks = [
   ...Object.keys(DfynConfig),
   ...Object.keys(ExcaliburConfig),
   ...Object.keys(DystopiaConfig),
+  ...Object.keys(DystopiaStableConfig),
 ];
 
 const transformToNetworkMap = (config: {
@@ -45,6 +47,7 @@ export const UniswapForksWithNetwork = transformToNetworkMap({
   ...DfynConfig,
   ...ExcaliburConfig,
   ...DystopiaConfig,
+  ...DystopiaStableConfig,
 });
 
 // These are exchanges used for swapOnUniswap method
