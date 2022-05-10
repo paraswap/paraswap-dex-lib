@@ -214,10 +214,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  static getIdentifier(dexKey: string, baseTokenAddress: string) {
-    // quoteToken is always the same, so I think baseToken address is sufficient
-    // for identifier
-    return `${dexKey.toLowerCase()}_${baseTokenAddress.toLowerCase()}`;
+  static getIdentifier(dexKey: string) {
+    // Token pairs are unique and we don't have pool address
+    return dexKey.toLowerCase();
   }
 
   async getPoolIdentifiers(
@@ -244,9 +243,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     const baseToken = this.baseTokens.find(
       token => token.address.toLowerCase() === tokenToSearch,
     );
-    return baseToken === undefined
-      ? []
-      : [WooFi.getIdentifier(this.dexKey, baseToken.address)];
+    return baseToken === undefined ? [] : [WooFi.getIdentifier(this.dexKey)];
   }
 
   getBaseFromIdentifier(identifier: string) {
@@ -284,7 +281,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       const allowedPairIdentifiers =
         limitPools !== undefined
           ? this.baseTokens
-              .map(token => WooFi.getIdentifier(this.dexKey, token.address))
+              .map(token => WooFi.getIdentifier(this.dexKey))
               .filter(identifier => limitPools.includes(identifier))
           : await this.getPoolIdentifiers(
               _srcToken,
@@ -343,7 +340,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           unit,
           prices: [0n, ..._prices.slice(1)],
           data: {},
-          poolIdentifier: WooFi.getIdentifier(this.dexKey, baseToken.address),
+          poolIdentifier: WooFi.getIdentifier(this.dexKey),
           exchange: this.dexKey,
           gasCost: WOO_FI_GAS_COST,
           poolAddresses: [this.exchangeAddress],
@@ -450,44 +447,42 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     // each time we query this function
     const state = await this.fetchStateForBlockNumber();
 
-    return (
-      selected
-        .map(token => {
-          const loweredTokenAddress = token.address.toLowerCase();
+    return selected
+      .map(token => {
+        const loweredTokenAddress = token.address.toLowerCase();
 
-          let liquidityBigInt: bigint;
+        let liquidityBigInt: bigint;
 
-          // If currentToken is quote, it means we want to sellQuote and buy baseToken.
-          // To calculate liquidity, we need to convert baseReserve to quote and use that value
-          if (this._isQuote(loweredTokenAddress)) {
-            const baseReserve = state.tokenInfos[wrappedTokenAddress].reserve;
-            liquidityBigInt = this.math.querySellBase(
-              state,
-              loweredTokenAddress,
-              wrappedTokenAddress,
-              baseReserve,
-            );
-          } else {
-            // If current token is the base, we just use the reserve of quote as liquidity
-            liquidityBigInt = state.tokenInfos[loweredTokenAddress].reserve;
-          }
-
-          const liquidityUSD = this._bigIntToNumberWithPrecision(
-            liquidityBigInt,
-            this.config.quoteToken.decimals,
-            USD_PRECISION,
+        // If currentToken is quote, it means we want to sellQuote and buy baseToken.
+        // To calculate liquidity, we need to convert baseReserve to quote and use that value
+        if (this._isQuote(loweredTokenAddress)) {
+          const baseReserve = state.tokenInfos[wrappedTokenAddress].reserve;
+          liquidityBigInt = this.math.querySellBase(
+            state,
+            loweredTokenAddress,
+            wrappedTokenAddress,
+            baseReserve,
           );
+        } else {
+          // If current token is the base, we just use the reserve of quote as liquidity
+          liquidityBigInt = state.tokenInfos[loweredTokenAddress].reserve;
+        }
 
-          return {
-            exchange: this.dexKey,
-            address: this.exchangeAddress,
-            connectorTokens: [token],
-            liquidityUSD,
-          };
-        })
-        .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
-        .slice(0, limit)
-    );
+        const liquidityUSD = this._bigIntToNumberWithPrecision(
+          liquidityBigInt,
+          this.config.quoteToken.decimals,
+          USD_PRECISION,
+        );
+
+        return {
+          exchange: this.dexKey,
+          address: this.exchangeAddress,
+          connectorTokens: [token],
+          liquidityUSD,
+        };
+      })
+      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+      .slice(0, limit);
   }
 
   private _isQuote(a: string): boolean {
