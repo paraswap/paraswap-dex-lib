@@ -75,7 +75,11 @@ async function checkOnChainPricing(
   prices: bigint[],
 ) {
   const exchangeAddress = ''; // TODO: Put here the real exchange address
-  const readerIface = new Interface(''); // TODO: Replace dummy interface with the real one
+
+  // TODO: Replace dummy interface with the real one
+  // Normally you can get it from __DexNameCamel__.Iface or from eventPool.
+  // It depends on your implementation
+  const readerIface = new Interface('');
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
