@@ -371,15 +371,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     data: WooFiData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-
-    // Encode here the payload for adapter
-    const payload = '';
 
     return {
       targetExchange: this.exchangeAddress,
-      payload,
+      payload: '0x',
       networkFee: '0',
     };
   }
