@@ -215,6 +215,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   static getIdentifier(dexKey: string, baseTokenAddress: string) {
+    // quoteToken is always the same, so I think baseToken address is sufficient
+    // for identifier
     return `${dexKey.toLowerCase()}_${baseTokenAddress.toLowerCase()}`;
   }
 
@@ -247,17 +249,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       : [WooFi.getIdentifier(this.dexKey, baseToken.address)];
   }
 
-  getPairFromIdentifier(identifier: string) {
+  getBaseFromIdentifier(identifier: string) {
     if (this.tokenByAddress === null)
       throw new Error(
         'tokenByAddress was not properly initialized. Check if initializePricing was called',
       );
 
     const baseTokenAddress = identifier.split('_')[1];
-    return {
-      baseToken: this.tokenByAddress[baseTokenAddress.toLowerCase()],
-      quoteToken: this.config.quoteToken,
-    };
+    return this.tokenByAddress[baseTokenAddress.toLowerCase()];
   }
 
   async getPricesVolume(
@@ -280,7 +279,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         return null;
       }
 
-      // Because all pools are made in the form of: baseToken / quoteToken
+      // Because of all pools are made in the form of: baseToken / quoteToken
       // where quoteToken is always the same, the difference only in baseToken.
       const allowedPairIdentifiers =
         limitPools !== undefined
@@ -304,7 +303,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       const result: ExchangePrices<WooFiData> = [];
       for (const allowedPairIdentifier of allowedPairIdentifiers) {
-        const { baseToken } = this.getPairFromIdentifier(allowedPairIdentifier);
+        const baseToken = this.getBaseFromIdentifier(allowedPairIdentifier);
+
         const _prices: bigint[] = [];
         for (const _amount of _amounts) {
           if (_amount === 0n) {
@@ -331,7 +331,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
                 ),
               );
             } else {
-              // Either of them must be quoteToken
+              // One of them must be quoteToken
               return null;
             }
           }
@@ -342,9 +342,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         result.push({
           unit,
           prices: [0n, ..._prices.slice(1)],
-          data: {
-            exchange: this.exchangeAddress,
-          },
+          data: {},
           poolIdentifier: WooFi.getIdentifier(this.dexKey, baseToken.address),
           exchange: this.dexKey,
           gasCost: WOO_FI_GAS_COST,
@@ -406,7 +404,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       _amount = srcAmount;
     } else {
       throw new Error(
-        `Either of srcToken ${srcToken} or destToken ${destToken} must be quoteToken`,
+        `srcToken ${srcToken} or destToken ${destToken} must be quoteToken`,
       );
     }
 
@@ -433,9 +431,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     const wrappedTokenAddress = wrapETH(
-      // We set decimals to default as we don't really care of actual number.
-      // Using only address
-      { address: tokenAddress, decimals: 18 },
+      { address: tokenAddress, decimals: 0 },
       this.network,
     ).address.toLowerCase();
 
