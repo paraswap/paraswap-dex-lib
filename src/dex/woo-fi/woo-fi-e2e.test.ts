@@ -32,68 +32,74 @@ describe('WooFi E2E', () => {
     const tokenBAmount: string = '111000000000000000000';
     const nativeTokenAmount = '3000000000000000000';
 
-    // SELL
-    // ContractMethod.multiSwap,
-    // ContractMethod.megaSwap,
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+    ]);
 
-    describe('SELL', () => {
-      const side = SwapSide.SELL;
-      describe('simpleSwap', () => {
-        const contractMethod = ContractMethod.simpleSwap;
-
-        it('BNB -> QUOTE TOKEN', async () => {
-          await testE2E(
-            tokens[nativeTokenSymbol],
-            tokens[tokenBSymbol],
-            holders[nativeTokenSymbol],
-            nativeTokenAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
+    sideToContractMethods.forEach((contractMethods, side) =>
+      contractMethods.forEach((contractMethod: ContractMethod) => {
+        describe(`${contractMethod}`, () => {
+          it(nativeTokenSymbol + ' -> QUOTE TOKEN', async () => {
+            await testE2E(
+              tokens[nativeTokenSymbol],
+              tokens[tokenBSymbol],
+              holders[nativeTokenSymbol],
+              side === SwapSide.SELL ? nativeTokenAmount : tokenBAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('QUOTE TOKEN -> ' + nativeTokenSymbol, async () => {
+            await testE2E(
+              tokens[tokenBSymbol],
+              tokens[nativeTokenSymbol],
+              holders[tokenBSymbol],
+              side === SwapSide.SELL ? tokenBAmount : nativeTokenAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('BASE TOKEN -> QUOTE TOKEN', async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it('QUOTE TOKEN -> BASE TOKEN', async () => {
+            await testE2E(
+              tokens[tokenBSymbol],
+              tokens[tokenASymbol],
+              holders[tokenBSymbol],
+              side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
         });
-        it('QUOTE TOKEN -> BNB', async () => {
-          await testE2E(
-            tokens[tokenBSymbol],
-            tokens[nativeTokenSymbol],
-            holders[tokenBSymbol],
-            tokenBAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
-        });
-        it('BASE TOKEN -> QUOTE TOKEN', async () => {
-          await testE2E(
-            tokens[tokenASymbol],
-            tokens[tokenBSymbol],
-            holders[tokenASymbol],
-            tokenAAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
-        });
-        it('QUOTE TOKEN -> BASE TOKEN', async () => {
-          await testE2E(
-            tokens[tokenBSymbol],
-            tokens[tokenASymbol],
-            holders[tokenBSymbol],
-            tokenBAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
-        });
-      });
-    });
+      }),
+    );
   });
 });
