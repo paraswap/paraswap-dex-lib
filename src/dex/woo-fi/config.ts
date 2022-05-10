@@ -4,7 +4,6 @@ import { Network, SwapSide } from '../../constants';
 
 export const WooFiConfig: DexConfigMap<DexParams> = {
   WooFi: {
-    // TODO: complete me!
     [Network.BSC]: {
       wooPPAddress: '0xbf365Ce9cFcb2d5855521985E351bA3bcf77FD3F',
       woOracleAddress: '0x6b6fBEc7934b104e81b2046D24A990e03e17afDC',
@@ -29,6 +28,62 @@ export const WooFiConfig: DexConfigMap<DexParams> = {
         },
         WOO: {
           address: '0x4691937a7508860f876c9c0a2a617e7d9e945d4b',
+          decimals: 18,
+        },
+      },
+    },
+    [Network.AVALANCHE]: {
+      wooPPAddress: '0x1df3009c57a8B143c6246149F00B090Bce3b8f88',
+      woOracleAddress: '0x25a4d4a094A084c7ad45Ac273cF7D6B6bfae7D4E',
+      wooFeeManagerAddress: '0x209102c0D2E34282494114ea76D5251c8e7Ea7ab',
+      quoteToken: {
+        // USDC
+        address: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
+        decimals: 6,
+      },
+      baseTokens: {
+        WAVAX: {
+          address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+          decimals: 18,
+        },
+        ['WBTC.e']: {
+          address: '0x50b7545627a5162F82A992c33b87aDc75187B218',
+          decimals: 8,
+        },
+        ['WETH.e']: {
+          address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
+          decimals: 18,
+        },
+        ['WOO.e']: {
+          address: '0xaBC9547B534519fF73921b1FBA6E672b5f58D083',
+          decimals: 18,
+        },
+      },
+    },
+    [Network.FANTOM]: {
+      wooPPAddress: '0x9503E7517D3C5bc4f9E4A1c6AE4f8B33AC2546f2',
+      woOracleAddress: '0x209102c0D2E34282494114ea76D5251c8e7Ea7ab',
+      wooFeeManagerAddress: '0xBE1a0FccCFA9c9065152B7770B918f7C59914E8D',
+      quoteToken: {
+        // USDC
+        address: '0x04068da6c83afcfa0e13ba15a6696662335d5b75',
+        decimals: 6,
+      },
+      baseTokens: {
+        WFTM: {
+          address: '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83',
+          decimals: 18,
+        },
+        BTC: {
+          address: '0x321162Cd933E2Be498Cd2267a90534A804051b11',
+          decimals: 8,
+        },
+        ETH: {
+          address: '0x74b23882a30290451A17c44f4F05243b6b58C76d',
+          decimals: 18,
+        },
+        WOO: {
+          address: '0x6626c47c00F1D87902fc13EECfaC3ed06D5E8D8a',
           decimals: 18,
         },
       },
