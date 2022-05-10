@@ -36,9 +36,6 @@ describe('WooFi E2E', () => {
     // ContractMethod.multiSwap,
     // ContractMethod.megaSwap,
 
-    // BUY
-    // ContractMethod.buy
-
     describe('SELL', () => {
       const side = SwapSide.SELL;
       describe('simpleSwap', () => {
@@ -89,65 +86,6 @@ describe('WooFi E2E', () => {
             tokens[tokenASymbol],
             holders[tokenBSymbol],
             tokenBAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
-        });
-      });
-    });
-
-    describe('BUY', () => {
-      const side = SwapSide.BUY;
-      describe('simpleBuy', () => {
-        const contractMethod = ContractMethod.simpleBuy;
-        it('BNB -> QUOTE TOKEN', async () => {
-          await testE2E(
-            tokens[nativeTokenSymbol],
-            tokens[tokenBSymbol],
-            holders[nativeTokenSymbol],
-            tokenBAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
-        });
-        it('QUOTE TOKEN -> BNB', async () => {
-          await testE2E(
-            tokens[tokenBSymbol],
-            tokens[nativeTokenSymbol],
-            holders[tokenBSymbol],
-            nativeTokenAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
-        });
-        it('BASE TOKEN -> QUOTE TOKEN', async () => {
-          await testE2E(
-            tokens[tokenASymbol],
-            tokens[tokenBSymbol],
-            holders[tokenASymbol],
-            tokenBAmount,
-            side,
-            dexKey,
-            contractMethod,
-            network,
-            provider,
-          );
-        });
-        it('QUOTE TOKEN -> BASE TOKEN', async () => {
-          await testE2E(
-            tokens[tokenBSymbol],
-            tokens[tokenASymbol],
-            holders[tokenBSymbol],
-            tokenAAmount,
             side,
             dexKey,
             contractMethod,
