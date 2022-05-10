@@ -53,13 +53,43 @@ function decodeReaderResult(
   });
 }
 
+async function checkOnChainPricing(
+  wooFi: WooFi,
+  funcName: string,
+  blockNumber: number,
+  prices: bigint[],
+) {
+  const readerCallData = getReaderCalldata(
+    wooFi.config.wooPPAddress,
+    wooFi.wooIfaces.PP,
+    amounts.slice(1),
+    funcName,
+    TokenA,
+  );
+  const readerResult = (
+    await dexHelper.multiContract.methods
+      .aggregate(readerCallData)
+      .call({}, blockNumber)
+  ).returnData;
+  const expectedPrices = [0n].concat(
+    decodeReaderResult(readerResult, wooFi.wooIfaces.PP, funcName),
+  );
+
+  expect(prices).toEqual(expectedPrices);
+}
+
 describe('WooFi', function () {
-  it('getPoolIdentifiers and getPricesVolume SELL Base', async function () {
-    const blockNumber = await dexHelper.provider.getBlockNumber();
+  let blockNumber: number;
+  let wooFi: WooFi;
 
-    const wooFi = new WooFi(network, dexKey, dexHelper);
+  beforeAll(async () => {
+    blockNumber = await dexHelper.provider.getBlockNumber();
+
+    wooFi = new WooFi(network, dexKey, dexHelper);
     await wooFi.initializePricing(blockNumber);
+  });
 
+  it('getPoolIdentifiers and getPricesVolume SELL Base', async function () {
     const pools = await wooFi.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -88,21 +118,11 @@ describe('WooFi', function () {
     }
 
     // Check if onchain pricing equals to calculated ones
-    const funcName = 'querySellBase';
-    const readerCallData = getReaderCalldata(
-      wooFi.config.wooPPAddress,
-      wooFi.wooIfaces.PP,
-      amounts.slice(1),
-      funcName,
-      TokenA,
-    );
-    const readerResult = (
-      await dexHelper.multiContract.methods
-        .aggregate(readerCallData)
-        .call({}, blockNumber)
-    ).returnData;
-    const expectedPrices = [0n].concat(
-      decodeReaderResult(readerResult, wooFi.wooIfaces.PP, funcName),
+    await checkOnChainPricing(
+      wooFi,
+      'querySellBase',
+      blockNumber,
+      poolPrices![0].prices,
     );
 
     // const test = wooFi.math.querySellBase(
@@ -139,15 +159,9 @@ describe('WooFi', function () {
     //   ),
     //   new BigNumber(amounts[1].toString()),
     // );
-
-    expect(poolPrices![0].prices).toEqual(expectedPrices);
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL Quote', async function () {
-    const blockNumber = await dexHelper.provider.getBlockNumber();
-    const wooFi = new WooFi(network, dexKey, dexHelper);
-    await wooFi.initializePricing(blockNumber);
-
     const pools = await wooFi.getPoolIdentifiers(
       TokenB,
       TokenA,
@@ -175,68 +189,87 @@ describe('WooFi', function () {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     }
 
-    // Check if onchain pricing equals to calculated ones
-    const funcName = 'querySellQuote';
-    const readerCallData = getReaderCalldata(
-      wooFi.config.wooPPAddress,
-      wooFi.wooIfaces.PP,
-      amounts.slice(1),
-      funcName,
-      TokenA,
+    await checkOnChainPricing(
+      wooFi,
+      'querySellQuote',
+      blockNumber,
+      poolPrices![0].prices,
     );
-    const readerResult = (
-      await dexHelper.multiContract.methods
-        .aggregate(readerCallData)
-        .call({}, blockNumber)
-    ).returnData;
-    const expectedPrices = [0n].concat(
-      decodeReaderResult(readerResult, wooFi.wooIfaces.PP, funcName),
-    );
-
-    expect(poolPrices![0].prices).toEqual(expectedPrices);
   });
 
-  // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-  //   const blockNumber = await dexHelper.provider.getBlockNumber();
+  it('getPoolIdentifiers and getPricesVolume BUY Quote', async function () {
+    const pools = await wooFi.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
-  //   const wooFi = new WooFi(network, dexKey, dexHelper);
-  //   await wooFi.initializePricing(blockNumber);
+    expect(pools.length).toBeGreaterThan(0);
 
-  //   const pools = await wooFi.getPoolIdentifiers(
-  //     TokenA,
-  //     TokenB,
-  //     SwapSide.BUY,
-  //     blockNumber,
-  //   );
-  //   console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    const poolPrices = await wooFi.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
-  //   expect(pools.length).toBeGreaterThan(0);
+    expect(poolPrices).not.toBeNull();
+    if (wooFi.hasConstantPriceLargeAmounts) {
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    } else {
+      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+    }
 
-  //   const poolPrices = await wooFi.getPricesVolume(
-  //     TokenA,
-  //     TokenB,
-  //     amounts,
-  //     SwapSide.BUY,
-  //     blockNumber,
-  //     pools,
-  //   );
-  //   console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    await checkOnChainPricing(
+      wooFi,
+      'querySellQuote',
+      blockNumber,
+      poolPrices![0].prices,
+    );
+  });
 
-  //   expect(poolPrices).not.toBeNull();
-  //   if (wooFi.hasConstantPriceLargeAmounts) {
-  //     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  //   } else {
-  //     checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
-  //   }
-  // });
+  it('getPoolIdentifiers and getPricesVolume BUY Base', async function () {
+    const pools = await wooFi.getPoolIdentifiers(
+      TokenB,
+      TokenA,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await wooFi.getPricesVolume(
+      TokenB,
+      TokenA,
+      amounts,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    if (wooFi.hasConstantPriceLargeAmounts) {
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    } else {
+      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+    }
+
+    await checkOnChainPricing(
+      wooFi,
+      'querySellBase',
+      blockNumber,
+      poolPrices![0].prices,
+    );
+  });
 
   it('getTopPoolsForToken Base', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blockNumber = await dexHelper.provider.getBlockNumber();
-
-    const wooFi = new WooFi(network, dexKey, dexHelper);
-    await wooFi.initializePricing(blockNumber);
-
     const poolLiquidity = await wooFi.getTopPoolsForToken(TokenA.address, 10);
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
@@ -246,12 +279,6 @@ describe('WooFi', function () {
   });
 
   it('getTopPoolsForToken Quote', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blockNumber = await dexHelper.provider.getBlockNumber();
-
-    const wooFi = new WooFi(network, dexKey, dexHelper);
-    await wooFi.initializePricing(blockNumber);
-
     const poolLiquidity = await wooFi.getTopPoolsForToken(TokenB.address, 10);
     console.log(`${TokenBSymbol} Top Pools:`, poolLiquidity);
 
