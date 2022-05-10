@@ -606,4 +606,5 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.POLYGON]: 'MATIC',
   [Network.BSC]: 'BNB',
   [Network.AVALANCHE]: 'AVAX',
+  [Network.FANTOM]: 'FTM',
 };
