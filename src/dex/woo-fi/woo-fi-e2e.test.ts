@@ -46,7 +46,7 @@ describe('WooFi E2E', () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it(nativeTokenSymbol + ' -> QUOTE TOKEN', async () => {
+          it(`${side} ${contractMethod} ${nativeTokenSymbol} -> QUOTE TOKEN`, async () => {
             await testE2E(
               tokens[nativeTokenSymbol],
               tokens[tokenBSymbol],
@@ -59,7 +59,7 @@ describe('WooFi E2E', () => {
               provider,
             );
           });
-          it('QUOTE TOKEN -> ' + nativeTokenSymbol, async () => {
+          it(`${side} ${contractMethod} QUOTE TOKEN -> ${nativeTokenSymbol}`, async () => {
             await testE2E(
               tokens[tokenBSymbol],
               tokens[nativeTokenSymbol],
@@ -72,7 +72,7 @@ describe('WooFi E2E', () => {
               provider,
             );
           });
-          it('BASE TOKEN -> QUOTE TOKEN', async () => {
+          it(`${side} ${contractMethod} BASE TOKEN -> QUOTE TOKEN`, async () => {
             await testE2E(
               tokens[tokenASymbol],
               tokens[tokenBSymbol],
@@ -85,7 +85,7 @@ describe('WooFi E2E', () => {
               provider,
             );
           });
-          it('QUOTE TOKEN -> BASE TOKEN', async () => {
+          it(`${side} ${contractMethod} QUOTE TOKEN -> BASE TOKEN`, async () => {
             await testE2E(
               tokens[tokenBSymbol],
               tokens[tokenASymbol],
