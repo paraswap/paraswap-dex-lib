@@ -268,6 +268,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<WooFiData>> {
+    if (side === SwapSide.BUY) return null;
+
     try {
       const _srcToken = wrapETH(srcToken, this.network);
       const _destToken = wrapETH(destToken, this.network);
@@ -294,10 +296,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       if (!allowedPairIdentifiers.length) return null;
 
-      const unitVolume =
-        side === SwapSide.SELL
-          ? getBigIntPow(_srcToken.decimals)
-          : getBigIntPow(_destToken.decimals);
+      const unitVolume = getBigIntPow(_srcToken.decimals);
 
       const _amounts = [unitVolume, ...amounts.slice(1)];
 
@@ -313,37 +312,23 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           } else {
             if (_srcToken.address.toLowerCase() === this.quoteTokenAddress) {
               _prices.push(
-                side === SwapSide.SELL
-                  ? this.math.querySellQuote(
-                      state,
-                      this.quoteTokenAddress,
-                      baseToken.address,
-                      _amount,
-                    )
-                  : this.math.querySellBase(
-                      state,
-                      this.quoteTokenAddress,
-                      baseToken.address,
-                      _amount,
-                    ),
+                this.math.querySellQuote(
+                  state,
+                  this.quoteTokenAddress,
+                  baseToken.address,
+                  _amount,
+                ),
               );
             } else if (
               _destToken.address.toLowerCase() === this.quoteTokenAddress
             ) {
               _prices.push(
-                side === SwapSide.SELL
-                  ? this.math.querySellBase(
-                      state,
-                      this.quoteTokenAddress,
-                      baseToken.address,
-                      _amount,
-                    )
-                  : this.math.querySellQuote(
-                      state,
-                      this.quoteTokenAddress,
-                      baseToken.address,
-                      _amount,
-                    ),
+                this.math.querySellBase(
+                  state,
+                  this.quoteTokenAddress,
+                  baseToken.address,
+                  _amount,
+                ),
               );
             } else {
               // Either of them must be quoteToken
@@ -387,6 +372,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     side: SwapSide,
   ): AdapterExchangeParam {
     // TODO: complete me!
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     // Encode here the payload for adapter
     const payload = '';
@@ -406,6 +392,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     data: WooFiData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
     const _srcToken = srcToken.toLowerCase();
     const _destToken = destToken.toLowerCase();
 
@@ -414,22 +402,12 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     let baseToken: string;
     if (_srcToken === this.quoteTokenAddress) {
       baseToken = _destToken;
-      if (side === SwapSide.SELL) {
-        funcName = 'sellQuote';
-        _amount = srcAmount;
-      } else {
-        funcName = 'sellBase';
-        _amount = destAmount;
-      }
+      funcName = 'sellQuote';
+      _amount = srcAmount;
     } else if (_destToken === this.quoteTokenAddress) {
       baseToken = _srcToken;
-      if (side === SwapSide.SELL) {
-        funcName = 'sellBase';
-        _amount = srcAmount;
-      } else {
-        funcName = 'sellQuote';
-        _amount = destAmount;
-      }
+      funcName = 'sellBase';
+      _amount = srcAmount;
     } else {
       throw new Error(
         `Either of srcToken ${srcToken} or destToken ${destToken} must be quoteToken`,
