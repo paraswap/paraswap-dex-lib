@@ -37,21 +37,80 @@ const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
+const dexHelper = new DummyDexHelper(network);
 const dexKey = '__DexName__';
-const readerIface = new Interface('' /* Put here the ABI for pricing */);
 
-function getReaderCalldata() {}
+function getReaderCalldata(
+  exchangeAddress: string,
+  readerIface: Interface,
+  amounts: bigint[],
+  funcName: string,
+  // TODO: Put here additional arguments you need
+) {
+  return amounts.map(amount => ({
+    target: exchangeAddress,
+    callData: readerIface.encodeFunctionData(funcName, [
+      // TODO: Put here additional arguments to encode them
+      amount,
+    ]),
+  }));
+}
 
-function decodeReaderResult(result: Result) {}
+function decodeReaderResult(
+  results: Result,
+  readerIface: Interface,
+  funcName: string,
+) {
+  // TODO: Adapt this function for your needs
+  return results.map(result => {
+    const parsed = readerIface.decodeFunctionResult(funcName, result);
+    return BigInt(parsed[0]._hex);
+  });
+}
+
+async function checkOnChainPricing(
+  __DexNameCamel__: __DexName__,
+  funcName: string,
+  blockNumber: number,
+  prices: bigint[],
+) {
+  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const readerIface = new Interface(''); // TODO: Replace dummy interface with the real one
+
+  const readerCallData = getReaderCalldata(
+    exchangeAddress,
+    readerIface,
+    amounts.slice(1),
+    funcName,
+  );
+  const readerResult = (
+    await dexHelper.multiContract.methods
+      .aggregate(readerCallData)
+      .call({}, blockNumber)
+  ).returnData;
+  const expectedPrices = [0n].concat(
+    decodeReaderResult(
+      readerResult,
+      readerIface,
+      funcName,
+    ),
+  );
+
+  expect(prices).toEqual(expectedPrices);
+}
 
 describe('__DexName__', function () {
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blockNumber = await dexHelper.provider.getBlockNumber();
-    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
+  let blockNumber: number;
+  let __DexNameCamel__: __DexName__;
 
+  beforeAll(async () => {
+    blockNumber = await dexHelper.provider.getBlockNumber();
+
+    __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
     await __DexNameCamel__.initializePricing(blockNumber);
+  });
 
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const pools = await __DexNameCamel__.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -80,22 +139,15 @@ describe('__DexName__', function () {
     }
 
     // Check if onchain pricing equals to calculated ones
-    const readerCallData = getReaderCalldata();
-    const readerResult = await dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber).returnData;
-    const expectedPrices = decodeReaderResult(readerResult);
-
-    expect(poolPrices[0].prices).toEqual(expectedPrices);
+    await checkOnChainPricing(
+      __DexNameCamel__,
+      '', // TODO: Put here the functionName to call
+      blockNumber,
+      poolPrices![0].prices,
+    );
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blockNumber = await dexHelper.provider.getBlockNumber();
-    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
-
-    await __DexNameCamel__.initializePricing(blockNumber);
-
     const pools = await __DexNameCamel__.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -124,19 +176,15 @@ describe('__DexName__', function () {
     }
 
     // Check if onchain pricing equals to calculated ones
-    const readerCallData = getReaderCalldata();
-    const readerResult = await dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber).returnData;
-    const expectedPrices = decodeReaderResult(readerResult);
-
-    expect(poolPrices[0].prices).toEqual(expectedPrices);
+    await checkOnChainPricing(
+      __DexNameCamel__,
+      '', // TODO: Put here the functionName to call
+      blockNumber,
+      poolPrices![0].prices,
+    );
   });
 
   it('getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
-
     const poolLiquidity = await __DexNameCamel__.getTopPoolsForToken(
       TokenA.address,
       10,
