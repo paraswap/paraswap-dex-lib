@@ -25,5 +25,5 @@ export type DexParams = {
   wooOracleAddress: Address;
   wooFeeManagerAddress: Address;
   quoteToken: Token;
-  baseTokens: Record<Address, Token>;
+  baseTokens: Record<string, Token>;
 };

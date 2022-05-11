@@ -13,7 +13,7 @@ import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState, WooFiData } from './types';
+import { DexParams, PoolState, WooFiData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WooFiConfig, Adapters } from './config';
 import { wooFiMath } from './woo-fi-math';
@@ -33,7 +33,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   latestBlockNumber: number = 0;
 
-  tokenByAddress: Record<string, Token> | null = null;
+  tokenByAddress: Record<string, Token>;
 
   private _encodedStateRequestCalldata?: {
     target: Address;
@@ -49,7 +49,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
-  private readonly exchangeAddress: Address;
   private readonly quoteTokenAddress: Address;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -66,8 +65,41 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.exchangeAddress = this.config.wooPPAddress.toLowerCase();
-    this.quoteTokenAddress = this.config.quoteToken.address.toLowerCase();
+
+    // Normalise once all config addresses and use across all scenarios
+    this.config = this._toLowerForAllConfigAddresses();
+
+    this.quoteTokenAddress = this.config.quoteToken.address;
+
+    this.tokenByAddress = Object.values(this.baseTokens).reduce(
+      (acc, cur) => {
+        acc[cur.address] = cur;
+        return acc;
+      },
+      { [this.quoteTokenAddress]: this.config.quoteToken },
+    );
+  }
+
+  private _toLowerForAllConfigAddresses() {
+    // If new config property will be added, the TS will throw compile error
+    const newConfig: DexParams = {
+      wooPPAddress: this.config.wooPPAddress.toLowerCase(),
+      wooOracleAddress: this.config.wooPPAddress.toLowerCase(),
+      wooFeeManagerAddress: this.config.wooPPAddress.toLowerCase(),
+      quoteToken: {
+        ...this.config.quoteToken,
+        address: this.config.quoteToken.address.toLowerCase(),
+      },
+      baseTokens: Object.keys(this.config.baseTokens).reduce<
+        Record<string, Token>
+      >((acc, cur) => {
+        const token = this.config.baseTokens[cur];
+        token.address = token.address.toLowerCase();
+        acc[cur] = token;
+        return acc;
+      }, {}),
+    };
+    return newConfig;
   }
 
   get baseTokens(): Token[] {
@@ -79,7 +111,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     address: string,
     values: Result,
   ) {
-    state.tokenInfos[address.toLowerCase()] = {
+    state.tokenInfos[address] = {
       reserve: BigInt(values.reserve._hex),
       R: BigInt(values.R._hex),
       threshold: BigInt(values.threshold._hex),
@@ -168,12 +200,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     this._fillTokenInfoState(state, this.quoteTokenAddress, quoteTokenInfo);
 
     baseFeeRates.map((value, index) => {
-      const tokenAddress = this.baseTokens[index].address.toLowerCase();
-      state.feeRates[tokenAddress] = BigInt(value[0]._hex);
+      state.feeRates[this.baseTokens[index].address] = BigInt(value[0]._hex);
     });
     baseInfos.map((value, index) => {
-      const tokenAddress = this.baseTokens[index].address.toLowerCase();
-      state.tokenStates[tokenAddress] = {
+      state.tokenStates[this.baseTokens[index].address] = {
         priceNow: BigInt(value.price._hex),
         coeffNow: BigInt(value.coeff._hex),
         spreadNow: BigInt(value.spread._hex),
@@ -189,18 +219,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   async initializePricing(blockNumber: number) {
     this.latestState = await this.fetchStateForBlockNumber(blockNumber);
     this.latestBlockNumber = blockNumber;
-
-    this.tokenByAddress = {};
-
-    // Normalising to toLowerCase()
-    this.config.quoteToken.address = this.quoteTokenAddress;
-    this.tokenByAddress[this.quoteTokenAddress] = this.config.quoteToken;
-
-    for (const baseToken of this.baseTokens) {
-      const baseTokenAddress = baseToken.address.toLowerCase();
-      baseToken.address = baseTokenAddress;
-      this.tokenByAddress[baseTokenAddress] = baseToken;
-    }
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -227,21 +245,23 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ): Promise<string[]> {
     const _srcToken = wrapETH(srcToken, this.network);
     const _destToken = wrapETH(destToken, this.network);
+    _srcToken.address = _srcToken.address.toLowerCase();
+    _destToken.address = _destToken.address.toLowerCase();
 
-    if (_srcToken.address.toLowerCase() === _destToken.address.toLowerCase()) {
+    if (_srcToken.address === _destToken.address) {
       return [];
     }
 
     let tokenToSearch: string;
-    if (_srcToken.address.toLowerCase() === this.quoteTokenAddress) {
-      tokenToSearch = _destToken.address.toLowerCase();
-    } else if (_destToken.address.toLowerCase() === this.quoteTokenAddress) {
-      tokenToSearch = _srcToken.address.toLowerCase();
+    if (_srcToken.address === this.quoteTokenAddress) {
+      tokenToSearch = _destToken.address;
+    } else if (_destToken.address === this.quoteTokenAddress) {
+      tokenToSearch = _srcToken.address;
     } else {
       return [];
     }
     const baseToken = this.baseTokens.find(
-      token => token.address.toLowerCase() === tokenToSearch,
+      token => token.address === tokenToSearch,
     );
     return baseToken === undefined
       ? []
@@ -260,9 +280,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
     const direction = identifier.split('_')[1];
     if (direction === 'bq') {
-      return this.tokenByAddress[srcToken.toLowerCase()];
+      return this.tokenByAddress[srcToken];
     } else if (direction === 'qb') {
-      return this.tokenByAddress[destToken.toLowerCase()];
+      return this.tokenByAddress[destToken];
     } else {
       throw new Error(
         `direction in getBaseFromIdentifier must be 'bq' or 'qb'`,
@@ -283,10 +303,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     try {
       const _srcToken = wrapETH(srcToken, this.network);
       const _destToken = wrapETH(destToken, this.network);
+      _srcToken.address = _srcToken.address.toLowerCase();
+      _destToken.address = _destToken.address.toLowerCase();
 
-      if (
-        _srcToken.address.toLowerCase() === _destToken.address.toLowerCase()
-      ) {
+      if (_srcToken.address === _destToken.address) {
         return null;
       }
 
@@ -327,7 +347,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           if (_amount === 0n) {
             _prices.push(_amount);
           } else {
-            if (_srcToken.address.toLowerCase() === this.quoteTokenAddress) {
+            if (_srcToken.address === this.quoteTokenAddress) {
               _prices.push(
                 this.math.querySellQuote(
                   state,
@@ -336,9 +356,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
                   _amount,
                 ),
               );
-            } else if (
-              _destToken.address.toLowerCase() === this.quoteTokenAddress
-            ) {
+            } else if (_destToken.address === this.quoteTokenAddress) {
               _prices.push(
                 this.math.querySellBase(
                   state,
@@ -363,7 +381,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           poolIdentifier: allowedPairIdentifier,
           exchange: this.dexKey,
           gasCost: WOO_FI_GAS_COST,
-          poolAddresses: [this.exchangeAddress],
+          poolAddresses: [this.config.wooPPAddress],
         });
       }
       return result;
@@ -389,7 +407,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     return {
-      targetExchange: this.exchangeAddress,
+      targetExchange: this.config.wooPPAddress,
       payload: '0x',
       networkFee: '0',
     };
@@ -439,7 +457,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       destToken,
       destAmount,
       swapData,
-      this.exchangeAddress,
+      this.config.wooPPAddress,
     );
   }
 
@@ -473,23 +491,21 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
     return selected
       .map(token => {
-        const loweredTokenAddress = token.address.toLowerCase();
-
         let liquidityBigInt: bigint;
 
         // If currentToken is quote, it means we want to sellQuote and buy baseToken.
         // To calculate liquidity, we need to convert baseReserve to quote and use that value
-        if (this._isQuote(loweredTokenAddress)) {
+        if (this._isQuote(token.address)) {
           const baseReserve = state.tokenInfos[wrappedTokenAddress].reserve;
           liquidityBigInt = this.math.querySellBase(
             state,
-            loweredTokenAddress,
+            token.address,
             wrappedTokenAddress,
             baseReserve,
           );
         } else {
           // If current token is the base, we just use the reserve of quote as liquidity
-          liquidityBigInt = state.tokenInfos[loweredTokenAddress].reserve;
+          liquidityBigInt = state.tokenInfos[token.address].reserve;
         }
 
         const liquidityUSD = this._bigIntToNumberWithPrecision(
@@ -500,7 +516,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
         return {
           exchange: this.dexKey,
-          address: this.exchangeAddress,
+          address: this.config.wooPPAddress,
           connectorTokens: [token],
           liquidityUSD,
         };
@@ -510,7 +526,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   private _isQuote(a: string): boolean {
-    return this.quoteTokenAddress === a.toLowerCase();
+    return this.quoteTokenAddress === a;
   }
 
   // I think this function is quite strange. Is there more simple way to achieve the same?

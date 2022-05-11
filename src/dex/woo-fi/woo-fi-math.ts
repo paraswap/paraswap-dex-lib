@@ -11,18 +11,15 @@ class WooFiPoolMath {
     baseTokenAddress: string,
     baseAmount: bigint,
   ): bigint {
-    const _quoteTokenAddress = quoteTokenAddress.toLowerCase();
-    const _baseTokenAddress = baseTokenAddress.toLowerCase();
-
     const quoteAmount = this._getQuoteAmountSellBase(
       state,
-      _quoteTokenAddress,
-      _baseTokenAddress,
+      quoteTokenAddress,
+      baseTokenAddress,
       baseAmount,
     );
     const lpFee = this.dMath.mulCeil(
       quoteAmount,
-      state.feeRates[_baseTokenAddress],
+      state.feeRates[baseTokenAddress],
     );
     return quoteAmount - lpFee;
   }
@@ -33,18 +30,15 @@ class WooFiPoolMath {
     baseTokenAddress: string,
     quoteAmount: bigint,
   ): bigint {
-    const _quoteTokenAddress = quoteTokenAddress.toLowerCase();
-    const _baseTokenAddress = baseTokenAddress.toLowerCase();
-
     const lpFee = this.dMath.mulCeil(
       quoteAmount,
-      state.feeRates[_baseTokenAddress],
+      state.feeRates[baseTokenAddress],
     );
     quoteAmount -= lpFee;
     return this._getBaseAmountSellQuote(
       state,
-      _quoteTokenAddress,
-      _baseTokenAddress,
+      quoteTokenAddress,
+      baseTokenAddress,
       quoteAmount,
     );
   }
