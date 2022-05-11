@@ -430,20 +430,18 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       this.network,
     ).address.toLowerCase();
 
-    const filteredToken = Object.values(this.tokenByAddress).filter(
-      token => token.address === wrappedTokenAddress,
-    );
-
-    if (filteredToken.length === 0) return [];
+    if (!this.tokenByAddress[wrappedTokenAddress]) return [];
 
     const selected =
       wrappedTokenAddress === this.quoteTokenAddress
         ? this.baseTokens
         : [this.tokenByAddress[this.quoteTokenAddress]];
 
+    if (!this.latestState) return [];
+
     // Assuming that updatePoolState was called right before current function
     // and block number didn't change
-    const state = this.latestState ? this.latestState : await this.getState();
+    const state = this.latestState;
 
     return selected
       .map(token => {
