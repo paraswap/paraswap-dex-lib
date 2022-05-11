@@ -82,8 +82,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   async fetchStateForBlockNumber(blockNumber?: number): Promise<PoolState> {
-    const calldata = _.flattenDeep(
-      this.baseTokens.map(t => [
+    const calldata = this.baseTokens
+      .map(t => [
         {
           target: this.config.wooFeeManagerAddress,
           callData: WooFi.ifaces.fee.encodeFunctionData('feeRate', [t.address]),
@@ -100,8 +100,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
             t.address,
           ]),
         },
-      ]),
-    );
+      ])
+      .flat();
 
     calldata.push({
       target: this.config.wooPPAddress,
