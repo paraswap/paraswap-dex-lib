@@ -124,41 +124,6 @@ describe('WooFi', function () {
       blockNumber,
       poolPrices![0].prices,
     );
-
-    // const test = wooFi.math.querySellBase(
-    //   wooFi.latestState!,
-    //   TokenB.address,
-    //   TokenA.address,
-    //   amounts[1],
-    // );
-
-    // const wooPP = new WooPP(wooFi.config.quoteToken);
-    // const baseInfo =
-    //   wooFi.latestState!.tokenInfos[TokenA.address.toLowerCase()];
-    // const quoteInfo =
-    //   wooFi.latestState!.tokenInfos[TokenB.address.toLowerCase()];
-    // const baseState =
-    //   wooFi.latestState!.tokenStates[TokenA.address.toLowerCase()];
-    // const fee = wooFi.latestState!.feeRates[TokenA.address.toLowerCase()];
-    // const realRes = wooPP.QuerySellBase(
-    //   { address: TokenA.address, decimals: 18 },
-    //   new WooppTokenInfo(
-    //     new BigNumber(baseInfo.reserve.toString()),
-    //     new BigNumber(fee.toString()),
-    //     new BigNumber(baseInfo.R.toString()),
-    //   ),
-    //   new WooppTokenInfo(
-    //     new BigNumber(quoteInfo.reserve.toString()),
-    //     new BigNumber('0'),
-    //     new BigNumber(quoteInfo.R.toString()),
-    //   ),
-    //   new WooracleState(
-    //     new BigNumber(baseState.priceNow.toString()),
-    //     new BigNumber(baseState.spreadNow.toString()),
-    //     new BigNumber(baseState.coeffNow.toString()),
-    //   ),
-    //   new BigNumber(amounts[1].toString()),
-    // );
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL Quote', async function () {
