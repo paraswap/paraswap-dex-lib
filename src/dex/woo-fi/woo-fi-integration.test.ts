@@ -87,6 +87,14 @@ describe('WooFi', function () {
 
     wooFi = new WooFi(network, dexKey, dexHelper);
     await wooFi.initializePricing(blockNumber);
+
+    console.log(`Current state for block number ${blockNumber} is:`);
+    console.log(
+      JSON.stringify(
+        wooFi.latestState,
+        (key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+      ),
+    );
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL Base', async function () {
