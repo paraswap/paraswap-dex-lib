@@ -33,6 +33,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   latestBlockNumber: number = 0;
 
+  vaultUSDBalance: number = 0;
+
   tokenByAddress: Record<string, Token>;
 
   private _encodedStateRequestCalldata?: {
@@ -301,31 +303,21 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       const state = await this.getState(blockNumber);
 
-      const _prices: bigint[] = [];
-      for (const _amount of _amounts) {
-        if (_amount === 0n) {
-          _prices.push(_amount);
-        } else {
-          if (isSrcQuote) {
-            _prices.push(
-              this.math.querySellQuote(
-                state,
-                this.quoteTokenAddress,
-                _destToken.address,
-                _amount,
-              ),
-            );
-          } else {
-            _prices.push(
-              this.math.querySellBase(
-                state,
-                this.quoteTokenAddress,
-                _srcToken.address,
-                _amount,
-              ),
-            );
-          }
-        }
+      let _prices: bigint[];
+      if (isSrcQuote) {
+        _prices = this.math.querySellQuote(
+          state,
+          this.quoteTokenAddress,
+          _destToken.address,
+          _amounts,
+        );
+      } else {
+        _prices = this.math.querySellBase(
+          state,
+          this.quoteTokenAddress,
+          _srcToken.address,
+          _amounts,
+        );
       }
 
       const unit = _prices[0];
@@ -418,7 +410,16 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   async updatePoolState(): Promise<void> {
-    await this.getState();
+    const state = await this.getState();
+
+    const tokenBalancesUSD = await Promise.all(
+      Object.values(this.tokenByAddress).map(t =>
+        this.dexHelper.getTokenUSDPrice(t, state.tokenInfos[t.address].reserve),
+      ),
+    );
+    this.vaultUSDBalance = tokenBalancesUSD.reduce(
+      (sum: number, curr: number) => sum + curr,
+    );
   }
 
   async getTopPoolsForToken(
@@ -431,52 +432,21 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     ).address.toLowerCase();
 
     if (!this.tokenByAddress[wrappedTokenAddress]) return [];
+    if (!this.latestState) return [];
 
-    const selected =
+    const connectorTokens =
       wrappedTokenAddress === this.quoteTokenAddress
         ? this.baseTokens
         : [this.tokenByAddress[this.quoteTokenAddress]];
 
-    if (!this.latestState) return [];
-
-    // Assuming that updatePoolState was called right before current function
-    // and block number didn't change
-    const state = this.latestState;
-
-    return selected
-      .map(token => {
-        let liquidityBigInt: bigint;
-
-        // If currentToken is quote, it means we want to sellQuote and buy baseToken.
-        // To calculate liquidity, we need to convert baseReserve to quote and use that value
-        if (this._isQuote(token.address)) {
-          const baseReserve = state.tokenInfos[wrappedTokenAddress].reserve;
-          liquidityBigInt = this.math.querySellBase(
-            state,
-            token.address,
-            wrappedTokenAddress,
-            baseReserve,
-          );
-        } else {
-          // If current token is the base, we just use the reserve of quote as liquidity
-          liquidityBigInt = state.tokenInfos[token.address].reserve;
-        }
-
-        const liquidityUSD = this._bigIntToNumberWithPrecision(
-          liquidityBigInt,
-          this.config.quoteToken.decimals,
-          USD_PRECISION,
-        );
-
-        return {
-          exchange: this.dexKey,
-          address: this.config.wooPPAddress,
-          connectorTokens: [token],
-          liquidityUSD,
-        };
-      })
-      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
-      .slice(0, limit);
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.config.wooPPAddress,
+        connectorTokens,
+        liquidityUSD: this.vaultUSDBalance,
+      },
+    ];
   }
 
   // I think this function is quite strange. Is there more simple way to achieve the same?
