@@ -9,46 +9,48 @@ class WooFiPoolMath {
     state: PoolState,
     quoteTokenAddress: string,
     baseTokenAddress: string,
-    baseAmount: bigint,
-  ): bigint {
-    const quoteAmount = this._getQuoteAmountSellBase(
+    baseAmounts: bigint[],
+  ): bigint[] {
+    const quoteAmounts = this._getQuoteAmountSellBase(
       state,
       quoteTokenAddress,
       baseTokenAddress,
-      baseAmount,
+      baseAmounts,
     );
-    const lpFee = this.dMath.mulCeil(
-      quoteAmount,
-      state.feeRates[baseTokenAddress],
-    );
-    return quoteAmount - lpFee;
+    const feeRate = state.feeRates[baseTokenAddress];
+    return this._takeFee(quoteAmounts, feeRate);
   }
 
   querySellQuote(
     state: PoolState,
     quoteTokenAddress: string,
     baseTokenAddress: string,
-    quoteAmount: bigint,
-  ): bigint {
-    const lpFee = this.dMath.mulCeil(
-      quoteAmount,
-      state.feeRates[baseTokenAddress],
-    );
-    quoteAmount -= lpFee;
+    quoteAmounts: bigint[],
+  ): bigint[] {
+    const feeRate = state.feeRates[baseTokenAddress];
+    quoteAmounts = this._takeFee(quoteAmounts, feeRate);
+
     return this._getBaseAmountSellQuote(
       state,
       quoteTokenAddress,
       baseTokenAddress,
-      quoteAmount,
+      quoteAmounts,
     );
+  }
+
+  protected _takeFee(amounts: bigint[], feeRate: bigint): bigint[] {
+    return amounts.map(amount => {
+      const lpFee = this.dMath.mulCeil(amount, feeRate);
+      return amount === 0n ? 0n : amount - lpFee;
+    });
   }
 
   protected _getQuoteAmountSellBase(
     state: PoolState,
     quoteTokenAddress: string,
     baseTokenAddress: string,
-    baseAmount: bigint,
-  ): bigint {
+    baseAmounts: bigint[],
+  ): bigint[] {
     const quoteInfo = state.tokenInfos[quoteTokenAddress];
     const baseInfo = state.tokenInfos[baseTokenAddress];
 
@@ -71,50 +73,54 @@ class WooFiPoolMath {
       true,
     );
 
-    if (baseBought > 0n) {
-      const quoteSold = this._getQuoteAmountLowBaseSide(
-        p,
-        k,
-        baseInfo.R,
-        baseBought,
-      );
-      if (baseAmount > baseBought) {
-        const newBaseSold = baseAmount - baseBought;
-        return (
-          quoteSold +
-          this._getQuoteAmountLowQuoteSide(p, k, this.dMath.ONE, newBaseSold)
+    return baseAmounts.map(baseAmount => {
+      if (baseAmount === 0n) return 0n;
+
+      if (baseBought > 0n) {
+        const quoteSold = this._getQuoteAmountLowBaseSide(
+          p,
+          k,
+          baseInfo.R,
+          baseBought,
         );
+        if (baseAmount > baseBought) {
+          const newBaseSold = baseAmount - baseBought;
+          return (
+            quoteSold +
+            this._getQuoteAmountLowQuoteSide(p, k, this.dMath.ONE, newBaseSold)
+          );
+        } else {
+          const newBaseBought = baseBought - baseAmount;
+          return (
+            quoteSold -
+            this._getQuoteAmountLowBaseSide(p, k, baseInfo.R, newBaseBought)
+          );
+        }
       } else {
-        const newBaseBought = baseBought - baseAmount;
-        return (
-          quoteSold -
-          this._getQuoteAmountLowBaseSide(p, k, baseInfo.R, newBaseBought)
+        const baseSold = this._getBaseAmountLowQuoteSide(
+          p,
+          k,
+          this.dMath.ONE,
+          quoteBought,
         );
+        const newBaseSold = baseAmount + baseSold;
+        const newQuoteBought = this._getQuoteAmountLowQuoteSide(
+          p,
+          k,
+          this.dMath.ONE,
+          newBaseSold,
+        );
+        return newQuoteBought > quoteBought ? newQuoteBought - quoteBought : 0n;
       }
-    } else {
-      const baseSold = this._getBaseAmountLowQuoteSide(
-        p,
-        k,
-        this.dMath.ONE,
-        quoteBought,
-      );
-      const newBaseSold = baseAmount + baseSold;
-      const newQuoteBought = this._getQuoteAmountLowQuoteSide(
-        p,
-        k,
-        this.dMath.ONE,
-        newBaseSold,
-      );
-      return newQuoteBought > quoteBought ? newQuoteBought - quoteBought : 0n;
-    }
+    });
   }
 
   protected _getBaseAmountSellQuote(
     state: PoolState,
     quoteTokenAddress: string,
     baseTokenAddress: string,
-    quoteAmount: bigint,
-  ): bigint {
+    quoteAmounts: bigint[],
+  ): bigint[] {
     const quoteInfo = state.tokenInfos[quoteTokenAddress];
     const baseInfo = state.tokenInfos[baseTokenAddress];
 
@@ -138,42 +144,46 @@ class WooFiPoolMath {
       false,
     );
 
-    if (quoteBought > 0) {
-      const baseSold = this._getBaseAmountLowQuoteSide(
-        p,
-        k,
-        baseInfo.R,
-        quoteBought,
-      );
-      if (quoteAmount > quoteBought) {
-        const newQuoteSold = quoteAmount - quoteBought;
-        return (
-          baseSold +
-          this._getBaseAmountLowBaseSide(p, k, this.dMath.ONE, newQuoteSold)
+    return quoteAmounts.map(quoteAmount => {
+      if (quoteAmount === 0n) return 0n;
+
+      if (quoteBought > 0) {
+        const baseSold = this._getBaseAmountLowQuoteSide(
+          p,
+          k,
+          baseInfo.R,
+          quoteBought,
         );
+        if (quoteAmount > quoteBought) {
+          const newQuoteSold = quoteAmount - quoteBought;
+          return (
+            baseSold +
+            this._getBaseAmountLowBaseSide(p, k, this.dMath.ONE, newQuoteSold)
+          );
+        } else {
+          const newQuoteBought = quoteBought - quoteAmount;
+          return (
+            baseSold -
+            this._getBaseAmountLowQuoteSide(p, k, baseInfo.R, newQuoteBought)
+          );
+        }
       } else {
-        const newQuoteBought = quoteBought - quoteAmount;
-        return (
-          baseSold -
-          this._getBaseAmountLowQuoteSide(p, k, baseInfo.R, newQuoteBought)
+        const quoteSold = this._getQuoteAmountLowBaseSide(
+          p,
+          k,
+          this.dMath.ONE,
+          baseBought,
         );
+        const newQuoteSold = quoteAmount + quoteSold;
+        const newBaseBought = this._getBaseAmountLowBaseSide(
+          p,
+          k,
+          this.dMath.ONE,
+          newQuoteSold,
+        );
+        return newBaseBought > baseBought ? newBaseBought - baseBought : 0n;
       }
-    } else {
-      const quoteSold = this._getQuoteAmountLowBaseSide(
-        p,
-        k,
-        this.dMath.ONE,
-        baseBought,
-      );
-      const newQuoteSold = quoteAmount + quoteSold;
-      const newBaseBought = this._getBaseAmountLowBaseSide(
-        p,
-        k,
-        this.dMath.ONE,
-        newQuoteSold,
-      );
-      return newBaseBought > baseBought ? newBaseBought - baseBought : 0n;
-    }
+    });
   }
 
   protected _getBoughtAmount(
