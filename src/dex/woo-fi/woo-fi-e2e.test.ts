@@ -148,9 +148,9 @@ describe('WooFi E2E', () => {
     const tokenASymbol: string = 'WFTM';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '3000000000000000000';
+    const tokenAAmount: string = '333000000000000000000';
     const tokenBAmount: string = '111000000';
-    const nativeTokenAmount = '3000000000000000000';
+    const nativeTokenAmount = '333000000000000000000';
 
     testForNetwork(
       network,
