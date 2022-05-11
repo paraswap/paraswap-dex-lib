@@ -79,7 +79,7 @@ const Dexes = [
   Nerve,
   Platypus,
   GMX,
-  WooFi
+  WooFi,
 ];
 
 const AdapterNameAddressMap: {
@@ -97,7 +97,7 @@ const AdapterNameAddressMap: {
     PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
   },
   [Network.BSC]: {
-    BscAdapter01: '0xcEC935682c0b510fb91c0A12275Bb7e14EEBE87c',
+    BscAdapter01: '0x7EE3C983cA38c370F296FE14a31bEaC5b1c9a9FE',
     BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
   },
   [Network.ROPSTEN]: {
@@ -105,11 +105,11 @@ const AdapterNameAddressMap: {
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
   [Network.AVALANCHE]: {
-    AvalancheAdapter01: '0xaaD116D3b51893bD00bFBAf337824A15796eD97a',
+    AvalancheAdapter01: '0xC79cf51b0951418cb7B010e38c3ceB8801E53184',
     AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
   [Network.FANTOM]: {
-    FantomAdapter01: '0x7EE3C983cA38c370F296FE14a31bEaC5b1c9a9FE',
+    FantomAdapter01: '0xbd09504819a604ca503F30D2Cc9D0Ef4C76dac33',
     FantomBuyAdapter: '0x3032B8c9CF91C791A8EcC2c7831A11279f419386',
   },
 };
