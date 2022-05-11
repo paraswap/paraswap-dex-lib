@@ -35,7 +35,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   tokenByAddress: Record<string, Token> | null = null;
 
-  readonly wooIfaces = {
+  static readonly ifaces = {
     PP: new Interface(wooPPABI),
     fee: new Interface(wooFeeManagerABI),
     oracle: new Interface(woOracleABI),
@@ -108,19 +108,17 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       this.baseTokens.map(t => [
         {
           target: this.config.wooFeeManagerAddress,
-          callData: this.wooIfaces.fee.encodeFunctionData('feeRate', [
-            t.address,
-          ]),
+          callData: WooFi.ifaces.fee.encodeFunctionData('feeRate', [t.address]),
         },
         {
           target: this.config.woOracleAddress,
-          callData: this.wooIfaces.oracle.encodeFunctionData('infos', [
+          callData: WooFi.ifaces.oracle.encodeFunctionData('infos', [
             t.address,
           ]),
         },
         {
           target: this.config.wooPPAddress,
-          callData: this.wooIfaces.PP.encodeFunctionData('tokenInfo', [
+          callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
             t.address,
           ]),
         },
@@ -129,7 +127,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
     calldata.push({
       target: this.config.wooPPAddress,
-      callData: this.wooIfaces.PP.encodeFunctionData('tokenInfo', [
+      callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
         this.quoteTokenAddress,
       ]),
     });
@@ -144,24 +142,24 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     const [baseFeeRates, baseInfos, baseTokenInfos, quoteTokenInfo] = [
       // Skip two as they are infos abd tokenInfo
       _.range(0, maxNumber, 3).map(index =>
-        this.wooIfaces.fee.decodeFunctionResult(
+        WooFi.ifaces.fee.decodeFunctionResult(
           'feeRate',
           data.returnData[index],
         ),
       ),
       _.range(1, maxNumber, 3).map(index =>
-        this.wooIfaces.oracle.decodeFunctionResult(
+        WooFi.ifaces.oracle.decodeFunctionResult(
           'infos',
           data.returnData[index],
         ),
       ),
       _.range(2, maxNumber, 3).map(index =>
-        this.wooIfaces.PP.decodeFunctionResult(
+        WooFi.ifaces.PP.decodeFunctionResult(
           'tokenInfo',
           data.returnData[index],
         ),
       ),
-      this.wooIfaces.PP.decodeFunctionResult(
+      WooFi.ifaces.PP.decodeFunctionResult(
         'tokenInfo',
         data.returnData[maxNumber],
       ),
@@ -432,7 +430,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       );
     }
 
-    const swapData = this.wooIfaces.PP.encodeFunctionData(funcName, [
+    const swapData = WooFi.ifaces.PP.encodeFunctionData(funcName, [
       baseToken, // baseToken
       _amount, // amount
       MIN_CONVERSION_RATE, // minAmount

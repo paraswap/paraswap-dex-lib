@@ -61,7 +61,7 @@ async function checkOnChainPricing(
 ) {
   const readerCallData = getReaderCalldata(
     wooFi.config.wooPPAddress,
-    wooFi.wooIfaces.PP,
+    WooFi.ifaces.PP,
     amounts.slice(1),
     funcName,
     TokenA,
@@ -72,7 +72,7 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, wooFi.wooIfaces.PP, funcName),
+    decodeReaderResult(readerResult, WooFi.ifaces.PP, funcName),
   );
 
   expect(prices).toEqual(expectedPrices);
