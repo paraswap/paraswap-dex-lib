@@ -44,11 +44,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
-  private _exchangeAddress?: string;
-
-  private _oracleAddress?: string;
-
-  private _quoteTokenAddress?: string;
+  private readonly exchangeAddress: Address;
+  private readonly quoteTokenAddress: Address;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WooFiConfig);
@@ -64,31 +61,12 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
+    this.exchangeAddress = this.config.wooPPAddress.toLowerCase();
+    this.quoteTokenAddress = this.config.quoteToken.address.toLowerCase();
   }
 
   get baseTokens(): Token[] {
     return Object.values(this.config.baseTokens);
-  }
-
-  get exchangeAddress() {
-    if (this._exchangeAddress === undefined) {
-      this._exchangeAddress = this.config.wooPPAddress.toLowerCase();
-    }
-    return this._exchangeAddress;
-  }
-
-  get oracleAddress() {
-    if (this._oracleAddress === undefined) {
-      this._oracleAddress = this.config.woOracleAddress.toLowerCase();
-    }
-    return this._oracleAddress;
-  }
-
-  get quoteTokenAddress() {
-    if (this._quoteTokenAddress === undefined) {
-      this._quoteTokenAddress = this.config.quoteToken.address.toLowerCase();
-    }
-    return this._quoteTokenAddress;
   }
 
   protected _fillTokenInfoState(
