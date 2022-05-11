@@ -214,7 +214,7 @@ class WooFiPoolMath {
       quoteSold = quoteInfo.reserve - quoteTarget;
     }
 
-    if (this.dMath.mulCeil(baseSold, p) < quoteSold) {
+    if (this.dMath.mulCeil(baseSold, p) > quoteSold) {
       baseSold = baseSold - this.dMath.divFloor(quoteSold, p);
       quoteSold = 0n;
     } else {
