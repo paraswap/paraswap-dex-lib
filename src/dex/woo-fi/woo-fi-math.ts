@@ -11,6 +11,8 @@ class WooFiPoolMath {
     baseTokenAddress: string,
     baseAmounts: bigint[],
   ): bigint[] {
+    this._autoUpdate(state, quoteTokenAddress, baseTokenAddress);
+
     const quoteAmounts = this._getQuoteAmountSellBase(
       state,
       quoteTokenAddress,
@@ -27,6 +29,8 @@ class WooFiPoolMath {
     baseTokenAddress: string,
     quoteAmounts: bigint[],
   ): bigint[] {
+    this._autoUpdate(state, quoteTokenAddress, baseTokenAddress);
+
     const feeRate = state.feeRates[baseTokenAddress];
     quoteAmounts = this._takeFee(quoteAmounts, feeRate);
 
@@ -197,25 +201,17 @@ class WooFiPoolMath {
     let quoteBought = 0n;
 
     let baseSold = 0n;
-    const baseTarget =
-      baseInfo.reserve > baseInfo.threshold
-        ? baseInfo.reserve
-        : baseInfo.threshold;
-    if (baseInfo.reserve < baseTarget) {
-      baseBought = baseTarget - baseInfo.reserve;
+    if (baseInfo.reserve < baseInfo.target) {
+      baseBought = baseInfo.target - baseInfo.reserve;
     } else {
-      baseSold = baseInfo.reserve - baseTarget;
+      baseSold = baseInfo.reserve - baseInfo.target;
     }
 
     let quoteSold = 0n;
-    const quoteTarget =
-      quoteInfo.reserve > baseInfo.threshold
-        ? quoteInfo.reserve
-        : baseInfo.threshold;
-    if (quoteInfo.reserve < quoteTarget) {
-      quoteBought = quoteTarget - quoteInfo.reserve;
+    if (quoteInfo.reserve < quoteInfo.target) {
+      quoteBought = quoteInfo.target - quoteInfo.reserve;
     } else {
-      quoteSold = quoteInfo.reserve - quoteTarget;
+      quoteSold = quoteInfo.reserve - quoteInfo.target;
     }
 
     if (this.dMath.mulCeil(baseSold, p) > quoteSold) {
@@ -316,6 +312,30 @@ class WooFiPoolMath {
       );
     // baseAmount * p / priceFactor;
     return this.dMath.divFloor(this.dMath.mulFloor(baseAmount, p), priceFactor);
+  }
+
+  protected _autoUpdate(
+    state: PoolState,
+    quoteTokenAddress: string,
+    baseTokenAddress: string,
+  ) {
+    const quoteInfo = state.tokenInfos[quoteTokenAddress];
+    const baseInfo = state.tokenInfos[baseTokenAddress];
+
+    if (state.oracleTimestamp !== baseInfo.lastResetTimestamp) {
+      baseInfo.target =
+        baseInfo.threshold > baseInfo.reserve
+          ? baseInfo.threshold
+          : baseInfo.reserve;
+      baseInfo.lastResetTimestamp = state.oracleTimestamp;
+    }
+    if (state.oracleTimestamp !== quoteInfo.lastResetTimestamp) {
+      quoteInfo.target =
+        quoteInfo.threshold > quoteInfo.reserve
+          ? quoteInfo.threshold
+          : quoteInfo.reserve;
+      quoteInfo.lastResetTimestamp = state.oracleTimestamp;
+    }
   }
 }
 

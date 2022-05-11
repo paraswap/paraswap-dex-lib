@@ -117,6 +117,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       reserve: BigInt(values.reserve._hex),
       R: BigInt(values.R._hex),
       threshold: BigInt(values.threshold._hex),
+      target: BigInt(values.target._hex),
+      lastResetTimestamp: BigInt(values.lastResetTimestamp),
     };
   }
 
@@ -152,6 +154,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         ]),
       });
 
+      calldata.push({
+        target: this.config.wooOracleAddress,
+        callData: WooFi.ifaces.oracle.encodeFunctionData('timestamp', []),
+      });
+
       this._encodedStateRequestCalldata = calldata;
     }
 
@@ -165,10 +172,16 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       .aggregate(calldata)
       .call({}, blockNumber || 'latest');
 
-    // Last request is standalone
-    const maxNumber = calldata.length - 1;
+    // Last two requests are standalone
+    const maxNumber = calldata.length - 2;
 
-    const [baseFeeRates, baseInfos, baseTokenInfos, quoteTokenInfo] = [
+    const [
+      baseFeeRates,
+      baseInfos,
+      baseTokenInfos,
+      quoteTokenInfo,
+      oracleTimestamp,
+    ] = [
       // Skip two as they are infos abd tokenInfo
       _.range(0, maxNumber, 3).map(index =>
         WooFi.ifaces.fee.decodeFunctionResult(
@@ -192,12 +205,17 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         'tokenInfo',
         data.returnData[maxNumber],
       ),
+      BigInt(WooFi.ifaces.oracle.decodeFunctionResult(
+        'timestamp',
+        data.returnData[maxNumber + 1],
+      )[0]._hex),
     ];
 
     const state: PoolState = {
       feeRates: {},
       tokenInfos: {},
       tokenStates: {},
+      oracleTimestamp,
     };
     this._fillTokenInfoState(state, this.quoteTokenAddress, quoteTokenInfo);
 
