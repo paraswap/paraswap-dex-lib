@@ -225,16 +225,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
+  // Expected lower cased addresses
   getIdentifier(srcToken: Address, destToken: Address) {
-    if (srcToken.toLowerCase() === this.quoteTokenAddress) {
+    if (this._isQuote(srcToken)) {
       return `${this.dexKey.toLowerCase()}_qb`;
-    } else if (destToken.toLowerCase() === this.quoteTokenAddress) {
+    } else if (this._isQuote(destToken)) {
       return `${this.dexKey.toLowerCase()}_bq`;
-    } else {
-      throw new Error(
-        'srcToken or destToken must be equal to quoteTokenAddress',
-      );
     }
+    return null;
   }
 
   async getPoolIdentifiers(
@@ -248,24 +246,20 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     _srcToken.address = _srcToken.address.toLowerCase();
     _destToken.address = _destToken.address.toLowerCase();
 
-    if (_srcToken.address === _destToken.address) {
+    if (
+      _srcToken.address === _destToken.address ||
+      !this.tokenByAddress[_srcToken.address] ||
+      !this.tokenByAddress[_destToken.address]
+    ) {
       return [];
     }
 
-    let tokenToSearch: string;
-    if (_srcToken.address === this.quoteTokenAddress) {
-      tokenToSearch = _destToken.address;
-    } else if (_destToken.address === this.quoteTokenAddress) {
-      tokenToSearch = _srcToken.address;
-    } else {
-      return [];
-    }
-    const baseToken = this.baseTokens.find(
-      token => token.address === tokenToSearch,
+    const identifier = this.getIdentifier(
+      _srcToken.address,
+      _destToken.address,
     );
-    return baseToken === undefined
-      ? []
-      : [this.getIdentifier(_srcToken.address, _destToken.address)];
+
+    return identifier ? [identifier] : [];
   }
 
   getBaseFromIdentifier(
@@ -309,6 +303,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         _srcToken.address,
         _destToken.address,
       );
+
+      if (!expectedIdentifier) return null;
+
       const allowedPairIdentifiers =
         limitPools !== undefined
           ? limitPools.filter(
