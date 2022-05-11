@@ -225,14 +225,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Expected lower cased addresses
-  getIdentifier(srcToken: Address, destToken: Address) {
-    if (this._isQuote(srcToken)) {
-      return `${this.dexKey.toLowerCase()}_qb`;
-    } else if (this._isQuote(destToken)) {
-      return `${this.dexKey.toLowerCase()}_bq`;
-    }
-    return null;
+  getIdentifier(isSrcQuote: boolean) {
+    // Expected lower cased addresses
+    // And checks if one of the tokens is quote already done outside
+    return isSrcQuote ? `${this.dexKey}_qb` : `${this.dexKey}_bq`;
   }
 
   async getPoolIdentifiers(
@@ -247,36 +243,20 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     _destToken.address = _destToken.address.toLowerCase();
 
     if (
-      _srcToken.address === _destToken.address ||
       !this.tokenByAddress[_srcToken.address] ||
       !this.tokenByAddress[_destToken.address]
     ) {
       return [];
     }
 
-    const identifier = this.getIdentifier(
+    const { isSrcQuote, isDestQuote } = this._identifyQuote(
       _srcToken.address,
       _destToken.address,
     );
 
-    return identifier ? [identifier] : [];
-  }
+    if (!isSrcQuote && !isDestQuote) return [];
 
-  getBaseFromIdentifier(
-    identifier: string,
-    srcToken: Address,
-    destToken: Address,
-  ) {
-    const direction = identifier.split('_')[1];
-    if (direction === 'bq') {
-      return this.tokenByAddress[srcToken];
-    } else if (direction === 'qb') {
-      return this.tokenByAddress[destToken];
-    } else {
-      throw new Error(
-        `direction in getBaseFromIdentifier must be 'bq' or 'qb'`,
-      );
-    }
+    return [this.getIdentifier(isSrcQuote)];
   }
 
   async getPricesVolume(
@@ -295,30 +275,25 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       _srcToken.address = _srcToken.address.toLowerCase();
       _destToken.address = _destToken.address.toLowerCase();
 
-      if (_srcToken.address === _destToken.address) {
+      if (
+        !this.tokenByAddress[_srcToken.address] ||
+        !this.tokenByAddress[_destToken.address]
+      )
         return null;
-      }
 
-      const expectedIdentifier = this.getIdentifier(
+      const { isSrcQuote, isDestQuote } = this._identifyQuote(
         _srcToken.address,
         _destToken.address,
       );
 
-      if (!expectedIdentifier) return null;
+      if (!isSrcQuote && !isDestQuote) return null;
 
-      const allowedPairIdentifiers =
-        limitPools !== undefined
-          ? limitPools.filter(
-              limitIdentifier => limitIdentifier === expectedIdentifier,
-            )
-          : await this.getPoolIdentifiers(
-              _srcToken,
-              _destToken,
-              side,
-              blockNumber,
-            );
-
-      if (!allowedPairIdentifiers.length) return null;
+      const expectedIdentifier = this.getIdentifier(isSrcQuote);
+      if (
+        limitPools === undefined ||
+        !limitPools.some(p => p === expectedIdentifier)
+      )
+        return null;
 
       const unitVolume = getBigIntPow(_srcToken.decimals);
 
@@ -326,57 +301,46 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       const state = await this.getState(blockNumber);
 
-      const result: ExchangePrices<WooFiData> = [];
-      for (const allowedPairIdentifier of allowedPairIdentifiers) {
-        const baseToken = this.getBaseFromIdentifier(
-          allowedPairIdentifier,
-          _srcToken.address,
-          _destToken.address,
-        );
-
-        const _prices: bigint[] = [];
-        for (const _amount of _amounts) {
-          if (_amount === 0n) {
-            _prices.push(_amount);
+      const _prices: bigint[] = [];
+      for (const _amount of _amounts) {
+        if (_amount === 0n) {
+          _prices.push(_amount);
+        } else {
+          if (isSrcQuote) {
+            _prices.push(
+              this.math.querySellQuote(
+                state,
+                this.quoteTokenAddress,
+                _destToken.address,
+                _amount,
+              ),
+            );
           } else {
-            if (_srcToken.address === this.quoteTokenAddress) {
-              _prices.push(
-                this.math.querySellQuote(
-                  state,
-                  this.quoteTokenAddress,
-                  baseToken.address,
-                  _amount,
-                ),
-              );
-            } else if (_destToken.address === this.quoteTokenAddress) {
-              _prices.push(
-                this.math.querySellBase(
-                  state,
-                  this.quoteTokenAddress,
-                  baseToken.address,
-                  _amount,
-                ),
-              );
-            } else {
-              // One of them must be quoteToken
-              return null;
-            }
+            _prices.push(
+              this.math.querySellBase(
+                state,
+                this.quoteTokenAddress,
+                _srcToken.address,
+                _amount,
+              ),
+            );
           }
         }
+      }
 
-        const unit = _prices[0];
+      const unit = _prices[0];
 
-        result.push({
+      return [
+        {
           unit,
           prices: [0n, ..._prices.slice(1)],
           data: {},
-          poolIdentifier: allowedPairIdentifier,
+          poolIdentifier: expectedIdentifier,
           exchange: this.dexKey,
           gasCost: WOO_FI_GAS_COST,
           poolAddresses: [this.config.wooPPAddress],
-        });
-      }
-      return result;
+        },
+      ];
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -517,10 +481,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       .slice(0, limit);
   }
 
-  private _isQuote(a: string): boolean {
-    return this.quoteTokenAddress === a;
-  }
-
   // I think this function is quite strange. Is there more simple way to achieve the same?
   // I want to convert bigint to number and keep the precision
   private _bigIntToNumberWithPrecision(
@@ -553,5 +513,12 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     this.latestState = await this.fetchStateForBlockNumber(blockNumber);
     this.latestBlockNumber = blockNumber ? blockNumber : 0;
     return this.latestState;
+  }
+
+  private _identifyQuote(srcAddress: Address, destAddress: Address) {
+    return {
+      isSrcQuote: srcAddress === this.quoteTokenAddress,
+      isDestQuote: destAddress === this.quoteTokenAddress,
+    };
   }
 }
