@@ -97,7 +97,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
             ]),
           },
           {
-            target: this.config.woOracleAddress,
+            target: this.config.wooOracleAddress,
             callData: WooFi.ifaces.oracle.encodeFunctionData('infos', [
               t.address,
             ]),

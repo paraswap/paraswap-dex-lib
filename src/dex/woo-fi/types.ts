@@ -22,7 +22,7 @@ export type WooFiData = {};
 
 export type DexParams = {
   wooPPAddress: Address;
-  woOracleAddress: Address;
+  wooOracleAddress: Address;
   wooFeeManagerAddress: Address;
   quoteToken: Token;
   baseTokens: Record<Address, Token>;
