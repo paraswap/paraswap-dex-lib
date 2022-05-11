@@ -35,6 +35,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   tokenByAddress: Record<string, Token> | null = null;
 
+  private _encodedStateRequestCalldata?: {
+    target: Address;
+    callData: string;
+  }[];
+
   static readonly ifaces = {
     PP: new Interface(wooPPABI),
     fee: new Interface(wooFeeManagerABI),
@@ -81,41 +86,53 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     };
   }
 
-  async fetchStateForBlockNumber(blockNumber?: number): Promise<PoolState> {
-    const calldata = this.baseTokens
-      .map(t => [
-        {
-          target: this.config.wooFeeManagerAddress,
-          callData: WooFi.ifaces.fee.encodeFunctionData('feeRate', [t.address]),
-        },
-        {
-          target: this.config.woOracleAddress,
-          callData: WooFi.ifaces.oracle.encodeFunctionData('infos', [
-            t.address,
-          ]),
-        },
-        {
-          target: this.config.wooPPAddress,
-          callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
-            t.address,
-          ]),
-        },
-      ])
-      .flat();
+  protected _getStateRequestCallData() {
+    if (this._encodedStateRequestCalldata === undefined) {
+      const callData = this.baseTokens
+        .map(t => [
+          {
+            target: this.config.wooFeeManagerAddress,
+            callData: WooFi.ifaces.fee.encodeFunctionData('feeRate', [
+              t.address,
+            ]),
+          },
+          {
+            target: this.config.woOracleAddress,
+            callData: WooFi.ifaces.oracle.encodeFunctionData('infos', [
+              t.address,
+            ]),
+          },
+          {
+            target: this.config.wooPPAddress,
+            callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
+              t.address,
+            ]),
+          },
+        ])
+        .flat();
 
-    calldata.push({
-      target: this.config.wooPPAddress,
-      callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
-        this.quoteTokenAddress,
-      ]),
-    });
+      callData.push({
+        target: this.config.wooPPAddress,
+        callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
+          this.quoteTokenAddress,
+        ]),
+      });
+
+      this._encodedStateRequestCalldata = callData;
+    }
+
+    return this._encodedStateRequestCalldata;
+  }
+
+  async fetchStateForBlockNumber(blockNumber?: number): Promise<PoolState> {
+    const callData = this._getStateRequestCallData();
 
     const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
+      .aggregate(callData)
       .call({}, blockNumber || 'latest');
 
     // Last request is standalone
-    const maxNumber = calldata.length - 1;
+    const maxNumber = callData.length - 1;
 
     const [baseFeeRates, baseInfos, baseTokenInfos, quoteTokenInfo] = [
       // Skip two as they are infos abd tokenInfo
