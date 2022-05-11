@@ -120,7 +120,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   protected _getStateRequestCallData() {
     if (this._encodedStateRequestCalldata === undefined) {
-      const callData = this.baseTokens
+      const calldata = this.baseTokens
         .map(t => [
           {
             target: this.config.wooFeeManagerAddress,
@@ -143,28 +143,28 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         ])
         .flat();
 
-      callData.push({
+      calldata.push({
         target: this.config.wooPPAddress,
         callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
           this.quoteTokenAddress,
         ]),
       });
 
-      this._encodedStateRequestCalldata = callData;
+      this._encodedStateRequestCalldata = calldata;
     }
 
     return this._encodedStateRequestCalldata;
   }
 
   async fetchStateForBlockNumber(blockNumber?: number): Promise<PoolState> {
-    const callData = this._getStateRequestCallData();
+    const calldata = this._getStateRequestCallData();
 
     const data = await this.dexHelper.multiContract.methods
-      .aggregate(callData)
+      .aggregate(calldata.slice(0, 1))
       .call({}, blockNumber || 'latest');
 
     // Last request is standalone
-    const maxNumber = callData.length - 1;
+    const maxNumber = calldata.length - 1;
 
     const [baseFeeRates, baseInfos, baseTokenInfos, quoteTokenInfo] = [
       // Skip two as they are infos abd tokenInfo
