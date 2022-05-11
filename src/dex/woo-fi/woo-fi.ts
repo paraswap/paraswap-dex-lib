@@ -214,9 +214,16 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  static getIdentifier(dexKey: string) {
-    // Token pairs are unique and we don't have pool address
-    return dexKey.toLowerCase();
+  getIdentifier(srcToken: Address, destToken: Address) {
+    if (srcToken.toLowerCase() === this.quoteTokenAddress) {
+      return `${this.dexKey.toLowerCase()}_qb`;
+    } else if (destToken.toLowerCase() === this.quoteTokenAddress) {
+      return `${this.dexKey.toLowerCase()}_bq`;
+    } else {
+      throw new Error(
+        'srcToken or destToken must be equal to quoteTokenAddress',
+      );
+    }
   }
 
   async getPoolIdentifiers(
@@ -243,17 +250,31 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     const baseToken = this.baseTokens.find(
       token => token.address.toLowerCase() === tokenToSearch,
     );
-    return baseToken === undefined ? [] : [WooFi.getIdentifier(this.dexKey)];
+    return baseToken === undefined
+      ? []
+      : [this.getIdentifier(_srcToken.address, _destToken.address)];
   }
 
-  getBaseFromIdentifier(identifier: string) {
+  getBaseFromIdentifier(
+    identifier: string,
+    srcToken: Address,
+    destToken: Address,
+  ) {
     if (this.tokenByAddress === null)
       throw new Error(
         'tokenByAddress was not properly initialized. Check if initializePricing was called',
       );
 
-    const baseTokenAddress = identifier.split('_')[1];
-    return this.tokenByAddress[baseTokenAddress.toLowerCase()];
+    const direction = identifier.split('_')[1];
+    if (direction === 'bq') {
+      return this.tokenByAddress[srcToken.toLowerCase()];
+    } else if (direction === 'qb') {
+      return this.tokenByAddress[destToken.toLowerCase()];
+    } else {
+      throw new Error(
+        `direction in getBaseFromIdentifier must be 'bq' or 'qb'`,
+      );
+    }
   }
 
   async getPricesVolume(
@@ -276,13 +297,15 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         return null;
       }
 
-      // Because of all pools are made in the form of: baseToken / quoteToken
-      // where quoteToken is always the same, the difference only in baseToken.
+      const expectedIdentifier = this.getIdentifier(
+        _srcToken.address,
+        _destToken.address,
+      );
       const allowedPairIdentifiers =
         limitPools !== undefined
-          ? this.baseTokens
-              .map(token => WooFi.getIdentifier(this.dexKey))
-              .filter(identifier => limitPools.includes(identifier))
+          ? limitPools.filter(
+              limitIdentifier => limitIdentifier === expectedIdentifier,
+            )
           : await this.getPoolIdentifiers(
               _srcToken,
               _destToken,
@@ -300,7 +323,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       const result: ExchangePrices<WooFiData> = [];
       for (const allowedPairIdentifier of allowedPairIdentifiers) {
-        const baseToken = this.getBaseFromIdentifier(allowedPairIdentifier);
+        const baseToken = this.getBaseFromIdentifier(
+          allowedPairIdentifier,
+          _srcToken.address,
+          _destToken.address,
+        );
 
         const _prices: bigint[] = [];
         for (const _amount of _amounts) {
@@ -340,7 +367,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           unit,
           prices: [0n, ..._prices.slice(1)],
           data: {},
-          poolIdentifier: WooFi.getIdentifier(this.dexKey),
+          poolIdentifier: allowedPairIdentifier,
           exchange: this.dexKey,
           gasCost: WOO_FI_GAS_COST,
           poolAddresses: [this.exchangeAddress],
@@ -423,6 +450,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     );
   }
 
+  async updatePoolState(): Promise<void> {
+    await this.getState();
+  }
+
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
@@ -443,9 +474,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         ? this.baseTokens
         : [this.tokenByAddress![this.quoteTokenAddress]];
 
-    // If we knew current blockNumber, we wouldn't need to fetch the state
-    // each time we query this function
-    const state = await this.fetchStateForBlockNumber();
+    // Assuming that updatePoolState was called right before current function
+    // and block number didn't change
+    const state = this.latestState ? this.latestState : await this.getState();
 
     return selected
       .map(token => {
@@ -510,12 +541,16 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     );
   }
 
-  async getState(blockNumber: number): Promise<PoolState> {
-    if (this.latestBlockNumber === blockNumber && this.latestState !== null) {
+  async getState(blockNumber?: number): Promise<PoolState> {
+    if (
+      blockNumber !== undefined &&
+      this.latestBlockNumber === blockNumber &&
+      this.latestState !== null
+    ) {
       return this.latestState;
     }
     this.latestState = await this.fetchStateForBlockNumber(blockNumber);
-    this.latestBlockNumber = blockNumber;
+    this.latestBlockNumber = blockNumber ? blockNumber : 0;
     return this.latestState;
   }
 }
