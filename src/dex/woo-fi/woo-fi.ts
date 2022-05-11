@@ -86,8 +86,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     // If new config property will be added, the TS will throw compile error
     const newConfig: DexParams = {
       wooPPAddress: this.config.wooPPAddress.toLowerCase(),
-      wooOracleAddress: this.config.wooPPAddress.toLowerCase(),
-      wooFeeManagerAddress: this.config.wooPPAddress.toLowerCase(),
+      wooOracleAddress: this.config.wooOracleAddress.toLowerCase(),
+      wooFeeManagerAddress: this.config.wooFeeManagerAddress.toLowerCase(),
       quoteToken: {
         ...this.config.quoteToken,
         address: this.config.quoteToken.address.toLowerCase(),
