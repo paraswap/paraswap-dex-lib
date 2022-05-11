@@ -162,7 +162,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     const calldata = this._getStateRequestCallData();
 
     const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata.slice(0, 1))
+      .aggregate(calldata)
       .call({}, blockNumber || 'latest');
 
     // Last request is standalone
