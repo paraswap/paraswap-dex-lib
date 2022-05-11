@@ -273,11 +273,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     srcToken: Address,
     destToken: Address,
   ) {
-    if (this.tokenByAddress === null)
-      throw new Error(
-        'tokenByAddress was not properly initialized. Check if initializePricing was called',
-      );
-
     const direction = identifier.split('_')[1];
     if (direction === 'bq') {
       return this.tokenByAddress[srcToken];
@@ -474,7 +469,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       this.network,
     ).address.toLowerCase();
 
-    const filteredToken = Object.values(this.tokenByAddress!).filter(
+    const filteredToken = Object.values(this.tokenByAddress).filter(
       token => token.address === wrappedTokenAddress,
     );
 
@@ -483,7 +478,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     const selected =
       wrappedTokenAddress === this.quoteTokenAddress
         ? this.baseTokens
-        : [this.tokenByAddress![this.quoteTokenAddress]];
+        : [this.tokenByAddress[this.quoteTokenAddress]];
 
     // Assuming that updatePoolState was called right before current function
     // and block number didn't change
