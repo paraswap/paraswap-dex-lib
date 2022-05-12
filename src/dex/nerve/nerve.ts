@@ -145,6 +145,8 @@ export class Nerve
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
     const _srcToken = wrapETH(srcToken, this.network);
     const _destToken = wrapETH(destToken, this.network);
 

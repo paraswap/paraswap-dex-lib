@@ -259,21 +259,24 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
     const _srcToken = wrapETH(srcToken, this.network);
     const _destToken = wrapETH(destToken, this.network);
-    _srcToken.address = _srcToken.address.toLowerCase();
-    _destToken.address = _destToken.address.toLowerCase();
+
+    const _srcAddress = _srcToken.address.toLowerCase();
+    const _destAddress = _destToken.address.toLowerCase();
 
     if (
-      !this.tokenByAddress[_srcToken.address] ||
-      !this.tokenByAddress[_destToken.address]
+      !this.tokenByAddress[_srcAddress] ||
+      !this.tokenByAddress[_destAddress]
     ) {
       return [];
     }
 
     const { isSrcQuote, isDestQuote } = this._identifyQuote(
-      _srcToken.address,
-      _destToken.address,
+      _srcAddress,
+      _destAddress,
     );
 
     if (!isSrcQuote && !isDestQuote) return [];
@@ -294,18 +297,19 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     try {
       const _srcToken = wrapETH(srcToken, this.network);
       const _destToken = wrapETH(destToken, this.network);
-      _srcToken.address = _srcToken.address.toLowerCase();
-      _destToken.address = _destToken.address.toLowerCase();
+
+      const _srcAddress = _srcToken.address.toLowerCase();
+      const _destAddress = _destToken.address.toLowerCase();
 
       if (
-        !this.tokenByAddress[_srcToken.address] ||
-        !this.tokenByAddress[_destToken.address]
+        !this.tokenByAddress[_srcAddress] ||
+        !this.tokenByAddress[_destAddress]
       )
         return null;
 
       const { isSrcQuote, isDestQuote } = this._identifyQuote(
-        _srcToken.address,
-        _destToken.address,
+        _srcAddress,
+        _destAddress,
       );
 
       if (!isSrcQuote && !isDestQuote) return null;
@@ -328,14 +332,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         _prices = this.math.querySellQuote(
           state,
           this.quoteTokenAddress,
-          _destToken.address,
+          _destAddress,
           _amounts,
         );
       } else {
         _prices = this.math.querySellBase(
           state,
           this.quoteTokenAddress,
-          _srcToken.address,
+          _srcAddress,
           _amounts,
         );
       }
@@ -467,27 +471,6 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         liquidityUSD: this.vaultUSDBalance,
       },
     ];
-  }
-
-  // I think this function is quite strange. Is there more simple way to achieve the same?
-  // I want to convert bigint to number and keep the precision
-  private _bigIntToNumberWithPrecision(
-    value: bigint,
-    decimals: number,
-    precision: number = 2,
-  ) {
-    if (precision > decimals)
-      throw new Error(
-        `precision ${precision} must be <= decimals ${decimals} in _convertToNumberWithPrecision`,
-      );
-
-    const slashed = (value / getBigIntPow(decimals - precision)).toString();
-
-    const indToInt = slashed.length - precision;
-    return (
-      Number(slashed.slice(0, indToInt)) +
-      Number(`0.${slashed.slice(indToInt, slashed.length)}`)
-    );
   }
 
   async getState(blockNumber?: number): Promise<PoolState> {
