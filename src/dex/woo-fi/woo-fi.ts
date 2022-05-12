@@ -123,7 +123,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   protected _getStateRequestCallData() {
-    if (this._encodedStateRequestCalldata === undefined) {
+    if (!this._encodedStateRequestCalldata) {
       const calldata = this.baseTokens
         .map(t => [
           {
@@ -205,10 +205,12 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         'tokenInfo',
         data.returnData[maxNumber],
       ),
-      BigInt(WooFi.ifaces.oracle.decodeFunctionResult(
-        'timestamp',
-        data.returnData[maxNumber + 1],
-      )[0]._hex),
+      BigInt(
+        WooFi.ifaces.oracle.decodeFunctionResult(
+          'timestamp',
+          data.returnData[maxNumber + 1],
+        )[0]._hex,
+      ),
     ];
 
     const state: PoolState = {
