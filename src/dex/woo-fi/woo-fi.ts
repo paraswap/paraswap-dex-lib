@@ -159,6 +159,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         callData: WooFi.ifaces.oracle.encodeFunctionData('timestamp', []),
       });
 
+      calldata.push({
+        target: this.config.wooPPAddress,
+        callData: WooFi.ifaces.PP.encodeFunctionData('paused', []),
+      });
+
       this._encodedStateRequestCalldata = calldata;
     }
 
@@ -173,7 +178,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       .call({}, blockNumber || 'latest');
 
     // Last two requests are standalone
-    const maxNumber = calldata.length - 2;
+    const maxNumber = calldata.length - 3;
 
     const [
       baseFeeRates,
@@ -181,6 +186,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       baseTokenInfos,
       quoteTokenInfo,
       oracleTimestamp,
+      isPaused,
     ] = [
       // Skip two as they are infos abd tokenInfo
       _.range(0, maxNumber, 3).map(index =>
@@ -211,6 +217,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           data.returnData[maxNumber + 1],
         )[0]._hex,
       ),
+      WooFi.ifaces.PP.decodeFunctionResult(
+        'paused',
+        data.returnData[maxNumber + 2],
+      )[0],
     ];
 
     const state: PoolState = {
@@ -218,7 +228,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       tokenInfos: {},
       tokenStates: {},
       oracleTimestamp,
+      isPaused,
     };
+
     this._fillTokenInfoState(state, this.quoteTokenAddress, quoteTokenInfo);
 
     baseFeeRates.map((value, index) => {
@@ -326,6 +338,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       const _amounts = [unitVolume, ...amounts.slice(1)];
 
       const state = await this.getState(blockNumber);
+
+      if (state.isPaused) {
+        this.logger.warn(
+          `${this.dexKey} is paused on ${this.network} in getPricesVolume`,
+        );
+        return null;
+      }
 
       let _prices: bigint[];
       if (isSrcQuote) {
@@ -457,6 +476,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
     if (!this.tokenByAddress[wrappedTokenAddress]) return [];
     if (!this.latestState) return [];
+
+    if (this.latestState.isPaused) {
+      this.logger.warn(
+        `${this.dexKey} is paused on ${this.network} in getTopPoolsForToken`,
+      );
+      return [];
+    }
 
     const connectorTokens =
       wrappedTokenAddress === this.quoteTokenAddress

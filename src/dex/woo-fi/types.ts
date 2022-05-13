@@ -19,6 +19,7 @@ export type PoolState = {
   tokenInfos: Record<Address, TokenInfo>;
   tokenStates: Record<Address, TokenState>;
   oracleTimestamp: bigint;
+  isPaused: boolean
 };
 
 export type WooFiData = {};
