@@ -137,7 +137,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.config = PlatypusConfig[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }

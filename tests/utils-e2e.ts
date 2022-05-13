@@ -11,14 +11,12 @@ import {
   ETHER_ADDRESS,
   MAX_UINT,
   Network,
-  TokenTransferProxyAddress,
-  AugustusAddress,
-  ProviderURL,
   ContractMethod,
 } from '../src/constants';
 import { OptimalRate, TxObject, Address, Token } from '../src/types';
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
+import { generateConfig } from '../src/config';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -50,7 +48,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     this.paraSwap = new ParaSwap(
       network as NetworkID,
       testingEndpoint,
-      ProviderURL[network],
+      generateConfig(network).httpProvider,
     );
   }
 
@@ -114,7 +112,7 @@ function allowTokenTransferProxyParams(
   holderAddress: Address,
   network: Network,
 ) {
-  const tokenTransferProxy = TokenTransferProxyAddress[network];
+  const tokenTransferProxy = generateConfig(network).tokenTransferProxyAddress;
   return {
     from: holderAddress,
     to: tokenAddress,
@@ -137,7 +135,7 @@ function deployAdapterParams(bytecode: string, network = Network.MAINNET) {
 }
 
 function whiteListAdapterParams(contractAddress: Address, network: Network) {
-  const augustusAddress = AugustusAddress[network];
+  const augustusAddress = generateConfig(network).augustusAddress;
   if (!augustusAddress) throw new Error('No whitelist address set for network');
   const ownerAddress = MULTISIG[network];
   if (!ownerAddress) throw new Error('No whitelist owner set for network');

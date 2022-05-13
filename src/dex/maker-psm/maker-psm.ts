@@ -13,7 +13,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MakerPsmData, PoolState, PoolConfig } from './types';
@@ -205,7 +205,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     protected vatAddress: Address = MakerPsmConfig[dexKey][network].vatAddress,
     protected poolConfigs: PoolConfig[] = MakerPsmConfig[dexKey][network].pools,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
     poolConfigs.forEach(

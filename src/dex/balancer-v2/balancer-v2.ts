@@ -24,7 +24,7 @@ import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -361,7 +361,7 @@ export class BalancerV2
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
       dexKey,
@@ -413,8 +413,8 @@ export class BalancerV2
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
-    const _from = wrapETH(from, this.network);
-    const _to = wrapETH(to, this.network);
+    const _from = this.dexHelper.config.wrapETH(from);
+    const _to = this.dexHelper.config.wrapETH(to);
 
     const pools = this.getPools(_from, _to);
 
@@ -433,8 +433,8 @@ export class BalancerV2
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
     if (side === SwapSide.BUY) return null;
     try {
-      const _from = wrapETH(from, this.network);
-      const _to = wrapETH(to, this.network);
+      const _from = this.dexHelper.config.wrapETH(from);
+      const _to = this.dexHelper.config.wrapETH(to);
 
       const allPools = this.getPools(_from, _to);
       const allowedPools = limitPools

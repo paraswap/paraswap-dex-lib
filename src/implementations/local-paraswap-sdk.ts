@@ -4,13 +4,7 @@ import { TransactionBuilder } from '../transaction-builder';
 import { PricingHelper } from '../pricing-helper';
 import { DexAdapterService } from '../dex';
 import { Address, Token, OptimalRate, TxObject } from '../types';
-import {
-  SwapSide,
-  AugustusAddress,
-  TokenTransferProxyAddress,
-  NULL_ADDRESS,
-  ContractMethod,
-} from '../constants';
+import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -137,8 +131,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
-      tokenTransferProxy: TokenTransferProxyAddress[this.network],
-      contractAddress: AugustusAddress[this.network],
+      tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
+      contractAddress: this.dexHelper.config.data.augustusAddress,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);

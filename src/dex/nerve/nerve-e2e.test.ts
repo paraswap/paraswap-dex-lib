@@ -3,13 +3,9 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Network, ContractMethod, SwapSide } from '../../constants';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 describe('Nerve', () => {
   const dexKey = 'Nerve';
@@ -18,7 +14,10 @@ describe('Nerve', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
       it('SELL BUSD -> USDC', async () => {
@@ -116,7 +115,10 @@ describe('Axial', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
       it('SELL newFRAX -> MIM', async () => {
@@ -201,7 +203,10 @@ describe('IronV2', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
       it('SELL DAI -> USDC', async () => {
@@ -255,7 +260,10 @@ describe('IronV2', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
       it('SELL USDCe -> USDTe', async () => {
@@ -310,7 +318,10 @@ describe('IronV2', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
       it('SELL USDC -> FUSDT', async () => {
@@ -369,7 +380,10 @@ describe('Saddle', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
       it('SELL FEI -> newFRAX', async () => {
@@ -463,7 +477,10 @@ describe('Saddle', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
       it('SELL USDC -> FRAX', async () => {

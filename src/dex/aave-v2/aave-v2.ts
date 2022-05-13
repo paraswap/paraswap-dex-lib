@@ -9,12 +9,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import {
-  isETHAddress,
-  getDexKeysWithNetwork,
-  wrapETH,
-  getBigIntPow,
-} from '../../utils';
+import { isETHAddress, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { AaveV2Data, AaveV2Param, AaveV2PoolAndWethFunctions } from './types';
 
 import WETH_GATEWAY_ABI_MAINNET from '../../abi/aave-weth-gateway.json';
@@ -70,7 +65,7 @@ export class AaveV2
     protected dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.wethGateway = new Interface(WETH_GATEWAY_ABI[network]);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V2);
@@ -99,8 +94,8 @@ export class AaveV2
   ): Promise<string[]> {
     const aToken = isAaveV2Pair(
       this.network,
-      wrapETH(srcToken, this.network),
-      wrapETH(destToken, this.network),
+      this.dexHelper.config.wrapETH(srcToken),
+      this.dexHelper.config.wrapETH(destToken),
     );
     if (aToken === null) {
       return [];
@@ -126,8 +121,8 @@ export class AaveV2
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AaveV2Data>> {
-    const _src = wrapETH(srcToken, this.network);
-    const _dst = wrapETH(destToken, this.network);
+    const _src = this.dexHelper.config.wrapETH(srcToken);
+    const _dst = this.dexHelper.config.wrapETH(destToken);
     const aToken = isAaveV2Pair(this.network, _src, _dst);
     if (!aToken) {
       return null;

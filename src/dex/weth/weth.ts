@@ -8,12 +8,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import {
-  getDexKeysWithNetwork,
-  isETHAddress,
-  WethMap,
-  isWETH,
-} from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -36,9 +31,7 @@ export class Weth
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WethConfig);
 
-  public static getAddress(network: number = 1): Address {
-    return WethMap[network];
-  }
+  readonly address: Address;
 
   logger: Logger;
 
@@ -50,8 +43,13 @@ export class Weth
     protected unitPrice = BI_POWS[18],
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
+    this.address = dexHelper.config.data.wrappedNativeTokenAddress;
     this.logger = dexHelper.getLogger(dexKey);
+  }
+
+  isWETH(tokenAddress: Address) {
+    return this.address.toLowerCase() === tokenAddress.toLowerCase();
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -64,13 +62,10 @@ export class Weth
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (
-      isETHAddress(srcToken.address) &&
-      isWETH(destToken.address, this.network)
-    ) {
+    if (isETHAddress(srcToken.address) && this.isWETH(destToken.address)) {
       return [`${this.network}_${destToken.address}`];
     } else if (
-      isWETH(srcToken.address, this.network) &&
+      this.isWETH(srcToken.address) &&
       isETHAddress(destToken.address)
     ) {
       return [`${this.network}_${srcToken.address}`];
@@ -88,10 +83,8 @@ export class Weth
     limitPools?: string[],
   ): Promise<null | ExchangePrices<WethData>> {
     const isWETHSwap =
-      (isETHAddress(srcToken.address) &&
-        isWETH(destToken.address, this.network)) ||
-      (isWETH(srcToken.address, this.network) &&
-        isETHAddress(destToken.address));
+      (isETHAddress(srcToken.address) && this.isWETH(destToken.address)) ||
+      (this.isWETH(srcToken.address) && isETHAddress(destToken.address));
 
     if (!isWETHSwap) return null;
 
@@ -101,7 +94,7 @@ export class Weth
         unit: this.unitPrice,
         gasCost: this.poolGasCost,
         exchange: this.dexKey,
-        poolAddresses: [Weth.getAddress(this.network)],
+        poolAddresses: [this.address],
         data: null,
       },
     ];
@@ -116,7 +109,7 @@ export class Weth
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: Weth.getAddress(this.network),
+      targetExchange: this.address,
       payload: '0x',
       networkFee: '0',
     };
@@ -142,7 +135,7 @@ export class Weth
       destToken,
       destAmount,
       swapData,
-      Weth.getAddress(this.network),
+      this.address,
     );
   }
 
@@ -160,7 +153,7 @@ export class Weth
     destAmount: string,
     side: SwapSide,
   ): DepositWithdrawReturn | undefined {
-    const wethToken = Weth.getAddress(this.network);
+    const wethToken = this.address;
 
     if (srcAmount !== '0' && isETHAddress(srcToken)) {
       const opType = WethFunctions.deposit;

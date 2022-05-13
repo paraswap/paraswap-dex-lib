@@ -3,13 +3,9 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 describe('Weth E2E', () => {
   describe('Weth Mainnet', () => {
@@ -24,7 +20,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -140,7 +139,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -256,7 +258,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -372,7 +377,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -488,7 +496,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];

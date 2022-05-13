@@ -7,13 +7,9 @@ import {
   Holders,
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 jest.setTimeout(50 * 1000);
 
@@ -24,7 +20,10 @@ describe('KyberDmm E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'WBTC';
@@ -97,7 +96,10 @@ describe('KyberDmm E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const tokenASymbol: string = 'DAI';
     const tokenBSymbol: string = 'USDC';
@@ -170,7 +172,10 @@ describe('KyberDmm E2E', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'BUSD';
@@ -243,7 +248,10 @@ describe('KyberDmm E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     const tokenASymbol: string = 'USDCe';
     const tokenBSymbol: string = 'USDTe';

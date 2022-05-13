@@ -27,7 +27,7 @@ async function createFolder(newDexPath: string) {
   try {
     await mkdirAsync(newDexPath);
   } catch (e) {
-    if (e.code === 'EEXIST') {
+    if (e && (e as any).code === 'EEXIST') {
       throw new Error(
         `Dex folder ${
           newDexPath.split('/').slice(-1)[0]

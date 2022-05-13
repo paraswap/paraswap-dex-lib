@@ -95,7 +95,8 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       throw new Error(`Simpleswap invalid bestRoute`);
     const swap = priceRoute.bestRoute[0].swaps[0];
 
-    const wethAddress = Weth.getAddress(priceRoute.network);
+    const wethAddress =
+      this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress;
 
     const rawSimpleParams = await Promise.all(
       swap.swapExchanges.map(async se => {

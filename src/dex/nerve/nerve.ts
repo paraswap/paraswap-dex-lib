@@ -11,12 +11,7 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import {
-  wrapETH,
-  getDexKeysWithNetwork,
-  interpolate,
-  getBigIntPow,
-} from '../../utils';
+import { getDexKeysWithNetwork, interpolate, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -62,7 +57,7 @@ export class Nerve
     protected poolConfigs = NerveConfig[dexKey][network].poolConfigs,
     protected nervePoolIface = new Interface(nervePoolABIDefault),
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -146,8 +141,8 @@ export class Nerve
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     return this.allPools
       .filter(pool => {
@@ -170,8 +165,8 @@ export class Nerve
     try {
       if (side === SwapSide.BUY) return null;
 
-      const _srcToken = wrapETH(srcToken, this.network);
-      const _destToken = wrapETH(destToken, this.network);
+      const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+      const _destToken = this.dexHelper.config.wrapETH(destToken);
 
       if (
         _srcToken.address.toLowerCase() === _destToken.address.toLowerCase()
@@ -339,10 +334,10 @@ export class Nerve
   ): Promise<PoolLiquidity[]> {
     // We set decimals to default as we don't really care of actual number.
     // We use here only address
-    const wrappedTokenAddress = wrapETH(
-      { address: tokenAddress, decimals: 18 },
-      this.network,
-    );
+    const wrappedTokenAddress = this.dexHelper.config.wrapETH({
+      address: tokenAddress,
+      decimals: 18,
+    });
 
     const selectedPools = this.allPools.filter(pool =>
       pool.tokenAddresses.includes(wrappedTokenAddress.address),

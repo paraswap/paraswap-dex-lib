@@ -5,11 +5,11 @@ import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders, NativeTokenSymbols } from '../../../tests/constants-e2e';
 import {
   Network,
-  ProviderURL,
   ContractMethod,
   SwapSide,
 } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 /*
   README
@@ -57,7 +57,7 @@ describe('__DexName__ E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(generateConfig(network).httpProvider, network);
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const tokenASymbol: string = 'tokenASymbol';

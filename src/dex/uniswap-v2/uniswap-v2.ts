@@ -30,11 +30,9 @@ import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  wrapETH,
   getDexKeysWithNetwork,
   isETHAddress,
   prependWithOx,
-  WethMap,
   getBigIntPow,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
@@ -174,15 +172,6 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   }
 }
 
-export const UniswapV2ExchangeRouter: { [network: number]: Address } = {
-  [Network.POLYGON]: '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
-  [Network.MAINNET]: '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
-  [Network.ROPSTEN]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.BSC]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.AVALANCHE]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.FANTOM]: '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
-};
-
 // Apply extra fee for certain tokens when used as input to swap (basis points)
 // These could be tokens with fee on transfer or rounding error on balances
 // Token addresses must be in lower case!
@@ -241,9 +230,9 @@ export class UniswapV2
       Adapters[network],
     protected router = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].router) ??
-      UniswapV2ExchangeRouter[network],
+      dexHelper.config.data.uniswapV2ExchangeRouterAddress,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
@@ -519,8 +508,8 @@ export class UniswapV2
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const from = wrapETH(_from, this.network);
-    const to = wrapETH(_to, this.network);
+    const from = this.dexHelper.config.wrapETH(_from);
+    const to = this.dexHelper.config.wrapETH(_to);
 
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];
@@ -544,8 +533,8 @@ export class UniswapV2
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
-      const from = wrapETH(_from, this.network);
-      const to = wrapETH(_to, this.network);
+      const from = this.dexHelper.config.wrapETH(_from);
+      const to = this.dexHelper.config.wrapETH(_to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
@@ -717,7 +706,7 @@ export class UniswapV2
   getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
     if (!isETHAddress(srcToken) && !isETHAddress(destToken))
       return NULL_ADDRESS;
-    return weth || WethMap[this.network];
+    return weth || this.dexHelper.config.data.wrappedNativeTokenAddress;
   }
 
   getAdapterParam(

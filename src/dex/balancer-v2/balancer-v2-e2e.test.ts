@@ -3,13 +3,9 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 jest.setTimeout(50 * 1000);
 
@@ -19,7 +15,10 @@ describe('BalancerV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[Network.MAINNET];
     const holders = Holders[Network.MAINNET];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).httpProvider,
+      network,
+    );
 
     describe('Simpleswap', () => {
       it('ETH -> TOKEN', async () => {
