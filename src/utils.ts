@@ -74,3 +74,7 @@ export function getBigIntPow(decimals: number): bigint {
   // It is not accurate to create 10 ** 23 and more decimals from number type
   return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
 }
+
+export const _require = (b: boolean, message: string) => {
+  if (!b) throw new Error(message);
+};
