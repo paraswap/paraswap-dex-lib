@@ -8,6 +8,7 @@ export const WooFiConfig: DexConfigMap<DexParams> = {
       wooPPAddress: '0xbf365Ce9cFcb2d5855521985E351bA3bcf77FD3F',
       wooOracleAddress: '0x6b6fBEc7934b104e81b2046D24A990e03e17afDC',
       wooFeeManagerAddress: '0xaA6c60D638d34261B764fEDB551E50Ab02c34C90',
+      wooGuardianAddress: '0x910723e3c6a68276687b50613a1a9e42cc6589b4',
       quoteToken: {
         // USDT
         address: '0x55d398326f99059ff775485246999027b3197955',
@@ -36,6 +37,7 @@ export const WooFiConfig: DexConfigMap<DexParams> = {
       wooPPAddress: '0x1df3009c57a8B143c6246149F00B090Bce3b8f88',
       wooOracleAddress: '0x25a4d4a094A084c7ad45Ac273cF7D6B6bfae7D4E',
       wooFeeManagerAddress: '0x209102c0D2E34282494114ea76D5251c8e7Ea7ab',
+      wooGuardianAddress: '0x58c73f7e102bc6bcdc6b092ef0399b3e06d6b3e3',
       quoteToken: {
         // USDC
         address: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
@@ -64,6 +66,7 @@ export const WooFiConfig: DexConfigMap<DexParams> = {
       wooPPAddress: '0x9503E7517D3C5bc4f9E4A1c6AE4f8B33AC2546f2',
       wooOracleAddress: '0x209102c0D2E34282494114ea76D5251c8e7Ea7ab',
       wooFeeManagerAddress: '0xBE1a0FccCFA9c9065152B7770B918f7C59914E8D',
+      wooGuardianAddress: '0x128758d0e909624841AB29D53919646BFBDa5dB2',
       quoteToken: {
         // USDC
         address: '0x04068da6c83afcfa0e13ba15a6696662335d5b75',

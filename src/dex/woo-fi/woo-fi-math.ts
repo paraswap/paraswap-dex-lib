@@ -1,43 +1,59 @@
 import { PoolState, TokenInfo } from './types';
 import { wooFiDecimalMath } from './woo-fi-decimal-math';
+import { Address, Logger } from '../../types';
+import { BI_MAX_UINT96, BI_POWS } from '../../bigint-constants';
+import { _require } from '../../utils';
+import { NULL_STATE } from './constants';
+import { NULL_ADDRESS } from '../../constants';
 
-class WooFiPoolMath {
+export class WooFiMath {
   // dMath = decimalMath
   readonly dMath: typeof wooFiDecimalMath = wooFiDecimalMath;
 
+  private readonly _MIN_INPUT_DEFAULT = BI_POWS[16]; // 0.01 xToken
+
+  private readonly _MAX_INPUT_DEFAULT = BI_POWS[20]; //  100 xToken
+
+  state: PoolState = NULL_STATE;
+
+  quoteToken = NULL_ADDRESS
+
+  constructor(private readonly logger: Logger) {}
+
   querySellBase(
-    state: PoolState,
-    quoteTokenAddress: string,
-    baseTokenAddress: string,
+    baseToken: Address,
     baseAmounts: bigint[],
-  ): bigint[] {
-    this._autoUpdate(state, quoteTokenAddress, baseTokenAddress);
+  ): bigint[] | null {
+    try {
+      baseAmounts.map(baseAmount => {
+        this._checkInputAmount(baseTokenAddress, baseAmount);
+      });
+    } catch (e) {
+      this.logger.warn('WooFi Guardian check _checkInputAmount Error:', e);
+      return null;
+    }
+
+    this._autoUpdate(quoteTokenAddress, baseTokenAddress);
 
     const quoteAmounts = this._getQuoteAmountSellBase(
-      state,
-      quoteTokenAddress,
-      baseTokenAddress,
+      baseToken,
       baseAmounts,
     );
-    const feeRate = state.feeRates[baseTokenAddress];
+    const feeRate = this.state.feeRates[baseToken];
     return this._takeFee(quoteAmounts, feeRate);
   }
 
   querySellQuote(
-    state: PoolState,
-    quoteTokenAddress: string,
-    baseTokenAddress: string,
+    baseToken: Address,
     quoteAmounts: bigint[],
-  ): bigint[] {
-    this._autoUpdate(state, quoteTokenAddress, baseTokenAddress);
+  ): bigint[] | null {
+    this._autoUpdate(quoteTokenAddress, baseToken);
 
-    const feeRate = state.feeRates[baseTokenAddress];
+    const feeRate = this.state.feeRates[baseToken];
     quoteAmounts = this._takeFee(quoteAmounts, feeRate);
 
     return this._getBaseAmountSellQuote(
-      state,
-      quoteTokenAddress,
-      baseTokenAddress,
+      baseToken,
       quoteAmounts,
     );
   }
@@ -50,19 +66,19 @@ class WooFiPoolMath {
   }
 
   protected _getQuoteAmountSellBase(
-    state: PoolState,
-    quoteTokenAddress: string,
-    baseTokenAddress: string,
+    baseToken: Address,
     baseAmounts: bigint[],
   ): bigint[] {
-    const quoteInfo = state.tokenInfos[quoteTokenAddress];
-    const baseInfo = state.tokenInfos[baseTokenAddress];
+    const quoteInfo = this.state.tokenInfos[this.quoteToken];
+    const baseInfo = this.state.tokenInfos[baseToken];
 
     let {
       priceNow: p,
       spreadNow: s,
       coeffNow: k,
-    } = state.tokenStates[baseTokenAddress];
+    } = this.state.tokenStates[baseToken];
+
+    this._checkSwapPrice(p, baseToken, this.quoteToken)
 
     // price: p * (1 - s / 2)
     p = this.dMath.mulFloor(
@@ -120,19 +136,18 @@ class WooFiPoolMath {
   }
 
   protected _getBaseAmountSellQuote(
-    state: PoolState,
     quoteTokenAddress: string,
     baseTokenAddress: string,
     quoteAmounts: bigint[],
   ): bigint[] {
-    const quoteInfo = state.tokenInfos[quoteTokenAddress];
-    const baseInfo = state.tokenInfos[baseTokenAddress];
+    const quoteInfo = this.state.tokenInfos[quoteTokenAddress];
+    const baseInfo = this.state.tokenInfos[baseTokenAddress];
 
     let {
       priceNow: p,
       spreadNow: s,
       coeffNow: k,
-    } = state.tokenStates[baseTokenAddress];
+    } = this.state.tokenStates[baseTokenAddress];
 
     // price: p * (1 + s / 2)
     p = this.dMath.mulCeil(
@@ -314,29 +329,111 @@ class WooFiPoolMath {
     return this.dMath.divFloor(this.dMath.mulFloor(baseAmount, p), priceFactor);
   }
 
-  protected _autoUpdate(
-    state: PoolState,
-    quoteTokenAddress: string,
-    baseTokenAddress: string,
-  ) {
-    const quoteInfo = state.tokenInfos[quoteTokenAddress];
-    const baseInfo = state.tokenInfos[baseTokenAddress];
+  protected _autoUpdate(quoteTokenAddress: string, baseTokenAddress: string) {
+    const quoteInfo = this.state.tokenInfos[quoteTokenAddress];
+    const baseInfo = this.state.tokenInfos[baseTokenAddress];
 
-    if (state.oracleTimestamp !== baseInfo.lastResetTimestamp) {
+    if (this.state.oracleTimestamp !== baseInfo.lastResetTimestamp) {
       baseInfo.target =
         baseInfo.threshold > baseInfo.reserve
           ? baseInfo.threshold
           : baseInfo.reserve;
-      baseInfo.lastResetTimestamp = state.oracleTimestamp;
+      baseInfo.lastResetTimestamp = this.state.oracleTimestamp;
     }
-    if (state.oracleTimestamp !== quoteInfo.lastResetTimestamp) {
+    if (this.state.oracleTimestamp !== quoteInfo.lastResetTimestamp) {
       quoteInfo.target =
         quoteInfo.threshold > quoteInfo.reserve
           ? quoteInfo.threshold
           : quoteInfo.reserve;
-      quoteInfo.lastResetTimestamp = state.oracleTimestamp;
+      quoteInfo.lastResetTimestamp = this.state.oracleTimestamp;
     }
   }
-}
 
-export const wooFiMath = new WooFiPoolMath();
+  private _checkInputAmount(token: Address, inputAmount: bigint) {
+    _require(
+      inputAmount < BI_MAX_UINT96,
+      `WooGuardian: inputAmount_uint96_OVERFLOW in _checkInputAmount for ${token}`,
+    );
+
+    const info = this.state.guardian.refInfos[token];
+    const minInputAmount =
+      info.minInputAmount != 0n ? info.minInputAmount : this._MIN_INPUT_DEFAULT;
+    const maxInputAmount =
+      info.maxInputAmount != 0n ? info.maxInputAmount : this._MAX_INPUT_DEFAULT;
+
+    _require(
+      inputAmount >= minInputAmount,
+      `WooGuardian: inputAmount_LTM in _checkInputAmount for ${token}`,
+    );
+    _require(
+      inputAmount <= maxInputAmount,
+      `WooGuardian: inputAmount_GTM in _checkInputAmount for ${token}`,
+    );
+  }
+
+  private _checkSwapAmount(
+    fromToken: Address,
+    toToken: Address,
+    fromAmount: bigint,
+    toAmount: bigint,
+  ) {
+    const refPrice = this._refPrice(fromToken, toToken);
+    const refToAmount = this.dMath.mulFloor(fromAmount, refPrice);
+
+    const bound = this._boundForTokens(fromToken, toToken);
+
+    _require(
+      this.dMath.mulFloor(refToAmount, BI_POWS[18] - bound) <= toAmount &&
+        toAmount <= this.dMath.mulCeil(refToAmount, BI_POWS[18] + bound),
+      `WooGuardian: TO_AMOUNT_UNRELIABLE in _checkSwapAmount for ${toToken}`,
+    );
+  }
+
+  private _checkSwapPrice(price: bigint, fromToken: Address, toToken: Address) {
+    const refPrice = this._refPrice(fromToken, toToken);
+    const bound = this._boundForTokens(fromToken, toToken);
+    _require(
+      this.dMath.mulFloor(refPrice, BI_POWS[18] - bound) <= price &&
+        price <= this.dMath.mulCeil(refPrice, BI_POWS[18] + bound),
+      `WooGuardian: PRICE_UNRELIABLE in _checkSwapPrice fromToken=${fromToken} and toToken=${toToken}`,
+    );
+  }
+
+  private _refPrice(fromToken: Address, toToken: Address) {
+    const baseInfo = this.state.guardian.refInfos[fromToken];
+    const quoteInfo = this.state.guardian.refInfos[toToken];
+
+    const { answer: rawBaseRefPrice } =
+      this.state.chainlink.latestRoundData[baseInfo.chainlinkRefOracle];
+
+    _require(
+      rawBaseRefPrice >= 0,
+      `WooGuardian: INVALID_CHAINLINK_PRICE in _refPrice for ${fromToken}`,
+    );
+
+    const { answer: rawQuoteRefPrice } =
+      this.state.chainlink.latestRoundData[quoteInfo.chainlinkRefOracle];
+
+    _require(
+      rawQuoteRefPrice >= 0,
+      `WooGuardian: INVALID_CHAINLINK_QUOTE_PRICE in _refPrice for ${toToken}`,
+    );
+
+    const baseRefPrice = rawBaseRefPrice * baseInfo.refPriceFixCoeff;
+    const quoteRefPrice = rawQuoteRefPrice * quoteInfo.refPriceFixCoeff;
+
+    return this.dMath.divFloor(baseRefPrice, quoteRefPrice);
+  }
+
+  private _boundForTokens(token1: Address, token2: Address) {
+    const info1 = this.state.guardian.refInfos[token1];
+    const bound1 =
+      info1.bound !== 0n ? info1.bound : this.state.guardian.globalBound;
+
+    const info2 = this.state.guardian.refInfos[token2];
+    const bound2 =
+      info2.bound != 0n ? info2.bound : this.state.guardian.globalBound;
+
+    return bound1 > bound2 ? bound1 : bound2;
+  }
+}
