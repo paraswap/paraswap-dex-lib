@@ -760,7 +760,6 @@ export class UniswapV2
       side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
       [src, srcAmount, destAmount, weth, pools],
     );
-    console.log('getSimpleParam data.router', data.router); // TODO remove
     return this.buildSimpleParamWithoutWETHConversion(
       src,
       srcAmount,

@@ -1243,12 +1243,6 @@ describe('UniswapV2 E2E Polygon', () => {
     const maticAmount = '1000000000000000000';
     const usdAmount = '1000000';
 
-    // TODO remove
-    log4js.configure({
-      appenders: { out: { type: 'stdout' } },
-      categories: { default: { appenders: ['out'], level: 'info' } },
-    });
-
     describe('simpleSwap', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
@@ -1387,13 +1381,11 @@ describe('UniswapV2 E2E Polygon', () => {
 
     const usdAmount = '1000000';
 
-    // TODO remove
-    log4js.configure({
+    /*log4js.configure({
       appenders: { out: { type: 'stdout' } },
       categories: { default: { appenders: ['out'], level: 'info' } },
-    });
+    });*/
 
-    // TODO remove only
     describe('simpleSwap', () => {
       it('Token -> Token', async () => {
         await testE2E(
@@ -1402,19 +1394,6 @@ describe('UniswapV2 E2E Polygon', () => {
           holders.USDC,
           usdAmount,
           SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('Token -> Token Buy', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          usdAmount,
-          SwapSide.BUY,
           dexKey,
           ContractMethod.simpleSwap,
           network,
@@ -1437,19 +1416,6 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('Token -> Token Buy', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          usdAmount,
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
     });
     describe('megaSwap', () => {
       it('Token -> Token', async () => {
@@ -1459,19 +1425,6 @@ describe('UniswapV2 E2E Polygon', () => {
           holders.USDC,
           usdAmount,
           SwapSide.SELL,
-          dexKey,
-          ContractMethod.megaSwap,
-          network,
-          provider,
-        );
-      });
-      it('Token -> Token Buy', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          usdAmount,
-          SwapSide.BUY,
           dexKey,
           ContractMethod.megaSwap,
           network,

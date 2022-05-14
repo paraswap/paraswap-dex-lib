@@ -1,29 +1,12 @@
-import {
-  UniswapV2,
-  UniswapV2PoolOrderedParams,
-  RESERVE_LIMIT,
-  TOKEN_EXTRA_FEE,
-} from './uniswap-v2';
+import { UniswapV2, RESERVE_LIMIT, TOKEN_EXTRA_FEE } from './uniswap-v2';
 import { Network, NULL_ADDRESS } from '../../constants';
-import {
-  Address,
-  DexConfigMap,
-  ExchangePrices,
-  SimpleExchangeParam,
-  Token,
-} from '../../types';
+import { DexConfigMap, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper';
-import {
-  DexParams,
-  UniswapData,
-  UniswapV2Data,
-  UniswapV2Functions,
-} from './types';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { DexParams } from './types';
+import { getDexKeysWithNetwork } from '../../utils';
 import dystopiaFactoryABI from '../../abi/dystopia/DystFactory.json';
 import { BI_MAX_UINT } from '../../bigint-constants';
-import { DystopiaConfig, DystopiaSharedPolygonConfig } from './dystopia';
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { DystopiaSharedPolygonConfig } from './dystopia';
 
 export const DystopiaStableConfig: DexConfigMap<DexParams> = {
   DystopiaStable: {
@@ -168,7 +151,6 @@ export class DystopiaStable extends UniswapV2 {
     priceParams: UniswapV2PoolOrderedParamsWithDecimals,
     srcAmount: bigint,
   ): Promise<bigint> {
-    console.log('srcAmount   ', srcAmount);
     const { reservesIn, reservesOut, decimalsIn, decimalsOut } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
@@ -188,11 +170,10 @@ export class DystopiaStable extends UniswapV2 {
     const amountInNorm = (amountIn * e18) / decimalsInN;
     const y = reserveB - _getY(amountInNorm + reserveA, xy, reserveB);
     const returnAmount = (y * decimalsOutN) / e18;
-    console.log('returnAmount', returnAmount);
     return returnAmount;
   }
 
-  // TODO
+  // TODO Do we have to implement getBuyPrice? (buy side do not used in tests)
   async getBuyPrice(
     priceParams: UniswapV2PoolOrderedParamsWithDecimals,
     destAmount: bigint,
