@@ -5,14 +5,25 @@ import {
   TOKEN_EXTRA_FEE,
 } from './uniswap-v2';
 import { Network, NULL_ADDRESS } from '../../constants';
-import { DexConfigMap, ExchangePrices, Token } from '../../types';
+import {
+  Address,
+  DexConfigMap,
+  ExchangePrices,
+  SimpleExchangeParam,
+  Token,
+} from '../../types';
 import { IDexHelper } from '../../dex-helper';
-import { DexParams, UniswapV2Data } from './types';
+import {
+  DexParams,
+  UniswapData,
+  UniswapV2Data,
+  UniswapV2Functions,
+} from './types';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 import dystopiaFactoryABI from '../../abi/dystopia/DystFactory.json';
 import { BI_MAX_UINT } from '../../bigint-constants';
-import { DystopiaSharedPolygonConfig } from './dystopia';
-import { SwapSide } from 'paraswap-core';
+import { DystopiaConfig, DystopiaSharedPolygonConfig } from './dystopia';
+import { NumberAsString, SwapSide } from 'paraswap-core';
 
 export const DystopiaStableConfig: DexConfigMap<DexParams> = {
   DystopiaStable: {
@@ -116,6 +127,10 @@ export class DystopiaStable extends UniswapV2 {
       DystopiaStableConfig[dexKey][network].poolGasCost,
     );
 
+    // swaps on Dystopia should use own router
+    const router = DystopiaStableConfig[dexKey][network].router;
+    if (router) this.router = router;
+
     this.factory = new dexHelper.web3Provider.eth.Contract(
       dystopiaFactoryABI as any,
       DystopiaStableConfig[dexKey][network].factoryAddress,
@@ -153,6 +168,7 @@ export class DystopiaStable extends UniswapV2 {
     priceParams: UniswapV2PoolOrderedParamsWithDecimals,
     srcAmount: bigint,
   ): Promise<bigint> {
+    console.log('srcAmount   ', srcAmount);
     const { reservesIn, reservesOut, decimalsIn, decimalsOut } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
@@ -171,7 +187,9 @@ export class DystopiaStable extends UniswapV2 {
     const reserveB = (reservesOutN * e18) / decimalsOutN;
     const amountInNorm = (amountIn * e18) / decimalsInN;
     const y = reserveB - _getY(amountInNorm + reserveA, xy, reserveB);
-    return (y * decimalsOutN) / e18;
+    const returnAmount = (y * decimalsOutN) / e18;
+    console.log('returnAmount', returnAmount);
+    return returnAmount;
   }
 
   // TODO

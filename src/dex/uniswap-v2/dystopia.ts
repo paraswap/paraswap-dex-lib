@@ -15,7 +15,8 @@ export const DystopiaSharedPolygonConfig: DexParams = {
   subgraphURL:
     'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia',
   factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
-  router: '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e',
+  // ParaSwap-compatible Router with stable pools support
+  router: '0x0E98A8e5ca6067B98d10Eb6476ec30E232346402',
   initCode:
     '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
   feeCode: 5,

@@ -223,6 +223,7 @@ export async function testE2E(
     (swapSide === SwapSide.SELL
       ? BigInt(priceRoute.destAmount) * 93n
       : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+  console.log('minMaxAmount', minMaxAmount); // TODO remove
   const swapParams = await paraswap.buildTransaction(
     priceRoute,
     minMaxAmount,
