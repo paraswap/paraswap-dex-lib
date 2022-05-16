@@ -170,6 +170,31 @@ describe('WooFi', function () {
     );
   });
 
+  it('receive 0 on very small input amount', async () => {
+    const pools = await wooFi.getPoolIdentifiers(
+      TokenB,
+      TokenA,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await wooFi.getPricesVolume(
+      TokenB,
+      TokenA,
+      amounts.concat([10n]),
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    expect(poolPrices![0].prices.slice(-1)[0].toString()).toEqual('0');
+  });
+
   it('getTopPoolsForToken Base', async function () {
     const poolLiquidity = await wooFi.getTopPoolsForToken(TokenA.address, 10);
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
@@ -186,5 +211,56 @@ describe('WooFi', function () {
     if (!wooFi.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
     }
+  });
+
+  it('handle woo guardian unreliable price', async () => {
+    // I found this test condition state only for Fantom
+    const _network = Network.FANTOM;
+    const _dexHelper = new DummyDexHelper(_network);
+
+    const _blockNumber = 38145311;
+
+    const _wooFi = new WooFi(_network, dexKey, _dexHelper);
+    await _wooFi.initializePricing(_blockNumber);
+
+    const baseSymbol = 'WFTM';
+    const quoteSymbol = 'USDC';
+
+    const pools = await _wooFi.getPoolIdentifiers(
+      Tokens[_network][baseSymbol],
+      Tokens[_network][quoteSymbol],
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${baseSymbol} <> ${quoteSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await _wooFi.getPricesVolume(
+      Tokens[_network][baseSymbol],
+      Tokens[_network][quoteSymbol],
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${baseSymbol} <> ${quoteSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).toBeNull();
+
+    const priceToTest =
+      _wooFi.latestState!.tokenStates[
+        Tokens[_network][baseSymbol].address.toLowerCase()
+      ].priceNow;
+
+    expect(() =>
+      _wooFi.math.checkSwapPrice(
+        priceToTest,
+        Tokens[_network][baseSymbol].address.toLowerCase(),
+        _wooFi.quoteTokenAddress,
+      ),
+    ).toThrowError(
+      'WooGuardian: PRICE_UNRELIABLE in checkSwapPrice fromToken=0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83 and toToken=0x04068da6c83afcfa0e13ba15a6696662335d5b75',
+    );
   });
 });
