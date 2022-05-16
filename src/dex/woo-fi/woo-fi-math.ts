@@ -6,6 +6,14 @@ import { _require } from '../../utils';
 import { NULL_STATE } from './constants';
 import { NULL_ADDRESS } from '../../constants';
 
+function handleMathError(e: unknown, logger: Logger) {
+  if (e instanceof Error && e.message.startsWith('WooGuardian:')) {
+    logger.warn('WooFi Guardian check Error:', e);
+    return;
+  }
+  logger.error('Unexpected error in WooFi math:', e);
+}
+
 export class WooFiMath {
   // dMath = decimalMath
   readonly dMath: typeof wooFiDecimalMath = wooFiDecimalMath;
@@ -16,46 +24,45 @@ export class WooFiMath {
 
   state: PoolState = NULL_STATE;
 
-  quoteToken = NULL_ADDRESS
+  constructor(
+    private readonly logger: Logger,
+    private readonly _quoteToken: Address,
+  ) {}
 
-  constructor(private readonly logger: Logger) {}
-
-  querySellBase(
-    baseToken: Address,
-    baseAmounts: bigint[],
-  ): bigint[] | null {
+  querySellBase(baseToken: Address, baseAmounts: bigint[]): bigint[] | null {
     try {
       baseAmounts.map(baseAmount => {
-        this._checkInputAmount(baseTokenAddress, baseAmount);
+        this._checkInputAmount(baseToken, baseAmount);
       });
+
+      this._autoUpdate(this._quoteToken, baseToken);
+
+      const quoteAmounts = this._getQuoteAmountSellBase(baseToken, baseAmounts);
+
+      const feeRate = this.state.feeRates[baseToken];
+      return this._takeFee(quoteAmounts, feeRate);
     } catch (e) {
-      this.logger.warn('WooFi Guardian check _checkInputAmount Error:', e);
+      handleMathError(e, this.logger);
       return null;
     }
-
-    this._autoUpdate(quoteTokenAddress, baseTokenAddress);
-
-    const quoteAmounts = this._getQuoteAmountSellBase(
-      baseToken,
-      baseAmounts,
-    );
-    const feeRate = this.state.feeRates[baseToken];
-    return this._takeFee(quoteAmounts, feeRate);
   }
 
-  querySellQuote(
-    baseToken: Address,
-    quoteAmounts: bigint[],
-  ): bigint[] | null {
-    this._autoUpdate(quoteTokenAddress, baseToken);
+  querySellQuote(baseToken: Address, quoteAmounts: bigint[]): bigint[] | null {
+    try {
+      quoteAmounts.map(quoteAmount => {
+        this._checkInputAmount(this._quoteToken, quoteAmount);
+      });
 
-    const feeRate = this.state.feeRates[baseToken];
-    quoteAmounts = this._takeFee(quoteAmounts, feeRate);
+      this._autoUpdate(this._quoteToken, baseToken);
 
-    return this._getBaseAmountSellQuote(
-      baseToken,
-      quoteAmounts,
-    );
+      const feeRate = this.state.feeRates[baseToken];
+      quoteAmounts = this._takeFee(quoteAmounts, feeRate);
+
+      return this._getBaseAmountSellQuote(baseToken, quoteAmounts);
+    } catch (e) {
+      handleMathError(e, this.logger);
+      return null;
+    }
   }
 
   protected _takeFee(amounts: bigint[], feeRate: bigint): bigint[] {
@@ -69,7 +76,7 @@ export class WooFiMath {
     baseToken: Address,
     baseAmounts: bigint[],
   ): bigint[] {
-    const quoteInfo = this.state.tokenInfos[this.quoteToken];
+    const quoteInfo = this.state.tokenInfos[this._quoteToken];
     const baseInfo = this.state.tokenInfos[baseToken];
 
     let {
@@ -78,7 +85,7 @@ export class WooFiMath {
       coeffNow: k,
     } = this.state.tokenStates[baseToken];
 
-    this._checkSwapPrice(p, baseToken, this.quoteToken)
+    this.checkSwapPrice(p, baseToken, this._quoteToken);
 
     // price: p * (1 - s / 2)
     p = this.dMath.mulFloor(
@@ -96,6 +103,8 @@ export class WooFiMath {
     return baseAmounts.map(baseAmount => {
       if (baseAmount === 0n) return 0n;
 
+      let quoteAmount: bigint;
+
       if (baseBought > 0n) {
         const quoteSold = this._getQuoteAmountLowBaseSide(
           p,
@@ -105,16 +114,14 @@ export class WooFiMath {
         );
         if (baseAmount > baseBought) {
           const newBaseSold = baseAmount - baseBought;
-          return (
+          quoteAmount =
             quoteSold +
-            this._getQuoteAmountLowQuoteSide(p, k, this.dMath.ONE, newBaseSold)
-          );
+            this._getQuoteAmountLowQuoteSide(p, k, this.dMath.ONE, newBaseSold);
         } else {
           const newBaseBought = baseBought - baseAmount;
-          return (
+          quoteAmount =
             quoteSold -
-            this._getQuoteAmountLowBaseSide(p, k, baseInfo.R, newBaseBought)
-          );
+            this._getQuoteAmountLowBaseSide(p, k, baseInfo.R, newBaseBought);
         }
       } else {
         const baseSold = this._getBaseAmountLowQuoteSide(
@@ -130,24 +137,34 @@ export class WooFiMath {
           this.dMath.ONE,
           newBaseSold,
         );
-        return newQuoteBought > quoteBought ? newQuoteBought - quoteBought : 0n;
+        quoteAmount =
+          newQuoteBought > quoteBought ? newQuoteBought - quoteBought : 0n;
       }
+
+      this._checkSwapAmount(
+        baseToken,
+        this._quoteToken,
+        baseAmount,
+        quoteAmount,
+      );
+      return quoteAmount;
     });
   }
 
   protected _getBaseAmountSellQuote(
-    quoteTokenAddress: string,
-    baseTokenAddress: string,
+    baseToken: string,
     quoteAmounts: bigint[],
   ): bigint[] {
-    const quoteInfo = this.state.tokenInfos[quoteTokenAddress];
-    const baseInfo = this.state.tokenInfos[baseTokenAddress];
+    const quoteInfo = this.state.tokenInfos[this._quoteToken];
+    const baseInfo = this.state.tokenInfos[baseToken];
 
     let {
       priceNow: p,
       spreadNow: s,
       coeffNow: k,
-    } = this.state.tokenStates[baseTokenAddress];
+    } = this.state.tokenStates[baseToken];
+
+    this.checkSwapPrice(p, baseToken, this._quoteToken);
 
     // price: p * (1 + s / 2)
     p = this.dMath.mulCeil(
@@ -166,6 +183,7 @@ export class WooFiMath {
     return quoteAmounts.map(quoteAmount => {
       if (quoteAmount === 0n) return 0n;
 
+      let baseAmount: bigint;
       if (quoteBought > 0) {
         const baseSold = this._getBaseAmountLowQuoteSide(
           p,
@@ -175,16 +193,14 @@ export class WooFiMath {
         );
         if (quoteAmount > quoteBought) {
           const newQuoteSold = quoteAmount - quoteBought;
-          return (
+          baseAmount =
             baseSold +
-            this._getBaseAmountLowBaseSide(p, k, this.dMath.ONE, newQuoteSold)
-          );
+            this._getBaseAmountLowBaseSide(p, k, this.dMath.ONE, newQuoteSold);
         } else {
           const newQuoteBought = quoteBought - quoteAmount;
-          return (
+          baseAmount =
             baseSold -
-            this._getBaseAmountLowQuoteSide(p, k, baseInfo.R, newQuoteBought)
-          );
+            this._getBaseAmountLowQuoteSide(p, k, baseInfo.R, newQuoteBought);
         }
       } else {
         const quoteSold = this._getQuoteAmountLowBaseSide(
@@ -200,8 +216,18 @@ export class WooFiMath {
           this.dMath.ONE,
           newQuoteSold,
         );
-        return newBaseBought > baseBought ? newBaseBought - baseBought : 0n;
+        baseAmount =
+          newBaseBought > baseBought ? newBaseBought - baseBought : 0n;
       }
+
+      this._checkSwapAmount(
+        this._quoteToken,
+        baseToken,
+        quoteAmount,
+        baseAmount,
+      );
+
+      return baseAmount;
     });
   }
 
@@ -389,13 +415,13 @@ export class WooFiMath {
     );
   }
 
-  private _checkSwapPrice(price: bigint, fromToken: Address, toToken: Address) {
+  checkSwapPrice(price: bigint, fromToken: Address, toToken: Address) {
     const refPrice = this._refPrice(fromToken, toToken);
     const bound = this._boundForTokens(fromToken, toToken);
     _require(
       this.dMath.mulFloor(refPrice, BI_POWS[18] - bound) <= price &&
         price <= this.dMath.mulCeil(refPrice, BI_POWS[18] + bound),
-      `WooGuardian: PRICE_UNRELIABLE in _checkSwapPrice fromToken=${fromToken} and toToken=${toToken}`,
+      `WooGuardian: PRICE_UNRELIABLE in checkSwapPrice fromToken=${fromToken} and toToken=${toToken}`,
     );
   }
 
@@ -403,8 +429,17 @@ export class WooFiMath {
     const baseInfo = this.state.guardian.refInfos[fromToken];
     const quoteInfo = this.state.guardian.refInfos[toToken];
 
+    _require(
+      baseInfo.chainlinkRefOracle !== NULL_ADDRESS,
+      `WooGuardian: fromToken_RefOracle_INVALID: ${fromToken}`,
+    );
+    _require(
+      quoteInfo.chainlinkRefOracle !== NULL_ADDRESS,
+      `WooGuardian: toToken_RefOracle_INVALID: ${toToken}`,
+    );
+
     const { answer: rawBaseRefPrice } =
-      this.state.chainlink.latestRoundData[baseInfo.chainlinkRefOracle];
+      this.state.chainlink.latestRoundDatas[baseInfo.chainlinkRefOracle];
 
     _require(
       rawBaseRefPrice >= 0,
@@ -412,7 +447,7 @@ export class WooFiMath {
     );
 
     const { answer: rawQuoteRefPrice } =
-      this.state.chainlink.latestRoundData[quoteInfo.chainlinkRefOracle];
+      this.state.chainlink.latestRoundDatas[quoteInfo.chainlinkRefOracle];
 
     _require(
       rawQuoteRefPrice >= 0,
