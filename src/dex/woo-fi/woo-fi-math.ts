@@ -31,13 +31,24 @@ export class WooFiMath {
 
   querySellBase(baseToken: Address, baseAmounts: bigint[]): bigint[] | null {
     try {
-      baseAmounts.map(baseAmount => {
-        this._checkInputAmount(baseToken, baseAmount);
+      const _baseAmounts = baseAmounts.map(baseAmount => {
+        try {
+          this._checkInputAmount(baseToken, baseAmount);
+          return baseAmount;
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            e.message.startsWith('WooGuardian: inputAmount')
+          ) {
+            return 0n;
+          }
+          throw e;
+        }
       });
 
       this._autoUpdate(this._quoteToken, baseToken);
 
-      const quoteAmounts = this._getQuoteAmountSellBase(baseToken, baseAmounts);
+      const quoteAmounts = this._getQuoteAmountSellBase(baseToken, _baseAmounts);
 
       const feeRate = this.state.feeRates[baseToken];
       return this._takeFee(quoteAmounts, feeRate);
@@ -49,8 +60,16 @@ export class WooFiMath {
 
   querySellQuote(baseToken: Address, quoteAmounts: bigint[]): bigint[] | null {
     try {
-      quoteAmounts.map(quoteAmount => {
-        this._checkInputAmount(this._quoteToken, quoteAmount);
+      const _quoteAmounts = quoteAmounts.map(quoteAmount => {
+        try {
+          this._checkInputAmount(this._quoteToken, quoteAmount);
+          return quoteAmount
+        }catch(e) {
+          if (e instanceof Error && e.message.startsWith('WooGuardian: inputAmount')) {
+            return 0n;
+          }
+          throw e
+        }
       });
 
       this._autoUpdate(this._quoteToken, baseToken);
@@ -403,6 +422,14 @@ export class WooFiMath {
     fromAmount: bigint,
     toAmount: bigint,
   ) {
+    if (
+      this.state.guardian.refInfos[fromToken].chainlinkRefOracle ===
+        NULL_ADDRESS ||
+      this.state.guardian.refInfos[toToken].chainlinkRefOracle === NULL_ADDRESS
+    ) {
+      return;
+    }
+
     const refPrice = this._refPrice(fromToken, toToken);
     const refToAmount = this.dMath.mulFloor(fromAmount, refPrice);
 
@@ -416,8 +443,17 @@ export class WooFiMath {
   }
 
   checkSwapPrice(price: bigint, fromToken: Address, toToken: Address) {
+    if (
+      this.state.guardian.refInfos[fromToken].chainlinkRefOracle ===
+        NULL_ADDRESS ||
+      this.state.guardian.refInfos[toToken].chainlinkRefOracle === NULL_ADDRESS
+    ) {
+      return;
+    }
+
     const refPrice = this._refPrice(fromToken, toToken);
     const bound = this._boundForTokens(fromToken, toToken);
+
     _require(
       this.dMath.mulFloor(refPrice, BI_POWS[18] - bound) <= price &&
         price <= this.dMath.mulCeil(refPrice, BI_POWS[18] + bound),

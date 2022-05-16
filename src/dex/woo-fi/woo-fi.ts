@@ -13,7 +13,13 @@ import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { DexParams, PoolState, RefInfo, WooFiData } from './types';
+import {
+  DexParams,
+  LatestRoundData,
+  PoolState,
+  RefInfo,
+  WooFiData,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WooFiConfig, Adapters } from './config';
 import { WooFiMath } from './woo-fi-math';
@@ -194,6 +200,17 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     };
   }
 
+  private _readChanLinkResponse(data: [boolean, string]): LatestRoundData {
+    const [success, returnData] = data;
+    const answer =
+      success === false || returnData === '0x'
+        ? -1n
+        : WooFi.ifaces.chainlink
+            .decodeFunctionResult('latestRoundData', returnData)[0]
+            .answer.toBigInt();
+    return { answer };
+  }
+
   protected _getStateRequestCallData() {
     if (!this._encodedStateRequestCalldata) {
       const calldata = this.baseTokens
@@ -296,17 +313,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[index][1]),
       ),
       _.range(3, maxNumber, 4).map(index =>
-        data[index][0] === false || data[index][1] === '0x'
-          ? null
-          : WooFi.ifaces.chainlink.decodeFunctionResult(
-              'latestRoundData',
-              data[index][1],
-            ),
+        this._readChanLinkResponse(data[index]),
       ),
       WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[maxNumber][1]),
-      WooFi.ifaces.chainlink
-        .decodeFunctionResult('latestRoundData', data[maxNumber + 1][1])[0]
-        .answer.toBigInt(),
+      this._readChanLinkResponse(data[maxNumber + 1]),
       WooFi.ifaces.oracle
         .decodeFunctionResult('timestamp', data[maxNumber + 2][1])[0]
         .toBigInt(),
@@ -334,9 +344,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     this._fillTokenInfoState(state, this.quoteTokenAddress, quoteTokenInfo);
     state.chainlink.latestRoundDatas[
       this._refInfos[this.quoteTokenAddress].chainlinkRefOracle
-    ] = {
-      answer: quoteChainlinkAnswer,
-    };
+    ] = quoteChainlinkAnswer;
 
     baseFeeRates.map((value, index) => {
       state.feeRates[this.baseTokens[index].address] = BigInt(value[0]._hex);
@@ -353,9 +361,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     });
     chainlinkLatestRoundDatas.map((value, index) => {
       const refInfo = this._refInfos[this.baseTokens[index].address];
-      state.chainlink.latestRoundDatas[refInfo.chainlinkRefOracle] = {
-        answer: value === null ? -1n : value[0].answer.toBigInt(),
-      };
+      state.chainlink.latestRoundDatas[refInfo.chainlinkRefOracle] = value;
     });
 
     return state;
