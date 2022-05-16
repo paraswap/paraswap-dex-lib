@@ -170,6 +170,31 @@ describe('WooFi', function () {
     );
   });
 
+  it('receive 0 on very small input amount', async () => {
+    const pools = await wooFi.getPoolIdentifiers(
+      TokenB,
+      TokenA,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await wooFi.getPricesVolume(
+      TokenB,
+      TokenA,
+      amounts.concat([10n]),
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenBSymbol} <> ${TokenASymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    expect(poolPrices![0].prices.slice(-1)[0].toString()).toEqual('0');
+  });
+
   it('getTopPoolsForToken Base', async function () {
     const poolLiquidity = await wooFi.getTopPoolsForToken(TokenA.address, 10);
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
