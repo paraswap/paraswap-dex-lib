@@ -202,8 +202,22 @@ describe('BalancerV2', function () {
       console.log('DAI <> USDC Pool Ideintifiers: ', pools);
 
       expect(pools.length).toBeGreaterThan(0);
+      // VirtualBoosted pool should return identifiers for all the internal pools
+      // for bbausd this is 3 Linear pools and the PhantomStable linking them
       expect(pools).toContain(
         'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+      );
+      expect(pools).toContain(
+        'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2', // PhantomStable
+      );
+      expect(pools).toContain(
+        'BalancerV2_0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c', // bUSDT (Linear)
+      );
+      expect(pools).toContain(
+        'BalancerV2_0x804cdb9116a10bb78768d3252355a1b18067bf8f', // bDAI (Linear)
+      );
+      expect(pools).toContain(
+        'BalancerV2_0x9210f1204b5a24742eba12f710636d76240df3d0', // bUSDC (Linear)
       );
 
       const poolPrices = await balancerV2.getPricesVolume(
@@ -232,6 +246,7 @@ describe('BalancerV2', function () {
       );
       expect(virtualPoolIdentifier?.gasCost).toBe(25); // TO DO 2 * Linear + 1 * Phantom
     });
+
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);

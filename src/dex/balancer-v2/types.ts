@@ -28,6 +28,8 @@ export type PoolState = {
 export type SubgraphToken = {
   address: string;
   decimals: number;
+  linearPoolAddr?: string;
+  linearPoolId?: string;
 };
 
 export interface SubgraphPoolBase {

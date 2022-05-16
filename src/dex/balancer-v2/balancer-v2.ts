@@ -39,11 +39,9 @@ import {
   BalancerParam,
   OptimizedBalancerV2Data,
   SwapTypes,
-  DexParams,
   PoolStateMap,
   BalancerSwap,
 } from './types';
-import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 
@@ -446,9 +444,21 @@ export class BalancerV2
 
     const pools = this.getPools(_from, _to);
 
-    return pools.map(
-      ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
-    );
+    const identifiers: string [] = [];
+
+    pools.forEach(p => {
+      if (p.poolType === 'VirtualBoosted'){
+        // VirtualBoosted pool should return identifiers for all the internal pools
+        // e.g. for bbausd this is 3 Linear pools and the PhantomStable linking them
+        identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
+        const phantomAddr = p.address.split(p.poolType.toLowerCase())[0];
+        identifiers.push(`${this.dexKey}_${phantomAddr.toLowerCase()}`);
+        p.tokens.forEach(t => identifiers.push(`${this.dexKey}_${t.linearPoolAddr?.toLowerCase()}`));
+      } else
+        identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
+    });
+
+    return identifiers;
   }
 
   async getPricesVolume(
