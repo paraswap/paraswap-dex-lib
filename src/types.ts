@@ -134,6 +134,10 @@ export type AdapterExchangeParam = {
   networkFee: string;
 };
 
+export type AdapterMappings = {
+  [side: string]: { name: string; index: number }[];
+};
+
 export type SimpleExchangeParam = {
   callees: string[];
   calldata: string[];

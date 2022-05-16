@@ -14,7 +14,7 @@ import { PoolState } from './types';
 
   This test script adds unit tests for __DexName__ event based
   system. This is done by fetching the state on-chain before the
-  event block, manually pushing the block logs to the event-subsriber,
+  event block, manually pushing the block logs to the event-subscriber,
   comparing the local state with on-chain state.
 
   Most of the logic for testing is abstracted by `testEventSubscriber`.
@@ -22,7 +22,7 @@ import { PoolState } from './types';
 
   1. Fetch the block numbers where certain events were released. You
   can modify the `./scripts/fetch-event-blocknumber.ts` to get the
-  blocknumbers for different events. Make sure to get sufficient
+  block numbers for different events. Make sure to get sufficient
   number of blockNumbers to cover all possible cases for the event
   mutations.
 

@@ -50,10 +50,6 @@ export type DexParams = {
   abi: JsonFragment[];
 };
 
-export type AdapterMappings = {
-  [side: string]: { name: string; index: number }[];
-};
-
 export type EventHandler<S> = (
   event: any,
   pool: S,

@@ -1,10 +1,4 @@
-import {
-  LoggerConstructor,
-  PoolLiquidity,
-  Logger,
-  Token,
-  Address,
-} from './types';
+import { LoggerConstructor, PoolLiquidity, Logger, Address } from './types';
 import { DexAdapterService } from './dex';
 
 export class PoolsHelper {
@@ -33,6 +27,21 @@ export class PoolsHelper {
       this.logger.error(`getTopPools_${dexKey}`, e);
       return [];
     }
+  }
+
+  async updateDexPoolState(dexKey: string) {
+    try {
+      const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+      if (!dexInstance.updatePoolState) return;
+
+      return await dexInstance.updatePoolState();
+    } catch (e) {
+      this.logger.error('Error_updateDexPoolState:', e);
+    }
+  }
+
+  async updateAllPoolState(dexKeys: string[]) {
+    return await Promise.all(dexKeys.map(key => this.updateDexPoolState(key)));
   }
 
   public async getTopPools(
