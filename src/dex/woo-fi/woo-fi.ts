@@ -37,7 +37,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   tokenByAddress: Record<Address, Token>;
 
-  private _refInfos: Record<Address, RefInfo>;
+  private _refInfos: Record<Address, RefInfo> = {};
 
   private _encodedStateRequestCalldata?: {
     target: Address;
@@ -50,7 +50,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     oracle: new Interface(woOracleABI),
     guardian: new Interface([
       'function globalBound() view returns (uint64)',
-      'function refInfo(address _address) view ' +
+      'function refInfo(address) view ' +
         'returns(tuple(address chainlinkRefOracle, uint96 refPriceFixCoeff, ' +
         'uint96 minInputAmount, uint96 maxInputAmount, uint64 bound))',
     ]),
@@ -64,7 +64,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
-  private readonly quoteTokenAddress: Address;
+  readonly quoteTokenAddress: Address;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WooFiConfig);
@@ -81,15 +81,17 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
 
-    // Do not do it singleton, because different networks will have different
-    // states at the same time
-    this.math = new WooFiMath(dexHelper.getLogger(`${dexKey}_math`));
-
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
-    this._refInfos = this._getRefInfos();
 
     this.quoteTokenAddress = this.config.quoteToken.address;
+
+    // Do not do it singleton, because different networks will have different
+    // states at the same time
+    this.math = new WooFiMath(
+      dexHelper.getLogger(`${dexKey}_math`),
+      this.quoteTokenAddress,
+    );
 
     this.tokenByAddress = Object.values(this.baseTokens).reduce(
       (acc, cur) => {
@@ -123,7 +125,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return newConfig;
   }
 
-  private _getRefInfos() {
+  private async _getRefInfos() {
     const calldata = this.baseTokens
       .map(t => [
         {
@@ -141,6 +143,32 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         this.quoteTokenAddress,
       ]),
     });
+
+    const data = await this.dexHelper.multiContract.methods
+      .aggregate(calldata)
+      .call({}, 'latest');
+
+    const parsed = data.returnData.map((_data: string) => {
+      const decoded = WooFi.ifaces.guardian.decodeFunctionResult(
+        'refInfo',
+        _data,
+      )[0];
+      return {
+        chainlinkRefOracle: decoded.chainlinkRefOracle.toLowerCase(),
+        refPriceFixCoeff: decoded.refPriceFixCoeff.toBigInt(),
+        minInputAmount: decoded.minInputAmount.toBigInt(),
+        maxInputAmount: decoded.maxInputAmount.toBigInt(),
+        bound: decoded.bound.toBigInt(),
+      };
+    });
+
+    return this.baseTokens.reduce<Record<string, RefInfo>>(
+      (acc, curr, ind) => {
+        acc[curr.address] = parsed[ind];
+        return acc;
+      },
+      { [this.quoteTokenAddress]: parsed.slice(-1)[0] },
+    );
   }
 
   get baseTokens(): Token[] {
@@ -184,10 +212,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
             ]),
           },
           {
-            target: this.config.woo,
-            callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
-              t.address,
-            ]),
+            target: this._refInfos[t.address].chainlinkRefOracle,
+            callData: WooFi.ifaces.chainlink.encodeFunctionData(
+              'latestRoundData',
+              [],
+            ),
           },
         ])
         .flat();
@@ -197,6 +226,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         callData: WooFi.ifaces.PP.encodeFunctionData('tokenInfo', [
           this.quoteTokenAddress,
         ]),
+      });
+
+      calldata.push({
+        target: this._refInfos[this.quoteTokenAddress].chainlinkRefOracle,
+        callData: WooFi.ifaces.chainlink.encodeFunctionData(
+          'latestRoundData',
+          [],
+        ),
       });
 
       calldata.push({
@@ -211,7 +248,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       calldata.push({
         target: this.config.wooGuardianAddress,
-        callData: WooFi.ifaces.PP.encodeFunctionData('globalBound', []),
+        callData: WooFi.ifaces.guardian.encodeFunctionData('globalBound', []),
       });
 
       this._encodedStateRequestCalldata = calldata;
@@ -220,64 +257,76 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return this._encodedStateRequestCalldata;
   }
 
-  async fetchStateForBlockNumber(blockNumber?: number): Promise<PoolState> {
+  private async _fetchStateForBlockNumber(
+    blockNumber?: number,
+  ): Promise<PoolState> {
     const calldata = this._getStateRequestCallData();
 
     const data = await this.dexHelper.multiContract.methods
       .aggregate(calldata)
       .call({}, blockNumber || 'latest');
 
-    // Last two requests are standalone
-    const maxNumber = calldata.length - 3;
+    // Last requests are standalone
+    const maxNumber = calldata.length - 5;
 
     const [
       baseFeeRates,
       baseInfos,
       baseTokenInfos,
+      chainlinkLatestRoundDatas,
       quoteTokenInfo,
+      quoteChainlinkAnswer,
       oracleTimestamp,
       isPaused,
       globalBound,
     ] = [
-      // Skip two as they are infos abd tokenInfo
-      _.range(0, maxNumber, 3).map(index =>
+      // Skip three as they are infos, tokenInfo and latestRoundData
+      _.range(0, maxNumber, 4).map(index =>
         WooFi.ifaces.fee.decodeFunctionResult(
           'feeRate',
           data.returnData[index],
         ),
       ),
-      _.range(1, maxNumber, 3).map(index =>
+      _.range(1, maxNumber, 4).map(index =>
         WooFi.ifaces.oracle.decodeFunctionResult(
           'infos',
           data.returnData[index],
         ),
       ),
-      _.range(2, maxNumber, 3).map(index =>
+      _.range(2, maxNumber, 4).map(index =>
         WooFi.ifaces.PP.decodeFunctionResult(
           'tokenInfo',
           data.returnData[index],
         ),
       ),
+      _.range(3, maxNumber, 4).map(index =>
+        data.returnData[index] === '0x'
+          ? null
+          : WooFi.ifaces.chainlink.decodeFunctionResult(
+              'latestRoundData',
+              data.returnData[index],
+            ),
+      ),
       WooFi.ifaces.PP.decodeFunctionResult(
         'tokenInfo',
         data.returnData[maxNumber],
       ),
-      BigInt(
-        WooFi.ifaces.oracle.decodeFunctionResult(
-          'timestamp',
+      WooFi.ifaces.chainlink
+        .decodeFunctionResult(
+          'latestRoundData',
           data.returnData[maxNumber + 1],
-        )[0]._hex,
-      ),
+        )[0]
+        .answer.toBigInt(),
+      WooFi.ifaces.oracle
+        .decodeFunctionResult('timestamp', data.returnData[maxNumber + 2])[0]
+        .toBigInt(),
       WooFi.ifaces.PP.decodeFunctionResult(
         'paused',
-        data.returnData[maxNumber + 2],
+        data.returnData[maxNumber + 3],
       )[0],
-      BigInt(
-        WooFi.ifaces.PP.decodeFunctionResult(
-          'globalBound',
-          data.returnData[maxNumber + 3],
-        )[0]._hex,
-      ),
+      WooFi.ifaces.guardian
+        .decodeFunctionResult('globalBound', data.returnData[maxNumber + 4])[0]
+        .toBigInt(),
     ];
 
     const state: PoolState = {
@@ -288,11 +337,19 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       isPaused,
       guardian: {
         globalBound,
-        refInfos: {},
+        refInfos: this._refInfos,
+      },
+      chainlink: {
+        latestRoundDatas: {},
       },
     };
 
     this._fillTokenInfoState(state, this.quoteTokenAddress, quoteTokenInfo);
+    state.chainlink.latestRoundDatas[
+      this._refInfos[this.quoteTokenAddress].chainlinkRefOracle
+    ] = {
+      answer: quoteChainlinkAnswer,
+    };
 
     baseFeeRates.map((value, index) => {
       state.feeRates[this.baseTokens[index].address] = BigInt(value[0]._hex);
@@ -307,13 +364,19 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     baseTokenInfos.map((values, index) => {
       this._fillTokenInfoState(state, this.baseTokens[index].address, values);
     });
+    chainlinkLatestRoundDatas.map((value, index) => {
+      const refInfo = this._refInfos[this.baseTokens[index].address];
+      state.chainlink.latestRoundDatas[refInfo.chainlinkRefOracle] = {
+        answer: value === null ? -1n : value[0].answer.toBigInt(),
+      };
+    });
 
     return state;
   }
 
   async initializePricing(blockNumber: number) {
-    this.latestState = await this.fetchStateForBlockNumber(blockNumber);
-    this.latestBlockNumber = blockNumber;
+    this._refInfos = await this._getRefInfos();
+    await this.getState(blockNumber);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -407,22 +470,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         return null;
       }
 
-      let _prices: bigint[];
+      let _prices: bigint[] | null;
       if (isSrcQuote) {
-        _prices = this.math.querySellQuote(
-          state,
-          this.quoteTokenAddress,
-          _destAddress,
-          _amounts,
-        );
+        _prices = this.math.querySellQuote(_destAddress, _amounts);
       } else {
-        _prices = this.math.querySellBase(
-          state,
-          this.quoteTokenAddress,
-          _srcAddress,
-          _amounts,
-        );
+        _prices = this.math.querySellBase(_srcAddress, _amounts);
       }
+
+      if (!_prices) return null;
 
       const unit = _prices[0];
 
@@ -568,8 +623,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     ) {
       return this.latestState;
     }
-    this.latestState = await this.fetchStateForBlockNumber(blockNumber);
+    this.latestState = await this._fetchStateForBlockNumber(blockNumber);
     this.latestBlockNumber = blockNumber ? blockNumber : 0;
+
+    this.math.state = this.latestState;
+
     return this.latestState;
   }
 

@@ -37,7 +37,7 @@ export type PoolState = {
     refInfos: Record<Address, RefInfo>;
   };
   chainlink: {
-    latestRoundData: Record<Address, LatestRoundData>;
+    latestRoundDatas: Record<Address, LatestRoundData>;
   };
 };
 

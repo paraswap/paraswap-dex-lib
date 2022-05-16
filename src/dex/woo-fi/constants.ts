@@ -16,5 +16,5 @@ export const NULL_STATE: PoolState = {
     globalBound: 0n,
     refInfos: {},
   },
-  chainlink: { latestRoundData: {} },
+  chainlink: { latestRoundDatas: {} },
 };
