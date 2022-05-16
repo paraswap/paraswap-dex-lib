@@ -190,49 +190,49 @@ describe('WooFi', function () {
 
   it('handle woo guardian unreliable price', async () => {
     // I found this test condition state only for Fantom
-    const network = Network.FANTOM;
-    const dexHelper = new DummyDexHelper(network);
+    const _network = Network.FANTOM;
+    const _dexHelper = new DummyDexHelper(_network);
 
-    const blockNumber = 38145311;
+    const _blockNumber = 38145311;
 
-    const wooFi = new WooFi(network, dexKey, dexHelper);
-    await wooFi.initializePricing(blockNumber);
+    const _wooFi = new WooFi(_network, dexKey, _dexHelper);
+    await _wooFi.initializePricing(_blockNumber);
 
-    const TokenASymbol = 'WFTM';
-    const TokenBSymbol = 'USDC';
+    const baseSymbol = 'WFTM';
+    const quoteSymbol = 'USDC';
 
-    const pools = await wooFi.getPoolIdentifiers(
-      Tokens[network][TokenASymbol],
-      Tokens[network][TokenBSymbol],
+    const pools = await _wooFi.getPoolIdentifiers(
+      Tokens[_network][baseSymbol],
+      Tokens[_network][quoteSymbol],
       SwapSide.SELL,
       blockNumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    console.log(`${baseSymbol} <> ${quoteSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await wooFi.getPricesVolume(
-      Tokens[network][TokenASymbol],
-      Tokens[network][TokenBSymbol],
+    const poolPrices = await _wooFi.getPricesVolume(
+      Tokens[_network][baseSymbol],
+      Tokens[_network][quoteSymbol],
       amounts,
       SwapSide.SELL,
       blockNumber,
       pools,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    console.log(`${baseSymbol} <> ${quoteSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).toBeNull();
 
     const priceToTest =
-      wooFi.latestState!.tokenStates[
-        Tokens[network][TokenASymbol].address.toLowerCase()
+      _wooFi.latestState!.tokenStates[
+        Tokens[_network][baseSymbol].address.toLowerCase()
       ].priceNow;
 
     expect(() =>
-      wooFi.math.checkSwapPrice(
+      _wooFi.math.checkSwapPrice(
         priceToTest,
-        Tokens[network][TokenASymbol].address.toLowerCase(),
-        wooFi.quoteTokenAddress,
+        Tokens[_network][baseSymbol].address.toLowerCase(),
+        _wooFi.quoteTokenAddress,
       ),
     ).toThrowError(
       'WooGuardian: PRICE_UNRELIABLE in checkSwapPrice fromToken=0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83 and toToken=0x04068da6c83afcfa0e13ba15a6696662335d5b75',
