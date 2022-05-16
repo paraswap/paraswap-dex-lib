@@ -145,10 +145,15 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     });
 
     const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
+      .tryAggregate(false, calldata)
       .call({}, 'latest');
 
-    const parsed = data.returnData.map((_data: string) => {
+    const parsed = data.map(([success, _data]: [boolean, string]) => {
+      if (!success)
+        throw new Error(
+          `Unexpected multicall error in ${this.dexKey} _getRefInfos`,
+        );
+
       const decoded = WooFi.ifaces.guardian.decodeFunctionResult(
         'refInfo',
         _data,
@@ -263,7 +268,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     const calldata = this._getStateRequestCallData();
 
     const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
+      .tryAggregate(false, calldata)
       .call({}, blockNumber || 'latest');
 
     // Last requests are standalone
@@ -282,50 +287,32 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     ] = [
       // Skip three as they are infos, tokenInfo and latestRoundData
       _.range(0, maxNumber, 4).map(index =>
-        WooFi.ifaces.fee.decodeFunctionResult(
-          'feeRate',
-          data.returnData[index],
-        ),
+        WooFi.ifaces.fee.decodeFunctionResult('feeRate', data[index][1]),
       ),
       _.range(1, maxNumber, 4).map(index =>
-        WooFi.ifaces.oracle.decodeFunctionResult(
-          'infos',
-          data.returnData[index],
-        ),
+        WooFi.ifaces.oracle.decodeFunctionResult('infos', data[index][1]),
       ),
       _.range(2, maxNumber, 4).map(index =>
-        WooFi.ifaces.PP.decodeFunctionResult(
-          'tokenInfo',
-          data.returnData[index],
-        ),
+        WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[index][1]),
       ),
       _.range(3, maxNumber, 4).map(index =>
-        data.returnData[index] === '0x'
+        data[index][0] === false || data[index][1] === '0x'
           ? null
           : WooFi.ifaces.chainlink.decodeFunctionResult(
               'latestRoundData',
-              data.returnData[index],
+              data[index][1],
             ),
       ),
-      WooFi.ifaces.PP.decodeFunctionResult(
-        'tokenInfo',
-        data.returnData[maxNumber],
-      ),
+      WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[maxNumber][1]),
       WooFi.ifaces.chainlink
-        .decodeFunctionResult(
-          'latestRoundData',
-          data.returnData[maxNumber + 1],
-        )[0]
+        .decodeFunctionResult('latestRoundData', data[maxNumber + 1][1])[0]
         .answer.toBigInt(),
       WooFi.ifaces.oracle
-        .decodeFunctionResult('timestamp', data.returnData[maxNumber + 2])[0]
+        .decodeFunctionResult('timestamp', data[maxNumber + 2][1])[0]
         .toBigInt(),
-      WooFi.ifaces.PP.decodeFunctionResult(
-        'paused',
-        data.returnData[maxNumber + 3],
-      )[0],
+      WooFi.ifaces.PP.decodeFunctionResult('paused', data[maxNumber + 3][1])[0],
       WooFi.ifaces.guardian
-        .decodeFunctionResult('globalBound', data.returnData[maxNumber + 4])[0]
+        .decodeFunctionResult('globalBound', data[maxNumber + 4][1])[0]
         .toBigInt(),
     ];
 
