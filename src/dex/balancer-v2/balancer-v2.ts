@@ -444,18 +444,19 @@ export class BalancerV2
 
     const pools = this.getPools(_from, _to);
 
-    const identifiers: string [] = [];
+    const identifiers: string[] = [];
 
     pools.forEach(p => {
-      if (p.poolType === 'VirtualBoosted'){
+      if (p.poolType === 'VirtualBoosted') {
         // VirtualBoosted pool should return identifiers for all the internal pools
         // e.g. for bbausd this is 3 Linear pools and the PhantomStable linking them
         identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
         const phantomAddr = p.address.split(p.poolType.toLowerCase())[0];
         identifiers.push(`${this.dexKey}_${phantomAddr.toLowerCase()}`);
-        p.tokens.forEach(t => identifiers.push(`${this.dexKey}_${t.linearPoolAddr?.toLowerCase()}`));
-      } else
-        identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
+        p.tokens.forEach(t =>
+          identifiers.push(`${this.dexKey}_${t.linearPoolAddr?.toLowerCase()}`),
+        );
+      } else identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
     });
 
     return identifiers;
@@ -474,12 +475,33 @@ export class BalancerV2
       const _from = wrapETH(from, this.network);
       const _to = wrapETH(to, this.network);
 
-      const allPools = this.getPools(_from, _to);
+      const poolsWithTokens = this.getPools(_from, _to);
+
+      // limit pools are IDS of pools we can use (preceded with BalancerV2_)
+      // poolsWithTokens contains pool data for pools with tokenIn/Out
+      // allowedPools contains pool data for pools with tokenIn/Out that are in limit list
       const allowedPools = limitPools
-        ? allPools.filter(({ address }) =>
-            limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
-          )
-        : allPools;
+        ? poolsWithTokens.filter(pool => {
+            const id = pool.id.split(pool.poolType.toLowerCase())[0];
+            // VirtualPools must have all their internal pools in limitPools
+            if (this.eventPools.virtualBoostedPools[id]) {
+              for (let t of this.eventPools.virtualBoostedPools[id]
+                .mainTokens) {
+                if (
+                  !limitPools.includes(
+                    `${this.dexKey}_${t.linearPoolAddr.toLowerCase()}`,
+                  )
+                )
+                  return false;
+              }
+              return true;
+            } else {
+              return limitPools.includes(
+                `${this.dexKey}_${pool.address.toLowerCase()}`,
+              );
+            }
+          })
+        : poolsWithTokens;
 
       if (!allowedPools.length) return null;
 
@@ -491,14 +513,15 @@ export class BalancerV2
         (side === SwapSide.SELL ? _to : _from).decimals,
       );
 
-      const poolStates = await this.eventPools.getState(blockNumber);
-      if (!poolStates) {
+      // poolStates contains all pools that are part of event system
+      const allPoolStates = await this.eventPools.getState(blockNumber);
+      if (!allPoolStates) {
         this.logger.error(`getState returned null`);
         return null;
       }
 
       const missingPools = allowedPools.filter(
-        pool => !(pool.address.toLowerCase() in poolStates),
+        pool => !(pool.address.toLowerCase() in allPoolStates),
       );
 
       const missingPoolsStateMap = missingPools.length
@@ -509,7 +532,7 @@ export class BalancerV2
         .map((pool: SubgraphPoolBase) => {
           const poolAddress = pool.address.toLowerCase();
           const poolState =
-            poolStates[poolAddress] || missingPoolsStateMap[poolAddress];
+            allPoolStates[poolAddress] || missingPoolsStateMap[poolAddress];
           if (!poolState) {
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
@@ -520,7 +543,7 @@ export class BalancerV2
               _from,
               _to,
               pool,
-              poolStates[poolAddress] ? poolStates : missingPoolsStateMap,
+              allPoolStates[poolAddress] ? allPoolStates : missingPoolsStateMap,
               amounts,
               unitVolume,
               side,

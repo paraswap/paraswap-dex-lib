@@ -10,7 +10,7 @@ import { OptimizedBalancerV2Data, SwapTypes, BalancerV2Data } from './types';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { Contract } from '@ethersproject/contracts';
-import { ExchangePrices, Token } from '../../types';
+import { ExchangePrices, PoolPrices, Token } from '../../types';
 import { VirtualBoostedPool, VirtualBoostedPools } from './VirtualBoostedPool';
 
 jest.setTimeout(50 * 1000);
@@ -123,12 +123,14 @@ const bbausdBoostedPools = [
   },
 ];
 
+// getPricesVolume with option to remove specified tokens from limit param
 async function getPrices(
   balancer: BalancerV2,
   blocknumber: number,
   from: Token,
   to: Token,
   amounts: bigint[],
+  poolsToRemove?: string[],
 ): Promise<null | ExchangePrices<BalancerV2Data>> {
   const pools = await balancer.getPoolIdentifiers(
     from,
@@ -136,15 +138,66 @@ async function getPrices(
     SwapSide.SELL,
     blocknumber,
   );
+
+  const allowedPools = poolsToRemove
+    ? pools.filter(pool => {
+        return !poolsToRemove.includes(pool);
+      })
+    : pools;
+
   const prices = await balancer.getPricesVolume(
     from,
     to,
     amounts,
     SwapSide.SELL,
     blocknumber,
-    pools,
+    allowedPools,
   );
   return prices;
+}
+
+// Compare calculated price to queryBatchSwap call using swaps created in params
+async function compareOnChain(
+  p: PoolPrices<any>,
+  amount: BigInt,
+  fromAddr: string,
+  toAddr: string,
+  holder: string,
+  swapType: SwapTypes,
+) {
+  // Get balancers params
+  const data: OptimizedBalancerV2Data = {
+    swaps: [
+      {
+        poolId: p.data.poolId,
+        amount: amount.toString(),
+      },
+    ],
+  };
+  // [swapType, swaps[], assets, funds, limits[], timeout]
+  const param = balancer.getBalancerParam(
+    fromAddr,
+    toAddr,
+    '', // These aren't used
+    '',
+    data,
+    swapType === SwapTypes.SwapExactIn ? SwapSide.SELL : SwapSide.BUY,
+  );
+  const funds = {
+    sender: holder,
+    recipient: holder,
+    fromInternalBalance: false,
+    toInternalBalance: false,
+  };
+  // query result onchain
+  const deltas = await vaultContract.callStatic.queryBatchSwap(
+    swapType,
+    param[1],
+    param[2],
+    funds,
+  );
+  expect(deltas[0].toString()).toEqual(amount.toString());
+  expect(deltas[1].toString()).toEqual((p.prices[1] * BigInt(-1)).toString());
 }
 
 describe('VirtualBoostedPools', () => {
@@ -387,53 +440,54 @@ describe('VirtualBoostedPools', () => {
   });
 
   describe('test pricing vs onchain', () => {
-    it('calculated prices should match queryBatchSwap delta', async () => {
-      const swapType = SwapTypes.SwapExactIn;
-      const from = tokens['DAI'];
-      const to = tokens['USDC'];
-      const amount = BigInt('1000000000000000000');
+    describe('calculated prices should match queryBatchSwap delta', () => {
+      it('has all VirtualBoostedPools in limit list', async () => {
+        const swapType = SwapTypes.SwapExactIn;
+        const from = tokens['DAI'];
+        const to = tokens['USDC'];
+        const holder = holders['DAI'];
+        const amount = BigInt('1000000000000000000');
 
-      // fetch calculated prices to compare
-      const prices = await getPrices(balancer, blocknumber, from, to, [
-        BigInt('0'),
-        amount,
-      ]);
-      expect(prices).not.toBeNull();
-      if (!prices) return;
-      // Get balancers params
-      const data: OptimizedBalancerV2Data = {
-        swaps: [
-          {
-            poolId: prices[0].data.poolId,
-            amount: amount.toString(),
-          },
-        ],
-      };
-      // [swapType, swaps[], assets, funds, limits[], timeout]
-      const param = balancer.getBalancerParam(
-        from.address,
-        to.address,
-        amount.toString(),
-        prices[0].prices[1].toString(),
-        data,
-        SwapTypes.SwapExactIn ? SwapSide.SELL : SwapSide.BUY,
-      );
-      const funds = {
-        sender: holders['DAI'],
-        recipient: holders['DAI'],
-        fromInternalBalance: false,
-        toInternalBalance: false,
-      };
-      // query result onchain
-      const deltas = await vaultContract.callStatic.queryBatchSwap(
-        swapType,
-        param[1],
-        param[2],
-        funds,
-      );
-      expect(deltas[1].toString()).toEqual(
-        (prices[0].prices[1] * BigInt(-1)).toString(),
-      );
+        // fetch calculated prices to compare
+        const prices = await getPrices(balancer, blocknumber, from, to, [
+          BigInt('0'),
+          amount,
+        ]);
+        expect(prices).not.toBeNull();
+        if (!prices) return;
+        for (let p of prices)
+          compareOnChain(p, amount, from.address, to.address, holder, swapType);
+      });
+
+      it('has bbausd VirtualBoostedPools missing internal pool in limit list', async () => {
+        const swapType = SwapTypes.SwapExactIn;
+        const from = tokens['DAI'];
+        const to = tokens['USDC'];
+        const holder = holders['DAI'];
+        const amount = BigInt('1000000000000000000');
+
+        // fetch calculated prices to compare
+        const prices = await getPrices(
+          balancer,
+          blocknumber,
+          from,
+          to,
+          [BigInt('0'), amount],
+          ['BalancerV2_0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c'],
+        ); // Removing a bbausd internal pool
+        expect(prices).not.toBeNull();
+        prices?.forEach(p => {
+          expect(p.poolIdentifier).not.toEqual(
+            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+          ); // Should not have boosted pool price
+          expect(p.data.poolId).not.toEqual(
+            '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted',
+          ); // Should not have boosted pool price
+        });
+        if (!prices) return;
+        for (let p of prices)
+          compareOnChain(p, amount, from.address, to.address, holder, swapType);
+      });
     });
   });
 });
