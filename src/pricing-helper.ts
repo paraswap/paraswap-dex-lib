@@ -172,7 +172,7 @@ export class PricingHelper {
           return false;
         }
 
-        if (Array.isArray(p.gasCost) && ) {
+        if (Array.isArray(p.gasCost)) {
           if (p.gasCost.length !== amounts.length) {
             this.logger.error(
               `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array length: ${p.gasCost.length} !== ${amounts.length}`,
