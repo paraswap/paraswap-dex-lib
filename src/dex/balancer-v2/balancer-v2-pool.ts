@@ -9,8 +9,6 @@ import {
   PoolBase,
 } from './types';
 import { getTokenScalingFactor, decodeThrowError } from './utils';
-import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
-import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import { BI_POWS } from '../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
@@ -369,11 +367,15 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
   poolInterface: Interface;
   gasCost = 150000; // TO DO - Get accurate
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(StablePoolABI);
+    this.poolInterface = poolInterface;
   }
 
   _onSwapGivenIn(
@@ -581,11 +583,15 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
   poolInterface: Interface;
   gasCost = 150000; // TO DO
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(WeightedPoolABI);
+    this.poolInterface = poolInterface;
   }
 
   _onSwapGivenIn(

@@ -11,7 +11,6 @@ import {
   PoolBase,
 } from './types';
 import { SwapSide } from '../../constants';
-import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 
 enum PairTypes {
   BptToToken,
@@ -53,11 +52,15 @@ export class PhantomStablePool extends BasePool implements PoolBase {
   poolInterface: Interface;
   gasCost = 130000;
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(MetaStablePoolABI);
+    this.poolInterface = poolInterface;
   }
 
   /*

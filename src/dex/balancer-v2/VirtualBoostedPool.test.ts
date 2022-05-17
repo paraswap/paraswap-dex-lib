@@ -9,6 +9,8 @@ import { Network, SwapSide, ProviderURL, MAX_INT } from '../../constants';
 import { OptimizedBalancerV2Data, SwapTypes, BalancerV2Data } from './types';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
+import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { Contract } from '@ethersproject/contracts';
 import { ExchangePrices, PoolPrices, Token } from '../../types';
 import { VirtualBoostedPool, VirtualBoostedPools } from './VirtualBoostedPool';
@@ -23,6 +25,9 @@ let vaultContract: Contract;
 let balancer: BalancerV2;
 let blocknumber: number;
 let virtualBoostedPools: VirtualBoostedPools;
+const vaultInterface = new Interface(VaultABI);
+const linearPoolInterface = new Interface(LinearPoolABI);
+const phantomPoolInterface = new Interface(MetaStablePoolABI);
 
 // bbausd is an existing boostedPool
 const bbausdId =
@@ -268,10 +273,11 @@ describe('VirtualBoostedPools', () => {
     it('parsePoolPairData', () => {
       const tokenInAddr = tokens['DAI'].address;
       const tokenOutAddr = tokens['USDC'].address;
-      const vaultInterface = new Interface(VaultABI);
       const virtualBoostedPool = new VirtualBoostedPool(
         vaultAddress,
         vaultInterface,
+        linearPoolInterface,
+        phantomPoolInterface,
       );
       const poolPairData = virtualBoostedPool.parsePoolPairData(
         virtualBoostedPools.subgraph[0],
@@ -316,10 +322,11 @@ describe('VirtualBoostedPools', () => {
       it('above limit', () => {
         const tokenInAddr = tokens['DAI'].address;
         const tokenOutAddr = tokens['USDC'].address;
-        const vaultInterface = new Interface(VaultABI);
         const virtualBoostedPool = new VirtualBoostedPool(
           vaultAddress,
           vaultInterface,
+          linearPoolInterface,
+          phantomPoolInterface,
         );
         const poolPairData = virtualBoostedPool.parsePoolPairData(
           virtualBoostedPools.subgraph[0],
@@ -340,10 +347,11 @@ describe('VirtualBoostedPools', () => {
       it('below limit', () => {
         const tokenInAddr = tokens['DAI'].address;
         const tokenOutAddr = tokens['USDC'].address;
-        const vaultInterface = new Interface(VaultABI);
         const virtualBoostedPool = new VirtualBoostedPool(
           vaultAddress,
           vaultInterface,
+          linearPoolInterface,
+          phantomPoolInterface,
         );
         const poolPairData = virtualBoostedPool.parsePoolPairData(
           virtualBoostedPools.subgraph[0],

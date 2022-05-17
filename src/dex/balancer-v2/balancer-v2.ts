@@ -28,6 +28,10 @@ import {
   BoostedPools,
 } from './VirtualBoostedPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
+import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
+import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
+import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -121,20 +125,36 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ) {
     super(parentName, logger);
     this.vaultInterface = new Interface(VaultABI);
+    const weightedPoolInterface = new Interface(WeightedPoolABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
       this.vaultInterface,
+      weightedPoolInterface,
     );
-    const stablePool = new StablePool(this.vaultAddress, this.vaultInterface);
+    const stablePoolInterface = new Interface(StablePoolABI);
+    const stablePool = new StablePool(
+      this.vaultAddress,
+      this.vaultInterface,
+      stablePoolInterface,
+    );
+    const metaStablePoolInterface = new Interface(MetaStablePoolABI);
     const stablePhantomPool = new PhantomStablePool(
       this.vaultAddress,
       this.vaultInterface,
+      metaStablePoolInterface,
     );
-    const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
+    const linearPoolInterface = new Interface(LinearPoolABI);
+    const linearPool = new LinearPool(
+      this.vaultAddress,
+      this.vaultInterface,
+      linearPoolInterface,
+    );
 
     const virtualBoostedPool = new VirtualBoostedPool(
       this.vaultAddress,
       this.vaultInterface,
+      linearPoolInterface,
+      metaStablePoolInterface,
     );
 
     this.pools = {};

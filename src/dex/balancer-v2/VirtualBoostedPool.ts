@@ -9,11 +9,8 @@ import {
   callData,
   BalancerSwap,
 } from './types';
-import { SwapSide, MAX_INT } from '../../constants';
+import { SwapSide } from '../../constants';
 import { BalancerPoolTypes } from './balancer-v2';
-
-import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
-import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 
 export type BoostedPools = {
   [id: string]: BoostedPool;
@@ -124,11 +121,16 @@ export class VirtualBoostedPool {
   linearPoolInterface: Interface;
   phantomStablePoolInterface: Interface;
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    linearPoolInterface: Interface,
+    metaStablePoolInterface: Interface,
+  ) {
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.linearPoolInterface = new Interface(LinearPoolABI);
-    this.phantomStablePoolInterface = new Interface(MetaStablePoolABI);
+    this.linearPoolInterface = linearPoolInterface;
+    this.phantomStablePoolInterface = metaStablePoolInterface;
   }
 
   /*
@@ -230,10 +232,12 @@ export class VirtualBoostedPool {
   ): [{ [address: string]: PoolState }, number] {
     const linearPool = new LinearPool(
       this.vaultAddress,
+      this.vaultInterface,
       this.linearPoolInterface,
     );
     const phantomStablePool = new PhantomStablePool(
       this.vaultAddress,
+      this.vaultInterface,
       this.phantomStablePoolInterface,
     );
     // TO DO - Change to use decodeThrowError
@@ -430,6 +434,7 @@ export class VirtualBoostedPool {
 
     const linearPool = new LinearPool(
       this.vaultAddress,
+      this.vaultInterface,
       this.linearPoolInterface,
     );
     const balanceOut =
@@ -485,10 +490,12 @@ export class VirtualBoostedPool {
     );
     const linearPool = new LinearPool(
       this.vaultAddress,
+      this.vaultInterface,
       this.linearPoolInterface,
     );
     const phantomStablePool = new PhantomStablePool(
       this.vaultAddress,
+      this.vaultInterface,
       this.phantomStablePoolInterface,
     );
 

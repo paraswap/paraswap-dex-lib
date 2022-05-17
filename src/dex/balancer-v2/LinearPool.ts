@@ -10,7 +10,6 @@ import {
   TokenState,
   PoolBase,
 } from './types';
-import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { SwapSide } from '../../constants';
 
 export enum PairTypes {
@@ -56,11 +55,15 @@ export class LinearPool extends BasePool implements PoolBase {
   vaultInterface: Interface;
   poolInterface: Interface;
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(LinearPoolABI);
+    this.poolInterface = poolInterface;
   }
 
   /*
