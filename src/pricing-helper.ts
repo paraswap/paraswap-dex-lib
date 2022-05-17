@@ -172,6 +172,13 @@ export class PricingHelper {
           return false;
         }
 
+        if (Array.isArray(p.gasCost) && p.gasCost.length !== amounts.length) {
+          this.logger.error(
+            `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array length: ${p.gasCost.length} !== ${amounts.length}`,
+          );
+          return false;
+        }
+
         if (p.prices.every(pi => pi === 0n)) {
           return false;
         }
