@@ -370,6 +370,8 @@ export class BalancerV2
   implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
 {
   protected eventPools: BalancerV2EventPool;
+  // Stores subgraph pools for updatePoolState/getTopPoolsForToken
+  allPools?: SubgraphPoolBase[];
 
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -769,30 +771,15 @@ export class BalancerV2
     );
   }
 
-  async getTopPoolsForToken(
-    tokenAddress: Address,
-    count: number,
-  ): Promise<PoolLiquidity[]> {
-    const variables = {
-      tokens: [tokenAddress],
-      count,
-    };
-
+  // This is called once before getTopPoolsForToken is
+  // called for multiple tokens. This can be helpful to
+  // update common state required for calculating
+  // getTopPoolsForToken. It is optional for a DEX
+  // to implement this
+  async updatePoolState(): Promise<void> {
     const query = `
-      query ($tokens: [Bytes!], $count: Int) {
-          pools: pools (first: $count, orderBy: totalLiquidity, orderDirection: desc, 
-           where: {tokensList_contains: $tokens, 
-                   swapEnabled: true, 
-                   totalLiquidity_gt: 0}) {
-            address
-            totalLiquidity
-            tokens {
-              address
-              decimals
-            }
-          }
-
-          poolsAll: pools(first: 1000, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
+      query {
+          pools: pools(first: 1000, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
             id
             address
             poolType
@@ -803,38 +790,45 @@ export class BalancerV2
             mainIndex
             wrappedIndex
             totalLiquidity
+            tokensList
           }
       }`;
 
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
-      {
-        query,
-        variables,
-      },
+      { query },
       subgraphTimeout,
     );
 
-    if (!(data && data.pools && data.poolsAll))
+    if (!(data && data.pools))
       throw new Error(
         `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
       );
 
     // Create virtual pool info
-    const virtualBoostedPools = VirtualBoostedPool.createPools(data.poolsAll);
-    // Check each virtualPool for token and add if present
-    const virtualPoolsWithToken = virtualBoostedPools.subgraph.filter(p => {
-      return p.tokens.some(
-        token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
-      );
-    });
+    const virtualBoostedPools = VirtualBoostedPool.createPools(data.pools);
 
     // Combine virtual pools with sg pools and order by liquidity
-    const allPools = [...data.pools, ...virtualPoolsWithToken].sort(
+    this.allPools = [...data.pools, ...virtualBoostedPools.subgraph].sort(
       (a, b) => b.totalLiquidity - a.totalLiquidity,
     );
+  }
 
-    const pools = _.map(allPools, (pool: any) => ({
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    count: number,
+  ): Promise<PoolLiquidity[]> {
+    if (!this.allPools) await this.updatePoolState();
+
+    const poolsWithToken = this.allPools
+      ?.filter(p =>
+        p.tokens.some(
+          token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+        ),
+      )
+      .slice(0, count);
+
+    const pools = _.map(poolsWithToken, (pool: any) => ({
       exchange: this.dexKey,
       address: pool.address.toLowerCase(),
       connectorTokens: pool.tokens.reduce(
