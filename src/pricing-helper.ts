@@ -178,11 +178,15 @@ export class PricingHelper {
               `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array length: ${p.gasCost.length} !== ${amounts.length}`,
             );
             return false;
-          } else if (amounts[0] === 0n && p.gasCost[0] === 0) {
-            this.logger.error(
-              `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array. It must be prepend with zero`,
-            );
-            return false;
+          }
+
+          for (const [i, amount] of amounts.entries()) {
+            if (amount === 0n && p.gasCost[i] !== 0) {
+              this.logger.error(
+                `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array. It must be prepend with zero`,
+              );
+              return false;
+            }
           }
         }
 
