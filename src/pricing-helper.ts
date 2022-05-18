@@ -183,7 +183,7 @@ export class PricingHelper {
           for (const [i, amount] of amounts.entries()) {
             if (amount === 0n && p.gasCost[i] !== 0) {
               this.logger.error(
-                `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array. It must be prepend with zero`,
+                `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array. At index ${i} amount is 0 but gasCost is ${p.gasCost[i]}`,
               );
               return false;
             }
