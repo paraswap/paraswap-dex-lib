@@ -27,5 +27,4 @@ export {
   Config,
 } from './types';
 
-// generateConfig should only be used by configuration service
-export { generateConfig, ConfigHelper } from './config';
+export { ConfigHelper } from './config';

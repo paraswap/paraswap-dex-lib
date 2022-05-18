@@ -142,7 +142,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
   },
 };
 
-// Should not be used, except by configuration service or internal test code
+// Should not be used, except by internal test code
 export function generateConfig(network: number): Config {
   const baseConfig = baseConfigs[network];
   const nativeTokenName =
