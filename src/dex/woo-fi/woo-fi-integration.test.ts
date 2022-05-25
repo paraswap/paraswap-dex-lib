@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Result, Interface } from '@ethersproject/abi';
-import { DummyDexHelper } from '../../dex-helper/index';
+import { DummyDexHelper, IDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { WooFi } from './woo-fi';
@@ -58,7 +58,9 @@ async function checkOnChainPricing(
   funcName: string,
   blockNumber: number,
   prices: bigint[],
+  dexHelperArg?: IDexHelper,
 ) {
+  const _dexHelper = dexHelperArg ? dexHelperArg : dexHelper;
   const readerCallData = getReaderCalldata(
     wooFi.config.wooPPAddress,
     WooFi.ifaces.PP,
@@ -67,7 +69,7 @@ async function checkOnChainPricing(
     TokenA,
   );
   const readerResult = (
-    await dexHelper.multiContract.methods
+    await _dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -167,6 +169,59 @@ describe('WooFi', function () {
       'querySellQuote',
       blockNumber,
       poolPrices![0].prices,
+    );
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL Quote Fantom', async function () {
+    const _network = Network.FANTOM;
+    const _dexHelper = new DummyDexHelper(_network);
+    const _amounts = [
+      0n,
+      BI_POWS[6],
+      10n * BI_POWS[6],
+      100n * BI_POWS[6],
+      1000n * BI_POWS[6],
+      10000n * BI_POWS[6],
+    ];
+
+    const _blockNumber = await _dexHelper.provider.getBlockNumber();
+
+    const _wooFi = new WooFi(_network, dexKey, _dexHelper);
+    await _wooFi.initializePricing(_blockNumber);
+
+    const pools = await _wooFi.getPoolIdentifiers(
+      Tokens[_network]['USDC'],
+      Tokens[_network]['FTM'],
+      SwapSide.SELL,
+      _blockNumber,
+    );
+    console.log(`USDC <> FTM Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await _wooFi.getPricesVolume(
+      Tokens[_network]['USDC'],
+      Tokens[_network]['FTM'],
+      _amounts,
+      SwapSide.SELL,
+      _blockNumber,
+      pools,
+    );
+    console.log(`USDC <> FTM Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    // if (_wooFi.hasConstantPriceLargeAmounts) {
+    //   checkConstantPoolPrices(poolPrices!, _amounts, dexKey);
+    // } else {
+    //   checkPoolPrices(poolPrices!, _amounts, SwapSide.SELL, dexKey);
+    // }
+
+    await checkOnChainPricing(
+      _wooFi,
+      'querySellQuote',
+      _blockNumber,
+      poolPrices![0].prices,
+      _dexHelper,
     );
   });
 
