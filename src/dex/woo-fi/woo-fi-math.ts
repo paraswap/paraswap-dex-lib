@@ -48,7 +48,10 @@ export class WooFiMath {
 
       this._autoUpdate(this._quoteToken, baseToken);
 
-      const quoteAmounts = this._getQuoteAmountSellBase(baseToken, _baseAmounts);
+      const quoteAmounts = this._getQuoteAmountSellBase(
+        baseToken,
+        _baseAmounts,
+      );
 
       const feeRate = this.state.feeRates[baseToken];
       return this._takeFee(quoteAmounts, feeRate);
@@ -60,24 +63,27 @@ export class WooFiMath {
 
   querySellQuote(baseToken: Address, quoteAmounts: bigint[]): bigint[] | null {
     try {
-      const _quoteAmounts = quoteAmounts.map(quoteAmount => {
+      let _quoteAmounts = quoteAmounts.map(quoteAmount => {
         try {
           this._checkInputAmount(this._quoteToken, quoteAmount);
-          return quoteAmount
-        }catch(e) {
-          if (e instanceof Error && e.message.startsWith('WooGuardian: inputAmount')) {
+          return quoteAmount;
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            e.message.startsWith('WooGuardian: inputAmount')
+          ) {
             return 0n;
           }
-          throw e
+          throw e;
         }
       });
 
       this._autoUpdate(this._quoteToken, baseToken);
 
       const feeRate = this.state.feeRates[baseToken];
-      quoteAmounts = this._takeFee(quoteAmounts, feeRate);
+      _quoteAmounts = this._takeFee(_quoteAmounts, feeRate);
 
-      return this._getBaseAmountSellQuote(baseToken, quoteAmounts);
+      return this._getBaseAmountSellQuote(baseToken, _quoteAmounts);
     } catch (e) {
       handleMathError(e, this.logger);
       return null;
