@@ -223,7 +223,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
           },
           {
             target: this.config.wooOracleAddress,
-            callData: WooFi.ifaces.oracle.encodeFunctionData('infos', [
+            callData: WooFi.ifaces.oracle.encodeFunctionData('state', [
               t.address,
             ]),
           },
@@ -307,7 +307,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         WooFi.ifaces.fee.decodeFunctionResult('feeRate', data[index][1]),
       ),
       _.range(1, maxNumber, 4).map(index =>
-        WooFi.ifaces.oracle.decodeFunctionResult('infos', data[index][1]),
+        WooFi.ifaces.oracle.decodeFunctionResult('state', data[index][1]),
       ),
       _.range(2, maxNumber, 4).map(index =>
         WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[index][1]),
@@ -351,9 +351,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     });
     baseInfos.map((value, index) => {
       state.tokenStates[this.baseTokens[index].address] = {
-        priceNow: BigInt(value.price._hex),
-        coeffNow: BigInt(value.coeff._hex),
-        spreadNow: BigInt(value.spread._hex),
+        priceNow: BigInt(value.priceNow._hex),
+        coeffNow: BigInt(value.coeffNow._hex),
+        spreadNow: BigInt(value.spreadNow._hex),
       };
     });
     baseTokenInfos.map((values, index) => {
