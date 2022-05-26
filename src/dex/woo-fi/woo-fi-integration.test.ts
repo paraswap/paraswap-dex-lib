@@ -58,18 +58,19 @@ async function checkOnChainPricing(
   funcName: string,
   blockNumber: number,
   prices: bigint[],
-  dexHelperArg?: IDexHelper,
+  dexHelper: IDexHelper,
+  amounts: bigint[],
+  baseToken: Token,
 ) {
-  const _dexHelper = dexHelperArg ? dexHelperArg : dexHelper;
   const readerCallData = getReaderCalldata(
     wooFi.config.wooPPAddress,
     WooFi.ifaces.PP,
     amounts.slice(1),
     funcName,
-    TokenA,
+    baseToken,
   );
   const readerResult = (
-    await _dexHelper.multiContract.methods
+    await dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -133,6 +134,9 @@ describe('WooFi', function () {
       'querySellBase',
       blockNumber,
       poolPrices![0].prices,
+      dexHelper,
+      amounts,
+      TokenA,
     );
   });
 
@@ -169,15 +173,19 @@ describe('WooFi', function () {
       'querySellQuote',
       blockNumber,
       poolPrices![0].prices,
+      dexHelper,
+      amounts,
+      TokenA,
     );
   });
 
-  it('getPoolIdentifiers and getPricesVolume SELL Quote Fantom', async function () {
-    const _network = Network.FANTOM;
+  it('getPoolIdentifiers and getPricesVolume SELL Quote Avalanche', async function () {
+    // TODO: refactor this test to more clear state. Need to put
+    // reusable variables in in `beforeAll` and use separate describe for each network
+    const _network = Network.AVALANCHE;
     const _dexHelper = new DummyDexHelper(_network);
     const _amounts = [
       0n,
-      BI_POWS[6],
       10n * BI_POWS[6],
       100n * BI_POWS[6],
       1000n * BI_POWS[6],
@@ -189,9 +197,81 @@ describe('WooFi', function () {
     const _wooFi = new WooFi(_network, dexKey, _dexHelper);
     await _wooFi.initializePricing(_blockNumber);
 
+    console.log(`Current state for block number ${_blockNumber} is:`);
+    console.log(
+      JSON.stringify(
+        _wooFi.latestState,
+        (key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+      ),
+    );
+
     const pools = await _wooFi.getPoolIdentifiers(
       Tokens[_network]['USDC'],
-      Tokens[_network]['FTM'],
+      Tokens[_network]['WAVAX'],
+      SwapSide.SELL,
+      _blockNumber,
+    );
+    console.log(`USDC <> WAVAX Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await _wooFi.getPricesVolume(
+      Tokens[_network]['USDC'],
+      Tokens[_network]['WAVAX'],
+      _amounts,
+      SwapSide.SELL,
+      _blockNumber,
+      pools,
+    );
+    console.log(`USDC <> WAVAX Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    if (_wooFi.hasConstantPriceLargeAmounts) {
+      checkConstantPoolPrices(poolPrices!, _amounts, dexKey);
+    } else {
+      checkPoolPrices(poolPrices!, _amounts, SwapSide.SELL, dexKey);
+    }
+
+    await checkOnChainPricing(
+      _wooFi,
+      'querySellQuote',
+      _blockNumber,
+      poolPrices![0].prices,
+      _dexHelper,
+      _amounts,
+      Tokens[_network]['WAVAX'],
+    );
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL Quote Fantom', async function () {
+    // TODO: refactor this test to more clear state. Need to put
+    // reusable variables in in `beforeAll` and use separate describe for each network
+    const _network = Network.FANTOM;
+    const _dexHelper = new DummyDexHelper(_network);
+    const _amounts = [
+      0n,
+      10n * BI_POWS[6],
+      100n * BI_POWS[6],
+      1000n * BI_POWS[6],
+      10000n * BI_POWS[6],
+    ];
+
+    const _blockNumber = await _dexHelper.provider.getBlockNumber();
+
+    const _wooFi = new WooFi(_network, dexKey, _dexHelper);
+    await _wooFi.initializePricing(_blockNumber);
+
+    console.log(`Current state for block number ${_blockNumber} is:`);
+    console.log(
+      JSON.stringify(
+        _wooFi.latestState,
+        (key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+      ),
+    );
+
+    const pools = await _wooFi.getPoolIdentifiers(
+      Tokens[_network]['USDC'],
+      Tokens[_network]['WFTM'],
       SwapSide.SELL,
       _blockNumber,
     );
@@ -201,13 +281,13 @@ describe('WooFi', function () {
 
     const poolPrices = await _wooFi.getPricesVolume(
       Tokens[_network]['USDC'],
-      Tokens[_network]['FTM'],
+      Tokens[_network]['WFTM'],
       _amounts,
       SwapSide.SELL,
       _blockNumber,
       pools,
     );
-    console.log(`USDC <> FTM Pool Prices: `, poolPrices);
+    console.log(`USDC <> WFTM Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     // if (_wooFi.hasConstantPriceLargeAmounts) {
@@ -222,6 +302,8 @@ describe('WooFi', function () {
       _blockNumber,
       poolPrices![0].prices,
       _dexHelper,
+      _amounts,
+      Tokens[_network]['WFTM'],
     );
   });
 
