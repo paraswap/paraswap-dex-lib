@@ -236,7 +236,6 @@ export class DystopiaStable extends UniswapV2 {
     tokenAddress: Address,
     count: number,
   ): Promise<PoolLiquidity[]> {
-    console.log('getTopPoolsForTokenFiltered...');
     return getTopPoolsForTokenFiltered(
       this.subgraphURL,
       this.dexHelper,
