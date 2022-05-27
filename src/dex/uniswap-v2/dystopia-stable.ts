@@ -1,12 +1,16 @@
 import { UniswapV2, RESERVE_LIMIT, TOKEN_EXTRA_FEE } from './uniswap-v2';
 import { Network, NULL_ADDRESS } from '../../constants';
-import { DexConfigMap, Token } from '../../types';
+import { Address, DexConfigMap, PoolLiquidity, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import { DexParams } from './types';
 import { getDexKeysWithNetwork } from '../../utils';
 import dystopiaFactoryABI from '../../abi/dystopia/DystFactory.json';
 import { BI_MAX_UINT } from '../../bigint-constants';
-import { DystopiaSharedPolygonConfig } from './dystopia';
+import {
+  Dystopia,
+  DystopiaSharedPolygonConfig,
+  getTopPoolsForTokenFiltered,
+} from './dystopia';
 
 export const DystopiaStableConfig: DexConfigMap<DexParams> = {
   DystopiaStable: {
@@ -226,5 +230,20 @@ export class DystopiaStable extends UniswapV2 {
       decimalsIn: from.decimals,
       decimalsOut: to.decimals,
     };
+  }
+
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    count: number,
+  ): Promise<PoolLiquidity[]> {
+    console.log('getTopPoolsForTokenFiltered...');
+    return getTopPoolsForTokenFiltered(
+      this.subgraphURL,
+      this.dexHelper,
+      this.dexKey,
+      tokenAddress,
+      count,
+      true,
+    );
   }
 }

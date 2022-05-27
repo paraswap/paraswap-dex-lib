@@ -2,14 +2,16 @@ import {
   UniswapV2,
   UniswapV2PoolOrderedParams,
   RESERVE_LIMIT,
+  subgraphTimeout,
 } from './uniswap-v2';
 import { Network, NULL_ADDRESS } from '../../constants';
-import { DexConfigMap, Token } from '../../types';
+import { Address, DexConfigMap, PoolLiquidity, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import { DexParams } from './types';
 import { getDexKeysWithNetwork } from '../../utils';
 import dystopiaFactoryABI from '../../abi/dystopia/DystFactory.json';
 import { BI_MAX_UINT } from '../../bigint-constants';
+import _ from 'lodash';
 
 export const DystopiaSharedPolygonConfig: DexParams = {
   subgraphURL:
@@ -28,6 +30,88 @@ export const DystopiaConfig: DexConfigMap<DexParams> = {
     [Network.POLYGON]: DystopiaSharedPolygonConfig,
   },
 };
+
+export async function getTopPoolsForTokenFiltered(
+  subgraphURL: string | undefined,
+  dexHelper: IDexHelper,
+  dexKey: string,
+  tokenAddress: Address,
+  count: number,
+  stable: boolean,
+): Promise<PoolLiquidity[]> {
+  if (!subgraphURL) return [];
+  const query = `
+        query ($token: Bytes!, $count: Int) {
+          pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, isStable: $stable, reserve0_gt: 1, reserve1_gt: 1}) {
+          id
+          token0 {
+            id
+            decimals
+          }
+          token1 {
+            id
+            decimals
+          }
+          reserveUSD
+        }
+        pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, isStable: $stable, reserve0_gt: 1, reserve1_gt: 1}) {
+          id
+          token0 {
+            id
+            decimals
+          }
+          token1 {
+            id
+            decimals
+          }
+          reserveUSD
+        }
+      }`;
+
+  const { data } = await dexHelper.httpRequest.post(
+    subgraphURL,
+    {
+      query,
+      variables: { token: tokenAddress.toLowerCase(), count },
+    },
+    subgraphTimeout,
+  );
+
+  if (!(data && data.pools0 && data.pools1))
+    throw new Error("Couldn't fetch the pools from the subgraph");
+  const pools0 = _.map(data.pools0, pool => ({
+    exchange: dexKey,
+    address: pool.id.toLowerCase(),
+    connectorTokens: [
+      {
+        address: pool.token1.id.toLowerCase(),
+        decimals: parseInt(pool.token1.decimals),
+      },
+    ],
+    liquidityUSD: parseFloat(pool.reserveUSD),
+  }));
+
+  const pools1 = _.map(data.pools1, pool => ({
+    exchange: dexKey,
+    address: pool.id.toLowerCase(),
+    connectorTokens: [
+      {
+        address: pool.token0.id.toLowerCase(),
+        decimals: parseInt(pool.token0.decimals),
+      },
+    ],
+    liquidityUSD: parseFloat(pool.reserveUSD),
+  }));
+
+  const pools = _.slice(
+    _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
+    0,
+    count,
+  );
+
+  console.log('pools', pools.length);
+  return pools;
+}
 
 export class Dystopia extends UniswapV2 {
   /// 0.05% swap fee
@@ -122,5 +206,20 @@ export class Dystopia extends UniswapV2 {
 
     if (denominator <= 0n) return BI_MAX_UINT;
     return 1n + numerator / denominator;
+  }
+
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    count: number,
+  ): Promise<PoolLiquidity[]> {
+    console.log('getTopPoolsForTokenFiltered...');
+    return getTopPoolsForTokenFiltered(
+      this.subgraphURL,
+      this.dexHelper,
+      this.dexKey,
+      tokenAddress,
+      count,
+      false,
+    );
   }
 }

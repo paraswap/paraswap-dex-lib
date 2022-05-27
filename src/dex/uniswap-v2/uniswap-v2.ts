@@ -85,7 +85,7 @@ export type UniswapV2Pair = {
   pool?: UniswapV2EventPool;
 };
 
-const subgraphTimeout = 10 * 1000;
+export const subgraphTimeout = 10 * 1000;
 
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => iface.parseLog(log);
