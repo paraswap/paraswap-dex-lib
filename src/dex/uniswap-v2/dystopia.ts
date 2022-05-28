@@ -41,8 +41,8 @@ export async function getTopPoolsForTokenFiltered(
 ): Promise<PoolLiquidity[]> {
   if (!subgraphURL) return [];
   const query = `
-        query ($token: Bytes!, $count: Int) {
-          pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, isStable: $stable, reserve0_gt: 1, reserve1_gt: 1}) {
+      query ($token: Bytes!, $count: Int, $stable: Boolean) {
+        pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, isStable: $stable, reserve0_gt: 1, reserve1_gt: 1}) {
           id
           token0 {
             id
@@ -72,7 +72,7 @@ export async function getTopPoolsForTokenFiltered(
     subgraphURL,
     {
       query,
-      variables: { token: tokenAddress.toLowerCase(), count },
+      variables: { token: tokenAddress.toLowerCase(), count, stable },
     },
     subgraphTimeout,
   );
