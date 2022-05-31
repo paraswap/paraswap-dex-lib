@@ -135,6 +135,10 @@ export type AdapterExchangeParam = {
   networkFee: string;
 };
 
+export type AdapterMappings = {
+  [side: string]: { name: string; index: number }[];
+};
+
 export type SimpleExchangeParam = {
   callees: string[];
   calldata: string[];
@@ -166,7 +170,7 @@ export type PoolPrices<T> = {
   data: T;
   poolIdentifier?: string;
   exchange: string;
-  gasCost: number;
+  gasCost: number | number[];
   poolAddresses?: Array<Address>;
 };
 

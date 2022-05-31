@@ -11,12 +11,7 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import {
-  wrapETH,
-  getDexKeysWithNetwork,
-  interpolate,
-  getBigIntPow,
-} from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -146,6 +141,8 @@ export class Nerve
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
     const _srcToken = wrapETH(srcToken, this.network);
     const _destToken = wrapETH(destToken, this.network);
 
