@@ -1,0 +1,260 @@
+[
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferPrepared",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "_NEW_OWNER_",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "_OWNER_",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claimOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "getCoeff",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "getPrice",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "getSpread",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "infos",
+    "outputs": [
+      { "internalType": "uint128", "name": "price", "type": "uint128" },
+      { "internalType": "uint64", "name": "coeff", "type": "uint64" },
+      { "internalType": "uint64", "name": "spread", "type": "uint64" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "initOwner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "isFeasible",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" },
+      { "internalType": "uint128", "name": "newPrice", "type": "uint128" }
+    ],
+    "name": "postPrice",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address[]", "name": "bases", "type": "address[]" },
+      { "internalType": "uint128[]", "name": "newPrices", "type": "uint128[]" }
+    ],
+    "name": "postPriceList",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" },
+      { "internalType": "uint64", "name": "newSpread", "type": "uint64" }
+    ],
+    "name": "postSpread",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address[]", "name": "bases", "type": "address[]" },
+      { "internalType": "uint64[]", "name": "newSpreads", "type": "uint64[]" }
+    ],
+    "name": "postSpreadList",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" },
+      { "internalType": "uint128", "name": "newPrice", "type": "uint128" },
+      { "internalType": "uint64", "name": "newSpread", "type": "uint64" },
+      { "internalType": "uint64", "name": "newCoeff", "type": "uint64" }
+    ],
+    "name": "postState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address[]", "name": "bases", "type": "address[]" },
+      { "internalType": "uint128[]", "name": "newPrices", "type": "uint128[]" },
+      { "internalType": "uint64[]", "name": "newSpreads", "type": "uint64[]" },
+      { "internalType": "uint64[]", "name": "newCoeffs", "type": "uint64[]" }
+    ],
+    "name": "postStateList",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "price",
+    "outputs": [
+      { "internalType": "uint256", "name": "priceNow", "type": "uint256" },
+      { "internalType": "bool", "name": "feasible", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "quoteToken",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newQuoteToken", "type": "address" }
+    ],
+    "name": "setQuoteToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newStaleDuration",
+        "type": "uint256"
+      }
+    ],
+    "name": "setStaleDuration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "staleDuration",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "state",
+    "outputs": [
+      { "internalType": "uint256", "name": "priceNow", "type": "uint256" },
+      { "internalType": "uint256", "name": "spreadNow", "type": "uint256" },
+      { "internalType": "uint256", "name": "coeffNow", "type": "uint256" },
+      { "internalType": "bool", "name": "feasible", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "timestamp",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

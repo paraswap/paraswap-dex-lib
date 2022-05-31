@@ -172,6 +172,24 @@ export class PricingHelper {
           return false;
         }
 
+        if (Array.isArray(p.gasCost)) {
+          if (p.gasCost.length !== amounts.length) {
+            this.logger.error(
+              `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array length: ${p.gasCost.length} !== ${amounts.length}`,
+            );
+            return false;
+          }
+
+          for (const [i, amount] of amounts.entries()) {
+            if (amount === 0n && p.gasCost[i] !== 0) {
+              this.logger.error(
+                `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array. At index ${i} amount is 0 but gasCost is ${p.gasCost[i]}`,
+              );
+              return false;
+            }
+          }
+        }
+
         if (p.prices.every(pi => pi === 0n)) {
           return false;
         }
