@@ -109,18 +109,6 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
         let _dest = swap.destToken;
         let wethWithdraw = 0n;
 
-        if (dex.needWrapNative) {
-          if (isETHAddress(swap.srcToken)) {
-            _src = wethAddress;
-            wethDeposit = BigInt(se.srcAmount);
-          }
-
-          if (isETHAddress(swap.destToken)) {
-            _dest = wethAddress;
-            wethWithdraw = BigInt(se.destAmount);
-          }
-        }
-
         // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
         // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
         // Also that it is is direct swap.
@@ -136,6 +124,18 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
         // even if the individual dex is rekt by slippage the swap
         // should work if the final slippage check passes.
         const _destAmount = this.side === SwapSide.SELL ? '1' : se.destAmount;
+
+        if (dex.needWrapNative) {
+          if (isETHAddress(swap.srcToken)) {
+            _src = wethAddress;
+            wethDeposit = BigInt(_srcAmount);
+          }
+
+          if (isETHAddress(swap.destToken)) {
+            _dest = wethAddress;
+            wethWithdraw = BigInt(_destAmount);
+          }
+        }
 
         const simpleParams = await dex.getSimpleParam(
           _src,
@@ -193,14 +193,21 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     );
 
     if (maybeWethCallData) {
-      if (maybeWethCallData.opType === WethFunctions.deposit) {
-        simpleExchangeDataFlat.callees.unshift(maybeWethCallData.callee);
-        simpleExchangeDataFlat.values.unshift(maybeWethCallData.value);
-        simpleExchangeDataFlat.calldata.unshift(maybeWethCallData.calldata);
-      } else {
-        simpleExchangeDataFlat.callees.push(maybeWethCallData.callee);
-        simpleExchangeDataFlat.values.push(maybeWethCallData.value);
-        simpleExchangeDataFlat.calldata.push(maybeWethCallData.calldata);
+      if (maybeWethCallData.deposit) {
+        simpleExchangeDataFlat.callees.unshift(
+          maybeWethCallData.deposit.callee,
+        );
+        simpleExchangeDataFlat.values.unshift(maybeWethCallData.deposit.value);
+        simpleExchangeDataFlat.calldata.unshift(
+          maybeWethCallData.deposit.calldata,
+        );
+      }
+      if (maybeWethCallData.withdraw) {
+        simpleExchangeDataFlat.callees.push(maybeWethCallData.withdraw.callee);
+        simpleExchangeDataFlat.values.push(maybeWethCallData.withdraw.value);
+        simpleExchangeDataFlat.calldata.push(
+          maybeWethCallData.withdraw.calldata,
+        );
       }
     }
 
@@ -263,7 +270,7 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       swap.destToken,
       srcAmountWeth.toString(),
       destAmountWeth.toString(),
-      SwapSide.SELL,
+      this.side,
     );
   }
 }
