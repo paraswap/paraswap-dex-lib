@@ -253,6 +253,14 @@ abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
     super(dexAdapterService, side, contractMethodName);
   }
 
+  protected validateBestRoute(priceRoute: OptimalRate): boolean {
+    return (
+      priceRoute.bestRoute.length === 1 &&
+      priceRoute.bestRoute[0].percent === 100 &&
+      priceRoute.bestRoute[0].swaps.length === 1
+    );
+  }
+
   async build(
     priceRoute: OptimalRate,
     minMaxAmount: string,
@@ -266,12 +274,8 @@ abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
     deadline: string,
     uuid: string,
   ): Promise<TxInfo<SimpleSwapParam>> {
-    if (
-      priceRoute.bestRoute.length !== 1 ||
-      priceRoute.bestRoute[0].percent !== 100 ||
-      priceRoute.bestRoute[0].swaps.length !== 1
-    )
-      throw new Error(`Simpleswap invalid bestRoute`);
+    if (!this.validateBestRoute(priceRoute))
+      throw new Error(`${this.contractMethodName} invalid bestRoute`);
 
     const { partialContractSimpleData, networkFee } = await this.buildCalls(
       priceRoute,
@@ -329,5 +333,19 @@ export class SimpleBuy extends SimpleRouter {
   static isBuy = true;
   constructor(dexAdapterService: DexAdapterService) {
     super(dexAdapterService, SwapSide.BUY, 'simpleBuy');
+  }
+
+  // Need to handle special case where second swap consists entirely of
+  // AugustusRFQOrder executions
+  protected validateBestRoute(priceRoute: OptimalRate): boolean {
+    return (
+      priceRoute.bestRoute.length === 1 &&
+      priceRoute.bestRoute[0].percent === 100 &&
+      (priceRoute.bestRoute[0].swaps.length === 1 ||
+        (priceRoute.bestRoute[0].swaps.length === 2 &&
+          !priceRoute.bestRoute[0].swaps[1].swapExchanges.find(
+            se => se.exchange.toLowerCase() !== 'augustusrfqorder',
+          )))
+    );
   }
 }
