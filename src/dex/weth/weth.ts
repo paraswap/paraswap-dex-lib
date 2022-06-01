@@ -155,8 +155,6 @@ export class Weth
   }
 
   getDepositWithdrawParam(
-    srcToken: string,
-    destToken: string,
     srcAmount: string,
     destAmount: string,
     side: SwapSide,
@@ -168,7 +166,7 @@ export class Weth
 
     let needWithdraw = false;
 
-    if (srcAmount !== '0' && isETHAddress(srcToken)) {
+    if (srcAmount !== '0') {
       const opType = WethFunctions.deposit;
       const depositWethData = this.erc20Interface.encodeFunctionData(opType);
 
@@ -181,7 +179,7 @@ export class Weth
       if (side === SwapSide.BUY) needWithdraw = true;
     }
 
-    if (needWithdraw || (destAmount !== '0' && isETHAddress(destToken))) {
+    if (needWithdraw || destAmount !== '0') {
       const opType = WethFunctions.withdrawAllWETH;
       const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
         opType,
