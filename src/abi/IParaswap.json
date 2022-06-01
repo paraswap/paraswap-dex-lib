@@ -559,6 +559,205 @@
   {
     "inputs": [
       {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "nonceAndMeta",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint128",
+                "name": "expiry",
+                "type": "uint128"
+              },
+              {
+                "internalType": "address",
+                "name": "makerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "takerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "maker",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "taker",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "makerAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "takerAmount",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IAugustusRFQ.Order",
+            "name": "order",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerTokenFillAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitTakerAsset",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitMakerAsset",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderInfo[]",
+        "name": "orderInfos",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmountMax",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "buyOnAugustusRFQTryBatchFill",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "nonceAndMeta",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint128",
+                "name": "expiry",
+                "type": "uint128"
+              },
+              {
+                "internalType": "address",
+                "name": "makerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "takerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "maker",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "taker",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "makerAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "takerAmount",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IAugustusRFQ.Order",
+            "name": "order",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerTokenFillAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitTakerAsset",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitMakerAsset",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderInfo[]",
+        "name": "orderInfos",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmountMax",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "buyOnAugustusRFQTryBatchFillWithPermit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "amountInMax",
         "type": "uint256"
@@ -2295,6 +2494,195 @@
       }
     ],
     "name": "swapOnAugustusRFQNFTWithPermit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "nonceAndMeta",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint128",
+                "name": "expiry",
+                "type": "uint128"
+              },
+              {
+                "internalType": "address",
+                "name": "makerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "takerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "maker",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "taker",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "makerAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "takerAmount",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IAugustusRFQ.Order",
+            "name": "order",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerTokenFillAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitTakerAsset",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitMakerAsset",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderInfo[]",
+        "name": "orderInfos",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "swapOnAugustusRFQTryBatchFill",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "nonceAndMeta",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint128",
+                "name": "expiry",
+                "type": "uint128"
+              },
+              {
+                "internalType": "address",
+                "name": "makerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "takerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "maker",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "taker",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "makerAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "takerAmount",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IAugustusRFQ.Order",
+            "name": "order",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerTokenFillAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitTakerAsset",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitMakerAsset",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IAugustusRFQ.OrderInfo[]",
+        "name": "orderInfos",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapETH",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapOnAugustusRFQTryBatchFillWithPermit",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"

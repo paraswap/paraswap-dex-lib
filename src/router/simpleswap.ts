@@ -23,12 +23,14 @@ import {
 
 type SimpleSwapParam = [ConstractSimpleData];
 
-type PartialContractSimpleData = Pick<
+export type PartialContractSimpleData = Pick<
   ConstractSimpleData,
   'callees' | 'exchangeData' | 'values' | 'startIndexes'
 >;
 
-abstract class SimpleRouterBase<RouterParam> implements IRouter<RouterParam> {
+export abstract class SimpleRouterBase<RouterParam>
+  implements IRouter<RouterParam>
+{
   paraswapInterface: Interface;
 
   constructor(
@@ -244,7 +246,7 @@ abstract class SimpleRouterBase<RouterParam> implements IRouter<RouterParam> {
   }
 }
 
-abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
+export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
   constructor(
     dexAdapterService: DexAdapterService,
     side: SwapSide,

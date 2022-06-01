@@ -3,13 +3,21 @@ import { MultiSwap } from './multiswap';
 import { MegaSwap } from './megaswap';
 import { Buy } from './buy';
 import { SimpleSwap, SimpleBuy } from './simpleswap';
+import { SimpleBuyNFT } from './simpleswapnft';
 import { DirectSwap } from './directswap';
 import { Adapters } from '../types';
 import { DexAdapterService } from '../dex';
 import { SwapSide } from '../constants';
 
 export class RouterService {
-  hybridRouters = [MultiSwap, MegaSwap, SimpleSwap, SimpleBuy, Buy];
+  hybridRouters = [
+    MultiSwap,
+    MegaSwap,
+    SimpleSwap,
+    SimpleBuy,
+    SimpleBuyNFT,
+    Buy,
+  ];
   hybridRouterMap: {
     [contractMethod: string]: IRouter<any>;
   };
