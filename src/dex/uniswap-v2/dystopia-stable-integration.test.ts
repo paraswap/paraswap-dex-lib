@@ -1,9 +1,10 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { DummyDexHelper } from '../../dex-helper/index';
+import { DummyDexHelper } from '../../dex-helper';
 import { Network, SwapSide } from '../../constants';
 import { DystopiaStable } from './dystopia-stable';
+// @ts-ignore
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 
