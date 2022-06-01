@@ -28,7 +28,7 @@ type PartialContractSimpleData = Pick<
   'callees' | 'exchangeData' | 'values' | 'startIndexes'
 >;
 
-abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
+abstract class SimpleRouterBase<RouterParam> implements IRouter<RouterParam> {
   paraswapInterface: Interface;
 
   constructor(
@@ -212,6 +212,47 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     };
   }
 
+  abstract build(
+    priceRoute: OptimalRate,
+    minMaxAmount: string,
+    userAddress: Address,
+    referrerAddress: Address | undefined,
+    partnerAddress: Address,
+    partnerFeePercent: string,
+    positiveSlippageToUser: boolean,
+    beneficiary: Address,
+    permit: string,
+    deadline: string,
+    uuid: string,
+  ): Promise<TxInfo<RouterParam>>;
+
+  protected getDepositWithdrawWethCallData(
+    srcAmountWeth: bigint,
+    destAmountWeth: bigint,
+  ) {
+    if (srcAmountWeth === 0n && destAmountWeth === 0n) return;
+
+    return (
+      this.dexAdapterService.getTxBuilderDexByKey(
+        this.wExchangeNetworkToKey[this.dexAdapterService.network],
+      ) as unknown as IWethDepositorWithdrawer
+    ).getDepositWithdrawParam(
+      srcAmountWeth.toString(),
+      destAmountWeth.toString(),
+      this.side,
+    );
+  }
+}
+
+abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
+  constructor(
+    dexAdapterService: DexAdapterService,
+    side: SwapSide,
+    contractMethodName: string,
+  ) {
+    super(dexAdapterService, side, contractMethodName);
+  }
+
   async build(
     priceRoute: OptimalRate,
     minMaxAmount: string,
@@ -275,35 +316,18 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       networkFee,
     };
   }
-
-  getDepositWithdrawWethCallData(
-    srcAmountWeth: bigint,
-    destAmountWeth: bigint,
-  ) {
-    if (srcAmountWeth === 0n && destAmountWeth === 0n) return;
-
-    return (
-      this.dexAdapterService.getTxBuilderDexByKey(
-        this.wExchangeNetworkToKey[this.dexAdapterService.network],
-      ) as unknown as IWethDepositorWithdrawer
-    ).getDepositWithdrawParam(
-      srcAmountWeth.toString(),
-      destAmountWeth.toString(),
-      this.side,
-    );
-  }
 }
 
 export class SimpleSwap extends SimpleRouter {
   static isBuy = false;
   constructor(dexAdapterService: DexAdapterService) {
-    super(dexAdapterService, SwapSide.SELL);
+    super(dexAdapterService, SwapSide.SELL, 'simpleSwap');
   }
 }
 
 export class SimpleBuy extends SimpleRouter {
   static isBuy = true;
   constructor(dexAdapterService: DexAdapterService) {
-    super(dexAdapterService, SwapSide.BUY);
+    super(dexAdapterService, SwapSide.BUY, 'simpleBuy');
   }
 }
