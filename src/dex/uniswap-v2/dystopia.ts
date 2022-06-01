@@ -15,7 +15,7 @@ import _ from 'lodash';
 
 export const DystopiaSharedPolygonConfig: DexParams = {
   subgraphURL:
-    'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia',
+    'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia-v2',
   factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
   // ParaSwap-compatible Router with stable pools support
   router: '0x0E98A8e5ca6067B98d10Eb6476ec30E232346402',
