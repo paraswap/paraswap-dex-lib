@@ -1,10 +1,18 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
+import { isHexString, hexConcat } from '@ethersproject/bytes';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import AugustusRFQABI from '../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
+import PermitABI from '../abi/permit/IERC20Permit.json';
+import PermitLegacyABI from '../abi/permit/IERC20PermitLegacy.json';
+
+const PERMIT_SIGHASH = new Interface(PermitABI).getSighash('permit');
+const PERMIT_LEGACY_SIGHASH = new Interface(PermitLegacyABI).getSighash(
+  'permit',
+);
 
 export type AugustusRFQOrderData = {
   nonceAndMeta: string;
@@ -18,7 +26,7 @@ export type AugustusRFQOrderData = {
   makerAmount: string;
   takerAmount: string;
   signature: string;
-  permitMakerAsset?: string; // TODO: add support
+  permitMakerAsset?: string;
 };
 
 type AugustusRFQOrderParam = {
@@ -141,7 +149,7 @@ export class AugustusRFQOrder
       swapFunctionParams,
     );
 
-    return this.buildSimpleParamWithoutWETHConversion(
+    const simpleParam = await this.buildSimpleParamWithoutWETHConversion(
       srcToken,
       srcAmount,
       destToken,
@@ -149,5 +157,27 @@ export class AugustusRFQOrder
       swapData,
       AUGUSTUS_RFQ_ADDRESS[this.network],
     );
+
+    if (data.permitMakerAsset) {
+      if (isNFTOrder) throw new Error('Permit not supported for NFTs');
+
+      let permitCalldata: string;
+      if (isHexString(data.permitMakerAsset, 7 * 32)) {
+        permitCalldata = hexConcat([PERMIT_SIGHASH, data.permitMakerAsset]);
+      } else if (isHexString(data.permitMakerAsset, 8 * 32)) {
+        permitCalldata = hexConcat([
+          PERMIT_LEGACY_SIGHASH,
+          data.permitMakerAsset,
+        ]);
+      } else {
+        throw new Error('Invalid permitMakerAsset');
+      }
+
+      simpleParam.callees.unshift(data.makerAsset);
+      simpleParam.calldata.unshift(permitCalldata);
+      simpleParam.values.unshift('0');
+    }
+
+    return simpleParam;
   }
 }
