@@ -7,7 +7,7 @@ import { Jarvis } from './jarvis';
 import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
-import { UniswapV3 } from './uniswap-v3';
+import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { Balancer } from './balancer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
@@ -58,7 +58,6 @@ const LegacyDexes = [
   OneInchLp,
   DodoV1,
   DodoV2,
-  UniswapV3,
   Jarvis,
   Lido,
 ];
@@ -80,6 +79,7 @@ const Dexes = [
   Platypus,
   GMX,
   WooFi,
+  UniswapV3,
 ];
 
 const AdapterNameAddressMap: {
