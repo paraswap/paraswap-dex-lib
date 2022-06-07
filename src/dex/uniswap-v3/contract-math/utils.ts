@@ -1,3 +1,5 @@
+import { boolean } from "yargs";
+
 export function _require(
   b: boolean,
   message: string,
@@ -24,4 +26,8 @@ export function _lt(x: bigint, y: bigint) {
 
 export function _gt(x: bigint, y: bigint) {
   return x > y ? 1n : 0n;
+}
+
+export function boolToBigint(condition: boolean): bigint {
+  return condition ? 1n : 0n;
 }
