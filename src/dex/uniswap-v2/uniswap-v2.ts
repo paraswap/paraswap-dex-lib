@@ -6,7 +6,6 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   AdapterExchangeParam,
   Address,
-  DexConfigMap,
   ExchangePrices,
   Log,
   Logger,
@@ -16,19 +15,24 @@ import {
   TxInfo,
 } from '../../types';
 import {
-  DexParams,
   UniswapData,
   UniswapDataLegacy,
   UniswapParam,
   UniswapPool,
   UniswapV2Data,
   UniswapV2Functions,
+  UniswapV2PoolOrderedParams,
 } from './types';
-import { IDex } from '../../dex/idex';
-import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
+import { IDex } from '../idex';
+import {
+  ETHER_ADDRESS,
+  Network,
+  NULL_ADDRESS,
+  subgraphTimeout,
+} from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDexHelper } from '../../dex-helper';
 import {
   wrapETH,
   getDexKeysWithNetwork,
@@ -48,16 +52,6 @@ import { BI_MAX_UINT } from '../../bigint-constants';
 export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
-
-export interface UniswapV2PoolOrderedParams {
-  tokenIn: string;
-  tokenOut: string;
-  reservesIn: string;
-  reservesOut: string;
-  fee: string;
-  direction: boolean;
-  exchange: string;
-}
 
 interface UniswapV2PoolState {
   reserves0: string;
@@ -84,8 +78,6 @@ export type UniswapV2Pair = {
   exchange?: Address;
   pool?: UniswapV2EventPool;
 };
-
-export const subgraphTimeout = 10 * 1000;
 
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => iface.parseLog(log);
@@ -693,13 +685,11 @@ export class UniswapV2
       liquidityUSD: parseFloat(pool.reserveUSD),
     }));
 
-    const pools = _.slice(
+    return _.slice(
       _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
       0,
       count,
     );
-
-    return pools;
   }
 
   protected fixPath(path: Address[], srcToken: Address, destToken: Address) {

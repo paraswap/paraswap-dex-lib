@@ -10,7 +10,6 @@ import {
   SwapSide,
 } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import * as log4js from 'log4js';
 
 describe('UniswapV2 E2E Polygon', () => {
   const network = Network.POLYGON;
@@ -1380,11 +1379,6 @@ describe('UniswapV2 E2E Polygon', () => {
     const dexKey = 'DystopiaStable';
 
     const usdAmount = '1000000';
-
-    /*log4js.configure({
-      appenders: { out: { type: 'stdout' } },
-      categories: { default: { appenders: ['out'], level: 'info' } },
-    });*/
 
     describe('simpleSwap', () => {
       it('Token -> Token', async () => {

@@ -66,3 +66,5 @@ export const AugustusAddress: { [nid: number]: Address } = {
   [Network.AVALANCHE]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.FANTOM]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
 };
+
+export const subgraphTimeout = 10 * 1000;

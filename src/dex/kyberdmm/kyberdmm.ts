@@ -1,8 +1,8 @@
-import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
+import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import _ from 'lodash';
-import { Network, SwapSide } from '../../constants';
+import { Network, subgraphTimeout, SwapSide } from '../../constants';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -17,8 +17,6 @@ import {
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
-  TxInfo,
-  Address,
 } from '../../types';
 import {
   KyberDmmData,
@@ -26,7 +24,7 @@ import {
   KyberDmmParam,
   TradeInfo,
 } from './types';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDexHelper } from '../../dex-helper';
 import { Adapters, KyberDmmConfig } from './config';
 import { Logger } from 'log4js';
 import { Contract } from 'web3-eth-contract';
@@ -37,8 +35,6 @@ import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-rou
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
-
-const subgraphTimeout = 10 * 1000;
 
 const iface = new Interface(kyberDmmPoolABI);
 const coder = new AbiCoder();

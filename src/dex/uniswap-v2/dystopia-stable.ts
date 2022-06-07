@@ -1,13 +1,12 @@
-import { UniswapV2, RESERVE_LIMIT, TOKEN_EXTRA_FEE } from './uniswap-v2';
+import { UniswapV2, RESERVE_LIMIT } from './uniswap-v2';
 import { Network, NULL_ADDRESS } from '../../constants';
 import { Address, DexConfigMap, PoolLiquidity, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import { DexParams } from './types';
 import { getDexKeysWithNetwork } from '../../utils';
-import dystopiaFactoryABI from '../../abi/dystopia/DystFactory.json';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import dystopiaFactoryABI from '../../abi/uniswap-v2/DystFactory.json';
+import { BI_POWS } from '../../bigint-constants';
 import {
-  Dystopia,
   DystopiaSharedPolygonConfig,
   getTopPoolsForTokenFiltered,
 } from './dystopia';
@@ -32,7 +31,7 @@ interface UniswapV2PoolOrderedParamsWithDecimals {
   decimalsOut: number;
 }
 
-const e18: bigint = BigInt(1e18);
+const e18 = BI_POWS[18];
 
 function _k(
   x: bigint,
@@ -92,7 +91,7 @@ function _closeTo(a: bigint, b: bigint, target: bigint) {
 
 export class DystopiaStable extends UniswapV2 {
   /// 0.05% swap fee
-  private static SWAP_FEE_FACTOR: bigint = BigInt(2000);
+  private static SWAP_FEE_FACTOR = 2000n;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DystopiaStableConfig);
@@ -173,25 +172,14 @@ export class DystopiaStable extends UniswapV2 {
     const reserveB = (reservesOutN * e18) / decimalsOutN;
     const amountInNorm = (amountIn * e18) / decimalsInN;
     const y = reserveB - _getY(amountInNorm + reserveA, xy, reserveB);
-    const returnAmount = (y * decimalsOutN) / e18;
-    return returnAmount;
+    return (y * decimalsOutN) / e18;
   }
 
-  // TODO Do we have to implement getBuyPrice? (buy side do not used in tests)
   async getBuyPrice(
     priceParams: UniswapV2PoolOrderedParamsWithDecimals,
     destAmount: bigint,
   ): Promise<bigint> {
-    const { reservesIn, reservesOut } = priceParams;
-
-    const numerator =
-      BigInt(reservesIn) * destAmount * DystopiaStable.SWAP_FEE_FACTOR;
-    const denominator =
-      (DystopiaStable.SWAP_FEE_FACTOR - 1n) *
-      (BigInt(reservesOut) - destAmount);
-
-    if (denominator <= 0n) return BI_MAX_UINT;
-    return 1n + numerator / denominator;
+    return 0n; // we have ready function to properly calculate buy price, so disable buy side by stubbing return price.
   }
 
   async getBuyPricePath(

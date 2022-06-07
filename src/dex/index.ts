@@ -31,7 +31,7 @@ import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Nerve } from './nerve/nerve';
-import { IDexHelper } from '../dex-helper/idex-helper';
+import { IDexHelper } from '../dex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
@@ -40,6 +40,7 @@ import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
+import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia';
 import { DystopiaStable } from './uniswap-v2/dystopia-stable';
 
@@ -80,6 +81,7 @@ const Dexes = [
   Nerve,
   Platypus,
   GMX,
+  WooFi,
   Dystopia,
   DystopiaStable,
 ];

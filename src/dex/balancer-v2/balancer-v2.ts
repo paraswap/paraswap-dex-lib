@@ -18,6 +18,7 @@ import {
   MAX_INT,
   MAX_UINT,
   Network,
+  subgraphTimeout,
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
@@ -25,8 +26,8 @@ import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
-import { IDex } from '../../dex/idex';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDex } from '../idex';
+import { IDexHelper } from '../../dex-helper';
 import {
   PoolState,
   SubgraphPoolBase,
@@ -34,10 +35,8 @@ import {
   BalancerParam,
   OptimizedBalancerV2Data,
   SwapTypes,
-  DexParams,
   PoolStateMap,
 } from './types';
-import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 
@@ -67,7 +66,6 @@ enum BalancerPoolTypes {
   ERC4626Linear = 'ERC4626Linear',
 }
 
-const subgraphTimeout = 1000 * 10;
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
