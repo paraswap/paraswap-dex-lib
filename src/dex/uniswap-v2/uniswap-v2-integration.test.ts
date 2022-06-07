@@ -6,8 +6,8 @@ import { Network, SwapSide } from '../../constants';
 import { UniswapV2 } from './uniswap-v2';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
-import { Dystopia } from './dystopia';
-import { DystopiaStable } from './dystopia-stable';
+import { Dystopia } from './dystopia/dystopia';
+import { DystopiaStable } from './dystopia/dystopia-stable';
 import { Tokens } from '../../../tests/constants-e2e';
 
 const WETH = {

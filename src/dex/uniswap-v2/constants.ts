@@ -4,8 +4,8 @@ import { MDEXConfig } from './mdex';
 import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
-import { DystopiaConfig } from './dystopia';
-import { DystopiaStableConfig } from './dystopia-stable';
+import { DystopiaConfig } from './dystopia/dystopia';
+import { DystopiaStableConfig } from './dystopia/dystopia-stable';
 
 // BakerySwap is removed from AllUniswapForks and UniswapForksWithNetwork
 // as it has a modified pool implementation which is not compatible with

@@ -1,11 +1,11 @@
-import { RESERVE_LIMIT, UniswapV2 } from './uniswap-v2';
-import { Network, NULL_ADDRESS, subgraphTimeout } from '../../constants';
-import { Address, DexConfigMap, PoolLiquidity, Token } from '../../types';
-import { IDexHelper } from '../../dex-helper';
-import { DexParams, UniswapV2PoolOrderedParams } from './types';
-import { getDexKeysWithNetwork } from '../../utils';
-import dystopiaFactoryABI from '../../abi/uniswap-v2/DystFactory.json';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import { RESERVE_LIMIT, UniswapV2 } from '../uniswap-v2';
+import { Network, NULL_ADDRESS, subgraphTimeout } from '../../../constants';
+import { Address, DexConfigMap, PoolLiquidity, Token } from '../../../types';
+import { IDexHelper } from '../../../dex-helper';
+import { DexParams, UniswapV2PoolOrderedParams } from '../types';
+import { getDexKeysWithNetwork } from '../../../utils';
+import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
+import { BI_MAX_UINT } from '../../../bigint-constants';
 import _ from 'lodash';
 
 export const DystopiaSharedPolygonConfig: DexParams = {
