@@ -9,3 +9,4 @@ export const BI_POWS = new Array(37)
 export const BI_MAX_INT = BigInt(MAX_INT);
 export const BI_MAX_UINT = 2n ** 256n - 1n;
 export const BI_MAX_UINT96 = 2n ** 96n - 1n;
+export const BI_MAX_UINT160 = 2n ** 160n - 1n;
