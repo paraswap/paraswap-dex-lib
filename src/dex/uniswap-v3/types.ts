@@ -1,11 +1,57 @@
 import { NumberAsString } from '../../types';
 import { Address } from '../../types';
 
+export type PositionInfo = {
+  liquidity: bigint;
+  feeGrowthInside0LastX128: bigint;
+  feeGrowthInside1LastX128: bigint;
+  tokensOwed0: bigint;
+  tokensOwed1: bigint;
+};
+
+export type OracleObservation = {
+  blockTimestamp: bigint;
+  tickCumulative: bigint;
+  secondsPerLiquidityCumulativeX128: bigint;
+  initialized: boolean;
+};
+
+export type OracleObservationCandidates = {
+  beforeOrAt: OracleObservation;
+  atOrAfter: OracleObservation;
+};
+
+export type TickInfo = {
+  liquidityGross: bigint;
+  liquidityNet: bigint;
+  feeGrowthOutside0X128: bigint;
+  feeGrowthOutside1X128: bigint;
+  tickCumulativeOutside: bigint;
+  secondsPerLiquidityOutsideX128: bigint;
+  secondsOutside: bigint;
+  initialized: boolean;
+};
+
+export type Slot0 = {
+  sqrtPriceX96: bigint;
+  tick: bigint;
+  observationIndex: number;
+  observationCardinality: number;
+  observationCardinalityNext: number;
+  feeProtocol: bigint;
+};
+
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  blockTimestamp: bigint;
+  tickSpacing: bigint;
+  fee: bigint;
+  slot0: Slot0;
+  liquidity: bigint;
+  tickBitMap: Record<NumberAsString, bigint>;
+  ticks: Record<NumberAsString, TickInfo>;
+  observations: OracleObservation[];
+  maxLiquidityPerTick: bigint;
+  positions: Record<string, PositionInfo>;
 };
 
 export type UniswapV3Data = {
