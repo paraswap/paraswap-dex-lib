@@ -43,7 +43,7 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
 
 const RESERVE_LIMIT = 2n ** 112n - 1n;
 
@@ -308,7 +308,7 @@ export class UniswapV2
       (BigInt(this.feeFactor) - BigInt(fee)) *
       (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= 0n) return BI_MAX_UINT;
+    if (denominator <= 0n) return BI_MAX_UINT256;
     return 1n + numerator / denominator;
   }
 
