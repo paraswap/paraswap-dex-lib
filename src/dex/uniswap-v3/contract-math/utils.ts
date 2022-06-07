@@ -1,7 +1,7 @@
 export function _require(
   b: boolean,
   message: string,
-  values?: Record<string, bigint>,
+  values?: Record<string, bigint | number>,
   condition?: string,
 ): void {
   let receivedValues = '';
