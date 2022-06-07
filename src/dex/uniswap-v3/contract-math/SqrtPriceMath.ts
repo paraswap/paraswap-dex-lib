@@ -161,4 +161,46 @@ export class SqrtPriceMath {
           FixedPoint96.Q96,
         );
   }
+
+  // Overloaded with different argument numbers
+  static _getAmount0DeltaO(
+    sqrtRatioAX96: bigint,
+    sqrtRatioBX96: bigint,
+    liquidity: bigint,
+  ) {
+    return liquidity < 0
+      ? -SqrtPriceMath.getAmount0Delta(
+          sqrtRatioAX96,
+          sqrtRatioBX96,
+          -liquidity,
+          false,
+        )
+      : SqrtPriceMath.getAmount0Delta(
+          sqrtRatioAX96,
+          sqrtRatioBX96,
+          liquidity,
+          true,
+        );
+  }
+
+  // Overloaded with different argument numbers
+  static getAmount1DeltaO(
+    sqrtRatioAX96: bigint,
+    sqrtRatioBX96: bigint,
+    liquidity: bigint,
+  ) {
+    return liquidity < 0
+      ? -SqrtPriceMath.getAmount1Delta(
+          sqrtRatioAX96,
+          sqrtRatioBX96,
+          -liquidity,
+          false,
+        )
+      : SqrtPriceMath.getAmount1Delta(
+          sqrtRatioAX96,
+          sqrtRatioBX96,
+          liquidity,
+          true,
+        );
+  }
 }
