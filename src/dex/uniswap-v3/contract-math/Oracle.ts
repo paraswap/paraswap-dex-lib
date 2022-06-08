@@ -32,14 +32,14 @@ export class Oracle {
     liquidity: bigint,
     cardinality: number,
     cardinalityNext: number,
-  ): { indexUpdated: number; cardinalityUpdated: number } {
+  ): [number, number] {
     const last = state.observations[index];
 
     if (last.blockTimestamp == state.blockTimestamp)
-      return { indexUpdated: index, cardinalityUpdated: cardinality };
+      return [index, cardinality];
 
-    let indexUpdated;
-    let cardinalityUpdated;
+    let indexUpdated = 0;
+    let cardinalityUpdated = 0;
 
     if (cardinalityNext > cardinality && index == cardinality - 1) {
       cardinalityUpdated = cardinalityNext;
@@ -55,7 +55,7 @@ export class Oracle {
       tick,
       liquidity,
     );
-    return { indexUpdated, cardinalityUpdated };
+    return [indexUpdated, cardinalityUpdated];
   }
 
   static grow(state: PoolState, current: number, next: number): number {
@@ -166,16 +166,12 @@ export class Oracle {
     index: number,
     liquidity: bigint,
     cardinality: number,
-  ): { tickCumulative: bigint; secondsPerLiquidityCumulativeX128: bigint } {
+  ): [bigint, bigint] {
     if (secondsAgo == 0n) {
       let last = state.observations[index];
       if (last.blockTimestamp != time)
         last = Oracle.transform(state, last, time, tick, liquidity);
-      return {
-        tickCumulative: last.tickCumulative,
-        secondsPerLiquidityCumulativeX128:
-          last.secondsPerLiquidityCumulativeX128,
-      };
+      return [last.tickCumulative, last.secondsPerLiquidityCumulativeX128];
     }
 
     const target = time - secondsAgo;
@@ -190,35 +186,31 @@ export class Oracle {
       cardinality,
     );
 
-    if (target == beforeOrAt.blockTimestamp) {
-      return {
-        tickCumulative: beforeOrAt.tickCumulative,
-        secondsPerLiquidityCumulativeX128:
-          beforeOrAt.secondsPerLiquidityCumulativeX128,
-      };
-    } else if (target == atOrAfter.blockTimestamp) {
-      return {
-        tickCumulative: atOrAfter.tickCumulative,
-        secondsPerLiquidityCumulativeX128:
-          atOrAfter.secondsPerLiquidityCumulativeX128,
-      };
+    if (target === beforeOrAt.blockTimestamp) {
+      return [
+        beforeOrAt.tickCumulative,
+        beforeOrAt.secondsPerLiquidityCumulativeX128,
+      ];
+    } else if (target === atOrAfter.blockTimestamp) {
+      return [
+        atOrAfter.tickCumulative,
+        atOrAfter.secondsPerLiquidityCumulativeX128,
+      ];
     } else {
       const observationTimeDelta =
         atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp;
       const targetDelta = target - beforeOrAt.blockTimestamp;
-      return {
-        tickCumulative:
-          beforeOrAt.tickCumulative +
+      return [
+        beforeOrAt.tickCumulative +
           ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative) /
             observationTimeDelta) *
             targetDelta,
-        secondsPerLiquidityCumulativeX128:
-          beforeOrAt.secondsPerLiquidityCumulativeX128 +
+        beforeOrAt.secondsPerLiquidityCumulativeX128 +
           ((atOrAfter.secondsPerLiquidityCumulativeX128 -
             beforeOrAt.secondsPerLiquidityCumulativeX128) *
             targetDelta) /
             observationTimeDelta,
-      };
+      ];
     }
   }
 }
