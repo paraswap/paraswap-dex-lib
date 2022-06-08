@@ -1,14 +1,6 @@
 import { NumberAsString } from '../../types';
 import { Address } from '../../types';
 
-export type PositionInfo = {
-  liquidity: bigint;
-  feeGrowthInside0LastX128: bigint;
-  feeGrowthInside1LastX128: bigint;
-  tokensOwed0: bigint;
-  tokensOwed1: bigint;
-};
-
 export type OracleObservation = {
   blockTimestamp: bigint;
   tickCumulative: bigint;
