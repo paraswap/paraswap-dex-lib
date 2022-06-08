@@ -17,7 +17,7 @@ import { BI_POWS } from '../../../bigint-constants';
 import {
   DystopiaSharedPolygonConfig,
   getTopPoolsForTokenFiltered,
-} from './dystopia';
+} from './dystopia-volatile';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 
 export const DystopiaStableConfig: DexConfigMap<DexParams> = {

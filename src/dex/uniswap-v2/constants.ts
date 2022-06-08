@@ -4,7 +4,7 @@ import { MDEXConfig } from './mdex';
 import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
-import { DystopiaConfig } from './dystopia/dystopia';
+import { DystopiaConfig } from './dystopia/dystopia-volatile';
 import { DystopiaStableConfig } from './dystopia/dystopia-stable';
 
 // BakerySwap is removed from AllUniswapForks and UniswapForksWithNetwork

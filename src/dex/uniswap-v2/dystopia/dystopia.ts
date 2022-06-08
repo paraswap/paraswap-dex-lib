@@ -1,116 +1,46 @@
 import { RESERVE_LIMIT, UniswapV2 } from '../uniswap-v2';
 import { Network, NULL_ADDRESS, subgraphTimeout } from '../../../constants';
-import { Address, DexConfigMap, PoolLiquidity, Token } from '../../../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexConfigMap,
+  ExchangePrices,
+  PoolLiquidity,
+  SimpleExchangeParam,
+  Token,
+} from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
-import { DexParams, UniswapV2PoolOrderedParams } from '../types';
-import { getDexKeysWithNetwork } from '../../../utils';
+import {
+  DexParams,
+  UniswapData,
+  UniswapV2Data,
+  UniswapV2PoolOrderedParams,
+} from '../types';
+import { getDexKeysWithNetwork, wrapETH } from '../../../utils';
 import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
 import { BI_MAX_UINT } from '../../../bigint-constants';
 import _ from 'lodash';
-
-export const DystopiaSharedPolygonConfig: DexParams = {
-  subgraphURL:
-    'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia-v2',
-  factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
-  // ParaSwap-compatible Router with stable pools support
-  router: '0x0E98A8e5ca6067B98d10Eb6476ec30E232346402',
-  initCode:
-    '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
-  feeCode: 5,
-  poolGasCost: 350 * 1000, // TODO check swap max gas cost
-};
+import { NumberAsString, SwapSide } from 'paraswap-core';
 
 export const DystopiaConfig: DexConfigMap<DexParams> = {
   Dystopia: {
-    [Network.POLYGON]: DystopiaSharedPolygonConfig,
+    [Network.POLYGON]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia-v2',
+      factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
+      // ParaSwap-compatible Router with stable pools support
+      router: '0x0E98A8e5ca6067B98d10Eb6476ec30E232346402',
+      initCode:
+        '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
+      feeCode: 5,
+      poolGasCost: 350 * 1000, // TODO check swap max gas cost
+    },
   },
 };
 
-export async function getTopPoolsForTokenFiltered(
-  subgraphURL: string | undefined,
-  dexHelper: IDexHelper,
-  dexKey: string,
-  tokenAddress: Address,
-  count: number,
-  stable: boolean,
-): Promise<PoolLiquidity[]> {
-  if (!subgraphURL) return [];
-  const query = `
-      query ($token: Bytes!, $count: Int, $stable: Boolean) {
-        pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, isStable: $stable, reserve0_gt: 1, reserve1_gt: 1}) {
-          id
-          token0 {
-            id
-            decimals
-          }
-          token1 {
-            id
-            decimals
-          }
-          reserveUSD
-        }
-        pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, isStable: $stable, reserve0_gt: 1, reserve1_gt: 1}) {
-          id
-          token0 {
-            id
-            decimals
-          }
-          token1 {
-            id
-            decimals
-          }
-          reserveUSD
-        }
-      }`;
-
-  const { data } = await dexHelper.httpRequest.post(
-    subgraphURL,
-    {
-      query,
-      variables: { token: tokenAddress.toLowerCase(), count, stable },
-    },
-    subgraphTimeout,
-  );
-
-  if (!(data && data.pools0 && data.pools1))
-    throw new Error("Couldn't fetch the pools from the subgraph");
-  const pools0 = _.map(data.pools0, pool => ({
-    exchange: dexKey,
-    address: pool.id.toLowerCase(),
-    connectorTokens: [
-      {
-        address: pool.token1.id.toLowerCase(),
-        decimals: parseInt(pool.token1.decimals),
-      },
-    ],
-    liquidityUSD: parseFloat(pool.reserveUSD),
-  }));
-
-  const pools1 = _.map(data.pools1, pool => ({
-    exchange: dexKey,
-    address: pool.id.toLowerCase(),
-    connectorTokens: [
-      {
-        address: pool.token0.id.toLowerCase(),
-        decimals: parseInt(pool.token0.decimals),
-      },
-    ],
-    liquidityUSD: parseFloat(pool.reserveUSD),
-  }));
-
-  const pools = _.slice(
-    _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
-    0,
-    count,
-  );
-
-  console.log('pools', pools.length);
-  return pools;
-}
-
 export class Dystopia extends UniswapV2 {
   /// 0.05% swap fee
-  private static SWAP_FEE_FACTOR: bigint = BigInt(2000);
+  private static SWAP_FEE_FACTOR: 2000n;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DystopiaConfig);
@@ -207,13 +137,150 @@ export class Dystopia extends UniswapV2 {
     tokenAddress: Address,
     count: number,
   ): Promise<PoolLiquidity[]> {
-    return getTopPoolsForTokenFiltered(
+    if (!this.subgraphURL) return [];
+    const query = `query ($token: Bytes!, $count: Int) {
+      pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+        id
+        isStable
+        token0 {
+          id
+          decimals
+        }
+        token1 {
+          id
+          decimals
+        }
+        reserveUSD
+      }
+      pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+        id
+        isStable
+        token0 {
+          id
+          decimals
+        }
+        token1 {
+          id
+          decimals
+        }
+        reserveUSD
+      }
+    }`;
+
+    const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
-      this.dexHelper,
-      this.dexKey,
-      tokenAddress,
+      {
+        query,
+        variables: { token: tokenAddress.toLowerCase(), count },
+      },
+      subgraphTimeout,
+    );
+
+    if (!(data && data.pools0 && data.pools1))
+      throw new Error("Couldn't fetch the pools from the subgraph");
+    const pools0 = _.map(data.pools0, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token1.id.toLowerCase(),
+          decimals: parseInt(pool.token1.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.reserveUSD),
+    }));
+
+    const pools1 = _.map(data.pools1, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token0.id.toLowerCase(),
+          decimals: parseInt(pool.token0.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.reserveUSD),
+    }));
+
+    return _.slice(
+      _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
+      0,
       count,
-      false,
+    );
+  }
+
+  async getPricesVolume(
+    srcToken: Token,
+    destToken: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    blockNumber: number,
+    limitPools?: string[],
+  ): Promise<null | ExchangePrices<UniswapV2Data>> {
+    if (side === SwapSide.BUY) return null;
+    return super.getPricesVolume(
+      srcToken,
+      destToken,
+      amounts,
+      side,
+      blockNumber,
+      limitPools,
+    );
+  }
+
+  async getPoolIdentifiers(
+    _from: Token,
+    _to: Token,
+    side: SwapSide,
+    blockNumber: number,
+  ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
+    const from = wrapETH(_from, this.network);
+    const to = wrapETH(_to, this.network);
+
+    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      return [];
+    }
+
+    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
+      .sort((a, b) => (a > b ? 1 : -1))
+      .join('_');
+
+    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+    const poolIdentifierUniswap = poolIdentifier + '_u';
+    const poolIdentifierStable = poolIdentifier + '_s';
+    return [poolIdentifierUniswap, poolIdentifierStable];
+  }
+
+  async getSimpleParam(
+    src: Address,
+    dest: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: UniswapData,
+    side: SwapSide,
+  ): Promise<SimpleExchangeParam> {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    return super.getSimpleParam(src, dest, srcAmount, destAmount, data, side);
+  }
+
+  getAdapterParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    toAmount: NumberAsString, // required for buy case
+    data: UniswapData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    return super.getAdapterParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      toAmount,
+      data,
+      side,
     );
   }
 }

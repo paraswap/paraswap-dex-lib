@@ -6,7 +6,7 @@ import { Network, SwapSide } from '../../constants';
 import { UniswapV2 } from './uniswap-v2';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
-import { Dystopia } from './dystopia/dystopia';
+import { DystopiaVolatile } from './dystopia/dystopia-volatile';
 import { DystopiaStable } from './dystopia/dystopia-stable';
 import { Tokens } from '../../../tests/constants-e2e';
 
@@ -76,7 +76,7 @@ describe('Dystopia', function () {
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.POLYGON);
       const blocknumber = await dexHelper.provider.getBlockNumber();
-      const dystopia = new Dystopia(Network.POLYGON, dexKey, dexHelper);
+      const dystopia = new DystopiaVolatile(Network.POLYGON, dexKey, dexHelper);
       const pools = await dystopia.getPoolIdentifiers(
         tokenA,
         tokenB,
@@ -109,7 +109,7 @@ describe('Dystopia', function () {
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.POLYGON);
-      const dystopia = new Dystopia(Network.POLYGON, dexKey, dexHelper);
+      const dystopia = new DystopiaVolatile(Network.POLYGON, dexKey, dexHelper);
 
       const poolLiquidity = await dystopia.getTopPoolsForToken(
         tokenA.address,
