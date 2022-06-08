@@ -1,6 +1,6 @@
 import { PoolState } from '../types';
 import { LiquidityMath } from './LiquidityMath';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class Tick {
   static getFeeGrowthInside(

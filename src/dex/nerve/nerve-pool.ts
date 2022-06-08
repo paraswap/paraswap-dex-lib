@@ -8,8 +8,9 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { EventHandler, NervePoolConfig, PoolState } from './types';
 import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
-import { bigIntify, typeCastPoolState } from './utils';
+import { typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
+import { bigIntify } from '../../utils';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   readonly math: NervePoolMath;

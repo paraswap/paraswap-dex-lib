@@ -75,6 +75,22 @@ export function getBigIntPow(decimals: number): bigint {
   return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
 }
 
-export const _require = (b: boolean, message: string) => {
-  if (!b) throw new Error(message);
-};
+export function _require(
+  b: boolean,
+  message: string,
+  values?: Record<string, unknown>,
+  condition?: string,
+): void {
+  let receivedValues = '';
+  if (values && condition) {
+    const keyValueStr = Object.entries(values)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ');
+    receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated`;
+  }
+  if (!b) throw new Error(`${receivedValues}${message}`);
+}
+
+export const bigIntify = (val: any) => BigInt(val);
+
+export const stringify = (val: any) => val.toString();

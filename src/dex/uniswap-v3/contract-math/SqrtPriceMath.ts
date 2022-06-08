@@ -2,7 +2,7 @@ import { BI_MAX_UINT160 } from '../../../bigint-constants';
 import { FixedPoint96 } from './FixedPoint96';
 import { FullMath } from './FullMath';
 import { UnsafeMath } from './UnsafeMath';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class SqrtPriceMath {
   static getNextSqrtPriceFromAmount0RoundingUp(

@@ -1,5 +1,5 @@
 import { BI_MAX_UINT256 } from '../../../bigint-constants';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class FullMath {
   static mulDiv(a: bigint, b: bigint, denominator: bigint) {

@@ -4,7 +4,7 @@ import { PoolState, PositionInfo } from '../types';
 import { FixedPoint128 } from './FixedPoint128';
 import { FullMath } from './FullMath';
 import { LiquidityMath } from './LiquidityMath';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class Position {
   static get(

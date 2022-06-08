@@ -5,7 +5,7 @@ import {
   BI_MAX_UINT64,
   BI_MAX_UINT8,
 } from '../../../bigint-constants';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class BitMath {
   static mostSignificantBit(x: bigint): bigint {

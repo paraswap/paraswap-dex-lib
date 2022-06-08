@@ -3,7 +3,7 @@ import {
   OracleObservationCandidates,
   PoolState,
 } from '../types';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class Oracle {
   static transform(

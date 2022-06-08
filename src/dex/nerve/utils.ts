@@ -1,9 +1,6 @@
 import { DeepReadonly } from 'ts-essentials';
+import { bigIntify } from '../../utils';
 import { PoolState } from './types';
-
-export const bigIntify = (val: any) => BigInt(val);
-
-export const stringify = (val: any) => val.toString();
 
 export class MathUtil {
   static within1(a: bigint, b: bigint) {

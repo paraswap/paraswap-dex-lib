@@ -10,7 +10,7 @@ import { SwapMath } from './SwapMath';
 import { Tick } from './Tick';
 import { TickBitMap } from './TickBitMap';
 import { TickMath } from './TickMath';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 type ModifyPositionParams = {
   owner: Address;

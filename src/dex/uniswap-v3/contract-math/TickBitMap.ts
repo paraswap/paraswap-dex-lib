@@ -1,7 +1,7 @@
 import { BI_MAX_UINT8 } from '../../../bigint-constants';
 import { PoolState } from '../types';
 import { BitMath } from './BitMath';
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class TickBitMap {
   static position(tick: bigint): { wordPos: bigint; bitPos: bigint } {

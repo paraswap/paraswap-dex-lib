@@ -1,4 +1,4 @@
-import { _require } from './utils';
+import { _require } from '../../../utils';
 
 export class LiquidityMath {
   static addDelta(x: bigint, y: bigint): bigint {

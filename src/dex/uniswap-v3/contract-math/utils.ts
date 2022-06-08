@@ -1,19 +1,3 @@
-export function _require(
-  b: boolean,
-  message: string,
-  values?: Record<string, unknown>,
-  condition?: string,
-): void {
-  let receivedValues = '';
-  if (values && condition) {
-    const keyValueStr = Object.entries(values)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(', ');
-    receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated`;
-  }
-  if (!b) throw new Error(`${receivedValues}${message}`);
-}
-
 export function _mulmod(x: bigint, y: bigint, m: bigint): bigint {
   return m === 0n ? 0n : (x * y) % m;
 }
