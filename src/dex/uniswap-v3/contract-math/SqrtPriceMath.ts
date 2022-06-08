@@ -69,7 +69,7 @@ export class SqrtPriceMath {
     }
   }
 
-  getNextSqrtPriceFromInput(
+  static getNextSqrtPriceFromInput(
     sqrtPX96: bigint,
     liquidity: bigint,
     amountIn: bigint,
