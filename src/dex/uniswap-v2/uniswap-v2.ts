@@ -258,7 +258,7 @@ export class UniswapV2
     return undefined;
   }
 
-  private async addPool(
+  protected async addPool(
     pair: UniswapV2Pair,
     reserves0: string,
     reserves1: string,
