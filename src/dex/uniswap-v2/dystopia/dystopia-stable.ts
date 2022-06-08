@@ -1,8 +1,16 @@
 import { UniswapV2, RESERVE_LIMIT } from '../uniswap-v2';
 import { Network, NULL_ADDRESS } from '../../../constants';
-import { Address, DexConfigMap, PoolLiquidity, Token } from '../../../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexConfigMap,
+  ExchangePrices,
+  PoolLiquidity,
+  SimpleExchangeParam,
+  Token,
+} from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
-import { DexParams } from '../types';
+import { DexParams, UniswapData, UniswapV2Data } from '../types';
 import { getDexKeysWithNetwork } from '../../../utils';
 import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
 import { BI_POWS } from '../../../bigint-constants';
@@ -10,6 +18,7 @@ import {
   DystopiaSharedPolygonConfig,
   getTopPoolsForTokenFiltered,
 } from './dystopia';
+import { NumberAsString, SwapSide } from 'paraswap-core';
 
 export const DystopiaStableConfig: DexConfigMap<DexParams> = {
   DystopiaStable: {
@@ -231,6 +240,66 @@ export class DystopiaStable extends UniswapV2 {
       tokenAddress,
       count,
       true,
+    );
+  }
+
+  async getPricesVolume(
+    srcToken: Token,
+    destToken: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    blockNumber: number,
+    limitPools?: string[],
+  ): Promise<null | ExchangePrices<UniswapV2Data>> {
+    if (side === SwapSide.BUY) return null;
+    return super.getPricesVolume(
+      srcToken,
+      destToken,
+      amounts,
+      side,
+      blockNumber,
+      limitPools,
+    );
+  }
+
+  async getPoolIdentifiers(
+    _from: Token,
+    _to: Token,
+    side: SwapSide,
+    blockNumber: number,
+  ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+    return super.getPoolIdentifiers(_from, _to, side, blockNumber);
+  }
+
+  async getSimpleParam(
+    src: Address,
+    dest: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: UniswapData,
+    side: SwapSide,
+  ): Promise<SimpleExchangeParam> {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    return super.getSimpleParam(src, dest, srcAmount, destAmount, data, side);
+  }
+
+  getAdapterParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    toAmount: NumberAsString, // required for buy case
+    data: UniswapData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    return super.getAdapterParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      toAmount,
+      data,
+      side,
     );
   }
 }
