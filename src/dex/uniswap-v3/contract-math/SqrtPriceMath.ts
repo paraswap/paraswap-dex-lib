@@ -184,7 +184,7 @@ export class SqrtPriceMath {
   }
 
   // Overloaded with different argument numbers
-  static getAmount1DeltaO(
+  static _getAmount1DeltaO(
     sqrtRatioAX96: bigint,
     sqrtRatioBX96: bigint,
     liquidity: bigint,
