@@ -22,7 +22,7 @@ export class UniswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
-  protected eventPools: UniswapV3EventPool;
+  protected eventPools: UniswapV3EventPool[] = [];
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -42,12 +42,6 @@ export class UniswapV3
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new UniswapV3EventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
   }
 
   async initializePricing(blockNumber: number) {

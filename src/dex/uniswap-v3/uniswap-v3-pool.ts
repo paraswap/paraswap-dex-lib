@@ -1,10 +1,14 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Log, Logger, BlockHeader } from '../../types';
+import { Log, Logger, BlockHeader, Token, Address } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { UniswapV3Data, PoolState } from './types';
-import { UniswapV3Config } from './config';
+import { PoolState } from './types';
+import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
+import { bigIntify, stringify, _require } from '../../utils';
+import { FullMath } from './contract-math/FullMath';
+import { FixedPoint128 } from './contract-math/FixedPoint128';
+import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -25,31 +29,31 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected uniswapV3Iface = new Interface(
-      '' /* TODO: Import and put here UniswapV3 ABI */,
-    ), // TODO: add any additional params required for event subscriber
+    protected uniswapV3Iface = new Interface(UniswapV3RouterABI),
+    private readonly poolAddress: Address,
+    private readonly token0: Token,
+    private readonly token1: Token,
+    private readonly feeCode: number,
   ) {
-    super(parentName, logger);
-
-    // TODO: make logDecoder decode logs that
+    super(
+      `${parentName}_${token0.symbol || token0.address}_${
+        token1.symbol || token1.address
+      }_pool`,
+      logger,
+    );
     this.logDecoder = (log: Log) => this.uniswapV3Iface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
+    this.addressesSubscribed = [poolAddress];
 
     // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    this.handlers['Swap'] = this.handleSwapEvent.bind(this);
+    this.handlers['Burn'] = this.handleBurnEvent.bind(this);
+    this.handlers['Mint'] = this.handleMintEvent.bind(this);
+    this.handlers['Flash'] = this.handleFlashEvent.bind(this);
+    this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
+    this.handlers['IncreaseObservationCardinalityNext'] =
+      this.handleIncreaseObservationCardinalityNextEvent.bind(this);
   }
 
-  /**
-   * The function is called every time any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
   protected processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
@@ -74,15 +78,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenerate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subscriber at blocknumber
-   */
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     // TODO: complete me!
     return {
@@ -108,8 +103,108 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     };
   }
 
-  // Its just a dummy example
-  handleMyEvent(event: any, pool: PoolState, log: Log) {
+  handleSwapEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    return pool;
+  }
+
+  handleBurnEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const amount = bigIntify(event.args.amount);
+    const tickLower = bigIntify(event.args.tickLower);
+    const tickUpper = bigIntify(event.args.tickUpper);
+
+    // For state is relevant just to update the ticks and other things
+    uniswapV3Math._modifyPosition(pool, {
+      tickLower,
+      tickUpper,
+      liquidityDelta: -amount,
+    });
+
+    return pool;
+  }
+
+  handleMintEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const amount = bigIntify(event.args.amount);
+    const tickLower = bigIntify(event.args.tickLower);
+    const tickUpper = bigIntify(event.args.tickUpper);
+
+    // For state is relevant just to update the ticks and other things
+    uniswapV3Math._modifyPosition(pool, {
+      tickLower,
+      tickUpper,
+      liquidityDelta: amount,
+    });
+
+    return pool;
+  }
+
+  handleFlashEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const paid0 = bigIntify(event.args.paid0);
+    const paid1 = bigIntify(event.args.paid1);
+
+    if (paid0 > 0n) {
+      const feeProtocol0 = pool.slot0.feeProtocol % 16n;
+      const fees0 = feeProtocol0 === 0n ? 0n : paid0 / feeProtocol0;
+      pool.feeGrowthGlobal0X128 += FullMath.mulDiv(
+        paid0 - fees0,
+        FixedPoint128.Q128,
+        pool.liquidity,
+      );
+    }
+    if (paid1 > 0n) {
+      const feeProtocol1 = pool.slot0.feeProtocol >> 4n;
+      const fees1 = feeProtocol1 == 0n ? 0n : paid1 / feeProtocol1;
+      pool.feeGrowthGlobal1X128 += FullMath.mulDiv(
+        paid1 - fees1,
+        FixedPoint128.Q128,
+        pool.liquidity,
+      );
+    }
+
+    return pool;
+  }
+
+  handleSetFeeProtocolEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
+    const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
+    pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
+    return pool;
+  }
+
+  handleIncreaseObservationCardinalityNextEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    pool.slot0.observationCardinalityNext = parseInt(
+      event.args.observationCardinalityNextNew,
+      10,
+    );
     return pool;
   }
 }

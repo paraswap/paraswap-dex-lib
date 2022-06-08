@@ -1,10 +1,8 @@
-import { Address } from '../../../types';
-import { PoolState, PositionInfo } from '../types';
+import { PoolState } from '../types';
 import { FixedPoint128 } from './FixedPoint128';
 import { FullMath } from './FullMath';
 import { LiquidityMath } from './LiquidityMath';
 import { Oracle } from './Oracle';
-import { Position } from './Position';
 import { SqrtPriceMath } from './SqrtPriceMath';
 import { SwapMath } from './SwapMath';
 import { Tick } from './Tick';
@@ -13,7 +11,6 @@ import { TickMath } from './TickMath';
 import { _require } from '../../../utils';
 
 type ModifyPositionParams = {
-  owner: Address;
   tickLower: bigint;
   tickUpper: bigint;
   liquidityDelta: bigint;
@@ -236,60 +233,16 @@ class UniswapV3Math {
     return { amount0, amount1 };
   }
 
-  mint(
-    state: PoolState,
-    recipient: Address,
-    tickLower: bigint,
-    tickUpper: bigint,
-    amount: bigint,
-  ): [bigint, bigint] {
-    _require(amount > 0, '', { amount }, 'amount > 0');
-    const [, amount0Int, amount1Int] = this._modifyPosition(state, {
-      owner: recipient,
-      tickLower,
-      tickUpper,
-      liquidityDelta: amount,
-    });
-    return [amount0Int, amount1Int];
-  }
-
-  burn(
-    state: PoolState,
-    owner: Address,
-    tickLower: bigint,
-    tickUpper: bigint,
-    amount: bigint,
-  ): [bigint, bigint] {
-    const [position, amount0Int, amount1Int] = this._modifyPosition(state, {
-      owner,
-      tickLower,
-      tickUpper,
-      liquidityDelta: -amount,
-    });
-
-    const amount0 = -amount0Int;
-    const amount1 = -amount1Int;
-
-    if (amount0 > 0n || amount1 > 0n) {
-      [position.tokensOwed0, position.tokensOwed1] = [
-        position.tokensOwed0 + amount0,
-        position.tokensOwed1 + amount1,
-      ];
-    }
-    return [amount0, amount1];
-  }
-
-  private _modifyPosition(
+  _modifyPosition(
     state: PoolState,
     params: ModifyPositionParams,
-  ): [PositionInfo, bigint, bigint] {
+  ): [bigint, bigint] {
     this.checkTicks(params.tickLower, params.tickUpper);
 
     const _slot0 = state.slot0;
 
-    const position = this._updatePosition(
+    this._updatePosition(
       state,
-      params.owner,
       params.tickLower,
       params.tickUpper,
       params.liquidityDelta,
@@ -300,8 +253,6 @@ class UniswapV3Math {
     let amount1 = 0n;
     if (params.liquidityDelta !== 0n) {
       if (_slot0.tick < params.tickLower) {
-        // current tick is below the passed range; liquidity can only become in range by crossing from left to
-        // right, when we'll need _more_ token0 (it's becoming more valuable) so user must provide it
         amount0 = SqrtPriceMath._getAmount0DeltaO(
           TickMath.getSqrtRatioAtTick(params.tickLower),
           TickMath.getSqrtRatioAtTick(params.tickUpper),
@@ -310,7 +261,6 @@ class UniswapV3Math {
       } else if (_slot0.tick < params.tickUpper) {
         const liquidityBefore = state.liquidity;
 
-        // write an oracle entry
         [state.slot0.observationIndex, state.slot0.observationCardinality] =
           Oracle.write(
             state,
@@ -345,19 +295,16 @@ class UniswapV3Math {
         );
       }
     }
-    return [position, amount0, amount1];
+    return [amount0, amount1];
   }
 
   private _updatePosition(
     state: PoolState,
-    owner: Address,
     tickLower: bigint,
     tickUpper: bigint,
     liquidityDelta: bigint,
     tick: bigint,
-  ): PositionInfo {
-    const position = Position.get(state, owner, tickLower, tickUpper);
-
+  ): void {
     const _feeGrowthGlobal0X128 = state.feeGrowthGlobal0X128;
     const _feeGrowthGlobal1X128 = state.feeGrowthGlobal1X128;
 
@@ -412,23 +359,6 @@ class UniswapV3Math {
       }
     }
 
-    const [feeGrowthInside0X128, feeGrowthInside1X128] =
-      Tick.getFeeGrowthInside(
-        state,
-        tickLower,
-        tickUpper,
-        tick,
-        _feeGrowthGlobal0X128,
-        _feeGrowthGlobal1X128,
-      );
-
-    Position.update(
-      position,
-      liquidityDelta,
-      feeGrowthInside0X128,
-      feeGrowthInside1X128,
-    );
-
     // clear any tick data that is no longer needed
     if (liquidityDelta < 0n) {
       if (flippedLower) {
@@ -438,7 +368,6 @@ class UniswapV3Math {
         Tick.clear(state, tickUpper);
       }
     }
-    return position;
   }
 
   private checkTicks(tickLower: bigint, tickUpper: bigint) {
