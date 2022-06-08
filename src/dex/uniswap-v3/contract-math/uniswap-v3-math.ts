@@ -17,7 +17,7 @@ type ModifyPositionParams = {
 };
 
 class UniswapV3Math {
-  swap(
+  querySwap(
     poolState: PoolState,
     zeroForOne: boolean,
     amountSpecified: bigint,
@@ -61,9 +61,6 @@ class UniswapV3Math {
       amountCalculated: 0n,
       sqrtPriceX96: slot0Start.sqrtPriceX96,
       tick: slot0Start.tick,
-      feeGrowthGlobalX128: zeroForOne
-        ? poolState.feeGrowthGlobal0X128
-        : poolState.feeGrowthGlobal1X128,
       protocolFee: 0n,
       liquidity: cache.liquidityStart,
     };
@@ -135,13 +132,6 @@ class UniswapV3Math {
         state.protocolFee += delta;
       }
 
-      if (state.liquidity > 0n)
-        state.feeGrowthGlobalX128 += FullMath.mulDiv(
-          step.feeAmount,
-          FixedPoint128.Q128,
-          state.liquidity,
-        );
-
       if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
         if (step.initialized) {
           if (!cache.computedLatestObservation) {
@@ -160,12 +150,7 @@ class UniswapV3Math {
           let liquidityNet = Tick.cross(
             poolState,
             step.tickNext,
-            zeroForOne
-              ? state.feeGrowthGlobalX128
-              : poolState.feeGrowthGlobal0X128,
-            zeroForOne
-              ? poolState.feeGrowthGlobal1X128
-              : state.feeGrowthGlobalX128,
+
             cache.secondsPerLiquidityCumulativeX128,
             cache.tickCumulative,
             cache.blockTimestamp,
@@ -184,42 +169,6 @@ class UniswapV3Math {
       }
     }
 
-    // update tick and write an oracle entry if the tick change
-    if (state.tick != slot0Start.tick) {
-      const [observationIndex, observationCardinality] = Oracle.write(
-        poolState,
-        slot0Start.observationIndex,
-        cache.blockTimestamp,
-        slot0Start.tick,
-        cache.liquidityStart,
-        slot0Start.observationCardinality,
-        slot0Start.observationCardinalityNext,
-      );
-
-      [
-        poolState.slot0.sqrtPriceX96,
-        poolState.slot0.tick,
-        poolState.slot0.observationIndex,
-        poolState.slot0.observationCardinality,
-      ] = [
-        state.sqrtPriceX96,
-        state.tick,
-        observationIndex,
-        observationCardinality,
-      ];
-    } else {
-      poolState.slot0.sqrtPriceX96 = state.sqrtPriceX96;
-    }
-
-    if (cache.liquidityStart != state.liquidity)
-      poolState.liquidity = state.liquidity;
-
-    if (zeroForOne) {
-      poolState.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-    } else {
-      poolState.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
-    }
-
     const [amount0, amount1] =
       zeroForOne == exactInput
         ? [
@@ -231,6 +180,39 @@ class UniswapV3Math {
             amountSpecified - state.amountSpecifiedRemaining,
           ];
     return { amount0, amount1 };
+  }
+
+  swapFromEvent(
+    poolState: PoolState,
+    newSqrtPriceX96: bigint,
+    newTick: bigint,
+    newLiquidity: bigint,
+  ): void {
+    const slot0Start = poolState.slot0;
+
+    if (slot0Start.tick !== newTick) {
+      const [observationIndex, observationCardinality] = Oracle.write(
+        poolState,
+        slot0Start.observationIndex,
+        this._blockTimestamp(poolState),
+        slot0Start.tick,
+        poolState.liquidity,
+        slot0Start.observationCardinality,
+        slot0Start.observationCardinalityNext,
+      );
+
+      [
+        poolState.slot0.sqrtPriceX96,
+        poolState.slot0.tick,
+        poolState.slot0.observationIndex,
+        poolState.slot0.observationCardinality,
+      ] = [newSqrtPriceX96, newTick, observationIndex, observationCardinality];
+    } else {
+      poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
+    }
+
+    if (poolState.liquidity !== newLiquidity)
+      poolState.liquidity = newLiquidity;
   }
 
   _modifyPosition(
@@ -305,9 +287,6 @@ class UniswapV3Math {
     liquidityDelta: bigint,
     tick: bigint,
   ): void {
-    const _feeGrowthGlobal0X128 = state.feeGrowthGlobal0X128;
-    const _feeGrowthGlobal1X128 = state.feeGrowthGlobal1X128;
-
     // if we need to update the ticks, do it
     let flippedLower = false;
     let flippedUpper = false;
@@ -329,8 +308,6 @@ class UniswapV3Math {
         tickLower,
         tick,
         liquidityDelta,
-        _feeGrowthGlobal0X128,
-        _feeGrowthGlobal1X128,
         secondsPerLiquidityCumulativeX128,
         tickCumulative,
         time,
@@ -342,8 +319,6 @@ class UniswapV3Math {
         tickUpper,
         tick,
         liquidityDelta,
-        _feeGrowthGlobal0X128,
-        _feeGrowthGlobal1X128,
         secondsPerLiquidityCumulativeX128,
         tickCumulative,
         time,

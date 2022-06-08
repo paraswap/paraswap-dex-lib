@@ -16,8 +16,6 @@ export type OracleObservationCandidates = {
 export type TickInfo = {
   liquidityGross: bigint;
   liquidityNet: bigint;
-  feeGrowthOutside0X128: bigint;
-  feeGrowthOutside1X128: bigint;
   tickCumulativeOutside: bigint;
   secondsPerLiquidityOutsideX128: bigint;
   secondsOutside: bigint;
@@ -39,13 +37,11 @@ export type PoolState = {
   fee: bigint;
   slot0: Slot0;
   liquidity: bigint;
+  maxLiquidityPerTick: bigint;
   tickBitMap: Record<NumberAsString, bigint>;
   ticks: Record<NumberAsString, TickInfo>;
   observations: OracleObservation[];
-  maxLiquidityPerTick: bigint;
-  positions: Record<string, PositionInfo>;
-  feeGrowthGlobal0X128: bigint;
-  feeGrowthGlobal1X128: bigint;
+  isValid: boolean;
 };
 
 export type UniswapV3Data = {

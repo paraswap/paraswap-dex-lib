@@ -8,8 +8,6 @@ export class Tick {
     tick: bigint,
     tickCurrent: bigint,
     liquidityDelta: bigint,
-    feeGrowthGlobal0X128: bigint,
-    feeGrowthGlobal1X128: bigint,
     secondsPerLiquidityCumulativeX128: bigint,
     tickCumulative: bigint,
     time: bigint,
@@ -35,8 +33,6 @@ export class Tick {
 
     if (liquidityGrossBefore == 0n) {
       if (tick <= tickCurrent) {
-        info.feeGrowthOutside0X128 = feeGrowthGlobal0X128;
-        info.feeGrowthOutside1X128 = feeGrowthGlobal1X128;
         info.secondsPerLiquidityOutsideX128 = secondsPerLiquidityCumulativeX128;
         info.tickCumulativeOutside = tickCumulative;
         info.secondsOutside = time;
@@ -59,17 +55,11 @@ export class Tick {
   static cross(
     state: PoolState,
     tick: bigint,
-    feeGrowthGlobal0X128: bigint,
-    feeGrowthGlobal1X128: bigint,
     secondsPerLiquidityCumulativeX128: bigint,
     tickCumulative: bigint,
     time: bigint,
   ): bigint {
     const info = state.ticks[Number(tick)];
-    info.feeGrowthOutside0X128 =
-      feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
-    info.feeGrowthOutside1X128 =
-      feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
     info.secondsPerLiquidityOutsideX128 =
       secondsPerLiquidityCumulativeX128 - info.secondsPerLiquidityOutsideX128;
     info.tickCumulativeOutside = tickCumulative - info.tickCumulativeOutside;
