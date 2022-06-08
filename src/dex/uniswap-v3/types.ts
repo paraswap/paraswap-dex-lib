@@ -52,6 +52,8 @@ export type PoolState = {
   observations: OracleObservation[];
   maxLiquidityPerTick: bigint;
   positions: Record<string, PositionInfo>;
+  feeGrowthGlobal0X128: bigint;
+  feeGrowthGlobal1X128: bigint;
 };
 
 export type UniswapV3Data = {

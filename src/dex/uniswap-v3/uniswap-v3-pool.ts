@@ -103,6 +103,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       observations: [],
       positions: {},
       maxLiquidityPerTick: 0n,
+      feeGrowthGlobal0X128: 0n,
+      feeGrowthGlobal1X128: 0n,
     };
   }
 

@@ -1,9 +1,7 @@
-import { boolean } from 'yargs';
-
 export function _require(
   b: boolean,
   message: string,
-  values?: Record<string, bigint | number>,
+  values?: Record<string, unknown>,
   condition?: string,
 ): void {
   let receivedValues = '';
