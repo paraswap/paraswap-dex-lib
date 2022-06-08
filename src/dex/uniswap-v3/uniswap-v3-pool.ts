@@ -5,10 +5,9 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
-import { bigIntify, stringify, _require } from '../../utils';
-import { FullMath } from './contract-math/FullMath';
-import { FixedPoint128 } from './contract-math/FixedPoint128';
+import { bigIntify } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { TICK_BIT_MAP_REQUEST_AMOUNT } from './constants';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -23,6 +22,11 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
+
+  private _encodedFirstStepStateCalldata?: {
+    target: Address;
+    callData: string;
+  }[];
 
   constructor(
     protected parentName: string,
@@ -41,6 +45,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       }_pool`,
       logger,
     );
+    this.poolAddress = poolAddress.toLowerCase();
     this.logDecoder = (log: Log) => this.uniswapV3Iface.parseLog(log);
     this.addressesSubscribed = [poolAddress];
 
@@ -48,7 +53,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
     this.handlers['Burn'] = this.handleBurnEvent.bind(this);
     this.handlers['Mint'] = this.handleMintEvent.bind(this);
-    this.handlers['Flash'] = this.handleFlashEvent.bind(this);
     this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
     this.handlers['IncreaseObservationCardinalityNext'] =
       this.handleIncreaseObservationCardinalityNextEvent.bind(this);
@@ -78,8 +82,84 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
+  private _getFirstStepStateCallData() {
+    const target = this.poolAddress;
+    if (!this._encodedFirstStepStateCalldata) {
+      const callData = [
+        {
+          target,
+          callData: this.uniswapV3Iface.encodeFunctionData('slot0', []),
+        },
+        {
+          target,
+          callData: this.uniswapV3Iface.encodeFunctionData('liquidity', []),
+        },
+        {
+          target,
+          callData: this.uniswapV3Iface.encodeFunctionData('fee', []),
+        },
+        {
+          target,
+          callData: this.uniswapV3Iface.encodeFunctionData('tickSpacing', []),
+        },
+        {
+          target,
+          callData: this.uniswapV3Iface.encodeFunctionData(
+            'maxLiquidityPerTick',
+            [],
+          ),
+        },
+      ].concat(
+        new Array(TICK_BIT_MAP_REQUEST_AMOUNT).fill(undefined).map((_0, i) => ({
+          target,
+          callData: this.uniswapV3Iface.encodeFunctionData('tickBitMap', [i]),
+        })),
+      );
+
+      this._encodedFirstStepStateCalldata = callData;
+    }
+    return this._encodedFirstStepStateCalldata;
+  }
+
+  private _getSecondStepStateCallData(
+    observationIndex: number,
+    ticks: bigint[],
+  ) {
+    if (ticks.length > 100) {
+      this.logger.error(
+        `Error ${this.parentName} [_getSecondStepStateCallData]: tick.length=${ticks.length} is too bog. Consider batching multicall requests`,
+      );
+    }
+    const target = this.poolAddress;
+    return [
+      {
+        target,
+        callData: this.uniswapV3Iface.encodeFunctionData('observations', []),
+      },
+    ].concat(
+      new Array(ticks.length).fill(undefined).map(tick => ({
+        target,
+        callData: this.uniswapV3Iface.encodeFunctionData('ticks', [tick]),
+      })),
+    );
+  }
+
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    // TODO: complete me!
+    const callData = this._getFirstStepStateCallData();
+
+    const data = await this.dexHelper.multiContract.methods
+      .tryAggregate(false, callData)
+      .call({}, blockNumber || 'latest');
+
+    // const [
+    //   slot0,
+    //   liquidity,
+    //   fee,
+    //   tickSpacing,
+    //   maxLiquidityPerTick,
+    //   tickBitMaps,
+    // ] = data.map(data: [boolean, any] => data);
+
     return {
       blockTimestamp: 0n,
       tickSpacing: 0n,
@@ -96,10 +176,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       tickBitMap: {},
       ticks: {},
       observations: [],
-      positions: {},
       maxLiquidityPerTick: 0n,
-      feeGrowthGlobal0X128: 0n,
-      feeGrowthGlobal1X128: 0n,
+      isValid: true,
     };
   }
 
@@ -109,6 +187,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     log: Log,
     blockHeader: BlockHeader,
   ) {
+    const newSqrtPriceX96 = bigIntify(event.args.sqrtPriceX96);
+    const newTick = bigIntify(event.args.tick);
+    const newLiquidity = bigIntify(event.args.liquidity);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    uniswapV3Math.swapFromEvent(pool, newSqrtPriceX96, newTick, newLiquidity);
+
     return pool;
   }
 
@@ -121,13 +206,22 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount = bigIntify(event.args.amount);
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    // For state is relevant just to update the ticks and other things
-    uniswapV3Math._modifyPosition(pool, {
-      tickLower,
-      tickUpper,
-      liquidityDelta: -amount,
-    });
+    try {
+      // For state is relevant just to update the ticks and other things
+      uniswapV3Math._modifyPosition(pool, {
+        tickLower,
+        tickUpper,
+        liquidityDelta: -amount,
+      });
+    } catch (e) {
+      this.logger.error(
+        'Unexpected error while handling Burn event for UniswapV3',
+        e,
+      );
+      pool.isValid = false;
+    }
 
     return pool;
   }
@@ -141,43 +235,21 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount = bigIntify(event.args.amount);
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    // For state is relevant just to update the ticks and other things
-    uniswapV3Math._modifyPosition(pool, {
-      tickLower,
-      tickUpper,
-      liquidityDelta: amount,
-    });
-
-    return pool;
-  }
-
-  handleFlashEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const paid0 = bigIntify(event.args.paid0);
-    const paid1 = bigIntify(event.args.paid1);
-
-    if (paid0 > 0n) {
-      const feeProtocol0 = pool.slot0.feeProtocol % 16n;
-      const fees0 = feeProtocol0 === 0n ? 0n : paid0 / feeProtocol0;
-      pool.feeGrowthGlobal0X128 += FullMath.mulDiv(
-        paid0 - fees0,
-        FixedPoint128.Q128,
-        pool.liquidity,
+    try {
+      // For state is relevant just to update the ticks and other things
+      uniswapV3Math._modifyPosition(pool, {
+        tickLower,
+        tickUpper,
+        liquidityDelta: amount,
+      });
+    } catch (e) {
+      this.logger.error(
+        'Unexpected error while handling Mint event for UniswapV3',
+        e,
       );
-    }
-    if (paid1 > 0n) {
-      const feeProtocol1 = pool.slot0.feeProtocol >> 4n;
-      const fees1 = feeProtocol1 == 0n ? 0n : paid1 / feeProtocol1;
-      pool.feeGrowthGlobal1X128 += FullMath.mulDiv(
-        paid1 - fees1,
-        FixedPoint128.Q128,
-        pool.liquidity,
-      );
+      pool.isValid = false;
     }
 
     return pool;

@@ -1,0 +1,1 @@
+export const TICK_BIT_MAP_REQUEST_AMOUNT = 50;
