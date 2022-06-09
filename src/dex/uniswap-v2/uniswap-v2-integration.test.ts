@@ -98,7 +98,7 @@ describe('Dystopia', function () {
         pools,
       );
       console.log(
-        '${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ',
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
         poolPrices,
       );
 
@@ -152,7 +152,7 @@ describe('Dystopia', function () {
         pools,
       );
       console.log(
-        '${TokenASymbol} <> ${TokenBSymbol} Pool Prices: ',
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
         poolPrices,
       );
 

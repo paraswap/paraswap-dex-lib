@@ -128,16 +128,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   ): Promise<DeepReadonly<UniswapV2PoolState>> {
     let calldata = [
       {
-        target: this.token0.address,
-        callData: erc20iface.encodeFunctionData('balanceOf', [
-          this.poolAddress,
-        ]),
-      },
-      {
-        target: this.token1.address,
-        callData: erc20iface.encodeFunctionData('balanceOf', [
-          this.poolAddress,
-        ]),
+        target: this.poolAddress,
+        callData: iface.encodeFunctionData('getReserves', []),
       },
     ];
 
@@ -145,22 +137,21 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    // const data = await this.dexHelper.multiContract.callStatic.aggregate(
-    //   calldata,
-    //   {
-    //     blockTag: blockNumber,
-    //   },
-    // );
+    const data: { returnData: any[] } =
+      await this.dexHelper.multiContract.methods
+        .aggregate(calldata)
+        .call({}, blockNumber);
 
-    const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
-      .call({}, blockNumber);
+    const decodedData = coder.decode(
+      ['uint112', 'uint112', 'uint32'],
+      data.returnData[0],
+    );
 
     return {
-      reserves0: coder.decode(['uint256'], data.returnData[0])[0].toString(),
-      reserves1: coder.decode(['uint256'], data.returnData[1])[0].toString(),
+      reserves0: decodedData[0].toString(),
+      reserves1: decodedData[1].toString(),
       feeCode: this.dynamicFees
-        ? this.feesMultiCallDecoder!(data.returnData[2])
+        ? this.feesMultiCallDecoder!(data.returnData[1])
         : this.feeCode,
     };
   }

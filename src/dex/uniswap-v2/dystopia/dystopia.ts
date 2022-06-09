@@ -173,7 +173,7 @@ export class Dystopia extends UniswapV2 {
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
-      if (side === SwapSide.BUY) return null;
+      if (side === SwapSide.BUY) return null; // Buy side not implemented yet
       const from = wrapETH(_from, this.network);
       const to = wrapETH(_to, this.network);
 
@@ -188,19 +188,22 @@ export class Dystopia extends UniswapV2 {
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
-      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+      const resultPromises = [false, true].map(async stable => {
+        const poolIdentifier =
+          `${this.dexKey}_${tokenAddress}` + this.poolPostfix(false);
 
-      if (limitPools && limitPools.every(p => p !== poolIdentifier))
-        return null;
+        if (limitPools && limitPools.every(p => p !== poolIdentifier))
+          return null;
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
+        await this.batchCatchUpPairs([[from, to]], blockNumber);
 
-      const pairParamsPromises = [false, true].map(async stable =>
-        this.getDystopiaPairOrderedParams(from, to, blockNumber, stable),
-      );
-      const pairParams = await Promise.all(pairParamsPromises);
+        const pairParam = await this.getDystopiaPairOrderedParams(
+          from,
+          to,
+          blockNumber,
+          stable,
+        );
 
-      const resultPoolsPromises = pairParams.map(async pairParam => {
         if (!pairParam) return null;
 
         const unitAmount = getBigIntPow(
@@ -250,11 +253,11 @@ export class Dystopia extends UniswapV2 {
           poolAddresses: [pairParam.exchange],
         };
       });
-      const resultPools = await Promise.all(resultPoolsPromises);
+      const resultPools = (await Promise.all(
+        resultPromises,
+      )) as ExchangePrices<UniswapV2Data>;
       const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
-      console.log('resultPoolsFiltered', resultPoolsFiltered);
-      return null;
-      // return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
+      return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
