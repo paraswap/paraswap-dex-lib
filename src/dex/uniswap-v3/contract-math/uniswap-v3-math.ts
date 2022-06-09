@@ -1,4 +1,4 @@
-import { PoolState } from '../types';
+import { PoolState, TickInfo } from '../types';
 import { FixedPoint128 } from './FixedPoint128';
 import { FullMath } from './FullMath';
 import { LiquidityMath } from './LiquidityMath';
@@ -9,6 +9,8 @@ import { Tick } from './Tick';
 import { TickBitMap } from './TickBitMap';
 import { TickMath } from './TickMath';
 import { _require } from '../../../utils';
+import { DeepReadonly } from 'ts-essentials';
+import { NumberAsString } from 'paraswap-core';
 
 type ModifyPositionParams = {
   tickLower: bigint;
@@ -18,11 +20,14 @@ type ModifyPositionParams = {
 
 class UniswapV3Math {
   querySwap(
-    poolState: PoolState,
+    poolState: DeepReadonly<PoolState>,
+    // While calculating, ticks are changing, so to not change the actual state,
+    // we use copy
+    ticksCopy: Record<NumberAsString, TickInfo>,
     zeroForOne: boolean,
     amountSpecified: bigint,
     sqrtPriceLimitX96: bigint,
-  ): { amount0: bigint; amount1: bigint } {
+  ): [bigint, bigint] {
     _require(
       amountSpecified != 0n,
       'AS',
@@ -148,9 +153,8 @@ class UniswapV3Math {
             cache.computedLatestObservation = true;
           }
           let liquidityNet = Tick.cross(
-            poolState,
+            ticksCopy,
             step.tickNext,
-
             cache.secondsPerLiquidityCumulativeX128,
             cache.tickCumulative,
             cache.blockTimestamp,
@@ -169,17 +173,15 @@ class UniswapV3Math {
       }
     }
 
-    const [amount0, amount1] =
-      zeroForOne == exactInput
-        ? [
-            amountSpecified - state.amountSpecifiedRemaining,
-            state.amountCalculated,
-          ]
-        : [
-            state.amountCalculated,
-            amountSpecified - state.amountSpecifiedRemaining,
-          ];
-    return { amount0, amount1 };
+    return zeroForOne == exactInput
+      ? [
+          amountSpecified - state.amountSpecifiedRemaining,
+          state.amountCalculated,
+        ]
+      : [
+          state.amountCalculated,
+          amountSpecified - state.amountSpecifiedRemaining,
+        ];
   }
 
   swapFromEvent(
@@ -366,7 +368,7 @@ class UniswapV3Math {
     );
   }
 
-  private _blockTimestamp(state: PoolState) {
+  private _blockTimestamp(state: DeepReadonly<PoolState>) {
     // Here we should have truncated to uint32 byte, but because in near future (132 years) it will not
     // be a problem, so I leave it as it is
     return state.blockTimestamp;

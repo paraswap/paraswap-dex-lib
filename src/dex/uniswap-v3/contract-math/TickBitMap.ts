@@ -2,6 +2,7 @@ import { BI_MAX_UINT8 } from '../../../bigint-constants';
 import { PoolState } from '../types';
 import { BitMath } from './BitMath';
 import { _require } from '../../../utils';
+import { DeepReadonly } from 'ts-essentials';
 
 export class TickBitMap {
   static position(tick: bigint): { wordPos: bigint; bitPos: bigint } {
@@ -17,11 +18,11 @@ export class TickBitMap {
     );
     const { wordPos, bitPos } = TickBitMap.position(tick / tickSpacing);
     const mask = 1n << bitPos;
-    state.tickBitMap[wordPos.toString()] ^= mask;
+    state.tickBitmap[wordPos.toString()] ^= mask;
   }
 
   static nextInitializedTickWithinOneWord(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     tick: bigint,
     tickSpacing: bigint,
     lte: boolean,
@@ -35,7 +36,7 @@ export class TickBitMap {
     if (lte) {
       const { wordPos, bitPos } = TickBitMap.position(compressed);
       const mask = (1n << bitPos) - 1n + (1n << bitPos);
-      const masked = state.tickBitMap[wordPos.toString()] & mask;
+      const masked = state.tickBitmap[wordPos.toString()] & mask;
 
       initialized = masked != 0n;
       next = initialized
@@ -46,7 +47,7 @@ export class TickBitMap {
       // start from the word of the next tick, since the current tick state doesn't matter
       const { wordPos, bitPos } = TickBitMap.position(compressed + 1n);
       const mask = ~((1n << bitPos) - 1n);
-      const masked = state.tickBitMap[wordPos.toString()] & mask;
+      const masked = state.tickBitmap[wordPos.toString()] & mask;
 
       initialized = masked != 0n;
       next = initialized

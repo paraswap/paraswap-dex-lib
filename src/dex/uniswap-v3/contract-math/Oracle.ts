@@ -4,10 +4,11 @@ import {
   PoolState,
 } from '../types';
 import { _require } from '../../../utils';
+import { DeepReadonly } from 'ts-essentials';
 
 export class Oracle {
   static transform(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     last: OracleObservation,
     blockTimestamp: bigint,
     tick: bigint,
@@ -76,7 +77,7 @@ export class Oracle {
   }
 
   static binarySearch(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     time: bigint,
     target: bigint,
     index: number,
@@ -118,7 +119,7 @@ export class Oracle {
   }
 
   static getSurroundingObservations(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     time: bigint,
     target: bigint,
     tick: bigint,
@@ -159,7 +160,7 @@ export class Oracle {
   }
 
   static observeSingle(
-    state: PoolState,
+    state: DeepReadonly<PoolState>,
     time: bigint,
     secondsAgo: bigint,
     tick: bigint,

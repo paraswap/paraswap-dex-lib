@@ -1,6 +1,7 @@
-import { PoolState } from '../types';
+import { PoolState, TickInfo } from '../types';
 import { LiquidityMath } from './LiquidityMath';
 import { _require } from '../../../utils';
+import { NumberAsString } from 'paraswap-core';
 
 export class Tick {
   static update(
@@ -53,13 +54,13 @@ export class Tick {
   }
 
   static cross(
-    state: PoolState,
+    ticks: Record<NumberAsString, TickInfo>,
     tick: bigint,
     secondsPerLiquidityCumulativeX128: bigint,
     tickCumulative: bigint,
     time: bigint,
   ): bigint {
-    const info = state.ticks[Number(tick)];
+    const info = ticks[Number(tick)];
     info.secondsPerLiquidityOutsideX128 =
       secondsPerLiquidityCumulativeX128 - info.secondsPerLiquidityOutsideX128;
     info.tickCumulativeOutside = tickCumulative - info.tickCumulativeOutside;
