@@ -41,6 +41,7 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
+import { Maverick } from './maverick/maverick';
 
 const LegacyDexes = [
   Curve,
@@ -80,6 +81,7 @@ const Dexes = [
   Platypus,
   GMX,
   WooFi,
+  Maverick,
 ];
 
 const AdapterNameAddressMap: {
