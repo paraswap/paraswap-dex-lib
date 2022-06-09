@@ -1,4 +1,4 @@
-import { RESERVE_LIMIT, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
+import { TOKEN_EXTRA_FEE, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
 import { Network, NULL_ADDRESS, subgraphTimeout } from '../../../constants';
 import {
   AdapterExchangeParam,
@@ -10,18 +10,13 @@ import {
   Token,
 } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
-import {
-  DexParams,
-  UniswapData,
-  UniswapV2Data,
-  UniswapV2PoolOrderedParams,
-} from '../types';
-import { getDexKeysWithNetwork, wrapETH } from '../../../utils';
+import { DexParams, UniswapData, UniswapV2Data } from '../types';
+import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../../utils';
 import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
-import { BI_MAX_UINT } from '../../../bigint-constants';
 import _ from 'lodash';
 import { NumberAsString, SwapSide } from 'paraswap-core';
-import { SWAP_FEE_FACTOR } from './dystopia-constants';
+import { DystopiaUniswapV2Pool } from './dystopia-uniswap-v2-pool';
+import { DystopiaStablePool } from './dystopia-stable-pool';
 
 export const DystopiaConfig: DexConfigMap<DexParams> = {
   Dystopia: {
@@ -41,7 +36,7 @@ export const DystopiaConfig: DexConfigMap<DexParams> = {
 
 // to calculate prices for stable pool, we need decimals of the stable tokens
 // so, we are extending UniswapV2PoolOrderedParams with token decimals
-export interface UniswapV2PoolOrderedParamsWithDecimals {
+export interface DystopiaPoolOrderedParams {
   tokenIn: string;
   tokenOut: string;
   reservesIn: string;
@@ -51,6 +46,7 @@ export interface UniswapV2PoolOrderedParamsWithDecimals {
   exchange: string;
   decimalsIn: number;
   decimalsOut: number;
+  stable: boolean;
 }
 
 export class Dystopia extends UniswapV2 {
@@ -151,36 +147,122 @@ export class Dystopia extends UniswapV2 {
   // but little changed in contract.
   // So we repeat formulas here to have same output.
   async getSellPrice(
-    priceParams: UniswapV2PoolOrderedParams,
+    priceParams: DystopiaPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
-    const { reservesIn, reservesOut } = priceParams;
-
-    if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return 0n;
-    }
-
-    const amountInWithFee = srcAmount - srcAmount / SWAP_FEE_FACTOR;
-
-    const numerator = amountInWithFee * BigInt(reservesOut);
-
-    const denominator = BigInt(reservesIn) * SWAP_FEE_FACTOR + amountInWithFee;
-
-    return denominator === 0n ? 0n : numerator / denominator;
+    return priceParams.stable
+      ? DystopiaStablePool.getSellPrice(priceParams, srcAmount)
+      : DystopiaUniswapV2Pool.getSellPrice(priceParams, srcAmount);
   }
 
   async getBuyPrice(
-    priceParams: UniswapV2PoolOrderedParams,
-    destAmount: bigint,
+    priceParams: DystopiaPoolOrderedParams,
+    srcAmount: bigint,
   ): Promise<bigint> {
-    const { reservesIn, reservesOut } = priceParams;
+    if (priceParams.stable) throw new Error(`Buy not supported`);
+    return DystopiaUniswapV2Pool.getBuyPrice(priceParams, srcAmount);
+  }
 
-    const numerator = BigInt(reservesIn) * destAmount * SWAP_FEE_FACTOR;
-    const denominator =
-      (SWAP_FEE_FACTOR - 1n) * (BigInt(reservesOut) - destAmount);
+  async getPricesVolume(
+    _from: Token,
+    _to: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    blockNumber: number,
+    // list of pool identifiers to use for pricing, if undefined use all pools
+    limitPools?: string[],
+  ): Promise<ExchangePrices<UniswapV2Data> | null> {
+    try {
+      if (side === SwapSide.BUY) return null;
+      const from = wrapETH(_from, this.network);
+      const to = wrapETH(_to, this.network);
 
-    if (denominator <= 0n) return BI_MAX_UINT;
-    return 1n + numerator / denominator;
+      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+        return null;
+      }
+
+      const tokenAddress = [
+        from.address.toLowerCase(),
+        to.address.toLowerCase(),
+      ]
+        .sort((a, b) => (a > b ? 1 : -1))
+        .join('_');
+
+      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+
+      if (limitPools && limitPools.every(p => p !== poolIdentifier))
+        return null;
+
+      await this.batchCatchUpPairs([[from, to]], blockNumber);
+
+      const pairParamsPromises = [false, true].map(async stable =>
+        this.getDystopiaPairOrderedParams(from, to, blockNumber, stable),
+      );
+      const pairParams = await Promise.all(pairParamsPromises);
+
+      const resultPoolsPromises = pairParams.map(async pairParam => {
+        if (!pairParam) return null;
+
+        const unitAmount = getBigIntPow(
+          // @ts-ignore
+          side == SwapSide.BUY ? to.decimals : from.decimals,
+        );
+        const unit =
+          // @ts-ignore
+          side == SwapSide.BUY
+            ? await this.getBuyPricePath(unitAmount, [pairParam])
+            : await this.getSellPricePath(unitAmount, [pairParam]);
+
+        const prices =
+          // @ts-ignore
+          side == SwapSide.BUY
+            ? await Promise.all(
+                amounts.map(amount =>
+                  this.getBuyPricePath(amount, [pairParam]),
+                ),
+              )
+            : await Promise.all(
+                amounts.map(amount =>
+                  this.getSellPricePath(amount, [pairParam]),
+                ),
+              );
+
+        return {
+          prices: prices,
+          unit: unit,
+          data: {
+            router: this.router,
+            path: [from.address.toLowerCase(), to.address.toLowerCase()],
+            factory: this.factoryAddress,
+            initCode: this.initCode,
+            feeFactor: this.feeFactor,
+            pools: [
+              {
+                address: pairParam.exchange,
+                fee: parseInt(pairParam.fee),
+                direction: pairParam.direction,
+              },
+            ],
+          },
+          exchange: this.dexKey,
+          poolIdentifier,
+          gasCost: this.poolGasCost,
+          poolAddresses: [pairParam.exchange],
+        };
+      });
+      const resultPools = await Promise.all(resultPoolsPromises);
+      const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
+      console.log('resultPoolsFiltered', resultPoolsFiltered);
+      return null;
+      // return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
+    } catch (e) {
+      if (blockNumber === 0)
+        this.logger.error(
+          `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
+        );
+      this.logger.error(`Error_getPrices:`, e);
+      return null;
+    }
   }
 
   async getTopPoolsForToken(
@@ -261,39 +343,56 @@ export class Dystopia extends UniswapV2 {
     );
   }
 
-  // Same as at uniswap-v2-pool.json, but extended with decimals
-  async getPairOrderedParams(
+  // Same as at uniswap-v2-pool.json, but extended with decimals and stable
+
+  async getDystopiaPairOrderedParams(
     from: Token,
     to: Token,
     blockNumber: number,
-  ): Promise<UniswapV2PoolOrderedParamsWithDecimals | null> {
-    const params = await super.getPairOrderedParams(from, to, blockNumber);
-    if (!params) return null;
-
+    stable: boolean,
+  ): Promise<DystopiaPoolOrderedParams | null> {
+    const pair = await this.findDystopiaPair(from, to, stable);
+    if (!(pair && pair.pool && pair.exchange)) return null;
+    const pairState = pair.pool.getState(blockNumber);
+    if (!pairState) {
+      this.logger.error(
+        `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
+          from.symbol || from.address
+        } ${to.symbol || to.address}`,
+      );
+      return null;
+    }
+    const fee = (
+      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
+    ).toString();
+    const pairReversed =
+      pair.token1.address.toLowerCase() === from.address.toLowerCase();
+    if (pairReversed) {
+      return {
+        tokenIn: from.address,
+        tokenOut: to.address,
+        reservesIn: pairState.reserves1,
+        reservesOut: pairState.reserves0,
+        fee,
+        direction: false,
+        exchange: pair.exchange,
+        decimalsIn: from.decimals,
+        decimalsOut: to.decimals,
+        stable,
+      };
+    }
     return {
-      ...params,
+      tokenIn: from.address,
+      tokenOut: to.address,
+      reservesIn: pairState.reserves0,
+      reservesOut: pairState.reserves1,
+      fee,
+      direction: true,
+      exchange: pair.exchange,
       decimalsIn: from.decimals,
       decimalsOut: to.decimals,
+      stable,
     };
-  }
-
-  async getPricesVolume(
-    srcToken: Token,
-    destToken: Token,
-    amounts: bigint[],
-    side: SwapSide,
-    blockNumber: number,
-    limitPools?: string[],
-  ): Promise<null | ExchangePrices<UniswapV2Data>> {
-    if (side === SwapSide.BUY) return null;
-    return super.getPricesVolume(
-      srcToken,
-      destToken,
-      amounts,
-      side,
-      blockNumber,
-      limitPools,
-    );
   }
 
   async getPoolIdentifiers(

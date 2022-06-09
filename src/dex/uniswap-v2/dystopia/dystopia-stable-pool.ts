@@ -1,6 +1,6 @@
 import { RESERVE_LIMIT } from '../uniswap-v2';
 import { BI_POWS } from '../../../bigint-constants';
-import { UniswapV2PoolOrderedParamsWithDecimals } from './dystopia';
+import { DystopiaPoolOrderedParams } from './dystopia';
 import { SWAP_FEE_FACTOR } from './dystopia-constants';
 
 const e18 = BI_POWS[18];
@@ -62,8 +62,8 @@ function _closeTo(a: bigint, b: bigint, target: bigint) {
 }
 
 export class DystopiaStablePool {
-  async getSellPrice(
-    priceParams: UniswapV2PoolOrderedParamsWithDecimals,
+  static async getSellPrice(
+    priceParams: DystopiaPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
     const { reservesIn, reservesOut, decimalsIn, decimalsOut } = priceParams;

@@ -7,7 +7,7 @@ export class DystopiaUniswapV2Pool {
   // Dystopia non-stable pools has almost same formula like uniswap2,
   // but little changed in contract.
   // So we repeat formulas here to have same output.
-  async getSellPrice(
+  static async getSellPrice(
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
@@ -26,7 +26,7 @@ export class DystopiaUniswapV2Pool {
     return denominator === 0n ? 0n : numerator / denominator;
   }
 
-  async getBuyPrice(
+  static async getBuyPrice(
     priceParams: UniswapV2PoolOrderedParams,
     destAmount: bigint,
   ): Promise<bigint> {
