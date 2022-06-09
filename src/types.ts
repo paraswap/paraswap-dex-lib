@@ -222,3 +222,5 @@ export type MultiCallInput = {
 };
 
 export type MultiCallOutput = string;
+
+export type MultiCallV2Output = { success: boolean; returnData: string };

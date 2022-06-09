@@ -38,7 +38,7 @@ export type PoolState = {
   slot0: Slot0;
   liquidity: bigint;
   maxLiquidityPerTick: bigint;
-  tickBitMap: Record<NumberAsString, bigint>;
+  tickBitmap: Record<NumberAsString, bigint>;
   ticks: Record<NumberAsString, TickInfo>;
   observations: OracleObservation[];
   isValid: boolean;
@@ -46,19 +46,19 @@ export type PoolState = {
 
 export type UniswapV3Data = {
   // ExactInputSingleParams
-  fee: number;
-  deadline?: number;
-  sqrtPriceLimitX96?: NumberAsString;
+  fee: bigint;
 };
 
 export type DexParams = {
   router: Address;
+  factory: Address;
+  supportedFees: bigint[];
 };
 
 export type UniswapV3SellParam = {
   tokenIn: Address;
   tokenOut: Address;
-  fee: number;
+  fee: bigint;
   recipient: Address;
   deadline: number;
   amountIn: NumberAsString;
@@ -69,7 +69,7 @@ export type UniswapV3SellParam = {
 export type UniswapV3BuyParam = {
   tokenIn: Address;
   tokenOut: Address;
-  fee: number;
+  fee: bigint;
   recipient: Address;
   deadline: number;
   amountOut: NumberAsString;
