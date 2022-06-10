@@ -218,6 +218,62 @@ export const NerveConfig: DexConfigMap<DexParams> = {
             decimals: 18,
           },
         },
+        SCALES: {
+          name: 'Scales',
+          address: '0xfD24d41B7C4C7C8Cd363Dd3FF6f49C99c8280430',
+          coins: [
+            {
+              address: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70', // 0 - DAI.e
+              decimals: 18,
+            },
+            {
+              address: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118', // 1 - USDT.e
+              decimals: 6,
+            },
+            {
+              address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664', // 2 - USDC.e
+              decimals: 6,
+            },
+            {
+              address: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', // 3 - USDC
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0x556FB44205549c115e83A58d91522B14340Fb8d3',
+            decimals: 18,
+          },
+        },
+        HERO: {
+          name: 'Hero',
+          address: '0xa0f6397FEBB03021F9BeF25134DE79835a24D76e',
+          coins: [
+            {
+              address: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', // 0 - USDC
+              decimals: 6,
+            },
+            {
+              address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7', // 1 - USDT
+              decimals: 6,
+            },
+            {
+              address: '0x130966628846BFd36ff31a822705796e8cb8C18D', // 2 - MIM
+              decimals: 18,
+            },
+            {
+              address: '0x111111111111ed1D73f860F57b2798b683f2d325', // 3 - YUSD
+              decimals: 18,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0x73fA690aE97CdE1426d144E5f7406895fEa715E4',
+            decimals: 18,
+          },
+        },
       },
       abi: axialPoolABI,
     },
