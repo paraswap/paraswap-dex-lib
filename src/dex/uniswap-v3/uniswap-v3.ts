@@ -209,10 +209,14 @@ export class UniswapV3
     );
 
     const unitAmount = getBigIntPow(
-      side == SwapSide.BUY ? _destToken.decimals : _srcToken.decimals,
+      side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
     );
 
     const _amounts = [unitAmount, ...amounts.slice(1)];
+
+    const [token0] = this._sortTokens(_srcAddress, _destAddress);
+
+    const zeroForOne = token0 === _srcAddress ? true : false;
 
     const result: ExchangePrices<UniswapV3Data> = new Array(
       selectedPools.length,
@@ -223,8 +227,8 @@ export class UniswapV3
 
       const prices =
         side == SwapSide.SELL
-          ? this._getSellOutputs(state, _amounts)
-          : this._getBuyOutputs(state, _amounts);
+          ? this._getSellOutputs(state, _amounts, zeroForOne)
+          : this._getBuyOutputs(state, _amounts, zeroForOne);
 
       result[i] = {
         unit: prices[0],
@@ -366,25 +370,44 @@ export class UniswapV3
   private _getSellOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
+    zeroForOne: boolean,
   ): bigint[] {
     return amounts.map(amount => {
-      const [, amount1] = uniswapV3Math.querySwap(
+      const [amount0, amount1] = uniswapV3Math.querySwap(
         state,
         { ...state.ticks },
-        // zeroForOne
-        true,
-        amount,
-        TickMath.MIN_SQRT_RATIO + 1n,
+        zeroForOne,
+        BigInt.asIntN(256, amount),
+        zeroForOne
+          ? TickMath.MIN_SQRT_RATIO + 1n
+          : TickMath.MAX_SQRT_RATIO - 1n,
       );
 
-      return -amount1;
+      return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
     });
   }
 
   private _getBuyOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
+    zeroForOne: boolean,
   ): bigint[] {
-    return [];
+    return amounts.map(amount => {
+      const [amount0Delta, amount1Delta] = uniswapV3Math.querySwap(
+        state,
+        { ...state.ticks },
+        // zeroForOne
+        zeroForOne,
+        -BigInt.asIntN(256, amount),
+        zeroForOne
+          ? TickMath.MIN_SQRT_RATIO + 1n
+          : TickMath.MAX_SQRT_RATIO - 1n,
+      );
+
+      const amountIn = zeroForOne
+        ? BigInt.asUintN(256, amount0Delta)
+        : BigInt.asUintN(256, amount1Delta);
+      return amountIn;
+    });
   }
 }
