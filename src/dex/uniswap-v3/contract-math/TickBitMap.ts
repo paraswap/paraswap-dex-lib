@@ -30,8 +30,8 @@ export class TickBitMap {
     let compressed = tick / tickSpacing;
     if (tick < 0n && tick % tickSpacing != 0n) compressed--;
 
-    let next;
-    let initialized;
+    let next = 0n;
+    let initialized = false;
 
     if (lte) {
       const [wordPos, bitPos] = TickBitMap.position(compressed);
