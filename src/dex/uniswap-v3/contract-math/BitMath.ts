@@ -12,35 +12,35 @@ export class BitMath {
     _require(x > 0, '', { x }, 'x > 0');
     let r = 0n;
 
-    if (x >= BigInt('0x100000000000000000000000000000000')) {
+    if (x >= 0x100000000000000000000000000000000n) {
       x >>= 128n;
       r += 128n;
     }
-    if (x >= BigInt('0x10000000000000000')) {
+    if (x >= 0x10000000000000000n) {
       x >>= 64n;
       r += 64n;
     }
-    if (x >= BigInt('0x100000000')) {
+    if (x >= 0x100000000n) {
       x >>= 32n;
       r += 32n;
     }
-    if (x >= BigInt('0x10000')) {
+    if (x >= 0x10000n) {
       x >>= 16n;
       r += 16n;
     }
-    if (x >= BigInt('0x100')) {
+    if (x >= 0x100n) {
       x >>= 8n;
       r += 8n;
     }
-    if (x >= BigInt('0x10')) {
+    if (x >= 0x10n) {
       x >>= 4n;
       r += 4n;
     }
-    if (x >= BigInt('0x4')) {
+    if (x >= 0x4n) {
       x >>= 2n;
       r += 2n;
     }
-    if (x >= BigInt('0x2')) r += 1n;
+    if (x >= 0x2n) r += 1n;
 
     return r;
   }
@@ -74,17 +74,17 @@ export class BitMath {
     } else {
       x >>= 8n;
     }
-    if ((x & BigInt('0xf')) > 0n) {
+    if ((x & 0xfn) > 0n) {
       r -= 4n;
     } else {
       x >>= 4n;
     }
-    if ((x & BigInt('0x3')) > 0n) {
+    if ((x & 0x3n) > 0n) {
       r -= 2n;
     } else {
       x >>= 2n;
     }
-    if ((x & BigInt('0x1')) > 0n) r -= 1n;
+    if ((x & 0x1n) > 0n) r -= 1n;
     return r;
   }
 }
