@@ -63,8 +63,8 @@ describe('MetavaultTrade E2E', () => {
     const holders = Holders[network];
     const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'WBTC';
+    const tokenASymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDT';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const tokenAAmount: string = '1000000000000000000';
