@@ -20,6 +20,12 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter01', index: 6 }],
+    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 2 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 13 }],
+    [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 2 }],
+  },
 };
