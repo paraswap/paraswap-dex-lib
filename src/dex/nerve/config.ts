@@ -219,7 +219,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
         SCALES: {
-          name: 'Scales',
+          name: 'SCALES',
           address: '0xfD24d41B7C4C7C8Cd363Dd3FF6f49C99c8280430',
           coins: [
             {
@@ -247,7 +247,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
           },
         },
         HERO: {
-          name: 'Hero',
+          name: 'HERO',
           address: '0xa0f6397FEBB03021F9BeF25134DE79835a24D76e',
           coins: [
             {
