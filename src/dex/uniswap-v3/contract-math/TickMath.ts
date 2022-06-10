@@ -44,7 +44,7 @@ export class TickMath {
       ratio = (ratio * 0xfcbe86c7900a88aedcffc83b479aa3a4n) >> 128n;
     if ((absTick & 0x200n) !== 0n)
       ratio = (ratio * 0xf987a7253ac413176f2b074cf7815e54n) >> 128n;
-    if ((absTick & ) !== 0n)
+    if ((absTick & 0x400n) !== 0n)
       ratio = (ratio * 0xf3392b0822b70005940c7a398e4b70f3n) >> 128n;
     if ((absTick & 0x800n) !== 0n)
       ratio = (ratio * 0xe7159475a2c29b7443b29c7fa6e889d9n) >> 128n;
