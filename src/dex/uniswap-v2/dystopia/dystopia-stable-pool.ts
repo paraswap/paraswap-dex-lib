@@ -1,7 +1,7 @@
 import { RESERVE_LIMIT } from '../uniswap-v2';
 import { BI_POWS } from '../../../bigint-constants';
 import { DystopiaPoolOrderedParams } from './dystopia';
-import { SWAP_FEE_FACTOR } from './dystopia-constants';
+import { SWAP_FEE_FACTOR } from './constants';
 
 const e18 = BI_POWS[18];
 

@@ -1,7 +1,7 @@
 import { RESERVE_LIMIT } from '../uniswap-v2';
 import { UniswapV2PoolOrderedParams } from '../types';
 import { BI_MAX_UINT } from '../../../bigint-constants';
-import { SWAP_FEE_FACTOR } from './dystopia-constants';
+import { SWAP_FEE_FACTOR } from './constants';
 
 export class DystopiaUniswapV2Pool {
   // Dystopia non-stable pools has almost same formula like uniswap2,
@@ -17,7 +17,7 @@ export class DystopiaUniswapV2Pool {
       return 0n;
     }
 
-    const amountInWithFee = srcAmount - srcAmount / SWAP_FEE_FACTOR;
+    const amountInWithFee = srcAmount * (SWAP_FEE_FACTOR - 1n);
 
     const numerator = amountInWithFee * BigInt(reservesOut);
 

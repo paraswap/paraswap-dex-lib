@@ -8,8 +8,10 @@ import { BI_POWS } from '../../../bigint-constants';
 import { Dystopia } from './dystopia';
 import { Tokens } from '../../../../tests/constants-e2e';
 import { Interface, Result } from '@ethersproject/abi';
+import dystopiaPairABI from '../../../abi/uniswap-v2/DystPair.json';
 
-const amounts = [0n, BI_POWS[18], 2000000000000000000n];
+const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
+const amounts6 = [0n, BI_POWS[6], BI_POWS[6] * 2n];
 
 const dexKey = 'Dystopia';
 const network = Network.POLYGON;
@@ -21,6 +23,7 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
+  tokenIn: string,
   // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
@@ -28,6 +31,7 @@ function getReaderCalldata(
     callData: readerIface.encodeFunctionData(funcName, [
       // TODO: Put here additional arguments to encode them
       amount,
+      tokenIn,
     ]),
   }));
 }
@@ -49,20 +53,20 @@ async function checkOnChainPricing(
   funcName: string,
   blockNumber: number,
   prices: bigint[],
+  exchangeAddress: string,
+  tokenIn: string,
+  amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from __DexNameCamel__.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = dystopia.Iface;
+  const readerIface = new Interface(dystopiaPairABI as any);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    tokenIn,
   );
+  console.log('readerCallData', readerCallData);
   const readerResult = (
     await dexHelper.multiContract.methods
       .aggregate(readerCallData)
@@ -81,6 +85,8 @@ describe('Dystopia', function () {
     const tokenA = Tokens[network][TokenASymbol];
     const TokenBSymbol = 'WMATIC';
     const tokenB = Tokens[network][TokenBSymbol];
+
+    const amounts = amounts18;
 
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const blocknumber = await dexHelper.provider.getBlockNumber();
@@ -115,12 +121,18 @@ describe('Dystopia', function () {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
       // Check if onchain pricing equals to calculated ones
-      await checkOnChainPricing(
-        dystopia,
-        '', // TODO: Put here the functionName to call
-        blocknumber,
-        poolPrices![0].prices,
-      );
+
+      for (const i in poolPrices || []) {
+        await checkOnChainPricing(
+          dystopia,
+          'getAmountOut',
+          blocknumber,
+          poolPrices![i].prices,
+          poolPrices![i].poolAddresses![0],
+          tokenA.address,
+          amounts,
+        );
+      }
     });
 
     it('getTopPoolsForToken', async function () {
@@ -138,10 +150,12 @@ describe('Dystopia', function () {
   });
 
   describe('Curve like stable pool', function () {
-    const TokenASymbol = 'USDC';
+    const TokenASymbol = 'USDT';
     const tokenA = Tokens[Network.POLYGON][TokenASymbol];
-    const TokenBSymbol = 'USDT';
+    const TokenBSymbol = 'USDC';
     const tokenB = Tokens[Network.POLYGON][TokenBSymbol];
+
+    const amounts = amounts6;
 
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.POLYGON);
@@ -176,12 +190,17 @@ describe('Dystopia', function () {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
       // Check if onchain pricing equals to calculated ones
-      await checkOnChainPricing(
-        dystopia,
-        '', // TODO: Put here the functionName to call
-        blocknumber,
-        poolPrices![0].prices,
-      );
+      for (const i in poolPrices || []) {
+        await checkOnChainPricing(
+          dystopia,
+          'getAmountOut',
+          blocknumber,
+          poolPrices![i].prices,
+          poolPrices![i].poolAddresses![0],
+          tokenA.address,
+          amounts,
+        );
+      }
     });
 
     it('getTopPoolsForToken', async function () {

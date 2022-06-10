@@ -3,36 +3,22 @@ import { Network, NULL_ADDRESS, subgraphTimeout } from '../../../constants';
 import {
   AdapterExchangeParam,
   Address,
-  DexConfigMap,
   ExchangePrices,
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
 } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
-import { DexParams, UniswapData, UniswapV2Data } from '../types';
+import { UniswapData, UniswapV2Data } from '../types';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../../utils';
 import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
+import uniswapV2ABI from '../../../abi/uniswap-v2/uniswap-v2-pool.json';
 import _ from 'lodash';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { DystopiaUniswapV2Pool } from './dystopia-uniswap-v2-pool';
 import { DystopiaStablePool } from './dystopia-stable-pool';
-
-export const DystopiaConfig: DexConfigMap<DexParams> = {
-  Dystopia: {
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia-v2',
-      factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
-      // ParaSwap-compatible Router with stable pools support
-      router: '0x0E98A8e5ca6067B98d10Eb6476ec30E232346402',
-      initCode:
-        '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
-      feeCode: 5,
-      poolGasCost: 350 * 1000, // TODO check swap max gas cost
-    },
-  },
-};
+import { DystopiaConfig } from './config';
+import { AbiCoder, Interface } from '@ethersproject/abi';
 
 // to calculate prices for stable pool, we need decimals of the stable tokens
 // so, we are extending UniswapV2PoolOrderedParams with token decimals
@@ -48,6 +34,15 @@ export interface DystopiaPoolOrderedParams {
   decimalsOut: number;
   stable: boolean;
 }
+
+export interface DystopiaPoolState {
+  reserves0: string;
+  reserves1: string;
+  feeCode: number;
+}
+
+const iface = new Interface(uniswapV2ABI);
+const coder = new AbiCoder();
 
 export class Dystopia extends UniswapV2 {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -143,9 +138,49 @@ export class Dystopia extends UniswapV2 {
     }
   }
 
-  // Dystopia non-stable pools has almost same formula like uniswap2,
-  // but little changed in contract.
-  // So we repeat formulas here to have same output.
+  async getManyPoolReserves(
+    pairs: UniswapV2Pair[],
+    blockNumber: number,
+  ): Promise<DystopiaPoolState[]> {
+    try {
+      const calldata = pairs
+        .map(pair => {
+          return [
+            {
+              target: pair.exchange,
+              callData: iface.encodeFunctionData('getReserves', []),
+            },
+          ];
+        })
+        .flat();
+
+      const data: { returnData: any[] } =
+        await this.dexHelper.multiContract.methods
+          .aggregate(calldata)
+          .call({}, blockNumber);
+
+      const returnData = _.chunk(data.returnData, 1);
+      return pairs.map((pair, i) => {
+        const decodedData = coder.decode(
+          ['uint112', 'uint112', 'uint32'],
+          returnData[i][0],
+        );
+
+        return {
+          reserves0: decodedData[0].toString(),
+          reserves1: decodedData[1].toString(),
+          feeCode: this.feeCode,
+        };
+      });
+    } catch (e) {
+      this.logger.error(
+        `Error_getManyPoolReserves could not get reserves with error:`,
+        e,
+      );
+      return [];
+    }
+  }
+
   async getSellPrice(
     priceParams: DystopiaPoolOrderedParams,
     srcAmount: bigint,
@@ -188,14 +223,14 @@ export class Dystopia extends UniswapV2 {
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
+      await this.batchCatchUpPairs([[from, to]], blockNumber);
+
       const resultPromises = [false, true].map(async stable => {
         const poolIdentifier =
-          `${this.dexKey}_${tokenAddress}` + this.poolPostfix(false);
+          `${this.dexKey}_${tokenAddress}` + this.poolPostfix(stable);
 
         if (limitPools && limitPools.every(p => p !== poolIdentifier))
           return null;
-
-        await this.batchCatchUpPairs([[from, to]], blockNumber);
 
         const pairParam = await this.getDystopiaPairOrderedParams(
           from,
