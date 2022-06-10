@@ -12,6 +12,8 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
+import { Address } from 'paraswap-core';
 
 const network = Network.MAINNET;
 const TokenASymbol = 'USDC';
@@ -20,23 +22,35 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'WETH';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [0n, 100_000_000n * BI_POWS[6], 200_000_000n * BI_POWS[6], 300_000_000n * BI_POWS[6]];
+const amounts = [
+  0n,
+  100_000_000n * BI_POWS[6],
+  200_000_000n * BI_POWS[6],
+  300_000_000n * BI_POWS[6],
+];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'UniswapV3';
+
+const quoterIface = new Interface(UniswapV3QuoterABI);
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  tokenIn: Address,
+  tokenOut: Address,
+  fee: bigint,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      tokenIn,
+      tokenOut,
+      fee,
       amount,
+      0n,
     ]),
   }));
 }
@@ -46,7 +60,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -58,19 +71,22 @@ async function checkOnChainPricing(
   funcName: string,
   blockNumber: number,
   prices: bigint[],
+  tokenIn: Address,
+  tokenOut: Address,
+  fee: bigint,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from uniswapV3.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  // Quoter address
+  const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+  const readerIface = quoterIface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    tokenIn,
+    tokenOut,
+    fee,
   );
   const readerResult = (
     await dexHelper.multiContract.methods
@@ -78,11 +94,7 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
   const expectedPrices = [0n].concat(
-    decodeReaderResult(
-      readerResult,
-      readerIface,
-      funcName,
-    ),
+    decodeReaderResult(readerResult, readerIface, funcName),
   );
 
   expect(prices).toEqual(expectedPrices);
@@ -127,12 +139,15 @@ describe('UniswapV3', function () {
     }
 
     // Check if onchain pricing equals to calculated ones
-    // await checkOnChainPricing(
-    //   uniswapV3,
-    //   '', // TODO: Put here the functionName to call
-    //   blockNumber,
-    //   poolPrices![0].prices,
-    // );
+    await checkOnChainPricing(
+      uniswapV3,
+      'quoteExactInputSingle',
+      blockNumber,
+      poolPrices![0].prices,
+      '',
+      '',
+      0n,
+    );
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
@@ -166,9 +181,12 @@ describe('UniswapV3', function () {
     // Check if onchain pricing equals to calculated ones
     await checkOnChainPricing(
       uniswapV3,
-      '', // TODO: Put here the functionName to call
+      'quoteExactOutputSingle',
       blockNumber,
       poolPrices![0].prices,
+      '',
+      '',
+      0n,
     );
   });
 
