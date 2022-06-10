@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
 import type { AbiItem } from 'web3-utils';
-
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -27,7 +27,11 @@ import { UniswapV3Config, Adapters } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3FactoryABI from '../../abi/uniswap-v3/UniswapV3Factory.abi.json';
-import { UNISWAPV3_QUOTE_GASLIMIT } from './constants';
+import {
+  UNISWAPV3_EFFICIENCY_FACTOR,
+  UNISWAPV3_QUOTE_GASLIMIT,
+  UNISWAPV3_SUBGRAPH_URL,
+} from './constants';
 import { DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { TickMath } from './contract-math/TickMath';
@@ -332,8 +336,80 @@ export class UniswapV3
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    const _tokenAddress = tokenAddress.toLowerCase();
+
+    const res = await this._querySubgraph(
+      `query ($token: Bytes!, $count: Int) {
+                pools0: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token0: $token}) {
+                id
+                token0 {
+                  id
+                  decimals
+                }
+                token1 {
+                  id
+                  decimals
+                }
+                totalValueLockedUSD
+              }
+              pools1: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token1: $token}) {
+                id
+                token0 {
+                  id
+                  decimals
+                }
+                token1 {
+                  id
+                  decimals
+                }
+                totalValueLockedUSD
+              }
+            }`,
+      {
+        token: _tokenAddress,
+        count: limit,
+      },
+    );
+
+    if (!(res && res.pools0 && res.pools1)) {
+      this.logger.error(
+        `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
+      );
+      return [];
+    }
+
+    const pools0 = _.map(res.pools0, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token1.id.toLowerCase(),
+          decimals: parseInt(pool.token1.decimals),
+        },
+      ],
+      liquidityUSD:
+        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+    }));
+
+    const pools1 = _.map(res.pools1, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token0.id.toLowerCase(),
+          decimals: parseInt(pool.token0.decimals),
+        },
+      ],
+      liquidityUSD:
+        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+    }));
+
+    const pools = _.slice(
+      _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
+      0,
+      limit,
+    );
+    return pools;
   }
 
   private async _getPoolsFromIdentifiers(
@@ -409,5 +485,26 @@ export class UniswapV3
         : BigInt.asUintN(256, amount1Delta);
       return amountIn;
     });
+  }
+
+  private async _querySubgraph(
+    query: string,
+    variables: Object,
+    timeout = 30000,
+  ) {
+    try {
+      const {
+        data: { data },
+      } = await this.dexHelper.httpRequest.post(
+        UNISWAPV3_SUBGRAPH_URL,
+        { query, variables },
+        undefined,
+        { timeout: timeout },
+      );
+      return data;
+    } catch (e) {
+      this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
+      return {};
+    }
   }
 }
