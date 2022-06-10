@@ -88,7 +88,10 @@ export function _require(
       .join(', ');
     receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated`;
   }
-  if (!b) throw new Error(`${receivedValues}${message}`);
+  if (!b)
+    throw new Error(
+      `${receivedValues}. Error message: ${message ? message : 'undefined'}`,
+    );
 }
 
 export const bigIntify = (val: any) => BigInt(val);
