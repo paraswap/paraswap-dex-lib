@@ -44,8 +44,14 @@ export class Tick {
     info.liquidityGross = liquidityGrossAfter;
 
     info.liquidityNet = upper
-      ? info.liquidityNet - liquidityDelta
-      : info.liquidityNet + liquidityDelta;
+      ? BigInt.asIntN(
+          128,
+          BigInt.asIntN(256, info.liquidityNet) - liquidityDelta,
+        )
+      : BigInt.asIntN(
+          128,
+          BigInt.asIntN(256, info.liquidityNet) + liquidityDelta,
+        );
     return flipped;
   }
 

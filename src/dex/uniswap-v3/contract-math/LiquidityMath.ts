@@ -4,11 +4,13 @@ export class LiquidityMath {
   static addDelta(x: bigint, y: bigint): bigint {
     let z;
     if (y < 0) {
-      z = x - -y;
-      _require(z < x, 'LS', { z, x, y }, 'z < x');
+      const _y = BigInt.asUintN(128, -y);
+      z = x - _y;
+      _require(z < x, 'LS', { z, x, y, _y }, 'z < x');
     } else {
-      z = x + y;
-      _require(z >= x, 'LA', { z, x, y }, 'z >= x');
+      const _y = BigInt.asUintN(128, y);
+      z = x + _y;
+      _require(z >= x, 'LA', { z, x, y, _y }, 'z >= x');
     }
     return z;
   }

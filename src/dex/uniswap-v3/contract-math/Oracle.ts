@@ -17,10 +17,11 @@ export class Oracle {
     const delta = blockTimestamp - last.blockTimestamp;
     return {
       blockTimestamp: state.blockTimestamp,
-      tickCumulative: last.tickCumulative + tick * delta,
+      tickCumulative: last.tickCumulative + BigInt.asIntN(56, tick) * delta,
       secondsPerLiquidityCumulativeX128:
         last.secondsPerLiquidityCumulativeX128 +
-        (delta << 128n) / (liquidity > 0n ? liquidity : 1n),
+        (BigInt.asUintN(160, delta) << 128n) /
+          (liquidity > 0n ? liquidity : 1n),
       initialized: true,
     };
   }
@@ -207,10 +208,16 @@ export class Oracle {
             observationTimeDelta) *
             targetDelta,
         beforeOrAt.secondsPerLiquidityCumulativeX128 +
-          ((atOrAfter.secondsPerLiquidityCumulativeX128 -
-            beforeOrAt.secondsPerLiquidityCumulativeX128) *
-            targetDelta) /
-            observationTimeDelta,
+          BigInt.asUintN(
+            160,
+            (BigInt.asUintN(
+              256,
+              atOrAfter.secondsPerLiquidityCumulativeX128 -
+                beforeOrAt.secondsPerLiquidityCumulativeX128,
+            ) *
+              targetDelta) /
+              observationTimeDelta,
+          ),
       ];
     }
   }

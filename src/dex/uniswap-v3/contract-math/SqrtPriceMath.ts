@@ -12,19 +12,23 @@ export class SqrtPriceMath {
     add: boolean,
   ): bigint {
     if (amount === 0n) return sqrtPX96;
-    const numerator1 = liquidity << FixedPoint96.RESOLUTION;
+    const numerator1 =
+      BigInt.asUintN(256, liquidity) << FixedPoint96.RESOLUTION;
 
     const product = amount * sqrtPX96;
     if (add) {
       if (product / amount === sqrtPX96) {
         const denominator = numerator1 + product;
         if (denominator >= numerator1) {
-          return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator);
+          return BigInt.asUintN(
+            160,
+            FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator),
+          );
         }
       }
-      return UnsafeMath.divRoundingUp(
-        numerator1,
-        numerator1 / sqrtPX96 + amount,
+      return BigInt.asUintN(
+        160,
+        UnsafeMath.divRoundingUp(numerator1, numerator1 / sqrtPX96 + amount),
       );
     } else {
       _require(
@@ -34,7 +38,10 @@ export class SqrtPriceMath {
         'product / amount === sqrtPX96 && numerator1 > product',
       );
       const denominator = numerator1 - product;
-      return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator);
+      return BigInt.asUintN(
+        160,
+        FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator),
+      );
     }
   }
 
@@ -49,7 +56,7 @@ export class SqrtPriceMath {
         amount <= BI_MAX_UINT160
           ? (amount << FixedPoint96.RESOLUTION) / liquidity
           : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity);
-      return sqrtPX96 + quotient;
+      return BigInt.asUintN(160, BigInt.asUintN(256, sqrtPX96) + quotient);
     } else {
       const quotient =
         amount <= BI_MAX_UINT160
@@ -65,7 +72,7 @@ export class SqrtPriceMath {
         { sqrtPX96, quotient },
         'sqrtPX96 > quotient',
       );
-      return sqrtPX96 - quotient;
+      return BigInt.asUintN(160, sqrtPX96 - quotient);
     }
   }
 
@@ -127,7 +134,8 @@ export class SqrtPriceMath {
       [sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96];
     }
 
-    const numerator1 = liquidity << FixedPoint96.RESOLUTION;
+    const numerator1 =
+      BigInt.asUintN(256, liquidity) << FixedPoint96.RESOLUTION;
     const numerator2 = sqrtRatioBX96 - sqrtRatioAX96;
 
     _require(sqrtRatioAX96 > 0, '', { sqrtRatioAX96 }, 'sqrtRatioAX96 > 0');
@@ -169,17 +177,23 @@ export class SqrtPriceMath {
     liquidity: bigint,
   ) {
     return liquidity < 0
-      ? -SqrtPriceMath.getAmount0Delta(
-          sqrtRatioAX96,
-          sqrtRatioBX96,
-          -liquidity,
-          false,
+      ? -BigInt.asIntN(
+          256,
+          SqrtPriceMath.getAmount0Delta(
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            BigInt.asUintN(128, -liquidity),
+            false,
+          ),
         )
-      : SqrtPriceMath.getAmount0Delta(
-          sqrtRatioAX96,
-          sqrtRatioBX96,
-          liquidity,
-          true,
+      : BigInt.asIntN(
+          256,
+          SqrtPriceMath.getAmount0Delta(
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            BigInt.asUintN(128, liquidity),
+            true,
+          ),
         );
   }
 
@@ -190,17 +204,23 @@ export class SqrtPriceMath {
     liquidity: bigint,
   ) {
     return liquidity < 0
-      ? -SqrtPriceMath.getAmount1Delta(
-          sqrtRatioAX96,
-          sqrtRatioBX96,
-          -liquidity,
-          false,
+      ? -BigInt.asIntN(
+          256,
+          SqrtPriceMath.getAmount1Delta(
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            BigInt.asUintN(128, -liquidity),
+            false,
+          ),
         )
-      : SqrtPriceMath.getAmount1Delta(
-          sqrtRatioAX96,
-          sqrtRatioBX96,
-          liquidity,
-          true,
+      : BigInt.asIntN(
+          256,
+          SqrtPriceMath.getAmount1Delta(
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            BigInt.asUintN(128, liquidity),
+            true,
+          ),
         );
   }
 }

@@ -25,7 +25,7 @@ export class SwapMath {
 
     if (exactIn) {
       const amountRemainingLessFee = FullMath.mulDiv(
-        amountRemaining,
+        BigInt.asUintN(256, amountRemaining),
         BI_POWS[6] - feePips,
         BI_POWS[6],
       );
@@ -65,12 +65,13 @@ export class SwapMath {
             liquidity,
             false,
           );
-      if (-amountRemaining >= amountOut) sqrtRatioNextX96 = sqrtRatioTargetX96;
+      if (BigInt.asUintN(256, -amountRemaining) >= amountOut)
+        sqrtRatioNextX96 = sqrtRatioTargetX96;
       else
         sqrtRatioNextX96 = SqrtPriceMath.getNextSqrtPriceFromOutput(
           sqrtRatioCurrentX96,
           liquidity,
-          -amountRemaining,
+          BigInt.asUintN(256, -amountRemaining),
           zeroForOne,
         );
     }
@@ -118,13 +119,13 @@ export class SwapMath {
     }
 
     // cap the output amount to not exceed the remaining output amount
-    if (!exactIn && amountOut > -amountRemaining) {
-      amountOut = -amountRemaining;
+    if (!exactIn && amountOut > BigInt.asUintN(256, -amountRemaining)) {
+      amountOut = BigInt.asUintN(256, -amountRemaining);
     }
 
     if (exactIn && sqrtRatioNextX96 != sqrtRatioTargetX96) {
       // we didn't reach the target, so take the remainder of the maximum input as fee
-      feeAmount = amountRemaining - amountIn;
+      feeAmount = BigInt.asUintN(256, amountRemaining) - amountIn;
     } else {
       feeAmount = FullMath.mulDivRoundingUp(
         amountIn,

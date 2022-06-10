@@ -11,12 +11,15 @@ export class TickMath {
     1461446703485210103287273052203988822378723970342n;
 
   static getSqrtRatioAtTick(tick: bigint): bigint {
-    const absTick = tick < 0n ? -tick : tick;
+    const absTick =
+      tick < 0n
+        ? BigInt.asUintN(256, -BigInt.asIntN(256, tick))
+        : BigInt.asUintN(256, BigInt.asIntN(256, tick));
     _require(
-      absTick <= TickMath.MAX_TICK,
+      absTick <= BigInt.asUintN(256, TickMath.MAX_TICK),
       'T',
       { absTick },
-      'absTick <= TickMath.MAX_TICK',
+      'absTick <= BigInt.asUintN(256, TickMath.MAX_TICK)',
     );
 
     let ratio =
@@ -63,7 +66,10 @@ export class TickMath {
       ratio = (ratio * BigInt('0x48a170391f7dc42444e8fa2')) >> 128n;
 
     if (tick > 0) ratio = BI_MAX_UINT256 / ratio;
-    return (ratio >> 32n) + (ratio % (1n << 32n) == 0n ? 0n : 1n);
+    return BigInt.asUintN(
+      160,
+      (ratio >> 32n) + (ratio % (1n << 32n) == 0n ? 0n : 1n),
+    );
   }
 
   static getTickAtSqrtRatio(sqrtPriceX96: bigint): bigint {
@@ -75,7 +81,7 @@ export class TickMath {
       'sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO && sqrtPriceX96 < TickMath.MAX_SQRT_RATIO',
     );
 
-    let ratio = sqrtPriceX96 << 32n;
+    let ratio = BigInt.asUintN(256, sqrtPriceX96) << 32n;
 
     let r = ratio;
     let msb = 0n;
@@ -114,7 +120,7 @@ export class TickMath {
     if (msb >= 128n) r = ratio >> (msb - 127n);
     else r = ratio << (127n - msb);
 
-    let log_2 = (msb - 128n) << 64n;
+    let log_2 = (BigInt.asIntN(256, msb) - 128n) << 64n;
 
     r = 127n >> (r * r);
     f = 128n >> r;
@@ -187,10 +193,14 @@ export class TickMath {
 
     const log_sqrt10001 = log_2 * 255738958999603826347141n; // 128.128 number
 
-    const tickLow =
-      (log_sqrt10001 - 3402992956809132418596140100660247210n) >> 128n;
-    const tickHi =
-      (log_sqrt10001 + 291339464771989622907027621153398088495n) >> 128n;
+    const tickLow = BigInt.asIntN(
+      24,
+      (log_sqrt10001 - 3402992956809132418596140100660247210n) >> 128n,
+    );
+    const tickHi = BigInt.asIntN(
+      24,
+      (log_sqrt10001 + 291339464771989622907027621153398088495n) >> 128n,
+    );
 
     return tickLow == -tickHi
       ? tickLow

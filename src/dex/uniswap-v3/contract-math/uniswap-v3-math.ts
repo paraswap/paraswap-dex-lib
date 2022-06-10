@@ -86,14 +86,13 @@ class UniswapV3Math {
 
       step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-      const bitMapResult = TickBitMap.nextInitializedTickWithinOneWord(
-        poolState,
-        state.tick,
-        poolState.tickSpacing,
-        zeroForOne,
-      );
-      step.tickNext = bitMapResult.next;
-      step.initialized = bitMapResult.initialized;
+      [step.tickNext, step.initialized] =
+        TickBitMap.nextInitializedTickWithinOneWord(
+          poolState,
+          state.tick,
+          poolState.tickSpacing,
+          zeroForOne,
+        );
 
       if (step.tickNext < TickMath.MIN_TICK) {
         step.tickNext = TickMath.MIN_TICK;
