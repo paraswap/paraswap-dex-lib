@@ -67,4 +67,4 @@ export const AugustusAddress: { [nid: number]: Address } = {
   [Network.FANTOM]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
 };
 
-export const subgraphTimeout = 20 * 1000;
+export const SUBGRAPH_TIMEOUT = 20 * 1000;

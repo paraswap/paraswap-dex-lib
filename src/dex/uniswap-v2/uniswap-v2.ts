@@ -28,7 +28,7 @@ import {
   ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
-  subgraphTimeout,
+  SUBGRAPH_TIMEOUT,
 } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
@@ -647,7 +647,7 @@ export class UniswapV2
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools0 && data.pools1))

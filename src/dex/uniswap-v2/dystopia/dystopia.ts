@@ -1,5 +1,5 @@
 import { TOKEN_EXTRA_FEE, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
-import { Network, NULL_ADDRESS, subgraphTimeout } from '../../../constants';
+import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -352,7 +352,7 @@ export class Dystopia extends UniswapV2 {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools0 && data.pools1))
