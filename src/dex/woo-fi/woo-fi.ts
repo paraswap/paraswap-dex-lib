@@ -72,8 +72,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   readonly quoteTokenAddress: Address;
 
-  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(WooFiConfig);
+  public static dexKeysWithNetwork: {
+    key: string;
+    networks: Network[];
+  }[] = getDexKeysWithNetwork(WooFiConfig);
 
   logger: Logger;
 

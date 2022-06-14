@@ -10,7 +10,7 @@ import {
 import {
   SwapSide,
   SETUP_RETRY_TIMEOUT,
-  FETCH_POOL_INDENTIFIER_TIMEOUT,
+  FETCH_POOL_IDENTIFIER_TIMEOUT,
   FETCH_POOL_PRICES_TIMEOUT,
 } from './constants';
 import { DexAdapterService } from './dex';
@@ -74,7 +74,7 @@ export class PricingHelper {
           return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
               () => reject(new Error(`Timeout`)),
-              FETCH_POOL_INDENTIFIER_TIMEOUT,
+              FETCH_POOL_IDENTIFIER_TIMEOUT,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
 

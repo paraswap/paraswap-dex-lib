@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { DummyDexHelper } from '../../dex-helper/index';
+import { DummyDexHelper } from '../../dex-helper';
 import { Network, SwapSide } from '../../constants';
 import { UniswapV2 } from './uniswap-v2';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';

@@ -16,7 +16,7 @@ export const MAX_BLOCKS_HISTORY = 7;
 
 export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 
-export const FETCH_POOL_INDENTIFIER_TIMEOUT = 1 * 1000; // 1s
+export const FETCH_POOL_IDENTIFIER_TIMEOUT = 1 * 1000; // 1s
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
 export enum Network {
@@ -66,3 +66,5 @@ export const AugustusAddress: { [nid: number]: Address } = {
   [Network.AVALANCHE]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.FANTOM]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
 };
+
+export const subgraphTimeout = 20 * 1000;
