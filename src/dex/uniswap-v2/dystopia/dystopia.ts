@@ -210,7 +210,7 @@ export class Dystopia extends UniswapV2 {
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
-    console.log('getPricesVolume limitPools', limitPools);
+    this.logger.trace(`${this.dexKey}: getPricesVolume limitPools`, limitPools);
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
       const from = wrapETH(_from, this.network);
@@ -246,18 +246,18 @@ export class Dystopia extends UniswapV2 {
         if (!pairParam) return null;
 
         const unitAmount = getBigIntPow(
-          // @ts-ignore
-          side == SwapSide.BUY ? to.decimals : from.decimals,
+          // @ts-expect-error Buy side is not implemented yet
+          side === SwapSide.BUY ? to.decimals : from.decimals,
         );
         const unit =
-          // @ts-ignore
-          side == SwapSide.BUY
+          // @ts-expect-error Buy side is not implemented yet
+          side === SwapSide.BUY
             ? await this.getBuyPricePath(unitAmount, [pairParam])
             : await this.getSellPricePath(unitAmount, [pairParam]);
 
         const prices =
-          // @ts-ignore
-          side == SwapSide.BUY
+          // @ts-expect-error Buy side is not implemented yet
+          side === SwapSide.BUY
             ? await Promise.all(
                 amounts.map(amount =>
                   this.getBuyPricePath(amount, [pairParam]),
@@ -300,7 +300,7 @@ export class Dystopia extends UniswapV2 {
       const resultPoolsSorted = resultPoolsFiltered.sort((a, b) =>
         Number(b.unit - a.unit),
       );
-      console.log('resultPoolsSorted', resultPoolsSorted);
+      this.logger.trace(`${this.dexKey}: resultPoolsSorted`, resultPoolsSorted);
       return resultPoolsSorted.length > 0 ? resultPoolsSorted : null;
     } catch (e) {
       if (blockNumber === 0)
