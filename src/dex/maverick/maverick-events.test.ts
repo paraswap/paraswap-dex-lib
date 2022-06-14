@@ -72,8 +72,9 @@ async function getSubgraphPool(
 
 describe('Maverick Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
-    AddLiquidity: [29299844],
-    Swap: [29300959, 29301354, 29301378],
+    AddLiquidity: [29361077, 29534022, 29299844, 29336737, 29534048],
+    RemoveLiquidity: [29533598, 29533926, 29533966, 29533510, 29533836],
+    Swap: [29301354, 29369066, 29358925, 29356334, 29378862],
   };
 
   describe.only('MaverickEventPool', function () {

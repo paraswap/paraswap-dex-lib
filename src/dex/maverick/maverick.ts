@@ -17,7 +17,6 @@ import {
   wrapETH,
   getDexKeysWithNetwork,
   getBigIntPow,
-  isWETH,
   isETHAddress,
 } from '../../utils';
 import PoolABI from '../../abi/maverick/pool.json';
@@ -351,6 +350,7 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
   pools: { [key: string]: MaverickEventPool } = {};
   readonly hasConstantPriceLargeAmounts = false;
   exchangeRouterInterface: Interface;
+  poolInterface: Interface;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MaverickConfig);
@@ -367,6 +367,7 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.exchangeRouterInterface = new Interface(RouterABI);
+    this.poolInterface = new Interface(PoolABI);
   }
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
@@ -479,46 +480,6 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     );
   }
 
-  async catchUpPool(from: Token, to: Token, blockNumber: number) {
-    const pools = await this.fetchSubgraphPoolsFromTokens(from, to);
-    await Promise.all(
-      pools.map(async (pool: any) => {
-        const eventPool = new MaverickEventPool(
-          this.dexKey,
-          this.dexHelper,
-          pool.id,
-          {
-            address: pool.quote.id,
-            symbol: pool.quote.symbol,
-            decimals: pool.quote.decimals,
-          },
-          {
-            address: pool.base.id,
-            symbol: pool.base.symbol,
-            decimals: pool.base.decimals,
-          },
-          pool.fee,
-          pool.w,
-          pool.h,
-          pool.k,
-          pool.paramChoice,
-          pool.twauLookback,
-          pool.uShiftMultiplier,
-          pool.maxSpreadFee,
-          pool.spreadFeeMultiplier,
-          pool.protocolFeeRatio,
-          pool.epsilon,
-          this.logger,
-        );
-        const onChainState = await eventPool.generateState(blockNumber);
-        if (blockNumber) {
-          eventPool.setState(onChainState, blockNumber);
-        }
-        this.pools[eventPool.name] = eventPool;
-      }),
-    );
-  }
-
   async initializePricing(blockNumber: number) {
     await this.setupEventPools(blockNumber);
   }
@@ -542,17 +503,15 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
   }
 
   async getPools(srcToken: Token, destToken: Token) {
-    return Object.values(this.pools)
-      .filter((pool: MaverickEventPool) => {
-        return (
-          (pool.quote.address.toLowerCase() == srcToken.address.toLowerCase() ||
-            pool.quote.address.toLowerCase() ==
-              destToken.address.toLowerCase()) &&
-          (pool.base.address.toLowerCase() == srcToken.address.toLowerCase() ||
-            pool.base.address.toLowerCase() == destToken.address.toLowerCase())
-        );
-      })
-      .slice(0, 10);
+    return Object.values(this.pools).filter((pool: MaverickEventPool) => {
+      return (
+        (pool.quote.address.toLowerCase() == srcToken.address.toLowerCase() ||
+          pool.quote.address.toLowerCase() ==
+            destToken.address.toLowerCase()) &&
+        (pool.base.address.toLowerCase() == srcToken.address.toLowerCase() ||
+          pool.base.address.toLowerCase() == destToken.address.toLowerCase())
+      );
+    });
   }
 
   async getPricesVolume(
@@ -567,7 +526,6 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
 
     const from = wrapETH(srcToken, this.network);
     const to = wrapETH(destToken, this.network);
-    await this.catchUpPool(from, to, blockNumber);
     const allPools = await this.getPools(from, to);
 
     const allowedPools = limitPools
@@ -595,6 +553,9 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
             fee: pool.fee,
             paramChoice: pool.paramChoice,
             router: MaverickConfig[this.dexKey][this.network].routerAddress,
+            pool: pool.address,
+            quote: pool.quote.address,
+            base: pool.base.address,
           },
           exchange: this.dexKey,
           poolIdentifier: pool.name,
@@ -667,21 +628,21 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
         ],
       );
     } else {
-      payload = this.exchangeRouterInterface.encodeFunctionData('swap', [
-        {
-          inputToken: srcToken,
-          outputToken: destToken,
-          fee: BigInt((data.fee * 1e4).toFixed(0)),
-          w: BigInt((data.w * 1e4).toFixed(0)),
-          k: BigInt((data.k * 1e2).toFixed(0)),
-          h: data.h,
-          paramChoice: data.paramChoice,
-          recipient: this.augustusAddress,
-          inputAmount: srcAmount,
-          minAmount: 0,
-          deadline: this.getDeadline(),
-        },
-      ]);
+      return {
+        callees: [srcToken, data.pool],
+        calldata: [
+          this.erc20Interface.encodeFunctionData('transfer', [
+            data.pool,
+            srcAmount,
+          ]),
+          this.poolInterface.encodeFunctionData('swap', [
+            this.augustusAddress,
+            srcToken == data.quote,
+          ]),
+        ],
+        values: ['0', '0'],
+        networkFee: '0',
+      };
     }
 
     return this.buildSimpleParamWithoutWETHConversion(

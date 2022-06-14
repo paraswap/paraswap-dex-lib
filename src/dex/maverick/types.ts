@@ -15,6 +15,9 @@ export type MaverickData = {
   fee: number;
   paramChoice: number;
   router: Address;
+  pool: Address;
+  quote: Address;
+  base: Address;
 };
 
 export interface SubgraphToken {
@@ -44,4 +47,5 @@ export type DexParams = {
   subgraphURL: string;
   factoryAddress: string;
   routerAddress: string;
+  estimatorAddress: string;
 };
