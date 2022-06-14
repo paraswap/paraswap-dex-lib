@@ -13,7 +13,7 @@ export const DystopiaConfig: DexConfigMap<DexParams> = {
       initCode:
         '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
       feeCode: 5,
-      poolGasCost: 350 * 1000, // TODO check swap max gas cost
+      poolGasCost: 180 * 1000,
     },
   },
 };
