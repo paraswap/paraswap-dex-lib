@@ -1,6 +1,6 @@
-import { DexConfigMap } from '../../../types';
+import { AdapterMappings, DexConfigMap } from '../../../types';
 import { DexParams } from '../types';
-import { Network } from '../../../constants';
+import { Network, SwapSide } from '../../../constants';
 
 export const DystopiaConfig: DexConfigMap<DexParams> = {
   Dystopia: {
@@ -15,5 +15,11 @@ export const DystopiaConfig: DexConfigMap<DexParams> = {
       feeCode: 5,
       poolGasCost: 350 * 1000, // TODO check swap max gas cost
     },
+  },
+};
+
+export const Adapters: Record<number, AdapterMappings> = {
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }],
   },
 };

@@ -17,7 +17,7 @@ import _ from 'lodash';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { DystopiaUniswapV2Pool } from './dystopia-uniswap-v2-pool';
 import { DystopiaStablePool } from './dystopia-stable-pool';
-import { DystopiaConfig } from './config';
+import { Adapters, DystopiaConfig } from './config';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 
 // to calculate prices for stable pool, we need decimals of the stable tokens
@@ -64,6 +64,7 @@ export class Dystopia extends UniswapV2 {
       DystopiaConfig[dexKey][network].initCode,
       DystopiaConfig[dexKey][network].feeCode,
       DystopiaConfig[dexKey][network].poolGasCost,
+      Adapters[network] || undefined,
     );
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
