@@ -1275,7 +1275,7 @@ describe('UniswapV2 E2E Polygon', () => {
         it('Token -> Token', async () => {
           await testE2E(
             tokens.WMATIC,
-            tokens.USDT,
+            tokens.WETH,
             holders.WMATIC,
             maticAmount,
             SwapSide.SELL,
@@ -1319,7 +1319,7 @@ describe('UniswapV2 E2E Polygon', () => {
         it('Token -> Token', async () => {
           await testE2E(
             tokens.WMATIC,
-            tokens.USDT,
+            tokens.WETH,
             holders.WMATIC,
             maticAmount,
             SwapSide.SELL,
@@ -1363,7 +1363,7 @@ describe('UniswapV2 E2E Polygon', () => {
         it('Token -> Token', async () => {
           await testE2E(
             tokens.WMATIC,
-            tokens.USDT,
+            tokens.WETH,
             holders.WMATIC,
             maticAmount,
             SwapSide.SELL,

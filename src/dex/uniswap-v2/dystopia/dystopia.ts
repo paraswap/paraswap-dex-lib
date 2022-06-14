@@ -45,6 +45,7 @@ const iface = new Interface(uniswapV2ABI);
 const coder = new AbiCoder();
 
 export class Dystopia extends UniswapV2 {
+  feeFactor = 20000;
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DystopiaConfig);
 
@@ -69,6 +70,8 @@ export class Dystopia extends UniswapV2 {
       dystopiaFactoryABI as any,
       DystopiaConfig[dexKey][network].factoryAddress,
     );
+
+    this.router = DystopiaConfig[dexKey][network].router || '';
   }
 
   async findDystopiaPair(from: Token, to: Token, stable: boolean) {
@@ -159,11 +162,10 @@ export class Dystopia extends UniswapV2 {
           .aggregate(calldata)
           .call({}, blockNumber);
 
-      const returnData = _.chunk(data.returnData, 1);
       return pairs.map((pair, i) => {
         const decodedData = coder.decode(
           ['uint112', 'uint112', 'uint32'],
-          returnData[i][0],
+          data.returnData[i],
         );
 
         return {
@@ -207,6 +209,7 @@ export class Dystopia extends UniswapV2 {
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
+    console.log('getPricesVolume limitPools', limitPools);
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
       const from = wrapETH(_from, this.network);
@@ -288,11 +291,16 @@ export class Dystopia extends UniswapV2 {
           poolAddresses: [pairParam.exchange],
         };
       });
+
       const resultPools = (await Promise.all(
         resultPromises,
       )) as ExchangePrices<UniswapV2Data>;
       const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
-      return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
+      const resultPoolsSorted = resultPoolsFiltered.sort((a, b) =>
+        Number(b.unit - a.unit),
+      );
+      console.log('resultPoolsSorted', resultPoolsSorted);
+      return resultPoolsSorted.length > 0 ? resultPoolsSorted : null;
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
