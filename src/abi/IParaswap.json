@@ -2583,6 +2583,11 @@
         "internalType": "uint256",
         "name": "fromAmount",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toAmountMin",
+        "type": "uint256"
       }
     ],
     "name": "swapOnAugustusRFQTryBatchFill",
@@ -2674,6 +2679,11 @@
       {
         "internalType": "uint256",
         "name": "fromAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toAmountMin",
         "type": "uint256"
       },
       {
