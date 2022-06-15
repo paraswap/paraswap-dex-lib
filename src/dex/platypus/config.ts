@@ -11,10 +11,6 @@ export const PlatypusConfig: DexConfigMap<DexParams> = {
           name: 'Main USD Pool',
         },
         {
-          address: '0xe0D166DE15665bC4B7185B2e35E847E51316E126',
-          name: 'Alt Pool UST',
-        },
-        {
           address: '0xB8E567fc23c39C94a1f6359509D7b43D1Fbed824',
           name: 'Alt Pool Frax',
         },
