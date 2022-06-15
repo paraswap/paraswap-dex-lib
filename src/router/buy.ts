@@ -1,5 +1,9 @@
 import { IRouter } from './irouter';
-import { PayloadEncoder, encodeFeePercent } from './payload-encoder';
+import {
+  PayloadEncoder,
+  encodeFeePercent,
+  encodeFeePercentForReferrer,
+} from './payload-encoder';
 import {
   Address,
   OptimalRate,
@@ -11,6 +15,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
 import { uuidToBytes16 } from '../utils';
+import { SwapSide } from '../constants';
 
 type BuyParam = [ContractBuyData];
 
@@ -33,6 +38,7 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
     priceRoute: OptimalRate,
     minMaxAmount: string,
     userAddress: Address,
+    referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
     positiveSlippageToUser: boolean,
@@ -61,10 +67,17 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       toToken: priceRoute.destToken,
       fromAmount: minMaxAmount,
       toAmount: priceRoute.destAmount,
+      expectedAmount: priceRoute.srcAmount,
       beneficiary,
       route,
-      partner: partnerAddress,
-      feePercent: encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+      partner: referrerAddress || partnerAddress,
+      feePercent: referrerAddress
+        ? encodeFeePercentForReferrer(SwapSide.BUY)
+        : encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.BUY,
+          ),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

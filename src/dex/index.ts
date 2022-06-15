@@ -41,6 +41,7 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
+import { AugustusRFQOrder } from './augustus-rfq';
 
 const LegacyDexes = [
   Curve,
@@ -61,6 +62,7 @@ const LegacyDexes = [
   UniswapV3,
   Jarvis,
   Lido,
+  AugustusRFQOrder,
 ];
 
 const Dexes = [

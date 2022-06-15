@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.0.38",
+  "version": "2.0.39",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -38,6 +38,7 @@
   "dependencies": {
     "@0x/utils": "^4.5.2",
     "@ethersproject/abi": "5.4.0",
+    "@ethersproject/bytes": "^5.6.1",
     "@ethersproject/contracts": "5.4.1",
     "@ethersproject/providers": "5.4.1",
     "lens.ts": "^0.5.1",

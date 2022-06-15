@@ -16,22 +16,29 @@ import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
 
 import { OptimalSwap } from 'paraswap-core';
 import { DexAdapterService } from '../dex';
-import { encodeFeePercent } from './payload-encoder';
+import {
+  encodeFeePercent,
+  encodeFeePercentForReferrer,
+} from './payload-encoder';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
-type PartialContractSimpleData = Pick<
+export type PartialContractSimpleData = Pick<
   ConstractSimpleData,
   'callees' | 'exchangeData' | 'values' | 'startIndexes'
 >;
 
-abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
+export abstract class SimpleRouterBase<RouterParam>
+  implements IRouter<RouterParam>
+{
   paraswapInterface: Interface;
-  contractMethodName: string;
 
   constructor(
     protected dexAdapterService: DexAdapterService,
     protected side: SwapSide,
+    protected contractMethodName: string = side === SwapSide.SELL
+      ? 'simpleSwap'
+      : 'simpleBuy',
 
     // prepare mapping: network -> wrapped exchange key
     // It assumes that no network has more than one wrapped exchange
@@ -45,8 +52,6 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     }, {}),
   ) {
     this.paraswapInterface = new Interface(IParaswapABI);
-    this.contractMethodName =
-      side === SwapSide.SELL ? 'simpleSwap' : 'simpleBuy';
   }
 
   getContractMethodName(): string {
@@ -75,79 +80,74 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     };
   }
 
-  async build(
+  protected async buildCalls(
     priceRoute: OptimalRate,
     minMaxAmount: string,
-    userAddress: Address,
-    partnerAddress: Address,
-    partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
-    beneficiary: Address,
-    permit: string,
-    deadline: string,
-    uuid: string,
-  ): Promise<TxInfo<SimpleSwapParam>> {
-    if (
-      priceRoute.bestRoute.length !== 1 ||
-      priceRoute.bestRoute[0].percent !== 100 ||
-      priceRoute.bestRoute[0].swaps.length !== 1
-    )
-      throw new Error(`Simpleswap invalid bestRoute`);
-    const swap = priceRoute.bestRoute[0].swaps[0];
-
+  ): Promise<{
+    partialContractSimpleData: PartialContractSimpleData;
+    networkFee: string;
+  }> {
     const wethAddress = Weth.getAddress(priceRoute.network);
 
     const rawSimpleParams = await Promise.all(
-      swap.swapExchanges.map(async se => {
-        const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
-        let _src = swap.srcToken;
-        let wethDeposit = 0n;
-        let _dest = swap.destToken;
-        let wethWithdraw = 0n;
+      priceRoute.bestRoute[0].swaps.flatMap((swap, swapIndex) =>
+        swap.swapExchanges.map(async se => {
+          const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
+          let _src = swap.srcToken;
+          let wethDeposit = 0n;
+          let _dest = swap.destToken;
+          let wethWithdraw = 0n;
 
-        // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
-        // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
-        // Also that it is is direct swap.
-        const _srcAmount =
-          this.side === SwapSide.SELL
-            ? se.srcAmount
-            : (
-                (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
-                BigInt(priceRoute.srcAmount)
-              ).toString();
+          // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
+          // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
+          // Also that it is a direct swap.
+          const _srcAmount =
+            swapIndex > 0 || this.side === SwapSide.SELL
+              ? se.srcAmount
+              : (
+                  (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
+                  BigInt(priceRoute.srcAmount)
+                ).toString();
 
-        // In case of sell the destAmount is set to minimum (1) as
-        // even if the individual dex is rekt by slippage the swap
-        // should work if the final slippage check passes.
-        const _destAmount = this.side === SwapSide.SELL ? '1' : se.destAmount;
+          // In case of sell the destAmount is set to minimum (1) as
+          // even if the individual dex is rekt by slippage the swap
+          // should work if the final slippage check passes.
+          const _destAmount = this.side === SwapSide.SELL ? '1' : se.destAmount;
 
-        if (dex.needWrapNative) {
-          if (isETHAddress(swap.srcToken)) {
-            _src = wethAddress;
-            wethDeposit = BigInt(_srcAmount);
+          if (dex.needWrapNative) {
+            if (isETHAddress(swap.srcToken)) {
+              if (swapIndex !== 0) {
+                throw new Error('Wrap native srcToken not in swapIndex 0');
+              }
+              _src = wethAddress;
+              wethDeposit = BigInt(_srcAmount);
+            }
+
+            if (isETHAddress(swap.destToken)) {
+              if (swapIndex !== priceRoute.bestRoute[0].swaps.length - 1) {
+                throw new Error('Wrap native destToken not in swapIndex last');
+              }
+              _dest = wethAddress;
+              wethWithdraw = BigInt(_destAmount);
+            }
           }
 
-          if (isETHAddress(swap.destToken)) {
-            _dest = wethAddress;
-            wethWithdraw = BigInt(_destAmount);
-          }
-        }
+          const simpleParams = await dex.getSimpleParam(
+            _src,
+            _dest,
+            _srcAmount,
+            _destAmount,
+            se.data,
+            this.side,
+          );
 
-        const simpleParams = await dex.getSimpleParam(
-          _src,
-          _dest,
-          _srcAmount,
-          _destAmount,
-          se.data,
-          this.side,
-        );
-
-        return {
-          simpleParams,
-          wethDeposit,
-          wethWithdraw,
-        };
-      }),
+          return {
+            simpleParams,
+            wethDeposit,
+            wethWithdraw,
+          };
+        }),
+      ),
     );
 
     const {
@@ -185,7 +185,6 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     const maybeWethCallData = this.getDepositWithdrawWethCallData(
       srcAmountWethToDeposit,
       destAmountWethToWithdraw,
-      swap,
     );
 
     if (maybeWethCallData) {
@@ -207,8 +206,82 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
       }
     }
 
-    const partialContractSimpleData = this.buildPartialContractSimpleData(
-      simpleExchangeDataFlat,
+    return {
+      partialContractSimpleData: this.buildPartialContractSimpleData(
+        simpleExchangeDataFlat,
+      ),
+      networkFee: simpleExchangeDataFlat.networkFee,
+    };
+  }
+
+  abstract build(
+    priceRoute: OptimalRate,
+    minMaxAmount: string,
+    userAddress: Address,
+    referrerAddress: Address | undefined,
+    partnerAddress: Address,
+    partnerFeePercent: string,
+    positiveSlippageToUser: boolean,
+    beneficiary: Address,
+    permit: string,
+    deadline: string,
+    uuid: string,
+  ): Promise<TxInfo<RouterParam>>;
+
+  protected getDepositWithdrawWethCallData(
+    srcAmountWeth: bigint,
+    destAmountWeth: bigint,
+  ) {
+    if (srcAmountWeth === 0n && destAmountWeth === 0n) return;
+
+    return (
+      this.dexAdapterService.getTxBuilderDexByKey(
+        this.wExchangeNetworkToKey[this.dexAdapterService.network],
+      ) as unknown as IWethDepositorWithdrawer
+    ).getDepositWithdrawParam(
+      srcAmountWeth.toString(),
+      destAmountWeth.toString(),
+      this.side,
+    );
+  }
+}
+
+export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
+  constructor(
+    dexAdapterService: DexAdapterService,
+    side: SwapSide,
+    contractMethodName: string,
+  ) {
+    super(dexAdapterService, side, contractMethodName);
+  }
+
+  protected validateBestRoute(priceRoute: OptimalRate): boolean {
+    return (
+      priceRoute.bestRoute.length === 1 &&
+      priceRoute.bestRoute[0].percent === 100 &&
+      priceRoute.bestRoute[0].swaps.length === 1
+    );
+  }
+
+  async build(
+    priceRoute: OptimalRate,
+    minMaxAmount: string,
+    userAddress: Address,
+    referrerAddress: Address | undefined,
+    partnerAddress: Address,
+    partnerFeePercent: string,
+    positiveSlippageToUser: boolean,
+    beneficiary: Address,
+    permit: string,
+    deadline: string,
+    uuid: string,
+  ): Promise<TxInfo<SimpleSwapParam>> {
+    if (!this.validateBestRoute(priceRoute))
+      throw new Error(`${this.contractMethodName} invalid bestRoute`);
+
+    const { partialContractSimpleData, networkFee } = await this.buildCalls(
+      priceRoute,
+      minMaxAmount,
     );
 
     const sellData: ConstractSimpleData = {
@@ -224,8 +297,14 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
           ? priceRoute.destAmount
           : priceRoute.srcAmount,
       beneficiary,
-      partner: partnerAddress,
-      feePercent: encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+      partner: referrerAddress || partnerAddress,
+      feePercent: referrerAddress
+        ? encodeFeePercentForReferrer(this.side)
+        : encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            this.side,
+          ),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),
@@ -240,41 +319,35 @@ abstract class SimpleRouter implements IRouter<SimpleSwapParam> {
     return {
       encoder,
       params: [sellData],
-      networkFee: simpleExchangeDataFlat.networkFee,
+      networkFee,
     };
-  }
-
-  getDepositWithdrawWethCallData(
-    srcAmountWeth: bigint,
-    destAmountWeth: bigint,
-    swap: OptimalSwap,
-  ) {
-    if (srcAmountWeth === 0n && destAmountWeth === 0n) return;
-
-    return (
-      this.dexAdapterService.getTxBuilderDexByKey(
-        this.wExchangeNetworkToKey[this.dexAdapterService.network],
-      ) as unknown as IWethDepositorWithdrawer
-    ).getDepositWithdrawParam(
-      swap.srcToken,
-      swap.destToken,
-      srcAmountWeth.toString(),
-      destAmountWeth.toString(),
-      this.side,
-    );
   }
 }
 
 export class SimpleSwap extends SimpleRouter {
   static isBuy = false;
   constructor(dexAdapterService: DexAdapterService) {
-    super(dexAdapterService, SwapSide.SELL);
+    super(dexAdapterService, SwapSide.SELL, 'simpleSwap');
   }
 }
 
 export class SimpleBuy extends SimpleRouter {
   static isBuy = true;
   constructor(dexAdapterService: DexAdapterService) {
-    super(dexAdapterService, SwapSide.BUY);
+    super(dexAdapterService, SwapSide.BUY, 'simpleBuy');
+  }
+
+  // Need to handle special case where second swap consists entirely of
+  // AugustusRFQOrder executions
+  protected validateBestRoute(priceRoute: OptimalRate): boolean {
+    return (
+      priceRoute.bestRoute.length === 1 &&
+      priceRoute.bestRoute[0].percent === 100 &&
+      (priceRoute.bestRoute[0].swaps.length === 1 ||
+        (priceRoute.bestRoute[0].swaps.length === 2 &&
+          !priceRoute.bestRoute[0].swaps[1].swapExchanges.find(
+            se => se.exchange.toLowerCase() !== 'augustusrfqorder',
+          )))
+    );
   }
 }
