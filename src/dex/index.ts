@@ -38,6 +38,7 @@ import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
+import { TetuSwap } from './uniswap-v2/tetuswap';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
@@ -78,6 +79,7 @@ const Dexes = [
   KyberDmm,
   Weth,
   MakerPsm,
+  TetuSwap,
   Nerve,
   Platypus,
   GMX,

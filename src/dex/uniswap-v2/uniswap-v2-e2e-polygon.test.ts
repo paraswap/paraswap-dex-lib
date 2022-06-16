@@ -1235,4 +1235,141 @@ describe('UniswapV2 E2E Polygon', () => {
       });
     });
   });
+
+  describe('TetuSwap', () => {
+    const dexKey = 'TetuSwap';
+
+    const MATIC_amount = '100000000000000000000'; // 100 MATIC
+    const TETU_amount = '1000000000000000000000'; // 1000 TETU
+
+    describe('simpleSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.TETU,
+          holders.MATIC,
+          MATIC_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.TETU,
+          tokens.MATIC,
+          holders.TETU,
+          TETU_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.TETU,
+          tokens.USDC,
+          holders.TETU,
+          TETU_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('multiSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.TETU,
+          holders.MATIC,
+          MATIC_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.TETU,
+          tokens.MATIC,
+          holders.TETU,
+          TETU_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.TETU,
+          tokens.USDC,
+          holders.TETU,
+          TETU_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('megaSwap', () => {
+      it('MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.TETU,
+          holders.MATIC,
+          MATIC_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> MATIC', async () => {
+        await testE2E(
+          tokens.TETU,
+          tokens.MATIC,
+          holders.TETU,
+          TETU_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Token -> Token', async () => {
+        await testE2E(
+          tokens.TETU,
+          tokens.USDC,
+          holders.TETU,
+          TETU_amount,
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });

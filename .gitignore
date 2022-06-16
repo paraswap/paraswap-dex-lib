@@ -6,4 +6,5 @@ yarn-error.log
 .vscode/
 tests/logs.json
 tests/states.json
+.idea
 tests/configs.json
