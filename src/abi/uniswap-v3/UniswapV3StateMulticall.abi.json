@@ -2,9 +2,24 @@
   {
     "inputs": [
       {
-        "internalType": "contract IUniswapV3Pool",
-        "name": "pool",
+        "internalType": "contract IUniswapV3Factory",
+        "name": "factory",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "uint24",
+        "name": "fee",
+        "type": "uint24"
       },
       {
         "internalType": "int16",
@@ -92,9 +107,24 @@
   {
     "inputs": [
       {
-        "internalType": "contract IUniswapV3Pool",
-        "name": "pool",
+        "internalType": "contract IUniswapV3Factory",
+        "name": "factory",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "uint24",
+        "name": "fee",
+        "type": "uint24"
       },
       {
         "internalType": "int16",
