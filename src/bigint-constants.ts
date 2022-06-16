@@ -6,7 +6,10 @@ export const BI_POWS = new Array(37)
   .fill(undefined)
   .map((_0, index) => BigInt(`1${'0'.repeat(index)}`));
 
+export const BI_MIN_INT16 = -(2n ** 16n / 2n);
+export const BI_MAX_INT16 = (2n ** 16n - 1n) / 2n;
 export const BI_MAX_INT = BigInt(MAX_INT);
+
 export const BI_MAX_UINT8 = 2n ** 8n - 1n;
 export const BI_MAX_UINT16 = 2n ** 16n - 1n;
 export const BI_MAX_UINT32 = 2n ** 32n - 1n;
