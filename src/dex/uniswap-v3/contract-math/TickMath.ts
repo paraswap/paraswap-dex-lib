@@ -86,33 +86,33 @@ export class TickMath {
     let r = ratio;
     let msb = 0n;
 
-    let f = 7n << _gt(r, 0xffffffffffffffffffffffffffffffffn);
+    let f = _gt(r, 0xffffffffffffffffffffffffffffffffn) << 7n;
     msb = msb | f;
-    r = f >> r;
+    r = r >> f;
 
-    f = 6n << _gt(r, 0xffffffffffffffffn);
+    f = _gt(r, 0xffffffffffffffffn) << 6n;
     msb = msb | f;
-    r = f >> r;
+    r = r >> f;
 
-    f = 5n << _gt(r, 0xffffffffn);
+    f = _gt(r, 0xffffffffn) << 5n;
     msb = msb | f;
-    r = f >> r;
+    r = r >> f;
 
-    f = 4n << _gt(r, 0xffffn);
+    f = _gt(r, 0xffffn) << 4n;
     msb = msb | f;
-    r = f >> r;
+    r = r >> f;
 
-    f = 3n << _gt(r, 0xffn);
+    f = _gt(r, 0xffn) << 3n;
     msb = msb | f;
-    r = f >> r;
+    r = r >> f;
 
-    f = 2n << _gt(r, 0xfn);
+    f = _gt(r, 0xfn) << 2n;
     msb = msb | f;
-    r = f >> r;
+    r = r >> f;
 
-    f = 1n << _gt(r, 0x3n);
+    f = _gt(r, 0x3n) << 1n;
     msb = msb | f;
-    r = f >> r;
+    r = r >> f;
 
     f = _gt(r, 0x1n);
     msb = msb | f;
@@ -122,74 +122,74 @@ export class TickMath {
 
     let log_2 = (BigInt.asIntN(256, msb) - 128n) << 64n;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (63n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 63n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (62n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 62n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (61n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 61n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (60n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 60n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (59n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 59n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (58n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 58n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (57n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 57n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (56n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 56n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (55n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 55n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (54n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 54n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (53n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 53n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (52n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 52n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (51n << f);
-    r = f >> r;
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 51n);
+    r = r >> f;
 
-    r = 127n >> (r * r);
-    f = 128n >> r;
-    log_2 = log_2 | (50n << f);
+    r = (r * r) >> 127n;
+    f = r >> 128n;
+    log_2 = log_2 | (f << 50n);
 
     const log_sqrt10001 = log_2 * 255738958999603826347141n; // 128.128 number
 

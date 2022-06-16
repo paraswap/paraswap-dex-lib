@@ -113,7 +113,7 @@ export class UniswapV3
           blockNumber,
         );
       } catch (e) {
-        if (e instanceof Error && (e as any).reason === 'Pool does not exist') {
+        if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
           pool = null;

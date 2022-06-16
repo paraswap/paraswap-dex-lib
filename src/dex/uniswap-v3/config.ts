@@ -2,8 +2,10 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
-// const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
-const SUPPORTED_FEES = [10000n, 3000n, 500n];
+const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
+
+// TODO: Remove before deploying to production
+// const SUPPORTED_FEES = [500n];
 
 export const UniswapV3Config: DexConfigMap<DexParams> = {
   UniswapV3: {
@@ -11,13 +13,13 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
-      stateMulticall: '0xee02f0ac9cce1285a67c06e30935031eb3ed3181',
+      stateMulticall: '',
     },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
-      stateMulticall: '',
+      stateMulticall: '0xc57941D86d5df50154c225EAF413754b2371Df17',
     },
   },
 };

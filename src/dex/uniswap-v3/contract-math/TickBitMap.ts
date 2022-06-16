@@ -42,16 +42,11 @@ export class TickBitMap {
       const mask = (1n << bitPos) - 1n + (1n << bitPos);
 
       let tickBitmapValue = state.tickBitmap[wordPos.toString()];
-      if (tickBitmapValue === undefined) {
-        _require(
-          wordPos > LOWER_TICK_REQUEST_LIMIT ||
-            wordPos < UPPER_TICK_REQUEST_LIMIT,
-          'wordPos is out of state tickBitmap request range',
-          { wordPos },
-          'wordPos > LOWER_TICK_REQUEST_LIMIT || wordPos < UPPER_TICK_REQUEST_LIMIT',
-        );
-        tickBitmapValue = 0n;
-      }
+      tickBitmapValue = TickBitMap._putZeroIfUndefined(
+        tickBitmapValue,
+        wordPos,
+      );
+
       const masked = tickBitmapValue & mask;
 
       initialized = masked != 0n;
@@ -66,16 +61,10 @@ export class TickBitMap {
       const mask = ~((1n << bitPos) - 1n);
 
       let tickBitmapValue = state.tickBitmap[wordPos.toString()];
-      if (tickBitmapValue === undefined) {
-        _require(
-          wordPos > UPPER_TICK_REQUEST_LIMIT ||
-            wordPos < LOWER_TICK_REQUEST_LIMIT,
-          'wordPos is out of state tickBitmap request range',
-          { wordPos },
-          'wordPos > UPPER_TICK_REQUEST_LIMIT || wordPos < LOWER_TICK_REQUEST_LIMIT',
-        );
-        tickBitmapValue = 0n;
-      }
+      tickBitmapValue = TickBitMap._putZeroIfUndefined(
+        tickBitmapValue,
+        wordPos,
+      );
 
       const masked = tickBitmapValue & mask;
 
@@ -90,5 +79,22 @@ export class TickBitMap {
     }
 
     return [next, initialized];
+  }
+
+  static _putZeroIfUndefined(
+    tickBitmapValue: bigint | undefined,
+    wordPos: bigint,
+  ): bigint {
+    if (tickBitmapValue === undefined) {
+      _require(
+        wordPos >= LOWER_TICK_REQUEST_LIMIT &&
+          wordPos <= UPPER_TICK_REQUEST_LIMIT,
+        'wordPos is out of state tickBitmap request range',
+        { wordPos },
+        'wordPos >= LOWER_TICK_REQUEST_LIMIT && wordPos <= UPPER_TICK_REQUEST_LIMIT',
+      );
+      return 0n;
+    }
+    return tickBitmapValue;
   }
 }
