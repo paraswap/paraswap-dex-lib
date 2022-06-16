@@ -22,6 +22,11 @@ export class TickBitMap {
     );
     const [wordPos, bitPos] = TickBitMap.position(tick / tickSpacing);
     const mask = 1n << bitPos;
+
+    // This is used only to check that we are not out of state requesting ranges.
+    // If yes, we must be notified to adapt the request range.
+    const _0 = this._putZeroIfUndefined(undefined, wordPos);
+
     state.tickBitmap[wordPos.toString()] ^= mask;
   }
 
