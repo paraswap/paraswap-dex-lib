@@ -106,7 +106,6 @@ describe('UniswapV3', function () {
 
   beforeAll(async () => {
     blockNumber = await dexHelper.provider.getBlockNumber();
-
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
   });
 
@@ -138,15 +137,20 @@ describe('UniswapV3', function () {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     }
 
+    const fee =
+      uniswapV3.eventPools[
+        'UniswapV3_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48_0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2_10000'
+      ]!.feeCode;
+
     // Check if onchain pricing equals to calculated ones
     await checkOnChainPricing(
       uniswapV3,
       'quoteExactInputSingle',
       blockNumber,
       poolPrices![0].prices,
-      '',
-      '',
-      0n,
+      TokenA.address,
+      TokenB.address,
+      fee,
     );
   });
 
