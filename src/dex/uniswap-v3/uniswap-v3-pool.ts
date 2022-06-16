@@ -1,23 +1,26 @@
 import _ from 'lodash';
+import ethers from 'ethers';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import {
   Log,
   Logger,
   BlockHeader,
-  Token,
   Address,
   MultiCallV2Output,
 } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { OracleObservation, PoolState, Slot0, TickInfo } from './types';
+import { PoolState, TickInfo } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
+import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import { bigIntify } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { BI_MAX_INT16 } from '../../bigint-constants';
+import { NumberAsString } from 'paraswap-core';
 import {
-  TICK_BIT_MAP_CHUNK_SIZE,
-  TICK_BIT_MAP_REQUEST_AMOUNT,
+  LOWER_TICK_REQUEST_LIMIT,
+  UPPER_TICK_REQUEST_LIMIT,
 } from './constants';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
@@ -35,8 +38,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   addressesSubscribed: string[];
   readonly token0: Address;
   readonly token1: Address;
+  private _poolAddress?: Address;
 
-  private _encodedFirstStepStateCalldata?: {
+  private _encodedStateRequestCallData?: {
     target: Address;
     callData: string;
   }[];
@@ -46,18 +50,21 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    readonly poolAddress: Address,
+    protected readonly stateMultiAddress: Address,
+    protected readonly factoryAddress: Address,
     readonly feeCode: bigint,
     token0: Address,
     token1: Address,
-    protected poolIface = new Interface(UniswapV3PoolABI),
+    protected readonly poolIface = new Interface(UniswapV3PoolABI),
+    protected readonly stateMultiIface = new Interface(
+      UniswapV3StateMulticallABI,
+    ),
   ) {
     super(`${parentName}_${token0}_${token1}_pool`, logger);
-    this.poolAddress = poolAddress.toLowerCase();
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
-    this.addressesSubscribed = [poolAddress];
+    this.addressesSubscribed = new Array<Address>(1);
 
     // Add handlers
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
@@ -66,6 +73,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
     this.handlers['IncreaseObservationCardinalityNext'] =
       this.handleIncreaseObservationCardinalityNextEvent.bind(this);
+  }
+
+  get poolAddress() {
+    if (this._poolAddress === undefined) {
+      throw new Error(
+        `${this.parentName}: First call generateState at least one time before requesting poolAddress`,
+      );
+    }
+    return this._poolAddress;
   }
 
   protected processLog(
@@ -92,168 +108,102 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
-  private _getFirstStepStateCallData() {
-    const target = this.poolAddress;
-    if (!this._encodedFirstStepStateCalldata) {
+  private _getStateRequestCallData() {
+    const target = this.stateMultiAddress;
+    if (!this._encodedStateRequestCallData) {
       const callData = [
         {
           target,
-          callData: this.poolIface.encodeFunctionData('slot0', []),
+          callData: this.stateMultiIface.encodeFunctionData('getFullState', [
+            this.factoryAddress,
+            this.token0,
+            this.token1,
+            this.feeCode,
+            LOWER_TICK_REQUEST_LIMIT,
+            UPPER_TICK_REQUEST_LIMIT,
+          ]),
         },
-        {
-          target,
-          callData: this.poolIface.encodeFunctionData('liquidity', []),
-        },
-        {
-          target,
-          callData: this.poolIface.encodeFunctionData('fee', []),
-        },
-        {
-          target,
-          callData: this.poolIface.encodeFunctionData('tickSpacing', []),
-        },
-        {
-          target,
-          callData: this.poolIface.encodeFunctionData(
-            'maxLiquidityPerTick',
-            [],
-          ),
-        },
-      ].concat(
-        new Array(TICK_BIT_MAP_REQUEST_AMOUNT).fill(undefined).map((_0, i) => ({
-          target,
-          callData: this.poolIface.encodeFunctionData('tickBitmap', [i]),
-        })),
-      );
-
-      this._encodedFirstStepStateCalldata = callData;
+      ];
+      this._encodedStateRequestCallData = callData;
     }
-    return this._encodedFirstStepStateCalldata;
-  }
-
-  private _getSecondStepStateCallData(
-    observationIndex: number,
-    ticks: bigint[],
-  ) {
-    if (ticks.length > 2000) {
-      this.logger.error(
-        `Error ${this.parentName} [_getSecondStepStateCallData]: tick.length=${ticks.length} is too bog. Consider batching multicall requests`,
-      );
-    }
-    const target = this.poolAddress;
-    return [
-      {
-        target,
-        callData: this.poolIface.encodeFunctionData('observations', [
-          observationIndex,
-        ]),
-      },
-    ].concat(
-      ticks.map(tick => ({
-        target,
-        callData: this.poolIface.encodeFunctionData('ticks', [tick]),
-      })),
-    );
+    return this._encodedStateRequestCallData;
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    const firstCallData = this._getFirstStepStateCallData();
+    const callData = this._getStateRequestCallData();
 
-    const firstData = (
-      await Promise.all(
-        _.chunk(
-          firstCallData,
-          Math.floor(
-            // Because callData has other entries than tickBitmap, real chunk
-            // size by one bigger than this value, so I reduce by one TICK_BIT_MAP_CHUNK_SIZE - 1
-            TICK_BIT_MAP_REQUEST_AMOUNT / (TICK_BIT_MAP_CHUNK_SIZE - 1),
-          ),
-        ).map(async chunkedCallData =>
-          this.dexHelper.multiContract.methods
-            .tryAggregate(false, chunkedCallData)
-            .call({}, blockNumber || 'latest'),
-        ),
-      )
-    ).flat();
-
-    this._checkMulticallResultForError(firstData, blockNumber);
-
-    const slot0 = this._decodeSlot0Result(firstData[0].returnData);
-    const liquidity = bigIntify(
-      this.poolIface.decodeFunctionResult(
-        'liquidity',
-        firstData[1].returnData,
-      )[0],
-    );
-    const fee = bigIntify(
-      this.poolIface.decodeFunctionResult('fee', firstData[2].returnData)[0],
-    );
-    const tickSpacing = bigIntify(
-      this.poolIface.decodeFunctionResult(
-        'tickSpacing',
-        firstData[3].returnData,
-      )[0],
-    );
-    const maxLiquidityPerTick = bigIntify(
-      this.poolIface.decodeFunctionResult(
-        'maxLiquidityPerTick',
-        firstData[4].returnData,
-      )[0],
-    );
-
-    const tickBitmap = firstData
-      .slice(5)
-      .map((d: MultiCallV2Output) =>
-        bigIntify(
-          this.poolIface.decodeFunctionResult('tickBitmap', d.returnData)[0],
-        ),
-      )
-      .reduce<Record<string, bigint>>((acc, curr, i) => {
-        acc[i.toString()] = curr;
-        return acc;
-      }, {});
-
-    const populatedTickIndexes = this._calcPopulatedTickIndexes(
-      Object.values(tickBitmap),
-      tickSpacing,
-    );
-
-    const observations = new Array(65535);
-
-    const secondCallData = this._getSecondStepStateCallData(
-      slot0.observationIndex,
-      populatedTickIndexes,
-    );
-
-    const secondData = await this.dexHelper.multiContract.methods
-      .tryAggregate(false, secondCallData)
+    const start = Date.now();
+    const data = await this.dexHelper.multiContract.methods
+      .tryAggregate(false, callData)
       .call({}, blockNumber || 'latest');
 
-    this._checkMulticallResultForError(secondData, blockNumber);
+    const elapsed = Date.now() - start;
+    console.log(elapsed);
 
-    observations[slot0.observationIndex] = this._decodeObservationResult(
-      secondData[0].returnData,
-    );
+    // I don't know why, but I receive "Returned values aren't valid, did it run Out of Gas?..." error
+    // if I use "aggregate". Actually, I wanted to fail and catch the error outside, but it is not working
+    // So, I use "tryAggregate(false, callData)" -> raise Error manually if not succeeded
+    this._raiseIfNotAllSucceeded(data);
 
-    const ticks = populatedTickIndexes.reduce<Record<string, TickInfo>>(
-      (acc, curr, i) => {
-        acc[curr.toString()] = this._decodeTickInfoResult(
-          secondData[i + 1].returnData,
-        );
-        return acc;
-      },
-      {},
-    );
+    const _state = this.stateMultiIface.decodeFunctionResult(
+      'getFullState',
+      data[0].returnData,
+    ).state;
+
+    // Not really a good place to do it, but in order to save RPC requests,
+    // put it here
+    this._poolAddress = _state.pool.toLowerCase();
+    this.addressesSubscribed[0] = this.poolAddress;
+
+    const tickBitmap = (
+      _state.tickBitmap as { index: number; value: ethers.utils.BigNumber }[]
+    ).reduce<Record<NumberAsString, bigint>>((acc, curr) => {
+      const { index, value } = curr;
+      acc[index] = bigIntify(value);
+      return acc;
+    }, {});
+
+    const observations = new Array(65535);
+    observations[_state.slot0.observationIndex] = {
+      blockTimestamp: bigIntify(_state.observation.blockTimestamp),
+      tickCumulative: bigIntify(_state.observation.tickCumulative),
+      secondsPerLiquidityCumulativeX128: bigIntify(
+        _state.observation.secondsPerLiquidityCumulativeX128,
+      ),
+      initialized: _state.observation.initialized,
+    };
+
+    const ticks = (_state.ticks as { index: number; value: TickInfo }[]).reduce<
+      Record<string, TickInfo>
+    >((acc, curr) => {
+      const { index, value } = curr;
+      acc[index] = {
+        liquidityGross: bigIntify(value.liquidityGross),
+        liquidityNet: bigIntify(value.liquidityNet),
+        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
+        secondsPerLiquidityOutsideX128: bigIntify(
+          value.secondsPerLiquidityOutsideX128,
+        ),
+        secondsOutside: bigIntify(value.secondsOutside),
+        initialized: value.initialized,
+      };
+      return acc;
+    }, {});
 
     return {
-      // Later before parsing new event, it will be replaced with blockTimestamp
-      // It doesn't affect the pricing
-      blockTimestamp: BigInt(Date.now()) / 1000n,
-      slot0,
-      liquidity,
-      fee,
-      tickSpacing,
-      maxLiquidityPerTick,
+      blockTimestamp: bigIntify(_state.blockTimestamp),
+      slot0: {
+        sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
+        tick: bigIntify(_state.slot0.tick),
+        observationIndex: _state.slot0.observationIndex,
+        observationCardinality: _state.slot0.observationCardinality,
+        observationCardinalityNext: _state.slot0.observationCardinalityNext,
+        feeProtocol: bigIntify(_state.slot0.feeProtocol),
+      },
+      liquidity: bigIntify(_state.liquidity),
+      fee: this.feeCode,
+      tickSpacing: bigIntify(_state.tickSpacing),
+      maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
       ticks,
       observations,
@@ -289,7 +239,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     try {
-      // For state is relevant just to update the ticks and other things
+      // There is relevant just to update the ticks and other things for state
       uniswapV3Math._modifyPosition(pool, {
         tickLower,
         tickUpper,
@@ -360,75 +310,31 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return pool;
   }
 
-  private _decodeSlot0Result(data: string): Slot0 {
-    const _slot0 = this.poolIface.decodeFunctionResult('slot0', data);
-    return {
-      sqrtPriceX96: bigIntify(_slot0.sqrtPriceX96),
-      tick: bigIntify(_slot0.tick),
-      observationIndex: _slot0.observationIndex,
-      observationCardinality: _slot0.observationCardinality,
-      observationCardinalityNext: _slot0.observationCardinalityNext,
-      feeProtocol: bigIntify(_slot0.feeProtocol),
-    };
-  }
-
-  private _decodeObservationResult(data: string): OracleObservation {
-    const observation = this.poolIface.decodeFunctionResult(
-      'observations',
-      data,
-    );
-    return {
-      blockTimestamp: bigIntify(observation.blockTimestamp),
-      tickCumulative: bigIntify(observation.tickCumulative),
-      secondsPerLiquidityCumulativeX128: bigIntify(
-        observation.secondsPerLiquidityCumulativeX128,
-      ),
-      initialized: observation.initialized,
-    };
-  }
-
-  private _decodeTickInfoResult(data: string): TickInfo {
-    const tickInfo = this.poolIface.decodeFunctionResult('ticks', data);
-    return {
-      liquidityGross: bigIntify(tickInfo.liquidityGross),
-      liquidityNet: bigIntify(tickInfo.liquidityNet),
-      tickCumulativeOutside: bigIntify(tickInfo.tickCumulativeOutside),
-      secondsPerLiquidityOutsideX128: bigIntify(
-        tickInfo.secondsPerLiquidityOutsideX128,
-      ),
-      secondsOutside: bigIntify(tickInfo.secondsOutside),
-      initialized: tickInfo.initialized,
-    };
-  }
-
-  private _calcPopulatedTickIndexes(
-    tickBitmaps: bigint[],
-    tickSpacing: bigint,
-  ): bigint[] {
-    return tickBitmaps.reduce<bigint[]>((acc, curr, tickBitmapIndex) => {
-      if (curr !== 0n) {
-        for (let i = 0n; i < 256n; i++) {
-          if ((curr & (1n << i)) > 0n) {
-            const populatedTick =
-              ((BigInt(tickBitmapIndex) << 8n) + i) * tickSpacing;
-            acc.push(populatedTick);
-          }
-        }
-      }
-      return acc;
-    }, []);
-  }
-
-  private _checkMulticallResultForError(
-    data: MultiCallV2Output[],
-    blockNumber: number,
-  ) {
+  private _raiseIfNotAllSucceeded(data: MultiCallV2Output[]) {
     data.forEach((d: MultiCallV2Output, i: number) => {
       if (!d.success) {
-        throw new Error(
-          `${this.parentName}: Can not fetch state for ${blockNumber} and index=${i}`,
-        );
+        // It will raise an error with required message
+        this.stateMultiIface.decodeFunctionResult('getFullState', d.returnData);
       }
     });
   }
+
+  // TODO: Remove if not used later
+  // private _calcPopulatedTickIndexes(
+  //   tickBitmaps: bigint[],
+  //   tickSpacing: bigint,
+  // ): bigint[] {
+  //   return tickBitmaps.reduce<bigint[]>((acc, curr, tickBitmapIndex) => {
+  //     if (curr !== 0n) {
+  //       for (let i = 0n; i < 256n; i++) {
+  //         if ((curr & (1n << i)) > 0n) {
+  //           const populatedTick =
+  //             ((BigInt(tickBitmapIndex) << 8n) + i) * tickSpacing;
+  //           acc.push(populatedTick);
+  //         }
+  //       }
+  //     }
+  //     return acc;
+  //   }, []);
+  // }
 }

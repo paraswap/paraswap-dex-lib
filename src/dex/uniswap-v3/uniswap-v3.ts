@@ -26,7 +26,6 @@ import { SimpleExchange } from '../simple-exchange';
 import { UniswapV3Config, Adapters } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
-import UniswapV3FactoryABI from '../../abi/uniswap-v3/UniswapV3Factory.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_QUOTE_GASLIMIT,
@@ -40,7 +39,7 @@ export class UniswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
-  protected eventPools: Record<string, UniswapV3EventPool | null> = {};
+  readonly eventPools: Record<string, UniswapV3EventPool | null> = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -49,7 +48,6 @@ export class UniswapV3
     getDexKeysWithNetwork(UniswapV3Config);
 
   logger: Logger;
-  readonly factoryContract: Contract;
 
   constructor(
     protected network: Network,
@@ -64,11 +62,6 @@ export class UniswapV3
 
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
-
-    this.factoryContract = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3FactoryABI as AbiItem[],
-      this.config.factory,
-    );
   }
 
   get supportedFees() {
@@ -95,45 +88,50 @@ export class UniswapV3
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
+      pool = new UniswapV3EventPool(
+        this.dexKey,
+        this.network,
+        this.dexHelper,
+        this.logger,
+        this.config.stateMulticall,
+        this.config.factory,
+        fee,
+        token0,
+        token1,
+      );
+
+      let newState;
       try {
-        const poolAddress = await this.factoryContract.methods
-          .getPool(token0, token1, fee)
-          .call({}, 'latest');
+        newState = await pool.generateState(blockNumber);
 
-        if (poolAddress === NULL_ADDRESS) {
-          this.eventPools[
-            this.getPoolIdentifier(srcAddress, destAddress, fee)
-          ] = null;
-        } else {
-          pool = new UniswapV3EventPool(
-            this.dexKey,
-            this.network,
-            this.dexHelper,
-            this.logger,
-            poolAddress,
-            fee,
-            token0,
-            token1,
-          );
+        pool.setState(newState, blockNumber);
 
-          const newState = await pool.generateState(blockNumber);
-          pool.setState(newState, blockNumber);
-          this.dexHelper.blockManager.subscribeToLogs(
-            pool,
-            pool.addressesSubscribed,
-            blockNumber,
-          );
-
-          this.eventPools[
-            this.getPoolIdentifier(srcAddress, destAddress, fee)
-          ] = pool;
-        }
-      } catch (e) {
-        this.logger.error(
-          `${this.dexKey}: Can not fetch pool address from factory: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee}`,
+        this.dexHelper.blockManager.subscribeToLogs(
+          pool,
+          pool.addressesSubscribed,
+          blockNumber,
         );
-        return null;
+      } catch (e) {
+        if (e instanceof Error && (e as any).reason === 'Pool does not exist') {
+          // Pool does not exist for this feeCode, so we can set it to null
+          // to prevent more requests for this pool
+          pool = null;
+          this.logger.warn(
+            `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
+            e,
+          );
+        } else {
+          // Unexpected Error. Break execution. Do not save the pool in this.eventPools
+          this.logger.error(
+            `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool`,
+            e,
+          );
+          return null;
+        }
       }
+
+      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
+        pool;
     }
     return pool;
   }
@@ -439,6 +437,7 @@ export class UniswapV3
       router: this.config.router.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
       supportedFees: this.config.supportedFees,
+      stateMulticall: this.config.stateMulticall.toLowerCase(),
     };
     return newConfig;
   }

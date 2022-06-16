@@ -52,6 +52,7 @@ export type UniswapV3Data = {
 export type DexParams = {
   router: Address;
   factory: Address;
+  stateMulticall: Address;
   supportedFees: bigint[];
 };
 
