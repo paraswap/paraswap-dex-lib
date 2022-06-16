@@ -4,9 +4,8 @@ export const STATE_REQUEST_CHUNK_AMOUNT = 1n;
 
 export const OBSERVATIONS_ARRAY_SIZE = 65535;
 
-// TODO: Must be adjusted before going production. For tests ok to use this
-export const LOWER_TICK_REQUEST_LIMIT = -2000n;
-export const UPPER_TICK_REQUEST_LIMIT = 2000n;
+export const LOWER_TICK_REQUEST_LIMIT = -3000n;
+export const UPPER_TICK_REQUEST_LIMIT = 3000n;
 
 export const UNISWAPV3_SUBGRAPH_URL =
   'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
