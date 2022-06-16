@@ -556,19 +556,35 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
         .aggregate(inputs)
         .call({}, blockNumber)
     ).returnData;
+    const usdPromises = [];
     let i = 0;
+    for (const poolAddress of this.cfgInfo.poolAddresses) {
+      for (const tokenAddress of this.cfgInfo.pools[poolAddress]
+        .tokenAddresses) {
+        usdPromises.push(
+          this.dexHelper.getTokenUSDPrice(
+            {
+              address: tokenAddress,
+              decimals:
+                this.cfgInfo.pools[poolAddress].tokens[tokenAddress]
+                  .tokenDecimals,
+            },
+            BigInt(
+              Platypus.assetInterface
+                .decodeFunctionResult('cash', returnData[i++])[0]
+                .toString(),
+            ),
+          ),
+        );
+      }
+    }
+    const usdValues = await Promise.all(usdPromises);
+    i = 0;
     for (const poolAddress of this.cfgInfo.poolAddresses) {
       poolLiquidityUSD[poolAddress] = 0;
       for (const tokenAddress of this.cfgInfo.pools[poolAddress]
         .tokenAddresses) {
-        poolLiquidityUSD[poolAddress] +=
-          Number(
-            Platypus.assetInterface
-              .decodeFunctionResult('cash', returnData[i++])[0]
-              .toString(),
-          ) /
-          10 **
-            this.cfgInfo.pools[poolAddress].tokens[tokenAddress].tokenDecimals;
+        poolLiquidityUSD[poolAddress] += usdValues[i++];
       }
     }
     this.poolLiquidityUSD = poolLiquidityUSD;
