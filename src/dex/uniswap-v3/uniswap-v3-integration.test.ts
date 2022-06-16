@@ -137,20 +137,19 @@ describe('UniswapV3', function () {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     }
 
-    const fee =
-      uniswapV3.eventPools[
-        'UniswapV3_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48_0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2_10000'
-      ]!.feeCode;
-
-    // Check if onchain pricing equals to calculated ones
-    await checkOnChainPricing(
-      uniswapV3,
-      'quoteExactInputSingle',
-      blockNumber,
-      poolPrices![0].prices,
-      TokenA.address,
-      TokenB.address,
-      fee,
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        await checkOnChainPricing(
+          uniswapV3,
+          'quoteExactInputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+        );
+      }),
     );
   });
 
@@ -183,14 +182,19 @@ describe('UniswapV3', function () {
     }
 
     // Check if onchain pricing equals to calculated ones
-    await checkOnChainPricing(
-      uniswapV3,
-      'quoteExactOutputSingle',
-      blockNumber,
-      poolPrices![0].prices,
-      '',
-      '',
-      0n,
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        await checkOnChainPricing(
+          uniswapV3,
+          'quoteExactOutputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+        );
+      }),
     );
   });
 
