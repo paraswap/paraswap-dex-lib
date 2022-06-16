@@ -2,6 +2,7 @@ import { PoolState, TickInfo } from '../types';
 import { LiquidityMath } from './LiquidityMath';
 import { _require } from '../../../utils';
 import { NumberAsString } from 'paraswap-core';
+import { ZERO_TICK_INFO } from '../constants';
 
 export class Tick {
   static update(
@@ -15,7 +16,11 @@ export class Tick {
     upper: boolean,
     maxLiquidity: bigint,
   ): boolean {
-    const info = state.ticks[Number(tick)];
+    let info = state.ticks[Number(tick)];
+
+    if (info === undefined) {
+      info = { ...ZERO_TICK_INFO };
+    }
 
     const liquidityGrossBefore = info.liquidityGross;
     const liquidityGrossAfter = LiquidityMath.addDelta(

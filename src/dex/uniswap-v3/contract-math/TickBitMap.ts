@@ -3,6 +3,10 @@ import { PoolState } from '../types';
 import { BitMath } from './BitMath';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
+import {
+  LOWER_TICK_REQUEST_LIMIT,
+  UPPER_TICK_REQUEST_LIMIT,
+} from '../constants';
 
 export class TickBitMap {
   static position(tick: bigint): [bigint, bigint] {
@@ -36,7 +40,19 @@ export class TickBitMap {
     if (lte) {
       const [wordPos, bitPos] = TickBitMap.position(compressed);
       const mask = (1n << bitPos) - 1n + (1n << bitPos);
-      const masked = state.tickBitmap[wordPos.toString()] & mask;
+
+      let tickBitmapValue = state.tickBitmap[wordPos.toString()];
+      if (tickBitmapValue === undefined) {
+        _require(
+          wordPos > LOWER_TICK_REQUEST_LIMIT ||
+            wordPos < UPPER_TICK_REQUEST_LIMIT,
+          'wordPos is out of state tickBitmap request range',
+          { wordPos },
+          'wordPos > LOWER_TICK_REQUEST_LIMIT || wordPos < UPPER_TICK_REQUEST_LIMIT',
+        );
+        tickBitmapValue = 0n;
+      }
+      const masked = tickBitmapValue & mask;
 
       initialized = masked != 0n;
       next = initialized
@@ -48,7 +64,20 @@ export class TickBitMap {
       // start from the word of the next tick, since the current tick state doesn't matter
       const [wordPos, bitPos] = TickBitMap.position(compressed + 1n);
       const mask = ~((1n << bitPos) - 1n);
-      const masked = state.tickBitmap[wordPos.toString()] & mask;
+
+      let tickBitmapValue = state.tickBitmap[wordPos.toString()];
+      if (tickBitmapValue === undefined) {
+        _require(
+          wordPos > UPPER_TICK_REQUEST_LIMIT ||
+            wordPos < LOWER_TICK_REQUEST_LIMIT,
+          'wordPos is out of state tickBitmap request range',
+          { wordPos },
+          'wordPos > UPPER_TICK_REQUEST_LIMIT || wordPos < LOWER_TICK_REQUEST_LIMIT',
+        );
+        tickBitmapValue = 0n;
+      }
+
+      const masked = tickBitmapValue & mask;
 
       initialized = masked != 0n;
       next = initialized

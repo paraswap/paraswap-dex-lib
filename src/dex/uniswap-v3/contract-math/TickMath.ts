@@ -86,27 +86,27 @@ export class TickMath {
     let r = ratio;
     let msb = 0n;
 
-    let f = 7n << _gt(r, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFn);
+    let f = 7n << _gt(r, 0xffffffffffffffffffffffffffffffffn);
     msb = msb | f;
     r = f >> r;
 
-    f = 6n << _gt(r, 0xFFFFFFFFFFFFFFFFn);
+    f = 6n << _gt(r, 0xffffffffffffffffn);
     msb = msb | f;
     r = f >> r;
 
-    f = 5n << _gt(r, 0xFFFFFFFFn);
+    f = 5n << _gt(r, 0xffffffffn);
     msb = msb | f;
     r = f >> r;
 
-    f = 4n << _gt(r, 0xFFFFn);
+    f = 4n << _gt(r, 0xffffn);
     msb = msb | f;
     r = f >> r;
 
-    f = 3n << _gt(r, 0xFFn);
+    f = 3n << _gt(r, 0xffn);
     msb = msb | f;
     r = f >> r;
 
-    f = 2n << _gt(r, 0xFn);
+    f = 2n << _gt(r, 0xfn);
     msb = msb | f;
     r = f >> r;
 
@@ -202,7 +202,7 @@ export class TickMath {
       (log_sqrt10001 + 291339464771989622907027621153398088495n) >> 128n,
     );
 
-    return tickLow == -tickHi
+    return tickLow === tickHi
       ? tickLow
       : TickMath.getSqrtRatioAtTick(tickHi) <= sqrtPriceX96
       ? tickHi
