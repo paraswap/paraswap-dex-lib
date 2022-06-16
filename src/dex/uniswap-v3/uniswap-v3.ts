@@ -1,6 +1,4 @@
 import { Interface } from '@ethersproject/abi';
-import { Contract } from 'web3-eth-contract';
-import type { AbiItem } from 'web3-utils';
 import _ from 'lodash';
 import {
   Token,
@@ -11,7 +9,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -59,6 +57,9 @@ export class UniswapV3
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
+
+    // To receive revert reasons
+    this.dexHelper.web3Provider.eth.handleRevert = false;
 
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();

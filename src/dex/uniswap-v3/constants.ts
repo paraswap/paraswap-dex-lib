@@ -1,10 +1,14 @@
+import { BI_MAX_INT16, BI_MIN_INT16 } from '../../bigint-constants';
+
 export const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
+
+export const STATE_REQUEST_CHUNK_AMOUNT = 3n;
 
 export const OBSERVATIONS_ARRAY_SIZE = 65535;
 
 // TODO: Must be optimized. used full range request. But for now use this
-export const LOWER_TICK_REQUEST_LIMIT = -2000n;
-export const UPPER_TICK_REQUEST_LIMIT = 2000n;
+export const LOWER_TICK_REQUEST_LIMIT = -4000n;
+export const UPPER_TICK_REQUEST_LIMIT = 4000n;
 
 export const UNISWAPV3_SUBGRAPH_URL =
   'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';

@@ -84,3 +84,13 @@ export enum UniswapV3Functions {
   exactInputSingle = 'exactInputSingle',
   exactOutputSingle = 'exactOutputSingle',
 }
+
+export type TickInfoMappings = {
+  index: number;
+  value: TickInfo;
+};
+
+export type TickBitMapMappings = {
+  index: number;
+  value: bigint;
+};

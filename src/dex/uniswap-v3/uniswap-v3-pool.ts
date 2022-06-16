@@ -1,25 +1,25 @@
 import _ from 'lodash';
-import ethers from 'ethers';
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import {
-  Log,
-  Logger,
-  BlockHeader,
-  Address,
-  MultiCallV2Output,
-} from '../../types';
+import { Log, Logger, BlockHeader, Address } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState, TickInfo } from './types';
+import {
+  PoolState,
+  TickBitMapMappings,
+  TickInfo,
+  TickInfoMappings,
+} from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import { bigIntify } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
-import { BI_MAX_INT16 } from '../../bigint-constants';
 import { NumberAsString } from 'paraswap-core';
 import {
   LOWER_TICK_REQUEST_LIMIT,
+  STATE_REQUEST_CHUNK_AMOUNT,
   UPPER_TICK_REQUEST_LIMIT,
 } from './constants';
 
@@ -36,13 +36,18 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
+
   readonly token0: Address;
+
   readonly token1: Address;
+
   private _poolAddress?: Address;
 
-  private _encodedStateRequestCallData?: {
-    target: Address;
-    callData: string;
+  readonly stateMultiContract: Contract;
+
+  private _stateRequestCallData?: {
+    funcName: string;
+    params: unknown[];
   }[];
 
   constructor(
@@ -50,21 +55,23 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected readonly stateMultiAddress: Address,
+    stateMultiAddress: Address,
     protected readonly factoryAddress: Address,
     readonly feeCode: bigint,
     token0: Address,
     token1: Address,
     protected readonly poolIface = new Interface(UniswapV3PoolABI),
-    protected readonly stateMultiIface = new Interface(
-      UniswapV3StateMulticallABI,
-    ),
   ) {
     super(`${parentName}_${token0}_${token1}_pool`, logger);
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = new Array<Address>(1);
+
+    this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
+      UniswapV3StateMulticallABI as AbiItem[],
+      stateMultiAddress,
+    );
 
     // Add handlers
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
@@ -109,59 +116,85 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   private _getStateRequestCallData() {
-    const target = this.stateMultiAddress;
-    if (!this._encodedStateRequestCallData) {
-      const callData = [
-        {
-          target,
-          callData: this.stateMultiIface.encodeFunctionData('getFullState', [
-            this.factoryAddress,
-            this.token0,
-            this.token1,
-            this.feeCode,
-            LOWER_TICK_REQUEST_LIMIT,
-            UPPER_TICK_REQUEST_LIMIT,
-          ]),
+    if (!this._stateRequestCallData) {
+      const step =
+        (-LOWER_TICK_REQUEST_LIMIT + UPPER_TICK_REQUEST_LIMIT + 1n) /
+        STATE_REQUEST_CHUNK_AMOUNT;
+
+      let start = LOWER_TICK_REQUEST_LIMIT;
+      let end = this._getEndRange(start, step);
+
+      const callData = _.range(0, Number(STATE_REQUEST_CHUNK_AMOUNT)).map(
+        (_0, i) => {
+          let data;
+          if (i === 0) {
+            data = {
+              funcName: 'getFullState',
+              params: [
+                this.factoryAddress,
+                this.token0,
+                this.token1,
+                this.feeCode,
+                start,
+                end,
+              ],
+            };
+          } else {
+            data = {
+              funcName: 'getAdditionalBitmapWithTicks',
+              params: [
+                this.factoryAddress,
+                this.token0,
+                this.token1,
+                this.feeCode,
+                start,
+                end,
+              ],
+            };
+          }
+          start = end + 1n;
+          end = this._getEndRange(start, step);
+          return data;
         },
-      ];
-      this._encodedStateRequestCallData = callData;
+      );
+      this._stateRequestCallData = callData;
     }
-    return this._encodedStateRequestCallData;
+    return this._stateRequestCallData;
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
+    // TODO: Delete after debugging
     const start = Date.now();
-    const data = await this.dexHelper.multiContract.methods
-      .tryAggregate(false, callData)
-      .call({}, blockNumber || 'latest');
 
+    const results = await Promise.all(
+      callData.map(async data =>
+        this.stateMultiContract.methods[data.funcName](...data.params).call(
+          {},
+          blockNumber || 'latest',
+        ),
+      ),
+    );
+
+    // TODO: Delete after debugging
     const elapsed = Date.now() - start;
     console.log(elapsed);
 
-    // I don't know why, but I receive "Returned values aren't valid, did it run Out of Gas?..." error
-    // if I use "aggregate". Actually, I wanted to fail and catch the error outside, but it is not working
-    // So, I use "tryAggregate(false, callData)" -> raise Error manually if not succeeded
-    this._raiseIfNotAllSucceeded(data);
+    const _state = results[0];
 
-    const _state = this.stateMultiIface.decodeFunctionResult(
-      'getFullState',
-      data[0].returnData,
-    ).state;
+    const tickBitmap = {};
+    const ticks = {};
+
+    results.map(result => {
+      this._reduceTickBitmap(tickBitmap, result.tickBitmap);
+      this._reduceTicks(ticks, result.ticks);
+    });
 
     // Not really a good place to do it, but in order to save RPC requests,
     // put it here
     this._poolAddress = _state.pool.toLowerCase();
     this.addressesSubscribed[0] = this.poolAddress;
-
-    const tickBitmap = (
-      _state.tickBitmap as { index: number; value: ethers.utils.BigNumber }[]
-    ).reduce<Record<NumberAsString, bigint>>((acc, curr) => {
-      const { index, value } = curr;
-      acc[index] = bigIntify(value);
-      return acc;
-    }, {});
 
     const observations = new Array(65535);
     observations[_state.slot0.observationIndex] = {
@@ -172,23 +205,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       ),
       initialized: _state.observation.initialized,
     };
-
-    const ticks = (_state.ticks as { index: number; value: TickInfo }[]).reduce<
-      Record<string, TickInfo>
-    >((acc, curr) => {
-      const { index, value } = curr;
-      acc[index] = {
-        liquidityGross: bigIntify(value.liquidityGross),
-        liquidityNet: bigIntify(value.liquidityNet),
-        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
-        secondsPerLiquidityOutsideX128: bigIntify(
-          value.secondsPerLiquidityOutsideX128,
-        ),
-        secondsOutside: bigIntify(value.secondsOutside),
-        initialized: value.initialized,
-      };
-      return acc;
-    }, {});
 
     return {
       blockTimestamp: bigIntify(_state.blockTimestamp),
@@ -310,31 +326,44 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return pool;
   }
 
-  private _raiseIfNotAllSucceeded(data: MultiCallV2Output[]) {
-    data.forEach((d: MultiCallV2Output, i: number) => {
-      if (!d.success) {
-        // It will raise an error with required message
-        this.stateMultiIface.decodeFunctionResult('getFullState', d.returnData);
-      }
-    });
+  private _getEndRange(start: bigint, step: bigint) {
+    const endCandidate = start + step;
+    return endCandidate > UPPER_TICK_REQUEST_LIMIT
+      ? UPPER_TICK_REQUEST_LIMIT
+      : endCandidate;
   }
 
-  // TODO: Remove if not used later
-  // private _calcPopulatedTickIndexes(
-  //   tickBitmaps: bigint[],
-  //   tickSpacing: bigint,
-  // ): bigint[] {
-  //   return tickBitmaps.reduce<bigint[]>((acc, curr, tickBitmapIndex) => {
-  //     if (curr !== 0n) {
-  //       for (let i = 0n; i < 256n; i++) {
-  //         if ((curr & (1n << i)) > 0n) {
-  //           const populatedTick =
-  //             ((BigInt(tickBitmapIndex) << 8n) + i) * tickSpacing;
-  //           acc.push(populatedTick);
-  //         }
-  //       }
-  //     }
-  //     return acc;
-  //   }, []);
-  // }
+  private _reduceTickBitmap(
+    tickBitmap: Record<NumberAsString, bigint>,
+    tickBitmapToReduce: TickBitMapMappings[],
+  ) {
+    return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
+      (acc, curr) => {
+        const { index, value } = curr;
+        acc[index] = bigIntify(value);
+        return acc;
+      },
+      tickBitmap,
+    );
+  }
+
+  private _reduceTicks(
+    ticks: Record<NumberAsString, TickInfo>,
+    ticksToReduce: TickInfoMappings[],
+  ) {
+    return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
+      const { index, value } = curr;
+      acc[index] = {
+        liquidityGross: bigIntify(value.liquidityGross),
+        liquidityNet: bigIntify(value.liquidityNet),
+        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
+        secondsPerLiquidityOutsideX128: bigIntify(
+          value.secondsPerLiquidityOutsideX128,
+        ),
+        secondsOutside: bigIntify(value.secondsOutside),
+        initialized: value.initialized,
+      };
+      return acc;
+    }, ticks);
+  }
 }
