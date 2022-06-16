@@ -233,6 +233,8 @@ export class UniswapV3
           ? this._getSellOutputs(state, _amounts, zeroForOne)
           : this._getBuyOutputs(state, _amounts, zeroForOne);
 
+      if (!prices) return null;
+
       result[i] = {
         unit: prices[0],
         prices: [0n, ...prices.slice(1)],
@@ -447,44 +449,65 @@ export class UniswapV3
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
-  ): bigint[] {
-    return amounts.map(amount => {
-      const [amount0, amount1] = uniswapV3Math.querySwap(
-        state,
-        { ...state.ticks },
-        zeroForOne,
-        BigInt.asIntN(256, amount),
-        zeroForOne
-          ? TickMath.MIN_SQRT_RATIO + 1n
-          : TickMath.MAX_SQRT_RATIO - 1n,
-      );
-
-      return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
+  ): bigint[] | null {
+    let nulled = false;
+    const outputs = amounts.map(amount => {
+      try {
+        const [amount0, amount1] = uniswapV3Math.querySwap(
+          state,
+          { ...state.ticks },
+          zeroForOne,
+          BigInt.asIntN(256, amount),
+          zeroForOne
+            ? TickMath.MIN_SQRT_RATIO + 1n
+            : TickMath.MAX_SQRT_RATIO - 1n,
+        );
+        return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
+      } catch (e) {
+        this.logger.error(
+          `${this.dexKey}: received error in _getSellOutputs while calculating outputs`,
+          e,
+        );
+        nulled = true;
+        return 0n;
+      }
     });
+    return nulled ? null : outputs;
   }
 
   private _getBuyOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
-  ): bigint[] {
-    return amounts.map(amount => {
-      const [amount0Delta, amount1Delta] = uniswapV3Math.querySwap(
-        state,
-        { ...state.ticks },
-        // zeroForOne
-        zeroForOne,
-        -BigInt.asIntN(256, amount),
-        zeroForOne
-          ? TickMath.MIN_SQRT_RATIO + 1n
-          : TickMath.MAX_SQRT_RATIO - 1n,
-      );
+  ): bigint[] | null {
+    let nulled = false;
+    const outputs = amounts.map(amount => {
+      try {
+        const [amount0Delta, amount1Delta] = uniswapV3Math.querySwap(
+          state,
+          { ...state.ticks },
+          // zeroForOne
+          zeroForOne,
+          -BigInt.asIntN(256, amount),
+          zeroForOne
+            ? TickMath.MIN_SQRT_RATIO + 1n
+            : TickMath.MAX_SQRT_RATIO - 1n,
+        );
 
-      const amountIn = zeroForOne
-        ? BigInt.asUintN(256, amount0Delta)
-        : BigInt.asUintN(256, amount1Delta);
-      return amountIn;
+        const amountIn = zeroForOne
+          ? BigInt.asUintN(256, amount0Delta)
+          : BigInt.asUintN(256, amount1Delta);
+        return amountIn;
+      } catch (e) {
+        this.logger.error(
+          `${this.dexKey}: received error in _getBuyOutputs while calculating outputs`,
+          e,
+        );
+        nulled = true;
+        return 0n;
+      }
     });
+    return nulled ? null : outputs;
   }
 
   private async _querySubgraph(

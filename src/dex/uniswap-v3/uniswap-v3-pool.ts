@@ -165,9 +165,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
-    // TODO: Delete after debugging
-    const start = Date.now();
-
     const results = await Promise.all(
       callData.map(async data =>
         this.stateMultiContract.methods[data.funcName](...data.params).call(
@@ -176,10 +173,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         ),
       ),
     );
-
-    // TODO: Delete after debugging
-    const elapsed = Date.now() - start;
-    console.log(elapsed);
 
     const _state = results[0];
 
@@ -238,7 +231,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const newLiquidity = bigIntify(event.args.liquidity);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    uniswapV3Math.swapFromEvent(pool, newSqrtPriceX96, newTick, newLiquidity);
+    try {
+      uniswapV3Math.swapFromEvent(pool, newSqrtPriceX96, newTick, newLiquidity);
+    } catch (e) {
+      this.logger.error(
+        'Unexpected error while handling Swap event for UniswapV3',
+        e,
+      );
+      pool.isValid = false;
+    }
 
     return pool;
   }
