@@ -43,6 +43,7 @@ import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
+import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
 
@@ -87,6 +88,7 @@ const Dexes = [
   WooFi,
   Dystopia,
   ParaSwapLimitOrders,
+  SwaapV1
 ];
 
 export type LegacyDexConstructor = new (
