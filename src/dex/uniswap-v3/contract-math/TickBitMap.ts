@@ -96,7 +96,7 @@ export class TickBitMap {
           wordPos <= UPPER_TICK_REQUEST_LIMIT,
         'wordPos is out of state tickBitmap request range',
         { wordPos },
-        'wordPos >= LOWER_TICK_REQUEST_LIMIT && wordPos <= UPPER_TICK_REQUEST_LIMIT',
+        'wordPos >= LOWER_TICK_REQUEST_LIMIT && wordPos <= UPPER_TICK_REQUEST_LIMIT: CORRECT_TICK_BIT_MAP_RANGES',
       );
       return 0n;
     }
