@@ -368,9 +368,7 @@ class UniswapV3Math {
   }
 
   private _blockTimestamp(state: DeepReadonly<PoolState>) {
-    // Here we should have truncated to uint32 byte, but because in near future (132 years) it will not
-    // be a problem, so I leave it as it is
-    return state.blockTimestamp;
+    return BigInt.asUintN(32, state.blockTimestamp);
   }
 }
 
