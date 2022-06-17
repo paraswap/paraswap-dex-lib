@@ -53,14 +53,14 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     protected parentName: string,
     protected network: number,
-    protected dexHelper: IDexHelper,
+    readonly dexHelper: IDexHelper,
     logger: Logger,
     stateMultiAddress: Address,
     protected readonly factoryAddress: Address,
     readonly feeCode: bigint,
     token0: Address,
     token1: Address,
-    protected readonly poolIface = new Interface(UniswapV3PoolABI),
+    readonly poolIface = new Interface(UniswapV3PoolABI),
   ) {
     super(`${parentName}_${token0}_${token1}_pool`, logger);
     this.token0 = token0.toLowerCase();
@@ -89,6 +89,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       );
     }
     return this._poolAddress;
+  }
+
+  set poolAddress(address: Address) {
+    this._poolAddress = address;
   }
 
   protected processLog(
@@ -186,7 +190,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     // Not really a good place to do it, but in order to save RPC requests,
     // put it here
-    this._poolAddress = _state.pool.toLowerCase();
+    this.poolAddress = _state.pool.toLowerCase();
     this.addressesSubscribed[0] = this.poolAddress;
 
     const observations = new Array(65535);
@@ -231,17 +235,16 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const newLiquidity = bigIntify(event.args.liquidity);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    try {
-      uniswapV3Math.swapFromEvent(pool, newSqrtPriceX96, newTick, newLiquidity);
-    } catch (e) {
-      this.logger.error(
-        'Unexpected error while handling Swap event for UniswapV3',
-        e,
-      );
-      pool.isValid = false;
-    }
-
-    return pool;
+    return this._callAndHandleError(
+      uniswapV3Math.swapFromEvent.bind(
+        this,
+        pool,
+        newSqrtPriceX96,
+        newTick,
+        newLiquidity,
+      ),
+      pool,
+    );
   }
 
   handleBurnEvent(
@@ -255,22 +258,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    try {
+    return this._callAndHandleError(
       // There is relevant just to update the ticks and other things for state
-      uniswapV3Math._modifyPosition(pool, {
+      uniswapV3Math._modifyPosition.bind(this, pool, {
         tickLower,
         tickUpper,
         liquidityDelta: -amount,
-      });
-    } catch (e) {
-      this.logger.error(
-        'Unexpected error while handling Burn event for UniswapV3',
-        e,
-      );
-      pool.isValid = false;
-    }
-
-    return pool;
+      }),
+      pool,
+    );
   }
 
   handleMintEvent(
@@ -284,22 +280,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    try {
+    return this._callAndHandleError(
       // For state is relevant just to update the ticks and other things
-      uniswapV3Math._modifyPosition(pool, {
+      uniswapV3Math._modifyPosition.bind(this, pool, {
         tickLower,
         tickUpper,
         liquidityDelta: amount,
-      });
-    } catch (e) {
-      this.logger.error(
-        'Unexpected error while handling Mint event for UniswapV3',
-        e,
-      );
-      pool.isValid = false;
-    }
-
-    return pool;
+      }),
+      pool,
+    );
   }
 
   handleSetFeeProtocolEvent(
@@ -311,6 +300,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
     const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
     pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
     return pool;
   }
 
@@ -324,6 +315,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       event.args.observationCardinalityNextNew,
       10,
     );
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
     return pool;
   }
 
@@ -366,5 +358,28 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       };
       return acc;
     }, ticks);
+  }
+
+  private _callAndHandleError(func: Function, pool: PoolState) {
+    try {
+      func();
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message.endsWith('CORRECT_TICK_BIT_MAP_RANGES')
+      ) {
+        this.logger.error(
+          `${this.parentName}: Pool ${this.poolAddress} on network ${this.network} is out of TickBitmap requested range. Need to adjust it`,
+          e,
+        );
+      } else {
+        this.logger.error(
+          'Unexpected error while handling event for UniswapV3',
+          e,
+        );
+      }
+      pool.isValid = false;
+    }
+    return pool;
   }
 }
