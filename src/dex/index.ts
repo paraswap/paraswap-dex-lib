@@ -97,7 +97,7 @@ const AdapterNameAddressMap: {
   },
   [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-    PolygonAdapter02: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
+    PolygonAdapter02: '0x475928fE50a9E9ADb706d6f5624fB97EE2AC087D',
     PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
   },
   [Network.BSC]: {
