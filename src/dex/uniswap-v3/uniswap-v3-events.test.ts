@@ -254,11 +254,16 @@ async function getStateFromMulticall(
     },
     {},
   );
+  const blockTimestamp = BigInt(
+    (
+      await uniswapV3Pool.dexHelper.web3Provider.eth.getBlock(
+        blockNumber || 'latest',
+      )
+    ).timestamp,
+  );
 
   return {
-    // Later before parsing new event, it will be replaced with blockTimestamp
-    // It doesn't affect the pricing
-    blockTimestamp: BigInt(Date.now()) / 1000n,
+    blockTimestamp,
     slot0,
     liquidity,
     fee,
