@@ -5,7 +5,7 @@
     "module": "commonjs",
     "noImplicitAny": true,
     "outDir": "build",
-    "rootDirs": ["src"],
+    "rootDir": "src",
     "preserveConstEnums": true,
     "strictNullChecks": true,
     "strict": true,
