@@ -15,11 +15,11 @@ import { Tokens } from '../../../tests/constants-e2e';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import { Address } from 'paraswap-core';
 
-const network = Network.MAINNET;
+const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'WETH';
+const TokenBSymbol = 'WMATIC';
 const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
