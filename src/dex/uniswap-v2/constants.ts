@@ -6,8 +6,8 @@ import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
 import { DystopiaConfig } from './dystopia/config';
 
-// BakerySwap is removed from AllUniswapForks and UniswapForksWithNetwork
-// as it has a modified pool implementation which is not compatible with
+// BakerySwap and Dystopia were removed from AllUniswapForks and UniswapForksWithNetwork
+// as they have a modified pool implementation which are not compatible with
 // standard contract methods
 
 export const AllUniswapForks = [
@@ -16,7 +16,6 @@ export const AllUniswapForks = [
   ...Object.keys(BiSwapConfig),
   ...Object.keys(DfynConfig),
   ...Object.keys(ExcaliburConfig),
-  ...Object.keys(DystopiaConfig),
 ];
 
 const transformToNetworkMap = (config: {
