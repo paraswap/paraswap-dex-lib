@@ -20,6 +20,7 @@ export class Tick {
 
     if (info === undefined) {
       info = { ...ZERO_TICK_INFO };
+      state.ticks[Number(tick)] = info;
     }
 
     const liquidityGrossBefore = info.liquidityGross;

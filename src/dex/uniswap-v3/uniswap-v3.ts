@@ -313,6 +313,7 @@ export class UniswapV3
       side === SwapSide.SELL
         ? UniswapV3Functions.exactInputSingle
         : UniswapV3Functions.exactOutputSingle;
+
     const swapFunctionParams: UniswapV3Param =
       side === SwapSide.SELL
         ? {
@@ -502,7 +503,6 @@ export class UniswapV3
         const [amount0Delta, amount1Delta] = uniswapV3Math.querySwap(
           state,
           { ...state.ticks },
-          // zeroForOne
           zeroForOne,
           -BigInt.asIntN(256, amount),
           zeroForOne
@@ -532,15 +532,13 @@ export class UniswapV3
     timeout = 30000,
   ) {
     try {
-      const {
-        data: { data },
-      } = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.post(
         UNISWAPV3_SUBGRAPH_URL,
         { query, variables },
         undefined,
         { timeout: timeout },
       );
-      return data;
+      return res.data;
     } catch (e) {
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return {};
