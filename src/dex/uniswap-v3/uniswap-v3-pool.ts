@@ -237,7 +237,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     return this._callAndHandleError(
       uniswapV3Math.swapFromEvent.bind(
-        this,
+        uniswapV3Math,
         pool,
         newSqrtPriceX96,
         newTick,
@@ -260,7 +260,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     return this._callAndHandleError(
       // There is relevant just to update the ticks and other things for state
-      uniswapV3Math._modifyPosition.bind(this, pool, {
+      uniswapV3Math._modifyPosition.bind(uniswapV3Math, pool, {
         tickLower,
         tickUpper,
         liquidityDelta: -amount,
@@ -282,7 +282,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     return this._callAndHandleError(
       // For state is relevant just to update the ticks and other things
-      uniswapV3Math._modifyPosition.bind(this, pool, {
+      uniswapV3Math._modifyPosition.bind(uniswapV3Math, pool, {
         tickLower,
         tickUpper,
         liquidityDelta: amount,
