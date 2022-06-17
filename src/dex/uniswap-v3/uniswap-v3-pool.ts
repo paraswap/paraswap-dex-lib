@@ -193,7 +193,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.poolAddress = _state.pool.toLowerCase();
     this.addressesSubscribed[0] = this.poolAddress;
 
-    const observations = new Array(65535);
+    const observations = new Array(65535)
+      .fill(undefined)
+      .map(() => ({ ...ZERO_ORACLE_OBSERVATION }));
+
     observations[_state.slot0.observationIndex] = {
       blockTimestamp: bigIntify(_state.observation.blockTimestamp),
       tickCumulative: bigIntify(_state.observation.tickCumulative),

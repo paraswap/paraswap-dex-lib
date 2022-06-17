@@ -5,6 +5,7 @@ import {
 } from '../types';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
+import { ZERO_ORACLE_OBSERVATION } from '../constants';
 
 export class Oracle {
   static transform(
@@ -57,6 +58,7 @@ export class Oracle {
       tick,
       liquidity,
     );
+    state.observations[index] = { ...ZERO_ORACLE_OBSERVATION };
     return [indexUpdated, cardinalityUpdated];
   }
 

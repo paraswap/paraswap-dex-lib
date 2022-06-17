@@ -20,3 +20,10 @@ export const ZERO_TICK_INFO = {
   secondsOutside: 0n,
   initialized: false,
 };
+
+export const ZERO_ORACLE_OBSERVATION = {
+  blockTimestamp: 0n,
+  tickCumulative: 0n,
+  secondsPerLiquidityCumulativeX128: 0n,
+  initialized: false,
+};
