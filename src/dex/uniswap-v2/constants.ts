@@ -43,7 +43,6 @@ export const UniswapForksWithNetwork = transformToNetworkMap({
   ...BiSwapConfig,
   ...DfynConfig,
   ...ExcaliburConfig,
-  ...DystopiaConfig,
 });
 
 // These are exchanges used for swapOnUniswap method
