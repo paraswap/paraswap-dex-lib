@@ -1,11 +1,24 @@
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
+import { Address } from 'paraswap';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
 
-// TODO: Remove before deploying to production
-// const SUPPORTED_FEES = [500n];
+// Pools tha will be initialized on app startup
+// They are added for testing
+export const PoolsToPreload: DexConfigMap<
+  { token0: Address; token1: Address }[]
+> = {
+  UniswapV3: {
+    [Network.POLYGON]: [
+      {
+        token0: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+        token1: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+      },
+    ],
+  },
+};
 
 export const UniswapV3Config: DexConfigMap<DexParams> = {
   UniswapV3: {

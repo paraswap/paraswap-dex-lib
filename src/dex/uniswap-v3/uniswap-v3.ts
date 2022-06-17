@@ -21,7 +21,7 @@ import {
   UniswapV3Param,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { UniswapV3Config, Adapters } from './config';
+import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import {
@@ -54,6 +54,7 @@ export class UniswapV3
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI),
     protected config = UniswapV3Config[dexKey][network],
+    protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
     super(dexHelper.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -76,6 +77,21 @@ export class UniswapV3
   getPoolIdentifier(srcAddress: Address, destAddress: Address, fee: bigint) {
     const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
     return `${this.dexKey}_${tokenAddresses}_${fee}`;
+  }
+
+  async initializePricing(blockNumber: number) {
+    // This is only for testing, because cold pool fetching is goes out of
+    // FETCH_POOL_INDENTIFIER_TIMEOUT range
+    await Promise.all(
+      this.poolsToPreload.map(async pool =>
+        Promise.all(
+          this.config.supportedFees.map(async fee =>
+            this.getPool(pool.token0, pool.token1, fee, blockNumber),
+          ),
+        ),
+      ),
+    );
+    console.log(0);
   }
 
   async getPool(
