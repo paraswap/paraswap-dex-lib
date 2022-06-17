@@ -29,6 +29,8 @@ const amounts = [
   300_000_000n * BI_POWS[6],
 ];
 
+const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
+
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'UniswapV3';
 
@@ -42,8 +44,9 @@ function getReaderCalldata(
   tokenIn: Address,
   tokenOut: Address,
   fee: bigint,
+  _amounts: bigint[],
 ) {
-  return amounts.map(amount => ({
+  return _amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
       tokenIn,
@@ -74,6 +77,7 @@ async function checkOnChainPricing(
   tokenIn: Address,
   tokenOut: Address,
   fee: bigint,
+  _amounts: bigint[],
 ) {
   // Quoter address
   const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
@@ -87,12 +91,24 @@ async function checkOnChainPricing(
     tokenIn,
     tokenOut,
     fee,
+    _amounts,
   );
-  const readerResult = (
-    await dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
+
+  let readerResult;
+  try {
+    readerResult = (
+      await dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+  } catch (e) {
+    console.log(
+      `Can not fetch on-chain pricing for fee ${fee}. It happens for low liquidity pools`,
+      e,
+    );
+    return;
+  }
+
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
@@ -103,10 +119,16 @@ async function checkOnChainPricing(
 describe('UniswapV3', function () {
   let blockNumber: number;
   let uniswapV3: UniswapV3;
+  let uniswapV3Mainnet: UniswapV3;
 
   beforeAll(async () => {
-    blockNumber = await dexHelper.provider.getBlockNumber();
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
+    uniswapV3Mainnet = new UniswapV3(
+      Network.MAINNET,
+      dexKey,
+      new DummyDexHelper(Network.MAINNET),
+    );
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -148,6 +170,7 @@ describe('UniswapV3', function () {
           TokenA.address,
           TokenB.address,
           fee,
+          amounts,
         );
       }),
     );
@@ -167,7 +190,7 @@ describe('UniswapV3', function () {
     const poolPrices = await uniswapV3.getPricesVolume(
       TokenA,
       TokenB,
-      amounts,
+      amountsBuy,
       SwapSide.BUY,
       blockNumber,
       pools,
@@ -193,14 +216,15 @@ describe('UniswapV3', function () {
           TokenA.address,
           TokenB.address,
           fee,
+          amountsBuy,
         );
       }),
     );
   });
 
   it('getTopPoolsForToken', async function () {
-    const poolLiquidity = await uniswapV3.getTopPoolsForToken(
-      TokenA.address,
+    const poolLiquidity = await uniswapV3Mainnet.getTopPoolsForToken(
+      Tokens[Network.MAINNET]['USDC'].address,
       10,
     );
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);

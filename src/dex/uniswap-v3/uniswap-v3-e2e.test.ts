@@ -25,12 +25,12 @@ describe('UniswapV3 E2E', () => {
     const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'WMATIC';
+    const tokenBSymbol: string = 'WETH';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
-    const tokenAAmount: string = '1111111000000';
-    const tokenBAmount: string = '111000000000000000000';
-    const nativeTokenAmount = '111000000000000000000';
+    const tokenAAmount: string = '11111000000';
+    const tokenBAmount: string = '11000000000000000000';
+    const nativeTokenAmount = '11000000000000000000';
 
     const sideToContractMethods = new Map([
       [
