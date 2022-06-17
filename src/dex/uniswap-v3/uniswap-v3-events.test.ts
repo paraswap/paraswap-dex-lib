@@ -27,12 +27,16 @@ async function fetchPoolState(
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolState> {
+  const message = `UniswapV3: ${poolAddress} blockNumber ${blockNumber}`;
+  console.log(`Fetching state ${message}`);
   // Because in pool implementation to receive state we use special StateMulticall,
   // but for the old blocks it was not existed, I could not use it to query state.
   // So in the end of this file I wrote the long redundant things to query the state
   // Please don't consider it as a practice which may be replicated.
   // Here should be either subgraph call or use internal generateState function
-  return getStateFromMulticall(uniswapV3Pool, blockNumber);
+  const state = await getStateFromMulticall(uniswapV3Pool, blockNumber);
+  console.log(`Done ${message}`);
+  return state;
 }
 
 describe('UniswapV3 Event', function () {
