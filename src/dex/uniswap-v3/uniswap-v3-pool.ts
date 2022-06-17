@@ -21,6 +21,7 @@ import {
   LOWER_TICK_REQUEST_LIMIT,
   STATE_REQUEST_CHUNK_AMOUNT,
   UPPER_TICK_REQUEST_LIMIT,
+  ZERO_ORACLE_OBSERVATION,
 } from './constants';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {

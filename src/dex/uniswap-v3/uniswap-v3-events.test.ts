@@ -10,6 +10,7 @@ import { testEventSubscriber } from '../../../tests/utils-events';
 import { OracleObservation, PoolState, Slot0, TickInfo } from './types';
 import { bigIntify } from '../../utils';
 import { MultiCallV2Output } from '../../types';
+import { ZERO_ORACLE_OBSERVATION } from './constants';
 
 jest.setTimeout(300 * 1000);
 const dexKey = 'UniswapV3';
@@ -43,7 +44,7 @@ describe('UniswapV3 Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     // topic0 - 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
     ['Swap']: [
-      14973668, 14973666, 14973665, 14973664, 14973663, 4973662, 14973661,
+      14973668, 14973666, 14973665, 14973664, 14973663, 14973662, 14973661,
     ],
     // topic0 - 0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c
     ['Burn']: [14973650, 14973586, 14973558, 14973552, 14973547],
@@ -205,6 +206,7 @@ async function getStateFromMulticall(
     )[0],
   );
 
+  let ind = TICK_BIT_MAP_START;
   const tickBitmap = firstData
     .slice(5)
     .map((d: MultiCallV2Output) =>
@@ -215,8 +217,8 @@ async function getStateFromMulticall(
         )[0],
       ),
     )
-    .reduce<Record<string, bigint>>((acc, curr, i) => {
-      acc[i.toString()] = curr;
+    .reduce<Record<string, bigint>>((acc, curr) => {
+      acc[ind++] = curr;
       return acc;
     }, {});
 
@@ -225,7 +227,9 @@ async function getStateFromMulticall(
     tickSpacing,
   );
 
-  const observations = new Array(65535);
+  const observations = new Array(65535)
+    .fill(undefined)
+    .map(() => ({ ...ZERO_ORACLE_OBSERVATION }));
 
   const secondCallData = _getSecondStepStateCallData(
     uniswapV3Pool,

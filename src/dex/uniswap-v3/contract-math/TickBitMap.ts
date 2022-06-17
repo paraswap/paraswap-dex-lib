@@ -15,7 +15,7 @@ export class TickBitMap {
 
   static flipTick(state: PoolState, tick: bigint, tickSpacing: bigint) {
     _require(
-      tick % tickSpacing == 0n,
+      tick % tickSpacing === 0n,
       '',
       { tick, tickSpacing },
       'tick % tickSpacing == 0n,',
