@@ -18,7 +18,7 @@ import {
   MAX_INT,
   MAX_UINT,
   Network,
-  subgraphTimeout,
+  SUBGRAPH_TIMEOUT,
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
@@ -192,7 +192,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       { query: fetchAllPools, variables },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools))
@@ -676,7 +676,7 @@ export class BalancerV2
         query,
         variables,
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools))

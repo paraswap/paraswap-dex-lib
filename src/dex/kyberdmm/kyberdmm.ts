@@ -2,7 +2,7 @@ import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import _ from 'lodash';
-import { Network, subgraphTimeout, SwapSide } from '../../constants';
+import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -140,7 +140,7 @@ export class KyberDmm
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools0 && data.pools1))
