@@ -42,6 +42,7 @@ import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
+import { AugustusRFQOrder } from './augustus-rfq';
 
 const LegacyDexes = [
   Curve,
@@ -62,6 +63,7 @@ const LegacyDexes = [
   UniswapV3,
   Jarvis,
   Lido,
+  AugustusRFQOrder,
 ];
 
 const Dexes = [
