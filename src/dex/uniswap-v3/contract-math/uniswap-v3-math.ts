@@ -188,8 +188,110 @@ class UniswapV3Math {
     newSqrtPriceX96: bigint,
     newTick: bigint,
     newLiquidity: bigint,
+    zeroForOne: boolean,
   ): void {
     const slot0Start = poolState.slot0;
+
+    const cache = {
+      liquidityStart: poolState.liquidity,
+      blockTimestamp: this._blockTimestamp(poolState),
+      feeProtocol: 0n,
+      secondsPerLiquidityCumulativeX128: 0n,
+      tickCumulative: 0n,
+      computedLatestObservation: false,
+    };
+
+    const state = {
+      amountSpecifiedRemaining: 0n,
+      amountCalculated: 0n,
+      sqrtPriceX96: slot0Start.sqrtPriceX96,
+      tick: slot0Start.tick,
+      protocolFee: 0n,
+      liquidity: cache.liquidityStart,
+    };
+
+    while (state.tick !== newTick && state.sqrtPriceX96 !== newSqrtPriceX96) {
+      const step = {
+        sqrtPriceStartX96: 0n,
+        tickNext: 0n,
+        initialized: false,
+        sqrtPriceNextX96: 0n,
+        amountIn: 0n,
+        amountOut: 0n,
+        feeAmount: 0n,
+      };
+
+      step.sqrtPriceStartX96 = state.sqrtPriceX96;
+
+      [step.tickNext, step.initialized] =
+        TickBitMap.nextInitializedTickWithinOneWord(
+          poolState,
+          state.tick,
+          poolState.tickSpacing,
+          zeroForOne,
+        );
+
+      if (step.tickNext < TickMath.MIN_TICK) {
+        step.tickNext = TickMath.MIN_TICK;
+      } else if (step.tickNext > TickMath.MAX_TICK) {
+        step.tickNext = TickMath.MAX_TICK;
+      }
+
+      step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+
+      const swapStepResult = SwapMath.computeSwapStep(
+        state.sqrtPriceX96,
+        (
+          zeroForOne
+            ? step.sqrtPriceNextX96 < newSqrtPriceX96
+            : step.sqrtPriceNextX96 > newSqrtPriceX96
+        )
+          ? newSqrtPriceX96
+          : step.sqrtPriceNextX96,
+        state.liquidity,
+        state.amountSpecifiedRemaining,
+        poolState.fee,
+      );
+
+      state.sqrtPriceX96 = swapStepResult.sqrtRatioNextX96;
+
+      if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+        if (step.initialized) {
+          if (!cache.computedLatestObservation) {
+            [cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128] =
+              Oracle.observeSingle(
+                poolState,
+                cache.blockTimestamp,
+                0n,
+                slot0Start.tick,
+                slot0Start.observationIndex,
+                cache.liquidityStart,
+                slot0Start.observationCardinality,
+              );
+            cache.computedLatestObservation = true;
+          }
+
+          let liquidityNet = Tick.cross(
+            poolState.ticks,
+            step.tickNext,
+            cache.secondsPerLiquidityCumulativeX128,
+            cache.tickCumulative,
+            cache.blockTimestamp,
+          );
+
+          if (zeroForOne) liquidityNet = -liquidityNet;
+
+          state.liquidity = LiquidityMath.addDelta(
+            state.liquidity,
+            liquidityNet,
+          );
+        }
+
+        state.tick = zeroForOne ? step.tickNext - 1n : step.tickNext;
+      } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
+        state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
+      }
+    }
 
     if (slot0Start.tick !== newTick) {
       const [observationIndex, observationCardinality] = Oracle.write(

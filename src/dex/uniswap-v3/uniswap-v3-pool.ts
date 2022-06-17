@@ -235,20 +235,32 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     blockHeader: BlockHeader,
   ) {
     const newSqrtPriceX96 = bigIntify(event.args.sqrtPriceX96);
+    const amount0 = bigIntify(event.args.amount0);
     const newTick = bigIntify(event.args.tick);
     const newLiquidity = bigIntify(event.args.liquidity);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    return this._callAndHandleError(
-      uniswapV3Math.swapFromEvent.bind(
-        uniswapV3Math,
+    if (amount0 === 0n) {
+      this.logger.error(
+        `${this.parentName}: amount0 === 0n for ${this.poolAddress} and ${blockHeader.number}. Check why it happened`,
+      );
+      pool.isValid = false;
+      return pool;
+    } else {
+      const zeroForOne = amount0 > 0n;
+
+      return this._callAndHandleError(
+        uniswapV3Math.swapFromEvent.bind(
+          uniswapV3Math,
+          pool,
+          newSqrtPriceX96,
+          newTick,
+          newLiquidity,
+          zeroForOne,
+        ),
         pool,
-        newSqrtPriceX96,
-        newTick,
-        newLiquidity,
-      ),
-      pool,
-    );
+      );
+    }
   }
 
   handleBurnEvent(
@@ -267,7 +279,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       uniswapV3Math._modifyPosition.bind(uniswapV3Math, pool, {
         tickLower,
         tickUpper,
-        liquidityDelta: -amount,
+        liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
       }),
       pool,
     );
