@@ -250,14 +250,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       const zeroForOne = amount0 > 0n;
 
       return this._callAndHandleError(
-        uniswapV3Math.swapFromEvent.bind(
-          uniswapV3Math,
-          pool,
-          newSqrtPriceX96,
-          newTick,
-          newLiquidity,
-          zeroForOne,
-        ),
+        // I had strange TS compiler issue, so have to write it this way
+        () =>
+          uniswapV3Math.swapFromEvent(
+            pool,
+            newSqrtPriceX96,
+            newTick,
+            newLiquidity,
+            zeroForOne,
+          ),
         pool,
       );
     }

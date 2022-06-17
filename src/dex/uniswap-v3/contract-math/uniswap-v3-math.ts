@@ -11,6 +11,7 @@ import { TickMath } from './TickMath';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import { NumberAsString } from 'paraswap-core';
+import { BI_MAX_INT } from '../../../bigint-constants';
 
 type ModifyPositionParams = {
   tickLower: bigint;
@@ -202,7 +203,9 @@ class UniswapV3Math {
     };
 
     const state = {
-      amountSpecifiedRemaining: 0n,
+      // Because I don't have the exact amount user used, set this number to MAX_NUMBER to proceed
+      // with calculations. I think it is not a problem since in loop I don't rely on this vallue
+      amountSpecifiedRemaining: BI_MAX_INT,
       amountCalculated: 0n,
       sqrtPriceX96: slot0Start.sqrtPriceX96,
       tick: slot0Start.tick,
@@ -210,6 +213,8 @@ class UniswapV3Math {
       liquidity: cache.liquidityStart,
     };
 
+    // Becaus eI didn't have all variables, adapted loop stop with state.tick !== newTick
+    // condition
     while (state.tick !== newTick && state.sqrtPriceX96 !== newSqrtPriceX96) {
       const step = {
         sqrtPriceStartX96: 0n,
