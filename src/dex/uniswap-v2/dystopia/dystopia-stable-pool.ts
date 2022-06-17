@@ -76,8 +76,8 @@ export class DystopiaStablePool {
 
     const reservesInN = BigInt(reservesIn);
     const reservesOutN = BigInt(reservesOut);
-    const decimalsInN = BigInt(decimalsIn);
-    const decimalsOutN = BigInt(decimalsOut);
+    const decimalsInN = 10n ** BigInt(decimalsIn);
+    const decimalsOutN = 10n ** BigInt(decimalsOut);
 
     const xy = _k(reservesInN, reservesOutN, decimalsInN, decimalsOutN);
     const reserveA = (reservesInN * e18) / decimalsInN;

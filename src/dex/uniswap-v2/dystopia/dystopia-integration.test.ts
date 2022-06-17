@@ -27,10 +27,7 @@ function getReaderCalldata(
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      amount,
-      tokenIn,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [amount, tokenIn]),
   }));
 }
 
@@ -147,12 +144,12 @@ describe('Dystopia', function () {
   });
 
   describe('Curve like stable pool', function () {
-    const TokenASymbol = 'USDT';
+    const TokenASymbol = 'DAI'; // 'USDT';
     const tokenA = Tokens[Network.POLYGON][TokenASymbol];
     const TokenBSymbol = 'USDC';
     const tokenB = Tokens[Network.POLYGON][TokenBSymbol];
 
-    const amounts = amounts6;
+    const amounts = amounts18; // amounts6;
 
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.POLYGON);
