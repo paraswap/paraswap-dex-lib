@@ -638,9 +638,9 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
       it('SushiSwap TOKEN -> TOKEN', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.USDT,
           tokens.WBTC,
-          holders.USDC,
+          holders.USDT,
           '200000000',
           SwapSide.SELL,
           dexKey,
@@ -680,10 +680,10 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
       it('SushiSwap TOKEN -> TOKEN', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.USDT,
           tokens.WBTC,
-          holders.USDC,
-          '200000000',
+          holders.USDT,
+          '2000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.swapOnUniswapFork,
@@ -997,7 +997,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           tokens.USDC,
           tokens.USDT,
           holders.USDC,
-          '200000000',
+          '2000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.simpleBuy,
