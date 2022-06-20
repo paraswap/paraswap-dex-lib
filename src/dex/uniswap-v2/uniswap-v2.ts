@@ -1,4 +1,4 @@
-import { AbiCoder, Interface } from '@ethersproject/abi';
+import { AbiCoder, Interface, JsonFragment } from '@ethersproject/abi';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
@@ -59,7 +59,6 @@ interface UniswapV2PoolState {
   feeCode: number;
 }
 
-const iface = new Interface(uniswapV2ABI);
 const erc20iface = new Interface(erc20ABI);
 const coder = new AbiCoder();
 
@@ -80,7 +79,9 @@ export type UniswapV2Pair = {
 };
 
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
-  decoder = (log: Log) => iface.parseLog(log);
+  decoder = (log: Log) => this.iface.parseLog(log);
+
+  private iface: Interface;
 
   constructor(
     protected parentName: string,
@@ -95,6 +96,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     // feesMultiCallData is only used if dynamicFees is set to true
     private feesMultiCallEntry?: { target: Address; callData: string },
     private feesMultiCallDecoder?: (values: any[]) => number,
+    decoderABI: JsonFragment[] = uniswapV2ABI,
   ) {
     super(
       parentName +
@@ -105,6 +107,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
         ' pool',
       logger,
     );
+
+    this.iface = new Interface(decoderABI);
   }
 
   protected processLog(
@@ -129,7 +133,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     let calldata = [
       {
         target: this.poolAddress,
-        callData: iface.encodeFunctionData('getReserves', []),
+        callData: this.iface.encodeFunctionData('getReserves', []),
       },
     ];
 
@@ -219,6 +223,7 @@ export class UniswapV2
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].poolGasCost) ??
       DefaultUniswapV2PoolGasCost,
+    protected decoderABI: JsonFragment[] = uniswapV2ABI,
     protected adapters = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].adapters) ??
       Adapters[network],
@@ -269,6 +274,7 @@ export class UniswapV2
       this.isDynamicFees,
       callEntry,
       callDecoder,
+      this.decoderABI,
     );
 
     if (blockNumber)

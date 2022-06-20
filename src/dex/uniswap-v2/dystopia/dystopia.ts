@@ -12,7 +12,7 @@ import { IDexHelper } from '../../../dex-helper';
 import { UniswapData, UniswapV2Data } from '../types';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../../utils';
 import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
-import uniswapV2ABI from '../../../abi/uniswap-v2/uniswap-v2-pool.json';
+import dystPairABI from '../../../abi/uniswap-v2/DystPair.json';
 import _ from 'lodash';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { DystopiaUniswapV2Pool } from './dystopia-uniswap-v2-pool';
@@ -41,7 +41,7 @@ export interface DystopiaPoolState {
   feeCode: number;
 }
 
-const iface = new Interface(uniswapV2ABI);
+const iface = new Interface(dystPairABI);
 const coder = new AbiCoder();
 
 export class Dystopia extends UniswapV2 {
@@ -64,6 +64,7 @@ export class Dystopia extends UniswapV2 {
       DystopiaConfig[dexKey][network].initCode,
       DystopiaConfig[dexKey][network].feeCode,
       DystopiaConfig[dexKey][network].poolGasCost,
+      dystPairABI,
       Adapters[network] || undefined,
     );
 
