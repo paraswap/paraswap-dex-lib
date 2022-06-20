@@ -184,6 +184,5 @@ async function getPools(): Promise<SubgraphResult[]> {
       )} sec. Current indexesCounter state is:`,
     );
     console.log(JSON.stringify(indexesCounter));
-    console.log(indexesCounter);
   }
 })();
