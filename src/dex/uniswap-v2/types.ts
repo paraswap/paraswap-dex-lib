@@ -1,4 +1,4 @@
-import { Address, NumberAsString, Token } from '../../types';
+import { Address, NumberAsString } from '../../types';
 
 export type UniswapDataLegacy = {
   router: Address;
@@ -129,3 +129,13 @@ export type DexParams = {
   router?: Address;
   adapters?: { [side: string]: { name: string; index: number }[] | null };
 };
+
+export interface UniswapV2PoolOrderedParams {
+  tokenIn: string;
+  tokenOut: string;
+  reservesIn: string;
+  reservesOut: string;
+  fee: string;
+  direction: boolean;
+  exchange: string;
+}

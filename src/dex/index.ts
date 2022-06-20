@@ -31,7 +31,7 @@ import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Nerve } from './nerve/nerve';
-import { IDexHelper } from '../dex-helper/idex-helper';
+import { IDexHelper } from '../dex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
@@ -41,6 +41,8 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
+import { Dystopia } from './uniswap-v2/dystopia/dystopia';
+import { AugustusRFQOrder } from './augustus-rfq';
 
 const LegacyDexes = [
   Curve,
@@ -60,6 +62,7 @@ const LegacyDexes = [
   DodoV2,
   Jarvis,
   Lido,
+  AugustusRFQOrder,
 ];
 
 const Dexes = [
@@ -80,6 +83,7 @@ const Dexes = [
   GMX,
   WooFi,
   UniswapV3,
+  Dystopia,
 ];
 
 const AdapterNameAddressMap: {
@@ -93,7 +97,7 @@ const AdapterNameAddressMap: {
   },
   [Network.POLYGON]: {
     PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-    PolygonAdapter02: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
+    PolygonAdapter02: '0x475928fE50a9E9ADb706d6f5624fB97EE2AC087D',
     PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
   },
   [Network.BSC]: {

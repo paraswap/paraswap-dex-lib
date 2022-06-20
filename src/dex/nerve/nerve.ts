@@ -44,8 +44,10 @@ export class Nerve
 
   readonly minConversionRate = '1';
 
-  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(NerveConfig);
+  public static dexKeysWithNetwork: {
+    key: string;
+    networks: Network[];
+  }[] = getDexKeysWithNetwork(NerveConfig);
 
   logger: Logger;
 

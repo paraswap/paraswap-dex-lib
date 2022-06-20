@@ -6,7 +6,6 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   AdapterExchangeParam,
   Address,
-  DexConfigMap,
   ExchangePrices,
   Log,
   Logger,
@@ -16,19 +15,24 @@ import {
   TxInfo,
 } from '../../types';
 import {
-  DexParams,
   UniswapData,
   UniswapDataLegacy,
   UniswapParam,
   UniswapPool,
   UniswapV2Data,
   UniswapV2Functions,
+  UniswapV2PoolOrderedParams,
 } from './types';
-import { IDex } from '../../dex/idex';
-import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
+import { IDex } from '../idex';
+import {
+  ETHER_ADDRESS,
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+} from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDexHelper } from '../../dex-helper';
 import {
   wrapETH,
   getDexKeysWithNetwork,
@@ -45,19 +49,9 @@ import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
-const RESERVE_LIMIT = 2n ** 112n - 1n;
+export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
-
-interface UniswapV2PoolOrderedParams {
-  tokenIn: string;
-  tokenOut: string;
-  reservesIn: string;
-  reservesOut: string;
-  fee: string;
-  direction: boolean;
-  exchange: string;
-}
 
 interface UniswapV2PoolState {
   reserves0: string;
@@ -84,8 +78,6 @@ export type UniswapV2Pair = {
   exchange?: Address;
   pool?: UniswapV2EventPool;
 };
-
-const subgraphTimeout = 10 * 1000;
 
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => iface.parseLog(log);
@@ -136,16 +128,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   ): Promise<DeepReadonly<UniswapV2PoolState>> {
     let calldata = [
       {
-        target: this.token0.address,
-        callData: erc20iface.encodeFunctionData('balanceOf', [
-          this.poolAddress,
-        ]),
-      },
-      {
-        target: this.token1.address,
-        callData: erc20iface.encodeFunctionData('balanceOf', [
-          this.poolAddress,
-        ]),
+        target: this.poolAddress,
+        callData: iface.encodeFunctionData('getReserves', []),
       },
     ];
 
@@ -153,22 +137,21 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    // const data = await this.dexHelper.multiContract.callStatic.aggregate(
-    //   calldata,
-    //   {
-    //     blockTag: blockNumber,
-    //   },
-    // );
+    const data: { returnData: any[] } =
+      await this.dexHelper.multiContract.methods
+        .aggregate(calldata)
+        .call({}, blockNumber);
 
-    const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
-      .call({}, blockNumber);
+    const decodedData = coder.decode(
+      ['uint112', 'uint112', 'uint32'],
+      data.returnData[0],
+    );
 
     return {
-      reserves0: coder.decode(['uint256'], data.returnData[0])[0].toString(),
-      reserves1: coder.decode(['uint256'], data.returnData[1])[0].toString(),
+      reserves0: decodedData[0].toString(),
+      reserves1: decodedData[1].toString(),
       feeCode: this.dynamicFees
-        ? this.feesMultiCallDecoder!(data.returnData[2])
+        ? this.feesMultiCallDecoder!(data.returnData[1])
         : this.feeCode,
     };
   }
@@ -266,7 +249,7 @@ export class UniswapV2
     return undefined;
   }
 
-  private async addPool(
+  protected async addPool(
     pair: UniswapV2Pair,
     reserves0: string,
     reserves1: string,
@@ -354,7 +337,7 @@ export class UniswapV2
     return price;
   }
 
-  private async findPair(from: Token, to: Token) {
+  async findPair(from: Token, to: Token) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
@@ -664,7 +647,7 @@ export class UniswapV2
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -693,13 +676,11 @@ export class UniswapV2
       liquidityUSD: parseFloat(pool.reserveUSD),
     }));
 
-    const pools = _.slice(
+    return _.slice(
       _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
       0,
       count,
     );
-
-    return pools;
   }
 
   protected fixPath(path: Address[], srcToken: Address, destToken: Address) {

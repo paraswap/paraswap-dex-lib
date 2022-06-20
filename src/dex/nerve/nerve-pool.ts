@@ -39,6 +39,12 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       .poolConfigs[poolName],
     protected poolABI: JsonFragment[] = NerveConfig[parentName][network].abi,
   ) {
+    if (poolConfig === undefined) {
+      logger.error(
+        `${parentName}: Config for ${poolName} was not found. Check if poolConfig.name === the key of pool config`,
+      );
+    }
+
     super(`${parentName}_${poolConfig.name}`, logger);
     this.math = new NervePoolMath(this.name, this.logger);
 

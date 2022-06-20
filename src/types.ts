@@ -53,6 +53,7 @@ export type ContractBuyData = {
   toToken: string;
   fromAmount: string;
   toAmount: string;
+  expectedAmount: string;
   beneficiary: string;
   route: ContractRoute[];
   partner: string;
@@ -67,6 +68,27 @@ export type ConstractSimpleData = {
   toToken: string;
   fromAmount: string;
   toAmount: string;
+  expectedAmount: string;
+  callees: string[];
+  exchangeData: string;
+  startIndexes: number[];
+  values: string[];
+  beneficiary: string;
+  partner: string;
+  feePercent: string;
+  permit: string;
+  deadline: string;
+  uuid: string;
+};
+
+export type ContractSimpleBuyNFTData = {
+  fromToken: string;
+  toTokenDetails: {
+    toToken: string;
+    toTokenID: string;
+    toAmount: string;
+  }[];
+  fromAmount: string;
   expectedAmount: string;
   callees: string[];
   exchangeData: string;
