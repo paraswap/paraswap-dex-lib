@@ -131,7 +131,7 @@ async function getPools(): Promise<SubgraphResult[]> {
   const upperTickBitmap = Number(BI_MAX_INT16);
   const chunks = 20;
   const poolsNumToProcess = 1;
-  const poolStartToProcess = 19;
+  const poolStartToProcess = 23;
 
   // Calculated from 18 first pools
   let globalMin = {
