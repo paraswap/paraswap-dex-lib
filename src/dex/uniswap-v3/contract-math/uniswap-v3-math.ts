@@ -213,8 +213,12 @@ class UniswapV3Math {
       liquidity: cache.liquidityStart,
     };
 
-    // Becaus eI didn't have all variables, adapted loop stop with state.tick !== newTick
-    // condition
+    // Because I didn't have all variables, adapted loop stop with state.tick !== newTick
+    // condition. This cycle need only to calculate Tick.cross() function values
+    // It means that we are interested in cycling only if state.tick !== newTick
+    // When they become equivalent, we proceed with state updating part as normal
+    // And if assumptions regarding this cycle are correct, we don't need to process
+    // the last cycle when state.tick === newTick
     while (state.tick !== newTick && state.sqrtPriceX96 !== newSqrtPriceX96) {
       const step = {
         sqrtPriceStartX96: 0n,
