@@ -29,7 +29,6 @@ const poolIface = new Interface(UniswapV3PoolABI);
 
 async function getBitmap(
   pool: string,
-  blockNumber: number,
   indexes: number[],
 ): Promise<Record<number, bigint>> {
   const callData = indexes.map(ind => ({
@@ -44,9 +43,7 @@ async function getBitmap(
     //   }`,
     // );
     // const start = Date.now();
-    const result = await multicallContract.methods
-      .aggregate(callData)
-      .call({}, blockNumber);
+    const result = await multicallContract.methods.aggregate(callData).call({});
 
     // console.log(
     //   `Done fetching bitMaps for ${pool}. Indexes from ${indexes[0]} to ${
@@ -77,7 +74,6 @@ async function getBitmap(
 
 async function getBitmaps(
   pool: string,
-  blockNumber: number,
   start: number,
   end: number,
   chunks: number,
@@ -88,7 +84,7 @@ async function getBitmaps(
   const chunked = _.chunk(indexes, Math.ceil(total / chunks));
 
   const bitMapArrays = await Promise.all(
-    chunked.map(async chunk => getBitmap(pool, blockNumber, chunk)),
+    chunked.map(async chunk => getBitmap(pool, chunk)),
   );
 
   // if (bitMapArrays.some(bitMapArray => Object.keys(bitMapArray).length === 0)) {
@@ -125,7 +121,6 @@ async function getPools(): Promise<SubgraphResult[]> {
 }
 
 (async function main() {
-  const blockNumber = await web3Provider.eth.getBlockNumber();
   const pools = await getPools();
   const lowerTickBitmap = Number(BI_MIN_INT16);
   const upperTickBitmap = Number(BI_MAX_INT16);
@@ -165,7 +160,6 @@ async function getPools(): Promise<SubgraphResult[]> {
       chunkedPool.map(async pool => {
         const bitMaps = await getBitmaps(
           pool.id,
-          blockNumber,
           lowerTickBitmap,
           upperTickBitmap,
           chunks,
