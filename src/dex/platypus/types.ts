@@ -8,6 +8,7 @@ export type PlatypusPoolState = {
 };
 
 export type PlatypusPoolParams = {
+  paused: boolean;
   slippageParamK: bigint;
   slippageParamN: bigint;
   c1: bigint;

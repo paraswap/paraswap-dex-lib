@@ -3,6 +3,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -435,46 +436,50 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
     if (srcTokenAddress === destTokenAddress) return null;
-    return await Promise.all(
-      this.findPools(srcTokenAddress, destTokenAddress)
-        .filter(
-          poolAddress =>
-            !limitPools ||
-            limitPools.includes(this.getPoolIdentifier(poolAddress)),
-        )
-        .map(poolAddress =>
-          (async () => {
-            let state = this.eventPools![poolAddress].getState(blockNumber);
-            if (!state) {
-              state = await this.eventPools![poolAddress].generateState(
-                blockNumber,
+    return (
+      await Promise.all(
+        this.findPools(srcTokenAddress, destTokenAddress)
+          .filter(
+            poolAddress =>
+              !limitPools ||
+              limitPools.includes(this.getPoolIdentifier(poolAddress)),
+          )
+          .map(poolAddress =>
+            (async () => {
+              let state = this.eventPools![poolAddress].getState(blockNumber);
+              if (!state) {
+                state = await this.eventPools![poolAddress].generateState(
+                  blockNumber,
+                );
+                this.eventPools![poolAddress].setState(state, blockNumber);
+              }
+              if (state.params.paused) return null;
+              const [unit, ...prices] = this.computePrices(
+                srcTokenAddress,
+                this.cfgInfo!.pools[poolAddress].tokens[srcTokenAddress]
+                  .tokenDecimals,
+                destTokenAddress,
+                this.cfgInfo!.pools[poolAddress].tokens[destTokenAddress]
+                  .tokenDecimals,
+                [getBigIntPow(srcToken.decimals), ...amounts],
+                state,
               );
-              this.eventPools![poolAddress].setState(state, blockNumber);
-            }
-            const [unit, ...prices] = this.computePrices(
-              srcTokenAddress,
-              this.cfgInfo!.pools[poolAddress].tokens[srcTokenAddress]
-                .tokenDecimals,
-              destTokenAddress,
-              this.cfgInfo!.pools[poolAddress].tokens[destTokenAddress]
-                .tokenDecimals,
-              [getBigIntPow(srcToken.decimals), ...amounts],
-              state,
-            );
-            return {
-              prices,
-              unit,
-              data: {
-                pool: poolAddress,
-              },
-              poolAddresses: [poolAddress],
-              exchange: this.dexKey,
-              gasCost: 260 * 1000,
-              poolIdentifier: this.getPoolIdentifier(poolAddress),
-            };
-          })(),
-        ),
-    );
+              const ret: PoolPrices<PlatypusData> = {
+                prices,
+                unit,
+                data: {
+                  pool: poolAddress,
+                },
+                poolAddresses: [poolAddress],
+                exchange: this.dexKey,
+                gasCost: 260 * 1000,
+                poolIdentifier: this.getPoolIdentifier(poolAddress),
+              };
+              return ret;
+            })(),
+          ),
+      )
+    ).filter((p): p is PoolPrices<PlatypusData> => !!p);
   }
 
   // Encode params required by the exchange adapter

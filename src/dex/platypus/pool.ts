@@ -64,6 +64,7 @@ export class PlatypusPool extends ComposedEventSubscriber<PlatypusPoolState> {
       ],
       {
         params: {
+          paused: false,
           slippageParamK: 0n,
           slippageParamN: 0n,
           c1: 0n,
@@ -101,6 +102,18 @@ export class PlatypusPoolSubscriber<State> extends PartialEventSubscriber<
     try {
       const parsed = PlatypusPoolSubscriber.poolInterface.parseLog(log);
       switch (parsed.name) {
+        case 'Paused': {
+          return {
+            ...state,
+            paused: true,
+          };
+        }
+        case 'Unpaused': {
+          return {
+            ...state,
+            paused: false,
+          };
+        }
         case 'PriceDeviationUpdated': {
           const previousPriceDeviation = BigInt(
             parsed.args.previousPriceDeviation.toString(),
@@ -193,6 +206,11 @@ export class PlatypusPoolSubscriber<State> extends PartialEventSubscriber<
       {
         target: this.pool,
         callData:
+          PlatypusPoolSubscriber.poolInterface.encodeFunctionData('paused'),
+      },
+      {
+        target: this.pool,
+        callData:
           PlatypusPoolSubscriber.poolInterface.encodeFunctionData(
             'getSlippageParamK',
           ),
@@ -244,39 +262,43 @@ export class PlatypusPoolSubscriber<State> extends PartialEventSubscriber<
     blockNumber?: number | 'latest',
   ): DeepReadonly<PlatypusPoolParams> {
     return {
+      paused: PlatypusPoolSubscriber.poolInterface.decodeFunctionResult(
+        'paused',
+        multicallOutputs[0],
+      )[0],
       slippageParamK: BigInt(
         PlatypusPoolSubscriber.poolInterface
-          .decodeFunctionResult('getSlippageParamK', multicallOutputs[0])[0]
+          .decodeFunctionResult('getSlippageParamK', multicallOutputs[1])[0]
           .toString(),
       ),
       slippageParamN: BigInt(
         PlatypusPoolSubscriber.poolInterface
-          .decodeFunctionResult('getSlippageParamN', multicallOutputs[1])[0]
+          .decodeFunctionResult('getSlippageParamN', multicallOutputs[2])[0]
           .toString(),
       ),
       c1: BigInt(
         PlatypusPoolSubscriber.poolInterface
-          .decodeFunctionResult('getC1', multicallOutputs[2])[0]
+          .decodeFunctionResult('getC1', multicallOutputs[3])[0]
           .toString(),
       ),
       xThreshold: BigInt(
         PlatypusPoolSubscriber.poolInterface
-          .decodeFunctionResult('getXThreshold', multicallOutputs[3])[0]
+          .decodeFunctionResult('getXThreshold', multicallOutputs[4])[0]
           .toString(),
       ),
       haircutRate: BigInt(
         PlatypusPoolSubscriber.poolInterface
-          .decodeFunctionResult('getHaircutRate', multicallOutputs[4])[0]
+          .decodeFunctionResult('getHaircutRate', multicallOutputs[5])[0]
           .toString(),
       ),
       retentionRatio: BigInt(
         PlatypusPoolSubscriber.poolInterface
-          .decodeFunctionResult('getRetentionRatio', multicallOutputs[5])[0]
+          .decodeFunctionResult('getRetentionRatio', multicallOutputs[6])[0]
           .toString(),
       ),
       maxPriceDeviation: BigInt(
         PlatypusPoolSubscriber.poolInterface
-          .decodeFunctionResult('getMaxPriceDeviation', multicallOutputs[6])[0]
+          .decodeFunctionResult('getMaxPriceDeviation', multicallOutputs[7])[0]
           .toString(),
       ),
     };
