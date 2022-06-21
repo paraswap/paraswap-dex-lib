@@ -201,7 +201,6 @@ export class UniswapV2
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
-  readonly decoderIface: Interface;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV2Config);
@@ -221,7 +220,7 @@ export class UniswapV2
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].poolGasCost) ??
       DefaultUniswapV2PoolGasCost,
-    decoderABI: JsonFragment[] = uniswapV2ABI,
+    protected decoderIface: Interface = uniswapV2Iface,
     protected adapters = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].adapters) ??
       Adapters[network],
@@ -239,7 +238,6 @@ export class UniswapV2
 
     this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
-    this.decoderIface = new Interface(decoderABI);
   }
 
   // getFeesMultiCallData should be override

@@ -64,7 +64,7 @@ export class Dystopia extends UniswapV2 {
       DystopiaConfig[dexKey][network].initCode,
       DystopiaConfig[dexKey][network].feeCode,
       DystopiaConfig[dexKey][network].poolGasCost,
-      dystPairABI,
+      iface,
       Adapters[network] || undefined,
     );
 
