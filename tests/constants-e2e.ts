@@ -232,6 +232,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       decimals: 18,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
+    USDC: {
+      address: '0x2ecf57cfaf2faedf1575d2372398ee34c428d6c3',
+      decimals: 6,
+    },
   },
   [Network.POLYGON]: {
     DAI: {
@@ -531,6 +535,7 @@ export const Holders: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
     DAI: '0xbe13517a2b520b2449068D2ec45280992B04047B',
     WETH: '0xdA87Da8C599E8A8993f3CBCD0aA5A1316A559A6D',
+    USDC: '0xb2dafb6fc7f66526e72027ade0f044beda0ba11e',
   },
   [Network.POLYGON]: {
     MATIC: '0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245',

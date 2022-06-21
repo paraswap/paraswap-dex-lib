@@ -68,3 +68,7 @@ export const AugustusAddress: { [nid: number]: Address } = {
 };
 
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
+
+export enum LIMIT_ORDER_PROVIDERS {
+  PARASWAP = 'ParaSwapLimitOrderProvider',
+}

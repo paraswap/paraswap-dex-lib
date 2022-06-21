@@ -1,6 +1,6 @@
 import { SwapSide } from 'paraswap-core';
 import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings } from '../../types';
+import { AdapterMappings, DexConfigMap } from '../../types';
 import { Network } from '../../constants';
 import nervePoolABI from '../../abi/nerve/nerve-pool.json';
 import axialPoolABI from '../../abi/nerve/axial-pool.json';

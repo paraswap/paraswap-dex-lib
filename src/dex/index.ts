@@ -42,6 +42,7 @@ import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
+import { ParaswapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 
 const LegacyDexes = [
@@ -84,6 +85,7 @@ const Dexes = [
   GMX,
   WooFi,
   Dystopia,
+  ParaswapLimitOrders,
 ];
 
 const AdapterNameAddressMap: {
@@ -105,8 +107,8 @@ const AdapterNameAddressMap: {
     BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
   },
   [Network.ROPSTEN]: {
-    RopstenAdapter01: '0x74fF86C61CF66334dCfc999814DE4695B4BaE57b',
-    RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
+    RopstenAdapter01: '0x59b7F6258e78C3E5234bb651656EDd0e08868cd5',
+    RopstenBuyAdapter: '0x63e908A4C793a33e40254362ED1A5997a234D85C',
   },
   [Network.AVALANCHE]: {
     AvalancheAdapter01: '0xC79cf51b0951418cb7B010e38c3ceB8801E53184',
