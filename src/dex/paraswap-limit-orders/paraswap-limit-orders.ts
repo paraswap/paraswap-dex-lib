@@ -99,6 +99,7 @@ export class ParaswapLimitOrders
       _srcAddress,
       _destAddress,
     );
+
     if (priceSummary === null) return [];
 
     return [this.getIdentifier(_srcAddress, _destAddress)];
@@ -300,7 +301,13 @@ export class ParaswapLimitOrders
         dest,
       );
 
-    if (priceSummaryUnparsed === null) return [];
+    if (priceSummaryUnparsed === null || priceSummaryUnparsed.length === 0) {
+      this.logger.trace(
+        `${this.dexKey}: No priceSummary found for ${src} and ${dest} on ${this.network} network`,
+      );
+      return null;
+    }
+
     return priceSummaryUnparsed
       .map(priceSummary => ({
         cumulativeMakerAmount: BigInt(priceSummary.cumulativeMakerAmount),
