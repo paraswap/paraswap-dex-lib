@@ -74,11 +74,11 @@ export class UniswapV3
   ): string {
     let encodedPath = 0n;
     const _path = side === SwapSide.SELL ? path : path.reverse();
-    for (const swap of _path) {
-      const { tokenIn, tokenOut, fee } = swap;
+    for (let i = 0; i < path.length; i++) {
+      const { tokenIn, tokenOut, fee } = path[i];
       const [a, b] =
         side === SwapSide.SELL ? [tokenIn, tokenOut] : [tokenOut, tokenIn];
-      encodedPath = (encodedPath << 160n) | BigInt(a);
+      if (i === 0) encodedPath = (encodedPath << 160n) | BigInt(a);
       encodedPath = (encodedPath << 24n) | BigInt(fee);
       encodedPath = (encodedPath << 160n) | BigInt(b);
     }
