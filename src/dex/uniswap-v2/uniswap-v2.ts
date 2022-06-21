@@ -1,4 +1,4 @@
-import { AbiCoder, Interface, JsonFragment } from '@ethersproject/abi';
+import { AbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
