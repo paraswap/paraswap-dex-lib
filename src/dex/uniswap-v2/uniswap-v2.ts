@@ -59,6 +59,7 @@ interface UniswapV2PoolState {
   feeCode: number;
 }
 
+const uniswapV2Iface = new Interface(uniswapV2ABI);
 const erc20iface = new Interface(erc20ABI);
 const coder = new AbiCoder();
 
@@ -81,8 +82,6 @@ export type UniswapV2Pair = {
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => this.iface.parseLog(log);
 
-  private iface: Interface;
-
   constructor(
     protected parentName: string,
     protected dexHelper: IDexHelper,
@@ -96,7 +95,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     // feesMultiCallData is only used if dynamicFees is set to true
     private feesMultiCallEntry?: { target: Address; callData: string },
     private feesMultiCallDecoder?: (values: any[]) => number,
-    decoderABI: JsonFragment[] = uniswapV2ABI,
+    private iface: Interface = uniswapV2Iface,
   ) {
     super(
       parentName +
@@ -107,8 +106,6 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
         ' pool',
       logger,
     );
-
-    this.iface = new Interface(decoderABI);
   }
 
   protected processLog(
@@ -204,6 +201,7 @@ export class UniswapV2
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly decoderIface: Interface;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV2Config);
@@ -223,7 +221,7 @@ export class UniswapV2
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].poolGasCost) ??
       DefaultUniswapV2PoolGasCost,
-    protected decoderABI: JsonFragment[] = uniswapV2ABI,
+    decoderABI: JsonFragment[] = uniswapV2ABI,
     protected adapters = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].adapters) ??
       Adapters[network],
@@ -241,6 +239,7 @@ export class UniswapV2
 
     this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
+    this.decoderIface = new Interface(decoderABI);
   }
 
   // getFeesMultiCallData should be override
@@ -274,7 +273,7 @@ export class UniswapV2
       this.isDynamicFees,
       callEntry,
       callDecoder,
-      this.decoderABI,
+      this.decoderIface,
     );
 
     if (blockNumber)
