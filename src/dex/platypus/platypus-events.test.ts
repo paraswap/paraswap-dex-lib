@@ -11,7 +11,11 @@ import {
   getSavedConfig,
   saveConfig,
 } from '../../../tests/utils-events';
-import { PlatypusConfigInfo, PlatypusPoolState } from './types';
+import {
+  PlatypusOracleType,
+  PlatypusConfigInfo,
+  PlatypusPoolState,
+} from './types';
 
 jest.setTimeout(50 * 1000);
 const dexKey = 'Platypus';
@@ -77,12 +81,17 @@ describe('Platypus Event', function () {
             saveConfig(blockNumber, dexKey, cfgInfo);
           }
 
+          const cfgInfoPool =
+            cfgInfo.pools[config.pools[poolIndex].address.toLowerCase()];
+          if (cfgInfoPool.oracleType !== PlatypusOracleType.ChainLink) {
+            throw new Error('Wrong Platypus oracle type for this test!');
+          }
           const platypusPool = new PlatypusPool(
             dexKey,
             network,
             config.pools[poolIndex].name,
             config.pools[poolIndex].address,
-            cfgInfo.pools[config.pools[poolIndex].address.toLowerCase()],
+            cfgInfoPool,
             dexHelper,
           );
 

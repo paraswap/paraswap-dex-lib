@@ -476,6 +476,18 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x71fc860f7d3a592a4a98740e39db31d25db65ae8',
       decimals: 6,
     },
+    YUSD: {
+      address: '0x111111111111ed1D73f860F57b2798b683f2d325',
+      decimals: 18,
+    },
+    H2O: {
+      address: '0x026187BdbC6b751003517bcb30Ac7817D5B766f8',
+      decimals: 18,
+    },
+    MONEY: {
+      address: '0x0f577433Bf59560Ef2a79c124E9Ff99fCa258948',
+      decimals: 18,
+    },
   },
 };
 

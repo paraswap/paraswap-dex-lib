@@ -1,11 +1,21 @@
 import { Address } from '../../types';
 import { ChainLinkState } from '../../lib/chainlink';
 
-export type PlatypusPoolState = {
+export enum PlatypusOracleType {
+  None = 'None',
+  ChainLink = 'ChainLink',
+}
+
+export type PlatypusPoolStateCommon = {
   params: PlatypusPoolParams;
-  chainlink: { [underlyingAddress: string]: ChainLinkState };
   asset: { [underlyingAddress: string]: PlatypusAssetState };
 };
+
+export type PlatypusPoolState = PlatypusPoolStateCommon & {
+  chainlink: { [underlyingAddress: string]: ChainLinkState };
+};
+
+export type PlatypusPurePoolState = PlatypusPoolStateCommon;
 
 export type PlatypusPoolParams = {
   paused: boolean;
@@ -25,10 +35,13 @@ export type PlatypusAssetState = {
 
 export type PlatypusConfigInfo = {
   poolAddresses: Address[];
-  pools: { [poolAddress: string]: PlatypusPoolConfigInfo };
+  pools: {
+    [poolAddress: string]: PlatypusPoolConfigInfo | PlatypusPurePoolConfigInfo;
+  };
 };
 
 export type PlatypusPoolConfigInfo = {
+  oracleType: PlatypusOracleType.ChainLink;
   priceOracleAddress: Address;
   tokenAddresses: Address[];
   tokens: {
@@ -44,6 +57,18 @@ export type PlatypusPoolConfigInfo = {
   };
 };
 
+export type PlatypusPurePoolConfigInfo = {
+  oracleType: PlatypusOracleType.None;
+  tokenAddresses: Address[];
+  tokens: {
+    [tokenAddress: string]: {
+      tokenSymbol: string;
+      tokenDecimals: number;
+      assetAddress: Address;
+    };
+  };
+};
+
 export type PlatypusData = {
   pool: Address;
 };
@@ -52,5 +77,6 @@ export type DexParams = {
   pools: {
     address: Address;
     name: string;
+    oracleType: PlatypusOracleType;
   }[];
 };
