@@ -27,6 +27,10 @@ export const PlatypusConfig: DexConfigMap<DexParams> = {
           name: 'Alt Pool YUSD',
         },
         {
+          address: '0x39dE4e02F76Dbd4352Ec2c926D8d64Db8aBdf5b2',
+          name: 'Alt Pool BTC',
+        },
+        {
           address: '0x233Ba46B01d2FbF1A31bDBc500702E286d6de218',
           name: 'Factory Pool H2O',
         },
