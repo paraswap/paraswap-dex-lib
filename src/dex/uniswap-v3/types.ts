@@ -40,8 +40,9 @@ export type PoolState = {
   maxLiquidityPerTick: bigint;
   tickBitmap: Record<NumberAsString, bigint>;
   ticks: Record<NumberAsString, TickInfo>;
-  observations: OracleObservation[];
+  observations: Record<number, OracleObservation>;
   isValid: boolean;
+  startTickBitmap: bigint;
 };
 
 export type UniswapV3Data = {

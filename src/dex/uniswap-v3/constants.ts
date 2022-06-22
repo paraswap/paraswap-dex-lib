@@ -1,11 +1,10 @@
 export const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
-export const STATE_REQUEST_CHUNK_AMOUNT = 2n;
+// This is used for price calculation. If out of scope, return 0n
+export const TICK_BITMAP_TO_USE = 64n;
 
-export const OBSERVATIONS_ARRAY_SIZE = 65535;
-
-export const LOWER_TICK_REQUEST_LIMIT = -6000n;
-export const UPPER_TICK_REQUEST_LIMIT = 6000n;
+// This is used to check if the state is still valid.
+export const TICK_BITMAP_BUFFER = 32n;
 
 export const UNISWAPV3_SUBGRAPH_URL =
   'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
@@ -27,3 +26,5 @@ export const ZERO_ORACLE_OBSERVATION = {
   secondsPerLiquidityCumulativeX128: 0n,
   initialized: false,
 };
+
+export const OUT_OF_RANGE_ERROR_POSTFIX = `INVALID_TICK_BIT_MAP_RANGES`;

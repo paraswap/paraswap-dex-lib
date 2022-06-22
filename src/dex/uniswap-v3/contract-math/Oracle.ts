@@ -7,6 +7,12 @@ import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import { ZERO_ORACLE_OBSERVATION } from '../constants';
 
+function replaceUndefinedObservationWithZero(state: PoolState, index: number) {
+  if (state.observations[index] === undefined) {
+    state.observations[index] = { ...ZERO_ORACLE_OBSERVATION };
+  }
+}
+
 export class Oracle {
   static transform(
     state: DeepReadonly<PoolState>,
@@ -36,6 +42,7 @@ export class Oracle {
     cardinality: number,
     cardinalityNext: number,
   ): [number, number] {
+    replaceUndefinedObservationWithZero(state, index);
     const last = state.observations[index];
 
     if (last.blockTimestamp == state.blockTimestamp)
@@ -51,6 +58,7 @@ export class Oracle {
     }
 
     indexUpdated = (index + 1) % cardinalityUpdated;
+
     state.observations[indexUpdated] = Oracle.transform(
       state,
       last,
@@ -58,7 +66,8 @@ export class Oracle {
       tick,
       liquidity,
     );
-    state.observations[index] = { ...ZERO_ORACLE_OBSERVATION };
+
+    delete state.observations[index];
     return [indexUpdated, cardinalityUpdated];
   }
 

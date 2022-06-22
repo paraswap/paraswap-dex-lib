@@ -12,6 +12,7 @@ import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import { NumberAsString } from 'paraswap-core';
 import { BI_MAX_INT } from '../../../bigint-constants';
+import { OUT_OF_RANGE_ERROR_POSTFIX } from '../constants';
 
 type ModifyPositionParams = {
   tickLower: bigint;
@@ -87,13 +88,26 @@ class UniswapV3Math {
 
       step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-      [step.tickNext, step.initialized] =
-        TickBitMap.nextInitializedTickWithinOneWord(
-          poolState,
-          state.tick,
-          poolState.tickSpacing,
-          zeroForOne,
-        );
+      try {
+        [step.tickNext, step.initialized] =
+          TickBitMap.nextInitializedTickWithinOneWord(
+            poolState,
+            state.tick,
+            poolState.tickSpacing,
+            zeroForOne,
+            true,
+          );
+      } catch (e) {
+        if (
+          e instanceof Error &&
+          e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
+        ) {
+          state.amountSpecifiedRemaining = 0n;
+          state.amountCalculated = 0n;
+          break;
+        }
+        throw e;
+      }
 
       if (step.tickNext < TickMath.MIN_TICK) {
         step.tickNext = TickMath.MIN_TICK;
@@ -238,6 +252,7 @@ class UniswapV3Math {
           state.tick,
           poolState.tickSpacing,
           zeroForOne,
+          false,
         );
 
       if (step.tickNext < TickMath.MIN_TICK) {

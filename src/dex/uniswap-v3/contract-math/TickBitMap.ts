@@ -4,9 +4,36 @@ import { BitMath } from './BitMath';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import {
-  LOWER_TICK_REQUEST_LIMIT,
-  UPPER_TICK_REQUEST_LIMIT,
+  OUT_OF_RANGE_ERROR_POSTFIX,
+  TICK_BITMAP_BUFFER,
+  TICK_BITMAP_TO_USE,
 } from '../constants';
+
+function isWordPosOut(
+  wordPos: bigint,
+  startTickBitmap: bigint,
+  // For pricing we use wider range to check price impact. If the function called from event
+  // it must always be within BUFFER
+  isPriceQuery: boolean,
+) {
+  let lowerTickBitmapLimit;
+  let upperTickBitmapLimit;
+
+  if (isPriceQuery) {
+    lowerTickBitmapLimit = startTickBitmap - TICK_BITMAP_TO_USE;
+    upperTickBitmapLimit = startTickBitmap + TICK_BITMAP_TO_USE;
+  } else {
+    lowerTickBitmapLimit = startTickBitmap - TICK_BITMAP_BUFFER;
+    upperTickBitmapLimit = startTickBitmap + TICK_BITMAP_BUFFER;
+  }
+
+  _require(
+    wordPos >= lowerTickBitmapLimit && wordPos <= upperTickBitmapLimit,
+    `wordPos is out of safe state tickBitmap request range: ${OUT_OF_RANGE_ERROR_POSTFIX}`,
+    { wordPos },
+    `wordPos >= LOWER_TICK_REQUEST_LIMIT && wordPos <= UPPER_TICK_REQUEST_LIMIT`,
+  );
+}
 
 export class TickBitMap {
   static position(tick: bigint): [bigint, bigint] {
@@ -23,9 +50,9 @@ export class TickBitMap {
     const [wordPos, bitPos] = TickBitMap.position(tick / tickSpacing);
     const mask = 1n << bitPos;
 
-    // This is used only to check that we are not out of state requesting ranges.
-    // If yes, we must be notified to adapt the request range.
-    const _0 = this._putZeroIfUndefined(undefined, wordPos);
+    // flipTick is used only in _updatePosition which is always state changing event
+    // Therefore it is never used in price query
+    isWordPosOut(wordPos, state.startTickBitmap, false);
 
     state.tickBitmap[wordPos.toString()] ^= mask;
   }
@@ -35,6 +62,7 @@ export class TickBitMap {
     tick: bigint,
     tickSpacing: bigint,
     lte: boolean,
+    isPriceQuery: boolean,
   ): [bigint, boolean] {
     let compressed = tick / tickSpacing;
     if (tick < 0n && tick % tickSpacing != 0n) compressed--;
@@ -46,11 +74,9 @@ export class TickBitMap {
       const [wordPos, bitPos] = TickBitMap.position(compressed);
       const mask = (1n << bitPos) - 1n + (1n << bitPos);
 
+      isWordPosOut(wordPos, state.startTickBitmap, isPriceQuery);
       let tickBitmapValue = state.tickBitmap[wordPos.toString()];
-      tickBitmapValue = TickBitMap._putZeroIfUndefined(
-        tickBitmapValue,
-        wordPos,
-      );
+      tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
 
       const masked = tickBitmapValue & mask;
 
@@ -65,11 +91,9 @@ export class TickBitMap {
       const [wordPos, bitPos] = TickBitMap.position(compressed + 1n);
       const mask = ~((1n << bitPos) - 1n);
 
+      isWordPosOut(wordPos, state.startTickBitmap, isPriceQuery);
       let tickBitmapValue = state.tickBitmap[wordPos.toString()];
-      tickBitmapValue = TickBitMap._putZeroIfUndefined(
-        tickBitmapValue,
-        wordPos,
-      );
+      tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
 
       const masked = tickBitmapValue & mask;
 
@@ -87,19 +111,11 @@ export class TickBitMap {
   }
 
   static _putZeroIfUndefined(
+    state: PoolState,
     tickBitmapValue: bigint | undefined,
     wordPos: bigint,
+    isPriceQuery: boolean = false,
   ): bigint {
-    if (tickBitmapValue === undefined) {
-      _require(
-        wordPos >= LOWER_TICK_REQUEST_LIMIT &&
-          wordPos <= UPPER_TICK_REQUEST_LIMIT,
-        'wordPos is out of state tickBitmap request range',
-        { wordPos },
-        'wordPos >= LOWER_TICK_REQUEST_LIMIT && wordPos <= UPPER_TICK_REQUEST_LIMIT: CORRECT_TICK_BIT_MAP_RANGES',
-      );
-      return 0n;
-    }
-    return tickBitmapValue;
+    return tickBitmapValue === undefined ? 0n : tickBitmapValue;
   }
 }

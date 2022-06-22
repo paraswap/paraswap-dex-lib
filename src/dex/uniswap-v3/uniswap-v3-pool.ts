@@ -18,11 +18,11 @@ import { bigIntify } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { NumberAsString } from 'paraswap-core';
 import {
-  LOWER_TICK_REQUEST_LIMIT,
-  STATE_REQUEST_CHUNK_AMOUNT,
-  UPPER_TICK_REQUEST_LIMIT,
-  ZERO_ORACLE_OBSERVATION,
+  OUT_OF_RANGE_ERROR_POSTFIX,
+  TICK_BITMAP_BUFFER,
+  TICK_BITMAP_TO_USE,
 } from './constants';
+import { TickBitMap } from './contract-math/TickBitMap';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -49,7 +49,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   private _stateRequestCallData?: {
     funcName: string;
     params: unknown[];
-  }[];
+  };
 
   constructor(
     protected parentName: string,
@@ -107,7 +107,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         // Because we have observations in array which is mutable by nature, there is a
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
         // And there is no good workaround, so turn off the type checker for this line
-        // @ts-expect-error
         return this.handlers[event.name](event, state, log, blockHeader);
       }
       return state;
@@ -122,46 +121,17 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _getStateRequestCallData() {
     if (!this._stateRequestCallData) {
-      const step =
-        (-LOWER_TICK_REQUEST_LIMIT + UPPER_TICK_REQUEST_LIMIT + 1n) /
-        STATE_REQUEST_CHUNK_AMOUNT;
-
-      let start = LOWER_TICK_REQUEST_LIMIT;
-      let end = this._getEndRange(start, step);
-
-      const callData = _.range(0, Number(STATE_REQUEST_CHUNK_AMOUNT)).map(
-        (_0, i) => {
-          let data;
-          if (i === 0) {
-            data = {
-              funcName: 'getFullState',
-              params: [
-                this.factoryAddress,
-                this.token0,
-                this.token1,
-                this.feeCode,
-                start,
-                end,
-              ],
-            };
-          } else {
-            data = {
-              funcName: 'getAdditionalBitmapWithTicks',
-              params: [
-                this.factoryAddress,
-                this.token0,
-                this.token1,
-                this.feeCode,
-                start,
-                end,
-              ],
-            };
-          }
-          start = end + 1n;
-          end = this._getEndRange(start, step);
-          return data;
-        },
-      );
+      const callData = {
+        funcName: 'getFullStateWithRelativeBitmaps',
+        params: [
+          this.factoryAddress,
+          this.token0,
+          this.token1,
+          this.feeCode,
+          TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER,
+          TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER,
+        ],
+      };
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;
@@ -170,48 +140,42 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
-    const results = await Promise.all(
-      callData.map(async data =>
-        this.stateMultiContract.methods[data.funcName](...data.params).call(
-          {},
-          blockNumber || 'latest',
-        ),
-      ),
-    );
+    const results = await this.stateMultiContract.methods[callData.funcName](
+      ...callData.params,
+    ).call({}, blockNumber || 'latest');
 
-    const _state = results[0];
+    const _state = results;
 
     const tickBitmap = {};
     const ticks = {};
 
-    results.map(result => {
-      this._reduceTickBitmap(tickBitmap, result.tickBitmap);
-      this._reduceTicks(ticks, result.ticks);
-    });
+    this._reduceTickBitmap(tickBitmap, _state.tickBitmap);
+    this._reduceTicks(ticks, _state.ticks);
 
     // Not really a good place to do it, but in order to save RPC requests,
     // put it here
     this.poolAddress = _state.pool.toLowerCase();
     this.addressesSubscribed[0] = this.poolAddress;
 
-    const observations = new Array(65535)
-      .fill(undefined)
-      .map(() => ({ ...ZERO_ORACLE_OBSERVATION }));
-
-    observations[_state.slot0.observationIndex] = {
-      blockTimestamp: bigIntify(_state.observation.blockTimestamp),
-      tickCumulative: bigIntify(_state.observation.tickCumulative),
-      secondsPerLiquidityCumulativeX128: bigIntify(
-        _state.observation.secondsPerLiquidityCumulativeX128,
-      ),
-      initialized: _state.observation.initialized,
+    const observations = {
+      [_state.slot0.observationIndex]: {
+        blockTimestamp: bigIntify(_state.observation.blockTimestamp),
+        tickCumulative: bigIntify(_state.observation.tickCumulative),
+        secondsPerLiquidityCumulativeX128: bigIntify(
+          _state.observation.secondsPerLiquidityCumulativeX128,
+        ),
+        initialized: _state.observation.initialized,
+      },
     };
+
+    const currentTick = bigIntify(_state.slot0.tick);
+    const tickSpacing = bigIntify(_state.tickSpacing);
 
     return {
       blockTimestamp: bigIntify(_state.blockTimestamp),
       slot0: {
         sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
-        tick: bigIntify(_state.slot0.tick),
+        tick: currentTick,
         observationIndex: _state.slot0.observationIndex,
         observationCardinality: _state.slot0.observationCardinality,
         observationCardinalityNext: _state.slot0.observationCardinalityNext,
@@ -219,12 +183,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       },
       liquidity: bigIntify(_state.liquidity),
       fee: this.feeCode,
-      tickSpacing: bigIntify(_state.tickSpacing),
+      tickSpacing,
       maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
       ticks,
       observations,
       isValid: true,
+      startTickBitmap: TickBitMap.position(currentTick / tickSpacing)[0],
     };
   }
 
@@ -276,7 +241,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return this._callAndHandleError(
-      // There is relevant just to update the ticks and other things for state
       uniswapV3Math._modifyPosition.bind(uniswapV3Math, pool, {
         tickLower,
         tickUpper,
@@ -298,7 +262,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return this._callAndHandleError(
-      // For state is relevant just to update the ticks and other things
       uniswapV3Math._modifyPosition.bind(uniswapV3Math, pool, {
         tickLower,
         tickUpper,
@@ -334,13 +297,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     );
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
     return pool;
-  }
-
-  private _getEndRange(start: bigint, step: bigint) {
-    const endCandidate = start + step;
-    return endCandidate > UPPER_TICK_REQUEST_LIMIT
-      ? UPPER_TICK_REQUEST_LIMIT
-      : endCandidate;
   }
 
   private _reduceTickBitmap(
@@ -383,10 +339,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     } catch (e) {
       if (
         e instanceof Error &&
-        e.message.endsWith('CORRECT_TICK_BIT_MAP_RANGES')
+        e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
       ) {
-        this.logger.error(
-          `${this.parentName}: Pool ${this.poolAddress} on network ${this.network} is out of TickBitmap requested range. Need to adjust it`,
+        this.logger.trace(
+          `${this.parentName}: Pool ${this.poolAddress} on network ${this.network} is out of TickBitmap requested range. Re-query the state`,
           e,
         );
       } else {
