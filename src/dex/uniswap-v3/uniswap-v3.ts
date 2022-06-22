@@ -255,7 +255,7 @@ export class UniswapV3
         unit: prices[0],
         prices: [0n, ...prices.slice(1)],
         data: {
-          fee: pool.feeCode,
+          fee: pool.feeCode.toString(),
         },
         poolIdentifier: this.getPoolIdentifier(
           pool.token0,

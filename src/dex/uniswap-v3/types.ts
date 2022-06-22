@@ -47,7 +47,7 @@ export type PoolState = {
 
 export type UniswapV3Data = {
   // ExactInputSingleParams
-  fee: bigint;
+  fee: NumberAsString;
 };
 
 export type DexParams = {
@@ -60,7 +60,7 @@ export type DexParams = {
 export type UniswapV3SellParam = {
   tokenIn: Address;
   tokenOut: Address;
-  fee: bigint;
+  fee: NumberAsString;
   recipient: Address;
   deadline: number;
   amountIn: NumberAsString;
@@ -71,7 +71,7 @@ export type UniswapV3SellParam = {
 export type UniswapV3BuyParam = {
   tokenIn: Address;
   tokenOut: Address;
-  fee: bigint;
+  fee: NumberAsString;
   recipient: Address;
   deadline: number;
   amountOut: NumberAsString;
