@@ -10,7 +10,12 @@ import { testEventSubscriber } from '../../../tests/utils-events';
 import { OracleObservation, PoolState, Slot0, TickInfo } from './types';
 import { bigIntify } from '../../utils';
 import { MultiCallV2Output } from '../../types';
-import { ZERO_ORACLE_OBSERVATION } from './constants';
+import {
+  TICK_BITMAP_BUFFER,
+  TICK_BITMAP_TO_USE,
+  ZERO_ORACLE_OBSERVATION,
+} from './constants';
+import { TickBitMap } from './contract-math/TickBitMap';
 
 jest.setTimeout(300 * 1000);
 const dexKey = 'UniswapV3';
@@ -101,7 +106,6 @@ describe('UniswapV3 Event', function () {
 function _getFirstStepStateCallData(uniswapV3Pool: UniswapV3EventPool) {
   const target = uniswapV3Pool.poolAddress;
 
-  let ind = TICK_BIT_MAP_START;
   return [
     {
       target,
@@ -126,19 +130,28 @@ function _getFirstStepStateCallData(uniswapV3Pool: UniswapV3EventPool) {
         [],
       ),
     },
-  ].concat(
-    new Array(-TICK_BIT_MAP_START + TICK_BIT_MAP_END + 1)
-      .fill(undefined)
-      .map(() => ({
-        target,
-        callData: uniswapV3Pool.poolIface.encodeFunctionData('tickBitmap', [
-          ind++,
-        ]),
-      })),
-  );
+  ];
 }
 
 function _getSecondStepStateCallData(
+  uniswapV3Pool: UniswapV3EventPool,
+  currentTickBitmap: bigint,
+) {
+  const target = uniswapV3Pool.poolAddress;
+  const start = Number(
+    currentTickBitmap - TICK_BITMAP_BUFFER - TICK_BITMAP_TO_USE,
+  );
+  const end = Number(
+    currentTickBitmap + TICK_BITMAP_BUFFER + TICK_BITMAP_TO_USE,
+  );
+
+  return _.range(start, end).map(ind => ({
+    target,
+    callData: uniswapV3Pool.poolIface.encodeFunctionData('tickBitmap', [ind]),
+  }));
+}
+
+function _getThirdStepStateCallData(
   uniswapV3Pool: UniswapV3EventPool,
   observationIndex: number,
   ticks: bigint[],
@@ -165,22 +178,9 @@ async function getStateFromMulticall(
 ): Promise<PoolState> {
   const firstCallData = _getFirstStepStateCallData(uniswapV3Pool);
 
-  const firstData = (
-    await Promise.all(
-      _.chunk(
-        firstCallData,
-        Math.floor(
-          // Because callData has other entries than tickBitmap, real chunk
-          // size by one bigger than this value, so I reduce by one TICK_BIT_MAP_CHUNK_SIZE - 1
-          TICK_BIT_MAP_REQUEST_AMOUNT / (CHUNK_SIZE - 1),
-        ),
-      ).map(async chunkedCallData =>
-        uniswapV3Pool.dexHelper.multiContract.methods
-          .tryAggregate(false, chunkedCallData)
-          .call({}, blockNumber || 'latest'),
-      ),
-    )
-  ).flat();
+  const firstData = await uniswapV3Pool.dexHelper.multiContract.methods
+    .tryAggregate(false, firstCallData)
+    .call({}, blockNumber || 'latest');
 
   _checkMulticallResultForError(firstData, blockNumber);
 
@@ -210,35 +210,11 @@ async function getStateFromMulticall(
     )[0],
   );
 
-  let ind = TICK_BIT_MAP_START;
-  const tickBitmap = firstData
-    .slice(5)
-    .map((d: MultiCallV2Output) =>
-      bigIntify(
-        uniswapV3Pool.poolIface.decodeFunctionResult(
-          'tickBitmap',
-          d.returnData,
-        )[0],
-      ),
-    )
-    .reduce<Record<string, bigint>>((acc, curr) => {
-      acc[ind++] = curr;
-      return acc;
-    }, {});
-
-  const populatedTickIndexes = _calcPopulatedTickIndexes(
-    Object.values(tickBitmap),
-    tickSpacing,
-  );
-
-  const observations = new Array(65535)
-    .fill(undefined)
-    .map(() => ({ ...ZERO_ORACLE_OBSERVATION }));
+  const [currentTickBitmap] = TickBitMap.position(slot0.tick / tickSpacing);
 
   const secondCallData = _getSecondStepStateCallData(
     uniswapV3Pool,
-    slot0.observationIndex,
-    populatedTickIndexes,
+    currentTickBitmap,
   );
 
   const secondData = await uniswapV3Pool.dexHelper.multiContract.methods
@@ -247,16 +223,50 @@ async function getStateFromMulticall(
 
   _checkMulticallResultForError(secondData, blockNumber);
 
+  let ind = Number(currentTickBitmap - TICK_BITMAP_BUFFER - TICK_BITMAP_TO_USE);
+  const tickBitmap = (
+    secondData.map((d: MultiCallV2Output) =>
+      bigIntify(
+        uniswapV3Pool.poolIface.decodeFunctionResult(
+          'tickBitmap',
+          d.returnData,
+        )[0],
+      ),
+    ) as bigint[]
+  ).reduce<Record<string, bigint>>((acc, curr) => {
+    acc[ind++] = curr;
+    return acc;
+  }, {});
+
+  const populatedTickIndexes = _calcPopulatedTickIndexes(
+    Object.values(tickBitmap),
+    tickSpacing,
+  );
+
+  const thirdCallData = _getThirdStepStateCallData(
+    uniswapV3Pool,
+    slot0.observationIndex,
+    populatedTickIndexes,
+  );
+
+  const thirdData = await uniswapV3Pool.dexHelper.multiContract.methods
+    .tryAggregate(false, thirdCallData)
+    .call({}, blockNumber || 'latest');
+
+  _checkMulticallResultForError(thirdData, blockNumber);
+
+  const observations: Record<number, OracleObservation> = {};
+
   observations[slot0.observationIndex] = _decodeObservationResult(
     uniswapV3Pool,
-    secondData[0].returnData,
+    thirdData[0].returnData,
   );
 
   const ticks = populatedTickIndexes.reduce<Record<string, TickInfo>>(
     (acc, curr, i) => {
       acc[curr.toString()] = _decodeTickInfoResult(
         uniswapV3Pool,
-        secondData[i + 1].returnData,
+        thirdData[i + 1].returnData,
       );
       return acc;
     },
@@ -281,6 +291,7 @@ async function getStateFromMulticall(
     ticks,
     observations,
     isValid: true,
+    startTickBitmap: currentTickBitmap,
   };
 }
 
