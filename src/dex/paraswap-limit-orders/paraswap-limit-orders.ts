@@ -125,8 +125,9 @@ export class ParaswapLimitOrders
       if (_srcAddress === _destAddress) return null;
 
       const expectedIdentifier = this.getIdentifier(_srcAddress, _destAddress);
+
       if (
-        limitPools === undefined ||
+        limitPools !== undefined &&
         !limitPools.some(p => p === expectedIdentifier)
       )
         return null;

@@ -446,8 +446,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       if (!isSrcQuote && !isDestQuote) return null;
 
       const expectedIdentifier = this.getIdentifier(isSrcQuote);
+
       if (
-        limitPools === undefined ||
+        limitPools !== undefined &&
         !limitPools.some(p => p === expectedIdentifier)
       )
         return null;
