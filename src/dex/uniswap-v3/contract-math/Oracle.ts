@@ -62,15 +62,6 @@ export class Oracle {
     return [indexUpdated, cardinalityUpdated];
   }
 
-  static grow(state: PoolState, current: number, next: number): number {
-    _require(current > 0, 'I', { current }, 'current > 0');
-
-    if (next <= current) return current;
-    for (let i = current; i < next; i++)
-      state.observations[i].blockTimestamp = 1n;
-    return next;
-  }
-
   static lte(time: bigint, a: bigint, b: bigint): boolean {
     if (a <= time && b <= time) return a <= b;
 
