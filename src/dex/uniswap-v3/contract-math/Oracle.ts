@@ -66,8 +66,9 @@ export class Oracle {
       tick,
       liquidity,
     );
-
-    delete state.observations[index];
+    if (indexUpdated !== index) {
+      delete state.observations[index];
+    }
     return [indexUpdated, cardinalityUpdated];
   }
 

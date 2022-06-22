@@ -30,12 +30,7 @@ class UniswapV3Math {
     amountSpecified: bigint,
     sqrtPriceLimitX96: bigint,
   ): [bigint, bigint] {
-    _require(
-      amountSpecified != 0n,
-      'AS',
-      { amountSpecified },
-      'amountSpecified != 0n',
-    );
+    if (amountSpecified === 0n) return [0n, 0n]
 
     const slot0Start = poolState.slot0;
 
