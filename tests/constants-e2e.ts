@@ -443,6 +443,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
       decimals: 8,
     },
+    BTCb: {
+      address: '0x152b9d0FdC40C096757F570A51E494bd4b943E50',
+      decimals: 8,
+    },
     ADAI: {
       address: '0x47AFa96Cdc9fAb46904A55a6ad4bf6660B53c38a',
       decimals: 18,
@@ -599,7 +603,7 @@ export const Holders: {
     TUSD: '0x5Db946411F08f15300f23D9bde4A407B07D56C03',
     PNG: '0x348b11CF986e8E1CdA10c4A7E375aA252b47fc55',
     SHIBX: '0xfE5ADf65BE1a46b83EF3d352A8F9258A039f3050',
-    wBTC: '0x2777baf69d6128ec1de252ad36eca93d5345daaa',
+    wBTC: '0xbB2BD754A45f400A01158A8b3C89DE085D58ABF1',
     renBTC: '0xb8D1D22609D10078Db36915fc4610F8674b44319',
     ADAI: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     MIM: '0x6e0a0df2d76b97c610e5b96c32ce53b8ab4c856c',

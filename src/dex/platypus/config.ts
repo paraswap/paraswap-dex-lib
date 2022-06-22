@@ -21,6 +21,11 @@ export const PlatypusConfig: DexConfigMap<DexParams> = {
           name: 'Alt Pool MIM',
           oracleType: PlatypusOracleType.ChainLink,
         },
+        {
+          address: '0x39dE4e02F76Dbd4352Ec2c926D8d64Db8aBdf5b2',
+          name: 'Alt Pool BTC',
+          oracleType: PlatypusOracleType.None,
+        },
         //{
         //  address: '0x4658EA7e9960D6158a261104aAA160cC953bb6ba',
         //  name: 'Alt Pool sAVAX',

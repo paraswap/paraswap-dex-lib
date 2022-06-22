@@ -98,5 +98,19 @@ describe('Platypus E2E', () => {
         });
       }),
     );
+
+    it(`wBTC -> BTCb`, async () => {
+      await testE2E(
+        tokens['wBTC'],
+        tokens['BTCb'],
+        holders['wBTC'],
+        '300000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
   });
 });
