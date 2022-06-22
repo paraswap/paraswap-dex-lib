@@ -11,11 +11,7 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import {
-  wrapETH,
-  getDexKeysWithNetwork,
-  getBigIntPow,
-} from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -44,8 +40,10 @@ export class Nerve
 
   readonly minConversionRate = '1';
 
-  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(NerveConfig);
+  public static dexKeysWithNetwork: {
+    key: string;
+    networks: Network[];
+  }[] = getDexKeysWithNetwork(NerveConfig);
 
   logger: Logger;
 
