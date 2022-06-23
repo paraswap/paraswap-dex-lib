@@ -11,7 +11,12 @@ import {
   MultiCallInput,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  isETHAddress,
+  wrapETH,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -19,8 +24,6 @@ import {
   PlatypusOracleType,
   PlatypusData,
   PlatypusConfigInfo,
-  PlatypusPoolState,
-  PlatypusPurePoolState,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { PlatypusConfig, Adapters } from './config';
@@ -28,14 +31,17 @@ import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { PlatypusPoolBase } from './pool-base';
 import { PlatypusPool } from './pool';
 import { PlatypusPurePool } from './pool-pure';
+import { PlatypusAvaxPool } from './pool-avax';
 import ERC20ABI from '../../abi/erc20.json';
 import PoolABI from '../../abi/platypus/pool.json';
+import AvaxPoolABI from '../../abi/platypus/avax-pool.json';
 import AssetABI from '../../abi/platypus/asset.json';
 import OracleABI from '../../abi/platypus/oracle.json';
 
 export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   static readonly erc20Interface = new Interface(ERC20ABI);
   static readonly poolInterface = new Interface(PoolABI);
+  static readonly avaxPoolInterface = new Interface(AvaxPoolABI);
   static readonly assetInterface = new Interface(AssetABI);
   static readonly oracleInterface = new Interface(OracleABI);
 
@@ -44,7 +50,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   protected poolLiquidityUSD?: { [poolAddress: string]: number };
 
   protected eventPools?: {
-    [poolAddress: string]: PlatypusPool | PlatypusPurePool;
+    [poolAddress: string]: PlatypusPool | PlatypusPurePool | PlatypusAvaxPool;
   };
 
   readonly hasConstantPriceLargeAmounts = false;
@@ -92,8 +98,15 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             tokenAddresses: [],
             tokens: {},
           };
+        } else if (p.oracleType === PlatypusOracleType.StakedAvax) {
+          cfgInfo.pools[poolAddress] = {
+            oracleType: PlatypusOracleType.StakedAvax,
+            priceOracleAddress: '',
+            tokenAddresses: [],
+            tokens: {},
+          };
         } else {
-          throw new Error('Invalid pool oracle type in Platypus');
+          throw new Error(`Invalid pool oracle type in ${this.dexKey}`);
         }
       }
     }
@@ -244,17 +257,17 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     await this.init(blockNumber);
     if (!this.cfgInfo)
       throw new Error(
-        'initializePricing: Platypus cfgInfo still null after init',
+        `initializePricing: ${this.dexKey} cfgInfo still null after init`,
       );
     const eventPools: {
-      [poolAddress: string]: PlatypusPool | PlatypusPurePool;
+      [poolAddress: string]: PlatypusPool | PlatypusPurePool | PlatypusAvaxPool;
     } = {};
     for (const poolAddress of this.cfgInfo.poolAddresses) {
       const cfgPool = this.cfgInfo.pools[poolAddress];
       const poolName = this.config.pools.find(
         p => p.address.toLowerCase() === poolAddress,
       )!.name;
-      let pool: PlatypusPool | PlatypusPurePool;
+      let pool: PlatypusPool | PlatypusPurePool | PlatypusAvaxPool;
       if (cfgPool.oracleType === PlatypusOracleType.None) {
         pool = new PlatypusPurePool(
           this.dexKey,
@@ -273,8 +286,17 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
           cfgPool,
           this.dexHelper,
         );
+      } else if (cfgPool.oracleType === PlatypusOracleType.StakedAvax) {
+        pool = new PlatypusAvaxPool(
+          this.dexKey,
+          this.network,
+          poolName,
+          poolAddress,
+          cfgPool,
+          this.dexHelper,
+        );
       } else {
-        throw new Error('Platypus cfgInfo invalid pool type');
+        throw new Error(`${this.dexKey} cfgInfo invalid pool type`);
       }
       await (async <P>(p: P extends PlatypusPoolBase<infer S> ? P : never) => {
         const state = await p.generateState(blockNumber);
@@ -326,8 +348,8 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
     return this.findPools(
-      srcToken.address.toLowerCase(),
-      destToken.address.toLowerCase(),
+      wrapETH(srcToken, this.network).address.toLowerCase(),
+      wrapETH(destToken, this.network).address.toLowerCase(),
     ).map(p => this.getPoolIdentifier(p));
   }
 
@@ -350,8 +372,14 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       );
       return null;
     }
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
+    const srcTokenAddress = wrapETH(
+      srcToken,
+      this.network,
+    ).address.toLowerCase();
+    const destTokenAddress = wrapETH(
+      destToken,
+      this.network,
+    ).address.toLowerCase();
     if (srcTokenAddress === destTokenAddress) return null;
     return (
       await Promise.all(
@@ -374,15 +402,11 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
               const [unit, ...prices] = pool.computePrices(
                 {
                   address: srcTokenAddress,
-                  decimals:
-                    this.cfgInfo!.pools[poolAddress].tokens[srcTokenAddress]
-                      .tokenDecimals,
+                  decimals: srcToken.decimals,
                 },
                 {
                   address: destTokenAddress,
-                  decimals:
-                    this.cfgInfo!.pools[poolAddress].tokens[destTokenAddress]
-                      .tokenDecimals,
+                  decimals: destToken.decimals,
                 },
                 [getBigIntPow(srcToken.decimals), ...amounts],
                 state,
@@ -440,14 +464,29 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       srcAmount,
       destToken,
       destAmount,
-      Platypus.poolInterface.encodeFunctionData('swap', [
-        srcToken,
-        destToken,
-        srcAmount,
-        1,
-        this.augustusAddress,
-        this.getDeadline(),
-      ]),
+      isETHAddress(srcToken)
+        ? Platypus.avaxPoolInterface.encodeFunctionData('swapFromETH', [
+            destToken,
+            1,
+            this.augustusAddress,
+            this.getDeadline(),
+          ])
+        : isETHAddress(destToken)
+        ? Platypus.avaxPoolInterface.encodeFunctionData('swapToETH', [
+            srcToken,
+            srcAmount,
+            1,
+            this.augustusAddress,
+            this.getDeadline(),
+          ])
+        : Platypus.poolInterface.encodeFunctionData('swap', [
+            srcToken,
+            destToken,
+            srcAmount,
+            1,
+            this.augustusAddress,
+            this.getDeadline(),
+          ]),
       data.pool,
     );
   }

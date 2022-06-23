@@ -9,22 +9,22 @@ import { Token } from '../../types';
 import { BI_POWS } from '../../bigint-constants';
 
 export const ETH_UNIT = BI_POWS[18];
-const WAD = BI_POWS[18];
-const RAY = BI_POWS[27];
+export const WAD = BI_POWS[18];
+export const RAY = BI_POWS[27];
 
-function wmul(x: bigint, y: bigint): bigint {
+export function wmul(x: bigint, y: bigint): bigint {
   return (x * y + WAD / 2n) / WAD;
 }
 
-function wdiv(x: bigint, y: bigint): bigint {
+export function wdiv(x: bigint, y: bigint): bigint {
   return (x * WAD + y / 2n) / y;
 }
 
-function rmul(x: bigint, y: bigint): bigint {
+export function rmul(x: bigint, y: bigint): bigint {
   return (x * y + RAY / 2n) / RAY;
 }
 
-function rpow(x: bigint, n: bigint): bigint {
+export function rpow(x: bigint, n: bigint): bigint {
   let z = n % 2n !== 0n ? x : RAY;
 
   for (n /= 2n; n !== 0n; n /= 2n) {
@@ -129,8 +129,8 @@ export abstract class PlatypusPoolBase<
   State extends PlatypusPoolStateCommon,
 > extends ComposedEventSubscriber<State> {
   constructor(
-    dexKey: string,
-    network: number,
+    protected readonly dexKey: string,
+    protected readonly network: number,
     name: string,
     dexHelper: IDexHelper,
     parts: PartialEventSubscriber<State, any>[],

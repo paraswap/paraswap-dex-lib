@@ -60,8 +60,8 @@ export class PlatypusPool extends PlatypusPoolBase<PlatypusPoolState> {
           retentionRatio: 0n,
           maxPriceDeviation: 0n,
         },
-        chainlink: {},
         asset: {},
+        chainlink: {},
       },
     );
   }

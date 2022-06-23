@@ -2,7 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Platypus } from './platypus';
+import { PlatypusPoolBase } from './pool-base';
 import { PlatypusPool } from './pool';
+import { PlatypusAvaxPool } from './pool-avax';
 import { PlatypusConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -14,7 +16,7 @@ import {
 import {
   PlatypusOracleType,
   PlatypusConfigInfo,
-  PlatypusPoolState,
+  PlatypusPoolStateCommon,
 } from './types';
 
 jest.setTimeout(50 * 1000);
@@ -23,10 +25,10 @@ const network = Network.AVALANCHE;
 const config = PlatypusConfig[dexKey][network];
 const poolIndex = 0;
 
-async function fetchPoolState(
-  platypusPool: PlatypusPool,
+async function fetchPoolState<T extends PlatypusPoolStateCommon>(
+  platypusPool: PlatypusPoolBase<T>,
   blockNumber: number,
-): Promise<PlatypusPoolState> {
+) {
   return await platypusPool.generateState(blockNumber);
 }
 
@@ -102,6 +104,60 @@ describe('Platypus Event', function () {
               fetchPoolState(platypusPool, _blockNumber),
             blockNumber,
             `${dexKey}_${config.pools[poolIndex].address}`,
+            dexHelper.provider,
+          );
+        });
+      });
+    });
+  });
+
+  /*
+  Submitted [ 16399520, 16401225 ]
+  Redeem [ 16402280, 16402429 ]
+  AccrueRewards [ 16401653, 16403057 ]
+  */
+  const blockNumbersAvax: { [eventName: string]: number[] } = {
+    Submitted: [16399520, 16401225],
+    Redeem: [16402280, 16402429],
+    AccrueRewards: [16401653, 16403057],
+  };
+
+  const poolIndexAvax = 4;
+
+  describe('PlatypusAvaxPool', function () {
+    Object.keys(blockNumbersAvax).forEach((event: string) => {
+      blockNumbersAvax[event].forEach((blockNumber: number) => {
+        it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
+          const dexHelper = new DummyDexHelper(network);
+
+          let cfgInfo = getSavedConfig<PlatypusConfigInfo>(blockNumber, dexKey);
+          if (!cfgInfo) {
+            const dex = new Platypus(network, dexKey, dexHelper);
+            cfgInfo = await dex.generateConfigInfo(blockNumber);
+            saveConfig(blockNumber, dexKey, cfgInfo);
+          }
+
+          const cfgInfoPool =
+            cfgInfo.pools[config.pools[poolIndexAvax].address.toLowerCase()];
+          if (cfgInfoPool.oracleType !== PlatypusOracleType.StakedAvax) {
+            throw new Error('Wrong Platypus oracle type for this test!');
+          }
+          const platypusPool = new PlatypusAvaxPool(
+            dexKey,
+            network,
+            config.pools[poolIndexAvax].name,
+            config.pools[poolIndexAvax].address,
+            cfgInfoPool,
+            dexHelper,
+          );
+
+          await testEventSubscriber(
+            platypusPool,
+            platypusPool.addressesSubscribed,
+            (_blockNumber: number) =>
+              fetchPoolState(platypusPool, _blockNumber),
+            blockNumber,
+            `${dexKey}_${config.pools[poolIndexAvax].address}`,
             dexHelper.provider,
           );
         });

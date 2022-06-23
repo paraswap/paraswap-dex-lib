@@ -395,6 +395,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
     },
+    sAVAX: {
+      address: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
+      decimals: 18,
+    },
     WETHe: {
       address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
       decimals: 18,
@@ -593,6 +597,7 @@ export const Holders: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WAVAX: '0xAc1F5F1eDBcAE771be00d0eC044deC5BEdbFd816',
+    sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
     USDCe: '0xCe2CC46682E9C6D5f174aF598fb4931a9c0bE68e',
     USDC: '0xBF14DB80D9275FB721383a77C00Ae180fc40ae98',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',

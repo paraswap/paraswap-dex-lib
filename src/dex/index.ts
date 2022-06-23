@@ -109,7 +109,7 @@ const AdapterNameAddressMap: {
     RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
   },
   [Network.AVALANCHE]: {
-    AvalancheAdapter01: '0xC79cf51b0951418cb7B010e38c3ceB8801E53184',
+    AvalancheAdapter01: '0xb41Ec6e014e2AD12Ae8514216EAb2592b74F19e7',
     AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
   [Network.FANTOM]: {

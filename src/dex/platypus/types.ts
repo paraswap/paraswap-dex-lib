@@ -1,9 +1,11 @@
 import { Address } from '../../types';
 import { ChainLinkState } from '../../lib/chainlink';
+import { StakedAvaxState } from '../../lib/benqi/staked-avax';
 
 export enum PlatypusOracleType {
   None = 'None',
   ChainLink = 'ChainLink',
+  StakedAvax = 'StakedAvax',
 }
 
 export type PlatypusPoolStateCommon = {
@@ -16,6 +18,10 @@ export type PlatypusPoolState = PlatypusPoolStateCommon & {
 };
 
 export type PlatypusPurePoolState = PlatypusPoolStateCommon;
+
+export type PlatypusAvaxPoolState = PlatypusPoolStateCommon & {
+  stakedAvax: StakedAvaxState;
+};
 
 export type PlatypusPoolParams = {
   paused: boolean;
@@ -36,7 +42,10 @@ export type PlatypusAssetState = {
 export type PlatypusConfigInfo = {
   poolAddresses: Address[];
   pools: {
-    [poolAddress: string]: PlatypusPoolConfigInfo | PlatypusPurePoolConfigInfo;
+    [poolAddress: string]:
+      | PlatypusPoolConfigInfo
+      | PlatypusPurePoolConfigInfo
+      | PlatypusAvaxPoolConfigInfo;
   };
 };
 
@@ -59,6 +68,19 @@ export type PlatypusPoolConfigInfo = {
 
 export type PlatypusPurePoolConfigInfo = {
   oracleType: PlatypusOracleType.None;
+  tokenAddresses: Address[];
+  tokens: {
+    [tokenAddress: string]: {
+      tokenSymbol: string;
+      tokenDecimals: number;
+      assetAddress: Address;
+    };
+  };
+};
+
+export type PlatypusAvaxPoolConfigInfo = {
+  oracleType: PlatypusOracleType.StakedAvax;
+  priceOracleAddress: Address;
   tokenAddresses: Address[];
   tokens: {
     [tokenAddress: string]: {

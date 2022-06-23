@@ -75,6 +75,58 @@ describe('Platypus E2E', () => {
               provider,
             );
           });
+          it(`AVAX -> sAVAX`, async () => {
+            await testE2E(
+              tokens['AVAX'],
+              tokens['sAVAX'],
+              holders['AVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`WAVAX -> sAVAX`, async () => {
+            await testE2E(
+              tokens['WAVAX'],
+              tokens['sAVAX'],
+              holders['WAVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`sAVAX -> AVAX`, async () => {
+            await testE2E(
+              tokens['sAVAX'],
+              tokens['AVAX'],
+              holders['sAVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`sAVAX -> WAVAX`, async () => {
+            await testE2E(
+              tokens['sAVAX'],
+              tokens['WAVAX'],
+              holders['sAVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
           if (
             contractMethod === ContractMethod.simpleSwap &&
             side === SwapSide.SELL

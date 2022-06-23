@@ -26,10 +26,11 @@ export const PlatypusConfig: DexConfigMap<DexParams> = {
           name: 'Alt Pool BTC',
           oracleType: PlatypusOracleType.None,
         },
-        //{
-        //  address: '0x4658EA7e9960D6158a261104aAA160cC953bb6ba',
-        //  name: 'Alt Pool sAVAX',
-        //},
+        {
+          address: '0x4658EA7e9960D6158a261104aAA160cC953bb6ba',
+          name: 'Alt Pool sAVAX',
+          oracleType: PlatypusOracleType.StakedAvax,
+        },
         {
           address: '0xC828D995C686AaBA78A4aC89dfc8eC0Ff4C5be83',
           name: 'Alt Pool YUSD',
