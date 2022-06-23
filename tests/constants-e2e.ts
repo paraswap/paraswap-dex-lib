@@ -399,6 +399,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
     },
+    sAVAX: {
+      address: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
+      decimals: 18,
+    },
     WETHe: {
       address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
       decimals: 18,
@@ -447,6 +451,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
       decimals: 8,
     },
+    BTCb: {
+      address: '0x152b9d0FdC40C096757F570A51E494bd4b943E50',
+      decimals: 8,
+    },
     ADAI: {
       address: '0x47AFa96Cdc9fAb46904A55a6ad4bf6660B53c38a',
       decimals: 18,
@@ -479,6 +487,18 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     aUSDT: {
       address: '0x71fc860f7d3a592a4a98740e39db31d25db65ae8',
       decimals: 6,
+    },
+    YUSD: {
+      address: '0x111111111111ed1D73f860F57b2798b683f2d325',
+      decimals: 18,
+    },
+    H2O: {
+      address: '0x026187BdbC6b751003517bcb30Ac7817D5B766f8',
+      decimals: 18,
+    },
+    MONEY: {
+      address: '0x0f577433Bf59560Ef2a79c124E9Ff99fCa258948',
+      decimals: 18,
     },
   },
 };
@@ -582,6 +602,7 @@ export const Holders: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WAVAX: '0xAc1F5F1eDBcAE771be00d0eC044deC5BEdbFd816',
+    sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
     USDCe: '0xCe2CC46682E9C6D5f174aF598fb4931a9c0bE68e',
     USDC: '0xBF14DB80D9275FB721383a77C00Ae180fc40ae98',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
@@ -592,7 +613,7 @@ export const Holders: {
     TUSD: '0x5Db946411F08f15300f23D9bde4A407B07D56C03',
     PNG: '0x348b11CF986e8E1CdA10c4A7E375aA252b47fc55',
     SHIBX: '0xfE5ADf65BE1a46b83EF3d352A8F9258A039f3050',
-    wBTC: '0x2777baf69d6128ec1de252ad36eca93d5345daaa',
+    wBTC: '0xbB2BD754A45f400A01158A8b3C89DE085D58ABF1',
     renBTC: '0xb8D1D22609D10078Db36915fc4610F8674b44319',
     ADAI: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     MIM: '0x6e0a0df2d76b97c610e5b96c32ce53b8ab4c856c',

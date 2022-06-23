@@ -111,8 +111,8 @@ const AdapterNameAddressMap: {
     RopstenBuyAdapter: '0x63e908A4C793a33e40254362ED1A5997a234D85C',
   },
   [Network.AVALANCHE]: {
-    AvalancheAdapter01: '0x5F7Cf10348A7d53709f13BbA1d6B47c2628c1bB9',
-    AvalancheBuyAdapter: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
+    AvalancheAdapter01: '0xb41Ec6e014e2AD12Ae8514216EAb2592b74F19e7',
+    AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
   },
   [Network.FANTOM]: {
     FantomAdapter01: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
