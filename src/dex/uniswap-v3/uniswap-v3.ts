@@ -8,6 +8,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
@@ -267,7 +268,13 @@ export class UniswapV3
         unit: prices[0],
         prices: [0n, ...prices.slice(1)],
         data: {
-          fee: pool.feeCode.toString(),
+          path: [
+            {
+              tokenIn: _srcAddress,
+              tokenOut: _destAddress,
+              fee: pool.feeCode.toString(),
+            },
+          ],
         },
         poolIdentifier: this.getPoolIdentifier(
           pool.token0,
@@ -290,19 +297,19 @@ export class UniswapV3
     data: UniswapV3Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { fee } = data;
+    const { path: rawPath } = data;
+    const path = this._encodePath(rawPath, side);
+
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
-          fee: 'uint24',
+          path: 'bytes',
           deadline: 'uint256',
-          sqrtPriceLimitX96: 'uint160',
         },
       },
       {
-        fee,
+        path,
         deadline: this.getDeadline(),
-        sqrtPriceLimitX96: 0,
       },
     );
 
@@ -323,30 +330,25 @@ export class UniswapV3
   ): Promise<SimpleExchangeParam> {
     const swapFunction =
       side === SwapSide.SELL
-        ? UniswapV3Functions.exactInputSingle
-        : UniswapV3Functions.exactOutputSingle;
+        ? UniswapV3Functions.exactInput
+        : UniswapV3Functions.exactOutput;
 
+    const path = this._encodePath(data.path, side);
     const swapFunctionParams: UniswapV3Param =
       side === SwapSide.SELL
         ? {
-            tokenIn: srcToken,
-            tokenOut: destToken,
-            fee: data.fee,
             recipient: this.augustusAddress,
             deadline: this.getDeadline(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
-            sqrtPriceLimitX96: '0',
+            path,
           }
         : {
-            tokenIn: srcToken,
-            tokenOut: destToken,
-            fee: data.fee,
             recipient: this.augustusAddress,
             deadline: this.getDeadline(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
-            sqrtPriceLimitX96: '0',
+            path,
           };
     const swapData = this.routerIface.encodeFunctionData(swapFunction, [
       swapFunctionParams,
@@ -555,5 +557,27 @@ export class UniswapV3
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return {};
     }
+  }
+
+  private _encodePath(
+    path: {
+      tokenIn: Address;
+      tokenOut: Address;
+      fee: NumberAsString;
+    }[],
+    side: SwapSide,
+  ): string {
+    let encodedPath = 0n;
+    const _path = side === SwapSide.SELL ? path : path.reverse();
+    for (let i = 0; i < path.length; i++) {
+      const { tokenIn, tokenOut, fee } = path[i];
+      const [a, b] =
+        side === SwapSide.SELL ? [tokenIn, tokenOut] : [tokenOut, tokenIn];
+      if (i === 0) encodedPath = (encodedPath << 160n) | BigInt(a);
+      encodedPath = (encodedPath << 24n) | BigInt(fee);
+      encodedPath = (encodedPath << 160n) | BigInt(b);
+    }
+    const hexString = encodedPath.toString(16);
+    return (hexString.length % 2 ? '0x0' : '0x') + hexString;
   }
 }

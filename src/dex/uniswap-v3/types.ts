@@ -46,8 +46,11 @@ export type PoolState = {
 };
 
 export type UniswapV3Data = {
-  // ExactInputSingleParams
-  fee: NumberAsString;
+  path: {
+    tokenIn: Address;
+    tokenOut: Address;
+    fee: NumberAsString;
+  }[];
 };
 
 export type DexParams = {
@@ -58,32 +61,26 @@ export type DexParams = {
 };
 
 export type UniswapV3SellParam = {
-  tokenIn: Address;
-  tokenOut: Address;
-  fee: NumberAsString;
+  path: string;
   recipient: Address;
   deadline: number;
   amountIn: NumberAsString;
   amountOutMinimum: NumberAsString;
-  sqrtPriceLimitX96: NumberAsString;
 };
 
 export type UniswapV3BuyParam = {
-  tokenIn: Address;
-  tokenOut: Address;
-  fee: NumberAsString;
+  path: string;
   recipient: Address;
   deadline: number;
   amountOut: NumberAsString;
   amountInMaximum: NumberAsString;
-  sqrtPriceLimitX96: NumberAsString;
 };
 
 export type UniswapV3Param = UniswapV3SellParam | UniswapV3BuyParam;
 
 export enum UniswapV3Functions {
-  exactInputSingle = 'exactInputSingle',
-  exactOutputSingle = 'exactOutputSingle',
+  exactInput = 'exactInput',
+  exactOutput = 'exactOutput',
 }
 
 export type TickInfoMappings = {
