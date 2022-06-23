@@ -244,3 +244,14 @@ export type MultiCallInput = {
 };
 
 export type MultiCallOutput = string;
+
+export type BigIntAsString = string;
+
+export type ExchangeTxInfo = {
+  deadline?: bigint;
+};
+
+export type PreprocessTransactionOptions = {
+  slippageFactor: string;
+  txOrigin: Address;
+};
