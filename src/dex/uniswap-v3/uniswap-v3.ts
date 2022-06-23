@@ -202,17 +202,29 @@ export class UniswapV3
 
     if (_srcAddress === _destAddress) return null;
 
-    const selectedPools = await this._getPoolsFromIdentifiers(
-      limitPools
-        ? limitPools
-        : await this.getPoolIdentifiers(
-            _srcToken,
-            _destToken,
-            side,
-            blockNumber,
+    let selectedPools: UniswapV3EventPool[] = [];
+    if (limitPools === undefined) {
+      selectedPools = (
+        await Promise.all(
+          this.supportedFees.map(async fee =>
+            this.getPool(_srcAddress, _destAddress, fee, blockNumber),
           ),
-      blockNumber,
-    );
+        )
+      ).filter(pool => pool) as UniswapV3EventPool[];
+    } else {
+      const pairIdentifierWithoutFee = this.getPoolIdentifier(
+        _srcAddress,
+        _destAddress,
+        0n,
+        // Trim from 0 fee postfix, so it become comparable
+      ).slice(0, -1);
+      selectedPools = await this._getPoolsFromIdentifiers(
+        limitPools.filter(identifier =>
+          identifier.startsWith(pairIdentifierWithoutFee),
+        ),
+        blockNumber,
+      );
+    }
 
     if (selectedPools.length === 0) return null;
 
@@ -440,7 +452,7 @@ export class UniswapV3
         return this.getPool(srcAddress, destAddress, BigInt(fee), blockNumber);
       }),
     );
-    return pools.filter(pool => pool !== null) as UniswapV3EventPool[];
+    return pools.filter(pool => pool) as UniswapV3EventPool[];
   }
 
   private _getLoweredAddresses(srcToken: Token, destToken: Token) {
