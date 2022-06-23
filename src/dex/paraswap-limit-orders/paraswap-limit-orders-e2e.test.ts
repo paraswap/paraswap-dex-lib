@@ -67,7 +67,7 @@ describe('ParaswapLimitOrders E2E', () => {
       {
         order: {
           nonceAndMeta:
-            '5435258417207634316802526407953398312487658309480619000381571072',
+            '6845735429342786815130681271919807714789080615235334578045452288',
           expiry: '0',
           makerAsset: tokens[tokenASymbol].address,
           takerAsset: tokens[tokenBSymbol].address,
@@ -77,7 +77,7 @@ describe('ParaswapLimitOrders E2E', () => {
           takerAmount: '20000000000000000',
         },
         signature:
-          '0xfff663003ac2b45b5ae2df251704b1ad397d548296c28c3dcf553e15e2aaaddd1e5d11821cac31c99cb5e15ba0eea1c061248c239945a1b9160b58be0929bedf1c',
+          '0xa75880885e92ed7d46c842d3d20138c60c33c411642ec33a82b73216c508b5503bc57a3ec4fcc2f8ece2477c9eb9716850ae8b97f64d86afac56d3dace8f9f701b',
         takerTokenFillAmount: '20000000000000000',
         permitTakerAsset: '0x',
         permitMakerAsset: '0x',
@@ -85,7 +85,7 @@ describe('ParaswapLimitOrders E2E', () => {
       {
         order: {
           nonceAndMeta:
-            '1527934870675942314274036667041453450196632870313936044039340032',
+            '11585127861177800418865894644506682666974354234368387567816015872',
           expiry: '0',
           makerAsset: tokens[tokenASymbol].address,
           takerAsset: tokens[tokenBSymbol].address,
@@ -95,7 +95,7 @@ describe('ParaswapLimitOrders E2E', () => {
           takerAmount: '110000000000000000',
         },
         signature:
-          '0x3ed504f3f5bd0d153f732a640b8d91680fee0bc7b5b8d72e6ac4a847aaaf220e738ee484c55ab27d5b6f85e26c5881de8f8b4c01f0d636d2e3a3b84def850e2b1c',
+          '0x33ce6d9a609190d3d936c0cac2609ab13ad9aaa64d79917d32064003903105302cb80dcf0133e102d513a45c61d9b813a9c85b2f627aec7fed53d858dad90df61c',
         takerTokenFillAmount: '110000000000000000',
         permitTakerAsset: '0x',
         permitMakerAsset: '0x',
@@ -103,7 +103,7 @@ describe('ParaswapLimitOrders E2E', () => {
       {
         order: {
           nonceAndMeta:
-            '455025777483691928005249310928740964642195687096708235985420288',
+            '11375705433687422051822427911677732183148366573414372269099057152',
           expiry: '0',
           makerAsset: tokens[tokenASymbol].address,
           takerAsset: tokens[tokenBSymbol].address,
@@ -113,7 +113,7 @@ describe('ParaswapLimitOrders E2E', () => {
           takerAmount: '170000000000000000',
         },
         signature:
-          '0x3820a6a550841c62034338f4380ad9317b8657bc70f11941ce2f022caa80f7a728a99507b4f81f1d29a37d36ee9252bcd8b809b586d5254b0db6885b1da077c61b',
+          '0x989eec978c60b1104c7133beae1da691353d138f1fe32862e75a9fc36d294e92655e327fcaa83b6506c6712268ea03423249714308418955dfcc067583fd823a1b',
         takerTokenFillAmount: '170000000000000000',
         permitTakerAsset: '0x',
         permitMakerAsset: '0x',
