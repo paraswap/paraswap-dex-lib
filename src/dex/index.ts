@@ -112,7 +112,7 @@ const AdapterNameAddressMap: {
   },
   [Network.AVALANCHE]: {
     AvalancheAdapter01: '0xb41Ec6e014e2AD12Ae8514216EAb2592b74F19e7',
-    AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
+    AvalancheBuyAdapter: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
   },
   [Network.FANTOM]: {
     FantomAdapter01: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
