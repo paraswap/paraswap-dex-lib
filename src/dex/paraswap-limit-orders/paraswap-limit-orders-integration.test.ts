@@ -7,7 +7,7 @@ import {
 } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { ParaswapLimitOrders } from './paraswap-limit-orders';
+import { ParaSwapLimitOrders } from './paraswap-limit-orders';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -29,7 +29,7 @@ const amounts = [
   33n * BI_POWS[TokenA.decimals],
 ];
 
-const dexKey = 'ParaswapLimitOrders';
+const dexKey = 'ParaSwapLimitOrders';
 
 const tokenABKey = DummyLimitOrderProvider.getPriceSummaryCacheKey(
   network,
@@ -55,16 +55,16 @@ const dummyPriceSummary = {
   ],
 };
 
-describe('ParaswapLimitOrders', function () {
+describe('ParaSwapLimitOrders', function () {
   let dummyLimitOrderProvider: DummyLimitOrderProvider;
   let dexHelper: DummyDexHelper;
   let blockNumber: number;
-  let paraswapLimitOrders: ParaswapLimitOrders;
+  let paraSwapLimitOrders: ParaSwapLimitOrders;
 
   beforeAll(async () => {
     dexHelper = new DummyDexHelper(network);
     blockNumber = await dexHelper.provider.getBlockNumber();
-    paraswapLimitOrders = new ParaswapLimitOrders(network, dexKey, dexHelper);
+    paraSwapLimitOrders = new ParaSwapLimitOrders(network, dexKey, dexHelper);
     dummyLimitOrderProvider = new DummyLimitOrderProvider();
     dummyLimitOrderProvider.setPriceSummary(
       network,
@@ -73,11 +73,11 @@ describe('ParaswapLimitOrders', function () {
       dummyPriceSummary[tokenABKey],
     );
 
-    paraswapLimitOrders.limitOrderProvider = dummyLimitOrderProvider;
+    paraSwapLimitOrders.limitOrderProvider = dummyLimitOrderProvider;
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL Unswappable amount', async function () {
-    const pools = await paraswapLimitOrders.getPoolIdentifiers(
+    const pools = await paraSwapLimitOrders.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
@@ -87,7 +87,7 @@ describe('ParaswapLimitOrders', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await paraswapLimitOrders.getPricesVolume(
+    const poolPrices = await paraSwapLimitOrders.getPricesVolume(
       TokenA,
       TokenB,
       [260n * BI_POWS[TokenA.decimals]],
@@ -101,7 +101,7 @@ describe('ParaswapLimitOrders', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const pools = await paraswapLimitOrders.getPoolIdentifiers(
+    const pools = await paraSwapLimitOrders.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
@@ -111,7 +111,7 @@ describe('ParaswapLimitOrders', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await paraswapLimitOrders.getPricesVolume(
+    const poolPrices = await paraSwapLimitOrders.getPricesVolume(
       TokenA,
       TokenB,
       amounts,
@@ -122,7 +122,7 @@ describe('ParaswapLimitOrders', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    if (paraswapLimitOrders.hasConstantPriceLargeAmounts) {
+    if (paraSwapLimitOrders.hasConstantPriceLargeAmounts) {
       checkConstantPoolPrices(poolPrices!, amounts, dexKey);
     } else {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
@@ -131,7 +131,7 @@ describe('ParaswapLimitOrders', function () {
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     // TODO: Add buy when we support it
-    // const pools = await paraswapLimitOrders.getPoolIdentifiers(
+    // const pools = await paraSwapLimitOrders.getPoolIdentifiers(
     //   TokenA,
     //   TokenB,
     //   SwapSide.BUY,

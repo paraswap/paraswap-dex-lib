@@ -18,17 +18,17 @@ export type AugustusOrder = {
   takerAmount: bigint;
 };
 
-export type ParaswapLimitOrderPriceSummary = {
+export type ParaSwapLimitOrderPriceSummary = {
   cumulativeMakerAmount: bigint;
   cumulativeTakerAmount: bigint;
 };
 
-export type ParaswapPriceSummaryResponse = {
+export type ParaSwapPriceSummaryResponse = {
   cumulativeMakerAmount: BigIntAsString;
   cumulativeTakerAmount: BigIntAsString;
 };
 
-export type ParaswapLimitOrdersData = {
+export type ParaSwapLimitOrdersData = {
   orderInfos: OrderInfo[] | null;
 };
 
@@ -52,4 +52,4 @@ export type OrderInfo = {
   permitMakerAsset: string;
 };
 
-export type ParaswapLimitOrderResponse = OrderInfo;
+export type ParaSwapLimitOrderResponse = OrderInfo;
