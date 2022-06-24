@@ -2,8 +2,8 @@ import { DexParams } from './types';
 import { AdapterMappings, DexConfigMap } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
-export const ParaswapLimitOrdersConfig: DexConfigMap<DexParams> = {
-  ParaswapLimitOrders: {
+export const ParaSwapLimitOrdersConfig: DexConfigMap<DexParams> = {
+  ParaSwapLimitOrders: {
     [Network.ROPSTEN]: {
       rfqAddress: '0x34268C38fcbC798814b058656bC0156C7511c0E4',
     },
