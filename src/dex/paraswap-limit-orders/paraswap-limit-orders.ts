@@ -181,10 +181,14 @@ export class ParaSwapLimitOrders
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
     const userAddress = options.txOrigin;
+
+    const srcWrapped = wrapETH(srcToken, this.network).address.toLowerCase();
+    const destWrapped = wrapETH(destToken, this.network).address.toLowerCase();
+
     const { encodingValues, minDeadline } =
       await this._prepareOrdersForTransaction(
-        srcToken.address,
-        destToken.address,
+        srcWrapped,
+        destWrapped,
         optimalSwapExchange.srcAmount,
         optimalSwapExchange.destAmount,
         side,
