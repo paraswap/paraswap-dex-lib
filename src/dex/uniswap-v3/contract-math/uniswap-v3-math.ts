@@ -1,4 +1,4 @@
-import { PoolState, TickInfo } from '../types';
+import { PoolState, Slot0, TickInfo } from '../types';
 import { FixedPoint128 } from './FixedPoint128';
 import { FullMath } from './FullMath';
 import { LiquidityMath } from './LiquidityMath';
@@ -10,7 +10,7 @@ import { TickBitMap } from './TickBitMap';
 import { TickMath } from './TickMath';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
-import { NumberAsString } from 'paraswap-core';
+import { NumberAsString, SwapSide } from 'paraswap-core';
 import { BI_MAX_INT } from '../../../bigint-constants';
 import { OUT_OF_RANGE_ERROR_POSTFIX } from '../constants';
 
@@ -20,32 +20,203 @@ type ModifyPositionParams = {
   liquidityDelta: bigint;
 };
 
-class UniswapV3Math {
-  querySwap(
-    poolState: DeepReadonly<PoolState>,
-    // While calculating, ticks are changing, so to not change the actual state,
-    // we use copy
-    ticksCopy: Record<NumberAsString, TickInfo>,
-    zeroForOne: boolean,
-    amountSpecified: bigint,
-    sqrtPriceLimitX96: bigint,
-  ): [bigint, bigint] {
-    if (amountSpecified === 0n) return [0n, 0n]
+type PriceComputationState = {
+  amountSpecifiedRemaining: bigint;
+  amountCalculated: bigint;
+  sqrtPriceX96: bigint;
+  tick: bigint;
+  protocolFee: bigint;
+  liquidity: bigint;
+  isFirstCycleState: boolean;
+};
 
-    const slot0Start = poolState.slot0;
+type PriceComputationCache = {
+  liquidityStart: bigint;
+  blockTimestamp: bigint;
+  feeProtocol: bigint;
+  secondsPerLiquidityCumulativeX128: bigint;
+  tickCumulative: bigint;
+  computedLatestObservation: boolean;
+};
 
-    _require(
-      zeroForOne
-        ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
-            sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
-        : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 &&
-            sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
-      'SPL',
-      { zeroForOne, sqrtPriceLimitX96, slot0Start },
-      'zeroForOne ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO',
+function _updatePriceComputationObjects<
+  T extends PriceComputationState | PriceComputationCache,
+>(toUpdate: T, updateBy: T) {
+  for (const k of Object.keys(updateBy) as (keyof T)[]) {
+    toUpdate[k] = updateBy[k];
+  }
+}
+
+function _priceComputationCycle(
+  poolState: DeepReadonly<PoolState>,
+  ticksCopy: Record<NumberAsString, TickInfo>,
+  slot0Start: Slot0,
+  state: PriceComputationState,
+  cache: PriceComputationCache,
+  sqrtPriceLimitX96: bigint,
+  zeroForOne: boolean,
+  exactInput: boolean,
+): [
+  // result
+  PriceComputationState,
+  // Latest calculated full cycle state we can use for bigger amounts
+  {
+    latestFullCycleState: PriceComputationState;
+    latestFullCycleCache: PriceComputationCache;
+    latestFullCycleTicks: Record<NumberAsString, TickInfo>;
+  },
+] {
+  const latestFullCycleState: PriceComputationState = { ...state };
+  const latestFullCycleCache: PriceComputationCache = { ...cache };
+  const latestFullCycleTicks: Record<NumberAsString, TickInfo> = {
+    ...tickCopy,
+  };
+
+  while (
+    state.amountSpecifiedRemaining !== 0n &&
+    state.sqrtPriceX96 != sqrtPriceLimitX96
+  ) {
+    const step = {
+      sqrtPriceStartX96: 0n,
+      tickNext: 0n,
+      initialized: false,
+      sqrtPriceNextX96: 0n,
+      amountIn: 0n,
+      amountOut: 0n,
+      feeAmount: 0n,
+    };
+
+    step.sqrtPriceStartX96 = state.sqrtPriceX96;
+
+    try {
+      [step.tickNext, step.initialized] =
+        TickBitMap.nextInitializedTickWithinOneWord(
+          poolState,
+          state.tick,
+          poolState.tickSpacing,
+          zeroForOne,
+          true,
+        );
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
+      ) {
+        state.amountSpecifiedRemaining = 0n;
+        state.amountCalculated = 0n;
+        break;
+      }
+      throw e;
+    }
+
+    if (step.tickNext < TickMath.MIN_TICK) {
+      step.tickNext = TickMath.MIN_TICK;
+    } else if (step.tickNext > TickMath.MAX_TICK) {
+      step.tickNext = TickMath.MAX_TICK;
+    }
+
+    step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+
+    const swapStepResult = SwapMath.computeSwapStep(
+      state.sqrtPriceX96,
+      (
+        zeroForOne
+          ? step.sqrtPriceNextX96 < sqrtPriceLimitX96
+          : step.sqrtPriceNextX96 > sqrtPriceLimitX96
+      )
+        ? sqrtPriceLimitX96
+        : step.sqrtPriceNextX96,
+      state.liquidity,
+      state.amountSpecifiedRemaining,
+      poolState.fee,
     );
 
-    const cache = {
+    state.sqrtPriceX96 = swapStepResult.sqrtRatioNextX96;
+    step.amountIn = swapStepResult.amountIn;
+    step.amountOut = swapStepResult.amountOut;
+    step.feeAmount = swapStepResult.feeAmount;
+
+    if (exactInput) {
+      state.amountSpecifiedRemaining -= step.amountIn + step.feeAmount;
+      state.amountCalculated = state.amountCalculated - step.amountOut;
+    } else {
+      state.amountSpecifiedRemaining += step.amountOut;
+      state.amountCalculated =
+        state.amountCalculated + step.amountIn + step.feeAmount;
+    }
+
+    if (cache.feeProtocol > 0n) {
+      const delta = step.feeAmount / cache.feeProtocol;
+      step.feeAmount -= delta;
+      state.protocolFee += delta;
+    }
+
+    if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+      if (step.initialized) {
+        if (!cache.computedLatestObservation) {
+          [cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128] =
+            Oracle.observeSingle(
+              poolState,
+              cache.blockTimestamp,
+              0n,
+              slot0Start.tick,
+              slot0Start.observationIndex,
+              cache.liquidityStart,
+              slot0Start.observationCardinality,
+            );
+          cache.computedLatestObservation = true;
+        }
+        let liquidityNet = Tick.cross(
+          ticksCopy,
+          step.tickNext,
+          cache.secondsPerLiquidityCumulativeX128,
+          cache.tickCumulative,
+          cache.blockTimestamp,
+        );
+        if (zeroForOne) liquidityNet = -liquidityNet;
+
+        state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
+      }
+
+      state.tick = zeroForOne ? step.tickNext - 1n : step.tickNext;
+    } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
+      state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
+    }
+
+    if (state.amountSpecifiedRemaining !== 0n) {
+      _updatePriceComputationObjects(latestFullCycleState, state);
+      _updatePriceComputationObjects(latestFullCycleCache, cache);
+      _updatePriceComputationObjects(latestFullCycleTicks, ticksCopy);
+    }
+  }
+
+  return [
+    state,
+    { latestFullCycleState, latestFullCycleCache, latestFullCycleTicks },
+  ];
+}
+
+class UniswapV3Math {
+  queryOutputs(
+    poolState: DeepReadonly<PoolState>,
+    // Amounts must increase
+    amounts: bigint[],
+    zeroForOne: boolean,
+    side: SwapSide,
+  ): bigint[] {
+    const slot0Start = poolState.slot0;
+
+    const isSell = side === SwapSide.SELL;
+
+    // While calculating, ticks are changing, so to not change the actual state,
+    // we use copy
+    const ticksCopy = { ...poolState.ticks };
+
+    const sqrtPriceLimitX96 = zeroForOne
+      ? TickMath.MIN_SQRT_RATIO + 1n
+      : TickMath.MAX_SQRT_RATIO - 1n;
+
+    const cache: PriceComputationCache = {
       liquidityStart: poolState.liquidity,
       blockTimestamp: this._blockTimestamp(poolState),
       feeProtocol: zeroForOne
@@ -56,141 +227,99 @@ class UniswapV3Math {
       computedLatestObservation: false,
     };
 
-    const exactInput = amountSpecified > 0n;
-
-    const state = {
-      amountSpecifiedRemaining: amountSpecified,
+    const state: PriceComputationState = {
+      // Will be overwritten later
+      amountSpecifiedRemaining: 0n,
       amountCalculated: 0n,
       sqrtPriceX96: slot0Start.sqrtPriceX96,
       tick: slot0Start.tick,
       protocolFee: 0n,
       liquidity: cache.liquidityStart,
+      isFirstCycleState: true,
     };
 
-    while (
-      state.amountSpecifiedRemaining != 0n &&
-      state.sqrtPriceX96 != sqrtPriceLimitX96
-    ) {
-      const step = {
-        sqrtPriceStartX96: 0n,
-        tickNext: 0n,
-        initialized: false,
-        sqrtPriceNextX96: 0n,
-        amountIn: 0n,
-        amountOut: 0n,
-        feeAmount: 0n,
-      };
+    let isOutOfRange = false;
+    let previousAmount = 0n;
 
-      step.sqrtPriceStartX96 = state.sqrtPriceX96;
+    return amounts.map(amount => {
+      if (amount === 0n) return 0n;
 
-      try {
-        [step.tickNext, step.initialized] =
-          TickBitMap.nextInitializedTickWithinOneWord(
-            poolState,
-            state.tick,
-            poolState.tickSpacing,
-            zeroForOne,
-            true,
-          );
-      } catch (e) {
-        if (
-          e instanceof Error &&
-          e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
-        ) {
-          state.amountSpecifiedRemaining = 0n;
-          state.amountCalculated = 0n;
-          break;
-        }
-        throw e;
+      const amountSpecified = isSell
+        ? BigInt.asIntN(256, amount)
+        : -BigInt.asIntN(256, amount);
+
+      if (state.isFirstCycleState) {
+        // Set first non zero amount
+        state.amountSpecifiedRemaining = amountSpecified;
+        state.isFirstCycleState = false;
+      } else {
+        state.amountSpecifiedRemaining = isSell
+          ? amountSpecified - (previousAmount - state.amountSpecifiedRemaining)
+          : amountSpecified + (previousAmount + state.amountSpecifiedRemaining);
       }
 
-      if (step.tickNext < TickMath.MIN_TICK) {
-        step.tickNext = TickMath.MIN_TICK;
-      } else if (step.tickNext > TickMath.MAX_TICK) {
-        step.tickNext = TickMath.MAX_TICK;
-      }
+      const exactInput = amountSpecified > 0n;
 
-      step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
-
-      const swapStepResult = SwapMath.computeSwapStep(
-        state.sqrtPriceX96,
-        (
-          zeroForOne
-            ? step.sqrtPriceNextX96 < sqrtPriceLimitX96
-            : step.sqrtPriceNextX96 > sqrtPriceLimitX96
-        )
-          ? sqrtPriceLimitX96
-          : step.sqrtPriceNextX96,
-        state.liquidity,
-        state.amountSpecifiedRemaining,
-        poolState.fee,
+      _require(
+        zeroForOne
+          ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
+              sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
+          : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 &&
+              sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
+        'SPL',
+        { zeroForOne, sqrtPriceLimitX96, slot0Start },
+        'zeroForOne ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO',
       );
 
-      state.sqrtPriceX96 = swapStepResult.sqrtRatioNextX96;
-      step.amountIn = swapStepResult.amountIn;
-      step.amountOut = swapStepResult.amountOut;
-      step.feeAmount = swapStepResult.feeAmount;
-
-      if (exactInput) {
-        state.amountSpecifiedRemaining -= step.amountIn + step.feeAmount;
-        state.amountCalculated = state.amountCalculated - step.amountOut;
-      } else {
-        state.amountSpecifiedRemaining += step.amountOut;
-        state.amountCalculated =
-          state.amountCalculated + step.amountIn + step.feeAmount;
-      }
-
-      if (cache.feeProtocol > 0n) {
-        const delta = step.feeAmount / cache.feeProtocol;
-        step.feeAmount -= delta;
-        state.protocolFee += delta;
-      }
-
-      if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
-        if (step.initialized) {
-          if (!cache.computedLatestObservation) {
-            [cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128] =
-              Oracle.observeSingle(
-                poolState,
-                cache.blockTimestamp,
-                0n,
-                slot0Start.tick,
-                slot0Start.observationIndex,
-                cache.liquidityStart,
-                slot0Start.observationCardinality,
-              );
-            cache.computedLatestObservation = true;
-          }
-          let liquidityNet = Tick.cross(
+      if (!isOutOfRange) {
+        const [finalState, { latestFullCycleState, latestFullCycleCache }] =
+          _priceComputationCycle(
+            poolState,
             ticksCopy,
-            step.tickNext,
-            cache.secondsPerLiquidityCumulativeX128,
-            cache.tickCumulative,
-            cache.blockTimestamp,
+            slot0Start,
+            state,
+            cache,
+            sqrtPriceLimitX96,
+            zeroForOne,
+            exactInput,
           );
-          if (zeroForOne) liquidityNet = -liquidityNet;
 
-          state.liquidity = LiquidityMath.addDelta(
-            state.liquidity,
-            liquidityNet,
-          );
+        if (
+          finalState.amountSpecifiedRemaining === 0n &&
+          finalState.amountCalculated === 0n
+        ) {
+          isOutOfRange = true;
+          return 0n;
         }
 
-        state.tick = zeroForOne ? step.tickNext - 1n : step.tickNext;
-      } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
-        state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
-      }
-    }
+        _updatePriceComputationObjects(state, latestFullCycleState);
+        _updatePriceComputationObjects(cache, latestFullCycleCache);
 
-    return zeroForOne == exactInput
-      ? [
-          amountSpecified - state.amountSpecifiedRemaining,
-          state.amountCalculated,
-        ]
-      : [
-          state.amountCalculated,
-          amountSpecified - state.amountSpecifiedRemaining,
-        ];
+        // We use it on next step to correct state.amountSpecifiedRemaining
+        previousAmount = amountSpecified;
+
+        const [amount0, amount1] =
+          zeroForOne === exactInput
+            ? [
+                amountSpecified - finalState.amountSpecifiedRemaining,
+                finalState.amountCalculated,
+              ]
+            : [
+                finalState.amountCalculated,
+                amountSpecified - finalState.amountSpecifiedRemaining,
+              ];
+
+        if (isSell) {
+          return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
+        } else {
+          return zeroForOne
+            ? BigInt.asUintN(256, amount0)
+            : BigInt.asUintN(256, amount1);
+        }
+      } else {
+        return 0n;
+      }
+    });
   }
 
   swapFromEvent(

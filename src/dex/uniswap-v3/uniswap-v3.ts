@@ -243,7 +243,7 @@ export class UniswapV3
       side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
     );
 
-    const _amounts = [unitAmount, ...amounts.slice(1)];
+    const _amounts = [...amounts.slice(1)];
 
     const [token0] = this._sortTokens(_srcAddress, _destAddress);
 
@@ -256,16 +256,21 @@ export class UniswapV3
     for (const [i, pool] of selectedPools.entries()) {
       const state = states[i];
 
+      const unit =
+        side == SwapSide.SELL
+          ? this._getSellOutputs(state, [unitAmount], zeroForOne)
+          : this._getBuyOutputs(state, [unitAmount], zeroForOne);
+
       const prices =
         side == SwapSide.SELL
           ? this._getSellOutputs(state, _amounts, zeroForOne)
           : this._getBuyOutputs(state, _amounts, zeroForOne);
 
-      if (!prices) return null;
+      if (!prices || !unit) return null;
 
       result[i] = {
-        unit: prices[0],
-        prices: [0n, ...prices.slice(1)],
+        unit: unit[0],
+        prices: [0n, ...prices],
         data: {
           fee: pool.feeCode.toString(),
         },
@@ -474,68 +479,21 @@ export class UniswapV3
     return newConfig;
   }
 
-  private _getSellOutputs(
+  private _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
+    side: SwapSide,
   ): bigint[] | null {
-    let nulled = false;
-    const outputs = amounts.map(amount => {
-      try {
-        const [amount0, amount1] = uniswapV3Math.querySwap(
-          state,
-          { ...state.ticks },
-          zeroForOne,
-          BigInt.asIntN(256, amount),
-          zeroForOne
-            ? TickMath.MIN_SQRT_RATIO + 1n
-            : TickMath.MAX_SQRT_RATIO - 1n,
-        );
-        return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
-      } catch (e) {
-        this.logger.error(
-          `${this.dexKey}: received error in _getSellOutputs while calculating outputs`,
-          e,
-        );
-        nulled = true;
-        return 0n;
-      }
-    });
-    return nulled ? null : outputs;
-  }
-
-  private _getBuyOutputs(
-    state: DeepReadonly<PoolState>,
-    amounts: bigint[],
-    zeroForOne: boolean,
-  ): bigint[] | null {
-    let nulled = false;
-    const outputs = amounts.map(amount => {
-      try {
-        const [amount0Delta, amount1Delta] = uniswapV3Math.querySwap(
-          state,
-          { ...state.ticks },
-          zeroForOne,
-          -BigInt.asIntN(256, amount),
-          zeroForOne
-            ? TickMath.MIN_SQRT_RATIO + 1n
-            : TickMath.MAX_SQRT_RATIO - 1n,
-        );
-
-        const amountIn = zeroForOne
-          ? BigInt.asUintN(256, amount0Delta)
-          : BigInt.asUintN(256, amount1Delta);
-        return amountIn;
-      } catch (e) {
-        this.logger.error(
-          `${this.dexKey}: received error in _getBuyOutputs while calculating outputs`,
-          e,
-        );
-        nulled = true;
-        return 0n;
-      }
-    });
-    return nulled ? null : outputs;
+    try {
+      return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
+    } catch (e) {
+      this.logger.error(
+        `${this.dexKey}: received error in _getSellOutputs while calculating outputs`,
+        e,
+      );
+      return null;
+    }
   }
 
   private async _querySubgraph(
