@@ -96,13 +96,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     }
 
     // Move best pool to the top
-    poolPrices.sort((a, b) => {
-      return side === SwapSide.SELL
-        ? Number(b.prices.slice(-1)[0] - a.prices.slice(-1)[0])
-        : Number(a.prices.slice(-1)[0] - b.prices.slice(-1)[0]);
-    });
+    const finalPrice = poolPrices
+      // Filter pools that didn't give latest output
+      .filter(poolPrices => poolPrices.prices.slice(-1)[0] !== 0n)
+      .sort((a, b) => {
+        return side === SwapSide.SELL
+          ? Number(b.prices.slice(-1)[0] - a.prices.slice(-1)[0])
+          : Number(a.prices.slice(-1)[0] - b.prices.slice(-1)[0]);
+      })[0];
 
-    const finalPrice = poolPrices[0];
     const quoteAmount = finalPrice.prices[chunks];
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount
