@@ -1,10 +1,10 @@
 export const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 // This is used for price calculation. If out of scope, return 0n
-export const TICK_BITMAP_TO_USE = 64n;
+export const TICK_BITMAP_TO_USE = 4n;
 
 // This is used to check if the state is still valid.
-export const TICK_BITMAP_BUFFER = 32n;
+export const TICK_BITMAP_BUFFER = 8n;
 
 export const UNISWAPV3_SUBGRAPH_URL =
   'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
