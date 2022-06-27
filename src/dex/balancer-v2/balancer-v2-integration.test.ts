@@ -23,7 +23,7 @@ const USDC = {
 };
 
 const BBADAI = {
-  address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
+  address: '0x804cdb9116a10bb78768d31500002355a1b18067bf8f',
   decimals: 18,
 };
 
@@ -68,7 +68,7 @@ describe('BalancerV2', function () {
       console.log('WETH <> DAI Pool Prices: ', poolPrices);
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-      expect(poolPrices?.[0].gasCost).toBe(25); // TO DO
+      expect(poolPrices?.[0].gasCost).toBe(150000); // TO DO
     });
 
     it('getTopPoolsForToken', async function () {
@@ -115,7 +115,7 @@ describe('BalancerV2', function () {
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-      expect(poolPrices?.[0].gasCost).toBe(25); // TO DO
+      expect(poolPrices?.[0].gasCost).toBe(100000); // TO DO
     });
 
     it('getTopPoolsForToken', async function () {
@@ -234,17 +234,20 @@ describe('BalancerV2', function () {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
       const virtualPoolIdentifier = poolPrices?.find(
         p =>
-          p.poolIdentifier ===
-          'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+          p.poolIdentifier!.toLowerCase() ===
+          'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted'.toLowerCase(),
       );
       expect(virtualPoolIdentifier).not.toBeUndefined();
       expect(virtualPoolIdentifier?.poolAddresses).toEqual([
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+        '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
+        '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
+        '0x9210f1204b5a24742eba12f710636d76240df3d0',
       ]);
       expect(virtualPoolIdentifier?.data.poolId).toEqual(
         '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted',
       );
-      expect(virtualPoolIdentifier?.gasCost).toBe(25); // TO DO 2 * Linear + 1 * Phantom
+      expect(virtualPoolIdentifier?.gasCost).toBe(100000 * 2 + 130000); // TO DO 2 * Linear + 1 * Phantom
     });
 
     it('getTopPoolsForToken', async function () {
@@ -258,9 +261,7 @@ describe('BalancerV2', function () {
       console.log('DAI Top Pools:', poolLiquidity);
 
       const virtualPool = poolLiquidity?.find(
-        p =>
-          p.address ===
-          '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+        p => p.address === '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
       );
       expect(virtualPool).not.toBeUndefined();
 

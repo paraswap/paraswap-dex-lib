@@ -251,9 +251,7 @@ describe('VirtualBoostedPools', () => {
     it('createVirtualBoostedPools, subgraph pools', () => {
       const subgraphPools = virtualBoostedPools.subgraph;
       expect(subgraphPools.length).toBe(1);
-      expect(subgraphPools[0].address).toBe(
-        bbausdAddr + VirtualBoostedPool.poolType.toLowerCase(),
-      );
+      expect(subgraphPools[0].address).toBe(bbausdAddr);
       expect(subgraphPools[0].id).toBe(
         bbausdId + VirtualBoostedPool.poolType.toLowerCase(),
       );
@@ -486,7 +484,7 @@ describe('VirtualBoostedPools', () => {
         expect(prices).not.toBeNull();
         prices?.forEach(p => {
           expect(p.poolIdentifier).not.toEqual(
-            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+            '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted',
           ); // Should not have boosted pool price
           expect(p.data.poolId).not.toEqual(
             '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted',

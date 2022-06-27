@@ -34,6 +34,7 @@ type LinearPoolPairData = {
   mainIndex: number;
   lowerTarget: bigint;
   upperTarget: bigint;
+  gasCost: number;
 };
 
 /*
@@ -50,7 +51,7 @@ export class LinearPool extends BasePool implements PoolBase {
   // actual amount of BPT in circulation is the total supply minus the amount held by the Pool, and is known as the
   // 'virtual supply'.
   MAX_TOKEN_BALANCE = BigNumber.from('2').pow('112').sub('1');
-  gasCost = 60000;
+  gasCost = 100000;
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
@@ -332,6 +333,7 @@ export class LinearPool extends BasePool implements PoolBase {
       mainIndex: poolState.mainIndex || 0,
       lowerTarget: poolState.lowerTarget || 0n,
       upperTarget: poolState.upperTarget || 0n,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }

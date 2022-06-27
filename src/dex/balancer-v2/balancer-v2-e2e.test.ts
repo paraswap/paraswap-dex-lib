@@ -173,6 +173,26 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+      it('DAI -> USDC, Virtual Boosted Pool', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['USDC'],
+          holders['DAI'],
+          '200000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [
+            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+            'BalancerV2_0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
+            'BalancerV2_0x804cdb9116a10bb78768d3252355a1b18067bf8f',
+            'BalancerV2_0x9210f1204b5a24742eba12f710636d76240df3d0',
+          ],
+        );
+      });
     });
 
     describe('Multiswap', () => {
@@ -267,6 +287,27 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.multiSwap,
           network,
           provider,
+        );
+      });
+
+      it('DAI -> USDC, Virtual Boosted Pool', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['USDC'],
+          holders['DAI'],
+          '200000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+          [
+            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
+            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+            'BalancerV2_0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
+            'BalancerV2_0x804cdb9116a10bb78768d3252355a1b18067bf8f',
+            'BalancerV2_0x9210f1204b5a24742eba12f710636d76240df3d0',
+          ],
         );
       });
     });

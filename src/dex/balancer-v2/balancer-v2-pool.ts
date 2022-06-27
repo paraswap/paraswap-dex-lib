@@ -44,6 +44,7 @@ type WeightedPoolPairData = {
   tokenInWeight: bigint;
   tokenOutWeight: bigint;
   swapFee: bigint;
+  gasCost: number;
 };
 
 type StablePoolPairData = {
@@ -53,6 +54,7 @@ type StablePoolPairData = {
   scalingFactors: bigint[];
   swapFee: bigint;
   amp: bigint;
+  gasCost: number;
 };
 
 abstract class BaseGeneralPool extends BasePool {
@@ -425,6 +427,7 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
       scalingFactors,
       swapFee: poolState.swapFee,
       amp: poolState.amp ? poolState.amp : 0n,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -643,6 +646,7 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
       tokenInWeight,
       tokenOutWeight,
       swapFee: poolState.swapFee,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }

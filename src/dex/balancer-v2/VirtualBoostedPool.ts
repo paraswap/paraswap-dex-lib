@@ -39,6 +39,7 @@ type BoostedPoolPairData = {
   phantomPoolId: any;
   poolStates: { [address: string]: PoolState };
   boostedPools: BoostedPools;
+  gasCost: number;
 };
 
 export type SwapData = {
@@ -102,7 +103,7 @@ export class VirtualBoostedPool {
         };
         subgraph.push({
           id: phantomPool.id + this.poolType.toLowerCase(),
-          address: phantomPool.address + this.poolType.toLowerCase(),
+          address: phantomPool.address,
           poolType: this.poolType,
           tokens: mainTokens,
           mainIndex: 0,
@@ -401,6 +402,17 @@ export class VirtualBoostedPool {
     tokenOut: string,
     boostedPools: BoostedPools,
   ): BoostedPoolPairData {
+    const linearPool = new LinearPool(
+      this.vaultAddress,
+      this.vaultInterface,
+      this.linearPoolInterface,
+    );
+    const phantomStablePool = new PhantomStablePool(
+      this.vaultAddress,
+      this.vaultInterface,
+      this.phantomStablePoolInterface,
+    );
+
     const poolPairData: BoostedPoolPairData = {
       tokenIn,
       tokenOut,
@@ -409,6 +421,7 @@ export class VirtualBoostedPool {
       )[0],
       poolStates,
       boostedPools,
+      gasCost: linearPool.gasCost * 2 + phantomStablePool.gasCost,
     };
     return poolPairData;
   }
@@ -575,9 +588,6 @@ export class VirtualBoostedPool {
         linearOut.lowerTarget,
         linearOut.upperTarget,
       );
-      poolStates[
-        phantomPoolAddr + VirtualBoostedPool.poolType.toLowerCase()
-      ].gasCost = linearPool.gasCost * 2 + phantomStablePool.gasCost;
       return amtOutLinearTwo;
     } else {
       return [0n];

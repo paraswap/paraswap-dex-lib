@@ -27,6 +27,7 @@ type PhantomStablePoolPairData = {
   bptIndex: number;
   swapFee: bigint;
   amp: bigint;
+  gasCost: number;
 };
 
 /*
@@ -285,6 +286,7 @@ export class PhantomStablePool extends BasePool implements PoolBase {
       bptIndex,
       swapFee: poolState.swapFee,
       amp: poolState.amp ? poolState.amp : 0n,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }

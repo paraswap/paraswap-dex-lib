@@ -305,7 +305,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
-  ): { unit: bigint; prices: bigint[] } | null {
+  ): { unit: bigint; prices: bigint[]; gasCost: number } | null {
     if (!this.isSupportedPool(pool.poolType)) {
       console.error(`Unsupported Pool Type: ${pool.poolType}`);
       return null;
@@ -335,7 +335,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       _amounts,
       poolPairData as any,
     );
-    return { unit: _prices[0], prices: [0n, ..._prices.slice(1)] };
+    return {
+      unit: _prices[0],
+      prices: [0n, ..._prices.slice(1)],
+      gasCost: poolPairData.gasCost,
+    };
   }
 
   async getOnChainState(
@@ -469,16 +473,17 @@ export class BalancerV2
     const identifiers: string[] = [];
 
     pools.forEach(p => {
+      identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
       if (p.poolType === 'VirtualBoosted') {
+        identifiers.push(
+          `${this.dexKey}_${p.address.toLowerCase()}virtualboosted`,
+        );
         // VirtualBoosted pool should return identifiers for all the internal pools
         // e.g. for bbausd this is 3 Linear pools and the PhantomStable linking them
-        identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
-        const phantomAddr = p.address.split(p.poolType.toLowerCase())[0];
-        identifiers.push(`${this.dexKey}_${phantomAddr.toLowerCase()}`);
         p.tokens.forEach(t =>
           identifiers.push(`${this.dexKey}_${t.linearPoolAddr?.toLowerCase()}`),
         );
-      } else identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
+      }
     });
 
     return identifiers;
@@ -504,9 +509,23 @@ export class BalancerV2
       // allowedPools contains pool data for pools with tokenIn/Out that are in limit list
       const allowedPools = limitPools
         ? poolsWithTokens.filter(pool => {
+            if (
+              !limitPools.includes(
+                `${this.dexKey}_${pool.address.toLowerCase()}`,
+              )
+            )
+              return false;
+
             const id = pool.id.split(pool.poolType.toLowerCase())[0];
             // VirtualPools must have all their internal pools in limitPools
             if (this.eventPools.virtualBoostedPools[id]) {
+              if (
+                !limitPools.includes(
+                  `${this.dexKey}_${pool.address.toLowerCase()}virtualboosted`,
+                )
+              )
+                return false;
+
               for (let t of this.eventPools.virtualBoostedPools[id]
                 .mainTokens) {
                 if (
@@ -516,12 +535,9 @@ export class BalancerV2
                 )
                   return false;
               }
-              return true;
-            } else {
-              return limitPools.includes(
-                `${this.dexKey}_${pool.address.toLowerCase()}`,
-              );
             }
+
+            return true;
           })
         : poolsWithTokens;
 
@@ -550,11 +566,12 @@ export class BalancerV2
         ? await this.eventPools.getOnChainState(missingPools, blockNumber)
         : {};
 
+      const completePoolStates = { ...allPoolStates, ...missingPoolsStateMap };
+
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
           const poolAddress = pool.address.toLowerCase();
-          const poolState =
-            allPoolStates[poolAddress] || missingPoolsStateMap[poolAddress];
+          const poolState = completePoolStates[poolAddress];
           if (!poolState) {
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
@@ -565,22 +582,31 @@ export class BalancerV2
               _from,
               _to,
               pool,
-              allPoolStates[poolAddress] ? allPoolStates : missingPoolsStateMap,
+              completePoolStates,
               amounts,
               unitVolume,
               side,
             );
-            if (!res) return;
+            if (!res) return null;
+
+            let poolAddresses = [poolAddress];
+            const id = pool.id.split(pool.poolType.toLowerCase())[0];
+            if (this.eventPools.virtualBoostedPools[id]) {
+              this.eventPools.virtualBoostedPools[id].mainTokens.forEach(t => {
+                poolAddresses.push(t.linearPoolAddr.toLowerCase());
+              });
+            }
+
             return {
               unit: res.unit,
               prices: res.prices,
               data: {
                 poolId: pool.id,
               },
-              poolAddresses: [poolAddress],
+              poolAddresses,
               exchange: this.dexKey,
-              gasCost: poolState.gasCost,
-              poolIdentifier: `${this.dexKey}_${poolAddress}`,
+              gasCost: res.gasCost,
+              poolIdentifier: `${this.dexKey}_${pool.id}`,
             };
           } catch (e) {
             this.logger.error(
