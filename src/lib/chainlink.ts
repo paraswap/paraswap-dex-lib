@@ -91,4 +91,8 @@ export class ChainLinkSubscriber<State> extends PartialEventSubscriber<
       timestamp: BigInt(decoded.updatedAt.toString()),
     };
   }
+
+  public getLatestRoundData(state: DeepReadonly<State>): bigint {
+    return this.lens.get()(state).answer;
+  }
 }

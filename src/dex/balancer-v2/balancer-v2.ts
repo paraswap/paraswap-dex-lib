@@ -18,6 +18,7 @@ import {
   MAX_INT,
   MAX_UINT,
   Network,
+  SUBGRAPH_TIMEOUT,
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
@@ -34,8 +35,8 @@ import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
-import { IDex } from '../../dex/idex';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDex } from '../idex';
+import { IDexHelper } from '../../dex-helper';
 import {
   PoolState,
   SubgraphPoolBase,
@@ -77,7 +78,6 @@ export enum BalancerPoolTypes {
   ERC4626Linear = 'ERC4626Linear',
 }
 
-const subgraphTimeout = 1000 * 10;
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
@@ -232,7 +232,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       { query: fetchAllPools, variables },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools))
@@ -843,7 +843,7 @@ export class BalancerV2
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       { query },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools))

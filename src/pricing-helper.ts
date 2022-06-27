@@ -10,11 +10,11 @@ import {
 import {
   SwapSide,
   SETUP_RETRY_TIMEOUT,
-  FETCH_POOL_INDENTIFIER_TIMEOUT,
+  FETCH_POOL_IDENTIFIER_TIMEOUT,
   FETCH_POOL_PRICES_TIMEOUT,
 } from './constants';
 import { DexAdapterService } from './dex';
-import { IRouteOptimizer } from './dex/idex';
+import { IDex, IRouteOptimizer } from './dex/idex';
 
 export class PricingHelper {
   logger: Logger;
@@ -54,6 +54,19 @@ export class PricingHelper {
     return this.dexAdapterService.getAllDexKeys();
   }
 
+  public getDexByKey(key: string): IDex<any, any, any> | null {
+    try {
+      return this.dexAdapterService.getDexByKey(key);
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('Invalid Dex Key')) {
+        this.logger.warn(`Dex ${key} was not found in getAllDexKeys`);
+        return null;
+      }
+      // Unexpected error
+      throw e;
+    }
+  }
+
   public async initialize(blockNumber: number, dexKeys: string[]) {
     return await Promise.all(
       dexKeys.map(key => this.initializeDex(key, blockNumber)),
@@ -74,7 +87,7 @@ export class PricingHelper {
           return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
               () => reject(new Error(`Timeout`)),
-              FETCH_POOL_INDENTIFIER_TIMEOUT,
+              FETCH_POOL_IDENTIFIER_TIMEOUT,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
 
@@ -170,6 +183,24 @@ export class PricingHelper {
             `Error_getPoolPrices: ${p.exchange} returned prices with invalid chunks`,
           );
           return false;
+        }
+
+        if (Array.isArray(p.gasCost)) {
+          if (p.gasCost.length !== amounts.length) {
+            this.logger.error(
+              `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array length: ${p.gasCost.length} !== ${amounts.length}`,
+            );
+            return false;
+          }
+
+          for (const [i, amount] of amounts.entries()) {
+            if (amount === 0n && p.gasCost[i] !== 0) {
+              this.logger.error(
+                `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array. At index ${i} amount is 0 but gasCost is ${p.gasCost[i]}`,
+              );
+              return false;
+            }
+          }
         }
 
         if (p.prices.every(pi => pi === 0n)) {

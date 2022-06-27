@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { TxObject } from '../src/types';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
@@ -35,11 +35,7 @@ export class TenderlySimulation {
       this.forkId = res.data.simulation_fork.id;
       this.lastTx = res.data.root_transaction.id;
     } catch (e) {
-      if (e instanceof AxiosError) {
-        console.error(`TenderlySimulation_setup: ${e.message}`);
-      } else {
-        console.error(`TenderlySimulation_setup:`, e);
-      }
+      console.error(`TenderlySimulation_setup:`, e);
       throw e;
     }
   }
@@ -82,14 +78,9 @@ export class TenderlySimulation {
         };
       }
     } catch (e) {
-      if (e instanceof AxiosError) {
-        console.error(`TenderlySimulation_simulate: ${e.message}`);
-      } else {
-        console.error(`TenderlySimulation_simulate`, e);
-      }
+      console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
-        error: (e as any).message,
         tenderlyUrl: '',
       };
     }
