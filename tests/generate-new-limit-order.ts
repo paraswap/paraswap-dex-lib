@@ -4,7 +4,7 @@ dotenv.config();
 import { ethers } from 'ethers';
 import { Address } from 'paraswap-core';
 import { Network, NULL_ADDRESS, ProviderURL } from '../src/constants';
-import { ParaswapLimitOrdersConfig } from '../src/dex/paraswap-limit-orders/config';
+import { ParaSwapLimitOrdersConfig } from '../src/dex/paraswap-limit-orders/config';
 
 const network = Network.ROPSTEN;
 const provider = ethers.getDefaultProvider(ProviderURL[network]);
@@ -13,9 +13,9 @@ const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';
 
 const maker = new ethers.Wallet(makerPK, provider);
 
-const dexKey = 'ParaswapLimitOrders';
+const dexKey = 'ParaSwapLimitOrders';
 const rfqAddress =
-  ParaswapLimitOrdersConfig[dexKey][network].rfqAddress.toLowerCase();
+  ParaSwapLimitOrdersConfig[dexKey][network].rfqAddress.toLowerCase();
 
 const wethAddress = '0xc778417e063141139fce010982780140aa0cd5ab';
 const daiAddress = '0xad6d458402f60fd3bd25163575031acdce07538d';

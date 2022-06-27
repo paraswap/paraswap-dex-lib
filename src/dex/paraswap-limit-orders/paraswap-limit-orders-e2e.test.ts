@@ -11,15 +11,15 @@ import {
 } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import {
-  ParaswapLimitOrderResponse,
-  ParaswapPriceSummaryResponse,
+  ParaSwapLimitOrderResponse,
+  ParaSwapPriceSummaryResponse,
 } from './types';
 import { DummyLimitOrderProvider } from '../../dex-helper/index';
 
-describe('ParaswapLimitOrders E2E', () => {
-  const dexKey = 'ParaswapLimitOrders';
+describe('ParaSwapLimitOrders E2E', () => {
+  const dexKey = 'ParaSwapLimitOrders';
 
-  describe('ParaswapLimitOrders ROPSTEN', () => {
+  describe('ParaSwapLimitOrders ROPSTEN', () => {
     const network = Network.ROPSTEN;
     const tokens = Tokens[network];
     const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
@@ -48,7 +48,7 @@ describe('ParaswapLimitOrders E2E', () => {
     const maker = '0xc3643bC869DC0dcd2Df8729fC3cb768d4F86F57a';
     const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';
 
-    const priceSummaryToUse: ParaswapPriceSummaryResponse[] = [
+    const priceSummaryToUse: ParaSwapPriceSummaryResponse[] = [
       {
         cumulativeMakerAmount: '10000000000000000000',
         cumulativeTakerAmount: '20000000000000000',
@@ -63,7 +63,7 @@ describe('ParaswapLimitOrders E2E', () => {
       },
     ];
 
-    const ordersToUse: ParaswapLimitOrderResponse[] = [
+    const ordersToUse: ParaSwapLimitOrderResponse[] = [
       {
         order: {
           nonceAndMeta:

@@ -13,40 +13,35 @@ import {
   ExchangeTxInfo,
   PreprocessTransactionOptions,
 } from '../../types';
-import {
-  SwapSide,
-  Network,
-  LIMIT_ORDER_PROVIDERS,
-  NULL_ADDRESS,
-} from '../../constants';
+import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  ParaswapLimitOrdersData,
-  ParaswapLimitOrderResponse,
-  ParaswapLimitOrderPriceSummary,
-  ParaswapPriceSummaryResponse,
+  ParaSwapLimitOrdersData,
+  ParaSwapLimitOrderResponse,
+  ParaSwapLimitOrderPriceSummary,
+  ParaSwapPriceSummaryResponse,
   OrderInfo,
 } from './types';
-import { ParaswapLimitOrdersConfig, Adapters } from './config';
+import { ParaSwapLimitOrdersConfig, Adapters } from './config';
 import { LimitOrderExchange } from '../limit-order-exchange';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import { ONE_ORDER_GASCOST } from './constant';
 
-export class ParaswapLimitOrders
+export class ParaSwapLimitOrders
   extends LimitOrderExchange<
-    ParaswapLimitOrderResponse,
-    ParaswapPriceSummaryResponse
+    ParaSwapLimitOrderResponse,
+    ParaSwapPriceSummaryResponse
   >
-  implements IDex<ParaswapLimitOrdersData>
+  implements IDex<ParaSwapLimitOrdersData>
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(ParaswapLimitOrdersConfig);
+    getDexKeysWithNetwork(ParaSwapLimitOrdersConfig);
 
   logger: Logger;
 
@@ -55,7 +50,7 @@ export class ParaswapLimitOrders
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] ? Adapters[network] : {},
-    protected augustusRFQAddress = ParaswapLimitOrdersConfig[dexKey][
+    protected augustusRFQAddress = ParaSwapLimitOrdersConfig[dexKey][
       network
     ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
@@ -112,7 +107,7 @@ export class ParaswapLimitOrders
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<ParaswapLimitOrdersData>> {
+  ): Promise<null | ExchangePrices<ParaSwapLimitOrdersData>> {
     if (side === SwapSide.BUY) return null;
 
     try {
@@ -179,17 +174,21 @@ export class ParaswapLimitOrders
   }
 
   async preProcessTransaction?(
-    optimalSwapExchange: OptimalSwapExchange<ParaswapLimitOrdersData>,
+    optimalSwapExchange: OptimalSwapExchange<ParaSwapLimitOrdersData>,
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     options: PreprocessTransactionOptions,
-  ): Promise<[OptimalSwapExchange<ParaswapLimitOrdersData>, ExchangeTxInfo]> {
+  ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
     const userAddress = options.txOrigin;
+
+    const srcWrapped = wrapETH(srcToken, this.network).address.toLowerCase();
+    const destWrapped = wrapETH(destToken, this.network).address.toLowerCase();
+
     const { encodingValues, minDeadline } =
       await this._prepareOrdersForTransaction(
-        srcToken.address,
-        destToken.address,
+        srcWrapped,
+        destWrapped,
         optimalSwapExchange.srcAmount,
         optimalSwapExchange.destAmount,
         side,
@@ -216,7 +215,7 @@ export class ParaswapLimitOrders
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: ParaswapLimitOrdersData,
+    data: ParaSwapLimitOrdersData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
@@ -255,7 +254,7 @@ export class ParaswapLimitOrders
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: ParaswapLimitOrdersData,
+    data: ParaSwapLimitOrdersData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
@@ -294,7 +293,7 @@ export class ParaswapLimitOrders
   private async _getLatestPriceSummary(
     src: Address,
     dest: Address,
-  ): Promise<ParaswapLimitOrderPriceSummary[] | null> {
+  ): Promise<ParaSwapLimitOrderPriceSummary[] | null> {
     const priceSummaryUnparsed =
       await this._limitOrderProvider!.fetchPriceSummary(
         this.network,
@@ -387,7 +386,7 @@ export class ParaswapLimitOrders
 
   private _getPrices(
     amounts: bigint[],
-    priceSummary: ParaswapLimitOrderPriceSummary[],
+    priceSummary: ParaSwapLimitOrderPriceSummary[],
     orderCosts: bigint[],
   ): { prices: bigint[]; costs: bigint[] } {
     const prices = new Array<bigint>(amounts.length);

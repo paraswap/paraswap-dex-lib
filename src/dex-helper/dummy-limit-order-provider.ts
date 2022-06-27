@@ -1,7 +1,7 @@
 import { ILimitOrderProvider } from './ilimit-order-provider';
 import {
-  ParaswapLimitOrderResponse,
-  ParaswapPriceSummaryResponse,
+  ParaSwapLimitOrderResponse,
+  ParaSwapPriceSummaryResponse,
 } from '../dex/paraswap-limit-orders/types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../constants';
 import { Address, BigIntAsString } from '../types';
@@ -9,18 +9,18 @@ import { Address, BigIntAsString } from '../types';
 export class DummyLimitOrderProvider
   implements
     ILimitOrderProvider<
-      ParaswapLimitOrderResponse,
-      ParaswapPriceSummaryResponse
+      ParaSwapLimitOrderResponse,
+      ParaSwapPriceSummaryResponse
     >
 {
   readonly name: LIMIT_ORDER_PROVIDERS = LIMIT_ORDER_PROVIDERS.PARASWAP;
 
   private readonly _priceSummary: {
-    [key in string]: ParaswapPriceSummaryResponse[];
+    [key in string]: ParaSwapPriceSummaryResponse[];
   } = {};
 
   private readonly _ordersToExecute: {
-    [key in number]: ParaswapLimitOrderResponse[];
+    [key in number]: ParaSwapLimitOrderResponse[];
   } = {};
 
   async fetchAndReserveOrders(
@@ -33,7 +33,7 @@ export class DummyLimitOrderProvider
     userAddress: Address,
     backupOrdersMaxPercent?: number,
     backupOrdersMinCount?: number,
-  ): Promise<ParaswapLimitOrderResponse[] | null> {
+  ): Promise<ParaSwapLimitOrderResponse[] | null> {
     return this._ordersToExecute[network]
       ? this._ordersToExecute[network]
       : null;
@@ -43,7 +43,7 @@ export class DummyLimitOrderProvider
     network: Network,
     src: Address,
     dest: Address,
-  ): Promise<ParaswapPriceSummaryResponse[] | null> {
+  ): Promise<ParaSwapPriceSummaryResponse[] | null> {
     const key = DummyLimitOrderProvider.getPriceSummaryCacheKey(
       network,
       src,
@@ -57,7 +57,7 @@ export class DummyLimitOrderProvider
     network: Network,
     src: Address,
     dest: Address,
-    priceSummary: ParaswapPriceSummaryResponse[],
+    priceSummary: ParaSwapPriceSummaryResponse[],
   ) {
     const key = DummyLimitOrderProvider.getPriceSummaryCacheKey(
       network,
@@ -67,7 +67,7 @@ export class DummyLimitOrderProvider
     this._priceSummary[key] = priceSummary;
   }
 
-  setOrdersToExecute(network: number, orders: ParaswapLimitOrderResponse[]) {
+  setOrdersToExecute(network: number, orders: ParaSwapLimitOrderResponse[]) {
     this._ordersToExecute[network] = orders;
   }
 

@@ -42,7 +42,7 @@ import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
-import { ParaswapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
+import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 
 const LegacyDexes = [
@@ -85,7 +85,7 @@ const Dexes = [
   WooFi,
   UniswapV3,
   Dystopia,
-  ParaswapLimitOrders,
+  ParaSwapLimitOrders,
 ];
 
 const AdapterNameAddressMap: {
