@@ -49,11 +49,15 @@ const EXCHANGER_ADDRESS = '0xD64D83829D92B5bdA881f6f61A4e4E27Fc185387';
  */
 describe('Synthetix', () => {
   it('first simple test: atomic swap AAVE for ETH', async () => {
+    // Contracts
     let resolver, // : SynthetixAddressResolver
       exchanger; // : Exchanger
 
+    // vars from Paraswap
     const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.provider.getBlockNumber();
+
+    // vars for atomic swap
     const sourceAmount = ethers.BigNumber.from('10');
     const sourceCurrencyKey = 'AAVE';
     const destinationCurrencyKey = 'ETH';
