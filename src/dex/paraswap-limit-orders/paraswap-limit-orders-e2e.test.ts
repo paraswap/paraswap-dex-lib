@@ -19,7 +19,7 @@ describe('ParaSwapLimitOrders E2E', () => {
     const network = Network.ROPSTEN;
     const tokens = Tokens[network];
     const provider = new StaticJsonRpcProvider(
-      generateConfig(network).httpProvider,
+      generateConfig(network).privateHttpProvider,
       network,
     );
 

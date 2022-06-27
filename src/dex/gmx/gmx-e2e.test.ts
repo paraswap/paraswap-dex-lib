@@ -19,7 +19,7 @@ describe('GMX E2E', () => {
     const tokens = Tokens[network];
     const holders = Holders[network];
     const provider = new StaticJsonRpcProvider(
-      generateConfig(network).httpProvider,
+      generateConfig(network).privateHttpProvider,
       network,
     );
 

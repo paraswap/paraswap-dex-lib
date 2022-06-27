@@ -17,7 +17,7 @@ type BaseConfig = {
   augustusAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
-  httpProvider?: string;
+  privateHttpProvider?: string;
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
 };
@@ -34,7 +34,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
-    httpProvider: process.env.HTTP_PROVIDER,
+    privateHttpProvider: process.env.HTTP_PROVIDER,
     adapterAddresses: {
       Adapter01: '0x3A0430bF7cd2633af111ce3204DB4b0990857a6F',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
@@ -56,7 +56,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
-    httpProvider: process.env.HTTP_PROVIDER_3,
+    privateHttpProvider: process.env.HTTP_PROVIDER_3,
     adapterAddresses: {
       RopstenAdapter01: '0x59b7F6258e78C3E5234bb651656EDd0e08868cd5',
       RopstenBuyAdapter: '0x63e908A4C793a33e40254362ED1A5997a234D85C',
@@ -74,7 +74,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
-    httpProvider: process.env.HTTP_PROVIDER_56,
+    privateHttpProvider: process.env.HTTP_PROVIDER_56,
     adapterAddresses: {
       BscAdapter01: '0xC9229EeC07B176AcC448BE33177c2834c9575ec5',
       BscBuyAdapter: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
@@ -93,7 +93,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
-    httpProvider: process.env.HTTP_PROVIDER_137,
+    privateHttpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
       PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
       PolygonAdapter02: '0x475928fE50a9E9ADb706d6f5624fB97EE2AC087D',
@@ -113,7 +113,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
-    httpProvider: process.env.HTTP_PROVIDER_43114,
+    privateHttpProvider: process.env.HTTP_PROVIDER_43114,
     adapterAddresses: {
       AvalancheAdapter01: '0xb41Ec6e014e2AD12Ae8514216EAb2592b74F19e7',
       AvalancheBuyAdapter: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
@@ -132,7 +132,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
-    httpProvider: process.env.HTTP_PROVIDER_250,
+    privateHttpProvider: process.env.HTTP_PROVIDER_250,
     adapterAddresses: {
       FantomAdapter01: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
       FantomBuyAdapter: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
@@ -150,7 +150,7 @@ export function generateConfig(network: number): Config {
   }
   const nativeTokenName =
     baseConfig.nativeTokenName || baseConfig.nativeTokenSymbol;
-  if (!baseConfig.httpProvider) {
+  if (!baseConfig.privateHttpProvider) {
     throw new Error(`Missing HTTP Provider for network ${network}`);
   }
   return {
@@ -169,7 +169,7 @@ export function generateConfig(network: number): Config {
     augustusAddress: baseConfig.augustusAddress,
     tokenTransferProxyAddress: baseConfig.tokenTransferProxyAddress,
     multicallV2Address: baseConfig.multicallV2Address,
-    httpProvider: baseConfig.httpProvider,
+    privateHttpProvider: baseConfig.privateHttpProvider,
     adapterAddresses: { ...baseConfig.adapterAddresses },
     uniswapV2ExchangeRouterAddress: baseConfig.uniswapV2ExchangeRouterAddress,
   };

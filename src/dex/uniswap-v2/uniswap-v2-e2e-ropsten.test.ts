@@ -13,7 +13,7 @@ describe('UniswapV2 E2E Ropsten', () => {
   const tokens = Tokens[network];
   const holders = Holders[network];
   const provider = new StaticJsonRpcProvider(
-    generateConfig(network).httpProvider,
+    generateConfig(network).privateHttpProvider,
     network,
   );
 

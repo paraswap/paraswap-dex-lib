@@ -16,7 +16,7 @@ describe('BalancerV2 E2E', () => {
     const tokens = Tokens[Network.MAINNET];
     const holders = Holders[Network.MAINNET];
     const provider = new StaticJsonRpcProvider(
-      generateConfig(network).httpProvider,
+      generateConfig(network).privateHttpProvider,
       network,
     );
 

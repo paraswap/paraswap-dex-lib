@@ -16,7 +16,7 @@ describe('AaveV1 E2E', () => {
     const network = Network.MAINNET;
     const holders = Holders[network];
     const provider = new StaticJsonRpcProvider(
-      generateConfig(network).httpProvider,
+      generateConfig(network).privateHttpProvider,
       network,
     );
     // TODO: Modify the USDTSymbol, aUSDTSymbol, aETHAmount;

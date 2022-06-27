@@ -9,7 +9,7 @@ import { generateConfig } from '../src/config';
 
 const network = Network.ROPSTEN;
 const provider = ethers.getDefaultProvider(
-  generateConfig(network).httpProvider,
+  generateConfig(network).privateHttpProvider,
 );
 const makerPK = process.env.MAKER_PK || '';
 const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';

@@ -49,7 +49,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     this.paraSwap = new ParaSwap(
       network as NetworkID,
       testingEndpoint,
-      generateConfig(network).httpProvider,
+      generateConfig(network).privateHttpProvider,
     );
   }
 

@@ -259,7 +259,7 @@ export type Config = {
   augustusAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
-  httpProvider: string;
+  privateHttpProvider: string;
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
 };

@@ -104,10 +104,10 @@ export class DummyDexHelper implements IDexHelper {
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.provider = new StaticJsonRpcProvider(
-      this.config.data.httpProvider,
+      this.config.data.privateHttpProvider,
       network,
     );
-    this.web3Provider = new Web3(this.config.data.httpProvider);
+    this.web3Provider = new Web3(this.config.data.privateHttpProvider);
     this.multiContract = new this.web3Provider.eth.Contract(
       multiABIV2 as any,
       this.config.data.multicallV2Address,
