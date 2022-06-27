@@ -70,7 +70,7 @@ describe('Synthetix', () => {
     exchanger = exchanger.deployed();
 
     const aaveAddress = resolver.getAddress(toHex('ProxysAAVE'));
-    const adaAddress = resolver.getAddress(toHex('ProxysETH'));
+    const ethAddress = resolver.getAddress(toHex('ProxysETH'));
 
     const { amountReceived, fee, exchangeFeeRate } =
       exchanger.getAmountsForAtomicExchange(
