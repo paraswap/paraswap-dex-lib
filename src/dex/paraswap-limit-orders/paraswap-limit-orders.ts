@@ -346,7 +346,19 @@ export class ParaSwapLimitOrders
 
     if (orderInfos === null)
       throw new Error(
-        `${this.dexHelper}: Orders have been changed, therefore no sufficient amount was found to fulfill this transaction`,
+        `${
+          this.dexKey
+        }: No orders received from _limitOrderProvider fetchAndReserveOrders request with params: ${JSON.stringify(
+          {
+            network: this.network,
+            srcToken,
+            destToken,
+            srcAmount,
+            destAmount,
+            side,
+            userAddress,
+          },
+        )}`,
       );
 
     const encodingValues: OrderInfo[] = new Array(orderInfos.length);
