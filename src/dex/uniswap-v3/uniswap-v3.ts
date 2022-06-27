@@ -256,15 +256,9 @@ export class UniswapV3
     for (const [i, pool] of selectedPools.entries()) {
       const state = states[i];
 
-      const unit =
-        side == SwapSide.SELL
-          ? this._getSellOutputs(state, [unitAmount], zeroForOne)
-          : this._getBuyOutputs(state, [unitAmount], zeroForOne);
+      const unit = this._getOutputs(state, [unitAmount], zeroForOne, side);
 
-      const prices =
-        side == SwapSide.SELL
-          ? this._getSellOutputs(state, _amounts, zeroForOne)
-          : this._getBuyOutputs(state, _amounts, zeroForOne);
+      const prices = this._getOutputs(state, _amounts, zeroForOne, side);
 
       if (!prices || !unit) return null;
 

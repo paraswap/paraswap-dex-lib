@@ -63,18 +63,18 @@ function _priceComputationCycle(
   {
     latestFullCycleState: PriceComputationState;
     latestFullCycleCache: PriceComputationCache;
-    latestFullCycleTicks: Record<NumberAsString, TickInfo>;
   },
 ] {
   const latestFullCycleState: PriceComputationState = { ...state };
   const latestFullCycleCache: PriceComputationCache = { ...cache };
-  const latestFullCycleTicks: Record<NumberAsString, TickInfo> = {
-    ...tickCopy,
-  };
+
+  // We save tick before any change. Later we use this to restore
+  // state before last step
+  let lastTicksCopy: { index: number; tick: TickInfo } | undefined;
 
   while (
     state.amountSpecifiedRemaining !== 0n &&
-    state.sqrtPriceX96 != sqrtPriceLimitX96
+    state.sqrtPriceX96 !== sqrtPriceLimitX96
   ) {
     const step = {
       sqrtPriceStartX96: 0n,
@@ -151,7 +151,7 @@ function _priceComputationCycle(
       state.protocolFee += delta;
     }
 
-    if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+    if (state.sqrtPriceX96 === step.sqrtPriceNextX96) {
       if (step.initialized) {
         if (!cache.computedLatestObservation) {
           [cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128] =
@@ -166,6 +166,15 @@ function _priceComputationCycle(
             );
           cache.computedLatestObservation = true;
         }
+
+        if (state.amountSpecifiedRemaining === 0n) {
+          const castTickNext = Number(step.tickNext);
+          lastTicksCopy = {
+            index: castTickNext,
+            tick: { ...ticksCopy[castTickNext] },
+          };
+        }
+
         let liquidityNet = Tick.cross(
           ticksCopy,
           step.tickNext,
@@ -186,14 +195,14 @@ function _priceComputationCycle(
     if (state.amountSpecifiedRemaining !== 0n) {
       _updatePriceComputationObjects(latestFullCycleState, state);
       _updatePriceComputationObjects(latestFullCycleCache, cache);
-      _updatePriceComputationObjects(latestFullCycleTicks, ticksCopy);
+      // If it last cycle, check if ticks were changed and then restore previous state
+      // for next calculations
+    } else if (lastTicksCopy !== undefined) {
+      ticksCopy[lastTicksCopy.index] = lastTicksCopy.tick;
     }
   }
 
-  return [
-    state,
-    { latestFullCycleState, latestFullCycleCache, latestFullCycleTicks },
-  ];
+  return [state, { latestFullCycleState, latestFullCycleCache }];
 }
 
 class UniswapV3Math {
@@ -292,12 +301,10 @@ class UniswapV3Math {
           return 0n;
         }
 
-        _updatePriceComputationObjects(state, latestFullCycleState);
-        _updatePriceComputationObjects(cache, latestFullCycleCache);
-
         // We use it on next step to correct state.amountSpecifiedRemaining
         previousAmount = amountSpecified;
 
+        // First extract calculated values
         const [amount0, amount1] =
           zeroForOne === exactInput
             ? [
@@ -308,6 +315,10 @@ class UniswapV3Math {
                 finalState.amountCalculated,
                 amountSpecified - finalState.amountSpecifiedRemaining,
               ];
+
+        // Update for next amount
+        _updatePriceComputationObjects(state, latestFullCycleState);
+        _updatePriceComputationObjects(cache, latestFullCycleCache);
 
         if (isSell) {
           return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
