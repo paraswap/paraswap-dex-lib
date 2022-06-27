@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
 import { BigNumber } from '@ethersproject/bignumber';
 
-// import SynthetixConfig from './config'
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../../src/dex-helper';
 import SynthetixReadProxyAddressResolverABI from '../../abi/synthetix/ProxyAddressResolver.json';
@@ -41,14 +40,7 @@ function toHex(arg: string) {
 
 const dexKey = 'Synthetix';
 const network = Network.MAINNET;
-// const config = SynthetixConfig[dexKey][network]
 
-// const poolIndex = 0 // might not need this
-
-/**
- * @notice Instantiation of pool variables and interfaces for Synthetix are not
- *         required since we are using Synthetix's `ProxyAddressResolver`
- */
 const PROXY_ADDRESS_RESOLVER = '0x4E3b31eB0E5CB73641EE1E65E7dCEFe520bA3ef2';
 const EXCHANGER_ADDRESS = '0xD64D83829D92B5bdA881f6f61A4e4E27Fc185387';
 
