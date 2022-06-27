@@ -36,10 +36,10 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     httpProvider: process.env.HTTP_PROVIDER,
     adapterAddresses: {
-      Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
+      Adapter01: '0x3A0430bF7cd2633af111ce3204DB4b0990857a6F',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-      Adapter03: '0x9Cf0b60C2133f67443fdf8a1bB952E2e6783d5DF',
-      BuyAdapter: '0x8D562A7D63248Ebfdd19B26665161cf867e5c10A',
+      Adapter03: '0xe5993623FF3ecD1f550124059252dDff804b3879',
+      BuyAdapter: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -58,8 +58,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     httpProvider: process.env.HTTP_PROVIDER_3,
     adapterAddresses: {
-      RopstenAdapter01: '0x74fF86C61CF66334dCfc999814DE4695B4BaE57b',
-      RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
+      RopstenAdapter01: '0x59b7F6258e78C3E5234bb651656EDd0e08868cd5',
+      RopstenBuyAdapter: '0x63e908A4C793a33e40254362ED1A5997a234D85C',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -76,8 +76,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     httpProvider: process.env.HTTP_PROVIDER_56,
     adapterAddresses: {
-      BscAdapter01: '0xcEC935682c0b510fb91c0A12275Bb7e14EEBE87c',
-      BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
+      BscAdapter01: '0xC9229EeC07B176AcC448BE33177c2834c9575ec5',
+      BscBuyAdapter: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -96,8 +96,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     httpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
       PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-      PolygonAdapter02: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
-      PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
+      PolygonAdapter02: '0x475928fE50a9E9ADb706d6f5624fB97EE2AC087D',
+      PolygonBuyAdapter: '0xDc514c500dB446F5a7Ab80872bAf3adDEfd00174',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -115,8 +115,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
     httpProvider: process.env.HTTP_PROVIDER_43114,
     adapterAddresses: {
-      AvalancheAdapter01: '0xaaD116D3b51893bD00bFBAf337824A15796eD97a',
-      AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
+      AvalancheAdapter01: '0xb41Ec6e014e2AD12Ae8514216EAb2592b74F19e7',
+      AvalancheBuyAdapter: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -134,8 +134,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     httpProvider: process.env.HTTP_PROVIDER_250,
     adapterAddresses: {
-      FantomAdapter01: '0x7EE3C983cA38c370F296FE14a31bEaC5b1c9a9FE',
-      FantomBuyAdapter: '0x3032B8c9CF91C791A8EcC2c7831A11279f419386',
+      FantomAdapter01: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
+      FantomBuyAdapter: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
     },
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
@@ -182,5 +182,12 @@ export class ConfigHelper {
     return isETHAddress(token.address)
       ? { address: this.data.wrappedNativeTokenAddress, decimals: 18 }
       : token;
+  }
+
+  isWETH(tokenAddress: Address): boolean {
+    return (
+      tokenAddress.toLowerCase() ===
+      this.data.wrappedNativeTokenAddress.toLowerCase()
+    );
   }
 }

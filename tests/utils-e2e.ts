@@ -17,6 +17,7 @@ import { OptimalRate, TxObject, Address, Token } from '../src/types';
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
+import { DummyLimitOrderProvider } from '../src/dex-helper';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -163,6 +164,7 @@ export async function testE2E(
   network: Network = Network.MAINNET,
   provider: Provider,
   poolIdentifiers?: string[],
+  limitOrderProvider?: DummyLimitOrderProvider,
 ) {
   const amount = BigInt(_amount);
   const ts = new TenderlySimulation(network);
@@ -202,7 +204,7 @@ export async function testE2E(
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = useAPI
     ? new APIParaswapSDK(network, dexKey)
-    : new LocalParaswapSDK(network, dexKey);
+    : new LocalParaswapSDK(network, dexKey, limitOrderProvider);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 

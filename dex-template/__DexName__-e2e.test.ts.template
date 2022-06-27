@@ -129,6 +129,6 @@ describe('__DexName__ E2E', () => {
       }),
     );
 
-    // TODO: Add any aditional test cases required to test __DexName__
+    // TODO: Add any additional test cases required to test __DexName__
   });
 });

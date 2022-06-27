@@ -1,4 +1,4 @@
-import { DexParams } from './types';
+import { DexParams, PlatypusOracleType } from './types';
 import { DexConfigMap } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
@@ -9,18 +9,47 @@ export const PlatypusConfig: DexConfigMap<DexParams> = {
         {
           address: '0x66357dCaCe80431aee0A7507e2E361B7e2402370',
           name: 'Main USD Pool',
-        },
-        {
-          address: '0xe0D166DE15665bC4B7185B2e35E847E51316E126',
-          name: 'Alt Pool UST',
+          oracleType: PlatypusOracleType.ChainLink,
         },
         {
           address: '0xB8E567fc23c39C94a1f6359509D7b43D1Fbed824',
           name: 'Alt Pool Frax',
+          oracleType: PlatypusOracleType.ChainLink,
         },
         {
           address: '0x30C30d826be87Cd0A4b90855C2F38f7FcfE4eaA7',
           name: 'Alt Pool MIM',
+          oracleType: PlatypusOracleType.ChainLink,
+        },
+        {
+          address: '0x39dE4e02F76Dbd4352Ec2c926D8d64Db8aBdf5b2',
+          name: 'Alt Pool BTC',
+          oracleType: PlatypusOracleType.None,
+        },
+        {
+          address: '0x4658EA7e9960D6158a261104aAA160cC953bb6ba',
+          name: 'Alt Pool sAVAX',
+          oracleType: PlatypusOracleType.StakedAvax,
+        },
+        {
+          address: '0xC828D995C686AaBA78A4aC89dfc8eC0Ff4C5be83',
+          name: 'Alt Pool YUSD',
+          oracleType: PlatypusOracleType.None,
+        },
+        {
+          address: '0x233Ba46B01d2FbF1A31bDBc500702E286d6de218',
+          name: 'Factory Pool H2O',
+          oracleType: PlatypusOracleType.None,
+        },
+        {
+          address: '0x27912AE6Ba9a54219d8287C3540A8969FF35500B',
+          name: 'Factory Pool MONEY',
+          oracleType: PlatypusOracleType.None,
+        },
+        {
+          address: '0x91BB10D68C72d64a7cE10482b453153eEa03322C',
+          name: 'Factory Pool TSD',
+          oracleType: PlatypusOracleType.None,
         },
       ],
     },

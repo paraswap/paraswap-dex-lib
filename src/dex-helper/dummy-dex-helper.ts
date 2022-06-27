@@ -113,7 +113,11 @@ export class DummyDexHelper implements IDexHelper {
       this.config.data.multicallV2Address,
     );
     this.blockManager = new DummyBlockManager();
-    this.getLogger = name => log4js.getLogger(name);
+    this.getLogger = name => {
+      const logger = log4js.getLogger(name);
+      logger.level = 'debug';
+      return logger;
+    };
     // For testing use only full parts like 1, 2, 3 ETH, not 0.1 ETH etc
     this.getTokenUSDPrice = async (token, amount) =>
       Number(amount / BigInt(10 ** token.decimals));

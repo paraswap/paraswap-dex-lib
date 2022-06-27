@@ -22,8 +22,8 @@ describe('Platypus E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAIE';
 
-    const tokenAAmount: string = '99999000000';
-    const tokenBAmount: string = '99999000000000000000000';
+    const tokenAAmount: string = '9999000000';
+    const tokenBAmount: string = '9999000000000000000000';
 
     const sideToContractMethods = new Map([
       [
@@ -35,6 +35,15 @@ describe('Platypus E2E', () => {
         ],
       ],
     ]);
+
+    const poolTokenSymbols: string[] = [
+      'newFRAX',
+      'MIM',
+      'YUSD',
+      'H2O',
+      'MONEY',
+      'TSD',
+    ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
@@ -65,8 +74,94 @@ describe('Platypus E2E', () => {
               provider,
             );
           });
+          it(`AVAX -> sAVAX`, async () => {
+            await testE2E(
+              tokens['AVAX'],
+              tokens['sAVAX'],
+              holders['AVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`WAVAX -> sAVAX`, async () => {
+            await testE2E(
+              tokens['WAVAX'],
+              tokens['sAVAX'],
+              holders['WAVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`sAVAX -> AVAX`, async () => {
+            await testE2E(
+              tokens['sAVAX'],
+              tokens['AVAX'],
+              holders['sAVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`sAVAX -> WAVAX`, async () => {
+            await testE2E(
+              tokens['sAVAX'],
+              tokens['WAVAX'],
+              holders['sAVAX'],
+              '999000000000000000000',
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          if (
+            contractMethod === ContractMethod.simpleSwap &&
+            side === SwapSide.SELL
+          ) {
+            poolTokenSymbols.forEach(poolTokenSymbol => {
+              it(`${tokenASymbol} -> ${poolTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[poolTokenSymbol],
+                  holders[tokenASymbol],
+                  tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          }
         });
       }),
     );
+
+    it(`wBTC -> BTCb`, async () => {
+      await testE2E(
+        tokens['wBTC'],
+        tokens['BTCb'],
+        holders['wBTC'],
+        '300000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
   });
 });

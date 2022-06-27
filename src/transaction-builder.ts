@@ -14,6 +14,7 @@ export class TransactionBuilder {
     priceRoute,
     minMaxAmount,
     userAddress,
+    referrerAddress,
     partnerAddress,
     partnerFeePercent,
     positiveSlippageToUser,
@@ -29,6 +30,7 @@ export class TransactionBuilder {
     priceRoute: OptimalRate;
     minMaxAmount: string;
     userAddress: Address;
+    referrerAddress?: Address;
     partnerAddress: Address;
     partnerFeePercent: string;
     positiveSlippageToUser?: boolean;
@@ -48,6 +50,7 @@ export class TransactionBuilder {
         priceRoute,
         minMaxAmount,
         userAddress,
+        referrerAddress,
         partnerAddress,
         partnerFeePercent,
         positiveSlippageToUser ?? true,

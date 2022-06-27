@@ -16,7 +16,7 @@ export const MAX_BLOCKS_HISTORY = 7;
 
 export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 
-export const FETCH_POOL_INDENTIFIER_TIMEOUT = 1 * 1000; // 1s
+export const FETCH_POOL_IDENTIFIER_TIMEOUT = 1 * 1000; // 1s
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
 export enum Network {
@@ -29,4 +29,10 @@ export enum Network {
   FANTOM = 250,
   ZK_SYNC_MAINNET = 271,
   ZK_SYNC_ROPSTEN = 273,
+}
+
+export const SUBGRAPH_TIMEOUT = 20 * 1000;
+
+export enum LIMIT_ORDER_PROVIDERS {
+  PARASWAP = 'ParaSwapLimitOrderProvider',
 }

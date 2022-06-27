@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork, interpolate, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -40,8 +40,10 @@ export class Nerve
 
   readonly minConversionRate = '1';
 
-  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(NerveConfig);
+  public static dexKeysWithNetwork: {
+    key: string;
+    networks: Network[];
+  }[] = getDexKeysWithNetwork(NerveConfig);
 
   logger: Logger;
 
@@ -141,6 +143,8 @@ export class Nerve
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
     const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
 

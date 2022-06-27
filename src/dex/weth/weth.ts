@@ -16,6 +16,7 @@ import {
   WethFunctions,
   DexParams,
   IWethDepositorWithdrawer,
+  DepositWithdrawData,
   DepositWithdrawReturn,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -147,39 +148,44 @@ export class Weth
   }
 
   getDepositWithdrawParam(
-    srcToken: string,
-    destToken: string,
     srcAmount: string,
     destAmount: string,
     side: SwapSide,
-  ): DepositWithdrawReturn | undefined {
+  ): DepositWithdrawReturn {
     const wethToken = this.address;
 
-    if (srcAmount !== '0' && isETHAddress(srcToken)) {
+    let deposit: DepositWithdrawData | undefined;
+    let withdraw: DepositWithdrawData | undefined;
+
+    let needWithdraw = false;
+
+    if (srcAmount !== '0') {
       const opType = WethFunctions.deposit;
       const depositWethData = this.erc20Interface.encodeFunctionData(opType);
 
-      return {
-        opType,
+      deposit = {
         callee: wethToken,
         calldata: depositWethData,
         value: srcAmount,
       };
+
+      if (side === SwapSide.BUY) needWithdraw = true;
     }
 
-    if (destAmount !== '0' && isETHAddress(destToken)) {
+    if (needWithdraw || destAmount !== '0') {
       const opType = WethFunctions.withdrawAllWETH;
       const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
         opType,
         [wethToken],
       );
 
-      return {
-        opType,
+      withdraw = {
         callee: this.augustusAddress,
         calldata: withdrawWethData,
         value: '0',
       };
     }
+
+    return { deposit, withdraw };
   }
 }

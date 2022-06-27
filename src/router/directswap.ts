@@ -20,6 +20,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     priceRoute: OptimalRate,
     minMaxAmount: string,
     userAddress: Address,
+    referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
     positiveSlippageToUser: boolean,
