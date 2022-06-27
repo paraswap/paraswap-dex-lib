@@ -83,6 +83,6 @@ describe('Synthetix', () => {
         destinationCurrencyKey,
       );
 
-    expect(amountReceived).toBe(sourceAmount.mul(exchangeFeeRate));
+    expect(amountReceived).toBe(sourceAmount.mul(exchangeFeeRate).sub(fee));
   });
 });
