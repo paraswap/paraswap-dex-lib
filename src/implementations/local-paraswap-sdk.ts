@@ -4,6 +4,7 @@ import {
   DummyLimitOrderProvider,
   IDexHelper,
 } from '../dex-helper';
+import BigNumber from 'bignumber.js';
 import { TransactionBuilder } from '../transaction-builder';
 import { PricingHelper } from '../pricing-helper';
 import { DexAdapterService } from '../dex';
@@ -175,11 +176,11 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     // Set deadline to be 10 min from now
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
 
-    const slippageFactor =
-      BigInt(minMaxAmount.toString()) /
-      (priceRoute.side === SwapSide.SELL
-        ? BigInt(priceRoute.destAmount)
-        : BigInt(priceRoute.srcAmount));
+    const slippageFactor = new BigNumber(minMaxAmount.toString()).div(
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount,
+    );
 
     // Call preprocessTransaction for each exchange before we build transaction
     try {
@@ -208,7 +209,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         dexLibExchange.getTokenFromAddress(swap.destToken),
                         priceRoute.side,
                         {
-                          slippageFactor: slippageFactor.toString(),
+                          slippageFactor,
                           txOrigin: userAddress,
                         },
                       );
