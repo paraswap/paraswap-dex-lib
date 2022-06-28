@@ -29,6 +29,7 @@ import { LimitOrderExchange } from '../limit-order-exchange';
 import { BI_MAX_UINT } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import { ONE_ORDER_GASCOST } from './constant';
+import BigNumber from 'bignumber.js';
 
 export class ParaSwapLimitOrders
   extends LimitOrderExchange<
@@ -185,12 +186,18 @@ export class ParaSwapLimitOrders
     const srcWrapped = wrapETH(srcToken, this.network).address.toLowerCase();
     const destWrapped = wrapETH(destToken, this.network).address.toLowerCase();
 
+    const destAmountWithSlippage = BigInt(
+      new BigNumber(optimalSwapExchange.destAmount.toString())
+        .times(options.slippageFactor)
+        .toFixed(0),
+    );
+
     const { encodingValues, minDeadline } =
       await this._prepareOrdersForTransaction(
         srcWrapped,
         destWrapped,
         optimalSwapExchange.srcAmount,
-        optimalSwapExchange.destAmount,
+        destAmountWithSlippage.toString(),
         side,
         userAddress,
       );
