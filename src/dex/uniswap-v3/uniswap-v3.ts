@@ -530,6 +530,7 @@ export class UniswapV3
       encodedPath = (encodedPath << 160n) | BigInt(b);
     }
     const hexString = encodedPath.toString(16);
-    return (hexString.length % 2 ? '0x0' : '0x') + hexString;
+    const padding = 40 + path.length * 46 - hexString.length;
+    return '0x' + Array(padding).fill('0').join('') + hexString;
   }
 }
