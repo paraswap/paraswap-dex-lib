@@ -188,6 +188,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return Object.values(this.config.baseTokens);
   }
 
+  get isRefInfosEmpty(): boolean {
+    return Object.keys(this._refInfos).length === 0;
+  }
+
   protected _fillTokenInfoState(
     state: PoolState,
     address: string,
@@ -565,6 +569,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   async updatePoolState(): Promise<void> {
+    if (this.isRefInfosEmpty) {
+      this._refInfos = await this._getRefInfos();
+    }
+
     const state = await this.getState();
 
     const tokenBalancesUSD = await Promise.all(
