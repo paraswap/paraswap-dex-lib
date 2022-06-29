@@ -84,12 +84,15 @@ async function checkOnChainPricing(
 describe('WooFi', function () {
   let blockNumber: number;
   let wooFi: WooFi;
+  let wooFiNotInitialized: WooFi;
 
   beforeAll(async () => {
     blockNumber = await dexHelper.provider.getBlockNumber();
 
     wooFi = new WooFi(network, dexKey, dexHelper);
     await wooFi.initializePricing(blockNumber);
+
+    wooFiNotInitialized = new WooFi(network, dexKey, dexHelper);
 
     console.log(`Current state for block number ${blockNumber} is:`);
     console.log(
@@ -333,19 +336,29 @@ describe('WooFi', function () {
   });
 
   it('getTopPoolsForToken Base', async function () {
-    const poolLiquidity = await wooFi.getTopPoolsForToken(TokenA.address, 10);
+    await wooFiNotInitialized.updatePoolState();
+
+    const poolLiquidity = await wooFiNotInitialized.getTopPoolsForToken(
+      TokenA.address,
+      10,
+    );
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
-    if (!wooFi.hasConstantPriceLargeAmounts) {
+    if (!wooFiNotInitialized.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
     }
   });
 
   it('getTopPoolsForToken Quote', async function () {
-    const poolLiquidity = await wooFi.getTopPoolsForToken(TokenB.address, 10);
+    await wooFiNotInitialized.updatePoolState();
+
+    const poolLiquidity = await wooFiNotInitialized.getTopPoolsForToken(
+      TokenB.address,
+      10,
+    );
     console.log(`${TokenBSymbol} Top Pools:`, poolLiquidity);
 
-    if (!wooFi.hasConstantPriceLargeAmounts) {
+    if (!wooFiNotInitialized.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
     }
   });
