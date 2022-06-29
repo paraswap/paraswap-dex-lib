@@ -246,3 +246,14 @@ export type MultiCallInput = {
 export type MultiCallOutput = string;
 
 export type MultiCallV2Output = { success: boolean; returnData: string };
+
+export type BigIntAsString = string;
+
+export type ExchangeTxInfo = {
+  deadline?: bigint;
+};
+
+export type PreprocessTransactionOptions = {
+  slippageFactor: string;
+  txOrigin: Address;
+};

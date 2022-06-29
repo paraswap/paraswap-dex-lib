@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.0.53",
+  "version": "2.0.60-0",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -41,6 +41,7 @@
     "@ethersproject/bytes": "^5.6.1",
     "@ethersproject/contracts": "5.4.1",
     "@ethersproject/providers": "5.4.1",
+    "ethers": "^5.6.7",
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
     "log4js": "6.3.0",

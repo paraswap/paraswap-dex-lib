@@ -30,8 +30,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
-      // TODO: Deploy and add contract address
-      stateMulticall: '',
+      stateMulticall: '0x9c764D2e92dA68E4CDfD784B902283A095ff8b63',
     },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
