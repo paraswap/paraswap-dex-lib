@@ -189,10 +189,10 @@ describe('WooFi', function () {
     const _dexHelper = new DummyDexHelper(_network);
     const _amounts = [
       0n,
-      10n * BI_POWS[6],
-      100n * BI_POWS[6],
-      1000n * BI_POWS[6],
-      10000n * BI_POWS[6],
+      1n * BI_POWS[6],
+      2n* BI_POWS[6],
+      3n * BI_POWS[6],
+      4n * BI_POWS[6],
     ];
 
     const _blockNumber = await _dexHelper.provider.getBlockNumber();
