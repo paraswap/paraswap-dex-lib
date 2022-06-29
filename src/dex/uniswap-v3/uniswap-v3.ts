@@ -1,5 +1,6 @@
 import { Interface } from '@ethersproject/abi';
 import _ from 'lodash';
+import { pack } from '@ethersproject/solidity';
 import {
   Token,
   Address,
@@ -519,18 +520,36 @@ export class UniswapV3
     }[],
     side: SwapSide,
   ): string {
-    let encodedPath = 0n;
-    const _path = side === SwapSide.SELL ? path : path.reverse();
-    for (let i = 0; i < path.length; i++) {
-      const { tokenIn, tokenOut, fee } = path[i];
-      const [a, b] =
-        side === SwapSide.SELL ? [tokenIn, tokenOut] : [tokenOut, tokenIn];
-      if (i === 0) encodedPath = (encodedPath << 160n) | BigInt(a);
-      encodedPath = (encodedPath << 24n) | BigInt(fee);
-      encodedPath = (encodedPath << 160n) | BigInt(b);
+    if (path.length === 0) {
+      this.logger.error(
+        `${this.dexKey}: Received invalid path=${path} for side=${side} to encode`,
+      );
+      return '0x';
     }
-    const hexString = encodedPath.toString(16);
-    const padding = 40 + path.length * 46 - hexString.length;
-    return '0x' + Array(padding).fill('0').join('') + hexString;
+
+    const { _path, types } = path.reduce(
+      (
+        { _path, types }: { _path: string[]; types: string[] },
+        curr,
+        index,
+      ): { _path: string[]; types: string[] } => {
+        if (index === 0) {
+          return {
+            types: ['address', 'uint24', 'address'],
+            _path: [curr.tokenIn, curr.fee, curr.tokenOut],
+          };
+        } else {
+          return {
+            types: [...types, 'uint24', 'address'],
+            _path: [..._path, curr.fee, curr.tokenOut],
+          };
+        }
+      },
+      { _path: [], types: [] },
+    );
+
+    return side === SwapSide.BUY
+      ? pack(types.reverse(), _path.reverse())
+      : pack(types, _path);
   }
 }

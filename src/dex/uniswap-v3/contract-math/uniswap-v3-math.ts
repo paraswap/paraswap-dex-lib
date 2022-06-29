@@ -47,7 +47,7 @@ function _updatePriceComputationObjects<
   }
 }
 
-function _priceComputationCycle(
+function _priceComputationCycles(
   poolState: DeepReadonly<PoolState>,
   ticksCopy: Record<NumberAsString, TickInfo>,
   slot0Start: Slot0,
@@ -282,7 +282,7 @@ class UniswapV3Math {
 
       if (!isOutOfRange) {
         const [finalState, { latestFullCycleState, latestFullCycleCache }] =
-          _priceComputationCycle(
+          _priceComputationCycles(
             poolState,
             ticksCopy,
             slot0Start,
