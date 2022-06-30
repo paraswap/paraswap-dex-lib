@@ -97,6 +97,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'Investment',
   ];
 
+  eventRemovedPools = [
+    // Gradual weight changes are not currently handled in event system
+    // This pool keeps changing weights and is causing pricing issue
+    '0x34809aEDF93066b49F638562c42A9751eDb36DF5',
+  ].map(s => s.toLowerCase());
+
   constructor(
     protected parentName: string,
     protected network: number,
@@ -215,8 +221,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
-    const eventSupportedPools = allPools.filter(pool =>
-      this.eventSupportedPoolTypes.includes(pool.poolType),
+    const eventSupportedPools = allPools.filter(
+      pool =>
+        this.eventSupportedPoolTypes.includes(pool.poolType) &&
+        !this.eventRemovedPools.includes(pool.address.toLowerCase()),
     );
     const allPoolsLatestState = await this.getOnChainState(
       eventSupportedPools,
