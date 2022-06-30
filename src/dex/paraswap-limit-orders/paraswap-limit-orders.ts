@@ -457,25 +457,21 @@ export class ParaSwapLimitOrders
         ob => ob.swappableTakerBalance >= amountThreshold,
       );
 
-      const priceSummary: ParaSwapLimitOrderPriceSummary[] = new Array(
-        Number(MAX_ORDERS_USED_FOR_SWAP),
-      );
+      const priceSummary: ParaSwapLimitOrderPriceSummary[] = [];
 
-      let counter = 0;
       for (const order of latestFilteredOrderBook) {
-        if (counter < MAX_ORDERS_USED_FOR_SWAP) {
-          const isCounterZero = counter === 0;
-          priceSummary[counter] = {
-            cumulativeMakerAmount: isCounterZero
+        if (priceSummary.length < MAX_ORDERS_USED_FOR_SWAP) {
+          const isFirstOrderZero = priceSummary.length === 0;
+          priceSummary.push({
+            cumulativeMakerAmount: isFirstOrderZero
               ? order.swappableMakerBalance
-              : priceSummary[counter - 1].cumulativeMakerAmount +
+              : priceSummary[priceSummary.length - 1].cumulativeMakerAmount +
                 order.swappableMakerBalance,
-            cumulativeTakerAmount: isCounterZero
+            cumulativeTakerAmount: isFirstOrderZero
               ? order.swappableTakerBalance
-              : priceSummary[counter - 1].cumulativeTakerAmount +
+              : priceSummary[priceSummary.length - 1].cumulativeTakerAmount +
                 order.swappableTakerBalance,
-          };
-          counter++;
+          });
         } else {
           break;
         }
