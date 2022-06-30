@@ -188,18 +188,25 @@ export class ParaSwapLimitOrders
     const srcWrapped = wrapETH(srcToken, this.network).address.toLowerCase();
     const destWrapped = wrapETH(destToken, this.network).address.toLowerCase();
 
-    const destAmountWithSlippage = BigInt(
-      new BigNumber(optimalSwapExchange.destAmount.toString())
-        .times(options.slippageFactor)
-        .toFixed(0),
-    );
+    const isSell = side === SwapSide.SELL;
+    const amountWithSlippage = isSell
+      ? BigInt(
+          new BigNumber(optimalSwapExchange.destAmount.toString())
+            .times(options.slippageFactor)
+            .toFixed(0),
+        )
+      : BigInt(
+          options.slippageFactor
+            .times(optimalSwapExchange.srcAmount.toString())
+            .toFixed(0),
+        );
 
     const { encodingValues, minDeadline } =
       await this._prepareOrdersForTransaction(
         srcWrapped,
         destWrapped,
-        optimalSwapExchange.srcAmount,
-        destAmountWithSlippage.toString(),
+        isSell ? optimalSwapExchange.srcAmount : amountWithSlippage.toString(),
+        isSell ? amountWithSlippage.toString() : optimalSwapExchange.destAmount,
         side,
         userAddress,
       );
@@ -227,8 +234,6 @@ export class ParaSwapLimitOrders
     data: ParaSwapLimitOrdersData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-
     const { orderInfos } = data;
 
     if (orderInfos === null) {
@@ -238,8 +243,9 @@ export class ParaSwapLimitOrders
       );
     }
 
+    const isSell = side === SwapSide.SELL;
     const orderInfoParamType = this.rfqIface.getFunction(
-      'tryBatchFillOrderTakerAmount',
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
     ).inputs[0];
 
     const orderInfoTypes = orderInfoParamType.format(
@@ -266,8 +272,6 @@ export class ParaSwapLimitOrders
     data: ParaSwapLimitOrdersData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-
     const { orderInfos } = data;
 
     if (orderInfos === null) {
@@ -277,9 +281,10 @@ export class ParaSwapLimitOrders
       );
     }
 
+    const isSell = side === SwapSide.SELL;
     const swapData = this.rfqIface.encodeFunctionData(
-      'tryBatchFillOrderTakerAmount',
-      [orderInfos, srcAmount, this.augustusAddress],
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
+      [orderInfos, isSell ? srcAmount : destAmount, this.augustusAddress],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
