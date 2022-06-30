@@ -39,8 +39,8 @@ export class ParaSwapLimitOrders
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
-  readonly orderCosts = [...Array(MAX_ORDERS_USED_FOR_SWAP)].map((_0, index) =>
-    BigInt((index + 1) * ONE_ORDER_GASCOST),
+  readonly orderCosts = [...Array(Number(MAX_ORDERS_USED_FOR_SWAP))].map(
+    (_0, index) => BigInt((index + 1) * ONE_ORDER_GASCOST),
   );
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
