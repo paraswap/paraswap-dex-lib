@@ -45,21 +45,6 @@ describe('ParaSwapLimitOrders E2E', () => {
     const maker = '0xc3643bC869DC0dcd2Df8729fC3cb768d4F86F57a';
     const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';
 
-    const orderBookToUse: ParaSwapOrderBookResponse[] = [
-      {
-        cumulativeMakerAmount: '10000000000000000000',
-        cumulativeTakerAmount: '20000000000000000',
-      },
-      {
-        cumulativeMakerAmount: '60000000000000000000',
-        cumulativeTakerAmount: '130000000000000000',
-      },
-      {
-        cumulativeMakerAmount: '130000000000000000000',
-        cumulativeTakerAmount: '300000000000000000',
-      },
-    ];
-
     const ordersToUse: ParaSwapOrderResponse[] = [
       {
         order: {
@@ -116,6 +101,11 @@ describe('ParaSwapLimitOrders E2E', () => {
         permitMakerAsset: '0x',
       },
     ];
+
+    const orderBookToUse: ParaSwapOrderBookResponse[] = ordersToUse.map(o => ({
+      swappableMakerBalance: o.order.makerAmount,
+      swappableTakerBalance: o.order.takerAmount,
+    }));
 
     const dummyLimitOrderProvider = new DummyLimitOrderProvider();
     dummyLimitOrderProvider.setOrdersToExecute(network, ordersToUse);
