@@ -10,10 +10,7 @@ import {
   SwapSide,
 } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import {
-  ParaSwapLimitOrderResponse,
-  ParaSwapPriceSummaryResponse,
-} from './types';
+import { ParaSwapOrderResponse, ParaSwapOrderBookResponse } from './types';
 import { DummyLimitOrderProvider } from '../../dex-helper/index';
 
 describe('ParaSwapLimitOrders E2E', () => {
@@ -48,7 +45,7 @@ describe('ParaSwapLimitOrders E2E', () => {
     const maker = '0xc3643bC869DC0dcd2Df8729fC3cb768d4F86F57a';
     const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';
 
-    const priceSummaryToUse: ParaSwapPriceSummaryResponse[] = [
+    const orderBookToUse: ParaSwapOrderBookResponse[] = [
       {
         cumulativeMakerAmount: '10000000000000000000',
         cumulativeTakerAmount: '20000000000000000',
@@ -63,7 +60,7 @@ describe('ParaSwapLimitOrders E2E', () => {
       },
     ];
 
-    const ordersToUse: ParaSwapLimitOrderResponse[] = [
+    const ordersToUse: ParaSwapOrderResponse[] = [
       {
         order: {
           nonceAndMeta:
@@ -122,11 +119,11 @@ describe('ParaSwapLimitOrders E2E', () => {
 
     const dummyLimitOrderProvider = new DummyLimitOrderProvider();
     dummyLimitOrderProvider.setOrdersToExecute(network, ordersToUse);
-    dummyLimitOrderProvider.setPriceSummary(
+    dummyLimitOrderProvider.setOrderBook(
       network,
       tokens[tokenBSymbol].address,
       tokens[tokenASymbol].address,
-      priceSummaryToUse,
+      orderBookToUse,
     );
 
     sideToContractMethods.forEach((contractMethods, side) =>
