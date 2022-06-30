@@ -31,26 +31,26 @@ const amounts = [
 
 const dexKey = 'ParaSwapLimitOrders';
 
-const tokenABKey = DummyLimitOrderProvider.getPriceSummaryCacheKey(
+const tokenABKey = DummyLimitOrderProvider.getOrderBookCacheKey(
   network,
   TokenA.address,
   TokenB.address,
 );
 
-const dummyPriceSummary = {
+const dummyOrderBook = {
   [tokenABKey]: [
     // Orders: Maker = USDC, Taker = WETH
     {
-      cumulativeMakerAmount: (1000n * BI_POWS[TokenB.decimals]).toString(),
-      cumulativeTakerAmount: (2n * BI_POWS[TokenA.decimals]).toString(),
+      swappableMakerBalance: (1000n * BI_POWS[TokenB.decimals]).toString(),
+      swappableTakerBalance: (2n * BI_POWS[TokenA.decimals]).toString(),
     },
     {
-      cumulativeMakerAmount: (11000n * BI_POWS[TokenB.decimals]).toString(),
-      cumulativeTakerAmount: (25n * BI_POWS[TokenA.decimals]).toString(),
+      swappableMakerBalance: (100n * BI_POWS[TokenB.decimals]).toString(),
+      swappableTakerBalance: (23n * BI_POWS[TokenA.decimals]).toString(),
     },
     {
-      cumulativeMakerAmount: (111000n * BI_POWS[TokenB.decimals]).toString(),
-      cumulativeTakerAmount: (259n * BI_POWS[TokenA.decimals]).toString(),
+      swappableMakerBalance: (109900n * BI_POWS[TokenB.decimals]).toString(),
+      swappableTakerBalance: (234n * BI_POWS[TokenA.decimals]).toString(),
     },
   ],
 };
@@ -66,11 +66,11 @@ describe('ParaSwapLimitOrders', function () {
     blockNumber = await dexHelper.provider.getBlockNumber();
     paraSwapLimitOrders = new ParaSwapLimitOrders(network, dexKey, dexHelper);
     dummyLimitOrderProvider = new DummyLimitOrderProvider();
-    dummyLimitOrderProvider.setPriceSummary(
+    dummyLimitOrderProvider.setOrderBook(
       network,
       TokenA.address,
       TokenB.address,
-      dummyPriceSummary[tokenABKey],
+      dummyOrderBook[tokenABKey],
     );
 
     paraSwapLimitOrders.limitOrderProvider = dummyLimitOrderProvider;
@@ -125,7 +125,7 @@ describe('ParaSwapLimitOrders', function () {
     if (paraSwapLimitOrders.hasConstantPriceLargeAmounts) {
       checkConstantPoolPrices(poolPrices!, amounts, dexKey);
     } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey, false);
     }
   });
 
