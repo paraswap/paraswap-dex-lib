@@ -318,11 +318,13 @@ export class ParaSwapLimitOrders
 
     return orderBookUnparsed
       .map(orderBook => ({
-        makerBalance: BigInt(orderBook.makerBalance),
-        takerBalance: BigInt(orderBook.takerBalance),
+        swappableMakerBalance: BigInt(orderBook.swappableMakerBalance),
+        swappableTakerBalance: BigInt(orderBook.swappableTakerBalance),
       }))
       .filter(
-        orderBook => orderBook.makerBalance > 0n && orderBook.takerBalance > 0n,
+        orderBook =>
+          orderBook.swappableMakerBalance > 0n &&
+          orderBook.swappableTakerBalance > 0n,
       );
   }
 
@@ -452,7 +454,7 @@ export class ParaSwapLimitOrders
       const amountThreshold = calcAmountThreshold(amount);
 
       latestFilteredOrderBook = latestFilteredOrderBook.filter(
-        ob => ob.takerBalance >= amountThreshold,
+        ob => ob.swappableTakerBalance >= amountThreshold,
       );
 
       const priceSummary: ParaSwapLimitOrderPriceSummary[] = new Array(
@@ -465,13 +467,13 @@ export class ParaSwapLimitOrders
           const isCounterZero = counter === 0;
           priceSummary[counter] = {
             cumulativeMakerAmount: isCounterZero
-              ? order.makerBalance
+              ? order.swappableMakerBalance
               : priceSummary[counter - 1].cumulativeMakerAmount +
-                order.makerBalance,
+                order.swappableMakerBalance,
             cumulativeTakerAmount: isCounterZero
-              ? order.takerBalance
+              ? order.swappableTakerBalance
               : priceSummary[counter - 1].cumulativeTakerAmount +
-                order.takerBalance,
+                order.swappableTakerBalance,
           };
           counter++;
         } else {
