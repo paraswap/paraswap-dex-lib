@@ -426,6 +426,12 @@ export class ParaSwapLimitOrders
     for (let j = 0; j < amounts.length; j++) {
       const priceSummary = priceSummaries[j];
 
+      if (priceSummary.length === 0) {
+        prices[j] = 0n;
+        costs[j] = 0n;
+        continue;
+      }
+
       let i = 0;
       while (
         i < priceSummary.length &&
