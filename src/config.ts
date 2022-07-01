@@ -140,6 +140,25 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
   },
+  [Network.ARBITRUM]: {
+    network: Network.ARBITRUM,
+    networkName: 'Arbitrum One',
+    isTestnet: false,
+    nativeTokenName: 'Ether',
+    nativeTokenSymbol: 'ETH',
+    wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+    hasEIP1559: false,
+    augustusAddress: '0x1120dd8772c1cbD4e3F0bC141AB1BC7eeaFbdAf0', //TODO: replace
+    tokenTransferProxyAddress: '0x3CfCE32338b1aB2530313033f58553BaD3B879e5', //TODO: replace
+    multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
+    privateHttpProvider: process.env.HTTP_PROVIDER_42161,
+    adapterAddresses: {
+      ArbitrumAdapter01: '0x5b99094C3c2129F17b78cE5eBD1Cd8ADB887b340',
+      ArbitrumBuyAdapter: '0x56a14A1954b5d5FD7C636a24137a93742bA708b9',
+    },
+    uniswapV2ExchangeRouterAddress:
+      '0x0310983446288E08f1Dd973148F194A685Ea551F',
+  },
 };
 
 // Should not be used, except by internal test code
