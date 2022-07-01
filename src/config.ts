@@ -96,7 +96,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
       PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-      PolygonAdapter02: '0x475928fE50a9E9ADb706d6f5624fB97EE2AC087D',
+      PolygonAdapter02: '0xAD1732884CF5aAB27B293707757a9b9011611bE6',
       PolygonBuyAdapter: '0xDc514c500dB446F5a7Ab80872bAf3adDEfd00174',
     },
     uniswapV2ExchangeRouterAddress:

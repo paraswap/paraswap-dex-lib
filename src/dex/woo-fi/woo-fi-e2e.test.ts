@@ -160,4 +160,24 @@ describe('WooFi E2E', () => {
       nativeTokenAmount,
     );
   });
+
+  describe('WooFi Polygon', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'WMATIC';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '3000000000000000000';
+    const tokenBAmount: string = '1000000';
+    const nativeTokenAmount = '3000000000000000000';
+
+    testForNetwork(
+      network,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
 });
