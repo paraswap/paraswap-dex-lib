@@ -81,8 +81,6 @@ export class ParaSwapLimitOrders
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
-
     const _srcToken = wrapETH(srcToken, this.network);
     const _destToken = wrapETH(destToken, this.network);
 
@@ -108,8 +106,6 @@ export class ParaSwapLimitOrders
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<ParaSwapLimitOrdersData>> {
-    if (side === SwapSide.BUY) return null;
-
     try {
       const _srcToken = wrapETH(srcToken, this.network);
       const _destToken = wrapETH(destToken, this.network);
@@ -127,7 +123,10 @@ export class ParaSwapLimitOrders
       )
         return null;
 
-      const unitVolume = getBigIntPow(_srcToken.decimals);
+      const isSell = side === SwapSide.SELL;
+      const unitVolume = getBigIntPow(
+        isSell ? _srcToken.decimals : _destToken.decimals,
+      );
 
       const _amounts = [unitVolume, ...amounts.slice(1)];
 
@@ -139,16 +138,17 @@ export class ParaSwapLimitOrders
       const unitPriceSummary = this._getPriceSummaries(
         [unitVolume],
         orderBook,
-        side,
+        isSell,
       );
 
       const priceSummaries = unitPriceSummary.concat(
-        this._getPriceSummaries(amounts.slice(1), orderBook, side),
+        this._getPriceSummaries(amounts.slice(1), orderBook, isSell),
       );
 
       const { prices: _prices, costs: gasCosts } = this._getPrices(
         _amounts,
         priceSummaries,
+        isSell,
       );
 
       const unit = _prices[0];
@@ -235,7 +235,6 @@ export class ParaSwapLimitOrders
     side: SwapSide,
   ): AdapterExchangeParam {
     const { orderInfos } = data;
-
     if (orderInfos === null) {
       throw new Error(
         `Error_${this.dexKey}_getAdapterParam payload is not received. It may be because of` +
@@ -412,9 +411,17 @@ export class ParaSwapLimitOrders
   private _getPrices(
     amounts: bigint[],
     priceSummaries: ParaSwapLimitOrderPriceSummary[][],
+    isSell: boolean,
   ): { prices: bigint[]; costs: bigint[] } {
     const prices = new Array<bigint>(amounts.length);
     const costs = new Array<bigint>(amounts.length);
+
+    const srcKeyAmount = isSell
+      ? 'cumulativeTakerAmount'
+      : 'cumulativeMakerAmount';
+    const destKeyAmount = isSell
+      ? 'cumulativeMakerAmount'
+      : 'cumulativeTakerAmount';
 
     for (let j = 0; j < amounts.length; j++) {
       const priceSummary = priceSummaries[j];
@@ -422,23 +429,22 @@ export class ParaSwapLimitOrders
       let i = 0;
       while (
         i < priceSummary.length &&
-        amounts[j] > priceSummary[i].cumulativeTakerAmount
+        amounts[j] > priceSummary[i][srcKeyAmount]
       )
         i++;
 
       if (i === 0) {
         prices[j] =
-          (priceSummary[i].cumulativeMakerAmount * amounts[j]) /
-          priceSummary[i].cumulativeTakerAmount;
+          (amounts[j] * priceSummary[i][srcKeyAmount]) /
+          priceSummary[i][destKeyAmount];
         costs[j] = this.orderCosts[i];
       } else if (i < priceSummary.length) {
         prices[j] =
-          priceSummary[i - 1].cumulativeMakerAmount +
-          ((priceSummary[i].cumulativeMakerAmount -
-            priceSummary[i - 1].cumulativeMakerAmount) *
-            (amounts[j] - priceSummary[i - 1].cumulativeTakerAmount)) /
-            (priceSummary[i].cumulativeTakerAmount -
-              priceSummary[i - 1].cumulativeTakerAmount);
+          priceSummary[i - 1][destKeyAmount] +
+          ((priceSummary[i][destKeyAmount] -
+            priceSummary[i - 1][destKeyAmount]) *
+            (amounts[j] - priceSummary[i - 1][srcKeyAmount])) /
+            (priceSummary[i][srcKeyAmount] - priceSummary[i - 1][srcKeyAmount]);
         costs[j] = this.orderCosts[i];
       } else {
         prices[j] = 0n;
@@ -451,7 +457,7 @@ export class ParaSwapLimitOrders
   private _getPriceSummaries(
     amounts: bigint[],
     orderBook: ParaSwapOrderBook[],
-    side: SwapSide,
+    isSell: boolean,
   ): ParaSwapLimitOrderPriceSummary[][] {
     let latestFilteredOrderBook = orderBook;
 
@@ -459,7 +465,9 @@ export class ParaSwapLimitOrders
       const amountThreshold = calcAmountThreshold(amount);
 
       latestFilteredOrderBook = latestFilteredOrderBook.filter(
-        ob => ob.swappableTakerBalance >= amountThreshold,
+        ob =>
+          (isSell ? ob.swappableTakerBalance : ob.swappableMakerBalance) >=
+          amountThreshold,
       );
 
       const priceSummary: ParaSwapLimitOrderPriceSummary[] = [];
