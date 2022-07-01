@@ -110,7 +110,7 @@ describe('ParaSwapLimitOrders', function () {
   let blockNumber: number;
   let paraSwapLimitOrders: ParaSwapLimitOrders;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     dexHelper = new DummyDexHelper(network);
     blockNumber = await dexHelper.provider.getBlockNumber();
     paraSwapLimitOrders = new ParaSwapLimitOrders(network, dexKey, dexHelper);
@@ -247,6 +247,53 @@ describe('ParaSwapLimitOrders', function () {
         expectedPricesOnBuy[i].toString(),
       );
     }
+  });
+
+  it('getPoolIdentifiers and getPricesVolume if not enough orders to fill unit', async function () {
+    const pools = await paraSwapLimitOrders.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const orderBookWithoutUnit = [
+      {
+        swappableMakerBalance: (5n * BI_POWS[TokenB.decimals - 1]).toString(),
+        swappableTakerBalance: (1n * BI_POWS[TokenA.decimals - 1]).toString(),
+      },
+      {
+        swappableMakerBalance: (7n * BI_POWS[TokenB.decimals - 1]).toString(),
+        swappableTakerBalance: (2n * BI_POWS[TokenA.decimals - 1]).toString(),
+      },
+    ];
+
+    dummyLimitOrderProvider.setOrderBook(
+      network,
+      TokenA.address,
+      TokenB.address,
+      orderBookWithoutUnit,
+    );
+    paraSwapLimitOrders.limitOrderProvider = dummyLimitOrderProvider;
+    const _amountsToCheck = [0n, 3n * BI_POWS[TokenA.decimals - 1]]
+
+    const poolPrices = await paraSwapLimitOrders.getPricesVolume(
+      TokenA,
+      TokenB,
+      _amountsToCheck,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    checkPoolPrices(poolPrices!, _amountsToCheck, SwapSide.SELL, dexKey);
+
+    expect(poolPrices![0].unit.toString()).toEqual('4000000');
   });
 
   it('getTopPoolsForToken', async function () {
