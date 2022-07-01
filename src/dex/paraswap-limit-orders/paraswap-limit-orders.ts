@@ -435,8 +435,8 @@ export class ParaSwapLimitOrders
 
       if (i === 0) {
         prices[j] =
-          (amounts[j] * priceSummary[i][srcKeyAmount]) /
-          priceSummary[i][destKeyAmount];
+          (amounts[j] * priceSummary[i][destKeyAmount]) /
+          priceSummary[i][srcKeyAmount];
         costs[j] = this.orderCosts[i];
       } else if (i < priceSummary.length) {
         prices[j] =
