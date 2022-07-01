@@ -501,6 +501,21 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       decimals: 18,
     },
   },
+  [Network.ARBITRUM]: {
+    DAI: {
+      address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+      decimals: 18,
+    },
+    WETH: {
+      address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+      decimals: 18,
+    },
+    ETH: { address: ETHER_ADDRESS, decimals: 18 },
+    USDC: {
+      address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+      decimals: 6,
+    },
+  },
 };
 
 export const Holders: {
@@ -625,6 +640,12 @@ export const Holders: {
     oldFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     newFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
   },
+  [Network.ARBITRUM]: {
+    ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
+    DAI: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
+    WETH: '0xc2707568D31F3fB1Fc55B2F8b2ae5682eAa72041',
+    USDC: '0x1714400FF23dB4aF24F9fd64e7039e6597f18C2b',
+  },
 };
 
 export const NativeTokenSymbols: { [network: number]: string } = {
@@ -633,4 +654,5 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.BSC]: 'BNB',
   [Network.AVALANCHE]: 'AVAX',
   [Network.FANTOM]: 'FTM',
+  [Network.ARBITRUM]: 'ETH',
 };
