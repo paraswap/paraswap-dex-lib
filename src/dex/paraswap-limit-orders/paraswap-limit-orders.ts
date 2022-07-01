@@ -151,6 +151,12 @@ export class ParaSwapLimitOrders
         isSell,
       );
 
+      if (_prices[0] === 0n) {
+        // If we didn't fulfill unit amount, scale up latest amount till unit
+        _prices[0] =
+          (unitVolume * _prices.slice(-1)[0]) / _amounts.slice(-1)[0];
+      }
+
       const unit = _prices[0];
       gasCosts[0] = 0n;
 
