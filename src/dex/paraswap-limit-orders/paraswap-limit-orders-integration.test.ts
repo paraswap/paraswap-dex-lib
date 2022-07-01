@@ -278,7 +278,7 @@ describe('ParaSwapLimitOrders', function () {
       orderBookWithoutUnit,
     );
     paraSwapLimitOrders.limitOrderProvider = dummyLimitOrderProvider;
-    const _amountsToCheck = [0n, 3n * BI_POWS[TokenA.decimals - 1]]
+    const _amountsToCheck = [0n, 3n * BI_POWS[TokenA.decimals - 1]];
 
     const poolPrices = await paraSwapLimitOrders.getPricesVolume(
       TokenA,
