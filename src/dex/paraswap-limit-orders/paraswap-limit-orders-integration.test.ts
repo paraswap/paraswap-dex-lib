@@ -24,10 +24,21 @@ const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
   0n,
-  11n * BI_POWS[TokenA.decimals],
-  22n * BI_POWS[TokenA.decimals],
-  33n * BI_POWS[TokenA.decimals],
+  10n * BI_POWS[TokenA.decimals],
+  20n * BI_POWS[TokenA.decimals],
+  30n * BI_POWS[TokenA.decimals],
 ];
+
+const amountsBuy = [
+  0n,
+  100n * BI_POWS[TokenB.decimals],
+  1100n * BI_POWS[TokenB.decimals],
+  11000n * BI_POWS[TokenB.decimals],
+];
+
+const expectedPricesOnSell = [0n, 39130434n];
+
+const expectedPricesOnBuy = [];
 
 const dexKey = 'ParaSwapLimitOrders';
 
@@ -45,11 +56,11 @@ const dummyOrderBook = {
       swappableTakerBalance: (2n * BI_POWS[TokenA.decimals]).toString(),
     },
     {
-      swappableMakerBalance: (100n * BI_POWS[TokenB.decimals]).toString(),
+      swappableMakerBalance: (10000n * BI_POWS[TokenB.decimals]).toString(),
       swappableTakerBalance: (23n * BI_POWS[TokenA.decimals]).toString(),
     },
     {
-      swappableMakerBalance: (109900n * BI_POWS[TokenB.decimals]).toString(),
+      swappableMakerBalance: (100000n * BI_POWS[TokenB.decimals]).toString(),
       swappableTakerBalance: (234n * BI_POWS[TokenA.decimals]).toString(),
     },
   ],
@@ -125,35 +136,67 @@ describe('ParaSwapLimitOrders', function () {
     if (paraSwapLimitOrders.hasConstantPriceLargeAmounts) {
       checkConstantPoolPrices(poolPrices!, amounts, dexKey);
     } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey, false);
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     }
+
+    // Check pricing values
+    // for (let i = 0; i < expectedPricesOnSell.length; i++) {
+    //   expect(poolPrices![0].prices[i].toString()).toEqual(
+    //     expectedPricesOnSell[i].toString(),
+    //   );
+    // }
+  });
+  it('getPoolIdentifiers and getPricesVolume BUY Unswappable amount', async function () {
+    const pools = await paraSwapLimitOrders.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await paraSwapLimitOrders.getPricesVolume(
+      TokenA,
+      TokenB,
+      [2000n * BI_POWS[TokenB.decimals]],
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices![0].prices[0].toString()).toEqual('0');
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    // TODO: Add buy when we support it
-    // const pools = await paraSwapLimitOrders.getPoolIdentifiers(
-    //   TokenA,
-    //   TokenB,
-    //   SwapSide.BUY,
-    //   blocknumber,
-    // );
-    // console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
-    // expect(pools.length).toBeGreaterThan(0);
-    // const poolPrices = await paraswapLimitOrders.getPricesVolume(
-    //   TokenA,
-    //   TokenB,
-    //   amounts,
-    //   SwapSide.BUY,
-    //   blocknumber,
-    //   pools,
-    // );
-    // console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
-    // expect(poolPrices).not.toBeNull();
-    // if (paraswapLimitOrders.hasConstantPriceLargeAmounts) {
-    //   checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-    // } else {
-    //   checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
-    // }
+    const pools = await paraSwapLimitOrders.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await paraSwapLimitOrders.getPricesVolume(
+      TokenA,
+      TokenB,
+      amountsBuy,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    if (paraSwapLimitOrders.hasConstantPriceLargeAmounts) {
+      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    } else {
+      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey, false);
+    }
   });
 
   it('getTopPoolsForToken', async function () {
