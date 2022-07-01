@@ -37,10 +37,7 @@ describe('ParaSwapLimitOrders E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
-      // [SwapSide.BUY, [
-      //   ContractMethod.simpleBuy,
-      //   ContractMethod.buy
-      // ]],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     ]);
     const maker = '0xc3643bC869DC0dcd2Df8729fC3cb768d4F86F57a';
     const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';
