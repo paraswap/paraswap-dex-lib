@@ -23,9 +23,14 @@ export type ParaSwapLimitOrderPriceSummary = {
   cumulativeTakerAmount: bigint;
 };
 
-export type ParaSwapPriceSummaryResponse = {
-  cumulativeMakerAmount: BigIntAsString;
-  cumulativeTakerAmount: BigIntAsString;
+export type ParaSwapOrderBookResponse = {
+  swappableMakerBalance: BigIntAsString;
+  swappableTakerBalance: BigIntAsString;
+};
+
+export type ParaSwapOrderBook = {
+  swappableMakerBalance: bigint;
+  swappableTakerBalance: bigint;
 };
 
 export type ParaSwapLimitOrdersData = {
@@ -52,4 +57,4 @@ export type OrderInfo = {
   permitMakerAsset: string;
 };
 
-export type ParaSwapLimitOrderResponse = OrderInfo;
+export type ParaSwapOrderResponse = OrderInfo;
