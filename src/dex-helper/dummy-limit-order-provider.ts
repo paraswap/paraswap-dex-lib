@@ -1,26 +1,23 @@
 import { ILimitOrderProvider } from './ilimit-order-provider';
 import {
-  ParaSwapLimitOrderResponse,
-  ParaSwapPriceSummaryResponse,
+  ParaSwapOrderResponse,
+  ParaSwapOrderBookResponse,
 } from '../dex/paraswap-limit-orders/types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../constants';
 import { Address, BigIntAsString } from '../types';
 
 export class DummyLimitOrderProvider
   implements
-    ILimitOrderProvider<
-      ParaSwapLimitOrderResponse,
-      ParaSwapPriceSummaryResponse
-    >
+    ILimitOrderProvider<ParaSwapOrderResponse, ParaSwapOrderBookResponse>
 {
   readonly name: LIMIT_ORDER_PROVIDERS = LIMIT_ORDER_PROVIDERS.PARASWAP;
 
-  private readonly _priceSummary: {
-    [key in string]: ParaSwapPriceSummaryResponse[];
+  private readonly _orderBook: {
+    [key in string]: ParaSwapOrderBookResponse[];
   } = {};
 
   private readonly _ordersToExecute: {
-    [key in number]: ParaSwapLimitOrderResponse[];
+    [key in number]: ParaSwapOrderResponse[];
   } = {};
 
   async fetchAndReserveOrders(
@@ -33,49 +30,45 @@ export class DummyLimitOrderProvider
     userAddress: Address,
     backupOrdersMaxPercent?: number,
     backupOrdersMinCount?: number,
-  ): Promise<ParaSwapLimitOrderResponse[] | null> {
+  ): Promise<ParaSwapOrderResponse[] | null> {
     return this._ordersToExecute[network]
       ? this._ordersToExecute[network]
       : null;
   }
 
-  async fetchPriceSummary(
+  async fetchOrderBook(
     network: Network,
     src: Address,
     dest: Address,
-  ): Promise<ParaSwapPriceSummaryResponse[] | null> {
-    const key = DummyLimitOrderProvider.getPriceSummaryCacheKey(
+  ): Promise<ParaSwapOrderBookResponse[] | null> {
+    const key = DummyLimitOrderProvider.getOrderBookCacheKey(
       network,
       src,
       dest,
     );
-    const priceSummary = this._priceSummary[key];
-    return priceSummary === undefined ? null : priceSummary;
+    const orderBook = this._orderBook[key];
+    return orderBook === undefined ? null : orderBook;
   }
 
-  setPriceSummary(
+  setOrderBook(
     network: Network,
     src: Address,
     dest: Address,
-    priceSummary: ParaSwapPriceSummaryResponse[],
+    orderBook: ParaSwapOrderBookResponse[],
   ) {
-    const key = DummyLimitOrderProvider.getPriceSummaryCacheKey(
+    const key = DummyLimitOrderProvider.getOrderBookCacheKey(
       network,
       src,
       dest,
     );
-    this._priceSummary[key] = priceSummary;
+    this._orderBook[key] = orderBook;
   }
 
-  setOrdersToExecute(network: number, orders: ParaSwapLimitOrderResponse[]) {
+  setOrdersToExecute(network: number, orders: ParaSwapOrderResponse[]) {
     this._ordersToExecute[network] = orders;
   }
 
-  static getPriceSummaryCacheKey(
-    network: Network,
-    src: Address,
-    dest: Address,
-  ) {
+  static getOrderBookCacheKey(network: Network, src: Address, dest: Address) {
     return `${network}_${dest.toLowerCase()}_${src.toLowerCase()}`;
   }
 }

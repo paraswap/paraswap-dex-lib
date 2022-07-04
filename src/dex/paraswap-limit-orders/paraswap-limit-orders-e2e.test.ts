@@ -5,10 +5,7 @@ import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import {
-  ParaSwapLimitOrderResponse,
-  ParaSwapPriceSummaryResponse,
-} from './types';
+import { ParaSwapOrderResponse, ParaSwapOrderBookResponse } from './types';
 import { DummyLimitOrderProvider } from '../../dex-helper/index';
 import { generateConfig } from '../../config';
 
@@ -39,30 +36,12 @@ describe('ParaSwapLimitOrders E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
-      // [SwapSide.BUY, [
-      //   ContractMethod.simpleBuy,
-      //   ContractMethod.buy
-      // ]],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     ]);
     const maker = '0xc3643bC869DC0dcd2Df8729fC3cb768d4F86F57a';
     const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';
 
-    const priceSummaryToUse: ParaSwapPriceSummaryResponse[] = [
-      {
-        cumulativeMakerAmount: '10000000000000000000',
-        cumulativeTakerAmount: '20000000000000000',
-      },
-      {
-        cumulativeMakerAmount: '60000000000000000000',
-        cumulativeTakerAmount: '130000000000000000',
-      },
-      {
-        cumulativeMakerAmount: '130000000000000000000',
-        cumulativeTakerAmount: '300000000000000000',
-      },
-    ];
-
-    const ordersToUse: ParaSwapLimitOrderResponse[] = [
+    const ordersToUse: ParaSwapOrderResponse[] = [
       {
         order: {
           nonceAndMeta:
@@ -119,13 +98,18 @@ describe('ParaSwapLimitOrders E2E', () => {
       },
     ];
 
+    const orderBookToUse: ParaSwapOrderBookResponse[] = ordersToUse.map(o => ({
+      swappableMakerBalance: o.order.makerAmount,
+      swappableTakerBalance: o.order.takerAmount,
+    }));
+
     const dummyLimitOrderProvider = new DummyLimitOrderProvider();
     dummyLimitOrderProvider.setOrdersToExecute(network, ordersToUse);
-    dummyLimitOrderProvider.setPriceSummary(
+    dummyLimitOrderProvider.setOrderBook(
       network,
       tokens[tokenBSymbol].address,
       tokens[tokenASymbol].address,
-      priceSummaryToUse,
+      orderBookToUse,
     );
 
     sideToContractMethods.forEach((contractMethods, side) =>
