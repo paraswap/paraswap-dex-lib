@@ -5,7 +5,7 @@ request worst case scenario.
 
 */
 import * as dotenv from 'dotenv';
-import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
+import { DeepReadonly } from 'ts-essentials';
 dotenv.config();
 import { Network, SwapSide } from '../../../constants';
 import { DummyDexHelper } from '../../../dex-helper';
@@ -31,9 +31,6 @@ const destToken = {
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
   decimals: 18,
 };
-
-const eventPoolKey =
-  'UniswapV3_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48_0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2_500';
 
 // 2_000_000 -> 100_000_000 (50 chunks)
 const amounts = [
@@ -109,9 +106,11 @@ const executeGetPricesVolume = async (blockNumber: number) => {
   await uniV3.getPricesVolume(srcToken, destToken, amounts, side, blockNumber);
 };
 
-const executeOnlySyncOperations = (states: DeepReadonly<PoolState>[]) => {
-  states.map(state =>
-    uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side),
+const executeOnlySyncOperations = async (states: DeepReadonly<PoolState>[]) => {
+  await Promise.all(
+    states.map(async state => {
+      await uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
+    }),
   );
 };
 
