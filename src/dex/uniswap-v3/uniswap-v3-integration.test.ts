@@ -131,7 +131,7 @@ describe('UniswapV3', function () {
   let uniswapV3: UniswapV3;
   let uniswapV3Mainnet: UniswapV3;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
     uniswapV3Mainnet = new UniswapV3(
