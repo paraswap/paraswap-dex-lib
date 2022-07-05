@@ -8,12 +8,13 @@ import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3/uniswap-v3';
+import { uniswapV3Merge } from './uniswap-v3/optimizer';
 import { Balancer } from './balancer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
 import { UniswapV2Alias } from './uniswap-v2/constants';
-import { uniswapMerge } from './uniswap-v2/optimizer';
+import { uniswapV2Merge } from './uniswap-v2/optimizer';
 import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
 import { Dfyn } from './uniswap-v2/dfyn';
@@ -92,15 +93,15 @@ const AdapterNameAddressMap: {
   [network: number]: { [name: string]: Address };
 } = {
   [Network.MAINNET]: {
-    Adapter01: '0x3A0430bF7cd2633af111ce3204DB4b0990857a6F',
+    Adapter01: '0xBdd13a9dd364E5557e0710fC1d2Ac145B5e8f3bE',
     Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
     Adapter03: '0xe5993623FF3ecD1f550124059252dDff804b3879',
-    BuyAdapter: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
+    BuyAdapter: '0x737E642eec6e5bD675022ADC6D726EB19FF74383',
   },
   [Network.POLYGON]: {
-    PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-    PolygonAdapter02: '0xAD1732884CF5aAB27B293707757a9b9011611bE6',
-    PolygonBuyAdapter: '0xDc514c500dB446F5a7Ab80872bAf3adDEfd00174',
+    PolygonAdapter01: '0xa41B5Ab708fe1fe11CD6121006497b8549e8A695',
+    PolygonAdapter02: '0x475928fE50a9E9ADb706d6f5624fB97EE2AC087D',
+    PolygonBuyAdapter: '0xD7d3E2491cc495faAa9a770cBDC7535fD1446D8C',
   },
   [Network.BSC]: {
     BscAdapter01: '0xC9229EeC07B176AcC448BE33177c2834c9575ec5',
@@ -145,7 +146,8 @@ export class DexAdapterService {
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
     balancerV2Merge,
-    uniswapMerge,
+    uniswapV2Merge,
+    uniswapV3Merge,
   ];
 
   constructor(

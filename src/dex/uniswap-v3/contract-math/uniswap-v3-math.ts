@@ -1,6 +1,5 @@
+import _ from 'lodash';
 import { PoolState, Slot0, TickInfo } from '../types';
-import { FixedPoint128 } from './FixedPoint128';
-import { FullMath } from './FullMath';
 import { LiquidityMath } from './LiquidityMath';
 import { Oracle } from './Oracle';
 import { SqrtPriceMath } from './SqrtPriceMath';
@@ -47,7 +46,7 @@ function _updatePriceComputationObjects<
   }
 }
 
-function _priceComputationCycle(
+function _priceComputationCycles(
   poolState: DeepReadonly<PoolState>,
   ticksCopy: Record<NumberAsString, TickInfo>,
   slot0Start: Slot0,
@@ -219,7 +218,7 @@ class UniswapV3Math {
 
     // While calculating, ticks are changing, so to not change the actual state,
     // we use copy
-    const ticksCopy = { ...poolState.ticks };
+    const ticksCopy = _.cloneDeep(poolState.ticks);
 
     const sqrtPriceLimitX96 = zeroForOne
       ? TickMath.MIN_SQRT_RATIO + 1n
@@ -264,7 +263,7 @@ class UniswapV3Math {
       } else {
         state.amountSpecifiedRemaining = isSell
           ? amountSpecified - (previousAmount - state.amountSpecifiedRemaining)
-          : amountSpecified + (previousAmount + state.amountSpecifiedRemaining);
+          : amountSpecified + (previousAmount - state.amountSpecifiedRemaining);
       }
 
       const exactInput = amountSpecified > 0n;
@@ -282,7 +281,7 @@ class UniswapV3Math {
 
       if (!isOutOfRange) {
         const [finalState, { latestFullCycleState, latestFullCycleCache }] =
-          _priceComputationCycle(
+          _priceComputationCycles(
             poolState,
             ticksCopy,
             slot0Start,
