@@ -59,7 +59,7 @@ export class PricingHelper {
       return this.dexAdapterService.getDexByKey(key);
     } catch (e) {
       if (e instanceof Error && e.message.startsWith('Invalid Dex Key')) {
-        this.logger.warn(`Dex ${key} was not found in getAllDexKeys`);
+        this.logger.warn(`Dex ${key} was not found in getDexByKey`);
         return null;
       }
       // Unexpected error
