@@ -14,3 +14,9 @@ export function getUniswapV3DexKey(UniswapV3Config: DexConfigMap<DexParams>) {
 
   return UniswapV3Keys[0].toLowerCase();
 }
+
+export function setImmediatePromise() {
+  return new Promise(resolve => {
+    setImmediate(() => resolve(undefined));
+  });
+}
