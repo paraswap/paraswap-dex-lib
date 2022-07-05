@@ -109,8 +109,10 @@ const executeGetPricesVolume = async (blockNumber: number) => {
   await uniV3.getPricesVolume(srcToken, destToken, amounts, side, blockNumber);
 };
 
-const executeOnlySyncOperations = (state: DeepReadonly<PoolState>) => {
-  uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
+const executeOnlySyncOperations = (states: DeepReadonly<PoolState>[]) => {
+  states.map(state =>
+    uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side),
+  );
 };
 
 const aggregateAndPrintMeasures = (measures: number[]) => {
@@ -154,13 +156,15 @@ const runOneSuite = async (func: Function) => {
 
   console.log('\n');
 
-  const state = uniV3.eventPools[eventPoolKey]!.getState(blockNumber);
+  const states = Object.values(uniV3.eventPools).map(
+    ep => ep!.getState(blockNumber)!,
+  );
 
   console.log(`\nRun for full calculation cycles\n`);
   await runOneSuite(executeGetPricesVolume.bind(undefined, blockNumber));
 
   console.log(`\nRun for only sync cycles\n`);
-  await runOneSuite(executeOnlySyncOperations.bind(undefined, state!));
+  await runOneSuite(executeOnlySyncOperations.bind(undefined, states));
 
   console.log(`Tests ended`);
 })();
