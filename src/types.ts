@@ -15,6 +15,7 @@ export {
 import { Logger } from 'log4js';
 export { Logger } from 'log4js';
 import { OptimalRate } from 'paraswap-core';
+import BigNumber from 'bignumber.js';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -254,6 +255,6 @@ export type ExchangeTxInfo = {
 };
 
 export type PreprocessTransactionOptions = {
-  slippageFactor: string;
+  slippageFactor: BigNumber;
   txOrigin: Address;
 };
