@@ -203,6 +203,7 @@ async function _priceComputationCycles(
       ticksCopy[lastTicksCopy.index] = lastTicksCopy.tick;
     }
   }
+
   await setImmediatePromise();
 
   return [state, { latestFullCycleState, latestFullCycleCache }];
@@ -253,91 +254,96 @@ class UniswapV3Math {
     let isOutOfRange = false;
     let previousAmount = 0n;
 
-    return Promise.all(
-      amounts.map(async amount => {
-        if (amount === 0n) return 0n;
+    const outputs = new Array(amounts.length);
+    for (const [i, amount] of amounts.entries()) {
+      if (amount === 0n) {
+        outputs[i] = 0n;
+        continue;
+      }
 
-        const amountSpecified = isSell
-          ? BigInt.asIntN(256, amount)
-          : -BigInt.asIntN(256, amount);
+      const amountSpecified = isSell
+        ? BigInt.asIntN(256, amount)
+        : -BigInt.asIntN(256, amount);
 
-        if (state.isFirstCycleState) {
-          // Set first non zero amount
-          state.amountSpecifiedRemaining = amountSpecified;
-          state.isFirstCycleState = false;
-        } else {
-          state.amountSpecifiedRemaining = isSell
-            ? amountSpecified -
-              (previousAmount - state.amountSpecifiedRemaining)
-            : amountSpecified +
-              (previousAmount - state.amountSpecifiedRemaining);
+      if (state.isFirstCycleState) {
+        // Set first non zero amount
+        state.amountSpecifiedRemaining = amountSpecified;
+        state.isFirstCycleState = false;
+      } else {
+        state.amountSpecifiedRemaining = isSell
+          ? amountSpecified - (previousAmount - state.amountSpecifiedRemaining)
+          : amountSpecified + (previousAmount - state.amountSpecifiedRemaining);
+      }
+
+      const exactInput = amountSpecified > 0n;
+
+      _require(
+        zeroForOne
+          ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
+              sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
+          : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 &&
+              sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
+        'SPL',
+        { zeroForOne, sqrtPriceLimitX96, slot0Start },
+        'zeroForOne ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO',
+      );
+
+      if (!isOutOfRange) {
+        const [finalState, { latestFullCycleState, latestFullCycleCache }] =
+          await _priceComputationCycles(
+            poolState,
+            ticksCopy,
+            slot0Start,
+            state,
+            cache,
+            sqrtPriceLimitX96,
+            zeroForOne,
+            exactInput,
+          );
+
+        if (
+          finalState.amountSpecifiedRemaining === 0n &&
+          finalState.amountCalculated === 0n
+        ) {
+          isOutOfRange = true;
+          outputs[i] = 0n;
+          continue;
         }
 
-        const exactInput = amountSpecified > 0n;
+        // We use it on next step to correct state.amountSpecifiedRemaining
+        previousAmount = amountSpecified;
 
-        _require(
-          zeroForOne
-            ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
-                sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
-            : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 &&
-                sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
-          'SPL',
-          { zeroForOne, sqrtPriceLimitX96, slot0Start },
-          'zeroForOne ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO',
-        );
+        // First extract calculated values
+        const [amount0, amount1] =
+          zeroForOne === exactInput
+            ? [
+                amountSpecified - finalState.amountSpecifiedRemaining,
+                finalState.amountCalculated,
+              ]
+            : [
+                finalState.amountCalculated,
+                amountSpecified - finalState.amountSpecifiedRemaining,
+              ];
 
-        if (!isOutOfRange) {
-          const [finalState, { latestFullCycleState, latestFullCycleCache }] =
-            await _priceComputationCycles(
-              poolState,
-              ticksCopy,
-              slot0Start,
-              state,
-              cache,
-              sqrtPriceLimitX96,
-              zeroForOne,
-              exactInput,
-            );
+        // Update for next amount
+        _updatePriceComputationObjects(state, latestFullCycleState);
+        _updatePriceComputationObjects(cache, latestFullCycleCache);
 
-          if (
-            finalState.amountSpecifiedRemaining === 0n &&
-            finalState.amountCalculated === 0n
-          ) {
-            isOutOfRange = true;
-            return 0n;
-          }
-
-          // We use it on next step to correct state.amountSpecifiedRemaining
-          previousAmount = amountSpecified;
-
-          // First extract calculated values
-          const [amount0, amount1] =
-            zeroForOne === exactInput
-              ? [
-                  amountSpecified - finalState.amountSpecifiedRemaining,
-                  finalState.amountCalculated,
-                ]
-              : [
-                  finalState.amountCalculated,
-                  amountSpecified - finalState.amountSpecifiedRemaining,
-                ];
-
-          // Update for next amount
-          _updatePriceComputationObjects(state, latestFullCycleState);
-          _updatePriceComputationObjects(cache, latestFullCycleCache);
-
-          if (isSell) {
-            return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
-          } else {
-            return zeroForOne
-              ? BigInt.asUintN(256, amount0)
-              : BigInt.asUintN(256, amount1);
-          }
+        if (isSell) {
+          outputs[i] = BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
+          continue;
         } else {
-          return 0n;
+          outputs[i] = zeroForOne
+            ? BigInt.asUintN(256, amount0)
+            : BigInt.asUintN(256, amount1);
+          continue;
         }
-      }),
-    );
+      } else {
+        outputs[i] = 0n;
+      }
+    }
+
+    return outputs;
   }
 
   swapFromEvent(

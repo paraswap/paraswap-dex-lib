@@ -260,51 +260,42 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result: ExchangePrices<UniswapV3Data> = new Array(
-        selectedPools.length,
+      const result = await Promise.all(
+        selectedPools.map(async (pool, i) => {
+          const state = states[i];
+
+          const [unit, prices] = await Promise.all(
+            [this._getOutputs(state, [unitAmount], zeroForOne, side),
+            this._getOutputs(state, _amounts, zeroForOne, side)]
+          );
+
+          if (!prices || !unit) {
+            throw new Error('Prices or unit is not calculated');
+          }
+
+          return {
+            unit: unit[0],
+            prices: [0n, ...prices],
+            data: {
+              path: [
+                {
+                  tokenIn: _srcAddress,
+                  tokenOut: _destAddress,
+                  fee: pool.feeCode.toString(),
+                },
+              ],
+            },
+            poolIdentifier: this.getPoolIdentifier(
+              pool.token0,
+              pool.token1,
+              pool.feeCode,
+            ),
+            exchange: this.dexKey,
+            gasCost: UNISWAPV3_QUOTE_GASLIMIT,
+            poolAddresses: [pool.poolAddress],
+          };
+        }),
       );
-
-      for (const [i, pool] of selectedPools.entries()) {
-        const state = states[i];
-
-        const unit = await this._getOutputs(
-          state,
-          [unitAmount],
-          zeroForOne,
-          side,
-        );
-
-        const prices = await this._getOutputs(
-          state,
-          _amounts,
-          zeroForOne,
-          side,
-        );
-
-        if (!prices || !unit) return null;
-
-        result[i] = {
-          unit: unit[0],
-          prices: [0n, ...prices],
-          data: {
-            path: [
-              {
-                tokenIn: _srcAddress,
-                tokenOut: _destAddress,
-                fee: pool.feeCode.toString(),
-              },
-            ],
-          },
-          poolIdentifier: this.getPoolIdentifier(
-            pool.token0,
-            pool.token1,
-            pool.feeCode,
-          ),
-          exchange: this.dexKey,
-          gasCost: UNISWAPV3_QUOTE_GASLIMIT,
-          poolAddresses: [pool.poolAddress],
-        };
-      }
       return result;
     } catch (e) {
       this.logger.error(
@@ -511,7 +502,13 @@ export class UniswapV3
     side: SwapSide,
   ): Promise<bigint[] | null> {
     try {
-      return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
+      const outputs = await uniswapV3Math.queryOutputs(
+        state,
+        amounts,
+        zeroForOne,
+        side,
+      );
+      return outputs;
     } catch (e) {
       this.logger.error(
         `${this.dexKey}: received error in _getSellOutputs while calculating outputs`,

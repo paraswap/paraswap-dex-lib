@@ -16,7 +16,9 @@ export function getUniswapV3DexKey(UniswapV3Config: DexConfigMap<DexParams>) {
 }
 
 export function setImmediatePromise() {
-  return new Promise(resolve => {
-    setImmediate(() => resolve(undefined));
+  return new Promise<void>(resolve => {
+    setImmediate(() => {
+      resolve();
+    });
   });
 }
