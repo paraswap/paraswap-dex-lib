@@ -9,11 +9,11 @@ import axios from 'axios';
 import Web3 from 'web3';
 import { Interface } from '@ethersproject/abi';
 import _ from 'lodash';
-import MulticallABI from '../../abi/multi-v2.json';
-import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
-import { UNISWAPV3_SUBGRAPH_URL } from './constants';
-import { MULTI_V2, Network, ProviderURL } from '../../constants';
-import { BI_MAX_INT16, BI_MIN_INT16 } from '../../bigint-constants';
+import MulticallABI from '../../../abi/multi-v2.json';
+import UniswapV3PoolABI from '../../../abi/uniswap-v3/UniswapV3Pool.abi.json';
+import { UNISWAPV3_SUBGRAPH_URL } from '../constants';
+import { MULTI_V2, Network, ProviderURL } from '../../../constants';
+import { BI_MAX_INT16, BI_MIN_INT16 } from '../../../bigint-constants';
 
 type SubgraphResult = { id: string; totalValueLockedUSD: string };
 
