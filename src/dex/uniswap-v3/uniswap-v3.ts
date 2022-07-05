@@ -33,7 +33,6 @@ import {
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
-import { TickMath } from './contract-math/TickMath';
 
 export class UniswapV3
   extends SimpleExchange
@@ -93,7 +92,6 @@ export class UniswapV3
         ),
       ),
     );
-    console.log(0);
   }
 
   async getPool(
@@ -135,7 +133,7 @@ export class UniswapV3
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
           pool = null;
-          this.logger.warn(
+          this.logger.trace(
             `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
             e,
           );
@@ -194,99 +192,119 @@ export class UniswapV3
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UniswapV3Data>> {
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    try {
+      const _srcToken = wrapETH(srcToken, this.network);
+      const _destToken = wrapETH(destToken, this.network);
 
-    const [_srcAddress, _destAddress] = this._getLoweredAddresses(
-      _srcToken,
-      _destToken,
-    );
-
-    if (_srcAddress === _destAddress) return null;
-
-    let selectedPools: UniswapV3EventPool[] = [];
-    if (limitPools === undefined) {
-      selectedPools = (
-        await Promise.all(
-          this.supportedFees.map(async fee =>
-            this.getPool(_srcAddress, _destAddress, fee, blockNumber),
-          ),
-        )
-      ).filter(pool => pool) as UniswapV3EventPool[];
-    } else {
-      const pairIdentifierWithoutFee = this.getPoolIdentifier(
-        _srcAddress,
-        _destAddress,
-        0n,
-        // Trim from 0 fee postfix, so it become comparable
-      ).slice(0, -1);
-      selectedPools = await this._getPoolsFromIdentifiers(
-        limitPools.filter(identifier =>
-          identifier.startsWith(pairIdentifierWithoutFee),
-        ),
-        blockNumber,
+      const [_srcAddress, _destAddress] = this._getLoweredAddresses(
+        _srcToken,
+        _destToken,
       );
+
+      if (_srcAddress === _destAddress) return null;
+
+      let selectedPools: UniswapV3EventPool[] = [];
+      if (limitPools === undefined) {
+        selectedPools = (
+          await Promise.all(
+            this.supportedFees.map(async fee =>
+              this.getPool(_srcAddress, _destAddress, fee, blockNumber),
+            ),
+          )
+        ).filter(pool => pool) as UniswapV3EventPool[];
+      } else {
+        const pairIdentifierWithoutFee = this.getPoolIdentifier(
+          _srcAddress,
+          _destAddress,
+          0n,
+          // Trim from 0 fee postfix, so it become comparable
+        ).slice(0, -1);
+        selectedPools = await this._getPoolsFromIdentifiers(
+          limitPools.filter(identifier =>
+            identifier.startsWith(pairIdentifierWithoutFee),
+          ),
+          blockNumber,
+        );
+      }
+
+      if (selectedPools.length === 0) return null;
+
+      const states = await Promise.all(
+        selectedPools.map(async pool => {
+          let state = pool.getState(blockNumber);
+          if (state === null || !state.isValid) {
+            if (state === null) {
+              this.logger.trace(
+                `${this.dexKey}: State === null. Generating new one`,
+              );
+            } else if (!state.isValid) {
+              this.logger.trace(
+                `${this.dexKey}: State is invalid. Generating new one`,
+              );
+            }
+
+            state = await pool.generateState(blockNumber);
+            pool.setState(state, blockNumber);
+          }
+          return state;
+        }),
+      );
+
+      const unitAmount = getBigIntPow(
+        side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
+      );
+
+      const _amounts = [...amounts.slice(1)];
+
+      const [token0] = this._sortTokens(_srcAddress, _destAddress);
+
+      const zeroForOne = token0 === _srcAddress ? true : false;
+
+      const result: ExchangePrices<UniswapV3Data> = new Array(
+        selectedPools.length,
+      );
+
+      for (const [i, pool] of selectedPools.entries()) {
+        const state = states[i];
+
+        const unit = this._getOutputs(state, [unitAmount], zeroForOne, side);
+
+        const prices = this._getOutputs(state, _amounts, zeroForOne, side);
+
+        if (!prices || !unit) return null;
+
+        result[i] = {
+          unit: unit[0],
+          prices: [0n, ...prices],
+          data: {
+            path: [
+              {
+                tokenIn: _srcAddress,
+                tokenOut: _destAddress,
+                fee: pool.feeCode.toString(),
+              },
+            ],
+          },
+          poolIdentifier: this.getPoolIdentifier(
+            pool.token0,
+            pool.token1,
+            pool.feeCode,
+          ),
+          exchange: this.dexKey,
+          gasCost: UNISWAPV3_QUOTE_GASLIMIT,
+          poolAddresses: [pool.poolAddress],
+        };
+      }
+      return result;
+    } catch (e) {
+      this.logger.error(
+        `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
+          destToken.symbol || destToken.address
+        }, ${side}:`,
+        e,
+      );
+      return null;
     }
-
-    if (selectedPools.length === 0) return null;
-
-    const states = await Promise.all(
-      selectedPools.map(async pool => {
-        let state = pool.getState(blockNumber);
-        if (state === null || !state.isValid) {
-          state = await pool.generateState(blockNumber);
-          pool.setState(state, blockNumber);
-        }
-        return state;
-      }),
-    );
-
-    const unitAmount = getBigIntPow(
-      side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
-    );
-
-    const _amounts = [...amounts.slice(1)];
-
-    const [token0] = this._sortTokens(_srcAddress, _destAddress);
-
-    const zeroForOne = token0 === _srcAddress ? true : false;
-
-    const result: ExchangePrices<UniswapV3Data> = new Array(
-      selectedPools.length,
-    );
-
-    for (const [i, pool] of selectedPools.entries()) {
-      const state = states[i];
-
-      const unit = this._getOutputs(state, [unitAmount], zeroForOne, side);
-
-      const prices = this._getOutputs(state, _amounts, zeroForOne, side);
-
-      if (!prices || !unit) return null;
-
-      result[i] = {
-        unit: unit[0],
-        prices: [0n, ...prices],
-        data: {
-          path: [
-            {
-              tokenIn: _srcAddress,
-              tokenOut: _destAddress,
-              fee: pool.feeCode.toString(),
-            },
-          ],
-        },
-        poolIdentifier: this.getPoolIdentifier(
-          pool.token0,
-          pool.token1,
-          pool.feeCode,
-        ),
-        exchange: this.dexKey,
-        gasCost: UNISWAPV3_QUOTE_GASLIMIT,
-        poolAddresses: [pool.poolAddress],
-      };
-    }
-    return result;
   }
 
   getAdapterParam(
