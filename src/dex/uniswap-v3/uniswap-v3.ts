@@ -267,9 +267,19 @@ export class UniswapV3
       for (const [i, pool] of selectedPools.entries()) {
         const state = states[i];
 
-        const unit = this._getOutputs(state, [unitAmount], zeroForOne, side);
+        const unit = await this._getOutputs(
+          state,
+          [unitAmount],
+          zeroForOne,
+          side,
+        );
 
-        const prices = this._getOutputs(state, _amounts, zeroForOne, side);
+        const prices = await this._getOutputs(
+          state,
+          _amounts,
+          zeroForOne,
+          side,
+        );
 
         if (!prices || !unit) return null;
 
@@ -494,12 +504,12 @@ export class UniswapV3
     return newConfig;
   }
 
-  private _getOutputs(
+  private async _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
-  ): bigint[] | null {
+  ): Promise<bigint[] | null> {
     try {
       return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
     } catch (e) {

@@ -12,6 +12,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { BI_MAX_INT } from '../../../bigint-constants';
 import { OUT_OF_RANGE_ERROR_POSTFIX } from '../constants';
+import { setImmediatePromise } from '../utils';
 
 type ModifyPositionParams = {
   tickLower: bigint;
@@ -46,7 +47,7 @@ function _updatePriceComputationObjects<
   }
 }
 
-function _priceComputationCycles(
+async function _priceComputationCycles(
   poolState: DeepReadonly<PoolState>,
   ticksCopy: Record<NumberAsString, TickInfo>,
   slot0Start: Slot0,
@@ -55,15 +56,17 @@ function _priceComputationCycles(
   sqrtPriceLimitX96: bigint,
   zeroForOne: boolean,
   exactInput: boolean,
-): [
-  // result
-  PriceComputationState,
-  // Latest calculated full cycle state we can use for bigger amounts
-  {
-    latestFullCycleState: PriceComputationState;
-    latestFullCycleCache: PriceComputationCache;
-  },
-] {
+): Promise<
+  [
+    // result
+    PriceComputationState,
+    // Latest calculated full cycle state we can use for bigger amounts
+    {
+      latestFullCycleState: PriceComputationState;
+      latestFullCycleCache: PriceComputationCache;
+    },
+  ]
+> {
   const latestFullCycleState: PriceComputationState = { ...state };
   const latestFullCycleCache: PriceComputationCache = { ...cache };
 
@@ -200,18 +203,19 @@ function _priceComputationCycles(
       ticksCopy[lastTicksCopy.index] = lastTicksCopy.tick;
     }
   }
+  await setImmediatePromise();
 
   return [state, { latestFullCycleState, latestFullCycleCache }];
 }
 
 class UniswapV3Math {
-  queryOutputs(
+  async queryOutputs(
     poolState: DeepReadonly<PoolState>,
     // Amounts must increase
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
-  ): bigint[] {
+  ): Promise<bigint[]> {
     const slot0Start = poolState.slot0;
 
     const isSell = side === SwapSide.SELL;
@@ -249,87 +253,91 @@ class UniswapV3Math {
     let isOutOfRange = false;
     let previousAmount = 0n;
 
-    return amounts.map(amount => {
-      if (amount === 0n) return 0n;
+    return Promise.all(
+      amounts.map(async amount => {
+        if (amount === 0n) return 0n;
 
-      const amountSpecified = isSell
-        ? BigInt.asIntN(256, amount)
-        : -BigInt.asIntN(256, amount);
+        const amountSpecified = isSell
+          ? BigInt.asIntN(256, amount)
+          : -BigInt.asIntN(256, amount);
 
-      if (state.isFirstCycleState) {
-        // Set first non zero amount
-        state.amountSpecifiedRemaining = amountSpecified;
-        state.isFirstCycleState = false;
-      } else {
-        state.amountSpecifiedRemaining = isSell
-          ? amountSpecified - (previousAmount - state.amountSpecifiedRemaining)
-          : amountSpecified + (previousAmount - state.amountSpecifiedRemaining);
-      }
+        if (state.isFirstCycleState) {
+          // Set first non zero amount
+          state.amountSpecifiedRemaining = amountSpecified;
+          state.isFirstCycleState = false;
+        } else {
+          state.amountSpecifiedRemaining = isSell
+            ? amountSpecified -
+              (previousAmount - state.amountSpecifiedRemaining)
+            : amountSpecified +
+              (previousAmount - state.amountSpecifiedRemaining);
+        }
 
-      const exactInput = amountSpecified > 0n;
+        const exactInput = amountSpecified > 0n;
 
-      _require(
-        zeroForOne
-          ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
-              sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
-          : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 &&
-              sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
-        'SPL',
-        { zeroForOne, sqrtPriceLimitX96, slot0Start },
-        'zeroForOne ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO',
-      );
+        _require(
+          zeroForOne
+            ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
+                sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
+            : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 &&
+                sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
+          'SPL',
+          { zeroForOne, sqrtPriceLimitX96, slot0Start },
+          'zeroForOne ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO',
+        );
 
-      if (!isOutOfRange) {
-        const [finalState, { latestFullCycleState, latestFullCycleCache }] =
-          _priceComputationCycles(
-            poolState,
-            ticksCopy,
-            slot0Start,
-            state,
-            cache,
-            sqrtPriceLimitX96,
-            zeroForOne,
-            exactInput,
-          );
+        if (!isOutOfRange) {
+          const [finalState, { latestFullCycleState, latestFullCycleCache }] =
+            await _priceComputationCycles(
+              poolState,
+              ticksCopy,
+              slot0Start,
+              state,
+              cache,
+              sqrtPriceLimitX96,
+              zeroForOne,
+              exactInput,
+            );
 
-        if (
-          finalState.amountSpecifiedRemaining === 0n &&
-          finalState.amountCalculated === 0n
-        ) {
-          isOutOfRange = true;
+          if (
+            finalState.amountSpecifiedRemaining === 0n &&
+            finalState.amountCalculated === 0n
+          ) {
+            isOutOfRange = true;
+            return 0n;
+          }
+
+          // We use it on next step to correct state.amountSpecifiedRemaining
+          previousAmount = amountSpecified;
+
+          // First extract calculated values
+          const [amount0, amount1] =
+            zeroForOne === exactInput
+              ? [
+                  amountSpecified - finalState.amountSpecifiedRemaining,
+                  finalState.amountCalculated,
+                ]
+              : [
+                  finalState.amountCalculated,
+                  amountSpecified - finalState.amountSpecifiedRemaining,
+                ];
+
+          // Update for next amount
+          _updatePriceComputationObjects(state, latestFullCycleState);
+          _updatePriceComputationObjects(cache, latestFullCycleCache);
+
+          if (isSell) {
+            return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
+          } else {
+            return zeroForOne
+              ? BigInt.asUintN(256, amount0)
+              : BigInt.asUintN(256, amount1);
+          }
+        } else {
           return 0n;
         }
-
-        // We use it on next step to correct state.amountSpecifiedRemaining
-        previousAmount = amountSpecified;
-
-        // First extract calculated values
-        const [amount0, amount1] =
-          zeroForOne === exactInput
-            ? [
-                amountSpecified - finalState.amountSpecifiedRemaining,
-                finalState.amountCalculated,
-              ]
-            : [
-                finalState.amountCalculated,
-                amountSpecified - finalState.amountSpecifiedRemaining,
-              ];
-
-        // Update for next amount
-        _updatePriceComputationObjects(state, latestFullCycleState);
-        _updatePriceComputationObjects(cache, latestFullCycleCache);
-
-        if (isSell) {
-          return BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
-        } else {
-          return zeroForOne
-            ? BigInt.asUintN(256, amount0)
-            : BigInt.asUintN(256, amount1);
-        }
-      } else {
-        return 0n;
-      }
-    });
+      }),
+    );
   }
 
   swapFromEvent(
