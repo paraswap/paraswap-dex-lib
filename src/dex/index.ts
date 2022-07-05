@@ -44,6 +44,7 @@ import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
+import { HodltreeFlashloanExchange } from './hodltree-flashloan-exchange/hodltree-flashloan-exchange';
 import Web3 from 'web3';
 
 const LegacyDexes = [
@@ -87,6 +88,7 @@ const Dexes = [
   WooFi,
   Dystopia,
   ParaSwapLimitOrders,
+  HodltreeFlashloanExchange,
 ];
 
 const AdapterNameAddressMap: {

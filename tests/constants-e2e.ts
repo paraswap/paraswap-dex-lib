@@ -236,6 +236,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x2ecf57cfaf2faedf1575d2372398ee34c428d6c3',
       decimals: 6,
     },
+    FRAX: {
+      address: '0x0A729fd2c64c72682C8b8D3598B22DA87992A2d3',
+      decimals: 18,
+    },
+    USDT: {
+      address: '0xD38e1D2F5bdDF797D9485f74Bf3cBfde30453149',
+      decimals: 6,
+    },
   },
   [Network.POLYGON]: {
     DAI: {
@@ -556,6 +564,8 @@ export const Holders: {
     DAI: '0xbe13517a2b520b2449068D2ec45280992B04047B',
     WETH: '0xdA87Da8C599E8A8993f3CBCD0aA5A1316A559A6D',
     USDC: '0xb2dafb6fc7f66526e72027ade0f044beda0ba11e',
+    FRAX: '0x9E70c8d85765103372dE8D66E26501c34E931f99',
+    USDT: '0x9E70c8d85765103372dE8D66E26501c34E931f99',
   },
   [Network.POLYGON]: {
     MATIC: '0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245',
