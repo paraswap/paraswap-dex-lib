@@ -20,9 +20,9 @@ const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
   0n,
-  100_000_000n * BI_POWS[6],
-  200_000_000n * BI_POWS[6],
-  300_000_000n * BI_POWS[6],
+  10_000n * BI_POWS[6],
+  20_000n * BI_POWS[6],
+  30_000n * BI_POWS[6],
 ];
 
 const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
@@ -84,6 +84,7 @@ async function checkOnChainPricing(
     console.log(
       `Prices were not calculated for tokenIn=${tokenIn}, tokenOut=${tokenOut}, fee=${fee.toString()}. Most likely price impact is too big for requested amount`,
     );
+    return false;
   }
 
   const readerCallData = getReaderCalldata(
@@ -108,7 +109,7 @@ async function checkOnChainPricing(
       `Can not fetch on-chain pricing for fee ${fee}. It happens for low liquidity pools`,
       e,
     );
-    return;
+    return false;
   }
 
   const expectedPrices = [0n].concat(
@@ -124,6 +125,7 @@ async function checkOnChainPricing(
   expect(prices.slice(0, firstZeroIndex)).toEqual(
     expectedPrices.slice(0, firstZeroIndex),
   );
+  return true;
 }
 
 describe('UniswapV3', function () {
@@ -165,10 +167,11 @@ describe('UniswapV3', function () {
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
+    let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
-        await checkOnChainPricing(
+        const res = await checkOnChainPricing(
           uniswapV3,
           'quoteExactInputSingle',
           blockNumber,
@@ -178,8 +181,11 @@ describe('UniswapV3', function () {
           fee,
           amounts,
         );
+        if (res === false) falseChecksCounter++;
       }),
     );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
@@ -207,10 +213,11 @@ describe('UniswapV3', function () {
     checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
 
     // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
-        await checkOnChainPricing(
+        const res = await checkOnChainPricing(
           uniswapV3,
           'quoteExactOutputSingle',
           blockNumber,
@@ -220,8 +227,10 @@ describe('UniswapV3', function () {
           fee,
           amountsBuy,
         );
+        if (res === false) falseChecksCounter++;
       }),
     );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
@@ -314,10 +323,11 @@ describe('UniswapV3', function () {
     );
 
     // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
-        await checkOnChainPricing(
+        const res = await checkOnChainPricing(
           uniswapV3,
           'quoteExactInputSingle',
           blockNumber,
@@ -327,8 +337,10 @@ describe('UniswapV3', function () {
           fee,
           amounts,
         );
+        if (res === false) falseChecksCounter++;
       }),
     );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
@@ -413,18 +425,19 @@ describe('UniswapV3', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    // checkPoolPrices(
-    //   poolPrices!.filter(pp => pp.unit !== 0n),
-    //   amountsBuy,
-    //   SwapSide.BUY,
-    //   dexKey,
-    // );
+    checkPoolPrices(
+      poolPrices!.filter(pp => pp.unit !== 0n),
+      amountsBuy,
+      SwapSide.BUY,
+      dexKey,
+    );
 
     // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
-        await checkOnChainPricing(
+        const res = await checkOnChainPricing(
           uniswapV3,
           'quoteExactOutputSingle',
           blockNumber,
@@ -434,8 +447,10 @@ describe('UniswapV3', function () {
           fee,
           amountsBuy,
         );
+        if (res === false) falseChecksCounter++;
       }),
     );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
   it('getTopPoolsForToken', async function () {
