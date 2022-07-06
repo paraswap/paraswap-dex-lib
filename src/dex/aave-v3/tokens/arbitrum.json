@@ -18,7 +18,7 @@
     "decimals": 6
   },
   {
-    "aSymbol": "WBTC",
+    "aSymbol": "aArbWBTC",
     "aAddress": "0x078f358208685046a11C85e8ad32895DED33A249",
     "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
     "decimals": 8
