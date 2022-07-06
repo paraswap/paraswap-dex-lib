@@ -270,9 +270,8 @@ class UniswapV3Math {
         state.amountSpecifiedRemaining = amountSpecified;
         state.isFirstCycleState = false;
       } else {
-        state.amountSpecifiedRemaining = isSell
-          ? amountSpecified - (previousAmount - state.amountSpecifiedRemaining)
-          : amountSpecified + (previousAmount - state.amountSpecifiedRemaining);
+        state.amountSpecifiedRemaining =
+          amountSpecified - (previousAmount - state.amountSpecifiedRemaining);
       }
 
       const exactInput = amountSpecified > 0n;
