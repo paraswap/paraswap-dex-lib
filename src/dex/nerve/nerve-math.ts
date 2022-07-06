@@ -1,7 +1,8 @@
-import { bigIntify, MathUtil } from './utils';
+import { MathUtil } from './utils';
 import { Logger } from '../../types';
 import { PoolState } from './types';
 import { DeepReadonly } from 'ts-essentials';
+import { bigIntify } from '../../utils';
 
 export class NervePoolMath {
   readonly FEE_DENOMINATOR = bigIntify(10 ** 10);

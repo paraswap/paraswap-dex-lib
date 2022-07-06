@@ -4,7 +4,7 @@ import { AllUniswapForks } from './constants';
 import _ from 'lodash';
 
 // TODO: use something similar for DODO as well
-export function uniswapMerge(or: UnoptimizedRate): UnoptimizedRate {
+export function uniswapV2Merge(or: UnoptimizedRate): UnoptimizedRate {
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;
     let optimizedRate = new Array<OptimalSwap>();

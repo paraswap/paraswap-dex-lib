@@ -246,6 +246,8 @@ export type MultiCallInput = {
 
 export type MultiCallOutput = string;
 
+export type MultiCallV2Output = { success: boolean; returnData: string };
+
 export type BigIntAsString = string;
 
 export type ExchangeTxInfo = {

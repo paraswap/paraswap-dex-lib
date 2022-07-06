@@ -211,7 +211,6 @@ export class Dystopia extends UniswapV2 {
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
-    this.logger.trace(`${this.dexKey}: getPricesVolume limitPools`, limitPools);
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
       const from = wrapETH(_from, this.network);
@@ -298,11 +297,7 @@ export class Dystopia extends UniswapV2 {
         resultPromises,
       )) as ExchangePrices<UniswapV2Data>;
       const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
-      const resultPoolsSorted = resultPoolsFiltered.sort((a, b) =>
-        Number(b.unit - a.unit),
-      );
-      this.logger.trace(`${this.dexKey}: resultPoolsSorted`, resultPoolsSorted);
-      return resultPoolsSorted.length > 0 ? resultPoolsSorted : null;
+      return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
