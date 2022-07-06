@@ -78,6 +78,11 @@
             "type": "uint8"
           },
           {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
             "internalType": "uint256",
             "name": "tokenAAmount",
             "type": "uint256"
@@ -169,6 +174,11 @@
             "type": "uint8"
           },
           {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
             "internalType": "uint256",
             "name": "tokenAmount",
             "type": "uint256"
@@ -255,6 +265,11 @@
             "type": "uint8"
           },
           {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
             "internalType": "uint256",
             "name": "inputAmount",
             "type": "uint256"
@@ -319,6 +334,11 @@
             "internalType": "uint8",
             "name": "paramChoice",
             "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
           },
           {
             "internalType": "uint256",
@@ -402,6 +422,11 @@
             "type": "uint8"
           },
           {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
@@ -483,6 +508,11 @@
             "type": "uint8"
           },
           {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
             "internalType": "address",
             "name": "recipient",
             "type": "address"
@@ -554,6 +584,11 @@
             "type": "uint8"
           },
           {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
             "internalType": "address",
             "name": "recipient",
             "type": "address"
@@ -618,6 +653,11 @@
             "internalType": "uint8",
             "name": "paramChoice",
             "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
           },
           {
             "internalType": "address",

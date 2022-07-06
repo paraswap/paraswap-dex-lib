@@ -18,14 +18,14 @@ import { ExchangePrices } from '../../types';
 import { MaverickData } from './types';
 
 const network = Network.POLYGON;
-const TokenASymbol = 'WETH';
+const TokenASymbol = 'USDT';
 const TokenA = Tokens[network][TokenASymbol];
 
 const TokenBSymbol = 'USDC';
 const TokenB = Tokens[network][TokenBSymbol];
 const dexHelper = new DummyDexHelper(network);
 
-const amounts = [0n, 500000000000000000n, BI_POWS[18]];
+const amounts = [0n, 500000n, BI_POWS[6]];
 
 const dexKey = 'Maverick';
 

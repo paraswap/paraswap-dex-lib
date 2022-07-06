@@ -804,11 +804,6 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "inputAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
         "name": "outputAmount",
         "type": "uint256"
       }

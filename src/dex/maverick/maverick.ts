@@ -13,12 +13,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import {
-  wrapETH,
-  getDexKeysWithNetwork,
-  getBigIntPow,
-  isETHAddress,
-} from '../../utils';
+import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import PoolABI from '../../abi/maverick/pool.json';
 import RouterABI from '../../abi/maverick/router.json';
 
@@ -32,6 +27,7 @@ import { MaverickPool } from './maverick-pool';
 import { BI_POWS } from '../../bigint-constants';
 import { parseFixed } from '@ethersproject/bignumber';
 import { MathSol } from '../balancer-v2/balancer-v2-math';
+import { MMath } from './maverick-math';
 
 const subgraphTimeout = 1000 * 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
@@ -157,6 +153,7 @@ export class MaverickEventPool extends StatefulEventSubscriber<MaverickPoolState
   poolDecoder: (log: Log) => any;
   public poolInterface: Interface;
   public pool: MaverickPool;
+  addressesSubscribed: string[];
 
   handlers: {
     [event: string]: (
@@ -198,7 +195,7 @@ export class MaverickEventPool extends StatefulEventSubscriber<MaverickPoolState
     this.handlers['Swap'] = this.handleSwap.bind(this);
     this.handlers['AddLiquidity'] = this.handleAddLiquidity.bind(this);
     this.handlers['RemoveLiquidity'] = this.handleRemoveLiquidity.bind(this);
-
+    this.addressesSubscribed = [address];
     this.pool = new MaverickPool(
       parentName,
       parseFixed(epsilon.toString(), 18).toBigInt(),
@@ -232,12 +229,12 @@ export class MaverickEventPool extends StatefulEventSubscriber<MaverickPoolState
     blockHeader: BlockHeader,
   ): MaverickPoolState {
     let amountIn = event.args.amountIn.toBigInt();
-    if (event.args.swapForBase) {
-      amountIn = this.scaleFromAmount(amountIn, this.quote);
-    } else {
-      amountIn = this.scaleFromAmount(amountIn, this.base);
-    }
-    this.pool.swap(state, amountIn, event.args.swapForBase);
+    this.pool.swap(
+      state,
+      BigInt(blockHeader.timestamp),
+      amountIn,
+      event.args.swapForBase,
+    );
     return state;
   }
 
@@ -247,10 +244,13 @@ export class MaverickEventPool extends StatefulEventSubscriber<MaverickPoolState
     log: Log,
     blockHeader: BlockHeader,
   ): MaverickPoolState {
-    const quoteAmount = event.args.quoteAmount.toBigInt();
-    const baseAmount = event.args.baseAmount.toBigInt();
-    state.quoteBalance += this.scaleFromAmount(quoteAmount, this.quote);
-    state.baseBalance += this.scaleFromAmount(baseAmount, this.base);
+    state.quoteBalance += event.args.quoteAmount.toBigInt();
+    state.baseBalance += event.args.baseAmount.toBigInt();
+    if (state.u == 0n) {
+      state.u = MMath.div(state.quoteBalance, state.baseBalance);
+      state.twau = state.u;
+      state.lastTimestamp = BigInt(blockHeader.timestamp);
+    }
     return state;
   }
 
@@ -262,8 +262,8 @@ export class MaverickEventPool extends StatefulEventSubscriber<MaverickPoolState
   ): MaverickPoolState {
     const quoteAmount = event.args.quoteAmount.toBigInt();
     const baseAmount = event.args.baseAmount.toBigInt();
-    state.quoteBalance -= this.scaleFromAmount(quoteAmount, this.quote);
-    state.baseBalance -= this.scaleFromAmount(baseAmount, this.base);
+    (state.quoteBalance -= quoteAmount), this.quote;
+    (state.baseBalance -= baseAmount), this.base;
     return state;
   }
 
@@ -292,16 +292,13 @@ export class MaverickEventPool extends StatefulEventSubscriber<MaverickPoolState
   }
 
   swap(amount: bigint, from: Token, to: Token) {
-    let tempState = Object.assign({}, this.state);
     const scaledAmount = this.scaleFromAmount(amount, from);
     const output = this.pool.swap(
-      tempState,
+      { ...this.state! },
+      0n,
       scaledAmount,
       from.address.toLowerCase() == this.quote.address.toLowerCase(),
     );
-    if (this.state) {
-      this.pool.setState(this.state);
-    }
     return this.scaleToAmount(output, to);
   }
 
@@ -349,6 +346,8 @@ export class MaverickEventPool extends StatefulEventSubscriber<MaverickPoolState
 export class Maverick extends SimpleExchange implements IDex<MaverickData> {
   pools: { [key: string]: MaverickEventPool } = {};
   readonly hasConstantPriceLargeAmounts = false;
+  readonly needWrapNative = true;
+
   exchangeRouterInterface: Interface;
   poolInterface: Interface;
 
@@ -371,46 +370,15 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
   }
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
-    const cacheKey = 'AllSubgraphPools';
-    const cachedPools = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      cacheKey,
-    );
-    if (cachedPools) {
-      const allPools = JSON.parse(cachedPools);
-      this.logger.info(
-        `Got ${allPools.length} ${this.dexKey}_${this.network} pools from cache`,
-      );
-      return allPools;
-    }
-
     this.logger.info(
       `Fetching ${this.dexKey}_${this.network} Pools from subgraph`,
     );
-    const variables = {
-      count: MAX_POOL_CNT,
-    };
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
-      { query: fetchAllPools, variables },
+      { query: fetchAllPools, count: MAX_POOL_CNT },
       subgraphTimeout,
     );
-    if (!(data && data.pools))
-      throw new Error('Unable to fetch pools from the subgraph');
-
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      cacheKey,
-      POOL_CACHE_TTL,
-      JSON.stringify(data.pools),
-    );
-    const allPools = data.pools;
-    this.logger.info(
-      `Got ${allPools.length} ${this.dexKey}_${this.network} pools from subgraph`,
-    );
-    return allPools;
+    return data.pools;
   }
 
   async fetchSubgraphPoolsFromTokens(
@@ -420,24 +388,12 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     this.logger.info(
       `Fetching ${this.dexKey}_${this.network} Pools from subgraph`,
     );
-    const variables = {
-      count: MAX_POOL_CNT,
-      from: [from.address.toLowerCase(), to.address.toLowerCase()],
-      to: [from.address.toLowerCase(), to.address.toLowerCase()],
-    };
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
-      { query: fetchPoolsFromTokens, variables },
+      { query: fetchPoolsFromTokens, count: MAX_POOL_CNT },
       subgraphTimeout,
     );
-    if (!(data && data.pools))
-      throw new Error('Unable to fetch pools from the subgraph');
-
-    const allPools = data.pools;
-    this.logger.info(
-      `Got ${allPools.length} ${this.dexKey}_${this.network} pools from subgraph`,
-    );
-    return allPools;
+    return data.pools;
   }
 
   async setupEventPools(blockNumber: number) {
@@ -474,7 +430,13 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
         const onChainState = await eventPool.generateState(blockNumber);
         if (blockNumber) {
           eventPool.setState(onChainState, blockNumber);
+          this.dexHelper.blockManager.subscribeToLogs(
+            eventPool,
+            eventPool.addressesSubscribed,
+            blockNumber,
+          );
         }
+
         this.pools[eventPool.name] = eventPool;
       }),
     );
@@ -590,69 +552,21 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    let payload;
-
-    if (isETHAddress(srcToken)) {
-      payload = this.exchangeRouterInterface.encodeFunctionData(
-        'swapEthForToken',
-        [
-          {
-            outputToken: destToken,
-            fee: BigInt((data.fee * 1e4).toFixed(0)),
-            w: BigInt((data.w * 1e4).toFixed(0)),
-            k: BigInt((data.k * 1e2).toFixed(0)),
-            h: data.h,
-            paramChoice: data.paramChoice,
-            recipient: this.augustusAddress,
-            minAmount: 0,
-            deadline: this.getDeadline(),
-          },
-        ],
-      );
-    } else if (isETHAddress(destToken)) {
-      payload = this.exchangeRouterInterface.encodeFunctionData(
-        'swapTokenForEth',
-        [
-          {
-            inputToken: srcToken,
-            fee: BigInt((data.fee * 1e4).toFixed(0)),
-            w: BigInt((data.w * 1e4).toFixed(0)),
-            k: BigInt((data.k * 1e2).toFixed(0)),
-            h: data.h,
-            paramChoice: data.paramChoice,
-            recipient: this.augustusAddress,
-            inputAmount: srcAmount,
-            minAmount: 0,
-            deadline: this.getDeadline(),
-          },
-        ],
-      );
-    } else {
-      return {
-        callees: [srcToken, data.pool],
-        calldata: [
-          this.erc20Interface.encodeFunctionData('transfer', [
-            data.pool,
-            srcAmount,
-          ]),
-          this.poolInterface.encodeFunctionData('swap', [
-            this.augustusAddress,
-            srcToken == data.quote,
-          ]),
-        ],
-        values: ['0', '0'],
-        networkFee: '0',
-      };
-    }
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      payload,
-      data.router,
-    );
+    return {
+      callees: [srcToken, data.pool],
+      calldata: [
+        this.erc20Interface.encodeFunctionData('transfer', [
+          data.pool,
+          srcAmount,
+        ]),
+        this.poolInterface.encodeFunctionData('swap', [
+          this.augustusAddress,
+          srcToken.toLowerCase() == data.quote.toLowerCase(),
+        ]),
+      ],
+      values: ['0', '0'],
+      networkFee: '0',
+    };
   }
 
   async updatePoolState(): Promise<void> {

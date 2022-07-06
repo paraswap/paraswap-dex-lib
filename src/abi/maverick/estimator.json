@@ -88,6 +88,47 @@
         "type": "address"
       }
     ],
+    "name": "getAssetsInActiveBin",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "int256[3]",
+            "name": "base",
+            "type": "int256[3]"
+          },
+          {
+            "internalType": "int256[3]",
+            "name": "quote",
+            "type": "int256[3]"
+          },
+          {
+            "internalType": "int256",
+            "name": "L",
+            "type": "int256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "activeInd",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IEstimator.AssetInfo",
+        "name": "assetInfo",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
     "name": "getEstimationParameters",
     "outputs": [
       {
@@ -100,16 +141,6 @@
           {
             "internalType": "int256[3]",
             "name": "gammas",
-            "type": "int256[3]"
-          },
-          {
-            "internalType": "int256[3]",
-            "name": "sHighEdges",
-            "type": "int256[3]"
-          },
-          {
-            "internalType": "int256[3]",
-            "name": "sLowEdges",
             "type": "int256[3]"
           },
           {
@@ -188,9 +219,28 @@
             "type": "uint224"
           }
         ],
-        "internalType": "struct Estimator.EstimationParameters",
+        "internalType": "struct IEstimator.EstimationParameters",
         "name": "",
         "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getSpreadFee",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
       }
     ],
     "stateMutability": "view",

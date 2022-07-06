@@ -25,7 +25,7 @@ describe('Maverick E2E', () => {
     const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
 
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDT';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const tokenAAmount: string = '1000000';

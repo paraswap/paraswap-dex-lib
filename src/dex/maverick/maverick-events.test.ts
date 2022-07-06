@@ -72,9 +72,9 @@ async function getSubgraphPool(
 
 describe('Maverick Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
-    AddLiquidity: [29361077, 29534022, 29299844, 29336737, 29534048],
-    RemoveLiquidity: [29533598, 29533926, 29533966, 29533510, 29533836],
-    Swap: [29301354, 29369066, 29358925, 29356334, 29378862],
+    AddLiquidity: [30056745, 30066571, 30100670, 30101634, 30066571],
+    RemoveLiquidity: [30056990, 30066638, 30102014, 30102040, 30102103],
+    Swap: [30056881, 30056947, 30066500, 30066534, 30066607],
   };
 
   describe.only('MaverickEventPool', function () {
@@ -84,16 +84,15 @@ describe('Maverick Event', function () {
           const dexHelper = new DummyDexHelper(network);
           const logger = dexHelper.getLogger(dexKey);
           const pool = await getSubgraphPool(
-            '0xf72Ba513CF61947bB9153f719B3f7E225eCB0703',
+            '0x515f36eb9a2ae11091949d8470ff808b8d6e57db',
             blockNumber,
           );
-
           const maverickPool = new MaverickEventPool(
             dexKey,
             dexHelper,
             pool.id,
+            Tokens[network]['USDT'],
             Tokens[network]['USDC'],
-            Tokens[network]['WETH'],
             pool.fee,
             pool.w,
             pool.h,

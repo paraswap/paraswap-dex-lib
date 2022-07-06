@@ -41,6 +41,7 @@ export class MaverickPool {
   gam2_k: bigint;
   gam_w: bigint;
   state: MaverickPoolState;
+  timestamp: bigint;
 
   constructor(
     private dexKey: string,
@@ -54,15 +55,10 @@ export class MaverickPool {
     public k: bigint,
     public h: bigint,
   ) {
+    this.timestamp = 0n;
     this.maxSpreadFee = BigInt(0.99e18) - this.fee;
     this.sk = MMath.sqrt(k);
     this.sw = MMath.sqrt(w);
-
-    this.gammas = [
-      MMath.div(BI_POWS[18], MMath.mul(this.sk, this.sw) - this.sw),
-      MMath.div(this.sw, this.w - BI_POWS[18]),
-      MMath.div(MMath.mul(this.sw, this.sk), this.sk - BI_POWS[18]),
-    ];
     this.state = {
       quoteBalance: 0n,
       baseBalance: 0n,
@@ -70,16 +66,21 @@ export class MaverickPool {
       twau: 0n,
       lastTimestamp: 0n,
     };
+    this.gammas = [
+      MMath.div(BI_POWS[18], MMath.mul(this.sk, this.sw) - this.sw),
+      MMath.div(this.sw, this.w - BI_POWS[18]),
+      MMath.div(MMath.mul(this.sw, this.sk), this.sk - BI_POWS[18]),
+    ];
     this.lambdas = [this.gammas[2], this.gammas[1], this.gammas[0]];
 
     const gamma_h =
       BI_POWS[18] + MMath.div(MMath.mul(h, this.gammas[2]), this.gammas[1]);
+
     this.binThreshold = MMath.div(
       this.gammas[2],
       MMath.mul(this.lambdas[0], gamma_h),
     );
     this.lamb_w = MMath.div(MMath.mul(this.h, this.lambdas[0]), this.sw);
-
     this.lamb2_w = MMath.mul(
       MMath.mul(
         MMath.mul(this.lambdas[0], this.lambdas[0]),
@@ -87,7 +88,6 @@ export class MaverickPool {
       ),
       MMath.mul(this.h, this.h),
     );
-
     this.ind_1_a2 = BI_POWS[18] - MathSol.mul(2n, this.lamb_w) + this.lamb2_w;
     this.gamma_bar = MMath.div(
       this.gammas[2],
@@ -107,21 +107,23 @@ export class MaverickPool {
         MMath.div(this.h, this.lambdas[1]),
     );
     this.lam2_kw = MMath.mul(
-      MMath.mul(this.lambda_bar, this.lambda_bar),
-      MMath.mul(this.sw, BI_POWS[18] - this.sk),
+      MMath.mul(MMath.mul(this.lambda_bar, this.lambda_bar), this.sw),
+      BI_POWS[18] - this.sk,
     );
     this.ind_2_a2 = -this.lambda_bar + this.lam2_kw;
   }
 
-  setState(state: MaverickPoolState) {
-    this.state = state;
-  }
-
-  swap(state: MaverickPoolState, amount: bigint, swapForBase: boolean): bigint {
+  swap(
+    state: MaverickPoolState,
+    timestamp: bigint,
+    amount: bigint,
+    swapForBase: boolean,
+  ): bigint {
     if (state.quoteBalance == 0n || state.baseBalance == 0n) {
       return 0n;
     }
     this.state = state;
+    this.timestamp = timestamp;
     if (swapForBase) {
       return this._swapQuoteForBase(amount, true);
     } else {
@@ -151,6 +153,9 @@ export class MaverickPool {
   }
 
   _getTimestamp() {
+    if (this.timestamp > 0n) {
+      return this.timestamp;
+    }
     return BigInt(parseInt((new Date().getTime() / 1000).toFixed(0)));
   }
 
@@ -230,6 +235,7 @@ export class MaverickPool {
     const activeInd = this._getActiveInd();
     const su = MMath.sqrt(this.state.u);
     let activeInfo: ActiveInfo = {};
+
     if (activeInd == 1) {
       const _lamb_w = this.lamb_w;
       const quotelamb = MMath.mul(this.state.quoteBalance, this.lamb2_w);
@@ -240,6 +246,7 @@ export class MaverickPool {
         this.state.quoteBalance,
         MMath.mul(_lamb_w, activeInfo.c) + quotelamb,
       );
+
       activeInfo.a1 =
         activeInfo.c +
         MMath.mul(
@@ -302,8 +309,11 @@ export class MaverickPool {
       activeInfo.a0 = MMath.mul(
         this.state.quoteBalance,
         MMath.mul(
-          MMath.mul(this.state.baseBalance, this.state.u),
-          MMath.mul(MMath.mul(this.w, this.lambda_bar), this.sk),
+          MMath.mul(
+            MMath.mul(MMath.mul(this.state.baseBalance, this.state.u), this.w),
+            this.lambda_bar,
+          ),
+          this.sk,
         ) + MMath.mul(this.state.quoteBalance, this.lam2_kw),
       );
       activeInfo.a1 =
@@ -404,7 +414,6 @@ export class MaverickPool {
     if (binInd == 1) {
       L = MMath.mul(L, this.h);
     }
-
     let spHigh: bigint;
     let spLow: bigint;
 
@@ -634,7 +643,7 @@ export class MaverickPool {
     } else {
       this.state.twau = this._calculateTwau(this.state.u);
     }
-    this.state.lastTimestamp = this._getTimestamp();
+    this.state.lastTimestamp = this.timestamp;
     this.state.u = newU;
   }
 }

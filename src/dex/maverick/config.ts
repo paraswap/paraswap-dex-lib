@@ -7,9 +7,9 @@ export const MaverickConfig: DexConfigMap<DexParams> = {
     [Network.POLYGON]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/maverickprotocol/swap-polygon',
-      factoryAddress: '0x08da5c7f95681D925D807b90E8AB67c2e10bD044',
-      routerAddress: '0x66a66a816a43Fc63BBaaF4b8f7210A19c8E32dB8',
-      estimatorAddress: '0x2718A216057EA4ef6D5FfA46B2Fa4E8d0F608b06',
+      factoryAddress: '0x09d267428cA6D221c64f343B3Af07446603F22C2',
+      routerAddress: '0x6F9014366DccAd9323247DA44518212C0572C80A',
+      estimatorAddress: '0x631b13a4C20705c067Fe5Cd1867C955B0D19C636',
     },
   },
 };
