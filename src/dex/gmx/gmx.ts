@@ -3,7 +3,6 @@ import {
   Token,
   Address,
   ExchangePrices,
-  Log,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -48,7 +47,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     protected adapters = Adapters[network],
     protected params: DexParams = GMXConfig[dexKey][network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 

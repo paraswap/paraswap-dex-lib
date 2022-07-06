@@ -1,10 +1,10 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BProtocolABI from '../abi/BProtocol.json';
+import Web3 from 'web3';
 
 export type BProtocolData = {
   exchange: string;
@@ -24,7 +24,7 @@ export class BProtocol
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(

@@ -1,11 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BalancerABI from '../abi/Balancer.json';
 import { isETHAddress } from '../utils';
+import Web3 from 'web3';
 
 type BalancerSwaps = {
   pool: Address;
@@ -81,7 +81,7 @@ export class Balancer
   constructor(
     augustusAddress: Address,
     public network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(BalancerABI as JsonFragment[]);

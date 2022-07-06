@@ -30,7 +30,7 @@ describe('AaveV1', function () {
     const dexKey = 'AaveV1';
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       const dexHelper = new DummyDexHelper(network);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const aaveV1 = new AaveV1(network, dexKey, dexHelper);
 
       const pools = await aaveV1.getPoolIdentifiers(
@@ -60,7 +60,7 @@ describe('AaveV1', function () {
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       const dexHelper = new DummyDexHelper(network);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const aaveV1 = new AaveV1(network, dexKey, dexHelper);
 
       const pools = await aaveV1.getPoolIdentifiers(

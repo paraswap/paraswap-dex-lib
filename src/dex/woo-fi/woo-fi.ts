@@ -23,11 +23,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { WooFiConfig, Adapters } from './config';
 import { WooFiMath } from './woo-fi-math';
-import {
-  MIN_CONVERSION_RATE,
-  USD_PRECISION,
-  WOO_FI_GAS_COST,
-} from './constants';
+import { MIN_CONVERSION_RATE, WOO_FI_GAS_COST } from './constants';
 import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
 import wooFeeManagerABI from '../../abi/woo-fi/WooFeeManager.abi.json';
 import woOracleABI from '../../abi/woo-fi/Wooracle.abi.json';
@@ -86,7 +82,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     protected adapters = Adapters[network] || {},
     readonly config = WooFiConfig[dexKey][network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
 
     // Normalise once all config addresses and use across all scenarios

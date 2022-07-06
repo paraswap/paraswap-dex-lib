@@ -1,5 +1,4 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide, MAX_UINT } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
@@ -7,6 +6,7 @@ import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from 'paraswap-core';
 import { isETHAddress } from '../utils';
+import Web3 from 'web3';
 
 const DODOAproveAddress: { [network: number]: Address } = {
   1: '0xCB859eA579b28e02B87A1FDE08d087ab9dbE5149',
@@ -67,7 +67,7 @@ export class DodoV2
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(

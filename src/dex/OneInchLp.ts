@@ -1,11 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import OneInchLpABI from '../abi/OneInchLp.json';
 import { isETHAddress } from '../utils';
+import Web3 from 'web3';
 
 export type OneInchLpData = {
   exchange: string; // _DOUBLE_CHECK_
@@ -31,7 +31,7 @@ export class OneInchLp
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(

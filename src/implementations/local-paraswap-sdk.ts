@@ -68,7 +68,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   }
 
   async initializePricing() {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
   }
 
@@ -80,7 +80,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     contractMethod: ContractMethod,
     _poolIdentifiers?: string[],
   ): Promise<OptimalRate> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     const poolIdentifiers =
       (_poolIdentifiers && { [this.dexKey]: _poolIdentifiers }) ||
       (await this.pricingHelper.getPoolIdentifiers(

@@ -24,7 +24,7 @@ const dexKey = 'UniswapV2';
 describe('UniswapV2', function () {
   it('getPoolIdentifiers and getPricesVolume', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     const uniswapV2 = new UniswapV2(Network.MAINNET, dexKey, dexHelper);
 
     const pools = await uniswapV2.getPoolIdentifiers(

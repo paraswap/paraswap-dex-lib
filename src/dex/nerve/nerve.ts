@@ -59,7 +59,7 @@ export class Nerve
     protected poolConfigs = NerveConfig[dexKey][network].poolConfigs,
     protected nervePoolIface = new Interface(nervePoolABIDefault),
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -116,7 +116,7 @@ export class Nerve
 
     const _blockNumber =
       blockNumber === undefined
-        ? await this.dexHelper.provider.getBlockNumber()
+        ? await this.dexHelper.web3Provider.eth.getBlockNumber()
         : blockNumber;
 
     // TODO: Need to batch this RPC calls in one multicall

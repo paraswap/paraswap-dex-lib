@@ -51,7 +51,7 @@ export class Weth
     protected unitPrice = BI_POWS[18],
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 

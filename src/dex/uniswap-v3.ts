@@ -1,11 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
 import { NumberAsString } from 'paraswap-core';
+import Web3 from 'web3';
 
 const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
   1: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
@@ -59,7 +59,7 @@ export class UniswapV3
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(

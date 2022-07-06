@@ -5,6 +5,7 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import OnebitABI from '../abi/Onebit.json';
+import Web3 from 'web3';
 
 export type OnebitData = {
   router: Address;
@@ -31,7 +32,7 @@ export class Onebit
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(OnebitABI as JsonFragment[]);

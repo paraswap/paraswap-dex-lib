@@ -58,7 +58,7 @@ export class ParaSwapLimitOrders
     ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
