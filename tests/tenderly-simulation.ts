@@ -26,7 +26,7 @@ export class TenderlySimulation {
           network_id: this.network.toString(),
         },
         {
-          timeout: 10000,
+          timeout: 20000,
           headers: {
             'x-access-key': TENDERLY_TOKEN,
           },
@@ -55,7 +55,7 @@ export class TenderlySimulation {
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,
         {
-          timeout: 10 * 1000,
+          timeout: 20 * 1000,
           headers: {
             'x-access-key': TENDERLY_TOKEN!,
           },
