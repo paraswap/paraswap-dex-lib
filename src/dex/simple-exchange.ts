@@ -5,7 +5,7 @@ import { ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 import ERC20ABI from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
-import { MAX_UINT, NULL_ADDRESS } from '../constants';
+import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
 
 export class SimpleExchange {
@@ -37,7 +37,6 @@ export class SimpleExchange {
       data: allowanceData,
     });
 
-    console.log(allowanceRaw);
     const allowance = this.erc20Interface.decodeFunctionResult(
       'allowance',
       allowanceRaw,
