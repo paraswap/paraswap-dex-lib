@@ -99,6 +99,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       .wrapETH(destToken)
       .address.toLowerCase();
     if (
+      srcAddress !== destAddress &&
       this.supportedTokensMap[srcAddress] &&
       this.supportedTokensMap[destAddress]
     ) {
@@ -127,6 +128,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       .wrapETH(destToken)
       .address.toLowerCase();
     if (
+      srcAddress === destAddress ||
       !(
         this.supportedTokensMap[srcAddress] &&
         this.supportedTokensMap[destAddress]
