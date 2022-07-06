@@ -228,7 +228,7 @@ export class UniswapV2
       UniswapV2Config[dexKey][network].router) ??
       UniswapV2ExchangeRouter[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(

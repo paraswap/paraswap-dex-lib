@@ -1,11 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide, NULL_ADDRESS } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import Ceth from '../abi/Compound_CETH.json'; // CETH abi
 import { isETHAddress } from '../utils';
+import Web3 from 'web3';
 
 export type CompoundData = {
   fromCToken: boolean;
@@ -26,7 +26,7 @@ export class Compound
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.cethInterface = new Interface(Ceth as JsonFragment[]);

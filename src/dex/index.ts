@@ -44,6 +44,7 @@ import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
+import Web3 from 'web3';
 
 const LegacyDexes = [
   Curve,
@@ -123,7 +124,7 @@ const AdapterNameAddressMap: {
 export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
-  provider: Provider,
+  provider: Web3,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -225,7 +226,7 @@ export class DexAdapterService {
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
         this.dexHelper.augustusAddress,
         this.network,
-        this.dexHelper.provider,
+        this.dexHelper.web3Provider,
       );
     }
 

@@ -112,7 +112,7 @@ describe('ParaSwapLimitOrders', function () {
 
   beforeEach(async () => {
     dexHelper = new DummyDexHelper(network);
-    blockNumber = await dexHelper.provider.getBlockNumber();
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     paraSwapLimitOrders = new ParaSwapLimitOrders(network, dexKey, dexHelper);
     dummyLimitOrderProvider = new DummyLimitOrderProvider();
     dummyLimitOrderProvider.setOrderBook(

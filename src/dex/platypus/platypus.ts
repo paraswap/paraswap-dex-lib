@@ -66,7 +66,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.augustusAddress, dexHelper.web3Provider);
     this.config = PlatypusConfig[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }
@@ -497,7 +497,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     await this.init(blockNumber);
     if (!this.cfgInfo)
       throw new Error(

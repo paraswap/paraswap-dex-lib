@@ -24,7 +24,7 @@ const dexKey = 'MakerPsm';
 describe('MakerPsm', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     const makerPsm = new MakerPsm(network, dexKey, dexHelper);
 
     await makerPsm.initializePricing(blocknumber);
@@ -55,7 +55,7 @@ describe('MakerPsm', function () {
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     const makerPsm = new MakerPsm(network, dexKey, dexHelper);
 
     await makerPsm.initializePricing(blocknumber);

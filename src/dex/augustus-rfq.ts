@@ -1,5 +1,4 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { isHexString, hexConcat } from '@ethersproject/bytes';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { SwapSide, Network } from '../constants';
@@ -8,6 +7,7 @@ import { SimpleExchange } from './simple-exchange';
 import AugustusRFQABI from '../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import PermitABI from '../abi/permit/IERC20Permit.json';
 import PermitLegacyABI from '../abi/permit/IERC20PermitLegacy.json';
+import Web3 from 'web3';
 
 const PERMIT_SIGHASH = new Interface(PermitABI).getSighash('permit');
 const PERMIT_LEGACY_SIGHASH = new Interface(PermitLegacyABI).getSighash(
@@ -83,7 +83,7 @@ export class AugustusRFQOrder
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.rfqInterface = new Interface(AugustusRFQABI as JsonFragment[]);
