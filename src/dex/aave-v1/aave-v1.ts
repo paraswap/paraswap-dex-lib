@@ -48,7 +48,7 @@ export class AaveV1
     protected dexKey: string,
     protected dexHelper: IDexHelper, // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V1 as JsonFragment[]);
     this.aContract = new Interface(ERC20 as JsonFragment[]);

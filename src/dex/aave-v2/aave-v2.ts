@@ -65,7 +65,7 @@ export class AaveV2
     protected dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.wethGateway = new Interface(WETH_GATEWAY_ABI[network]);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V2);

@@ -87,7 +87,7 @@ describe('WooFi', function () {
   let wooFiNotInitialized: WooFi;
 
   beforeAll(async () => {
-    blockNumber = await dexHelper.provider.getBlockNumber();
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
     wooFi = new WooFi(network, dexKey, dexHelper);
     await wooFi.initializePricing(blockNumber);
@@ -195,7 +195,7 @@ describe('WooFi', function () {
       4n * BI_POWS[6],
     ];
 
-    const _blockNumber = await _dexHelper.provider.getBlockNumber();
+    const _blockNumber = await _dexHelper.web3Provider.eth.getBlockNumber();
 
     const _wooFi = new WooFi(_network, dexKey, _dexHelper);
     await _wooFi.initializePricing(_blockNumber);
@@ -259,7 +259,7 @@ describe('WooFi', function () {
       10000n * BI_POWS[6],
     ];
 
-    const _blockNumber = await _dexHelper.provider.getBlockNumber();
+    const _blockNumber = await _dexHelper.web3Provider.eth.getBlockNumber();
 
     const _wooFi = new WooFi(_network, dexKey, _dexHelper);
     await _wooFi.initializePricing(_blockNumber);

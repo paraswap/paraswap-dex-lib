@@ -62,7 +62,7 @@ export class KyberDmm
     protected config = KyberDmmConfig[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
 
     this.logger = dexHelper.getLogger(dexKey);
 

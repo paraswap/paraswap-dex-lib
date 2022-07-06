@@ -1,4 +1,4 @@
-import { Provider } from '@ethersproject/providers';
+import Web3 from 'web3';
 import { LIMIT_ORDER_PROVIDERS } from '../constants';
 import { ILimitOrderProvider } from '../dex-helper/ilimit-order-provider';
 import { Address } from '../types';
@@ -13,7 +13,7 @@ export abstract class LimitOrderExchange<
     LimitOrderPriceSummaryResponse
   >;
 
-  constructor(augustusAddress: Address, provider: Provider) {
+  constructor(augustusAddress: Address, provider: Web3) {
     super(augustusAddress, provider);
   }
 

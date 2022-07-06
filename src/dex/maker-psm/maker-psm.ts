@@ -205,7 +205,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     protected vatAddress: Address = MakerPsmConfig[dexKey][network].vatAddress,
     protected poolConfigs: PoolConfig[] = MakerPsmConfig[dexKey][network].pools,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
     poolConfigs.forEach(

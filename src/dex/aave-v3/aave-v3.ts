@@ -39,7 +39,7 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     protected config = Config[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.wethGateway = new Interface(WETH_GATEWAY_ABI);
     this.pool = new Interface(POOL_ABI);
