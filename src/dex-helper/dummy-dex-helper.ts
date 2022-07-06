@@ -85,6 +85,7 @@ class DummyBlockManager implements IBlockManager {
     console.log(
       `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
     );
+    subscriber.isTracking = () => true;
   }
 }
 
