@@ -1,0 +1,44 @@
+[
+  {
+    "aSymbol": "aArbDAI",
+    "aAddress": "0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE",
+    "address": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aArbLINK",
+    "aAddress": "0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530",
+    "address": "0xf97f4df75117a78c1a5a0dbb814af92458539fb4",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aArbUSDC",
+    "aAddress": "0x625E7708f30cA75bfd92586e17077590C60eb4cD",
+    "address": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "WBTC",
+    "aAddress": "0x078f358208685046a11C85e8ad32895DED33A249",
+    "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+    "decimals": 8
+  },
+  {
+    "aSymbol": "aArbWETH",
+    "aAddress": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8",
+    "address": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aArbUSDT",
+    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
+    "address": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "aArbAAVE",
+    "aAddress": "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375",
+    "address": "0xba5ddd1f9d7f570dc94a51479a000e3bce967196",
+    "decimals": 18
+  }
+]
