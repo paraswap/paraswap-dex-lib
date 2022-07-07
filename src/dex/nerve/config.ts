@@ -500,6 +500,82 @@ export const NerveConfig: DexConfigMap<DexParams> = {
       // The same as axial
       abi: axialPoolABI,
     },
+    [Network.ARBITRUM]: {
+      poolConfigs: {
+        arbUSD: {
+          name: 'arbUSD',
+          address: '0xBea9F78090bDB9e662d8CB301A00ad09A5b756e9',
+          coins: [
+            {
+              address: '0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688', // 0 - nUSD
+              decimals: 18,
+            },
+            {
+              address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A', // 1 - MIM
+              decimals: 18,
+            },
+            {
+              address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // 2 - USDC
+              decimals: 6,
+            },
+            {
+              address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // 3 - USDT
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0xc969dD0A7AB0F8a0C5A69C0839dB39b6C928bC08',
+            decimals: 18,
+          },
+        },
+        arbUSDV2: {
+          name: 'arbUSDV2',
+          address: '0xfeEa4D1BacB0519E8f952460A70719944fe56Ee0',
+          coins: [
+            {
+              address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F', // 0 - FRAX
+              decimals: 18,
+            },
+            {
+              address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // 1 - USDC
+              decimals: 6,
+            },
+            {
+              address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // 2 - USDT
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0x0a20c2FFa10cD43F67D06170422505b7D6fC0953',
+            decimals: 18,
+          },
+        },
+        // TODO: This pool doesn't have liquidity and I don't know the addresses. We can add it later at some time
+        // FraxUsdcBp: {
+        //   name: 'FraxUsdcBp',
+        //   address: '',
+        //   coins: [
+        //     {
+        //       address: '', // 0 - FRAX
+        //       decimals: 0,
+        //     },
+        //   ],
+        //   isMetapool: false,
+        //   isUSDPool: true,
+        //   lpToken: {
+        //     address: '',
+        //     decimals: 0,
+        //   },
+        // },
+      },
+
+      // The same as axial
+      abi: axialPoolABI,
+    },
   },
 };
 
@@ -520,5 +596,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.FANTOM]: {
     [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 7 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 8 }],
   },
 };
