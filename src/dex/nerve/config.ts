@@ -599,84 +599,84 @@ export const NerveConfig: DexConfigMap<DexParams> = {
     //   poolConfigs: {},
     //   abi: axialPoolABI,
     // },
-    // TODO: Not giving correct prices
-    // [Network.ARBITRUM]: {
-    //   poolConfigs: {
-    //     ArbETHPool: {
-    //       name: 'ArbETHPool',
-    //       address: '0xa067668661C84476aFcDc6fA5D758C4c01C34352',
-    //       coins: [
-    //         {
-    //           address: '0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e', // 0 - nETH
-    //           decimals: 18,
-    //         },
-    //         {
-    //           address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', // 1 - WETH
-    //           decimals: 18,
-    //         },
-    //       ],
-    //       isMetapool: false,
-    //       isUSDPool: false,
-    //       lpToken: {
-    //         address: '0xD70A52248e546A3B260849386410C7170c7BD1E9',
-    //         decimals: 18,
-    //       },
-    //     },
-    //     nUSDV2: {
-    //       name: 'nUSDV2',
-    //       address: '0x0Db3FE3B770c95A0B99D1Ed6F2627933466c0Dd8',
-    //       coins: [
-    //         {
-    //           address: '0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688', // 0 - nUSD
-    //           decimals: 18,
-    //         },
-    //         {
-    //           address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A', // 1 - MIM
-    //           decimals: 18,
-    //         },
-    //         {
-    //           address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // 2 - USDC
-    //           decimals: 6,
-    //         },
-    //         {
-    //           address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // 3 - USDT
-    //           decimals: 6,
-    //         },
-    //       ],
-    //       isMetapool: false,
-    //       isUSDPool: true,
-    //       lpToken: {
-    //         address: '0xADeac0343C2Ac62DFE5A5f51E896AefFF5Ab513E',
-    //         decimals: 18,
-    //       },
-    //     },
-    //     nUSDV3: {
-    //       name: 'nUSDV3',
-    //       address: '0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40',
-    //       coins: [
-    //         {
-    //           address: '0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688', // 0 - nUSD
-    //           decimals: 18,
-    //         },
-    //         {
-    //           address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // 1 - USDC
-    //           decimals: 6,
-    //         },
-    //         {
-    //           address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // 2 - USDT
-    //           decimals: 6,
-    //         },
-    //       ],
-    //       isMetapool: false,
-    //       isUSDPool: true,
-    //       lpToken: {
-    //         address: '0xcFd72be67Ee69A0dd7cF0f846Fc0D98C33d60F16',
-    //         decimals: 18,
-    //       },
-    //     },
-    //   },
-    //   abi: axialPoolABI,
-    // },
+
+    [Network.ARBITRUM]: {
+      poolConfigs: {
+        ArbETHPool: {
+          name: 'ArbETHPool',
+          address: '0xa067668661C84476aFcDc6fA5D758C4c01C34352',
+          coins: [
+            {
+              address: '0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e', // 0 - nETH
+              decimals: 18,
+            },
+            {
+              address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', // 1 - WETH
+              decimals: 18,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: false,
+          lpToken: {
+            address: '0xD70A52248e546A3B260849386410C7170c7BD1E9',
+            decimals: 18,
+          },
+        },
+        nUSDV2: {
+          name: 'nUSDV2',
+          address: '0x0Db3FE3B770c95A0B99D1Ed6F2627933466c0Dd8',
+          coins: [
+            {
+              address: '0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688', // 0 - nUSD
+              decimals: 18,
+            },
+            {
+              address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A', // 1 - MIM
+              decimals: 18,
+            },
+            {
+              address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // 2 - USDC
+              decimals: 6,
+            },
+            {
+              address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // 3 - USDT
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0xADeac0343C2Ac62DFE5A5f51E896AefFF5Ab513E',
+            decimals: 18,
+          },
+        },
+        nUSDV3: {
+          name: 'nUSDV3',
+          address: '0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40',
+          coins: [
+            {
+              address: '0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688', // 0 - nUSD
+              decimals: 18,
+            },
+            {
+              address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // 1 - USDC
+              decimals: 6,
+            },
+            {
+              address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // 2 - USDT
+              decimals: 6,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0xcFd72be67Ee69A0dd7cF0f846Fc0D98C33d60F16',
+            decimals: 18,
+          },
+        },
+      },
+      abi: axialPoolABI,
+    },
   },
 };
 

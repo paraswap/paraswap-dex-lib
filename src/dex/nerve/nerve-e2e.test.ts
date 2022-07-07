@@ -603,11 +603,11 @@ describe('Synapse', () => {
     );
     describe('simpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
-      it('SELL nUSD -> USDC', async () => {
+      it('SELL USDC -> nUSD', async () => {
         await testE2E(
-          tokens.nUSD,
           tokens.USDC,
-          holders.nUSD,
+          tokens.nUSD,
+          holders.USDC,
           '111000000',
           SwapSide.SELL,
           dexKey,
@@ -619,11 +619,11 @@ describe('Synapse', () => {
     });
     describe('multiSwap', () => {
       const contractMethod = ContractMethod.multiSwap;
-      it('SELL nUSD -> USDC', async () => {
+      it('SELL USDC -> nUSD', async () => {
         await testE2E(
-          tokens.nUSD,
           tokens.USDC,
-          holders.nUSD,
+          tokens.nUSD,
+          holders.USDC,
           '111000000',
           SwapSide.SELL,
           dexKey,
@@ -635,10 +635,10 @@ describe('Synapse', () => {
     });
     describe('megaSwap', () => {
       const contractMethod = ContractMethod.megaSwap;
-      it('SELL nUSD -> USDC', async () => {
+      it('SELL USDC -> nUSD', async () => {
         await testE2E(
-          tokens.nUSD,
           tokens.USDC,
+          tokens.nUSD,
           holders.USDC,
           '111000000',
           SwapSide.SELL,
