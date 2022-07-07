@@ -589,3 +589,65 @@ describe('Saddle', () => {
     });
   });
 });
+
+describe('Synapse', () => {
+  const dexKey = 'Synapse';
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+    describe('simpleSwap', () => {
+      const contractMethod = ContractMethod.simpleSwap;
+      it('SELL nUSD -> USDC', async () => {
+        await testE2E(
+          tokens.nUSD,
+          tokens.USDC,
+          holders.nUSD,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('multiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+      it('SELL nUSD -> USDC', async () => {
+        await testE2E(
+          tokens.nUSD,
+          tokens.USDC,
+          holders.nUSD,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('megaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+      it('SELL nUSD -> USDC', async () => {
+        await testE2E(
+          tokens.nUSD,
+          tokens.USDC,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+});

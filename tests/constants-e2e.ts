@@ -519,6 +519,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
       decimals: 18,
     },
+    nUSD: {
+      address: '0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688',
+      decimals: 18,
+    },
   },
 };
 
@@ -650,6 +654,7 @@ export const Holders: {
     WETH: '0xc2707568D31F3fB1Fc55B2F8b2ae5682eAa72041',
     USDC: '0x1714400FF23dB4aF24F9fd64e7039e6597f18C2b',
     FRAX: '0xf07d553b195080f84f582e88ecdd54baa122b279',
+    nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',
   },
 };
 
