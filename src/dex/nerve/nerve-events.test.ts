@@ -1160,17 +1160,6 @@ describe('Synapse Event Pool Arbitrum', async () => {
         dexHelper.provider,
       );
     });
-    it(`State after 5143230`, async () => {
-      const blockNumber = 5143230;
-      await testEventSubscriber(
-        nervePool,
-        nervePool.addressesSubscribed,
-        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
-        blockNumber,
-        Nerve.getIdentifier(dexKey, testPoolAddress),
-        dexHelper.provider,
-      );
-    });
   });
 
   // NewSwapFee -> 0xd88ea5155021c6f8dafa1a741e173f595cdf77ce7c17d43342131d7f06afdfe5

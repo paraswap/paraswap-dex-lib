@@ -288,7 +288,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       const dyAdminFee =
         (dyFee * state.adminFee) /
         this.math.FEE_DENOMINATOR /
-        state.tokenPrecisionMultipliers[tokenIndexFrom];
+        state.tokenPrecisionMultipliers[tokenIndexTo];
 
       state.balances[tokenIndexFrom] += transferredDx;
       state.balances[tokenIndexTo] -= dy + dyAdminFee;
