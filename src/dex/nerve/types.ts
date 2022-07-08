@@ -17,6 +17,7 @@ export interface PoolState {
   balances: bigint[];
   tokenPrecisionMultipliers: bigint[];
   isValid: boolean;
+  paused: boolean;
 }
 
 export interface NervePoolConfig {

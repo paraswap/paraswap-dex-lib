@@ -208,6 +208,10 @@ export class Nerve
 
       const result: ExchangePrices<NerveData> = [];
       for (const { pool, state } of statePoolPair) {
+        if (state.paused) {
+          continue;
+        }
+
         const srcIndex = pool.tokens.findIndex(
           token =>
             token.address.toLowerCase() === _srcToken.address.toLowerCase(),
@@ -236,6 +240,7 @@ export class Nerve
             pool.setState({ ...state, isValid: false }, blockNumber);
             this.logger.error(
               `${this.dexKey} protocol ${pool.name} (${pool.address}) pool can not calculate out swap for amount ${_amount}`,
+              e,
             );
             return null;
           }
