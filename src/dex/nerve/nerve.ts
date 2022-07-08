@@ -221,6 +221,10 @@ export class Nerve
             token.address.toLowerCase() === _destToken.address.toLowerCase(),
         );
 
+        if (srcIndex === -1 || destIndex === -1) {
+          continue;
+        }
+
         const _prices: bigint[] = [];
         for (const _amount of _amounts) {
           try {

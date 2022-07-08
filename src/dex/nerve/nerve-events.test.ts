@@ -5,7 +5,7 @@ import { NerveEventPool } from './nerve-pool';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { EventPoolOrMetapool, PoolState } from './types';
+import { PoolState } from './types';
 import { typeCastPoolState } from './utils';
 import { Nerve } from './nerve';
 import { threePoolName } from './config';
@@ -29,7 +29,7 @@ describe('Nerve Event Pool BSC', async () => {
   const testPoolAddress = '0x1B3771a66ee31180906972580adE9b81AFc5fCDc'; // 3Pool
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let nervePool: EventPoolOrMetapool;
+  let nervePool: NerveEventPool;
 
   beforeEach(async () => {
     nervePool = new NerveEventPool(
@@ -413,7 +413,7 @@ describe('Saddle Event Pool Mainnet', async () => {
   const testPoolAddress = '0xc69ddcd4dfef25d8a793241834d4cc4b3668ead6'; // D4
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let nervePool: EventPoolOrMetapool;
+  let nervePool: NerveEventPool;
 
   beforeEach(async () => {
     nervePool = new NerveEventPool(
@@ -681,7 +681,7 @@ describe('IronV2 Event Pool Polygon', async () => {
   const testPoolAddress = '0x837503e8A8753ae17fB8C8151B8e6f586defCb57'; // IS3USD
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let nervePool: EventPoolOrMetapool;
+  let nervePool: NerveEventPool;
 
   beforeEach(async () => {
     nervePool = new NerveEventPool(
@@ -975,4 +975,216 @@ describe('IronV2 Event Pool Polygon', async () => {
 
   // RemoveLiquidityImbalance -> 0x3631c28b1f9dd213e0319fb167b554d76b6c283a41143eb400a0d1adb1af1755
   // No events for RemoveLiquidityImbalance
+});
+
+describe('Synapse Event Pool Arbitrum', async () => {
+  const dexKey = 'Synapse';
+  const network = Network.ARBITRUM;
+  const poolName = 'nUSDV3';
+  const testPoolAddress = '0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40'; // nUSDV3
+  const dexHelper = new DummyDexHelper(network);
+  const logger = dexHelper.getLogger(dexKey);
+  let nervePool: NerveEventPool;
+
+  beforeEach(async () => {
+    nervePool = new NerveEventPool(
+      dexKey,
+      network,
+      dexHelper,
+      logger,
+      poolName,
+    );
+  });
+
+  // TokenSwap -> 0xc6c1e0630dbe9130cc068028486c0d118ddcea348550819defd5cb8c257f8a38
+  describe('TokenSwap', () => {
+    it(`State after 17256191`, async () => {
+      const blockNumber = 17256191;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17256467`, async () => {
+      const blockNumber = 17256467;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17256191`, async () => {
+      const blockNumber = 17256191;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17256173 `, async () => {
+      const blockNumber = 17256173;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17256144`, async () => {
+      const blockNumber = 17256144;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+  });
+
+  // AddLiquidity -> 0x189c623b666b1b45b83d7178f39b8c087cb09774317ca2f53c2d3c3726f222a2
+  describe('AddLiquidity', () => {
+    it(`State after 17220979`, async () => {
+      const blockNumber = 17220979;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17186516`, async () => {
+      const blockNumber = 17186516;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17186114`, async () => {
+      const blockNumber = 17186114;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17180822`, async () => {
+      const blockNumber = 17180822;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17154508`, async () => {
+      const blockNumber = 17154508;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+  });
+
+  // RemoveLiquidity -> 0x88d38ed598fdd809c2bf01ee49cd24b7fdabf379a83d29567952b60324d58cef
+  describe('RemoveLiquidity', () => {
+    it(`State after 17232908`, async () => {
+      const blockNumber = 17232908;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 17154430`, async () => {
+      const blockNumber = 17154430;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 16780865`, async () => {
+      const blockNumber = 16780865;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 13691211`, async () => {
+      const blockNumber = 13691211;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+    it(`State after 5143230`, async () => {
+      const blockNumber = 5143230;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+  });
+
+  // NewSwapFee -> 0xd88ea5155021c6f8dafa1a741e173f595cdf77ce7c17d43342131d7f06afdfe5
+  describe('NewSwapFee', () => {
+    it(`State after 11349722`, async () => {
+      const blockNumber = 11349722;
+      await testEventSubscriber(
+        nervePool,
+        nervePool.addressesSubscribed,
+        (_blockNumber: number) => fetchPoolState(nervePool, _blockNumber),
+        blockNumber,
+        Nerve.getIdentifier(dexKey, testPoolAddress),
+        dexHelper.provider,
+      );
+    });
+  });
 });

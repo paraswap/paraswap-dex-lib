@@ -989,6 +989,19 @@ describe('Synapse', () => {
           provider,
         );
       });
+      it('SELL nUSD -> MIM', async () => {
+        await testE2E(
+          tokens.nUSD,
+          tokens.MIM,
+          holders.nUSD,
+          '111000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
       it('SELL nETH -> WETH', async () => {
         await testE2E(
           tokens.nETH,
@@ -1018,6 +1031,19 @@ describe('Synapse', () => {
           provider,
         );
       });
+      it('SELL nUSD -> MIM', async () => {
+        await testE2E(
+          tokens.nUSD,
+          tokens.MIM,
+          holders.nUSD,
+          '111000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
       it('SELL nETH -> WETH', async () => {
         await testE2E(
           tokens.nETH,
@@ -1040,6 +1066,19 @@ describe('Synapse', () => {
           tokens.nUSD,
           holders.USDC,
           '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+      it('SELL nUSD -> MIM', async () => {
+        await testE2E(
+          tokens.nUSD,
+          tokens.MIM,
+          holders.nUSD,
+          '111000000000000000000',
           SwapSide.SELL,
           dexKey,
           contractMethod,
