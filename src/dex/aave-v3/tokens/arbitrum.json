@@ -40,5 +40,11 @@
     "aAddress": "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375",
     "address": "0xba5ddd1f9d7f570dc94a51479a000e3bce967196",
     "decimals": 18
+  },
+  {
+    "aSymbol": "aArbEURS",
+    "aAddress": "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97",
+    "address": "0xd22a58f79e9481d1a88e00c343885a588b34b68b",
+    "decimals": 2
   }
 ]

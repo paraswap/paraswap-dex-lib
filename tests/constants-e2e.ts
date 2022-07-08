@@ -551,6 +551,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e',
       decimals: 18,
     },
+    EURS: {
+      address: '0xd22a58f79e9481d1a88e00c343885a588b34b68b',
+      decimals: 2,
+    },
+    AAVE: {
+      address: '0xba5ddd1f9d7f570dc94a51479a000e3bce967196',
+      decimals: 18,
+    },
   },
 };
 
@@ -689,6 +697,8 @@ export const Holders: {
     FRAX: '0xf07d553b195080f84f582e88ecdd54baa122b279',
     nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',
     nETH: '0xa067668661c84476afcdc6fa5d758c4c01c34352',
+    AAVE: '0x7185fbff199928cbae71990ecb3cc4a7be2ff00a',
+    EURS: '0x4449dd09067dcaa55c15f40b465a5173778f8100',
   },
 };
 

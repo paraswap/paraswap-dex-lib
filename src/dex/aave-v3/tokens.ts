@@ -4,6 +4,7 @@ import { Network } from '../../constants';
 import tokensFantom from './tokens/fantom.json';
 import tokensPolygon from './tokens/polygon.json';
 import tokensAvalanche from './tokens/avalanche.json';
+import tokensArbitrum from './tokens/arbitrum.json';
 
 export const Tokens: { [network: number]: { [symbol: string]: aToken } } = {};
 const TokensByAddress: { [network: number]: { [address: string]: aToken } } =
@@ -13,6 +14,7 @@ const tokensByNetwork: { [network: number]: any } = {
   [Network.FANTOM]: tokensFantom,
   [Network.POLYGON]: tokensPolygon,
   [Network.AVALANCHE]: tokensAvalanche,
+  [Network.ARBITRUM]: tokensArbitrum,
 };
 
 for (const [key, tokens] of Object.entries(tokensByNetwork)) {
