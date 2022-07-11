@@ -148,16 +148,16 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     nativeTokenSymbol: 'ETH',
     wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     hasEIP1559: false,
-    augustusAddress: '0x1120dd8772c1cbD4e3F0bC141AB1BC7eeaFbdAf0', //TODO: replace
-    tokenTransferProxyAddress: '0x3CfCE32338b1aB2530313033f58553BaD3B879e5', //TODO: replace
+    augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
     adapterAddresses: {
-      ArbitrumAdapter01: '0x5b99094C3c2129F17b78cE5eBD1Cd8ADB887b340',
-      ArbitrumBuyAdapter: '0x56a14A1954b5d5FD7C636a24137a93742bA708b9',
+      ArbitrumAdapter01: '0x6295Cd918b48e1D2a96cBae2fC70B29623c593c2',
+      ArbitrumBuyAdapter: '0xeef30844023B355408C44224B9d4031609D316d4',
     },
     uniswapV2ExchangeRouterAddress:
-      '0x0310983446288E08f1Dd973148F194A685Ea551F',
+      '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
   },
 };
 
