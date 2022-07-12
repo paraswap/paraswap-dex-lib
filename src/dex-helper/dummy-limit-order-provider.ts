@@ -68,11 +68,7 @@ export class DummyLimitOrderProvider
     this._ordersToExecute[network] = orders;
   }
 
-  static getOrderBookCacheKey(
-    network: Network,
-    src: Address,
-    dest: Address,
-  ) {
+  static getOrderBookCacheKey(network: Network, src: Address, dest: Address) {
     return `${network}_${dest.toLowerCase()}_${src.toLowerCase()}`;
   }
 }

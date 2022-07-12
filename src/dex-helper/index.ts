@@ -8,4 +8,4 @@ export { IBlockManager, EventSubscriber } from './iblock-manager';
 
 export { DummyDexHelper } from './dummy-dex-helper';
 
-export { DummyLimitOrderProvider } from './dummy-limit-order-provider'
+export { DummyLimitOrderProvider } from './dummy-limit-order-provider';

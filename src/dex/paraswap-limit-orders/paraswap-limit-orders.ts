@@ -14,7 +14,7 @@ import {
   PreprocessTransactionOptions,
 } from '../../types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../../constants';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -58,7 +58,7 @@ export class ParaSwapLimitOrders
     ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
-    super(dexHelper.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -81,8 +81,8 @@ export class ParaSwapLimitOrders
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     const _srcAddress = _srcToken.address.toLowerCase();
     const _destAddress = _destToken.address.toLowerCase();
@@ -107,8 +107,8 @@ export class ParaSwapLimitOrders
     limitPools?: string[],
   ): Promise<null | ExchangePrices<ParaSwapLimitOrdersData>> {
     try {
-      const _srcToken = wrapETH(srcToken, this.network);
-      const _destToken = wrapETH(destToken, this.network);
+      const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+      const _destToken = this.dexHelper.config.wrapETH(destToken);
 
       const _srcAddress = _srcToken.address.toLowerCase();
       const _destAddress = _destToken.address.toLowerCase();
@@ -191,8 +191,12 @@ export class ParaSwapLimitOrders
   ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
     const userAddress = options.txOrigin;
 
-    const srcWrapped = wrapETH(srcToken, this.network).address.toLowerCase();
-    const destWrapped = wrapETH(destToken, this.network).address.toLowerCase();
+    const srcWrapped = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destWrapped = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
 
     const isSell = side === SwapSide.SELL;
     const amountWithSlippage = isSell

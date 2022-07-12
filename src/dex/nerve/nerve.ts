@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -59,7 +59,7 @@ export class Nerve
     protected poolConfigs = NerveConfig[dexKey][network].poolConfigs,
     protected nervePoolIface = new Interface(nervePoolABIDefault),
   ) {
-    super(dexHelper.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -145,8 +145,8 @@ export class Nerve
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     return this.allPools
       .filter(pool => {
@@ -169,8 +169,8 @@ export class Nerve
     try {
       if (side === SwapSide.BUY) return null;
 
-      const _srcToken = wrapETH(srcToken, this.network);
-      const _destToken = wrapETH(destToken, this.network);
+      const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+      const _destToken = this.dexHelper.config.wrapETH(destToken);
 
       if (
         _srcToken.address.toLowerCase() === _destToken.address.toLowerCase()
@@ -208,6 +208,10 @@ export class Nerve
 
       const result: ExchangePrices<NerveData> = [];
       for (const { pool, state } of statePoolPair) {
+        if (state.paused) {
+          continue;
+        }
+
         const srcIndex = pool.tokens.findIndex(
           token =>
             token.address.toLowerCase() === _srcToken.address.toLowerCase(),
@@ -216,6 +220,10 @@ export class Nerve
           token =>
             token.address.toLowerCase() === _destToken.address.toLowerCase(),
         );
+
+        if (srcIndex === -1 || destIndex === -1) {
+          continue;
+        }
 
         const _prices: bigint[] = [];
         for (const _amount of _amounts) {
@@ -236,6 +244,7 @@ export class Nerve
             pool.setState({ ...state, isValid: false }, blockNumber);
             this.logger.error(
               `${this.dexKey} protocol ${pool.name} (${pool.address}) pool can not calculate out swap for amount ${_amount}`,
+              e,
             );
             return null;
           }
@@ -338,10 +347,10 @@ export class Nerve
   ): Promise<PoolLiquidity[]> {
     // We set decimals to default as we don't really care of actual number.
     // We use here only address
-    const wrappedTokenAddress = wrapETH(
-      { address: tokenAddress, decimals: 18 },
-      this.network,
-    );
+    const wrappedTokenAddress = this.dexHelper.config.wrapETH({
+      address: tokenAddress,
+      decimals: 18,
+    });
 
     const selectedPools = this.allPools.filter(pool =>
       pool.tokenAddresses.includes(wrappedTokenAddress.address),

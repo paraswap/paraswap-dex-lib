@@ -35,7 +35,7 @@ export class __DexName__
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new __DexName__EventPool(
       dexKey,

@@ -11,12 +11,7 @@ import {
   MultiCallInput,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import {
-  getDexKeysWithNetwork,
-  getBigIntPow,
-  isETHAddress,
-  wrapETH,
-} from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -66,7 +61,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.config = PlatypusConfig[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }
@@ -348,8 +343,8 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
     return this.findPools(
-      wrapETH(srcToken, this.network).address.toLowerCase(),
-      wrapETH(destToken, this.network).address.toLowerCase(),
+      this.dexHelper.config.wrapETH(srcToken).address.toLowerCase(),
+      this.dexHelper.config.wrapETH(destToken).address.toLowerCase(),
     ).map(p => this.getPoolIdentifier(p));
   }
 
@@ -372,14 +367,12 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       );
       return null;
     }
-    const srcTokenAddress = wrapETH(
-      srcToken,
-      this.network,
-    ).address.toLowerCase();
-    const destTokenAddress = wrapETH(
-      destToken,
-      this.network,
-    ).address.toLowerCase();
+    const srcTokenAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destTokenAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (srcTokenAddress === destTokenAddress) return null;
     return (
       await Promise.all(

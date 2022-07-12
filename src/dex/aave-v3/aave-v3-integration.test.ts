@@ -12,21 +12,6 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { getTokenFromASymbol } from './tokens';
 import { BI_POWS } from '../../bigint-constants';
 
-/*
-  README
-  ======
-
-  This test script adds tests for AaveV3 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover AaveV3 specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 const network = Network.POLYGON;
 const TokenASymbol = 'USDT';
 const TokenA = Tokens[network][TokenASymbol];

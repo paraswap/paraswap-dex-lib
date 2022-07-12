@@ -7,7 +7,6 @@ import { PlatypusPoolSubscriber } from './pool-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PlatypusAvaxPoolState, PlatypusAvaxPoolConfigInfo } from './types';
 import { PlatypusPoolBase, calcPrice, WAD, wmul, wdiv } from './pool-base';
-import { isWETH } from '../../utils';
 
 export class PlatypusAvaxPool extends PlatypusPoolBase<PlatypusAvaxPoolState> {
   constructor(
@@ -72,9 +71,9 @@ export class PlatypusAvaxPool extends PlatypusPoolBase<PlatypusAvaxPoolState> {
     state: PlatypusAvaxPoolState,
   ): bigint[] {
     let fromShares: boolean;
-    if (isWETH(destToken.address, this.network)) {
+    if (this.dexHelper.config.isWETH(destToken.address)) {
       fromShares = true;
-    } else if (isWETH(srcToken.address, this.network)) {
+    } else if (this.dexHelper.config.isWETH(srcToken.address)) {
       fromShares = false;
     } else {
       throw new Error(`Unexpected tokens being swapped in ${this.name}`);

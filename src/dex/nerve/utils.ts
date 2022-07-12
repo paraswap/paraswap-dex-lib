@@ -34,5 +34,6 @@ export function typeCastPoolState(state: DeepReadonly<PoolState>): PoolState {
     balances: state.balances.map(bigIntify),
     tokenPrecisionMultipliers: state.tokenPrecisionMultipliers.map(bigIntify),
     isValid: state.isValid,
+    paused: state.paused,
   };
 }
