@@ -30,7 +30,7 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
   Embr: {
     [Network.AVALANCHE]: {
       subgraphURL:
-        'https://node-us.embr.finance/subgraphs/name/embrfinance/embr-avalanche-v2',
+        'https://api.thegraph.com/subgraphs/name/embrfinance/embr-avalanche-v2',
       vaultAddress: '0xad68ea482860cd7077a5D0684313dD3a9BC70fbB',
     },
   },
