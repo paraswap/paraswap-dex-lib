@@ -486,9 +486,7 @@ export class ParaSwapLimitOrders
     makerAmount: bigint,
     takerAmount: bigint,
   ): bigint {
-    return (
-      (swappableMakerAmount * takerAmount + (makerAmount - 1n)) / makerAmount
-    );
+    return (swappableMakerAmount * takerAmount) / makerAmount;
   }
 
   private _calcMakerFromTakerAmount(
@@ -496,9 +494,7 @@ export class ParaSwapLimitOrders
     makerAmount: bigint,
     takerAmount: bigint,
   ): bigint {
-    return (
-      (swappableTakerAmount * makerAmount + (takerAmount - 1n)) / takerAmount
-    );
+    return (swappableTakerAmount * makerAmount) / takerAmount;
   }
 
   private _getPriceSummaries(
