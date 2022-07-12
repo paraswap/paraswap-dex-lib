@@ -426,6 +426,10 @@ export class ParaSwapLimitOrders
     const prices = new Array<bigint>(amounts.length);
     const costs = new Array<bigint>(amounts.length);
 
+    const calcOutFunc = isSell
+      ? this._calcMakerFromTakerAmount
+      : this._calcTakerFromMakerAmount;
+
     const srcKeyAmount = isSell
       ? 'cumulativeTakerAmount'
       : 'cumulativeMakerAmount';
@@ -450,17 +454,24 @@ export class ParaSwapLimitOrders
         i++;
 
       if (i === 0) {
-        prices[j] =
-          (amounts[j] * priceSummary[i][destKeyAmount]) /
-          priceSummary[i][srcKeyAmount];
+        prices[j] = calcOutFunc(
+          amounts[j],
+          priceSummary[i].cumulativeMakerAmount,
+          priceSummary[i].cumulativeTakerAmount,
+        );
         costs[j] = this.orderCosts[i];
       } else if (i < priceSummary.length) {
         prices[j] =
+          // Previous cumulative amount
           priceSummary[i - 1][destKeyAmount] +
-          ((priceSummary[i][destKeyAmount] -
-            priceSummary[i - 1][destKeyAmount]) *
-            (amounts[j] - priceSummary[i - 1][srcKeyAmount])) /
-            (priceSummary[i][srcKeyAmount] - priceSummary[i - 1][srcKeyAmount]);
+          // last order amount
+          calcOutFunc(
+            amounts[j] - priceSummary[i - 1][srcKeyAmount],
+            priceSummary[i].cumulativeMakerAmount -
+              priceSummary[i - 1].cumulativeMakerAmount,
+            priceSummary[i].cumulativeTakerAmount -
+              priceSummary[i - 1].cumulativeTakerAmount,
+          );
         costs[j] = this.orderCosts[i];
       } else {
         prices[j] = 0n;
@@ -468,6 +479,26 @@ export class ParaSwapLimitOrders
       }
     }
     return { prices, costs };
+  }
+
+  private _calcTakerFromMakerAmount(
+    swappableMakerAmount: bigint,
+    makerAmount: bigint,
+    takerAmount: bigint,
+  ): bigint {
+    return (
+      (swappableMakerAmount * takerAmount + (makerAmount - 1n)) / makerAmount
+    );
+  }
+
+  private _calcMakerFromTakerAmount(
+    swappableTakerAmount: bigint,
+    makerAmount: bigint,
+    takerAmount: bigint,
+  ): bigint {
+    return (
+      (swappableTakerAmount * makerAmount + (takerAmount - 1n)) / takerAmount
+    );
   }
 
   private _getPriceSummaries(
