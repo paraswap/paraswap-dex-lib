@@ -39,9 +39,6 @@ export class ParaSwapLimitOrders
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
-  readonly orderCosts = [...Array(Number(MAX_ORDERS_USED_FOR_SWAP))].map(
-    (_0, index) => BigInt((index + 1) * ONE_ORDER_GASCOST),
-  );
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(ParaSwapLimitOrdersConfig);
@@ -128,42 +125,26 @@ export class ParaSwapLimitOrders
         isSell ? _srcToken.decimals : _destToken.decimals,
       );
 
-      const _amounts = [unitVolume, ...amounts.slice(1)];
-
       let orderBook = await this._getLatestOrderBook(_srcAddress, _destAddress);
 
       if (orderBook === null) return null;
 
       // Unit is volume is not increasing, so better to request separate
-      const unitPriceSummary = this._getPriceSummaries(
-        [unitVolume],
-        orderBook,
-        isSell,
-      );
+      let {
+        prices: [unit],
+      } = this._getPrices([unitVolume], orderBook, isSell);
 
-      const priceSummaries = unitPriceSummary.concat(
-        this._getPriceSummaries(amounts.slice(1), orderBook, isSell),
-      );
+      const { prices, gasCosts } = this._getPrices(amounts, orderBook, isSell);
 
-      const { prices: _prices, costs: gasCosts } = this._getPrices(
-        _amounts,
-        priceSummaries,
-        isSell,
-      );
-
-      if (_prices[0] === 0n) {
+      if (unit === 0n) {
         // If we didn't fulfill unit amount, scale up latest amount till unit
-        _prices[0] =
-          (unitVolume * _prices.slice(-1)[0]) / _amounts.slice(-1)[0];
+        unit = (unitVolume * prices.slice(-1)[0]) / amounts.slice(-1)[0];
       }
-
-      const unit = _prices[0];
-      gasCosts[0] = 0n;
 
       return [
         {
           unit,
-          prices: [0n, ..._prices.slice(1)],
+          prices,
           data: { orderInfos: null },
           poolIdentifier: expectedIdentifier,
           exchange: this.dexKey,
@@ -334,6 +315,9 @@ export class ParaSwapLimitOrders
       .map(orderBook => ({
         swappableMakerBalance: BigInt(orderBook.swappableMakerBalance),
         swappableTakerBalance: BigInt(orderBook.swappableTakerBalance),
+        makerAmount: BigInt(orderBook.makerAmount),
+        takerAmount: BigInt(orderBook.takerAmount),
+        isFillOrKill: orderBook.isFillOrKill,
       }))
       .filter(
         orderBook =>
@@ -420,65 +404,78 @@ export class ParaSwapLimitOrders
 
   private _getPrices(
     amounts: bigint[],
-    priceSummaries: ParaSwapLimitOrderPriceSummary[][],
+    orderBook: ParaSwapOrderBook[],
     isSell: boolean,
-  ): { prices: bigint[]; costs: bigint[] } {
+  ): { prices: bigint[]; gasCosts: bigint[] } {
     const prices = new Array<bigint>(amounts.length);
-    const costs = new Array<bigint>(amounts.length);
+    const gasCosts = new Array<bigint>(amounts.length);
+    let latestFilteredOrderBook = orderBook;
 
     const calcOutFunc = isSell
       ? this._calcMakerFromTakerAmount
       : this._calcTakerFromMakerAmount;
 
     const srcKeyAmount = isSell
-      ? 'cumulativeTakerAmount'
-      : 'cumulativeMakerAmount';
+      ? 'swappableTakerBalance'
+      : 'swappableMakerBalance';
     const destKeyAmount = isSell
-      ? 'cumulativeMakerAmount'
-      : 'cumulativeTakerAmount';
+      ? 'swappableMakerBalance'
+      : 'swappableTakerBalance';
 
-    for (let j = 0; j < amounts.length; j++) {
-      const priceSummary = priceSummaries[j];
-
-      if (priceSummary.length === 0) {
-        prices[j] = 0n;
-        costs[j] = 0n;
+    for (const [i, amount] of amounts.entries()) {
+      if (amount === 0n) {
+        prices[i] = 0n;
+        gasCosts[i] = 0n;
         continue;
       }
 
-      let i = 0;
-      while (
-        i < priceSummary.length &&
-        amounts[j] > priceSummary[i][srcKeyAmount]
-      )
-        i++;
+      const amountThreshold = calcAmountThreshold(amount);
 
-      if (i === 0) {
-        prices[j] = calcOutFunc(
-          amounts[j],
-          priceSummary[i].cumulativeMakerAmount,
-          priceSummary[i].cumulativeTakerAmount,
-        );
-        costs[j] = this.orderCosts[i];
-      } else if (i < priceSummary.length) {
-        prices[j] =
-          // Previous cumulative amount
-          priceSummary[i - 1][destKeyAmount] +
-          // last order amount
-          calcOutFunc(
-            amounts[j] - priceSummary[i - 1][srcKeyAmount],
-            priceSummary[i].cumulativeMakerAmount -
-              priceSummary[i - 1].cumulativeMakerAmount,
-            priceSummary[i].cumulativeTakerAmount -
-              priceSummary[i - 1].cumulativeTakerAmount,
-          );
-        costs[j] = this.orderCosts[i];
+      latestFilteredOrderBook = latestFilteredOrderBook.filter(
+        ob => ob[srcKeyAmount] >= amountThreshold,
+      );
+
+      if (latestFilteredOrderBook.length === 0) {
+        prices[i] = 0n;
+        gasCosts[i] = 0n;
+        continue;
+      }
+
+      let toFill = amount;
+      let numberOfOrders = 0n;
+      let filled = 0n;
+
+      for (const order of latestFilteredOrderBook) {
+        if (toFill > 0n) {
+          if (toFill > order[srcKeyAmount]) {
+            toFill -= order[srcKeyAmount];
+            filled += order[destKeyAmount];
+            numberOfOrders++;
+          } else if (order.isFillOrKill) {
+            continue;
+          } else {
+            filled += calcOutFunc(toFill, order.makerAmount, order.takerAmount);
+            toFill = 0n;
+            numberOfOrders++;
+          }
+        }
+        if (numberOfOrders >= MAX_ORDERS_USED_FOR_SWAP) {
+          break;
+        }
+      }
+
+      if (numberOfOrders > MAX_ORDERS_USED_FOR_SWAP) {
+        prices[i] = 0n;
+        gasCosts[i] = 0n;
+      } else if (toFill === 0n) {
+        prices[i] = filled;
+        gasCosts[i] = numberOfOrders * ONE_ORDER_GASCOST;
       } else {
-        prices[j] = 0n;
-        costs[j] = 0n;
+        prices[i] = 0n;
+        gasCosts[i] = 0n;
       }
     }
-    return { prices, costs };
+    return { prices, gasCosts };
   }
 
   private _calcTakerFromMakerAmount(
@@ -497,44 +494,5 @@ export class ParaSwapLimitOrders
     takerAmount: bigint,
   ): bigint {
     return (swappableTakerAmount * makerAmount) / takerAmount;
-  }
-
-  private _getPriceSummaries(
-    amounts: bigint[],
-    orderBook: ParaSwapOrderBook[],
-    isSell: boolean,
-  ): ParaSwapLimitOrderPriceSummary[][] {
-    let latestFilteredOrderBook = orderBook;
-
-    return amounts.map(amount => {
-      const amountThreshold = calcAmountThreshold(amount);
-
-      latestFilteredOrderBook = latestFilteredOrderBook.filter(
-        ob =>
-          (isSell ? ob.swappableTakerBalance : ob.swappableMakerBalance) >=
-          amountThreshold,
-      );
-
-      const priceSummary: ParaSwapLimitOrderPriceSummary[] = [];
-
-      for (const order of latestFilteredOrderBook) {
-        if (priceSummary.length < MAX_ORDERS_USED_FOR_SWAP) {
-          const isFirstOrderZero = priceSummary.length === 0;
-          priceSummary.push({
-            cumulativeMakerAmount: isFirstOrderZero
-              ? order.swappableMakerBalance
-              : priceSummary[priceSummary.length - 1].cumulativeMakerAmount +
-                order.swappableMakerBalance,
-            cumulativeTakerAmount: isFirstOrderZero
-              ? order.swappableTakerBalance
-              : priceSummary[priceSummary.length - 1].cumulativeTakerAmount +
-                order.swappableTakerBalance,
-          });
-        } else {
-          break;
-        }
-      }
-      return priceSummary;
-    });
   }
 }

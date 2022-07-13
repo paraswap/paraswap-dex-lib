@@ -26,11 +26,17 @@ export type ParaSwapLimitOrderPriceSummary = {
 export type ParaSwapOrderBookResponse = {
   swappableMakerBalance: BigIntAsString;
   swappableTakerBalance: BigIntAsString;
+  makerAmount: BigIntAsString;
+  takerAmount: BigIntAsString;
+  isFillOrKill: boolean;
 };
 
 export type ParaSwapOrderBook = {
   swappableMakerBalance: bigint;
   swappableTakerBalance: bigint;
+  makerAmount: bigint;
+  takerAmount: bigint;
+  isFillOrKill: boolean;
 };
 
 export type ParaSwapLimitOrdersData = {
