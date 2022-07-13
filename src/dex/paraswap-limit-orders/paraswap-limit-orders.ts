@@ -486,7 +486,9 @@ export class ParaSwapLimitOrders
     makerAmount: bigint,
     takerAmount: bigint,
   ): bigint {
-    return (swappableMakerAmount * takerAmount) / makerAmount;
+    return (
+      (swappableMakerAmount * takerAmount + (makerAmount - 1n)) / makerAmount
+    );
   }
 
   private _calcMakerFromTakerAmount(
