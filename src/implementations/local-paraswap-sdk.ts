@@ -84,7 +84,6 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         blockNumber,
         [this.dexKey],
       ));
-
     const amounts = _.range(0, chunks + 1).map(
       i => (amount * BigInt(i)) / BigInt(chunks),
     );
@@ -97,7 +96,6 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       [this.dexKey],
       poolIdentifiers,
     );
-
     if (!poolPrices || poolPrices.length == 0)
       throw new Error('Fail to get price for ' + this.dexKey);
 

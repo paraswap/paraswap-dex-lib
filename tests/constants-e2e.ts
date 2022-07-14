@@ -213,6 +213,32 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x8f4063446f5011bc1c9f79a819efe87776f23704',
       decimals: 18,
     },
+    // IB-AMM START
+    IBAUD: {
+      address: '0xFAFdF0C4c1CB09d430Bf88c75D88BB46DAe09967',
+      decimals: 18,
+    },
+    IBCHF: {
+      address: '0x1CC481cE2BD2EC7Bf67d1Be64d4878b16078F309',
+      decimals: 18,
+    },
+    IBGBP: {
+      address: '0x69681f8fde45345C3870BCD5eaf4A05a60E7D227',
+      decimals: 18,
+    },
+    IBJPY: {
+      address: '0x5555f75e3d5278082200Fb451D1b6bA946D8e13b',
+      decimals: 18,
+    },
+    IBEUR: {
+      address: '0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27',
+      decimals: 18,
+    },
+    IBKRW: {
+      address: '0x95dFDC8161832e4fF7816aC4B6367CE201538253',
+      decimals: 18,
+    },
+    // IB-AMM END
     FEI: {
       address: '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
       decimals: 18,
@@ -613,6 +639,12 @@ export const Holders: {
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x9888e846bCb0a14e0fCB2f66368A69d1d04bd5F0',
+    IBAUD: '0x0034daf2e65f6ef82bc6f893dbbfd7c232a0e59c',
+    IBCHF: '0x50dfdf7836c90db447ae6dd83a3eee2b0417d051',
+    IBGBP: '0x1897ecfc9df8ca7f360d271c84e3d8567460202d',
+    IBJPY: '0x5ba6624ed97eaddc2a2b5778a2771716eb4ca96a',
+    IBEUR: '0x3b11B48De7CF69B7C1f0465862A4f3Dc725Ed1Ce',
+    IBKRW: '0xfdcd5daf992a68f297647074221cf51a3c23e4ed',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
