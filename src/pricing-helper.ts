@@ -42,7 +42,7 @@ export class PricingHelper {
 
       return await dexInstance.initializePricing(blockNumber);
     } catch (e) {
-      this.logger.error('Error_startListening:', e);
+      this.logger.error(`Error_startListening_${dexKey}:`, e);
       setTimeout(
         () => this.initializeDex(dexKey, blockNumber),
         SETUP_RETRY_TIMEOUT,
