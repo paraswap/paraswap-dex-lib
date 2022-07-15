@@ -7,13 +7,9 @@ import {
   Holders,
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 const dexKey = 'WooFi';
 
@@ -27,7 +23,10 @@ async function testForNetwork(
 ) {
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
@@ -151,6 +150,26 @@ describe('WooFi E2E', () => {
     const tokenAAmount: string = '333000000000000000000';
     const tokenBAmount: string = '111000000';
     const nativeTokenAmount = '333000000000000000000';
+
+    testForNetwork(
+      network,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('WooFi Polygon', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'WMATIC';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '3000000000000000000';
+    const tokenBAmount: string = '1000000';
+    const nativeTokenAmount = '3000000000000000000';
 
     testForNetwork(
       network,

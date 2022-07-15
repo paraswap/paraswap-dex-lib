@@ -1,6 +1,5 @@
 import { AbiEncoder } from '@0x/utils';
 import { Interface } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 
 import IParaswapAbi from '../../abi/IParaswap.json';
 import ZRX_V2_ABI from '../../abi/zrx.v2.json';
@@ -24,6 +23,7 @@ import type {
   ZeroXSignedOrderV2,
   ZeroXSignedOrderV4,
 } from './types';
+import Web3 from 'web3';
 
 const ZRX_EXCHANGE: any = {
   1: {
@@ -104,7 +104,7 @@ export class ZeroX
   constructor(
     augustusAddress: Address,
     public network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.routerInterface = new Interface(IParaswapAbi);

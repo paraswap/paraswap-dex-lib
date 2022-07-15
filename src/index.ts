@@ -24,4 +24,7 @@ export {
   LoggerConstructor,
   Logger,
   BlockHeader,
+  Config,
 } from './types';
+
+export { ConfigHelper } from './config';

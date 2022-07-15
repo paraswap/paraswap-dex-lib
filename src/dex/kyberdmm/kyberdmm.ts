@@ -32,7 +32,7 @@ import { Contract } from 'web3-eth-contract';
 import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -62,7 +62,7 @@ export class KyberDmm
     protected config = KyberDmmConfig[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
 
     this.logger = dexHelper.getLogger(dexKey);
 
@@ -80,8 +80,8 @@ export class KyberDmm
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    from = wrapETH(from, this.network);
-    to = wrapETH(to, this.network);
+    from = this.dexHelper.config.wrapETH(from);
+    to = this.dexHelper.config.wrapETH(to);
 
     const pair = await this.findPair(from, to);
 
@@ -268,8 +268,8 @@ export class KyberDmm
         return null;
       }
 
-      from = wrapETH(from, this.network);
-      to = wrapETH(to, this.network);
+      from = this.dexHelper.config.wrapETH(from);
+      to = this.dexHelper.config.wrapETH(to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;

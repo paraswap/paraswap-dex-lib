@@ -83,7 +83,7 @@ describe('Dystopia', function () {
     const amounts = amounts18;
 
     it('getPoolIdentifiers and getPricesVolume', async function () {
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const dystopia = new Dystopia(network, dexKey, dexHelper);
       const pools = await dystopia.getPoolIdentifiers(
         tokenA,
@@ -153,7 +153,7 @@ describe('Dystopia', function () {
 
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.POLYGON);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const pools = await dystopia.getPoolIdentifiers(
         tokenA,
         tokenB,

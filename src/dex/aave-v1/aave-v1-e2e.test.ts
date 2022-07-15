@@ -3,14 +3,10 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { aaveV1GetToken } from './tokens';
+import { generateConfig } from '../../config';
 
 jest.setTimeout(1000 * 60 * 3);
 
@@ -19,7 +15,10 @@ describe('AaveV1 E2E', () => {
     const dexKey = 'AaveV1';
     const network = Network.MAINNET;
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
     // TODO: Modify the USDTSymbol, aUSDTSymbol, aETHAmount;
 
     const aETHSymbol: string = 'aETH';

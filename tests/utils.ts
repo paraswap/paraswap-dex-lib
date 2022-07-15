@@ -7,6 +7,7 @@ export function checkPoolPrices(
   amounts: bigint[],
   side: SwapSide,
   dexKey: string,
+  expectIncreasingValues: boolean = true,
 ) {
   for (const poolPrice of poolPrices) {
     expect(poolPrice.prices.length).toBe(amounts.length);
@@ -15,20 +16,22 @@ export function checkPoolPrices(
     poolPrice.prices.forEach(p => expect(p).toBeGreaterThanOrEqual(0));
     expect(poolPrice.unit).toBeGreaterThanOrEqual(0);
 
-    for (let i = 2; i < poolPrice.prices.length; ++i) {
-      const prevMarginalPrice =
-        poolPrice.prices[i - 1] - poolPrice.prices[i - 2];
-      const currMarginalPrice = poolPrice.prices[i] - poolPrice.prices[i - 1];
+    if (expectIncreasingValues) {
+      for (let i = 2; i < poolPrice.prices.length; ++i) {
+        const prevMarginalPrice =
+          poolPrice.prices[i - 1] - poolPrice.prices[i - 2];
+        const currMarginalPrice = poolPrice.prices[i] - poolPrice.prices[i - 1];
 
-      //This check has 1% fudge factor to avoid slight differences causing error
-      if (side === SwapSide.SELL)
-        expect((currMarginalPrice * 99n) / 100n).toBeLessThanOrEqual(
-          prevMarginalPrice,
-        );
-      else
-        expect((currMarginalPrice * 101n) / 100n).toBeGreaterThan(
-          prevMarginalPrice,
-        );
+        //This check has 1% fudge factor to avoid slight differences causing error
+        if (side === SwapSide.SELL)
+          expect((currMarginalPrice * 99n) / 100n).toBeLessThanOrEqual(
+            prevMarginalPrice,
+          );
+        else
+          expect((currMarginalPrice * 101n) / 100n).toBeGreaterThan(
+            prevMarginalPrice,
+          );
+      }
     }
 
     expect(poolPrice.exchange).toEqual(dexKey);

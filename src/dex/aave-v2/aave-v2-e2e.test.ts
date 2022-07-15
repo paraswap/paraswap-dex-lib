@@ -3,14 +3,10 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { aaveV2GetToken } from './tokens';
+import { generateConfig } from '../../config';
 
 jest.setTimeout(1000 * 60 * 3);
 
@@ -20,7 +16,10 @@ describe('AaveV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const ETH = tokens['ETH'];
     const aWETH = aaveV2GetToken(network, 'aWETH');
@@ -107,7 +106,10 @@ describe('AaveV2 E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const MATIC = tokens['MATIC'];
     const amWMATIC = aaveV2GetToken(network, 'amWMATIC');
@@ -194,7 +196,10 @@ describe('AaveV2 E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const AVAX = tokens['AVAX'];
     const avWAVAX = aaveV2GetToken(network, 'avWAVAX');

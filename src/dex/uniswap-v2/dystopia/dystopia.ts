@@ -10,9 +10,9 @@ import {
 } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
 import { UniswapData, UniswapV2Data } from '../types';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../../utils';
 import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
-import uniswapV2ABI from '../../../abi/uniswap-v2/uniswap-v2-pool.json';
+import dystPairABI from '../../../abi/uniswap-v2/DystPair.json';
 import _ from 'lodash';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { DystopiaUniswapV2Pool } from './dystopia-uniswap-v2-pool';
@@ -41,7 +41,7 @@ export interface DystopiaPoolState {
   feeCode: number;
 }
 
-const iface = new Interface(uniswapV2ABI);
+const iface = new Interface(dystPairABI);
 const coder = new AbiCoder();
 
 export class Dystopia extends UniswapV2 {
@@ -64,6 +64,7 @@ export class Dystopia extends UniswapV2 {
       DystopiaConfig[dexKey][network].initCode,
       DystopiaConfig[dexKey][network].feeCode,
       DystopiaConfig[dexKey][network].poolGasCost,
+      iface,
       Adapters[network] || undefined,
     );
 
@@ -213,8 +214,8 @@ export class Dystopia extends UniswapV2 {
     this.logger.trace(`${this.dexKey}: getPricesVolume limitPools`, limitPools);
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
-      const from = wrapETH(_from, this.network);
-      const to = wrapETH(_to, this.network);
+      const from = this.dexHelper.config.wrapETH(_from);
+      const to = this.dexHelper.config.wrapETH(_to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
@@ -450,8 +451,8 @@ export class Dystopia extends UniswapV2 {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const from = wrapETH(_from, this.network);
-    const to = wrapETH(_to, this.network);
+    const from = this.dexHelper.config.wrapETH(_from);
+    const to = this.dexHelper.config.wrapETH(_to);
 
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];

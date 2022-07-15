@@ -14,7 +14,7 @@ import {
   FETCH_POOL_PRICES_TIMEOUT,
 } from './constants';
 import { DexAdapterService } from './dex';
-import { IRouteOptimizer } from './dex/idex';
+import { IDex, IRouteOptimizer } from './dex/idex';
 
 export class PricingHelper {
   logger: Logger;
@@ -52,6 +52,19 @@ export class PricingHelper {
 
   public getAllDexKeys(): string[] {
     return this.dexAdapterService.getAllDexKeys();
+  }
+
+  public getDexByKey(key: string): IDex<any, any, any> | null {
+    try {
+      return this.dexAdapterService.getDexByKey(key);
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('Invalid Dex Key')) {
+        this.logger.warn(`Dex ${key} was not found in getDexByKey`);
+        return null;
+      }
+      // Unexpected error
+      throw e;
+    }
   }
 
   public async initialize(blockNumber: number, dexKeys: string[]) {

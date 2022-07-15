@@ -9,12 +9,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import {
-  wrapETH,
-  getDexKeysWithNetwork,
-  isETHAddress,
-  getBigIntPow,
-} from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Data, Param, PoolAndWethFunctions } from './types';
@@ -44,7 +39,7 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     protected config = Config[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.wethGateway = new Interface(WETH_GATEWAY_ABI);
     this.pool = new Interface(POOL_ABI);
@@ -71,8 +66,8 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   ): Promise<string[]> {
     const aToken = getATokenIfAaveV3Pair(
       this.network,
-      wrapETH(srcToken, this.network),
-      wrapETH(destToken, this.network),
+      this.dexHelper.config.wrapETH(srcToken),
+      this.dexHelper.config.wrapETH(destToken),
     );
 
     if (aToken === null) return [];
@@ -88,8 +83,8 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<Data>> {
-    const _src = wrapETH(srcToken, this.network);
-    const _dst = wrapETH(destToken, this.network);
+    const _src = this.dexHelper.config.wrapETH(srcToken);
+    const _dst = this.dexHelper.config.wrapETH(destToken);
 
     const aToken = getATokenIfAaveV3Pair(this.network, _src, _dst);
 

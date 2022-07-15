@@ -1,12 +1,12 @@
 import { Interface } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 import ERC20ABI from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
-import { MAX_UINT, NULL_ADDRESS } from '../constants';
+import { MAX_UINT } from '../constants';
+import Web3 from 'web3';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
@@ -14,7 +14,7 @@ export class SimpleExchange {
   erc20Interface: Interface;
   needWrapNative = false;
 
-  constructor(protected augustusAddress: Address, private provider: Provider) {
+  constructor(protected augustusAddress: Address, private provider: Web3) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
     this.abiCoder = Web3Abi as unknown as AbiCoder;
@@ -31,10 +31,12 @@ export class SimpleExchange {
       this.augustusAddress,
       target,
     ]);
-    const allowanceRaw = await this.provider.call({
+
+    const allowanceRaw = await this.provider.eth.call({
       to: token,
       data: allowanceData,
     });
+
     const allowance = this.erc20Interface.decodeFunctionResult(
       'allowance',
       allowanceRaw,

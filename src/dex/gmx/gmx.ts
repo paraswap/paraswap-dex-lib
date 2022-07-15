@@ -3,7 +3,6 @@ import {
   Token,
   Address,
   ExchangePrices,
-  Log,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -17,7 +16,6 @@ import { GMXData, DexParams } from './types';
 import { GMXEventPool } from './pool';
 import { SimpleExchange } from '../simple-exchange';
 import { GMXConfig, Adapters } from './config';
-import { wrapETH } from '../../utils';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
 
@@ -48,7 +46,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     protected adapters = Adapters[network],
     protected params: DexParams = GMXConfig[dexKey][network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -94,9 +92,14 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY || !this.pool) return [];
-    const srcAddress = wrapETH(srcToken, this.network).address.toLowerCase();
-    const destAddress = wrapETH(destToken, this.network).address.toLowerCase();
+    const srcAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (
+      srcAddress !== destAddress &&
       this.supportedTokensMap[srcAddress] &&
       this.supportedTokensMap[destAddress]
     ) {
@@ -118,9 +121,14 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<GMXData>> {
     if (side === SwapSide.BUY || !this.pool) return null;
-    const srcAddress = wrapETH(srcToken, this.network).address.toLowerCase();
-    const destAddress = wrapETH(destToken, this.network).address.toLowerCase();
+    const srcAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (
+      srcAddress === destAddress ||
       !(
         this.supportedTokensMap[srcAddress] &&
         this.supportedTokensMap[destAddress]

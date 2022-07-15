@@ -5,6 +5,7 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import stETHAbi from '../abi/stETH.json';
 import { NULL_ADDRESS } from '../constants';
+import Web3 from 'web3';
 
 export const stETH: any = {
   1: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -25,7 +26,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     this.stETHInterface = new Interface(stETHAbi as JsonFragment[]);
   }

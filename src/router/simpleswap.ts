@@ -87,7 +87,8 @@ export abstract class SimpleRouterBase<RouterParam>
     partialContractSimpleData: PartialContractSimpleData;
     networkFee: string;
   }> {
-    const wethAddress = Weth.getAddress(priceRoute.network);
+    const wethAddress =
+      this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress;
 
     const rawSimpleParams = await Promise.all(
       priceRoute.bestRoute[0].swaps.flatMap((swap, swapIndex) =>

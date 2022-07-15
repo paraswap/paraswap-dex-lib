@@ -25,8 +25,8 @@ import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
-import { IDex } from '../idex';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
   PoolState,
@@ -96,6 +96,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'LiquidityBootstrapping',
     'Investment',
   ];
+
+  eventRemovedPools = [
+    // Gradual weight changes are not currently handled in event system
+    // This pool keeps changing weights and is causing pricing issue
+    '0x34809aEDF93066b49F638562c42A9751eDb36DF5',
+  ].map(s => s.toLowerCase());
 
   constructor(
     protected parentName: string,
@@ -215,8 +221,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
-    const eventSupportedPools = allPools.filter(pool =>
-      this.eventSupportedPoolTypes.includes(pool.poolType),
+    const eventSupportedPools = allPools.filter(
+      pool =>
+        this.eventSupportedPoolTypes.includes(pool.poolType) &&
+        !this.eventRemovedPools.includes(pool.address.toLowerCase()),
     );
     const allPoolsLatestState = await this.getOnChainState(
       eventSupportedPools,
@@ -359,7 +367,7 @@ export class BalancerV2
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
       dexKey,
@@ -411,8 +419,8 @@ export class BalancerV2
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
-    const _from = wrapETH(from, this.network);
-    const _to = wrapETH(to, this.network);
+    const _from = this.dexHelper.config.wrapETH(from);
+    const _to = this.dexHelper.config.wrapETH(to);
 
     const pools = this.getPools(_from, _to);
 
@@ -431,8 +439,8 @@ export class BalancerV2
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
     if (side === SwapSide.BUY) return null;
     try {
-      const _from = wrapETH(from, this.network);
-      const _to = wrapETH(to, this.network);
+      const _from = this.dexHelper.config.wrapETH(from);
+      const _to = this.dexHelper.config.wrapETH(to);
 
       const allPools = this.getPools(_from, _to);
       const allowedPools = limitPools

@@ -39,7 +39,7 @@ const readerAddress = '0x67b789D48c926006F5132BFCe4e976F0A7A63d5D';
 describe('GMX', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     const gmx = new GMX(network, dexKey, dexHelper);
 
     await gmx.initializePricing(blocknumber);

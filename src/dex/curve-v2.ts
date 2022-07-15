@@ -10,8 +10,8 @@ import {
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
-import { isETHAddress } from '../utils';
 import type { CurveData } from './curve';
+import Web3 from 'web3';
 
 type CurveV2Data = Omit<CurveData, 'deadline' | 'v3'>;
 
@@ -40,7 +40,7 @@ export class CurveV2
   constructor(
     augustusAddress: Address,
     public network: number,
-    provider: Provider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);

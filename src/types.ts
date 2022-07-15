@@ -15,6 +15,7 @@ export {
 import { Logger } from 'log4js';
 export { Logger } from 'log4js';
 import { OptimalRate } from 'paraswap-core';
+import BigNumber from 'bignumber.js';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -244,3 +245,33 @@ export type MultiCallInput = {
 };
 
 export type MultiCallOutput = string;
+
+export type Config = {
+  network: number;
+  networkName: string;
+  isTestnet: boolean;
+  mainnetNetwork?: number;
+  nativeTokenName: string;
+  nativeTokenSymbol: string;
+  wrappedNativeTokenName: string;
+  wrappedNativeTokenSymbol: string;
+  wrappedNativeTokenAddress: Address;
+  hasEIP1559: boolean;
+  augustusAddress: Address;
+  tokenTransferProxyAddress: Address;
+  multicallV2Address: Address;
+  privateHttpProvider: string;
+  adapterAddresses: { [name: string]: Address };
+  uniswapV2ExchangeRouterAddress: Address;
+};
+
+export type BigIntAsString = string;
+
+export type ExchangeTxInfo = {
+  deadline?: bigint;
+};
+
+export type PreprocessTransactionOptions = {
+  slippageFactor: BigNumber;
+  txOrigin: Address;
+};
