@@ -29,9 +29,12 @@ import { ParaSwapLimitOrdersConfig, Adapters } from './config';
 import { LimitOrderExchange } from '../limit-order-exchange';
 import { BI_MAX_UINT } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
-import { MAX_ORDERS_USED_FOR_SWAP, ONE_ORDER_GASCOST } from './constant';
+import {
+  MAX_ORDERS_MULTI_FACTOR,
+  MAX_ORDERS_USED_FOR_SWAP,
+  ONE_ORDER_GASCOST,
+} from './constant';
 import BigNumber from 'bignumber.js';
-import { calcAmountThreshold } from './utils';
 
 export class ParaSwapLimitOrders
   extends LimitOrderExchange<ParaSwapOrderResponse, ParaSwapOrderBookResponse>
@@ -407,9 +410,8 @@ export class ParaSwapLimitOrders
     orderBook: ParaSwapOrderBook[],
     isSell: boolean,
   ): { prices: bigint[]; gasCosts: bigint[] } {
-    const prices = new Array<bigint>(amounts.length);
-    const gasCosts = new Array<bigint>(amounts.length);
-    let latestFilteredOrderBook = orderBook;
+    const prices = new Array<bigint>(amounts.length).fill(0n);
+    const gasCosts = new Array<bigint>(amounts.length).fill(0n);
 
     const calcOutFunc = isSell
       ? this._calcMakerFromTakerAmount
@@ -422,57 +424,74 @@ export class ParaSwapLimitOrders
       ? 'swappableMakerBalance'
       : 'swappableTakerBalance';
 
-    for (const [i, amount] of amounts.entries()) {
-      if (amount === 0n) {
-        prices[i] = 0n;
-        gasCosts[i] = 0n;
-        continue;
-      }
+    const orderThresholdDenominators = [
+      BigInt(MAX_ORDERS_USED_FOR_SWAP),
+      BigInt(MAX_ORDERS_USED_FOR_SWAP) * BigInt(MAX_ORDERS_MULTI_FACTOR),
+    ];
 
-      const amountThreshold = calcAmountThreshold(amount);
+    for (const orderThresholdDenominator of orderThresholdDenominators) {
+      let latestFilteredOrderBook = orderBook;
+      for (const [i, amount] of amounts.entries()) {
+        if (!(prices[i] === 0n && gasCosts[i] === 0n)) {
+          // We don't want to recalculate prices if previous iterations succeeded
+          continue;
+        }
 
-      latestFilteredOrderBook = latestFilteredOrderBook.filter(
-        ob => ob[srcKeyAmount] >= amountThreshold,
-      );
+        if (amount === 0n) {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+          continue;
+        }
 
-      if (latestFilteredOrderBook.length === 0) {
-        prices[i] = 0n;
-        gasCosts[i] = 0n;
-        continue;
-      }
+        const amountThreshold = amount / orderThresholdDenominator;
 
-      let toFill = amount;
-      let numberOfOrders = 0n;
-      let filled = 0n;
+        latestFilteredOrderBook = latestFilteredOrderBook.filter(
+          ob => ob[srcKeyAmount] >= amountThreshold,
+        );
 
-      for (const order of latestFilteredOrderBook) {
-        if (toFill > 0n) {
-          if (toFill > order[srcKeyAmount]) {
-            toFill -= order[srcKeyAmount];
-            filled += order[destKeyAmount];
-            numberOfOrders++;
-          } else if (order.isFillOrKill) {
-            continue;
-          } else {
-            filled += calcOutFunc(toFill, order.makerAmount, order.takerAmount);
-            toFill = 0n;
-            numberOfOrders++;
+        if (latestFilteredOrderBook.length === 0) {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+          continue;
+        }
+
+        let toFill = amount;
+        let numberOfOrders = 0n;
+        let filled = 0n;
+
+        for (const order of latestFilteredOrderBook) {
+          if (toFill > 0n) {
+            if (toFill > order[srcKeyAmount]) {
+              toFill -= order[srcKeyAmount];
+              filled += order[destKeyAmount];
+              numberOfOrders++;
+            } else if (order.isFillOrKill) {
+              continue;
+            } else {
+              filled += calcOutFunc(
+                toFill,
+                order.makerAmount,
+                order.takerAmount,
+              );
+              toFill = 0n;
+              numberOfOrders++;
+            }
+          }
+          if (numberOfOrders >= MAX_ORDERS_USED_FOR_SWAP) {
+            break;
           }
         }
-        if (numberOfOrders >= MAX_ORDERS_USED_FOR_SWAP) {
-          break;
-        }
-      }
 
-      if (numberOfOrders > MAX_ORDERS_USED_FOR_SWAP) {
-        prices[i] = 0n;
-        gasCosts[i] = 0n;
-      } else if (toFill === 0n) {
-        prices[i] = filled;
-        gasCosts[i] = numberOfOrders * ONE_ORDER_GASCOST;
-      } else {
-        prices[i] = 0n;
-        gasCosts[i] = 0n;
+        if (numberOfOrders > MAX_ORDERS_USED_FOR_SWAP) {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+        } else if (toFill === 0n) {
+          prices[i] = filled;
+          gasCosts[i] = numberOfOrders * ONE_ORDER_GASCOST;
+        } else {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+        }
       }
     }
     return { prices, gasCosts };
