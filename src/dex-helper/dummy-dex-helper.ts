@@ -36,6 +36,25 @@ class DummyCache implements ICache {
     // console.log('Cache Stored: ', dexKey, network, cacheKey, seconds, value);
     return;
   }
+
+  async rawsetex(key: string, value: string): Promise<void> {
+    return;
+  }
+
+  async rawget(key: string): Promise<string | null> {
+    return null;
+  }
+
+  async publish(channel: string, msg: string): Promise<void> {
+    return;
+  }
+
+  subscribe(
+    channel: string,
+    cb: (channel: string, msg: string) => void,
+  ): () => void {
+    return () => {};
+  }
 }
 
 class DummyRequestWrapper implements IRequestWrapper {
@@ -100,8 +119,8 @@ export class DummyDexHelper implements IDexHelper {
   web3Provider: Web3;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
-  constructor(network: number) {
-    this.config = new ConfigHelper(generateConfig(network));
+  constructor(public network: number) {
+    this.config = new ConfigHelper(generateConfig(network), false);
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.provider = new StaticJsonRpcProvider(

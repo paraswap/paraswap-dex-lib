@@ -1,6 +1,7 @@
 import { BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { Address, Token, DexConfigMap } from './types';
+import _ from 'lodash';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -59,3 +60,49 @@ export function getBigIntPow(decimals: number): bigint {
 export const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
 };
+
+const casterBigIntToString = (obj: bigint) => 'bi@'.concat(obj.toString());
+const checkerBigInt = (obj: any) => typeof obj === 'bigint';
+
+const checkerStringWithBigIntPrefix = (obj: any) =>
+  _.isString(obj) && obj.includes('bi@');
+const casterStringToBigInt = (obj: string) => BigInt(obj.slice(3));
+
+export function deepTypecast<T>(
+  obj: any,
+  checker: (val: any) => boolean,
+  caster: (val: T) => any,
+): any {
+  return _.forEach(
+    obj,
+    (val: any, key: any, obj: any) =>
+      (obj[key] = checker(val)
+        ? caster(val)
+        : _.isObject(val)
+        ? deepTypecast(val, checker, caster)
+        : val),
+  );
+}
+
+export class Utils {
+  static Serialize(data: any): string {
+    return JSON.stringify(
+      deepTypecast<bigint>(
+        _.cloneDeep(data),
+        checkerBigInt,
+        casterBigIntToString,
+      ),
+    );
+  }
+
+  static Parse(data: any): any {
+    return deepTypecast<string>(
+      _.cloneDeep(JSON.parse(data)),
+      checkerStringWithBigIntPrefix,
+      casterStringToBigInt,
+    );
+  }
+}
+
+export const sleep = (ms: number) =>
+  new Promise(resolve => setTimeout(resolve, ms));

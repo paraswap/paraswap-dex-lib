@@ -45,11 +45,11 @@ export abstract class ComposedEventSubscriber<
   constructor(
     name: string,
     logger: Logger,
-    protected dexHelper: IDexHelper,
+    dexHelper: IDexHelper,
     private parts: PartialEventSubscriber<State, any>[],
     private blankState: DeepReadonly<State>,
   ) {
-    super(name, logger);
+    super(name, dexHelper, logger);
 
     this.addressesSubscribed = [];
     for (const p of this.parts) {

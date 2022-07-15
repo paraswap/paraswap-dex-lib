@@ -11,7 +11,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -96,12 +96,12 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     protected parentName: string,
     protected network: number,
-    protected dexHelper: IDexHelper,
+    dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
     protected vatAddress: Address,
   ) {
-    super(parentName, logger);
+    super(`${parentName}_${poolConfig.psmAddress}`, dexHelper, logger);
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];

@@ -9,6 +9,7 @@ import { Token } from '../types';
 import { ConfigHelper } from '../config';
 
 export interface IDexHelper {
+  network: number;
   config: ConfigHelper;
   cache: ICache;
   httpRequest: IRequestWrapper;

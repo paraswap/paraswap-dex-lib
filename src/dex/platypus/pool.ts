@@ -25,7 +25,7 @@ export class PlatypusPool extends PlatypusPoolBase<PlatypusPoolState> {
       dexHelper,
       [
         new PlatypusPoolSubscriber<PlatypusPoolState>(
-          poolAddress,
+          `${dexKey}_${poolAddress}`,
           lens<DeepReadonly<PlatypusPoolState>>().params,
           dexHelper.getLogger(`${dexKey}-${network} Params ${name}`),
         ),

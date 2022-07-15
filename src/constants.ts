@@ -1,6 +1,8 @@
 import { Address } from './types';
 export { SwapSide, ContractMethod } from 'paraswap-core';
 
+export const CACHE_PREFIX = 'dl';
+
 export const ETHER_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 

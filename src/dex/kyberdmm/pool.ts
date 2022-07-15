@@ -63,12 +63,8 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     logger: Logger,
   ) {
     super(
-      parentName +
-        ' ' +
-        (token0.symbol || token0.address) +
-        '-' +
-        (token1.symbol || token1.address) +
-        ' pool',
+      `${parentName}_${poolAddress}_${token0.address}_${token1.address}`,
+      dexHelper,
       logger,
     );
   }

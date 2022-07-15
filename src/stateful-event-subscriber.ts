@@ -3,7 +3,9 @@ import { Log, Logger } from './types';
 import { BlockHeader } from 'web3-eth';
 import { EventSubscriber } from './dex-helper/iblock-manager';
 
-import { MAX_BLOCKS_HISTORY } from './constants';
+import { CACHE_PREFIX, MAX_BLOCKS_HISTORY } from './constants';
+import { IDexHelper } from './dex-helper';
+import { Utils } from './utils';
 
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
@@ -21,10 +23,48 @@ export abstract class StatefulEventSubscriber<State>
 
   isTracking: () => boolean = () => false;
 
-  constructor(public readonly name: string, protected logger: Logger) {}
+  public readonly name: string;
+
+  constructor(
+    _name: string,
+    protected dexHelper: IDexHelper,
+    protected logger: Logger,
+  ) {
+    this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
+    if (dexHelper.config.isSlave) {
+      console.log('slave');
+      this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
+      this.dexHelper.cache.rawget(this.name).then(stateAsStr => {
+        if (stateAsStr) {
+          this.state = Utils.Parse(stateAsStr);
+          this.logger.debug(`[${this.name}] got initial state from cache`);
+        }
+      });
+    } else {
+      this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
+    }
+  }
 
   getStateBlockNumber(): Readonly<number> {
     return this.stateBlockNumber;
+  }
+
+  private slaveSetState(channel: string, stateMsg: string) {
+    if (stateMsg === 'null') {
+      this.state = null;
+      return;
+    }
+
+    this.logger.debug(`[${this.name}] received state update from cache`);
+    this.state = Utils.Parse(stateMsg);
+  }
+
+  private _setState(state: DeepReadonly<State> | null) {
+    this.state = state;
+    const stateAsStr = Utils.Serialize(state);
+    console.log(this.name, stateAsStr.length);
+    this.dexHelper.cache.publish(this.name, stateAsStr);
+    this.dexHelper.cache.rawsetex(this.name, stateAsStr);
   }
 
   //Function which transforms the given state for the given log event.
@@ -73,7 +113,7 @@ export abstract class StatefulEventSubscriber<State>
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
-      this.state = null;
+      this._setState(null);
     }
   }
 
@@ -145,12 +185,12 @@ export abstract class StatefulEventSubscriber<State>
         if (+bn > blockNumber) {
           delete this.stateHistory[bn];
         } else {
-          this.state = this.stateHistory[bn];
+          this._setState(this.stateHistory[bn]);
           this.stateBlockNumber = +bn;
         }
       }
       if (this.state && this.stateBlockNumber > blockNumber) {
-        this.state = null;
+        this._setState(null);
       }
     } else {
       //Keep the current state in this.state and in the history
@@ -173,6 +213,9 @@ export abstract class StatefulEventSubscriber<State>
   //setState.  In case isTracking() returns true, it is assumed that the stored
   //state is current and so the minBlockNumber will be disregarded.
   getState(minBlockNumber: number): DeepReadonly<State> | null {
+    if (this.dexHelper.config.isSlave) {
+      return this.state;
+    }
     if (!this.state || this.invalid) return null;
     if (this.isTracking() || this.stateBlockNumber >= minBlockNumber) {
       return this.state;
@@ -196,7 +239,7 @@ export abstract class StatefulEventSubscriber<State>
     }
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
-      this.state = state;
+      this._setState(state);
       this.stateBlockNumber = blockNumber;
       this.invalid = false;
     }

@@ -105,13 +105,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   constructor(
     protected parentName: string,
-    protected network: number,
+    protected dexHelper: IDexHelper,
     protected vaultAddress: Address,
     protected subgraphURL: string,
-    protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, logger);
+    super(parentName, dexHelper, logger);
     this.vaultInterface = new Interface(VaultABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
@@ -178,19 +177,19 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const cacheKey = 'AllSubgraphPools';
     const cachedPools = await this.dexHelper.cache.get(
       this.parentName,
-      this.network,
+      this.dexHelper.network,
       cacheKey,
     );
     if (cachedPools) {
       const allPools = JSON.parse(cachedPools);
       this.logger.info(
-        `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
+        `Got ${allPools.length} ${this.parentName}_${this.dexHelper.network} pools from cache`,
       );
       return allPools;
     }
 
     this.logger.info(
-      `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
+      `Fetching ${this.parentName}_${this.dexHelper.network} Pools from subgraph`,
     );
     const variables = {
       count: MAX_POOL_CNT,
@@ -206,14 +205,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     this.dexHelper.cache.setex(
       this.parentName,
-      this.network,
+      this.dexHelper.network,
       cacheKey,
       POOL_CACHE_TTL,
       JSON.stringify(data.pools),
     );
     const allPools = data.pools;
     this.logger.info(
-      `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
+      `Got ${allPools.length} ${this.parentName}_${this.dexHelper.network} pools from subgraph`,
     );
     return allPools;
   }
@@ -371,10 +370,9 @@ export class BalancerV2
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
       dexKey,
-      network,
+      dexHelper,
       vaultAddress,
       subgraphURL,
-      dexHelper,
       this.logger,
     );
   }

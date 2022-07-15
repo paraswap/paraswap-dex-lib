@@ -44,7 +44,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       );
     }
 
-    super(`${parentName}_${poolConfig.name}`, logger);
+    super(`${parentName}_${poolConfig.name}`, dexHelper, logger);
     this.math = new NervePoolMath(this.name, this.logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);

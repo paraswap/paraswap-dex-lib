@@ -137,6 +137,8 @@ export interface IDexPooltracker {
     tokenAddress: Address,
     limit: number,
   ): AsyncOrSync<PoolLiquidity[]>;
+
+  addMasterPool?(poolKey: string): AsyncOrSync<void>;
 }
 
 // Combine IDexTxBuilder, IDexPricing & IDexPooltracker in
