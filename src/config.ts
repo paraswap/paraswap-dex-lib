@@ -159,6 +159,25 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
   },
+  [Network.OPTIMISM]: {
+    network: Network.OPTIMISM,
+    networkName: 'Optimistic Ethereum',
+    isTestnet: false,
+    nativeTokenName: 'Ether',
+    nativeTokenSymbol: 'ETH',
+    wrappedNativeTokenAddress: '0x4200000000000000000000000000000000000006',
+    hasEIP1559: false,
+    augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
+    multicallV2Address: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
+    privateHttpProvider: process.env.HTTP_PROVIDER_10,
+    adapterAddresses: {
+      OptimismAdapter01: '0x6295Cd918b48e1D2a96cBae2fC70B29623c593c2',
+      OptimismBuyAdapter: '0xeef30844023B355408C44224B9d4031609D316d4',
+    },
+    uniswapV2ExchangeRouterAddress:
+      '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
+  },
 };
 
 // Should not be used, except by internal test code

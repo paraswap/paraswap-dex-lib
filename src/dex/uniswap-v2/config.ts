@@ -103,6 +103,20 @@ export const Adapters: {
       },
     ],
   },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'OptimismAdapter01',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'OptimismBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
 };
 
 export const UniswapV2Config: DexConfigMap<DexParams> = {
@@ -576,6 +590,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xc6b4cc64699496d0514c783d6aca5142c3b61e327524db01cabfa4248e430e49',
       poolGasCost: 120 * 1000,
       feeCode: 10,
+    },
+  },
+  ZipSwap: {
+    [Network.OPTIMISM]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/nonamefits/zipswap',
+      factoryAddress: '0x8BCeDD62DD46F1A76F8A1633d4f5B76e0CDa521E',
+      initCode:
+        '0x1a76b7e7272f6187014e23f04d1b2e543eed2fd1f76481149008cc6eacb05c22',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
     },
   },
 };

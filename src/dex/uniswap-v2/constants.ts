@@ -53,4 +53,6 @@ export const UniswapV2Alias: { [network: number]: string } = {
   [Network.POLYGON]: 'quickswap',
   [Network.AVALANCHE]: 'pangolinswap',
   [Network.FANTOM]: 'spookyswap',
+  [Network.ARBITRUM]: 'sushiswap',
+  [Network.OPTIMISM]: 'zipswap',
 };
