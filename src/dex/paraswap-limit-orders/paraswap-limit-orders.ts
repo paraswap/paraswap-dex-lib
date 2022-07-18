@@ -425,8 +425,8 @@ export class ParaSwapLimitOrders
       : 'swappableTakerBalance';
 
     const orderThresholdDenominators = [
-      BigInt(MAX_ORDERS_USED_FOR_SWAP),
       BigInt(MAX_ORDERS_USED_FOR_SWAP) * BigInt(MAX_ORDERS_MULTI_FACTOR),
+      BigInt(MAX_ORDERS_USED_FOR_SWAP),
     ];
 
     for (const orderThresholdDenominator of orderThresholdDenominators) {

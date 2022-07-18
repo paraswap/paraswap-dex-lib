@@ -2,7 +2,7 @@ import { Config, Address, Token } from './types';
 import { Network } from './constants';
 import { isETHAddress } from './utils';
 
-// Hardcoded and envionment values from which actual config is derived
+// Hardcoded and environment values from which actual config is derived
 type BaseConfig = {
   network: number;
   networkName: string;
