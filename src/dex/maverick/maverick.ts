@@ -13,7 +13,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import PoolABI from '../../abi/maverick/pool.json';
 import RouterABI from '../../abi/maverick/router.json';
 
@@ -36,7 +36,7 @@ const POOL_CACHE_TTL = 60 * 60; // 1hr
 const fetchAllPools = `
   query($count: Int){
       pools(first: $count, orderBy: balanceUSD, orderDirection: desc) {
-          id  
+          id
           fee
           w
           h
@@ -67,7 +67,7 @@ const fetchAllPools = `
 const fetchPoolsFromTokens = `
   query($count: Int, $from: [String], $to: [String]){
       pools(first: $count, orderBy: balanceUSD, orderDirection: desc, where: {quote_in: $from, base_in: $to}) {
-          id  
+          id
           fee
           w
           h
@@ -98,7 +98,7 @@ const fetchPoolsFromTokens = `
 const fetchQuoteTokenPools = `
   query($count: Int, $token: [String]){
       pools(first: $count, orderBy: balanceUSD, orderDirection: desc, where: {quote_in: $token}) {
-          id  
+          id
           fee
           w
           h
@@ -124,7 +124,7 @@ const fetchQuoteTokenPools = `
 const fetchBaseTokenPools = `
   query($count: Int, $token: [String]){
       pools(first: $count, orderBy: balanceUSD, orderDirection: desc, where: {base_in: $token}) {
-          id  
+          id
           fee
           w
           h
@@ -363,7 +363,7 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     protected adapters = Adapters[network],
     protected subgraphURL: string = MaverickConfig[dexKey][network].subgraphURL, // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.exchangeRouterInterface = new Interface(RouterABI);
     this.poolInterface = new Interface(PoolABI);
@@ -456,8 +456,8 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const from = wrapETH(srcToken, this.network);
-    const to = wrapETH(destToken, this.network);
+    const from = this.dexHelper.config.wrapETH(srcToken);
+    const to = this.dexHelper.config.wrapETH(destToken);
     const pools = await this.getPools(from, to);
     return pools.map(
       (pool: any) => `${this.dexKey}_${pool.address.toLowerCase()}`,
@@ -486,8 +486,8 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
   ): Promise<null | ExchangePrices<MaverickData>> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const from = wrapETH(srcToken, this.network);
-    const to = wrapETH(destToken, this.network);
+    const from = this.dexHelper.config.wrapETH(srcToken);
+    const to = this.dexHelper.config.wrapETH(destToken);
     const allPools = await this.getPools(from, to);
 
     const allowedPools = limitPools
@@ -578,7 +578,10 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     count: number,
   ): Promise<PoolLiquidity[]> {
     if (!this.subgraphURL) return [];
-    const token = wrapETH({ address: tokenAddress, decimals: 0 }, this.network);
+    const token = this.dexHelper.config.wrapETH({
+      address: tokenAddress,
+      decimals: 0,
+    });
     const data1 = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       {
