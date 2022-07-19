@@ -1,0 +1,703 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract IFactory",
+        "name": "_factory",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IEstimator",
+        "name": "_estimator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_WETH",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "WETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenA",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenB",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenBAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenBMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.AddLiquidityParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "addLiquidity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenAAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenBAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lpTokenAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ethMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.AddLiquidityEthParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "addLiquidityEth",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "ethAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lpTokenAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inputAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.EstimateSwapParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "estimateSwap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "outputAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenA",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenB",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenBMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.RemoveLiquidityParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "removeLiquidity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenAAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenBAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ethMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.RemoveLiquidityEthParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "removeLiquidityEth",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "ethAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.SwapParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "swap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "outputAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.SwapEthForTokenParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "swapEthForToken",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "outputAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "int16",
+            "name": "fee",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "w",
+            "type": "int16"
+          },
+          {
+            "internalType": "int16",
+            "name": "k",
+            "type": "int16"
+          },
+          {
+            "internalType": "int8",
+            "name": "h",
+            "type": "int8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "paramChoice",
+            "type": "uint8"
+          },
+          {
+            "internalType": "int8",
+            "name": "uShiftMultiplier",
+            "type": "int8"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IRouter.SwapTokenForEthParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "swapTokenForEth",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "outputAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]
