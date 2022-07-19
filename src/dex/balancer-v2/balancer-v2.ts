@@ -490,10 +490,6 @@ export class BalancerV2
         (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const quoteUnitVolume = getBigIntPow(
-        (side === SwapSide.SELL ? _to : _from).decimals,
-      );
-
       const eventPoolStates = await this.eventPools.getState(blockNumber);
       if (!eventPoolStates) {
         this.logger.error(`getState returned null`);
