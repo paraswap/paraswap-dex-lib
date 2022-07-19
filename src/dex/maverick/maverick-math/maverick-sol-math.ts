@@ -1,10 +1,8 @@
-import { MathSol } from '../balancer-v2/balancer-v2-math';
-import { BI_POWS } from '../../bigint-constants';
+import { BI_POWS } from '../../../bigint-constants';
+import { _require } from '../../../utils';
 
 const UNIT = BI_POWS[18];
-const _require = (b: boolean, message: string) => {
-  if (!b) throw new Error(message);
-};
+
 export class MMath {
   static ONE = BI_POWS[18]; // 18 decimal places
   static MAX_POW_RELATIVE_ERROR = BI_POWS[4]; // 10 000
@@ -13,27 +11,31 @@ export class MMath {
     return x < 0n ? -x : x;
   }
 
-  static min(a: bigint, b: bigint) {
-    return MathSol.min(a, b);
+  static min(a: bigint, b: bigint): bigint {
+    return a < b ? a : b;
   }
 
-  static max(a: bigint, b: bigint) {
-    return MathSol.max(a, b);
+  static max(a: bigint, b: bigint): bigint {
+    return a >= b ? a : b;
   }
 
-  static add(a: bigint, b: bigint) {
-    return MathSol.add(a, b);
+  static add(a: bigint, b: bigint): bigint {
+    const c = a + b;
+    _require((b >= 0 && c >= a) || (b < 0 && c < a), 'Errors.ADD_OVERFLOW');
+    return c;
   }
 
-  static sub(a: bigint, b: bigint) {
-    return MathSol.sub(a, b);
+  static sub(a: bigint, b: bigint): bigint {
+    _require(b <= a, 'Errors.SUB_OVERFLOW');
+    const c = a - b;
+    return c;
   }
 
   static mul(a: bigint, b: bigint) {
     if ((MMath.abs(a) * MMath.abs(b)) % UNIT > 499999999999999999n) {
       return this.mulUpFixed(a, b);
     } else {
-      return MathSol.mulDownFixed(a, b);
+      return this.sMulDownFixed(a, b);
     }
   }
 
@@ -56,7 +58,7 @@ export class MMath {
   }
 
   static div(a: bigint, b: bigint) {
-    return MathSol.divDownFixed(a, b);
+    return this.sDivDownFixed(a, b);
   }
 
   static sqrt(x: bigint) {
@@ -96,23 +98,57 @@ export class MMath {
     if (xAux >= 0x8) {
       result <<= 1n;
     }
-    // console.log("result1", result)
     result = (result + x / result) >> 1n;
-    // console.log("result2", result)
     result = (result + x / result) >> 1n;
-    // console.log("result3", result)
     result = (result + x / result) >> 1n;
-    // console.log("result4", result)
     result = (result + x / result) >> 1n;
-    // console.log("result5", result)
     result = (result + x / result) >> 1n;
-    // console.log("result6", result)
     result = (result + x / result) >> 1n;
-    // console.log("result7", result)
     result = (result + x / result) >> 1n; // Seven iterations should be enough
-    // console.log("result8", result)
     let roundedDownResult = x / result;
-    // console.log("rounddown", roundedDownResult)
     return result >= roundedDownResult ? roundedDownResult : result;
+  }
+
+  // Functions that were in MathSol.ts from BalancerV2
+  static sDivDownFixed(a: bigint, b: bigint): bigint {
+    _require(b != 0n, 'Errors.ZERO_DIVISION');
+    if (a == 0n) {
+      return 0n;
+    } else {
+      const aInflated = a * this.ONE;
+      // _require(aInflated / a == ONE, Errors.DIV_INTERNAL); // mul overflow
+
+      return aInflated / b;
+    }
+  }
+
+  static sMulUpFixed(a: bigint, b: bigint): bigint {
+    const product = a * b;
+    _require(a == 0n || product / a == b, 'Errors.MUL_OVERFLOW');
+
+    if (product == 0n) {
+      return 0n;
+    } else {
+      // The traditional divUp formula is:
+      // divUp(x, y) := (x + y - 1) / y
+      // To avoid intermediate overflow in the addition, we distribute the division and get:
+      // divUp(x, y) := (x - 1) / y + 1
+      // Note that this requires x != 0, which we already tested for.
+
+      return (product - 1n) / this.ONE + 1n;
+    }
+  }
+
+  static sMul(a: bigint, b: bigint): bigint {
+    const c = a * b;
+    _require(a == 0n || c / a == b, 'Errors.MUL_OVERFLOW');
+    return c;
+  }
+
+  static sMulDownFixed(a: bigint, b: bigint): bigint {
+    const product = a * b;
+    _require(a == 0n || product / a == b, 'Errors.MUL_OVERFLOW');
+
+    return product / this.ONE;
   }
 }

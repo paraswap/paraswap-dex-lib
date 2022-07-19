@@ -37,3 +37,5 @@ export const SUBGRAPH_TIMEOUT = 20 * 1000;
 export enum LIMIT_ORDER_PROVIDERS {
   PARASWAP = 'ParaSwapLimitOrderProvider',
 }
+
+export const MAX_POOL_CNT = 1000;

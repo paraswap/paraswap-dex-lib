@@ -19,6 +19,7 @@ import {
   MAX_UINT,
   Network,
   SUBGRAPH_TIMEOUT,
+  MAX_POOL_CNT,
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
@@ -67,7 +68,6 @@ enum BalancerPoolTypes {
 }
 
 const BALANCER_V2_CHUNKS = 10;
-const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
