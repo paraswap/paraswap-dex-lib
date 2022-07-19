@@ -1,13 +1,13 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { MaverickEventPool } from './maverick';
+import { MaverickEventPool } from './maverick-pool';
 import { MaverickConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { MaverickPoolState, SubgraphPoolBase } from './types';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
+import { Tokens } from '../../../tests/constants-e2e';
 import axios from 'axios';
 
 jest.setTimeout(50 * 1000);
@@ -30,7 +30,7 @@ async function getSubgraphPool(
 
   const query = `query ($blockNumber: Int, $address: Bytes!) {
     pools(block: { number: $blockNumber }, where: {id: $address}) {
-        id  
+        id
         fee
         w
         h

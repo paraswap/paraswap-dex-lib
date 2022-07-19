@@ -1,12 +1,12 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { MaverickPool } from './maverick-pool';
+import { MaverickPoolMath } from './maverick-math/maverick-pool-math';
 
 describe('MaverickPool', () => {
   it.only('swap base for quote without moving u', async () => {
     try {
-      const pool = new MaverickPool(
+      const poolMath = new MaverickPoolMath(
         'Maverick',
         BigInt(0.5e18),
         BigInt(0.01e18),
@@ -20,7 +20,7 @@ describe('MaverickPool', () => {
       );
 
       expect(
-        pool.swap(
+        poolMath.swap(
           {
             twau: 980392156862745098n,
             quoteBalance: BigInt(50e18),
@@ -40,7 +40,7 @@ describe('MaverickPool', () => {
 
   it.only('swap base for quote moving u', async () => {
     try {
-      const pool = new MaverickPool(
+      const poolMath = new MaverickPoolMath(
         'Maverick',
         BigInt(0.5e18),
         BigInt(0.01e18),
@@ -54,7 +54,7 @@ describe('MaverickPool', () => {
       );
 
       expect(
-        pool.swap(
+        poolMath.swap(
           {
             twau: 980392156862745098n,
             quoteBalance: BigInt(50e18),
@@ -74,7 +74,7 @@ describe('MaverickPool', () => {
 
   it.only('swap quote for base without moving u', async () => {
     try {
-      const pool = new MaverickPool(
+      const poolMath = new MaverickPoolMath(
         'Maverick',
         BigInt(0.5e18),
         BigInt(0.01e18),
@@ -88,7 +88,7 @@ describe('MaverickPool', () => {
       );
 
       expect(
-        pool.swap(
+        poolMath.swap(
           {
             twau: 980392156862745098n,
             quoteBalance: BigInt(50e18),
@@ -108,7 +108,7 @@ describe('MaverickPool', () => {
 
   it.only('swap base for quote with moving u', async () => {
     try {
-      const pool = new MaverickPool(
+      const poolMath = new MaverickPoolMath(
         'Maverick',
         BigInt(0.5e18),
         BigInt(0.01e18),
@@ -122,7 +122,7 @@ describe('MaverickPool', () => {
       );
 
       expect(
-        pool.swap(
+        poolMath.swap(
           {
             twau: 980392156862745098n,
             quoteBalance: BigInt(50e18),
@@ -142,7 +142,7 @@ describe('MaverickPool', () => {
 
   it.only('when theres a spread fee', async () => {
     try {
-      const pool = new MaverickPool(
+      const poolMath = new MaverickPoolMath(
         'Maverick',
         BigInt(0.5e18),
         BigInt(0.01e18),
@@ -156,7 +156,7 @@ describe('MaverickPool', () => {
       );
 
       expect(
-        pool.swap(
+        poolMath.swap(
           {
             twau: 980392156862745098n,
             quoteBalance: BigInt(50e18),
