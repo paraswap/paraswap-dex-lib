@@ -3,9 +3,14 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { BasePool } from './balancer-v2-pool';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as StableMath from './StableMath';
-import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
+import {
+  SubgraphPoolBase,
+  PoolState,
+  callData,
+  TokenState,
+  PoolBase,
+} from './types';
 import { SwapSide } from '../../constants';
-import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 
 enum PairTypes {
   BptToToken,
@@ -22,6 +27,7 @@ type PhantomStablePoolPairData = {
   bptIndex: number;
   swapFee: bigint;
   amp: bigint;
+  gasCost: number;
 };
 
 /*
@@ -36,7 +42,7 @@ type PhantomStablePoolPairData = {
  * didn't exist, and the BPT total supply is not a useful value: we rely on the 'virtual supply' (how much BPT is
  * actually owned by some entity) instead.
  */
-export class PhantomStablePool extends BasePool {
+export class PhantomStablePool extends BasePool implements PoolBase {
   // This is the maximum token amount the Vault can hold. In regular operation, the total BPT supply remains constant
   // and equal to _INITIAL_BPT_SUPPLY, but most of it remains in the Pool, waiting to be exchanged for tokens. The
   // actual amount of BPT in circulation is the total supply minus the amount held by the Pool, and is known as the
@@ -45,12 +51,17 @@ export class PhantomStablePool extends BasePool {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
+  gasCost = 130000;
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(MetaStablePoolABI);
+    this.poolInterface = poolInterface;
   }
 
   /*
@@ -243,10 +254,11 @@ export class PhantomStablePool extends BasePool {
     */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolState: PoolState,
+    poolStates: { [address: string]: PoolState },
     tokenIn: string,
     tokenOut: string,
   ): PhantomStablePoolPairData {
+    const poolState = poolStates[pool.address];
     let indexIn = 0,
       indexOut = 0,
       bptIndex = 0;
@@ -274,6 +286,7 @@ export class PhantomStablePool extends BasePool {
       bptIndex,
       swapFee: poolState.swapFee,
       amp: poolState.amp ? poolState.amp : 0n,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -363,6 +376,7 @@ export class PhantomStablePool extends BasePool {
         },
         {},
       ),
+      gasCost: this.gasCost,
     };
 
     if (amp) {

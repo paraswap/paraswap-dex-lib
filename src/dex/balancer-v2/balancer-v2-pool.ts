@@ -1,10 +1,14 @@
 import { Interface } from '@ethersproject/abi';
 import { MathSol } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
-import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import {
+  callData,
+  SubgraphPoolBase,
+  PoolState,
+  TokenState,
+  PoolBase,
+} from './types';
 import { getTokenScalingFactor, decodeThrowError } from './utils';
-import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
-import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import { BI_POWS } from '../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
@@ -40,6 +44,7 @@ type WeightedPoolPairData = {
   tokenInWeight: bigint;
   tokenOutWeight: bigint;
   swapFee: bigint;
+  gasCost: number;
 };
 
 type StablePoolPairData = {
@@ -49,6 +54,7 @@ type StablePoolPairData = {
   scalingFactors: bigint[];
   swapFee: bigint;
   amp: bigint;
+  gasCost: number;
 };
 
 abstract class BaseGeneralPool extends BasePool {
@@ -357,16 +363,21 @@ class StableMath {
   }
 }
 
-export class StablePool extends BaseGeneralPool {
+export class StablePool extends BaseGeneralPool implements PoolBase {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
+  gasCost = 150000; // TO DO - Get accurate
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(StablePoolABI);
+    this.poolInterface = poolInterface;
   }
 
   _onSwapGivenIn(
@@ -390,10 +401,11 @@ export class StablePool extends BaseGeneralPool {
   */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolState: PoolState,
+    poolStates: { [address: string]: PoolState },
     tokenIn: string,
     tokenOut: string,
   ): StablePoolPairData {
+    const poolState = poolStates[pool.address];
     let indexIn = 0,
       indexOut = 0;
     const scalingFactors: bigint[] = [];
@@ -415,6 +427,7 @@ export class StablePool extends BaseGeneralPool {
       scalingFactors,
       swapFee: poolState.swapFee,
       amp: poolState.amp ? poolState.amp : 0n,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -487,6 +500,7 @@ export class StablePool extends BaseGeneralPool {
         },
         {},
       ),
+      gasCost: this.gasCost,
     };
 
     if (amp) {
@@ -566,16 +580,21 @@ export class WeightedMath {
   }
 }
 
-export class WeightedPool extends BaseMinimalSwapInfoPool {
+export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
+  gasCost = 150000; // TO DO
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(WeightedPoolABI);
+    this.poolInterface = poolInterface;
   }
 
   _onSwapGivenIn(
@@ -599,10 +618,11 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
   */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolState: PoolState,
+    poolStates: { [address: string]: PoolState },
     tokenIn: string,
     tokenOut: string,
   ): WeightedPoolPairData {
+    const poolState = poolStates[pool.address];
     const inAddress = tokenIn.toLowerCase();
     const outAddress = tokenOut.toLowerCase();
 
@@ -626,6 +646,7 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
       tokenInWeight,
       tokenOutWeight,
       swapFee: poolState.swapFee,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -699,6 +720,7 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
         },
         {},
       ),
+      gasCost: this.gasCost,
     };
 
     pools[pool.address] = poolState;
