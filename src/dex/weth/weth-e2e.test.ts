@@ -3,13 +3,9 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 describe('Weth E2E', () => {
   describe('Weth Mainnet', () => {
@@ -24,7 +20,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -140,7 +139,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -256,7 +258,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -372,7 +377,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -488,7 +496,10 @@ describe('Weth E2E', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const nativeToken = tokens[nativeTokenSymbol];
     const wrappedToken = tokens[wrappedTokenSymbol];
@@ -527,6 +538,126 @@ describe('Weth E2E', () => {
         );
       });
     });
+    describe('MultiSwap SELL', () => {
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it('native -> wrapped', async () => {
+        await testE2E(
+          nativeToken,
+          wrappedToken,
+          nativeHolder,
+          nativeAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+      it('wrapped -> native', async () => {
+        await testE2E(
+          wrappedToken,
+          nativeToken,
+          wrappedHolder,
+          wrappedAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('MegaSwap SELL', () => {
+      const contractMethod = ContractMethod.megaSwap;
+      const side = SwapSide.SELL;
+
+      it('native -> wrapped', async () => {
+        await testE2E(
+          nativeToken,
+          wrappedToken,
+          nativeHolder,
+          nativeAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+      it('wrapped -> native', async () => {
+        await testE2E(
+          wrappedToken,
+          nativeToken,
+          wrappedHolder,
+          wrappedAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
+  describe('Weth Arbitrum', () => {
+    const dexKey = 'Weth';
+    const network = Network.ARBITRUM;
+
+    const nativeTokenSymbol = 'ETH';
+    const wrappedTokenSymbol = 'WETH';
+
+    const nativeAmount = '1000000000000000000';
+    const wrappedAmount = '1000000000000000000';
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const nativeToken = tokens[nativeTokenSymbol];
+    const wrappedToken = tokens[wrappedTokenSymbol];
+
+    const nativeHolder = holders[nativeTokenSymbol];
+    const wrappedHolder = holders[wrappedTokenSymbol];
+
+    describe('SimpleSwap SELL', () => {
+      const contractMethod = ContractMethod.simpleSwap;
+      const side = SwapSide.SELL;
+
+      it('native -> wrapped', async () => {
+        await testE2E(
+          nativeToken,
+          wrappedToken,
+          nativeHolder,
+          nativeAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+      it('wrapped -> native', async () => {
+        await testE2E(
+          wrappedToken,
+          nativeToken,
+          wrappedHolder,
+          wrappedAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+
     describe('MultiSwap SELL', () => {
       const contractMethod = ContractMethod.multiSwap;
       const side = SwapSide.SELL;

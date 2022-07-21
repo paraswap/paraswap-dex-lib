@@ -16,6 +16,9 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.RINKEBY]: {
       poolGasCost: WethGasCost,
     },
+    [Network.ARBITRUM]: {
+      poolGasCost: WethGasCost,
+    },
   },
   Wbnb: {
     [Network.BSC]: {
@@ -54,5 +57,8 @@ export const Adapters: {
   [Network.MAINNET]: { [SwapSide.SELL]: [{ name: 'Adapter02', index: 5 }] },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 2 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 1 }],
   },
 };

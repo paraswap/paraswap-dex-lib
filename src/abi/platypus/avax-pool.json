@@ -1,0 +1,820 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      }
+    ],
+    "name": "AssetAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "liquidity",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "Deposit",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousDev",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newDev",
+        "type": "address"
+      }
+    ],
+    "name": "DevUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousHaircut",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newHaircut",
+        "type": "uint256"
+      }
+    ],
+    "name": "HaircutRateUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOracle",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOracle",
+        "type": "address"
+      }
+    ],
+    "name": "OracleUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousPriceDeviation",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newPriceDeviation",
+        "type": "uint256"
+      }
+    ],
+    "name": "PriceDeviationUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousRetentionRatio",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newRetentionRatio",
+        "type": "uint256"
+      }
+    ],
+    "name": "RetentionRatioUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousSAvax",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newSAvax",
+        "type": "address"
+      }
+    ],
+    "name": "SAvaxUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousK",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newK",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousN",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newN",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousC1",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newC1",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousXThreshold",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newXThreshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "SlippageParamsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "fromToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "toToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fromAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "toAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "Swap",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "liquidity",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "Withdraw",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "address", "name": "asset", "type": "address" }
+    ],
+    "name": "addAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" }
+    ],
+    "name": "assetOf",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "deposit",
+    "outputs": [
+      { "internalType": "uint256", "name": "liquidity", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "depositETH",
+    "outputs": [
+      { "internalType": "uint256", "name": "liquidity", "type": "uint256" }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getC1",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getDev",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getHaircutRate",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMaxPriceDeviation",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPriceOracle",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getRetentionRatio",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSlippageParamK",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSlippageParamN",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTokenAddresses",
+    "outputs": [
+      { "internalType": "address[]", "name": "", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getXThreshold",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "weth_", "type": "address" }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "initialToken", "type": "address" },
+      { "internalType": "address", "name": "wantedToken", "type": "address" }
+    ],
+    "name": "quoteMaxInitialAssetWithdrawable",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "maxInitialAssetAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "fromToken", "type": "address" },
+      { "internalType": "address", "name": "toToken", "type": "address" },
+      { "internalType": "uint256", "name": "fromAmount", "type": "uint256" }
+    ],
+    "name": "quotePotentialSwap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "potentialOutcome",
+        "type": "uint256"
+      },
+      { "internalType": "uint256", "name": "haircut", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "uint256", "name": "liquidity", "type": "uint256" }
+    ],
+    "name": "quotePotentialWithdraw",
+    "outputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "uint256", "name": "fee", "type": "uint256" },
+      { "internalType": "bool", "name": "enoughCash", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "initialToken", "type": "address" },
+      { "internalType": "address", "name": "wantedToken", "type": "address" },
+      { "internalType": "uint256", "name": "liquidity", "type": "uint256" }
+    ],
+    "name": "quotePotentialWithdrawFromOtherAsset",
+    "outputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "uint256", "name": "fee", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "key", "type": "address" }],
+    "name": "removeAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "sAvax",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "dev", "type": "address" }],
+    "name": "setDev",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "haircutRate_", "type": "uint256" }
+    ],
+    "name": "setHaircutRate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "maxPriceDeviation_",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxPriceDeviation",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "priceOracle", "type": "address" }
+    ],
+    "name": "setPriceOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "retentionRatio_",
+        "type": "uint256"
+      }
+    ],
+    "name": "setRetentionRatio",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "sAvax_", "type": "address" }
+    ],
+    "name": "setSAvax",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "k_", "type": "uint256" },
+      { "internalType": "uint256", "name": "n_", "type": "uint256" },
+      { "internalType": "uint256", "name": "c1_", "type": "uint256" },
+      { "internalType": "uint256", "name": "xThreshold_", "type": "uint256" }
+    ],
+    "name": "setSlippageParams",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "wethForwarder_",
+        "type": "address"
+      }
+    ],
+    "name": "setWETHForwarder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "fromToken", "type": "address" },
+      { "internalType": "address", "name": "toToken", "type": "address" },
+      { "internalType": "uint256", "name": "fromAmount", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "minimumToAmount",
+        "type": "uint256"
+      },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "swap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "actualToAmount",
+        "type": "uint256"
+      },
+      { "internalType": "uint256", "name": "haircut", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "toToken", "type": "address" },
+      {
+        "internalType": "uint256",
+        "name": "minimumToAmount",
+        "type": "uint256"
+      },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "swapFromETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "actualToAmount",
+        "type": "uint256"
+      },
+      { "internalType": "uint256", "name": "haircut", "type": "uint256" }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "fromToken", "type": "address" },
+      { "internalType": "uint256", "name": "fromAmount", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "minimumToAmount",
+        "type": "uint256"
+      },
+      { "internalType": "address payable", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "swapToETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "actualToAmount",
+        "type": "uint256"
+      },
+      { "internalType": "uint256", "name": "haircut", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "weth",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "wethForwarder",
+    "outputs": [
+      {
+        "internalType": "contract IWETHForwarder",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "uint256", "name": "liquidity", "type": "uint256" },
+      { "internalType": "uint256", "name": "minimumAmount", "type": "uint256" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "withdraw",
+    "outputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "liquidity", "type": "uint256" },
+      { "internalType": "uint256", "name": "minimumAmount", "type": "uint256" },
+      { "internalType": "address payable", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "withdrawETH",
+    "outputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "initialToken", "type": "address" },
+      { "internalType": "address", "name": "wantedToken", "type": "address" },
+      { "internalType": "uint256", "name": "liquidity", "type": "uint256" },
+      { "internalType": "uint256", "name": "minimumAmount", "type": "uint256" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "withdrawFromOtherAsset",
+    "outputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

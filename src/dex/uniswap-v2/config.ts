@@ -89,6 +89,20 @@ export const Adapters: {
       },
     ],
   },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'ArbitrumAdapter01',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'ArbitrumBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
 };
 
 export const UniswapV2Config: DexConfigMap<DexParams> = {
@@ -399,6 +413,14 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
     },
     [Network.AVALANCHE]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/sushiswap/exchange',
+      factoryAddress: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      initCode:
+        '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
+      feeCode: 30,
+    },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/sushiswap/arbitrum-exchange',
       factoryAddress: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
       initCode:
         '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',

@@ -146,7 +146,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
       .map(a => BigInt(a.toString()));
 
     if (blockNumber == 'latest')
-      blockNumber = await this.dexHelper.provider.getBlockNumber();
+      blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
 
     const prevBlockData: { returnData: any[] } =
       await this.dexHelper.multiContract.methods

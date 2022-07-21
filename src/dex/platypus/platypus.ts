@@ -3,6 +3,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -10,111 +11,32 @@ import {
   MultiCallInput,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   DexParams,
+  PlatypusOracleType,
   PlatypusData,
   PlatypusConfigInfo,
-  PlatypusPoolState,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { PlatypusConfig, Adapters } from './config';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
+import { PlatypusPoolBase } from './pool-base';
 import { PlatypusPool } from './pool';
-import { BI_POWS } from '../../bigint-constants';
+import { PlatypusPurePool } from './pool-pure';
+import { PlatypusAvaxPool } from './pool-avax';
 import ERC20ABI from '../../abi/erc20.json';
 import PoolABI from '../../abi/platypus/pool.json';
+import AvaxPoolABI from '../../abi/platypus/avax-pool.json';
 import AssetABI from '../../abi/platypus/asset.json';
 import OracleABI from '../../abi/platypus/oracle.json';
-
-const ETH_UNIT = BI_POWS[18];
-const WAD = BI_POWS[18];
-const RAY = BI_POWS[27];
-
-function wmul(x: bigint, y: bigint): bigint {
-  return (x * y + WAD / 2n) / WAD;
-}
-
-function wdiv(x: bigint, y: bigint): bigint {
-  return (x * WAD + y / 2n) / y;
-}
-
-function rmul(x: bigint, y: bigint): bigint {
-  return (x * y + RAY / 2n) / RAY;
-}
-
-function rpow(x: bigint, n: bigint): bigint {
-  let z = n % 2n !== 0n ? x : RAY;
-
-  for (n /= 2n; n !== 0n; n /= 2n) {
-    x = rmul(x, x);
-
-    if (n % 2n !== 0n) {
-      z = rmul(z, x);
-    }
-  }
-
-  return z;
-}
-
-function slippageFunc(
-  k: bigint,
-  n: bigint,
-  c1: bigint,
-  xThreshold: bigint,
-  x: bigint,
-): bigint {
-  if (x < xThreshold) {
-    return c1 - x;
-  } else {
-    return wdiv(k, (rpow((x * RAY) / WAD, n) * WAD) / RAY);
-  }
-}
-
-function calcSlippage(
-  k: bigint,
-  n: bigint,
-  c1: bigint,
-  xThreshold: bigint,
-  cash: bigint,
-  liability: bigint,
-  cashChange: bigint,
-  addCash: boolean,
-): bigint {
-  const covBefore = wdiv(cash, liability);
-  let covAfter: bigint;
-  if (addCash) {
-    covAfter = wdiv(cash + cashChange, liability);
-  } else {
-    covAfter = wdiv(cash - cashChange, liability);
-  }
-  if (covBefore === covAfter) {
-    return 0n;
-  }
-
-  const slippageBefore = slippageFunc(k, n, c1, xThreshold, covBefore);
-  const slippageAfter = slippageFunc(k, n, c1, xThreshold, covAfter);
-
-  if (covBefore > covAfter) {
-    return wdiv(slippageAfter - slippageBefore, covBefore - covAfter);
-  } else {
-    return wdiv(slippageBefore - slippageAfter, covAfter - covBefore);
-  }
-}
-
-function calcSwappingSlippage(si: bigint, sj: bigint): bigint {
-  return WAD + si - sj;
-}
-
-function calcHaircut(amount: bigint, rate: bigint): bigint {
-  return wmul(amount, rate);
-}
 
 export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   static readonly erc20Interface = new Interface(ERC20ABI);
   static readonly poolInterface = new Interface(PoolABI);
+  static readonly avaxPoolInterface = new Interface(AvaxPoolABI);
   static readonly assetInterface = new Interface(AssetABI);
   static readonly oracleInterface = new Interface(OracleABI);
 
@@ -122,7 +44,9 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   protected cfgInfo?: PlatypusConfigInfo;
   protected poolLiquidityUSD?: { [poolAddress: string]: number };
 
-  protected eventPools?: { [poolAddress: string]: PlatypusPool };
+  protected eventPools?: {
+    [poolAddress: string]: PlatypusPool | PlatypusPurePool | PlatypusAvaxPool;
+  };
 
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -137,7 +61,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.config = PlatypusConfig[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }
@@ -154,15 +78,42 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
         (await this.dexHelper.web3Provider.eth.getCode(p.address, blockNumber))
           .length > 3
       ) {
-        cfgInfo.poolAddresses.push(p.address.toLowerCase());
+        const poolAddress = p.address.toLowerCase();
+        cfgInfo.poolAddresses.push(poolAddress);
+        if (p.oracleType === PlatypusOracleType.None) {
+          cfgInfo.pools[poolAddress] = {
+            oracleType: PlatypusOracleType.None,
+            tokenAddresses: [],
+            tokens: {},
+          };
+        } else if (p.oracleType === PlatypusOracleType.ChainLink) {
+          cfgInfo.pools[poolAddress] = {
+            oracleType: PlatypusOracleType.ChainLink,
+            priceOracleAddress: '',
+            tokenAddresses: [],
+            tokens: {},
+          };
+        } else if (p.oracleType === PlatypusOracleType.StakedAvax) {
+          cfgInfo.pools[poolAddress] = {
+            oracleType: PlatypusOracleType.StakedAvax,
+            priceOracleAddress: '',
+            tokenAddresses: [],
+            tokens: {},
+          };
+        } else {
+          throw new Error(`Invalid pool oracle type in ${this.dexKey}`);
+        }
       }
     }
     let inputs: MultiCallInput[] = [];
     for (const poolAddress of cfgInfo.poolAddresses) {
-      inputs.push({
-        target: poolAddress,
-        callData: Platypus.poolInterface.encodeFunctionData('getPriceOracle'),
-      });
+      const pool = cfgInfo.pools[poolAddress];
+      if (pool.oracleType !== PlatypusOracleType.None) {
+        inputs.push({
+          target: poolAddress,
+          callData: Platypus.poolInterface.encodeFunctionData('getPriceOracle'),
+        });
+      }
       inputs.push({
         target: poolAddress,
         callData:
@@ -176,21 +127,20 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     ).returnData;
     let i = 0;
     for (const poolAddress of cfgInfo.poolAddresses) {
-      const priceOracleAddress = Platypus.poolInterface
-        .decodeFunctionResult('getPriceOracle', returnData[i++])[0]
-        .toLowerCase();
-      const tokenAddresses = Platypus.poolInterface
+      const pool = cfgInfo.pools[poolAddress];
+      if (pool.oracleType !== PlatypusOracleType.None) {
+        pool.priceOracleAddress = Platypus.poolInterface
+          .decodeFunctionResult('getPriceOracle', returnData[i++])[0]
+          .toLowerCase();
+      }
+      pool.tokenAddresses = Platypus.poolInterface
         .decodeFunctionResult('getTokenAddresses', returnData[i++])[0]
         .map((a: Address) => a.toLowerCase());
-      cfgInfo.pools[poolAddress] = {
-        priceOracleAddress,
-        tokenAddresses,
-        tokens: {},
-      };
     }
     inputs = [];
     for (const poolAddress of cfgInfo.poolAddresses) {
-      for (const tokenAddress of cfgInfo.pools[poolAddress].tokenAddresses) {
+      const pool = cfgInfo.pools[poolAddress];
+      for (const tokenAddress of pool.tokenAddresses) {
         inputs.push({
           target: tokenAddress,
           callData: Platypus.erc20Interface.encodeFunctionData('symbol'),
@@ -205,13 +155,15 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             tokenAddress,
           ]),
         });
-        inputs.push({
-          target: cfgInfo.pools[poolAddress].priceOracleAddress,
-          callData: Platypus.oracleInterface.encodeFunctionData(
-            'getSourceOfAsset',
-            [tokenAddress],
-          ),
-        });
+        if (pool.oracleType === PlatypusOracleType.ChainLink) {
+          inputs.push({
+            target: pool.priceOracleAddress,
+            callData: Platypus.oracleInterface.encodeFunctionData(
+              'getSourceOfAsset',
+              [tokenAddress],
+            ),
+          });
+        }
       }
     }
     returnData = (
@@ -221,7 +173,8 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     ).returnData;
     i = 0;
     for (const poolAddress of cfgInfo.poolAddresses) {
-      for (const tokenAddress of cfgInfo.pools[poolAddress].tokenAddresses) {
+      const pool = cfgInfo.pools[poolAddress];
+      for (const tokenAddress of pool.tokenAddresses) {
         const tokenSymbol = Platypus.erc20Interface.decodeFunctionResult(
           'symbol',
           returnData[i++],
@@ -233,29 +186,39 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
         const assetAddress = Platypus.poolInterface
           .decodeFunctionResult('assetOf', returnData[i++])[0]
           .toLowerCase();
-        const proxyAddress = Platypus.oracleInterface
-          .decodeFunctionResult('getSourceOfAsset', returnData[i++])[0]
-          .toLowerCase();
-        cfgInfo.pools[poolAddress].tokens[tokenAddress] = {
-          tokenSymbol,
-          tokenDecimals,
-          assetAddress,
-          chainlink: {
-            proxyAddress,
-            aggregatorAddress: '',
-          },
-        };
+        if (pool.oracleType === PlatypusOracleType.ChainLink) {
+          const proxyAddress = Platypus.oracleInterface
+            .decodeFunctionResult('getSourceOfAsset', returnData[i++])[0]
+            .toLowerCase();
+          pool.tokens[tokenAddress] = {
+            tokenSymbol,
+            tokenDecimals,
+            assetAddress,
+            chainlink: {
+              proxyAddress,
+              aggregatorAddress: '',
+            },
+          };
+        } else {
+          pool.tokens[tokenAddress] = {
+            tokenSymbol,
+            tokenDecimals,
+            assetAddress,
+          };
+        }
       }
     }
     inputs = [];
     for (const poolAddress of cfgInfo.poolAddresses) {
-      for (const tokenAddress of cfgInfo.pools[poolAddress].tokenAddresses) {
-        inputs.push(
-          ChainLinkSubscriber.getReadAggregatorMultiCallInput(
-            cfgInfo.pools[poolAddress].tokens[tokenAddress].chainlink
-              .proxyAddress,
-          ),
-        );
+      const pool = cfgInfo.pools[poolAddress];
+      if (pool.oracleType === PlatypusOracleType.ChainLink) {
+        for (const tokenAddress of pool.tokenAddresses) {
+          inputs.push(
+            ChainLinkSubscriber.getReadAggregatorMultiCallInput(
+              pool.tokens[tokenAddress].chainlink.proxyAddress,
+            ),
+          );
+        }
       }
     }
     returnData = (
@@ -265,12 +228,12 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     ).returnData;
     i = 0;
     for (const poolAddress of cfgInfo.poolAddresses) {
-      for (const tokenAddress of cfgInfo.pools[poolAddress].tokenAddresses) {
-        cfgInfo.pools[poolAddress].tokens[
-          tokenAddress
-        ].chainlink.aggregatorAddress = ChainLinkSubscriber.readAggregator(
-          returnData[i++],
-        ).toLowerCase();
+      const pool = cfgInfo.pools[poolAddress];
+      if (pool.oracleType === PlatypusOracleType.ChainLink) {
+        for (const tokenAddress of pool.tokenAddresses) {
+          pool.tokens[tokenAddress].chainlink.aggregatorAddress =
+            ChainLinkSubscriber.readAggregator(returnData[i++]).toLowerCase();
+        }
       }
     }
     return cfgInfo;
@@ -289,22 +252,51 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     await this.init(blockNumber);
     if (!this.cfgInfo)
       throw new Error(
-        'initializePricing: Platypus cfgInfo still null after init',
+        `initializePricing: ${this.dexKey} cfgInfo still null after init`,
       );
-    const eventPools: { [poolAddress: string]: PlatypusPool } = {};
+    const eventPools: {
+      [poolAddress: string]: PlatypusPool | PlatypusPurePool | PlatypusAvaxPool;
+    } = {};
     for (const poolAddress of this.cfgInfo.poolAddresses) {
-      const pool = new PlatypusPool(
-        this.dexKey,
-        this.network,
-        this.config.pools.find(
-          p => p.address.toLowerCase() === poolAddress,
-        )!.name,
-        poolAddress,
-        this.cfgInfo.pools[poolAddress],
-        this.dexHelper,
-      );
-      const state = await pool.generateState(blockNumber);
-      pool.setState(state, blockNumber);
+      const cfgPool = this.cfgInfo.pools[poolAddress];
+      const poolName = this.config.pools.find(
+        p => p.address.toLowerCase() === poolAddress,
+      )!.name;
+      let pool: PlatypusPool | PlatypusPurePool | PlatypusAvaxPool;
+      if (cfgPool.oracleType === PlatypusOracleType.None) {
+        pool = new PlatypusPurePool(
+          this.dexKey,
+          this.network,
+          poolName,
+          poolAddress,
+          cfgPool,
+          this.dexHelper,
+        );
+      } else if (cfgPool.oracleType === PlatypusOracleType.ChainLink) {
+        pool = new PlatypusPool(
+          this.dexKey,
+          this.network,
+          poolName,
+          poolAddress,
+          cfgPool,
+          this.dexHelper,
+        );
+      } else if (cfgPool.oracleType === PlatypusOracleType.StakedAvax) {
+        pool = new PlatypusAvaxPool(
+          this.dexKey,
+          this.network,
+          poolName,
+          poolAddress,
+          cfgPool,
+          this.dexHelper,
+        );
+      } else {
+        throw new Error(`${this.dexKey} cfgInfo invalid pool type`);
+      }
+      await (async <P>(p: P extends PlatypusPoolBase<infer S> ? P : never) => {
+        const state = await p.generateState(blockNumber);
+        p.setState(state, blockNumber);
+      })(pool);
       this.dexHelper.blockManager.subscribeToLogs(
         pool,
         pool.addressesSubscribed,
@@ -351,66 +343,9 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
     return this.findPools(
-      srcToken.address.toLowerCase(),
-      destToken.address.toLowerCase(),
+      this.dexHelper.config.wrapETH(srcToken).address.toLowerCase(),
+      this.dexHelper.config.wrapETH(destToken).address.toLowerCase(),
     ).map(p => this.getPoolIdentifier(p));
-  }
-
-  protected computePrices(
-    srcTokenAddress: Address,
-    srcTokenDecimals: number,
-    destTokenAddress: Address,
-    destTokenDecimals: number,
-    amounts: bigint[],
-    state: PlatypusPoolState,
-  ): bigint[] {
-    const tokenAPrice = state.chainlink[srcTokenAddress].answer;
-    const tokenBPrice = state.chainlink[destTokenAddress].answer;
-    if (tokenBPrice > tokenAPrice) {
-      if (
-        ((tokenBPrice - tokenAPrice) * ETH_UNIT) / tokenBPrice >
-        state.params.maxPriceDeviation
-      ) {
-        return Array(amounts.length).fill(0n);
-      }
-    } else {
-      if (
-        ((tokenAPrice - tokenBPrice) * ETH_UNIT) / tokenAPrice >
-        state.params.maxPriceDeviation
-      ) {
-        return Array(amounts.length).fill(0n);
-      }
-    }
-    return amounts.map(fromAmount => {
-      const idealToAmount =
-        (fromAmount * getBigIntPow(destTokenDecimals)) /
-        getBigIntPow(srcTokenDecimals);
-      if (state.asset[destTokenAddress].cash < idealToAmount) return 0n;
-      const slippageFrom = calcSlippage(
-        state.params.slippageParamK,
-        state.params.slippageParamN,
-        state.params.c1,
-        state.params.xThreshold,
-        state.asset[srcTokenAddress].cash,
-        state.asset[srcTokenAddress].liability,
-        fromAmount,
-        true,
-      );
-      const slippageTo = calcSlippage(
-        state.params.slippageParamK,
-        state.params.slippageParamN,
-        state.params.c1,
-        state.params.xThreshold,
-        state.asset[destTokenAddress].cash,
-        state.asset[destTokenAddress].liability,
-        idealToAmount,
-        false,
-      );
-      const swappingSlippage = calcSwappingSlippage(slippageFrom, slippageTo);
-      const toAmount = wmul(idealToAmount, swappingSlippage);
-      const haircut = calcHaircut(toAmount, state.params.haircutRate);
-      return toAmount - haircut;
-    });
   }
 
   // Returns pool prices for amounts.
@@ -432,49 +367,59 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       );
       return null;
     }
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
+    const srcTokenAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destTokenAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (srcTokenAddress === destTokenAddress) return null;
-    return await Promise.all(
-      this.findPools(srcTokenAddress, destTokenAddress)
-        .filter(
-          poolAddress =>
-            !limitPools ||
-            limitPools.includes(this.getPoolIdentifier(poolAddress)),
-        )
-        .map(poolAddress =>
-          (async () => {
-            let state = this.eventPools![poolAddress].getState(blockNumber);
-            if (!state) {
-              state = await this.eventPools![poolAddress].generateState(
-                blockNumber,
+    return (
+      await Promise.all(
+        this.findPools(srcTokenAddress, destTokenAddress)
+          .filter(
+            poolAddress =>
+              !limitPools ||
+              limitPools.includes(this.getPoolIdentifier(poolAddress)),
+          )
+          .map(poolAddress =>
+            (async <P>(
+              pool: P extends PlatypusPoolBase<infer S> ? P : never,
+            ) => {
+              let state = pool.getState(blockNumber);
+              if (!state) {
+                state = await pool.generateState(blockNumber);
+                pool.setState(state, blockNumber);
+              }
+              if (state.params.paused) return null;
+              const [unit, ...prices] = pool.computePrices(
+                {
+                  address: srcTokenAddress,
+                  decimals: srcToken.decimals,
+                },
+                {
+                  address: destTokenAddress,
+                  decimals: destToken.decimals,
+                },
+                [getBigIntPow(srcToken.decimals), ...amounts],
+                state,
               );
-              this.eventPools![poolAddress].setState(state, blockNumber);
-            }
-            const [unit, ...prices] = this.computePrices(
-              srcTokenAddress,
-              this.cfgInfo!.pools[poolAddress].tokens[srcTokenAddress]
-                .tokenDecimals,
-              destTokenAddress,
-              this.cfgInfo!.pools[poolAddress].tokens[destTokenAddress]
-                .tokenDecimals,
-              [getBigIntPow(srcToken.decimals), ...amounts],
-              state,
-            );
-            return {
-              prices,
-              unit,
-              data: {
-                pool: poolAddress,
-              },
-              poolAddresses: [poolAddress],
-              exchange: this.dexKey,
-              gasCost: 260 * 1000,
-              poolIdentifier: this.getPoolIdentifier(poolAddress),
-            };
-          })(),
-        ),
-    );
+              const ret: PoolPrices<PlatypusData> = {
+                prices,
+                unit,
+                data: {
+                  pool: poolAddress,
+                },
+                poolAddresses: [poolAddress],
+                exchange: this.dexKey,
+                gasCost: 260 * 1000,
+                poolIdentifier: this.getPoolIdentifier(poolAddress),
+              };
+              return ret;
+            })(this.eventPools![poolAddress]),
+          ),
+      )
+    ).filter((p): p is PoolPrices<PlatypusData> => !!p);
   }
 
   // Encode params required by the exchange adapter
@@ -512,14 +457,29 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       srcAmount,
       destToken,
       destAmount,
-      Platypus.poolInterface.encodeFunctionData('swap', [
-        srcToken,
-        destToken,
-        srcAmount,
-        1,
-        this.augustusAddress,
-        this.getDeadline(),
-      ]),
+      isETHAddress(srcToken)
+        ? Platypus.avaxPoolInterface.encodeFunctionData('swapFromETH', [
+            destToken,
+            1,
+            this.augustusAddress,
+            this.getDeadline(),
+          ])
+        : isETHAddress(destToken)
+        ? Platypus.avaxPoolInterface.encodeFunctionData('swapToETH', [
+            srcToken,
+            srcAmount,
+            1,
+            this.augustusAddress,
+            this.getDeadline(),
+          ])
+        : Platypus.poolInterface.encodeFunctionData('swap', [
+            srcToken,
+            destToken,
+            srcAmount,
+            1,
+            this.augustusAddress,
+            this.getDeadline(),
+          ]),
       data.pool,
     );
   }
@@ -530,7 +490,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     await this.init(blockNumber);
     if (!this.cfgInfo)
       throw new Error(
@@ -556,19 +516,35 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
         .aggregate(inputs)
         .call({}, blockNumber)
     ).returnData;
+    const usdPromises = [];
     let i = 0;
+    for (const poolAddress of this.cfgInfo.poolAddresses) {
+      for (const tokenAddress of this.cfgInfo.pools[poolAddress]
+        .tokenAddresses) {
+        usdPromises.push(
+          this.dexHelper.getTokenUSDPrice(
+            {
+              address: tokenAddress,
+              decimals:
+                this.cfgInfo.pools[poolAddress].tokens[tokenAddress]
+                  .tokenDecimals,
+            },
+            BigInt(
+              Platypus.assetInterface
+                .decodeFunctionResult('cash', returnData[i++])[0]
+                .toString(),
+            ),
+          ),
+        );
+      }
+    }
+    const usdValues = await Promise.all(usdPromises);
+    i = 0;
     for (const poolAddress of this.cfgInfo.poolAddresses) {
       poolLiquidityUSD[poolAddress] = 0;
       for (const tokenAddress of this.cfgInfo.pools[poolAddress]
         .tokenAddresses) {
-        poolLiquidityUSD[poolAddress] +=
-          Number(
-            Platypus.assetInterface
-              .decodeFunctionResult('cash', returnData[i++])[0]
-              .toString(),
-          ) /
-          10 **
-            this.cfgInfo.pools[poolAddress].tokens[tokenAddress].tokenDecimals;
+        poolLiquidityUSD[poolAddress] += usdValues[i++];
       }
     }
     this.poolLiquidityUSD = poolLiquidityUSD;

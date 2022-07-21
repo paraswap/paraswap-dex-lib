@@ -1,16 +1,16 @@
 import * as _ from 'lodash';
-import { DummyDexHelper, IDexHelper } from '../dex-helper';
+import {
+  DummyDexHelper,
+  DummyLimitOrderProvider,
+  IDexHelper,
+} from '../dex-helper';
+import BigNumber from 'bignumber.js';
 import { TransactionBuilder } from '../transaction-builder';
 import { PricingHelper } from '../pricing-helper';
 import { DexAdapterService } from '../dex';
 import { Address, Token, OptimalRate, TxObject } from '../types';
-import {
-  SwapSide,
-  AugustusAddress,
-  TokenTransferProxyAddress,
-  NULL_ADDRESS,
-  ContractMethod,
-} from '../constants';
+import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
+import { LimitOrderExchange } from '../dex/limit-order-exchange';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -39,7 +39,11 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   pricingHelper: PricingHelper;
   transactionBuilder: TransactionBuilder;
 
-  constructor(protected network: number, protected dexKey: string) {
+  constructor(
+    protected network: number,
+    protected dexKey: string,
+    limitOrderProvider?: DummyLimitOrderProvider,
+  ) {
     this.dexHelper = new DummyDexHelper(this.network);
     this.dexAdapterService = new DexAdapterService(
       this.dexHelper,
@@ -50,10 +54,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       this.dexHelper.getLogger,
     );
     this.transactionBuilder = new TransactionBuilder(this.dexAdapterService);
+
+    const dex = this.dexAdapterService.getDexByKey(dexKey);
+    if (limitOrderProvider && dex instanceof LimitOrderExchange) {
+      dex.limitOrderProvider = limitOrderProvider;
+    }
   }
 
   async initializePricing() {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
   }
 
@@ -65,7 +74,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     contractMethod: ContractMethod,
     _poolIdentifiers?: string[],
   ): Promise<OptimalRate> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     const poolIdentifiers =
       (_poolIdentifiers && { [this.dexKey]: _poolIdentifiers }) ||
       (await this.pricingHelper.getPoolIdentifiers(
@@ -137,8 +146,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
-      tokenTransferProxy: TokenTransferProxyAddress[this.network],
-      contractAddress: AugustusAddress[this.network],
+      tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
+      contractAddress: this.dexHelper.config.data.augustusAddress,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
@@ -159,7 +168,65 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     userAddress: Address,
   ) {
     // Set deadline to be 10 min from now
-    const deadline = (Math.floor(Date.now() / 1000) + 10 * 60).toFixed();
+    let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
+
+    const slippageFactor = new BigNumber(minMaxAmount.toString()).div(
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount,
+    );
+
+    // Call preprocessTransaction for each exchange before we build transaction
+    try {
+      priceRoute.bestRoute = await Promise.all(
+        priceRoute.bestRoute.map(async route => {
+          route.swaps = await Promise.all(
+            route.swaps.map(async swap => {
+              swap.swapExchanges = await Promise.all(
+                swap.swapExchanges.map(async exchange => {
+                  // Search in dexLib dexes
+                  const dexLibExchange = this.pricingHelper.getDexByKey(
+                    exchange.exchange,
+                  );
+
+                  if (dexLibExchange && dexLibExchange.preProcessTransaction) {
+                    if (!dexLibExchange.getTokenFromAddress) {
+                      throw new Error(
+                        'If you want to test preProcessTransaction, first need to implement getTokenFromAddress function',
+                      );
+                    }
+
+                    const [preprocessedRoute, txInfo] =
+                      await dexLibExchange.preProcessTransaction(
+                        exchange,
+                        dexLibExchange.getTokenFromAddress(swap.srcToken),
+                        dexLibExchange.getTokenFromAddress(swap.destToken),
+                        priceRoute.side,
+                        {
+                          slippageFactor,
+                          txOrigin: userAddress,
+                        },
+                      );
+
+                    deadline =
+                      txInfo.deadline && Number(txInfo.deadline) < deadline
+                        ? Number(txInfo.deadline)
+                        : deadline;
+
+                    return preprocessedRoute;
+                  }
+                  return exchange;
+                }),
+              );
+              return swap;
+            }),
+          );
+          return route;
+        }),
+      );
+    } catch (e) {
+      throw e;
+    }
 
     return await this.transactionBuilder.build({
       priceRoute,
@@ -167,7 +234,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       userAddress,
       partnerAddress: NULL_ADDRESS,
       partnerFeePercent: '0',
-      deadline,
+      deadline: deadline.toString(),
       uuid: '00000000-0000-0000-0000-000000000000',
     });
   }

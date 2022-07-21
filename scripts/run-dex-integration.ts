@@ -49,7 +49,7 @@ const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 async function main() {
   const dexHelper = new DummyDexHelper(Network.MAINNET);
-  const blocknumber = await dexHelper.provider.getBlockNumber();
+  const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
   const balancerV2 = new BalancerV2(Network.MAINNET, 'BalancerV2', dexHelper);
 

@@ -7,15 +7,11 @@ import {
   Holders,
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { getTokenFromASymbol } from './tokens';
 import { Token } from '../../types';
+import { generateConfig } from '../../config';
 
 jest.setTimeout(1000 * 60 * 3);
 
@@ -26,7 +22,10 @@ describe('AaveV3 E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const pairs = [
       {
@@ -109,7 +108,10 @@ describe('AaveV3 E2E', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const pairs = [
       {
@@ -192,7 +194,10 @@ describe('AaveV3 E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const pairs = [
       {
@@ -270,4 +275,91 @@ describe('AaveV3 E2E', () => {
       );
     });
   });
+
+  describe('AaveV3 ARBITRUM', () => {
+    const network = Network.ARBITRUM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const pairs = [
+      {
+        tokenSymbol: 'AAVE',
+        aTokenSymbol: 'aArbAAVE',
+        amount: '1000000',
+        aToken: getTokenFromASymbol(network, 'aArbAAVE'),
+      },
+      {
+        tokenSymbol: 'EURS',
+        aTokenSymbol: 'aArbEURS',
+        amount: '1000000000000000000',
+        aToken: getTokenFromASymbol(network, 'aArbEURS'),
+      },
+      {
+        tokenSymbol: 'USDC',
+        aTokenSymbol: 'aArbUSDC',
+        amount: '1000000000000000000',
+        aToken: getTokenFromASymbol(network, 'aArbUSDC'),
+      },
+    ];
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    ]);
+
+    pairs.forEach(pair => {
+      let aToken: Token;
+
+      if (!pair.aToken) {
+        expect(pair.aToken).not.toBeNull();
+        return;
+      } else aToken = pair.aToken;
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
+              await testE2E(
+                aToken,
+                tokens[pair.tokenSymbol],
+                holders[pair.aTokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.tokenSymbol],
+                aToken,
+                holders[pair.tokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }),
+      );
+    });
+  });
+
 });

@@ -26,8 +26,6 @@ export type DepositWithdrawReturn = {
 
 export interface IWethDepositorWithdrawer {
   getDepositWithdrawParam(
-    srcToken: Address,
-    destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     side: SwapSide,

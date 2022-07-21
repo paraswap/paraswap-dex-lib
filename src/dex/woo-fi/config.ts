@@ -91,6 +91,35 @@ export const WooFiConfig: DexConfigMap<DexParams> = {
         },
       },
     },
+    [Network.POLYGON]: {
+      wooPPAddress: '0x7400B665C8f4f3a951a99f1ee9872efb8778723d',
+      wooOracleAddress: '0x2Fe5E5D341cFFa606a5d9DA1B6B646a381B0f7ec',
+      wooFeeManagerAddress: '0x7214833BE05Ce39f6dCd97668e521162e6C18937',
+      wooGuardianAddress: '0xF5d215d9C84778F85746D15762DaF39B9E83a2d6',
+      quoteToken: {
+        // USDC
+        address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+        decimals: 6,
+      },
+      baseTokens: {
+        WMATIC: {
+          address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+          decimals: 18,
+        },
+        WBTC: {
+          address: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
+          decimals: 8,
+        },
+        WETH: {
+          address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+          decimals: 18,
+        },
+        WOO: {
+          address: '0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603',
+          decimals: 18,
+        },
+      },
+    },
   },
 };
 
@@ -101,5 +130,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.FANTOM]: {
     [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 8 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 4 }],
   },
 };

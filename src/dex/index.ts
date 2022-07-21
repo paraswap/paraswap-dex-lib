@@ -31,7 +31,7 @@ import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Nerve } from './nerve/nerve';
-import { IDexHelper } from '../dex-helper/idex-helper';
+import { IDexHelper } from '../dex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
@@ -42,6 +42,11 @@ import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { MetavaultTrade } from './metavault-trade/metavault-trade';
+import { Dystopia } from './uniswap-v2/dystopia/dystopia';
+import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
+import { AugustusRFQOrder } from './augustus-rfq';
+import Web3 from 'web3';
+
 
 const LegacyDexes = [
   Curve,
@@ -62,6 +67,7 @@ const LegacyDexes = [
   UniswapV3,
   Jarvis,
   Lido,
+  AugustusRFQOrder,
 ];
 
 const Dexes = [
@@ -82,44 +88,14 @@ const Dexes = [
   GMX,
   MetavaultTrade,
   WooFi,
+  Dystopia,
+  ParaSwapLimitOrders,
 ];
-
-const AdapterNameAddressMap: {
-  [network: number]: { [name: string]: Address };
-} = {
-  [Network.MAINNET]: {
-    Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
-    Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-    Adapter03: '0x9Cf0b60C2133f67443fdf8a1bB952E2e6783d5DF',
-    BuyAdapter: '0x8D562A7D63248Ebfdd19B26665161cf867e5c10A',
-  },
-  [Network.POLYGON]: {
-    PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-    PolygonAdapter02: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
-    PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
-  },
-  [Network.BSC]: {
-    BscAdapter01: '0x7EE3C983cA38c370F296FE14a31bEaC5b1c9a9FE',
-    BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
-  },
-  [Network.ROPSTEN]: {
-    RopstenAdapter01: '0x74fF86C61CF66334dCfc999814DE4695B4BaE57b',
-    RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
-  },
-  [Network.AVALANCHE]: {
-    AvalancheAdapter01: '0xC79cf51b0951418cb7B010e38c3ceB8801E53184',
-    AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
-  },
-  [Network.FANTOM]: {
-    FantomAdapter01: '0xbd09504819a604ca503F30D2Cc9D0Ef4C76dac33',
-    FantomBuyAdapter: '0x3032B8c9CF91C791A8EcC2c7831A11279f419386',
-  },
-};
 
 export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
-  provider: Provider,
+  provider: Web3,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -145,7 +121,7 @@ export class DexAdapterService {
   ];
 
   constructor(
-    private dexHelper: IDexHelper,
+    public dexHelper: IDexHelper,
     public network: number,
     protected sellAdapters: Adapters = {},
     protected buyAdapters: Adapters = {},
@@ -175,7 +151,7 @@ export class DexAdapterService {
           if (sellAdaptersDex)
             this.sellAdapters[_key] = sellAdaptersDex.map(
               ({ name, index }) => ({
-                adapter: AdapterNameAddressMap[network][name],
+                adapter: this.dexHelper.config.data.adapterAddresses[name],
                 index,
               }),
             );
@@ -185,7 +161,7 @@ export class DexAdapterService {
           ).getAdapters(SwapSide.BUY);
           if (buyAdaptersDex)
             this.buyAdapters[_key] = buyAdaptersDex.map(({ name, index }) => ({
-              adapter: AdapterNameAddressMap[network][name],
+              adapter: this.dexHelper.config.data.adapterAddresses[name],
               index,
             }));
         }
@@ -219,9 +195,9 @@ export class DexAdapterService {
         );
 
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
-        this.dexHelper.augustusAddress,
+        this.dexHelper.config.data.augustusAddress,
         this.network,
-        this.dexHelper.provider,
+        this.dexHelper.web3Provider,
       );
     }
 

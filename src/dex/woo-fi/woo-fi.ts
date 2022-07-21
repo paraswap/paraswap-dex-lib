@@ -10,7 +10,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -23,11 +23,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { WooFiConfig, Adapters } from './config';
 import { WooFiMath } from './woo-fi-math';
-import {
-  MIN_CONVERSION_RATE,
-  USD_PRECISION,
-  WOO_FI_GAS_COST,
-} from './constants';
+import { MIN_CONVERSION_RATE, WOO_FI_GAS_COST } from './constants';
 import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
 import wooFeeManagerABI from '../../abi/woo-fi/WooFeeManager.abi.json';
 import woOracleABI from '../../abi/woo-fi/Wooracle.abi.json';
@@ -72,8 +68,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   readonly quoteTokenAddress: Address;
 
-  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(WooFiConfig);
+  public static dexKeysWithNetwork: {
+    key: string;
+    networks: Network[];
+  }[] = getDexKeysWithNetwork(WooFiConfig);
 
   logger: Logger;
 
@@ -84,7 +82,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     protected adapters = Adapters[network] || {},
     readonly config = WooFiConfig[dexKey][network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
 
     // Normalise once all config addresses and use across all scenarios
@@ -184,6 +182,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   get baseTokens(): Token[] {
     return Object.values(this.config.baseTokens);
+  }
+
+  get isRefInfosEmpty(): boolean {
+    return Object.keys(this._refInfos).length === 0;
   }
 
   protected _fillTokenInfoState(
@@ -390,8 +392,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     const _srcAddress = _srcToken.address.toLowerCase();
     const _destAddress = _destToken.address.toLowerCase();
@@ -424,8 +426,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     if (side === SwapSide.BUY) return null;
 
     try {
-      const _srcToken = wrapETH(srcToken, this.network);
-      const _destToken = wrapETH(destToken, this.network);
+      const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+      const _destToken = this.dexHelper.config.wrapETH(destToken);
 
       const _srcAddress = _srcToken.address.toLowerCase();
       const _destAddress = _destToken.address.toLowerCase();
@@ -444,8 +446,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       if (!isSrcQuote && !isDestQuote) return null;
 
       const expectedIdentifier = this.getIdentifier(isSrcQuote);
+
       if (
-        limitPools === undefined ||
+        limitPools !== undefined &&
         !limitPools.some(p => p === expectedIdentifier)
       )
         return null;
@@ -562,6 +565,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   async updatePoolState(): Promise<void> {
+    if (this.isRefInfosEmpty) {
+      this._refInfos = await this._getRefInfos();
+    }
+
     const state = await this.getState();
 
     const tokenBalancesUSD = await Promise.all(
@@ -578,10 +585,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const wrappedTokenAddress = wrapETH(
-      { address: tokenAddress, decimals: 0 },
-      this.network,
-    ).address.toLowerCase();
+    const wrappedTokenAddress = this.dexHelper.config
+      .wrapETH({ address: tokenAddress, decimals: 0 })
+      .address.toLowerCase();
 
     if (!this.tokenByAddress[wrappedTokenAddress]) return [];
     if (!this.latestState) return [];
