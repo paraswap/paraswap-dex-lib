@@ -1,4 +1,4 @@
-export const ONE_ORDER_GASCOST = 65500;
+export const ONE_ORDER_GASCOST = 65500n;
 
 // In one swap we can use only MAX_ORDERS_COUNT_FOR_SWAP for pricing and tx building
 // TODO: Must be replaced later with configuration service
