@@ -1,6 +1,6 @@
 import { DexParams } from './types';
-import { DexConfigMap } from '../../types';
-import { Network } from '../../constants';
+import { AdapterMappings, DexConfigMap } from '../../types';
+import { Network, SwapSide } from '../../constants';
 
 export const MaverickConfig: DexConfigMap<DexParams> = {
   Maverick: {
@@ -14,6 +14,8 @@ export const MaverickConfig: DexConfigMap<DexParams> = {
   },
 };
 
-export const Adapters: {
-  [chainId: number]: { name: string; index: number }[];
-} = {};
+export const Adapters: Record<number, AdapterMappings> = {
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 5 }],
+  },
+};

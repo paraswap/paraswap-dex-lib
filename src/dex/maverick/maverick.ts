@@ -47,7 +47,7 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network],
+    protected adapters = Adapters[network] || {},
     protected subgraphURL: string = MaverickConfig[dexKey][network].subgraphURL,
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
@@ -134,7 +134,7 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return null;
+    return this.adapters[side] ? this.adapters[side] : null;
   }
 
   async getPoolIdentifiers(
@@ -223,8 +223,10 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     data: MaverickData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
     return {
-      targetExchange: data.router,
+      targetExchange: data.pool,
       payload: '0x',
       networkFee: '0',
     };
@@ -239,25 +241,22 @@ export class Maverick extends SimpleExchange implements IDex<MaverickData> {
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    return {
-      callees: [srcToken, data.pool],
-      calldata: [
-        this.erc20Interface.encodeFunctionData('transfer', [
-          data.pool,
-          srcAmount,
-        ]),
-        this.poolInterface.encodeFunctionData('swap', [
-          this.augustusAddress,
-          srcToken.toLowerCase() == data.quote.toLowerCase(),
-        ]),
-      ],
-      values: ['0', '0'],
-      networkFee: '0',
-    };
-  }
 
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    const { pool, quote } = data;
+
+    const swapCalldata = this.poolInterface.encodeFunctionData('swap', [
+      this.augustusAddress,
+      srcToken.toLowerCase() == quote.toLowerCase(),
+    ]);
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapCalldata,
+      pool,
+    );
   }
 
   async getTopPoolsForToken(
