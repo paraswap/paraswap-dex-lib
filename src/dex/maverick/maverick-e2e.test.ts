@@ -7,11 +7,7 @@ import {
   Holders,
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
@@ -22,7 +18,10 @@ describe('Maverick E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(generateConfig(network).privateHttpProvider, network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
@@ -32,12 +31,20 @@ describe('Maverick E2E', () => {
     const nativeTokenAmount = '1000000000000000000';
 
     const sideToContractMethods = new Map([
-      [SwapSide.SELL, [ContractMethod.simpleSwap]],
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
     ]);
+
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it(nativeTokenSymbol + ' -> TOKEN', async () => {
+          it(`${network} ${side} ${contractMethod} ${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
             await testE2E(
               tokens[nativeTokenSymbol],
               tokens[tokenASymbol],
@@ -50,7 +57,7 @@ describe('Maverick E2E', () => {
               provider,
             );
           });
-          it('TOKEN -> ' + nativeTokenSymbol, async () => {
+          it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
             await testE2E(
               tokens[tokenASymbol],
               tokens[nativeTokenSymbol],
@@ -63,7 +70,7 @@ describe('Maverick E2E', () => {
               provider,
             );
           });
-          it('TOKEN -> TOKEN', async () => {
+          it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${tokenBSymbol}`, async () => {
             await testE2E(
               tokens[tokenASymbol],
               tokens[tokenBSymbol],
