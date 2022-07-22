@@ -36,6 +36,7 @@ import {
   OptimizedBalancerV2Data,
   SwapTypes,
   PoolStateMap,
+  PoolStateCache,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
@@ -358,6 +359,9 @@ export class BalancerV2
 
   logger: Logger;
 
+  // In memory pool state for non-event pools
+  nonEventPoolStateCache: PoolStateCache;
+
   constructor(
     protected network: Network,
     protected dexKey: string,
@@ -368,6 +372,8 @@ export class BalancerV2
     protected adapters = Adapters[network],
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
+    this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
       dexKey,
@@ -429,6 +435,35 @@ export class BalancerV2
     );
   }
 
+  /**
+   * Returns cached poolState if blockNumber matches cached value. Resets if not.
+   */
+  private getNonEventPoolStateCache(blockNumber: number): PoolStateMap {
+    if (this.nonEventPoolStateCache.blockNumber !== blockNumber)
+      this.nonEventPoolStateCache.poolState = {};
+    return this.nonEventPoolStateCache.poolState;
+  }
+
+  /**
+   * Update poolState cache.
+   * If same blockNumber as current cache then update with new pool state.
+   * If different blockNumber overwrite cache with latest.
+   */
+  private updateNonEventPoolStateCache(
+    poolState: PoolStateMap,
+    blockNumber: number,
+  ): PoolStateMap {
+    if (this.nonEventPoolStateCache.blockNumber !== blockNumber) {
+      this.nonEventPoolStateCache.blockNumber = blockNumber;
+      this.nonEventPoolStateCache.poolState = poolState;
+    } else
+      this.nonEventPoolStateCache.poolState = {
+        ...this.nonEventPoolStateCache.poolState,
+        ...poolState,
+      };
+    return this.nonEventPoolStateCache.poolState;
+  }
+
   async getPricesVolume(
     from: Token,
     to: Token,
@@ -455,29 +490,42 @@ export class BalancerV2
         (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const quoteUnitVolume = getBigIntPow(
-        (side === SwapSide.SELL ? _to : _from).decimals,
-      );
-
-      const poolStates = await this.eventPools.getState(blockNumber);
-      if (!poolStates) {
+      const eventPoolStates = await this.eventPools.getState(blockNumber);
+      if (!eventPoolStates) {
         this.logger.error(`getState returned null`);
         return null;
       }
 
+      // Fetch previously cached non-event pool states
+      let nonEventPoolStates = this.getNonEventPoolStateCache(blockNumber);
+
+      // Missing pools are pools that don't already exist in event or non-event
       const missingPools = allowedPools.filter(
-        pool => !(pool.address.toLowerCase() in poolStates),
+        pool =>
+          !(
+            pool.address.toLowerCase() in eventPoolStates ||
+            pool.address.toLowerCase() in nonEventPoolStates
+          ),
       );
 
-      const missingPoolsStateMap = missingPools.length
-        ? await this.eventPools.getOnChainState(missingPools, blockNumber)
-        : {};
+      // Retrieve onchain state for any missing pools
+      if (missingPools.length > 0) {
+        const missingPoolsStateMap = await this.eventPools.getOnChainState(
+          missingPools,
+          blockNumber,
+        );
+        // Update non-event pool state cache with newly retrieved data so it can be reused in future
+        nonEventPoolStates = this.updateNonEventPoolStateCache(
+          missingPoolsStateMap,
+          blockNumber,
+        );
+      }
 
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
           const poolAddress = pool.address.toLowerCase();
           const poolState =
-            poolStates[poolAddress] || missingPoolsStateMap[poolAddress];
+            eventPoolStates[poolAddress] || nonEventPoolStates[poolAddress];
           if (!poolState) {
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
