@@ -1,0 +1,232 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "liquidityPool",
+        "type": "address"
+      }
+    ],
+    "name": "SetLiquidityPool",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "liquidityPool",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inTokenIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "outTokenIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "outAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Swap",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "liquidityPool_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "inAmount_",
+        "type": "uint256"
+      }
+    ],
+    "name": "swap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "liquidityPool_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenInIndex_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenOutIndex_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "inAmount_",
+        "type": "uint256"
+      }
+    ],
+    "name": "swapByTokenIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "inToken_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "inAmount_",
+        "type": "uint256"
+      }
+    ],
+    "name": "callBack",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "pool_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenInIndex_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenOutIndex_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "inAmount_",
+        "type": "uint256"
+      }
+    ],
+    "name": "calculateOut",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "sum",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "success",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "pool_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenInIndex_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenOutIndex_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "outAmount_",
+        "type": "uint256"
+      }
+    ],
+    "name": "calculateIn",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "sum",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "success",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
