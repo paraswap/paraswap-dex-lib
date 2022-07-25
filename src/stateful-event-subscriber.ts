@@ -32,7 +32,6 @@ export abstract class StatefulEventSubscriber<State>
   ) {
     this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
     if (dexHelper.config.isSlave) {
-      console.log('slave');
       this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
       this.dexHelper.cache.rawget(this.name).then(stateAsStr => {
         if (stateAsStr) {
@@ -40,9 +39,8 @@ export abstract class StatefulEventSubscriber<State>
           this.logger.debug(`[${this.name}] got initial state from cache`);
         }
       });
-    } else {
-      this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
     }
+    this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
   }
 
   getStateBlockNumber(): Readonly<number> {
@@ -233,6 +231,12 @@ export abstract class StatefulEventSubscriber<State>
   //current state, then the current state will be updated and the invalid flag
   //can be reset.
   setState(state: DeepReadonly<State>, blockNumber: number): void {
+    if (this.dexHelper.config.isSlave) {
+      this.stateBlockNumber = blockNumber;
+      this.stateHistory[blockNumber] = state;
+      this.state = state;
+      return;
+    }
     if (!blockNumber) {
       this.logger.error('setState() with blockNumber', blockNumber);
       return;

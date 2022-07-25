@@ -43,6 +43,7 @@ export interface EventSubscriber {
 }
 
 export interface IBlockManager {
+  getLatestBlockNumber(): number;
   subscribeToLogs(
     subscriber: EventSubscriber,
     contractAddress: Address | Address[],

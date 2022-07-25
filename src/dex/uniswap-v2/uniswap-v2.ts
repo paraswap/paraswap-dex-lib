@@ -247,7 +247,8 @@ export class UniswapV2
     const { callEntry, callDecoder } =
       this.getFeesMultiCallData(pair.exchange!) || {};
 
-    const key = `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${pair.token0}_${pair.token1}`;
+    const key =
+      `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${pair.token0.address}_${pair.token1.address}`.toLowerCase();
 
     await this.dexHelper.cache.rawsetex(
       key,
@@ -450,15 +451,18 @@ export class UniswapV2
   }
 
   async addMasterPool(poolKey: string) {
-    const _pairs = await this.dexHelper.cache.rawget(
-      `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase(),
-    );
+    const key =
+      `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
+    const _pairs = await this.dexHelper.cache.rawget(key);
     if (!_pairs) {
-      this.logger.warn(`did not find poolconfig in for key ${poolKey}`);
+      this.logger.warn(`did not find poolconfig in for key ${key}`);
       return;
     }
-    const pairs: [Token, Token][] = JSON.parse(_pairs);
-    this.batchCatchUpPairs(pairs, 42);
+    const pairs: [Token, Token] = JSON.parse(_pairs);
+    this.batchCatchUpPairs(
+      [pairs],
+      this.dexHelper.blockManager.getLatestBlockNumber(),
+    );
   }
 
   async getPairOrderedParams(

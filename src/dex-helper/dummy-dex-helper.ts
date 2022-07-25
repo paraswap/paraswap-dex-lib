@@ -96,6 +96,10 @@ class DummyRequestWrapper implements IRequestWrapper {
 }
 
 class DummyBlockManager implements IBlockManager {
+  getLatestBlockNumber(): number {
+    return 1;
+  }
+
   subscribeToLogs(
     subscriber: EventSubscriber,
     contractAddress: Address | Address[],
