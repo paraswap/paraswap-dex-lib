@@ -60,7 +60,6 @@ export abstract class StatefulEventSubscriber<State>
   private _setState(state: DeepReadonly<State> | null) {
     this.state = state;
     const stateAsStr = Utils.Serialize(state);
-    console.log(this.name, stateAsStr.length);
     this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.rawsetex(this.name, stateAsStr);
   }
