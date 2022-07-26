@@ -17,6 +17,10 @@ import { generateConfig, ConfigHelper } from '../config';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
+  async initialize(): Promise<void> {
+    return;
+  }
+
   async get(
     dexKey: string,
     network: number,
