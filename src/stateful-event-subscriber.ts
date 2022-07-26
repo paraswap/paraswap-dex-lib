@@ -15,6 +15,8 @@ export abstract class StatefulEventSubscriber<State>
   protected state: DeepReadonly<State> | null = null;
   protected stateBlockNumber: number = 0;
 
+  protected addressesSubscribed: string[] = [];
+
   //Derived classes should use setState() to record a new entry
   protected stateHistory: { [blockNumber: number]: DeepReadonly<State> } = {};
 
@@ -41,6 +43,16 @@ export abstract class StatefulEventSubscriber<State>
       });
     }
     this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
+  }
+
+  initialize(blockNumber: number) {
+    if (!this.dexHelper.config.isSlave) {
+      this.dexHelper.blockManager.subscribeToLogs(
+        this,
+        this.addressesSubscribed,
+        blockNumber,
+      );
+    }
   }
 
   getStateBlockNumber(): Readonly<number> {

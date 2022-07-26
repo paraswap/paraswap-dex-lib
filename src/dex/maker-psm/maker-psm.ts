@@ -86,7 +86,6 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
   to18ConversionFactor: bigint;
   bytes32Tout =
     '0x746f757400000000000000000000000000000000000000000000000000000000'; // bytes32('tout')
@@ -231,11 +230,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     this.poolConfigs.forEach((p, i) => {
       const eventPool = this.eventPools[p.gem.address.toLowerCase()];
       eventPool.setState(poolStates[i], blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        eventPool,
-        eventPool.addressesSubscribed,
-        blockNumber,
-      );
+      eventPool.initialize(blockNumber);
     });
   }
 

@@ -83,11 +83,8 @@ export class Nerve
       // Generate first state for the blockNumber and subscribe to logs
       const newPoolState = await newPool.generateState(blockNumber);
       newPool.setState(newPoolState, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        newPool,
-        newPool.addressesSubscribed,
-        blockNumber,
-      );
+
+      newPool.initialize(blockNumber);
     } else {
       this.logger.warn(
         `We don't support metapools for Nerve. Check config: ${poolConfig.name}`,

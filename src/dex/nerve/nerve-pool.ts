@@ -20,8 +20,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: Address[];
-
   poolIface: Interface;
 
   lpTokenIface: Interface;
@@ -48,7 +46,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     this.math = new NervePoolMath(this.name, this.logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
-    this.addressesSubscribed = [poolConfig.address];
+    this.addressesSubscribed.push(poolConfig.address);
 
     // Add handlers
     this.handlers['TokenSwap'] = this.handleTokenSwap.bind(this);

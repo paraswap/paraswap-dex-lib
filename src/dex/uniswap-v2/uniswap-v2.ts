@@ -101,6 +101,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       dexHelper,
       logger,
     );
+    this.addressesSubscribed.push(poolAddress);
   }
 
   protected processLog(
@@ -270,11 +271,8 @@ export class UniswapV2
     );
     if (blockNumber)
       pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      pair.pool,
-      pair.exchange!,
-      blockNumber,
-    );
+
+    pair.pool.initialize(blockNumber);
   }
 
   async getBuyPrice(

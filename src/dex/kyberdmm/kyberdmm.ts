@@ -260,11 +260,8 @@ export class KyberDmm
       );
       pair.pools[poolAddress] = pool;
       if (blockNumber) pool.setState(poolData, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        poolAddress,
-        blockNumber,
-      );
+
+      pool.initialize(blockNumber);
     }
   }
 

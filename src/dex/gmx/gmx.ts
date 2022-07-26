@@ -69,11 +69,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       this.logger,
       config,
     );
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.pool,
-      this.pool.addressesSubscribed,
-      blockNumber,
-    );
+    this.pool.initialize(blockNumber);
   }
 
   // Returns the list of contract adapters (name and index)

@@ -297,11 +297,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
         const state = await p.generateState(blockNumber);
         p.setState(state, blockNumber);
       })(pool);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        pool.addressesSubscribed,
-        blockNumber,
-      );
+      pool.initialize(blockNumber);
       eventPools[poolAddress] = pool;
     }
     this.eventPools = eventPools;

@@ -35,7 +35,6 @@ export abstract class PartialEventSubscriber<State, SubState> {
 export abstract class ComposedEventSubscriber<
   State,
 > extends StatefulEventSubscriber<State> {
-  public addressesSubscribed: Address[];
   private addressSubscribers: {
     [address: string]: PartialEventSubscriber<State, any>[];
   } = {};

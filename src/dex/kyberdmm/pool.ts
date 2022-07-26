@@ -67,6 +67,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
       dexHelper,
       logger,
     );
+    this.addressesSubscribed.push(poolAddress);
   }
 
   protected async processLog(
