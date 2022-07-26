@@ -2,7 +2,12 @@ import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import _ from 'lodash';
-import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
+import {
+  CACHE_PREFIX,
+  Network,
+  SUBGRAPH_TIMEOUT,
+  SwapSide,
+} from '../../constants';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -226,7 +231,7 @@ export class KyberDmm
     );
   }
 
-  private addPool(
+  private async addPool(
     pair: KyberDmmPair,
     poolAddress: string,
     poolData: KyberDmmPoolState,
@@ -236,6 +241,14 @@ export class KyberDmm
       pair.exchanges.find(p => p === poolAddress) &&
       !(poolAddress in pair.pools)
     ) {
+      const key =
+        `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${pair.token0.address}_${pair.token1.address}`.toLowerCase();
+
+      await this.dexHelper.cache.rawsetex(
+        key,
+        JSON.stringify([pair.token0, pair.token1]),
+      );
+
       const pool = new KyberDmmPool(
         this.dexKey,
         this.dexHelper,
@@ -253,6 +266,22 @@ export class KyberDmm
         blockNumber,
       );
     }
+  }
+
+  async addMasterPool(poolKey: string) {
+    const key =
+      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
+    const _pairs = await this.dexHelper.cache.rawget(key);
+    if (!_pairs) {
+      this.logger.warn(`did not find poolconfig in for key ${key}`);
+      return;
+    }
+    const pairs: [Token, Token] = JSON.parse(_pairs);
+    this.catchUpPair(
+      pairs[0],
+      pairs[1],
+      this.dexHelper.blockManager.getLatestBlockNumber(),
+    );
   }
 
   async getPricesVolume(
@@ -477,11 +506,13 @@ export class KyberDmm
       pair.exchanges = pair.exchanges.filter(pool => poolsState[pool]);
     }
 
-    Object.entries(poolsState).forEach(([poolAddress, state]) => {
-      if (!pair.pools[poolAddress]) {
-        this.addPool(pair, poolAddress, state, blockNumber);
-      } else pair.pools[poolAddress].setState(state, blockNumber);
-    });
+    await Promise.all(
+      Object.entries(poolsState).map(async ([poolAddress, state]) => {
+        if (!pair.pools[poolAddress]) {
+          await this.addPool(pair, poolAddress, state, blockNumber);
+        } else pair.pools[poolAddress].setState(state, blockNumber);
+      }),
+    );
   }
 
   private async getPairOrderedParams(
