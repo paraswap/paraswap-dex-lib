@@ -420,7 +420,7 @@ export class UniswapV2
       if (!(pair && pair.exchange)) continue;
       if (!pair.pool) {
         pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
+      } else if (!(await pair.pool.getState(blockNumber))) {
         pairsToFetch.push(pair);
       }
     }
@@ -472,7 +472,7 @@ export class UniswapV2
   ): Promise<UniswapV2PoolOrderedParams | null> {
     const pair = await this.findPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) return null;
-    const pairState = pair.pool.getState(blockNumber);
+    const pairState = await pair.pool.getState(blockNumber);
     if (!pairState) {
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${

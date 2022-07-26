@@ -386,7 +386,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             (async <P>(
               pool: P extends PlatypusPoolBase<infer S> ? P : never,
             ) => {
-              let state = pool.getState(blockNumber);
+              let state = await pool.getState(blockNumber);
               if (!state) {
                 state = await pool.generateState(blockNumber);
                 pool.setState(state, blockNumber);

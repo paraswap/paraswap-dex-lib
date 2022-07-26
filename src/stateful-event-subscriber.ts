@@ -31,15 +31,6 @@ export abstract class StatefulEventSubscriber<State>
     protected logger: Logger,
   ) {
     this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
-    if (dexHelper.config.isSlave) {
-      this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
-      this.dexHelper.cache.rawget(this.name).then(stateAsStr => {
-        if (stateAsStr) {
-          this.state = Utils.Parse(stateAsStr);
-          this.logger.debug(`[${this.name}] got initial state from cache`);
-        }
-      });
-    }
     this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
   }
 
@@ -47,20 +38,19 @@ export abstract class StatefulEventSubscriber<State>
     return this.stateBlockNumber;
   }
 
-  private slaveSetState(channel: string, stateMsg: string) {
-    if (stateMsg === 'null') {
-      this.state = null;
-      return;
+  private async _slaveGetState(): Promise<DeepReadonly<State> | null> {
+    const stateAsStr = await this.dexHelper.cache.rawget(this.name);
+    if (stateAsStr) {
+      this.logger.debug(`[${this.name}] got state from cache`);
+      return Utils.Parse(stateAsStr);
     }
 
-    this.logger.debug(`[${this.name}] received state update from cache`);
-    this.state = Utils.Parse(stateMsg);
+    return null;
   }
 
   private _setState(state: DeepReadonly<State> | null) {
     this.state = state;
     const stateAsStr = Utils.Serialize(state);
-    this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.rawsetex(this.name, stateAsStr);
   }
 
@@ -209,15 +199,15 @@ export abstract class StatefulEventSubscriber<State>
   //number), possibly using generateState(), and set it on this object using
   //setState.  In case isTracking() returns true, it is assumed that the stored
   //state is current and so the minBlockNumber will be disregarded.
-  getState(minBlockNumber: number): DeepReadonly<State> | null {
+  getState(minBlockNumber: number): Promise<DeepReadonly<State> | null> {
     if (this.dexHelper.config.isSlave) {
-      return this.state;
+      return this._slaveGetState();
     }
-    if (!this.state || this.invalid) return null;
+    if (!this.state || this.invalid) return Promise.resolve(null);
     if (this.isTracking() || this.stateBlockNumber >= minBlockNumber) {
-      return this.state;
+      return Promise.resolve(this.state);
     }
-    return null;
+    return Promise.resolve(null);
   }
 
   // Returns the last set state. The state might be invalid or not updated.

@@ -122,7 +122,7 @@ export class Nerve
     // TODO: Need to batch this RPC calls in one multicall
     return Promise.all(
       _pools.map(async eventPool => {
-        let state = eventPool.getState(_blockNumber);
+        let state = await eventPool.getState(_blockNumber);
         if (!state || !state.isValid) {
           this.logger.info(
             `State for ${this.dexKey} pool ${eventPool.name} is stale or invalid on block ${_blockNumber}. Generating new one`,

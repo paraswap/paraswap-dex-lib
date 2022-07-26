@@ -112,7 +112,7 @@ export class Dystopia extends UniswapV2 {
         if (!(pair && pair.exchange)) continue;
         if (!pair.pool) {
           pairsToFetch.push(pair);
-        } else if (!pair.pool.getState(blockNumber)) {
+        } else if (!(await pair.pool.getState(blockNumber))) {
           pairsToFetch.push(pair);
         }
       }
@@ -401,7 +401,7 @@ export class Dystopia extends UniswapV2 {
   ): Promise<DystopiaPoolOrderedParams | null> {
     const pair = await this.findDystopiaPair(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
-    const pairState = pair.pool.getState(blockNumber);
+    const pairState = await pair.pool.getState(blockNumber);
     if (!pairState) {
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${

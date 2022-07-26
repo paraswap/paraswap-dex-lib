@@ -493,13 +493,17 @@ export class KyberDmm
     if (!(pair && Object.keys(pair.pools).length && pair.exchanges.length))
       return null;
 
-    const pairState = Object.entries(pair.pools)
-      .map(([poolAddress, pool]) => ({
-        poolAddress,
-        state: pool.getState(blockNumber) as KyberDmmPoolState,
-        ampBps: pool.ampBps,
-      }))
-      .filter(s => s.state);
+    const results = await Promise.all(
+      Object.entries(pair.pools).map(async ([poolAddress, pool]) => {
+        const _state = await pool.getState(blockNumber);
+        return {
+          poolAddress,
+          state: _state as KyberDmmPoolState,
+          ampBps: pool.ampBps,
+        };
+      }),
+    );
+    const pairState = results.filter(s => s.state);
 
     if (!pairState.length) {
       this.logger.error(
