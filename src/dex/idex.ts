@@ -1,5 +1,4 @@
 import { AsyncOrSync } from 'ts-essentials';
-import { JsonRpcProvider } from '@ethersproject/providers';
 import {
   Address,
   SimpleExchangeParam,
@@ -9,6 +8,9 @@ import {
   Token,
   ExchangePrices,
   PoolLiquidity,
+  OptimalSwapExchange,
+  ExchangeTxInfo,
+  PreprocessTransactionOptions,
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
@@ -27,6 +29,18 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     data: ExchangeData,
     side: SwapSide,
   ): NumberAsString;
+
+  // If exists, called before getAdapterParam to use async calls and receive data if needed
+  preProcessTransaction?(
+    optimalSwapExchange: OptimalSwapExchange<ExchangeData>,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): AsyncOrSync<[OptimalSwapExchange<ExchangeData>, ExchangeTxInfo]>;
+
+  // This is helper a function to support testing if preProcessTransaction is implemented
+  getTokenFromAddress?(address: Address): Token;
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
@@ -129,7 +143,7 @@ export interface IDexPooltracker {
 // a single interface
 export interface IDex<
   ExchangeData,
-  DirectParam,
+  DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > extends IDexTxBuilder<OptimizedExchangeData, DirectParam>,
     IDexPricing<ExchangeData>,

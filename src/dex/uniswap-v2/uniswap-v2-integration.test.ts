@@ -1,10 +1,11 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { DummyDexHelper } from '../../dex-helper/index';
+import { DummyDexHelper } from '../../dex-helper';
 import { Network, SwapSide } from '../../constants';
 import { UniswapV2 } from './uniswap-v2';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
+import { BI_POWS } from '../../bigint-constants';
 
 const WETH = {
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
@@ -16,18 +17,14 @@ const DAI = {
   decimals: 18,
 };
 
-const amounts = [
-  BigInt('0'),
-  BigInt('1000000000000000000'),
-  BigInt('2000000000000000000'),
-];
+const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = 'UniswapV2';
 
 describe('UniswapV2', function () {
   it('getPoolIdentifiers and getPricesVolume', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     const uniswapV2 = new UniswapV2(Network.MAINNET, dexKey, dexHelper);
 
     const pools = await uniswapV2.getPoolIdentifiers(

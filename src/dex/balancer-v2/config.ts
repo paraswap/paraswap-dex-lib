@@ -14,6 +14,11 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    },
   },
   BeetsFi: {
     [Network.FANTOM]: {
@@ -49,6 +54,12 @@ export const Adapters: {
   [Network.FANTOM]: [
     {
       name: 'FantomAdapter01',
+      index: 5,
+    },
+  ],
+  [Network.ARBITRUM]: [
+    {
+      name: 'ArbitrumAdapter01',
       index: 5,
     },
   ],

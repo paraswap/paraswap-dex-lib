@@ -6,6 +6,7 @@ import { KyberDmmAbiEvents, TradeInfo } from './types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
+import { BI_POWS } from '../../bigint-constants';
 
 export type KyberDmmPools = { [poolAddress: string]: KyberDmmPool };
 
@@ -145,7 +146,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
       .map(a => BigInt(a.toString()));
 
     if (blockNumber == 'latest')
-      blockNumber = await this.dexHelper.provider.getBlockNumber();
+      blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
 
     const prevBlockData: { returnData: any[] } =
       await this.dexHelper.multiContract.methods
@@ -182,17 +183,17 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   }
 }
 
-const BPS = BigInt(10000);
+const BPS = 10000n;
 
 const getFinalFee = (feeInPrecision: bigint, _ampBps: bigint): bigint => {
   if (_ampBps <= 20000) {
     return feeInPrecision;
   } else if (_ampBps <= 50000) {
-    return (feeInPrecision * BigInt(20)) / BigInt(30);
+    return (feeInPrecision * 20n) / 30n;
   } else if (_ampBps <= 200000) {
-    return (feeInPrecision * BigInt(10)) / BigInt(30);
+    return (feeInPrecision * 10n) / 30n;
   } else {
-    return (feeInPrecision * BigInt(4)) / BigInt(30);
+    return (feeInPrecision * 4n) / 30n;
   }
 };
 

@@ -1,17 +1,18 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
-import { SwapSide, MAX_UINT } from '../constants';
+import { SwapSide, MAX_UINT, Network } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from 'paraswap-core';
 import { isETHAddress } from '../utils';
+import Web3 from 'web3';
 
 const DODOAproveAddress: { [network: number]: Address } = {
-  1: '0xCB859eA579b28e02B87A1FDE08d087ab9dbE5149',
-  56: '0xa128Ba44B2738A558A1fdC06d6303d52D3Cef8c1',
-  137: '0x6D310348d5c12009854DFCf72e0DF9027e8cb4f4',
+  [Network.MAINNET]: '0xCB859eA579b28e02B87A1FDE08d087ab9dbE5149',
+  [Network.BSC]: '0xa128Ba44B2738A558A1fdC06d6303d52D3Cef8c1',
+  [Network.POLYGON]: '0x6D310348d5c12009854DFCf72e0DF9027e8cb4f4',
+  [Network.ARBITRUM]: '0xA867241cDC8d3b0C07C85cC06F25a0cD3b5474d8',
 };
 
 export type DodoV2Data = {
@@ -67,7 +68,7 @@ export class DodoV2
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: JsonRpcProvider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(

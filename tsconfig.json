@@ -4,18 +4,20 @@
     "lib": ["es2019"],
     "module": "commonjs",
     "noImplicitAny": true,
-    "outDir": "./build/",
+    "outDir": "build",
+    "rootDir": "src",
     "preserveConstEnums": true,
     "strictNullChecks": true,
     "strict": true,
     "sourceMap": true,
     "declaration": true,
     "skipLibCheck": true,
-    "target": "es2019",
+    "target": "es2020",
     "resolveJsonModule": true,
     "allowJs": true,
     "typeRoots": ["node_modules/@types"],
     "esModuleInterop": true
   },
-  "include": ["src/*", "./src/abi/*.json"]
+  "include": ["src/**/*"],
+  "exclude": ["**/*.test.ts"]
 }

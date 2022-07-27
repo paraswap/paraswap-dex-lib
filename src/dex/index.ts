@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
@@ -26,16 +26,26 @@ import { Onebit } from './onebit';
 import { Compound } from './compound';
 import { AaveV1 } from './aave-v1/aave-v1';
 import { AaveV2 } from './aave-v2/aave-v2';
+import { AaveV3 } from './aave-v3/aave-v3';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
-import { IDexHelper } from '../dex-helper/idex-helper';
+import { Nerve } from './nerve/nerve';
+import { IDexHelper } from '../dex-helper';
 import { SwapSide, Network } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
+import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
+import { Platypus } from './platypus/platypus';
+import { GMX } from './gmx/gmx';
+import { WooFi } from './woo-fi/woo-fi';
+import { Dystopia } from './uniswap-v2/dystopia/dystopia';
+import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
+import { AugustusRFQOrder } from './augustus-rfq';
+import Web3 from 'web3';
 
 const LegacyDexes = [
   Curve,
@@ -55,6 +65,7 @@ const LegacyDexes = [
   UniswapV3,
   Jarvis,
   Lido,
+  AugustusRFQOrder,
 ];
 
 const Dexes = [
@@ -67,45 +78,22 @@ const Dexes = [
   Excalibur,
   AaveV1,
   AaveV2,
+  AaveV3,
   KyberDmm,
   Weth,
+  MakerPsm,
+  Nerve,
+  Platypus,
+  GMX,
+  WooFi,
+  Dystopia,
+  ParaSwapLimitOrders,
 ];
-
-const AdapterNameAddressMap: {
-  [network: number]: { [name: string]: Address };
-} = {
-  [Network.MAINNET]: {
-    Adapter01: '0x3a0430bf7cd2633af111ce3204db4b0990857a6f',
-    Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-    Adapter03: '0xe6A36F977844EB6AE1609686682698D20e4B0C26',
-    BuyAdapter: '0xd8b2760230BbF3aA9777E175eC1c9720EB499ebA',
-  },
-  [Network.POLYGON]: {
-    PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
-    PolygonBuyAdapter: '0x34E0E6448A648Fc0b340679C4F16e5ACC4Bf4c95',
-  },
-  [Network.BSC]: {
-    BscAdapter01: '0xcEC935682c0b510fb91c0A12275Bb7e14EEBE87c',
-    BscBuyAdapter: '0xdA0DAFbbC95d96bAb164c847112e15c0299541f6',
-  },
-  [Network.ROPSTEN]: {
-    RopstenAdapter01: '0x74fF86C61CF66334dCfc999814DE4695B4BaE57b',
-    RopstenBuyAdapter: '0xDDbaC07C9ef96D6E792c25Ff934E7e111241BFf1',
-  },
-  [Network.AVALANCHE]: {
-    AvalancheAdapter01: '0x749015EFfb59fcB9B826d854F3cA5c5C2F192147',
-    AvalancheBuyAdapter: '0x05d0c2b58fF6c05bcc3e5F2D797bEB77e0A4CC7b',
-  },
-  [Network.FANTOM]: {
-    FantomAdapter01: '0xCBaeB06C2dF373c07A2Dc205266EC3bCd525DfB6',
-    FantomBuyAdapter: '0x3032B8c9CF91C791A8EcC2c7831A11279f419386',
-  },
-};
 
 export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
-  provider: JsonRpcProvider,
+  provider: Web3,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -132,7 +120,7 @@ export class DexAdapterService {
   ];
 
   constructor(
-    private dexHelper: IDexHelper,
+    public dexHelper: IDexHelper,
     public network: number,
     protected sellAdapters: Adapters = {},
     protected buyAdapters: Adapters = {},
@@ -156,21 +144,23 @@ export class DexAdapterService {
             this.dexHelper,
           );
 
-          const sellAdapters = (
+          const sellAdaptersDex = (
             this.dexInstances[_key] as IDex<any, any, any>
           ).getAdapters(SwapSide.SELL);
-          if (sellAdapters)
-            this.sellAdapters[_key] = sellAdapters.map(({ name, index }) => ({
-              adapter: AdapterNameAddressMap[network][name],
-              index,
-            }));
+          if (sellAdaptersDex)
+            this.sellAdapters[_key] = sellAdaptersDex.map(
+              ({ name, index }) => ({
+                adapter: this.dexHelper.config.data.adapterAddresses[name],
+                index,
+              }),
+            );
 
-          const buyAdapters = (
+          const buyAdaptersDex = (
             this.dexInstances[_key] as IDex<any, any, any>
           ).getAdapters(SwapSide.BUY);
-          if (buyAdapters)
-            this.buyAdapters[_key] = buyAdapters.map(({ name, index }) => ({
-              adapter: AdapterNameAddressMap[network][name],
+          if (buyAdaptersDex)
+            this.buyAdapters[_key] = buyAdaptersDex.map(({ name, index }) => ({
+              adapter: this.dexHelper.config.data.adapterAddresses[name],
               index,
             }));
         }
@@ -194,17 +184,7 @@ export class DexAdapterService {
   }
 
   getTxBuilderDexByKey(dexKey: string): IDexTxBuilder<any, any> {
-    let _dexKey = dexKey.toLowerCase();
-
-    if (/^paraswappool(.*)/i.test(_dexKey)) _dexKey = 'zerox';
-
-    if ('uniswapforkoptimized' === _dexKey) {
-      if (!this.uniswapV2Alias)
-        throw new Error(
-          `${dexKey} dex is not supported for network(${this.network})!`,
-        );
-      _dexKey = this.uniswapV2Alias;
-    }
+    let _dexKey = this.getDexKeySpecial(dexKey);
 
     if (!this.dexInstances[_dexKey]) {
       const DexAdapter = this.dexToKeyMap[_dexKey];
@@ -214,9 +194,9 @@ export class DexAdapterService {
         );
 
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
-        this.dexHelper.augustusAddress,
+        this.dexHelper.config.data.augustusAddress,
         this.network,
-        this.dexHelper.provider,
+        this.dexHelper.web3Provider,
       );
     }
 
@@ -241,5 +221,25 @@ export class DexAdapterService {
 
   getAllDexAdapters(side: SwapSide = SwapSide.SELL) {
     return side === SwapSide.SELL ? this.sellAdapters : this.buyAdapters;
+  }
+
+  getDexKeySpecial(dexKey: string, isAdapters: boolean = false) {
+    dexKey = dexKey.toLowerCase();
+    if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
+    else if ('uniswapforkoptimized' === dexKey) {
+      if (!this.uniswapV2Alias)
+        throw new Error(
+          `${dexKey} dex is not supported for network(${this.network})!`,
+        );
+      return this.uniswapV2Alias;
+    }
+    return dexKey;
+  }
+
+  getAdapter(dexKey: string, side: SwapSide) {
+    const specialDexKey = this.getDexKeySpecial(dexKey, true);
+    return side === SwapSide.SELL
+      ? this.sellAdapters[specialDexKey]
+      : this.buyAdapters[specialDexKey];
   }
 }

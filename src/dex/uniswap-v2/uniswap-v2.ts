@@ -6,7 +6,6 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   AdapterExchangeParam,
   Address,
-  DexConfigMap,
   ExchangePrices,
   Log,
   Logger,
@@ -16,30 +15,29 @@ import {
   TxInfo,
 } from '../../types';
 import {
-  DexParams,
   UniswapData,
   UniswapDataLegacy,
   UniswapParam,
   UniswapPool,
   UniswapV2Data,
   UniswapV2Functions,
+  UniswapV2PoolOrderedParams,
 } from './types';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import {
   ETHER_ADDRESS,
-  MAX_UINT,
   Network,
   NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
 } from '../../constants';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDexHelper } from '../../dex-helper';
 import {
-  wrapETH,
   getDexKeysWithNetwork,
   isETHAddress,
   prependWithOx,
-  WethMap,
+  getBigIntPow,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
@@ -47,21 +45,11 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
+import { BI_MAX_UINT } from '../../bigint-constants';
 
-const MAX_UINT_BIGINT = BigInt(MAX_UINT);
-const RESERVE_LIMIT = BigInt(2) ** BigInt(112) - BigInt(1);
+export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
-
-interface UniswapV2PoolOrderedParams {
-  tokenIn: string;
-  tokenOut: string;
-  reservesIn: string;
-  reservesOut: string;
-  fee: string;
-  direction: boolean;
-  exchange: string;
-}
 
 interface UniswapV2PoolState {
   reserves0: string;
@@ -69,7 +57,7 @@ interface UniswapV2PoolState {
   feeCode: number;
 }
 
-const iface = new Interface(uniswapV2ABI);
+const uniswapV2Iface = new Interface(uniswapV2ABI);
 const erc20iface = new Interface(erc20ABI);
 const coder = new AbiCoder();
 
@@ -89,10 +77,8 @@ export type UniswapV2Pair = {
   pool?: UniswapV2EventPool;
 };
 
-const subgraphTimeout = 10 * 1000;
-
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
-  decoder = (log: Log) => iface.parseLog(log);
+  decoder = (log: Log) => this.iface.parseLog(log);
 
   constructor(
     protected parentName: string,
@@ -107,6 +93,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     // feesMultiCallData is only used if dynamicFees is set to true
     private feesMultiCallEntry?: { target: Address; callData: string },
     private feesMultiCallDecoder?: (values: any[]) => number,
+    private iface: Interface = uniswapV2Iface,
   ) {
     super(
       parentName +
@@ -140,16 +127,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   ): Promise<DeepReadonly<UniswapV2PoolState>> {
     let calldata = [
       {
-        target: this.token0.address,
-        callData: erc20iface.encodeFunctionData('balanceOf', [
-          this.poolAddress,
-        ]),
-      },
-      {
-        target: this.token1.address,
-        callData: erc20iface.encodeFunctionData('balanceOf', [
-          this.poolAddress,
-        ]),
+        target: this.poolAddress,
+        callData: this.iface.encodeFunctionData('getReserves', []),
       },
     ];
 
@@ -157,35 +136,25 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    // const data = await this.dexHelper.multiContract.callStatic.aggregate(
-    //   calldata,
-    //   {
-    //     blockTag: blockNumber,
-    //   },
-    // );
+    const data: { returnData: any[] } =
+      await this.dexHelper.multiContract.methods
+        .aggregate(calldata)
+        .call({}, blockNumber);
 
-    const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
-      .call({}, blockNumber);
+    const decodedData = coder.decode(
+      ['uint112', 'uint112', 'uint32'],
+      data.returnData[0],
+    );
 
     return {
-      reserves0: coder.decode(['uint256'], data.returnData[0])[0].toString(),
-      reserves1: coder.decode(['uint256'], data.returnData[1])[0].toString(),
+      reserves0: decodedData[0].toString(),
+      reserves1: decodedData[1].toString(),
       feeCode: this.dynamicFees
-        ? this.feesMultiCallDecoder!(data.returnData[2])
+        ? this.feesMultiCallDecoder!(data.returnData[1])
         : this.feeCode,
     };
   }
 }
-
-export const UniswapV2ExchangeRouter: { [network: number]: Address } = {
-  [Network.POLYGON]: '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
-  [Network.MAINNET]: '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
-  [Network.ROPSTEN]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.BSC]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.AVALANCHE]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.FANTOM]: '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
-};
 
 // Apply extra fee for certain tokens when used as input to swap (basis points)
 // These could be tokens with fee on transfer or rounding error on balances
@@ -193,13 +162,14 @@ export const UniswapV2ExchangeRouter: { [network: number]: Address } = {
 export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
   // stETH - uses balances based on shares which causes rounding errors
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 1,
+  '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f': 200,
 };
 
 function encodePools(pools: UniswapPool[]): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000 - fee) << BigInt(161)) +
-      (BigInt(direction ? 0 : 1) << BigInt(160)) +
+      (BigInt(10000 - fee) << 161n) +
+      ((direction ? 0n : 1n) << 160n) +
       BigInt(address)
     ).toString();
   });
@@ -239,14 +209,15 @@ export class UniswapV2
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].poolGasCost) ??
       DefaultUniswapV2PoolGasCost,
+    protected decoderIface: Interface = uniswapV2Iface,
     protected adapters = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].adapters) ??
       Adapters[network],
     protected router = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].router) ??
-      UniswapV2ExchangeRouter[network],
+      dexHelper.config.data.uniswapV2ExchangeRouterAddress,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
@@ -269,7 +240,7 @@ export class UniswapV2
     return undefined;
   }
 
-  private async addPool(
+  protected async addPool(
     pair: UniswapV2Pair,
     reserves0: string,
     reserves1: string,
@@ -289,6 +260,7 @@ export class UniswapV2
       this.isDynamicFees,
       callEntry,
       callDecoder,
+      this.decoderIface,
     );
 
     if (blockNumber)
@@ -311,8 +283,8 @@ export class UniswapV2
       (BigInt(this.feeFactor) - BigInt(fee)) *
       (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= BigInt(0)) return MAX_UINT_BIGINT;
-    return BigInt(1) + numerator / denominator;
+    if (denominator <= 0n) return BI_MAX_UINT;
+    return 1n + numerator / denominator;
   }
 
   async getSellPrice(
@@ -322,7 +294,7 @@ export class UniswapV2
     const { reservesIn, reservesOut, fee } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return BigInt(0);
+      return 0n;
     }
 
     const amountInWithFee = srcAmount * BigInt(this.feeFactor - parseInt(fee));
@@ -332,7 +304,7 @@ export class UniswapV2
     const denominator =
       BigInt(reservesIn) * BigInt(this.feeFactor) + amountInWithFee;
 
-    return denominator === BigInt(0) ? BigInt(0) : numerator / denominator;
+    return denominator === 0n ? 0n : numerator / denominator;
   }
 
   async getBuyPricePath(
@@ -357,7 +329,7 @@ export class UniswapV2
     return price;
   }
 
-  private async findPair(from: Token, to: Token) {
+  async findPair(from: Token, to: Token) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
@@ -522,8 +494,8 @@ export class UniswapV2
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const from = wrapETH(_from, this.network);
-    const to = wrapETH(_to, this.network);
+    const from = this.dexHelper.config.wrapETH(_from);
+    const to = this.dexHelper.config.wrapETH(_to);
 
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];
@@ -547,8 +519,8 @@ export class UniswapV2
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
-      const from = wrapETH(_from, this.network);
-      const to = wrapETH(_to, this.network);
+      const from = this.dexHelper.config.wrapETH(_from);
+      const to = this.dexHelper.config.wrapETH(_to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
@@ -572,8 +544,8 @@ export class UniswapV2
 
       if (!pairParam) return null;
 
-      const unitAmount = BigInt(
-        10 ** (side == SwapSide.BUY ? to.decimals : from.decimals),
+      const unitAmount = getBigIntPow(
+        side == SwapSide.BUY ? to.decimals : from.decimals,
       );
       const unit =
         side == SwapSide.BUY
@@ -667,7 +639,7 @@ export class UniswapV2
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -696,13 +668,11 @@ export class UniswapV2
       liquidityUSD: parseFloat(pool.reserveUSD),
     }));
 
-    const pools = _.slice(
+    return _.slice(
       _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
       0,
       count,
     );
-
-    return pools;
   }
 
   protected fixPath(path: Address[], srcToken: Address, destToken: Address) {
@@ -720,7 +690,7 @@ export class UniswapV2
   getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
     if (!isETHAddress(srcToken) && !isETHAddress(destToken))
       return NULL_ADDRESS;
-    return weth || WethMap[this.network];
+    return weth || this.dexHelper.config.data.wrappedNativeTokenAddress;
   }
 
   getAdapterParam(

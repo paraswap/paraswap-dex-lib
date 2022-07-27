@@ -1,0 +1,50 @@
+[
+  {
+    "aSymbol": "aWETH",
+    "aAddress": "0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8",
+    "address": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aDAI",
+    "aAddress": "0x82e64f49ed5ec1bc6e43dad4fc8af9bb3a2312ee",
+    "address": "0xd586e7f844cea2f87f50152665bcbc2c279d8d70",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aLINK",
+    "aAddress": "0x191c10aa4af7c30e871e70c95db0e4eb77237530",
+    "address": "0x5947bb275c521040051d82396192181b413227a3",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aUSDT",
+    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
+    "address": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "aUSDC",
+    "aAddress": "0x625e7708f30ca75bfd92586e17077590c60eb4cd",
+    "address": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "aAAVE",
+    "aAddress": "0xf329e36c7bf6e5e86ce2150875a84ce77f477375",
+    "address": "0x63a72806098bd3d9520cc43356dd78afe5d386d9",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aWBTC",
+    "aAddress": "0x078f358208685046a11c85e8ad32895ded33a249",
+    "address": "0x50b7545627a5162f82a992c33b87adc75187b218",
+    "decimals": 8
+  },
+  {
+    "aSymbol": "aWAVAX",
+    "aAddress": "0x6d80113e533a2c0fe82eabd35f1875dcea89ea97",
+    "address": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+    "decimals": 18
+  }
+]

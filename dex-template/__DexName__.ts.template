@@ -1,104 +1,20 @@
-import { Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
 import {
   Token,
   Address,
   ExchangePrices,
-  Log,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
-import {
-  SwapSide,
-  Network,
-} from '../../constants';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { SwapSide, Network } from '../../constants';
+import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import {
-  __DexName__Data,
-  PoolState,
-} from './types';
+import { __DexName__Data } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { __DexName__Config, Adapters } from './config';
-
-
-
-export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
-  handlers: {
-    [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
-  } = {};
-
-  logDecoder: (log: Log) => any;
-
-  addressesSubscribed: string[];
-
-  constructor(
-    protected parentName: string,
-    protected network: number,
-    protected dexHelper: IDexHelper,
-    logger: Logger,
-    protected adapters = Adapters[network],
-    // TODO: add any additional params required for event subscriber
-  ) {
-    super(parentName, logger);
-
-    // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.interface.parseLog(log);
-    this.addressesSubscribed = [/* subscribed addresses */];
-
-    // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
-  }
-
-  /**
-   * The function is called everytime any of the subscribed 
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state. 
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
-  protected processLog(
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    try {
-      const event = this.logDecoder(log);
-      if (event.name in this.handlers) {
-        return this.handlers[event.name](
-          event,
-          state,
-          log,
-        );
-      }
-      return state;
-    } catch (e) {
-      this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
-        e,
-      );
-      return null;
-    }
-  }
-
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenrate state if the event based 
-   * system fails to fetch events and the local state is no 
-   * more correct. 
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subsriber at blocknumber
-   */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    // TODO: complete me!
-  }
-}
+import { __DexName__EventPool } from './__DexNameParam__-pool';
 
 export class __DexName__
   extends SimpleExchange
@@ -117,9 +33,9 @@ export class __DexName__
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
-    // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new __DexName__EventPool(
       dexKey,
@@ -129,9 +45,9 @@ export class __DexName__
     );
   }
 
-  // Initialize pricing is called once in the start of 
+  // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to 
+  // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
     // TODO: complete me!
@@ -140,13 +56,13 @@ export class __DexName__
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side];
+    return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Returns list of pool identifiers that can be used 
-  // for a given swap. poolIdentifers must be unique
-  // across DEXes. It is recommended to use 
-  // ${dexKey}_${poolAddress} as a poolIdentifier 
+  // Returns list of pool identifiers that can be used
+  // for a given swap. poolIdentifiers must be unique
+  // across DEXes. It is recommended to use
+  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -154,12 +70,13 @@ export class __DexName__
     blockNumber: number,
   ): Promise<string[]> {
     // TODO: complete me!
+    return [];
   }
 
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
-  // any pools can be used. 
+  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -169,52 +86,77 @@ export class __DexName__
     limitPools?: string[],
   ): Promise<null | ExchangePrices<__DexName__Data>> {
     // TODO: complete me!
+    return null;
   }
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() couls be useful
+  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: Optimized__DexName__Data,
+    data: __DexName__Data,
     side: SwapSide,
   ): AdapterExchangeParam {
     // TODO: complete me!
+    const { exchange } = data;
+
+    // Encode here the payload for adapter
+    const payload = '';
+
+    return {
+      targetExchange: exchange,
+      payload,
+      networkFee: '0',
+    };
   }
 
   // Encode call data used by simpleSwap like routers
   // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion 
+  // Hint: this.buildSimpleParamWithoutWETHConversion
   // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: Optimized__DexName__Data,
+    data: __DexName__Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     // TODO: complete me!
+    const { exchange } = data;
+
+    // Encode here the transaction arguments
+    const swapData = '';
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      exchange,
+    );
   }
 
-  // This is called once before getTopPoolsForToken is 
-  // called for multiple tokens. This can be helpful to 
-  // update common state required for calculating 
-  // getTopPoolsForToken. It is optional for a DEX 
+  // This is called once before getTopPoolsForToken is
+  // called for multiple tokens. This can be helpful to
+  // update common state required for calculating
+  // getTopPoolsForToken. It is optional for a DEX
   // to implement this
-  updatePoolState(): Promise<void> {
+  async updatePoolState(): Promise<void> {
     // TODO: complete me!
   }
 
   // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned. 
+  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
     //TODO: complete me!
+    return [];
   }
 }

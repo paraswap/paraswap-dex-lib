@@ -10,6 +10,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { aaveV1GetToken } from './tokens';
+import { BI_POWS } from '../../bigint-constants';
 
 describe('AaveV1', function () {
   describe('AaveV1 MAINNET', () => {
@@ -24,16 +25,12 @@ describe('AaveV1', function () {
       return;
     }
 
-    const amounts = [
-      BigInt('0'),
-      BigInt('1000000000000000000'),
-      BigInt('2000000000000000000'),
-    ];
+    const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
     const dexKey = 'AaveV1';
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       const dexHelper = new DummyDexHelper(network);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const aaveV1 = new AaveV1(network, dexKey, dexHelper);
 
       const pools = await aaveV1.getPoolIdentifiers(
@@ -42,7 +39,7 @@ describe('AaveV1', function () {
         SwapSide.SELL,
         blocknumber,
       );
-      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 
@@ -63,7 +60,7 @@ describe('AaveV1', function () {
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       const dexHelper = new DummyDexHelper(network);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const aaveV1 = new AaveV1(network, dexKey, dexHelper);
 
       const pools = await aaveV1.getPoolIdentifiers(
@@ -72,7 +69,7 @@ describe('AaveV1', function () {
         SwapSide.BUY,
         blocknumber,
       );
-      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Ideintifiers: `, pools);
+      console.log(`${USDTSymbol} <> ${aUSDTSymbol} Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 

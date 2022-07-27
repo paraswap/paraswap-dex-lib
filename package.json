@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.0.10",
+  "version": "2.2.5",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -25,7 +25,7 @@
     "pretty-quick": "3.1.1",
     "ts-jest": "24.1.0",
     "ts-node": "^10.6.0",
-    "typescript": "4.3.5",
+    "typescript": "4.6.4",
     "yargs": "^17.0.1"
   },
   "scripts": {
@@ -39,8 +39,12 @@
     "@0x/utils": "^4.5.2",
     "@balancer-labs/sor": "^0.3.3",
     "@ethersproject/abi": "5.4.0",
+    "@ethersproject/bytes": "^5.6.1",
     "@ethersproject/contracts": "5.4.1",
     "@ethersproject/providers": "5.4.1",
+    "bignumber.js": "9.0.1",
+    "ethers": "^5.6.7",
+    "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
     "log4js": "6.3.0",
     "paraswap": "5.1.0",

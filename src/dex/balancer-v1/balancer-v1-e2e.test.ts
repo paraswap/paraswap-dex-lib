@@ -3,13 +3,9 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Network, ContractMethod, SwapSide } from '../../constants';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 // Balancer doesn't support USDT
 describe('BalancerV1 E2E Mainnet', () => {
@@ -17,7 +13,10 @@ describe('BalancerV1 E2E Mainnet', () => {
   const network = Network.MAINNET;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
 
   describe('Simpleswap SELL', () => {
     it('ETH -> USDC', async () => {

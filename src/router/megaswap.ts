@@ -1,5 +1,9 @@
 import { IRouter } from './irouter';
-import { PayloadEncoder, encodeFeePercent } from './payload-encoder';
+import {
+  PayloadEncoder,
+  encodeFeePercent,
+  encodeFeePercentForReferrer,
+} from './payload-encoder';
 import {
   Address,
   OptimalRate,
@@ -11,6 +15,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
 import { uuidToBytes16 } from '../utils';
+import { SwapSide } from '../constants';
 
 type MegaSwapParam = [ContractMegaSwapSellData];
 
@@ -19,8 +24,8 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
   paraswapInterface: Interface;
   contractMethodName: string;
 
-  constructor(dexAdapterService: DexAdapterService, adapters: Adapters) {
-    super(dexAdapterService, adapters);
+  constructor(dexAdapterService: DexAdapterService) {
+    super(dexAdapterService);
     this.paraswapInterface = new Interface(IParaswapABI);
     this.contractMethodName = 'megaSwap';
   }
@@ -33,6 +38,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     priceRoute: OptimalRate,
     minMaxAmount: string,
     userAddress: Address,
+    referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
     positiveSlippageToUser: boolean,
@@ -51,8 +57,14 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       expectedAmount: priceRoute.destAmount,
       beneficiary,
       path: megaSwapPaths,
-      partner: partnerAddress,
-      feePercent: encodeFeePercent(partnerFeePercent, positiveSlippageToUser),
+      partner: referrerAddress || partnerAddress,
+      feePercent: referrerAddress
+        ? encodeFeePercentForReferrer(SwapSide.SELL)
+        : encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.SELL,
+          ),
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

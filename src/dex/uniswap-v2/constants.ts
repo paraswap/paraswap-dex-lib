@@ -4,9 +4,10 @@ import { MDEXConfig } from './mdex';
 import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
+import { DystopiaConfig } from './dystopia/config';
 
-// BakerySwap is removed from AllUniswapForks and UniswapForksWithNetwork
-// as it has a modified pool implementation which is not compatible with
+// BakerySwap and Dystopia were removed from AllUniswapForks and UniswapForksWithNetwork
+// as they have a modified pool implementation which are not compatible with
 // standard contract methods
 
 export const AllUniswapForks = [
@@ -29,7 +30,7 @@ const transformToNetworkMap = (config: {
       Object.keys(networkConfig).forEach((_n: string) => {
         const n = parseInt(_n);
         if (!(n in acc)) acc[n] = [];
-        acc[n].push(dexKey);
+        acc[n].push(dexKey.toLowerCase());
       });
       return acc;
     },
@@ -46,10 +47,10 @@ export const UniswapForksWithNetwork = transformToNetworkMap({
 
 // These are exchanges used for swapOnUniswap method
 export const UniswapV2Alias: { [network: number]: string } = {
-  [Network.MAINNET]: 'UniswapV2',
-  [Network.ROPSTEN]: 'UniswapV2',
-  [Network.BSC]: 'PancakeSwap',
-  [Network.POLYGON]: 'QuickSwap',
-  [Network.AVALANCHE]: 'PangolinSwap',
-  [Network.FANTOM]: 'SpookySwap',
+  [Network.MAINNET]: 'uniswapv2',
+  [Network.ROPSTEN]: 'uniswapv2',
+  [Network.BSC]: 'pancakeswap',
+  [Network.POLYGON]: 'quickswap',
+  [Network.AVALANCHE]: 'pangolinswap',
+  [Network.FANTOM]: 'spookyswap',
 };

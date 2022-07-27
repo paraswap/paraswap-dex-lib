@@ -1,6 +1,7 @@
-import { MathSol, BZERO } from './balancer-v2-math';
+import { BI_POWS } from '../../bigint-constants';
+import { MathSol } from './balancer-v2-math';
 
-const AMP_PRECISION = BigInt(1e3);
+const AMP_PRECISION = BI_POWS[3];
 
 export function _calculateInvariant(
   amp: bigint,
@@ -18,16 +19,16 @@ export function _calculateInvariant(
 
   // We support rounding up or down.
 
-  let sum = BZERO;
+  let sum = 0n;
   const numTokens = balances.length;
   for (let i = 0; i < numTokens; i++) {
     sum = sum + balances[i];
   }
-  if (sum == BZERO) {
-    return BZERO;
+  if (sum == 0n) {
+    return 0n;
   }
 
-  let prevInvariant = BZERO;
+  let prevInvariant = 0n;
   let invariant = sum;
   const ampTimesTotal = amp * BigInt(numTokens);
 
@@ -92,7 +93,7 @@ export function _calcOutGivenIn(
     invariant,
     tokenIndexOut,
   );
-  return balances[tokenIndexOut] - finalBalanceOut - BigInt(1);
+  return balances[tokenIndexOut] - finalBalanceOut - 1n;
 }
 
 export function _calcInGivenOut(
@@ -117,7 +118,7 @@ export function _calcInGivenOut(
 
   let amountIn = MathSol.add(
     MathSol.sub(finalBalanceIn, balances[tokenIndexIn]),
-    BigInt(1),
+    1n,
   );
   amountIn = addFee(amountIn, fee);
   return amountIn;
@@ -135,7 +136,7 @@ export function _calcBptOutGivenExactTokensIn(
 
   // First loop calculates the sum of all token balances, which will be used to calculate
   // the current weights of each token, relative to this sum
-  let sumBalances = BigInt(0);
+  let sumBalances = 0n;
   for (let i = 0; i < balances.length; i++) {
     sumBalances = sumBalances + balances[i];
   }
@@ -143,7 +144,7 @@ export function _calcBptOutGivenExactTokensIn(
   // Calculate the weighted balance ratio without considering fees
   const balanceRatiosWithFee: bigint[] = new Array(amountsIn.length);
   // The weighted sum of token balance ratios with fee
-  let invariantRatioWithFees = BigInt(0);
+  let invariantRatioWithFees = 0n;
   for (let i = 0; i < balances.length; i++) {
     const currentWeight = MathSol.divDownFixed(balances[i], sumBalances);
     balanceRatiosWithFee[i] = MathSol.divDownFixed(
@@ -190,7 +191,7 @@ export function _calcBptOutGivenExactTokensIn(
   if (invariantRatio > MathSol.ONE) {
     return MathSol.mulDownFixed(bptTotalSupply, invariantRatio - MathSol.ONE);
   } else {
-    return BigInt(0);
+    return 0n;
   }
 }
 
@@ -212,14 +213,14 @@ export function _calcBptInGivenExactTokensOut(
 
   // First loop calculates the sum of all token balances, which will be used to calculate
   // the current weights of each token relative to this sum
-  let sumBalances = BigInt(0);
+  let sumBalances = 0n;
   for (let i = 0; i < balances.length; i++) {
     sumBalances = sumBalances + balances[i];
   }
 
   // Calculate the weighted balance ratio without considering fees
   const balanceRatiosWithoutFee: bigint[] = new Array(amountsOut.length);
-  let invariantRatioWithoutFees = BigInt(0);
+  let invariantRatioWithoutFees = 0n;
   for (let i = 0; i < balances.length; i++) {
     const currentWeight = MathSol.divUpFixed(balances[i], sumBalances);
     balanceRatiosWithoutFee[i] = MathSol.divUpFixed(
@@ -296,7 +297,7 @@ export function _calcTokenOutGivenExactBptIn(
 
   // First calculate the sum of all token balances, which will be used to calculate
   // the current weight of each token
-  let sumBalances = BigInt(0);
+  let sumBalances = 0n;
   for (let i = 0; i < balances.length; i++) {
     sumBalances = sumBalances + balances[i];
   }
@@ -379,7 +380,7 @@ function _getTokenBalanceGivenInvariantAndAllOtherBalances(
     sum + MathSol.mul(MathSol.divDown(invariant, ampTimesTotal), AMP_PRECISION);
 
   // We iterate to find the balance
-  let prevTokenBalance = BZERO;
+  let prevTokenBalance = 0n;
   // We multiply the first iteration outside the loop with the invariant to set the value of the
   // initial approximation.
   let tokenBalance = MathSol.divUp(inv2 + c, invariant + b);
@@ -389,7 +390,7 @@ function _getTokenBalanceGivenInvariantAndAllOtherBalances(
 
     tokenBalance = MathSol.divUp(
       MathSol.mul(tokenBalance, tokenBalance) + c,
-      MathSol.mul(tokenBalance, BigInt(2)) + b - invariant,
+      MathSol.mul(tokenBalance, 2n) + b - invariant,
     );
 
     if (tokenBalance > prevTokenBalance) {

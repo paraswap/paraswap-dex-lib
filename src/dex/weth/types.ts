@@ -13,18 +13,21 @@ export enum WethFunctions {
   withdraw = 'withdraw',
 }
 
-export type DepositWithdrawReturn = {
-  opType: WethFunctions;
+export type DepositWithdrawData = {
   callee: string;
   calldata: string;
   value: string;
 };
+
+export type DepositWithdrawReturn = {
+  deposit?: DepositWithdrawData;
+  withdraw?: DepositWithdrawData;
+};
+
 export interface IWethDepositorWithdrawer {
   getDepositWithdrawParam(
-    srcToken: Address,
-    destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     side: SwapSide,
-  ): DepositWithdrawReturn | undefined;
+  ): DepositWithdrawReturn;
 }

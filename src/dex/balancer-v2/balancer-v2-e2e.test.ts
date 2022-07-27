@@ -3,13 +3,9 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Network, ContractMethod, SwapSide } from '../../constants';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 jest.setTimeout(50 * 1000);
 
@@ -19,7 +15,10 @@ describe('BalancerV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[Network.MAINNET];
     const holders = Holders[Network.MAINNET];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     describe('Simpleswap', () => {
       it('ETH -> TOKEN', async () => {
@@ -160,6 +159,19 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+      it('MAIN TOKEN -> BPT, ERC4626 Linear Pool', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['BBFDAI'],
+          holders['DAI'],
+          '20000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
     });
 
     describe('Multiswap', () => {
@@ -194,7 +206,7 @@ describe('BalancerV2 E2E', () => {
           tokens['USDC'],
           tokens['WBTC'],
           holders['USDC'],
-          '2000000000',
+          '20000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -235,6 +247,19 @@ describe('BalancerV2 E2E', () => {
           tokens['BBAUSD'],
           tokens['BBAUSDT'],
           holders['BBAUSD'],
+          '20000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('MAIN TOKEN -> BPT, ERC4626 Linear Pool', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['BBFDAI'],
+          holders['DAI'],
           '20000000000',
           SwapSide.SELL,
           dexKey,
@@ -289,12 +314,110 @@ describe('BalancerV2 E2E', () => {
     //});
   });
 
+  describe('BalancerV2 ARBITRUM', () => {
+    const dexKey = 'BalancerV2';
+    const network = Network.ARBITRUM;
+    const tokens = Tokens[Network.ARBITRUM];
+    const holders = Holders[Network.ARBITRUM];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    describe('Simpleswap', () => {
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens['ETH'],
+          tokens['USDC'],
+          holders['ETH'],
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['ETH'],
+          holders['USDC'],
+          '2000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['WETH'],
+          holders['USDC'],
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multiswap', () => {
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens['ETH'],
+          tokens['USDC'],
+          holders['ETH'],
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['ETH'],
+          holders['USDC'],
+          '2000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['WETH'],
+          holders['USDC'],
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
   describe('Embr AVALANCHE', () => {
     const dexKey = 'Embr';
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     describe('simpleSwap', () => {
       it('AVAX -> USDC', async () => {
@@ -434,7 +557,10 @@ describe('BalancerV2 E2E', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new JsonRpcProvider(ProviderURL[network]);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     describe('simpleSwap', () => {
       it('FTM -> USDC', async () => {

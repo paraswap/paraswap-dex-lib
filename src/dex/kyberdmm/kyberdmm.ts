@@ -1,8 +1,8 @@
-import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
+import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import _ from 'lodash';
-import { Network, SwapSide } from '../../constants';
+import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -17,8 +17,6 @@ import {
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
-  TxInfo,
-  Address,
 } from '../../types';
 import {
   KyberDmmData,
@@ -26,7 +24,7 @@ import {
   KyberDmmParam,
   TradeInfo,
 } from './types';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDexHelper } from '../../dex-helper';
 import { Adapters, KyberDmmConfig } from './config';
 import { Logger } from 'log4js';
 import { Contract } from 'web3-eth-contract';
@@ -34,12 +32,9 @@ import { Contract } from 'web3-eth-contract';
 import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
-import { getDexKeysWithNetwork, wrapETH } from '../../utils';
-import { BigNumber } from '@0x/utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
-
-const subgraphTimeout = 10 * 1000;
 
 const iface = new Interface(kyberDmmPoolABI);
 const coder = new AbiCoder();
@@ -67,7 +62,7 @@ export class KyberDmm
     protected config = KyberDmmConfig[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
 
     this.logger = dexHelper.getLogger(dexKey);
 
@@ -85,8 +80,8 @@ export class KyberDmm
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    from = wrapETH(from, this.network);
-    to = wrapETH(to, this.network);
+    from = this.dexHelper.config.wrapETH(from);
+    to = this.dexHelper.config.wrapETH(to);
 
     const pair = await this.findPair(from, to);
 
@@ -145,7 +140,7 @@ export class KyberDmm
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -273,8 +268,8 @@ export class KyberDmm
         return null;
       }
 
-      from = wrapETH(from, this.network);
-      to = wrapETH(to, this.network);
+      from = this.dexHelper.config.wrapETH(from);
+      to = this.dexHelper.config.wrapETH(to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
@@ -333,8 +328,8 @@ export class KyberDmm
     //   to.address.toLowerCase(),
     // ].sort((a, b) => (a > b ? 1 : -1));
 
-    const unitAmount = (
-      BigInt(10) ** BigInt(side == SwapSide.BUY ? to.decimals : from.decimals)
+    const unitAmount = getBigIntPow(
+      side == SwapSide.BUY ? to.decimals : from.decimals,
     ).toString();
 
     const tradeInfo = getTradeInfo(pool.state, blockNumber, direction);
@@ -367,7 +362,7 @@ export class KyberDmm
         pools: [
           {
             address: pool.poolAddress,
-            fee: tradeInfo.feeInPrecision,
+            fee: tradeInfo.feeInPrecision.toString(),
             direction,
           },
         ],
@@ -467,6 +462,7 @@ export class KyberDmm
       this.logger.error(
         `${this.dexKey}_getManyPoolReserves didn't get any pool reserves`,
       );
+      return;
     }
 
     // Filter out pools
@@ -474,7 +470,7 @@ export class KyberDmm
       poolsState = Object.fromEntries(
         Object.entries(poolsState)
           .sort(([, stateA], [, stateB]) =>
-            stateA.reserves.vReserves0 < stateB.reserves.reserves0 ? 1 : -1,
+            stateA.reserves.reserves0 < stateB.reserves.reserves0 ? 1 : -1,
           )
           .slice(0, MAX_TRACKED_PAIR_POOLS),
       );
@@ -556,15 +552,15 @@ export class KyberDmm
       feeInPrecision,
     } = priceParams;
     if (amountOut <= 0) return 0;
-    if (reserveIn <= BigInt(0) || reserveOut <= amountOut) return 0;
+    if (reserveIn <= 0n || reserveOut <= amountOut) return 0;
 
     let numerator = vReserveIn * amountOut;
     let denominator = vReserveOut - amountOut;
-    const amountIn = numerator / denominator + BigInt(1);
+    const amountIn = numerator / denominator + 1n;
     // amountIn = floor(amountIN *PRECISION / (PRECISION - feeInPrecision));
     numerator = amountIn * PRECISION;
     denominator = PRECISION - feeInPrecision;
-    return (numerator + denominator - BigInt(1)) / denominator;
+    return (numerator + denominator - 1n) / denominator;
   }
 
   private async getSellPrice(priceParams: TradeInfo, amountIn: bigint) {

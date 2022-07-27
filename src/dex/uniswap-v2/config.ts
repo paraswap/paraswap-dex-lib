@@ -89,6 +89,20 @@ export const Adapters: {
       },
     ],
   },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'ArbitrumAdapter01',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'ArbitrumBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
 };
 
 export const UniswapV2Config: DexConfigMap<DexParams> = {
@@ -133,7 +147,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
     [Network.AVALANCHE]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/baguette-exchange/baguette',
-      factoryAddress: '0x0841bd0b734e4f5853f0dd8d7ea041c241fb0da6',
+      factoryAddress: '0x3587b8c0136c2c3605a9e5b03ab54da3e4044b50',
       initCode:
         '0xf4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b',
       poolGasCost: 80 * 1000,
@@ -232,8 +246,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   JulSwap: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/subgraph',
+      // subgraphURL:
+      //   'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/subgraph',
       factoryAddress: '0x553990f2cba90272390f62c5bdb1681ffc899675',
       initCode:
         '0xb1e98e21a5335633815a8cfb3b580071c2e4561c50afd57a8746def9ed890b18',
@@ -404,6 +418,14 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
       feeCode: 30,
     },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/sushiswap/arbitrum-exchange',
+      factoryAddress: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      initCode:
+        '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
+      feeCode: 30,
+    },
   },
   QuickSwap: {
     [Network.POLYGON]: {
@@ -435,8 +457,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   StreetSwap: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
+      // subgraphURL:
+      //   'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
       factoryAddress: '0xaC653cE27E04C6ac565FD87F18128aD33ca03Ba2',
       initCode:
         '0x0b3961eeccfbf746d2d5c59ee3c8ae3a5dcf8dc9b0dfb6f89e1e8ca0b32b544b',

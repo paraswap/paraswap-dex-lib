@@ -1,10 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import MStableAssetABI from '../abi/MStableAsset.json';
+import Web3 from 'web3';
 
 enum MStableFunctions {
   mint = 'mint',
@@ -48,7 +49,7 @@ export class MStable
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: JsonRpcProvider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.mStableAsset = new Interface(MStableAssetABI as JsonFragment[]);

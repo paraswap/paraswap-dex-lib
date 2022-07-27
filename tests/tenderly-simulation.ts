@@ -26,7 +26,7 @@ export class TenderlySimulation {
           network_id: this.network.toString(),
         },
         {
-          timeout: 10000,
+          timeout: 20000,
           headers: {
             'x-access-key': TENDERLY_TOKEN,
           },
@@ -35,7 +35,7 @@ export class TenderlySimulation {
       this.forkId = res.data.simulation_fork.id;
       this.lastTx = res.data.root_transaction.id;
     } catch (e) {
-      console.error(`TenderlySimulation_setup: ${e.message}`, e.trace);
+      console.error(`TenderlySimulation_setup:`, e);
       throw e;
     }
   }
@@ -55,7 +55,7 @@ export class TenderlySimulation {
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,
         {
-          timeout: 10 * 1000,
+          timeout: 20 * 1000,
           headers: {
             'x-access-key': TENDERLY_TOKEN!,
           },
@@ -78,10 +78,9 @@ export class TenderlySimulation {
         };
       }
     } catch (e) {
-      console.error(`TenderlySimulation_simulate: ${e.message}`, e.trace);
+      console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
-        error: e.message,
         tenderlyUrl: '',
       };
     }

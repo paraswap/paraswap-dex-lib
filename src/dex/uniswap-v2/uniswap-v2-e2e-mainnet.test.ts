@@ -3,19 +3,18 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { Network, ContractMethod, SwapSide } from '../../constants';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 describe('UniswapV2 E2E Mainnet', () => {
   const network = Network.MAINNET;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new JsonRpcProvider(ProviderURL[network]);
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
 
   describe('UniswapV2', () => {
     const dexKey = 'UniswapV2';
@@ -609,7 +608,7 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
     });
 
-    describe('Multiswap', () => {
+    describe('MultiSwap', () => {
       it('SushiSwap ETH -> TOKEN', async () => {
         await testE2E(
           tokens.ETH,
@@ -638,9 +637,9 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
       it('SushiSwap TOKEN -> TOKEN', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.USDT,
           tokens.WBTC,
-          holders.USDC,
+          holders.USDT,
           '200000000',
           SwapSide.SELL,
           dexKey,
@@ -680,13 +679,69 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
       it('SushiSwap TOKEN -> TOKEN', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.USDT,
           tokens.WBTC,
-          holders.USDC,
-          '200000000',
+          holders.USDT,
+          '2000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.swapOnUniswapFork,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('swapOnUniswapV2Fork', () => {
+      it('SAITAMA -> ETH', async () => {
+        await testE2E(
+          tokens.SAITAMA,
+          tokens.ETH,
+          holders.SAITAMA,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> SAITAMA', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.SAITAMA,
+          holders.ETH,
+          '11111111111000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('buyOnUniswapV2Fork', () => {
+      it('SAITAMA -> ETH', async () => {
+        await testE2E(
+          tokens.SAITAMA,
+          tokens.ETH,
+          holders.SAITAMA,
+          '60000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> SAITAMA', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.SAITAMA,
+          holders.ETH,
+          '11111111111000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buyOnUniswapV2Fork,
           network,
           provider,
         );
@@ -941,7 +996,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           tokens.USDC,
           tokens.USDT,
           holders.USDC,
-          '200000000',
+          '2000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.simpleBuy,

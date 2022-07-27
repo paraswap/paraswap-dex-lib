@@ -15,10 +15,9 @@ import {
   Token,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network, MAX_UINT_BIGINT } from '../../constants';
+import { SwapSide, Network, MAX_UINT } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
-  wrapETH,
   getDexKeysWithNetwork,
   isETHAddress,
   interpolate,
@@ -262,7 +261,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       side === SwapSide.BUY &&
       amount * BigInt(2) > BigInt(pool.balanceOut.toFixed(0))
     ) {
-      return MAX_UINT_BIGINT;
+      return BigInt(MAX_UINT);
     }
     const _amount = new BigNumber(amount.toString());
     const res =
@@ -360,11 +359,11 @@ export class BalancerV1
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
+    protected adapters = Adapters[network] || {},
     protected subgraphURL: string = BalancerV1Config[dexKey] &&
       BalancerV1Config[dexKey][network].subgraphURL,
-    protected adapters = Adapters[network] || {},
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV1EventPool(
       dexKey,
@@ -406,8 +405,8 @@ export class BalancerV1
     if (srcToken.address.toLowerCase() === destToken.address.toLowerCase())
       return [];
 
-    const _from = wrapETH(srcToken, this.network);
-    const _to = wrapETH(destToken, this.network);
+    const _from = this.dexHelper.config.wrapETH(srcToken);
+    const _to = this.dexHelper.config.wrapETH(destToken);
 
     const poolsWithTokens = this.eventPools.allPools.filter(pool => {
       const tokenAddresses = pool.tokens.map(token => token.address);
@@ -502,8 +501,8 @@ export class BalancerV1
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV1Data>> {
     try {
-      const _from = wrapETH(srcToken, this.network);
-      const _to = wrapETH(destToken, this.network);
+      const _from = this.dexHelper.config.wrapETH(srcToken);
+      const _to = this.dexHelper.config.wrapETH(destToken);
 
       let poolStates = this.eventPools.getState(blockNumber);
       let isStale = false;

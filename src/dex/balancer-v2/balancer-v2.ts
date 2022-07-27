@@ -18,15 +18,16 @@ import {
   MAX_INT,
   MAX_UINT,
   Network,
+  SUBGRAPH_TIMEOUT,
 } from '../../constants';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { wrapETH, getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
-import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDexHelper } from '../../dex-helper';
 import {
   PoolState,
   SubgraphPoolBase,
@@ -34,15 +35,14 @@ import {
   BalancerParam,
   OptimizedBalancerV2Data,
   SwapTypes,
-  DexParams,
   PoolStateMap,
+  PoolStateCache,
 } from './types';
-import { getTokenScalingFactor } from './utils';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
     id
     address
     poolType
@@ -64,9 +64,9 @@ enum BalancerPoolTypes {
   Investment = 'Investment',
   AaveLinear = 'AaveLinear',
   StablePhantom = 'StablePhantom',
+  ERC4626Linear = 'ERC4626Linear',
 }
 
-const subgraphTimeout = 1000 * 10;
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
@@ -98,6 +98,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'Investment',
   ];
 
+  eventRemovedPools = [
+    // Gradual weight changes are not currently handled in event system
+    // This pool keeps changing weights and is causing pricing issue
+    '0x34809aEDF93066b49F638562c42A9751eDb36DF5',
+  ].map(s => s.toLowerCase());
+
   constructor(
     protected parentName: string,
     protected network: number,
@@ -117,10 +123,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.vaultAddress,
       this.vaultInterface,
     );
-    const aaveLinearPool = new LinearPool(
-      this.vaultAddress,
-      this.vaultInterface,
-    );
+    const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
@@ -128,7 +131,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.MetaStable] = stablePool;
     this.pools[BalancerPoolTypes.LiquidityBootstrapping] = weightedPool;
     this.pools[BalancerPoolTypes.Investment] = weightedPool;
-    this.pools[BalancerPoolTypes.AaveLinear] = aaveLinearPool;
+    this.pools[BalancerPoolTypes.AaveLinear] = linearPool;
+    // ERC4626Linear has the same maths and ABI as AaveLinear (has different factory)
+    this.pools[BalancerPoolTypes.ERC4626Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
@@ -194,7 +199,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       { query: fetchAllPools, variables },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools))
@@ -217,8 +222,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
-    const eventSupportedPools = allPools.filter(pool =>
-      this.eventSupportedPoolTypes.includes(pool.poolType),
+    const eventSupportedPools = allPools.filter(
+      pool =>
+        this.eventSupportedPoolTypes.includes(pool.poolType) &&
+        !this.eventRemovedPools.includes(pool.address.toLowerCase()),
     );
     const allPoolsLatestState = await this.getOnChainState(
       eventSupportedPools,
@@ -292,7 +299,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       _amounts,
       poolPairData as any,
     );
-    return { unit: _prices[0], prices: [BigInt(0), ..._prices.slice(1)] };
+    return { unit: _prices[0], prices: [0n, ..._prices.slice(1)] };
   }
 
   async getOnChainState(
@@ -352,6 +359,9 @@ export class BalancerV2
 
   logger: Logger;
 
+  // In memory pool state for non-event pools
+  nonEventPoolStateCache: PoolStateCache;
+
   constructor(
     protected network: Network,
     protected dexKey: string,
@@ -361,7 +371,9 @@ export class BalancerV2
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
+    this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
       dexKey,
@@ -413,14 +425,43 @@ export class BalancerV2
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
-    const _from = wrapETH(from, this.network);
-    const _to = wrapETH(to, this.network);
+    const _from = this.dexHelper.config.wrapETH(from);
+    const _to = this.dexHelper.config.wrapETH(to);
 
     const pools = this.getPools(_from, _to);
 
     return pools.map(
       ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
     );
+  }
+
+  /**
+   * Returns cached poolState if blockNumber matches cached value. Resets if not.
+   */
+  private getNonEventPoolStateCache(blockNumber: number): PoolStateMap {
+    if (this.nonEventPoolStateCache.blockNumber !== blockNumber)
+      this.nonEventPoolStateCache.poolState = {};
+    return this.nonEventPoolStateCache.poolState;
+  }
+
+  /**
+   * Update poolState cache.
+   * If same blockNumber as current cache then update with new pool state.
+   * If different blockNumber overwrite cache with latest.
+   */
+  private updateNonEventPoolStateCache(
+    poolState: PoolStateMap,
+    blockNumber: number,
+  ): PoolStateMap {
+    if (this.nonEventPoolStateCache.blockNumber !== blockNumber) {
+      this.nonEventPoolStateCache.blockNumber = blockNumber;
+      this.nonEventPoolStateCache.poolState = poolState;
+    } else
+      this.nonEventPoolStateCache.poolState = {
+        ...this.nonEventPoolStateCache.poolState,
+        ...poolState,
+      };
+    return this.nonEventPoolStateCache.poolState;
   }
 
   async getPricesVolume(
@@ -433,8 +474,8 @@ export class BalancerV2
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
     if (side === SwapSide.BUY) return null;
     try {
-      const _from = wrapETH(from, this.network);
-      const _to = wrapETH(to, this.network);
+      const _from = this.dexHelper.config.wrapETH(from);
+      const _to = this.dexHelper.config.wrapETH(to);
 
       const allPools = this.getPools(_from, _to);
       const allowedPools = limitPools
@@ -445,33 +486,46 @@ export class BalancerV2
 
       if (!allowedPools.length) return null;
 
-      const unitVolume = BigInt(
-        10 ** (side === SwapSide.SELL ? _from : _to).decimals,
+      const unitVolume = getBigIntPow(
+        (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const quoteUnitVolume = BigInt(
-        10 ** (side === SwapSide.SELL ? _to : _from).decimals,
-      );
-
-      const poolStates = await this.eventPools.getState(blockNumber);
-      if (!poolStates) {
+      const eventPoolStates = await this.eventPools.getState(blockNumber);
+      if (!eventPoolStates) {
         this.logger.error(`getState returned null`);
         return null;
       }
 
+      // Fetch previously cached non-event pool states
+      let nonEventPoolStates = this.getNonEventPoolStateCache(blockNumber);
+
+      // Missing pools are pools that don't already exist in event or non-event
       const missingPools = allowedPools.filter(
-        pool => !(pool.address.toLowerCase() in poolStates),
+        pool =>
+          !(
+            pool.address.toLowerCase() in eventPoolStates ||
+            pool.address.toLowerCase() in nonEventPoolStates
+          ),
       );
 
-      const missingPoolsStateMap = missingPools.length
-        ? await this.eventPools.getOnChainState(missingPools, blockNumber)
-        : {};
+      // Retrieve onchain state for any missing pools
+      if (missingPools.length > 0) {
+        const missingPoolsStateMap = await this.eventPools.getOnChainState(
+          missingPools,
+          blockNumber,
+        );
+        // Update non-event pool state cache with newly retrieved data so it can be reused in future
+        nonEventPoolStates = this.updateNonEventPoolStateCache(
+          missingPoolsStateMap,
+          blockNumber,
+        );
+      }
 
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
           const poolAddress = pool.address.toLowerCase();
           const poolState =
-            poolStates[poolAddress] || missingPoolsStateMap[poolAddress];
+            eventPoolStates[poolAddress] || nonEventPoolStates[poolAddress];
           if (!poolState) {
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
@@ -678,7 +732,7 @@ export class BalancerV2
         query,
         variables,
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools))

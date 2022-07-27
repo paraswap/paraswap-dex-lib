@@ -3,29 +3,31 @@ import { MultiSwap } from './multiswap';
 import { MegaSwap } from './megaswap';
 import { Buy } from './buy';
 import { SimpleSwap, SimpleBuy } from './simpleswap';
+import { SimpleBuyNFT } from './simpleswapnft';
 import { DirectSwap } from './directswap';
 import { Adapters } from '../types';
 import { DexAdapterService } from '../dex';
 import { SwapSide } from '../constants';
 
 export class RouterService {
-  hybridRouters = [MultiSwap, MegaSwap, SimpleSwap, SimpleBuy, Buy];
+  hybridRouters = [
+    MultiSwap,
+    MegaSwap,
+    SimpleSwap,
+    SimpleBuy,
+    SimpleBuyNFT,
+    Buy,
+  ];
   hybridRouterMap: {
     [contractMethod: string]: IRouter<any>;
   };
   directSwapRouter: DirectSwap<any>;
 
   constructor(private dexAdapterService: DexAdapterService) {
-    const adapters = dexAdapterService.getAllDexAdapters(SwapSide.SELL);
-    const buyAdapters = dexAdapterService.getAllDexAdapters(SwapSide.BUY);
-
     this.hybridRouterMap = this.hybridRouters.reduce<{
       [contractMethod: string]: IRouter<any>;
     }>((acc, Router) => {
-      const router = new Router(
-        this.dexAdapterService,
-        Router.isBuy ? buyAdapters : adapters,
-      );
+      const router = new Router(this.dexAdapterService);
       acc[router.getContractMethodName().toLowerCase()] = router;
       return acc;
     }, {});

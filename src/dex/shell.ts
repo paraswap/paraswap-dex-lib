@@ -1,10 +1,10 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import ShellABI from '../abi/Shell.json';
+import Web3 from 'web3';
 
 export type ShellData = {
   exchange: Address;
@@ -31,7 +31,7 @@ export class Shell
   constructor(
     augustusAddress: Address,
     private network: number,
-    provider: JsonRpcProvider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(ShellABI as JsonFragment[]);

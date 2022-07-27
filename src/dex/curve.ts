@@ -1,5 +1,4 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { JsonRpcProvider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -10,6 +9,7 @@ import {
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveABI from '../abi/Curve.json';
+import Web3 from 'web3';
 
 export type CurveData = {
   exchange: string;
@@ -50,7 +50,7 @@ export class Curve
   constructor(
     augustusAddress: Address,
     public network: number,
-    provider: JsonRpcProvider,
+    provider: Web3,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(CurveABI as JsonFragment[]);
