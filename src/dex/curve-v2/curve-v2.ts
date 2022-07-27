@@ -16,10 +16,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { CurveV2Config, Adapters } from './config';
 import { CurveV2EventPool } from './curve-v2-pool';
 
-export class CurveV2
-  extends SimpleExchange
-  implements IDex<CurveV2Data>
-{
+export class CurveV2 extends SimpleExchange implements IDex<CurveV2Data> {
   protected eventPools: CurveV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
@@ -35,7 +32,7 @@ export class CurveV2
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.provider);
+    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new CurveV2EventPool(
       dexKey,
