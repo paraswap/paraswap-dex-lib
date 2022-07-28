@@ -283,8 +283,8 @@ export class UniswapV2
       (BigInt(this.feeFactor) - BigInt(fee)) *
       (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= 0n) return BI_MAX_UINT;
-    return 1n + numerator / denominator;
+    if (denominator <= 0n) return 0n;
+    return numerator === 0n ? 0n : 1n + numerator / denominator;
   }
 
   async getSellPrice(
