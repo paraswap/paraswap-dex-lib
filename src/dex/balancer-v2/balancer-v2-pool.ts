@@ -715,12 +715,11 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
     side: SwapSide,
     poolPairData: WeightedPoolPairData,
   ): boolean {
-    const swapMax =
-      ((side === SwapSide.SELL
+    const input =
+      side === SwapSide.SELL
         ? poolPairData.tokenInBalance
-        : poolPairData.tokenOutBalance) *
-        3n) /
-      10n;
+        : poolPairData.tokenOutBalance;
+    const swapMax = (input * 3n) / 10n;
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

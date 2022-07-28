@@ -31,6 +31,7 @@ export abstract class StatefulEventSubscriber<State>
     _name: string,
     protected dexHelper: IDexHelper,
     protected logger: Logger,
+    isAlwaysTracking: boolean = false,
   ) {
     this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
     if (dexHelper.config.isSlave) {
@@ -43,6 +44,10 @@ export abstract class StatefulEventSubscriber<State>
       });
     }
     this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
+
+    if (isAlwaysTracking) {
+      this.isTracking = () => true;
+    }
   }
 
   initialize(blockNumber: number) {

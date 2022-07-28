@@ -79,7 +79,7 @@ class BalancerV2PoolState extends StatefulEventSubscriber<PoolState> {
     logger: Logger,
     public info: SubgraphPoolBase,
   ) {
-    super(parentName, dexHelper, logger);
+    super(parentName, dexHelper, logger, true);
     this.poolAddress = info.address.toLowerCase();
   }
 
@@ -212,10 +212,20 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+    const pools = Object.values(this.poolsState);
+    const states = await this.getOnChainState(
+      pools.map(pool => pool.info),
+      blockNumber,
+    );
+
+    pools.forEach((pool, index) => {
+      pool.setState(states[index], blockNumber);
+    });
     return this.state!;
   }
 
   async initPools(blockNumber: number): Promise<void> {
+    this.setState({}, blockNumber);
     const allPools = await this.fetchAllSubgraphPools();
     const eventSupportedPools = allPools.filter(
       pool =>
@@ -233,38 +243,31 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       eventSupportedPools,
       blockNumber,
     );
-    Object.keys(poolStates).reduce<Record<string, BalancerV2PoolState>>(
-      (acc, poolAddress) => {
-        const _state = poolStates[poolAddress];
-        const tokensStrConcatenated = Object.keys(_state.tokens).reduce<string>(
-          (_acc, tokenAddress) => {
-            _acc = _acc + tokenAddress;
-            return _acc;
-          },
-          '',
-        );
-        const pool = new BalancerV2PoolState(
-          `${this.parentName}_${tokensStrConcatenated}`,
-          this.dexHelper,
-          this.logger,
-          subgraphBasePools[poolAddress],
-        );
-        Object.keys(_state.tokens).forEach(_token => {
-          const token = _token.toLowerCase();
-          let pools = this.tokensToPools[token];
-          if (!pools) {
-            this.tokensToPools[token] = [];
-            pools = this.tokensToPools[token];
-          }
-          pool.setState(_state, blockNumber);
-          pools.push(pool);
-        });
+    this.poolsState = Object.keys(poolStates).reduce<
+      Record<string, BalancerV2PoolState>
+    >((acc, _poolAddress) => {
+      const poolAddress = _poolAddress.toLowerCase();
+      const _state = poolStates[poolAddress];
+      const pool = new BalancerV2PoolState(
+        `${this.parentName}_${poolAddress}`,
+        this.dexHelper,
+        this.logger,
+        subgraphBasePools[poolAddress],
+      );
+      Object.keys(_state.tokens).forEach(_token => {
+        const token = _token.toLowerCase();
+        let pools = this.tokensToPools[token];
+        if (!pools) {
+          this.tokensToPools[token] = [];
+          pools = this.tokensToPools[token];
+        }
+        pool.setState(_state, blockNumber);
+        pools.push(pool);
+      });
 
-        acc[poolAddress] = pool;
-        return acc;
-      },
-      {},
-    );
+      acc[poolAddress] = pool;
+      return acc;
+    }, {});
 
     this.initialize(blockNumber);
   }
@@ -467,10 +470,15 @@ export class BalancerV2
   }
 
   getPools(from: Token, to: Token): BalancerV2PoolState[] {
-    const fromPools = this.eventPools.tokensToPools[from.address.toLowerCase()];
-    const toPools = this.eventPools.tokensToPools[to.address.toLowerCase()];
+    const fromPools = this.eventPools.tokensToPools[
+      from.address.toLowerCase()
+    ].filter(pool =>
+      pool.info.tokens.some(
+        t => t.address.toLowerCase() === to.address.toLowerCase(),
+      ),
+    );
 
-    return [...fromPools, ...toPools].slice(0, 10);
+    return [...fromPools].slice(0, 10);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
