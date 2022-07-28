@@ -1,12 +1,11 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Log, Logger } from '../../types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { IDexHelper } from '../../dex-helper/idex-helper';
-import { CurveData, PoolState } from './types';
-import { CurveConfig } from './config';
+import { IDexHelper } from '../../../dex-helper';
+import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
+import { Log, Logger } from '../../../types';
+import { PoolState } from '../types';
 
-export class CurveEventPool extends StatefulEventSubscriber<PoolState> {
+export abstract class BaseCurveEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
   } = {};
@@ -15,7 +14,7 @@ export class CurveEventPool extends StatefulEventSubscriber<PoolState> {
 
   addressesSubscribed: string[];
 
-  constructor(
+  protected constructor(
     protected parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
@@ -36,15 +35,6 @@ export class CurveEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['myEvent'] = this.handleMyEvent.bind(this);
   }
 
-  /**
-   * The function is called every time any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
   protected processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
@@ -62,20 +52,6 @@ export class CurveEventPool extends StatefulEventSubscriber<PoolState> {
       );
       return null;
     }
-  }
-
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenerate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subscriber at blocknumber
-   */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    // TODO: complete me!
-    return {};
   }
 
   // Its just a dummy example
