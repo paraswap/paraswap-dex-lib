@@ -398,6 +398,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     const _srcAddress = _srcToken.address.toLowerCase();
     const _destAddress = _destToken.address.toLowerCase();
 
+    if (_srcAddress === _destAddress) return [];
+
     if (
       !this.tokenByAddress[_srcAddress] ||
       !this.tokenByAddress[_destAddress]
@@ -431,6 +433,8 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
       const _srcAddress = _srcToken.address.toLowerCase();
       const _destAddress = _destToken.address.toLowerCase();
+
+      if (_srcAddress === _destAddress) return null;
 
       if (
         !this.tokenByAddress[_srcAddress] ||
