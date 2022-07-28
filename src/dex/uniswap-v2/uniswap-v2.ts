@@ -45,7 +45,6 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
-import { BI_MAX_UINT } from '../../bigint-constants';
 
 export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
