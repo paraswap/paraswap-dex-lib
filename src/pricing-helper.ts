@@ -71,7 +71,6 @@ export class PricingHelper {
   }
 
   public async initialize(blockNumber: number, dexKeys: string[]) {
-    await this.dexAdapterService.dexHelper.cache.initialize();
     return await Promise.all(
       dexKeys.map(key => this.initializeDex(key, blockNumber)),
     );

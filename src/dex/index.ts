@@ -211,8 +211,9 @@ export class DexAdapterService {
 
   getDexByKey(key: string): IDex<any, any, any> {
     const _key = key.toLowerCase();
-    if (!(_key in this.isLegacy) || this.isLegacy[_key])
-      throw new Error('Invalid Dex Key');
+    if (this.isLegacy[_key]) {
+      throw new Error(`Invalid Dex Key: ${key}`);
+    }
 
     return this.dexInstances[_key] as IDex<any, any, any>;
   }
