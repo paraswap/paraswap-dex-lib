@@ -16,6 +16,21 @@ export const DystopiaConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000,
     },
   },
+  SpiritSwapV2: {
+    [Network.FANTOM]: {
+      factoryAddress: '0x9d3591719038752db0c8bEEe2040FfcC3B2c6B9c',
+      // ParaSwap-compatible Router with stable pools support
+      router: '0x0E98A8e5ca6067B98d10Eb6476ec30E232346402',
+      initCode:
+        '0x5442fb448d86f32a7d2a9dc1a457e64bf5a6c77415d98802aac4fb5a9dc5ecd9',
+      stableFee: 2000,
+      volatileFee: 500,
+
+      // TODO: Not correct, need to update for event based
+      feeCode: 2000,
+      poolGasCost: 18000000000000 * 1000,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
