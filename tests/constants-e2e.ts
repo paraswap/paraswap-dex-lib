@@ -7,6 +7,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    agEUR: {
+      address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
+      decimals: 18,
+    },
     REQ: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
@@ -613,6 +617,7 @@ export const Holders: {
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x3a3ee61f7c6e1994a2001762250a5e17b2061b6d',
+    agEUR: '0xb1F2A25fFB2b095E99f430cAF507cC31F9A3EaAB',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
