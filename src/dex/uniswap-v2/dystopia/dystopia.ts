@@ -1,5 +1,10 @@
 import { TOKEN_EXTRA_FEE, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
-import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../../constants';
+import {
+  CACHE_PREFIX,
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+} from '../../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -105,41 +110,68 @@ export class Dystopia extends UniswapV2 {
 
   async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
     if (!blockNumber) return;
-    const pairsToFetch: UniswapV2Pair[] = [];
+
+    const stableArray = [false, true];
+    const stablePairsToFetch: UniswapV2Pair[] = [];
+    const notStablePairsToFetch: UniswapV2Pair[] = [];
     for (const _pair of pairs) {
-      for (const stable of [false, true]) {
+      for (const stable of stableArray) {
         const pair = await this.findDystopiaPair(_pair[0], _pair[1], stable);
         if (!(pair && pair.exchange)) continue;
         if (!pair.pool) {
-          pairsToFetch.push(pair);
+          stable
+            ? stablePairsToFetch.push(pair)
+            : notStablePairsToFetch.push(pair);
         } else if (!pair.pool.getState(blockNumber)) {
-          pairsToFetch.push(pair);
+          stable
+            ? stablePairsToFetch.push(pair)
+            : notStablePairsToFetch.push(pair);
         }
       }
     }
 
-    if (!pairsToFetch.length) return;
+    if (!notStablePairsToFetch.length && !stablePairsToFetch.length) return;
 
-    const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
+    const stableReserves = await this.getManyPoolReserves(
+      stablePairsToFetch,
+      blockNumber,
+    );
+    const notStableReserves = await this.getManyPoolReserves(
+      notStablePairsToFetch,
+      blockNumber,
+    );
 
-    if (reserves.length !== pairsToFetch.length) {
+    if (
+      stableReserves.length !== stablePairsToFetch.length &&
+      notStableReserves.length !== notStablePairsToFetch.length
+    ) {
       this.logger.error(
         `Error_getManyPoolReserves didn't get any pool reserves`,
       );
     }
 
-    for (let i = 0; i < pairsToFetch.length; i++) {
-      const pairState = reserves[i];
-      const pair = pairsToFetch[i];
-      if (!pair.pool) {
-        await this.addPool(
-          pair,
-          pairState.reserves0,
-          pairState.reserves1,
-          pairState.feeCode,
-          blockNumber,
-        );
-      } else pair.pool.setState(pairState, blockNumber);
+    const toFetch = [stablePairsToFetch, notStablePairsToFetch];
+    const reservesStableAndNotStable = [stableReserves, notStableReserves];
+
+    for (let index = 0; index < toFetch.length; ++index) {
+      const pairsToFetch = toFetch[index];
+      const reserves = reservesStableAndNotStable[index];
+      const stable = stableArray[index];
+
+      for (let i = 0; i < pairsToFetch.length; i++) {
+        const pairState = reserves[i];
+        const pair = pairsToFetch[i];
+        if (!pair.pool) {
+          await this.addPool(
+            '_' + (stable ? 'stable' : 'notStable'),
+            pair,
+            pairState.reserves0,
+            pairState.reserves1,
+            pairState.feeCode,
+            blockNumber,
+          );
+        } else pair.pool.setState(pairState, blockNumber);
+      }
     }
   }
 

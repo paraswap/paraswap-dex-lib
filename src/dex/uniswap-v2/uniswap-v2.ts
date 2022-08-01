@@ -87,6 +87,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private poolAddress: Address,
     private token0: Token,
     private token1: Token,
+    private suffix: string,
     // feeCode is ignored if DynamicFees is set to true
     private feeCode: number,
     logger: Logger,
@@ -97,7 +98,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private iface: Interface = uniswapV2Iface,
   ) {
     super(
-      `${parentName}_${token0.address}_${token1.address}`,
+      `${parentName}_${token0.address}_${token1.address}${suffix}`,
       dexHelper,
       logger,
     );
@@ -239,6 +240,7 @@ export class UniswapV2
   }
 
   protected async addPool(
+    suffix: string,
     pair: UniswapV2Pair,
     reserves0: string,
     reserves1: string,
@@ -249,7 +251,7 @@ export class UniswapV2
       this.getFeesMultiCallData(pair.exchange!) || {};
 
     const key =
-      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${pair.token0.address}_${pair.token1.address}`.toLowerCase();
+      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${pair.token0.address}_${pair.token1.address}${suffix}`.toLowerCase();
 
     await this.dexHelper.cache.rawsetex(
       key,
@@ -262,6 +264,7 @@ export class UniswapV2
       pair.exchange!,
       pair.token0,
       pair.token1,
+      suffix,
       feeCode,
       this.logger,
       this.isDynamicFees,
@@ -438,6 +441,7 @@ export class UniswapV2
       const pair = pairsToFetch[i];
       if (!pair.pool) {
         await this.addPool(
+          '',
           pair,
           pairState.reserves0,
           pairState.reserves1,
