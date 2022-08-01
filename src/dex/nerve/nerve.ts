@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow, bigIntify } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -28,7 +28,6 @@ import { SimpleExchange } from '../simple-exchange';
 import { NerveConfig, Adapters, NERVE_GAS_COST } from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
-import { bigIntify } from './utils';
 
 export class Nerve
   extends SimpleExchange

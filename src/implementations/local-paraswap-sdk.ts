@@ -101,7 +101,19 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     if (!poolPrices || poolPrices.length == 0)
       throw new Error('Fail to get price for ' + this.dexKey);
 
-    const finalPrice = poolPrices[0];
+    if (side === SwapSide.SELL) {
+    }
+
+    // Move best pool to the top
+    const finalPrice = poolPrices
+      // Filter pools that didn't give latest output
+      .filter(poolPrices => poolPrices.prices.slice(-1)[0] !== 0n)
+      .sort((a, b) => {
+        return side === SwapSide.SELL
+          ? Number(b.prices.slice(-1)[0] - a.prices.slice(-1)[0])
+          : Number(a.prices.slice(-1)[0] - b.prices.slice(-1)[0]);
+      })[0];
+
     const quoteAmount = finalPrice.prices[chunks];
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount

@@ -57,10 +57,6 @@ export function getBigIntPow(decimals: number): bigint {
   return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
 }
 
-export const _require = (b: boolean, message: string) => {
-  if (!b) throw new Error(message);
-};
-
 const casterBigIntToString = (obj: bigint) => 'bi@'.concat(obj.toString());
 const checkerBigInt = (obj: any) => typeof obj === 'bigint';
 
@@ -106,3 +102,26 @@ export class Utils {
 
 export const sleep = (ms: number) =>
   new Promise(resolve => setTimeout(resolve, ms));
+
+export function _require(
+  b: boolean,
+  message: string,
+  values?: Record<string, unknown>,
+  condition?: string,
+): void {
+  let receivedValues = '';
+  if (values && condition) {
+    const keyValueStr = Object.entries(values)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ');
+    receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated`;
+  }
+  if (!b)
+    throw new Error(
+      `${receivedValues}. Error message: ${message ? message : 'undefined'}`,
+    );
+}
+
+export const bigIntify = (val: any) => BigInt(val);
+
+export const stringify = (val: any) => val.toString();
