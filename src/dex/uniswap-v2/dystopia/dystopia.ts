@@ -53,27 +53,47 @@ export class Dystopia extends UniswapV2 {
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
+    isDynamicFees = false,
+    factoryAddress?: Address,
+    subgraphURL?: string,
+    initCode?: string,
+    feeCode?: number,
+    poolGasCost?: number,
+    routerAddress?: Address,
   ) {
     super(
       network,
       dexKey,
       dexHelper,
-      false,
-      DystopiaConfig[dexKey][network].factoryAddress,
-      DystopiaConfig[dexKey][network].subgraphURL,
-      DystopiaConfig[dexKey][network].initCode,
-      DystopiaConfig[dexKey][network].feeCode,
-      DystopiaConfig[dexKey][network].poolGasCost,
+      isDynamicFees,
+      factoryAddress !== undefined
+        ? factoryAddress
+        : DystopiaConfig[dexKey][network].factoryAddress,
+      subgraphURL !== undefined
+        ? subgraphURL
+        : DystopiaConfig[dexKey][network].subgraphURL,
+      initCode !== undefined
+        ? initCode
+        : DystopiaConfig[dexKey][network].initCode,
+      feeCode !== undefined ? feeCode : DystopiaConfig[dexKey][network].feeCode,
+      poolGasCost !== undefined
+        ? poolGasCost
+        : DystopiaConfig[dexKey][network].poolGasCost,
       iface,
       Adapters[network] || undefined,
     );
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
       dystopiaFactoryABI as any,
-      DystopiaConfig[dexKey][network].factoryAddress,
+      factoryAddress !== undefined
+        ? factoryAddress
+        : DystopiaConfig[dexKey][network].factoryAddress,
     );
 
-    this.router = DystopiaConfig[dexKey][network].router || '';
+    this.router =
+      routerAddress !== undefined
+        ? routerAddress
+        : DystopiaConfig[dexKey][network].router || '';
   }
 
   async findDystopiaPair(from: Token, to: Token, stable: boolean) {
