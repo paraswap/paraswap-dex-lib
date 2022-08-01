@@ -41,10 +41,12 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
+import { MetavaultTrade } from './metavault-trade/metavault-trade';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
+
 
 const LegacyDexes = [
   Curve,
@@ -84,6 +86,7 @@ const Dexes = [
   Nerve,
   Platypus,
   GMX,
+  MetavaultTrade,
   WooFi,
   Dystopia,
   ParaSwapLimitOrders,
