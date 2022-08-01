@@ -1,5 +1,10 @@
 import { TOKEN_EXTRA_FEE, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
-import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../../constants';
+import {
+  CACHE_PREFIX,
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+} from '../../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -48,6 +53,8 @@ export class Dystopia extends UniswapV2 {
   feeFactor = 20000;
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DystopiaConfig);
+
+  private poolsInitalized = new Set<string>();
 
   constructor(
     protected network: Network,
@@ -131,7 +138,15 @@ export class Dystopia extends UniswapV2 {
     for (let i = 0; i < pairsToFetch.length; i++) {
       const pairState = reserves[i];
       const pair = pairsToFetch[i];
+      const poolKey =
+        `${pair.token0.address}_${pair.token1.address}`.toLowerCase();
+      if (this.poolsInitalized.has(poolKey)) {
+        return;
+      }
+
       if (!pair.pool) {
+        this.poolsInitalized.add(poolKey);
+
         await this.addPool(
           pair,
           pairState.reserves0,
@@ -410,6 +425,7 @@ export class Dystopia extends UniswapV2 {
     ).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
+
     if (pairReversed) {
       return {
         tokenIn: from.address,

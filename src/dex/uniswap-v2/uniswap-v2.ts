@@ -459,7 +459,7 @@ export class UniswapV2
 
     this.logger.info(`starting to listen to new pool: ${key}`);
     const pairs: [Token, Token] = JSON.parse(_pairs);
-    this.batchCatchUpPairs(
+    return this.batchCatchUpPairs(
       [pairs],
       this.dexHelper.blockManager.getLatestBlockNumber(),
     );
