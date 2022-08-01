@@ -88,7 +88,6 @@ export abstract class StatefulEventSubscriber<State>
     const stateAsStr = Utils.Serialize(state);
     this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.rawsetex(this.name, stateAsStr);
-    console.log(stateAsStr);
 
     this.logger.debug(`forward state for ${this.name}`);
   }
