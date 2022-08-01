@@ -1,4 +1,4 @@
-import { TOKEN_EXTRA_FEE, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
+import { UniswapV2, UniswapV2Pair } from '../uniswap-v2';
 import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../../constants';
 import {
   AdapterExchangeParam,
@@ -405,9 +405,7 @@ export class Dystopia extends UniswapV2 {
       );
       return null;
     }
-    const fee = (
-      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
-    ).toString();
+
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
     if (pairReversed) {
@@ -416,7 +414,7 @@ export class Dystopia extends UniswapV2 {
         tokenOut: to.address,
         reservesIn: pairState.reserves1,
         reservesOut: pairState.reserves0,
-        fee,
+        fee: pairState.feeCode.toString(),
         direction: false,
         exchange: pair.exchange,
         decimalsIn: from.decimals,
