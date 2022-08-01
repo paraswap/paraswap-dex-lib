@@ -69,7 +69,9 @@ export class Dystopia extends UniswapV2 {
       factoryAddress !== undefined
         ? factoryAddress
         : DystopiaConfig[dexKey][network].factoryAddress,
-      subgraphURL !== undefined
+      subgraphURL === ''
+        ? undefined
+        : subgraphURL !== undefined
         ? subgraphURL
         : DystopiaConfig[dexKey][network].subgraphURL,
       initCode !== undefined

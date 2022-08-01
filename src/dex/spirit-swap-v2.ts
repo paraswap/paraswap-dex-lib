@@ -10,6 +10,9 @@ const dexKey = 'SpiritSwapV2';
 
 export const spiritSwapV2Config: Record<number, DexParams> = {
   [Network.FANTOM]: {
+    // Later in Dystopia constructor it will be replaced with undefined
+    // If we set here undefined, it will go search for non-existing config
+    subgraphURL: '',
     factoryAddress: '0x9d3591719038752db0c8bEEe2040FfcC3B2c6B9c',
     // ParaSwap-compatible Router with stable pools support
     router: '0x56a14A1954b5d5FD7C636a24137a93742bA708b9',
