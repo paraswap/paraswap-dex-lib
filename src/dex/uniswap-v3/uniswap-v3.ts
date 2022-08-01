@@ -37,6 +37,7 @@ import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
+  fee: string;
 };
 
 export class UniswapV3
@@ -111,16 +112,18 @@ export class UniswapV3
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
       const key =
-        `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${token0}_${token1}`.toLowerCase();
+        `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${token0}_${token1}_${fee}`.toLowerCase();
 
       await this.dexHelper.cache.rawsetex(
         key,
         JSON.stringify({
           token0,
           token1,
+          fee: fee.toString(),
         }),
       );
 
+      this.logger.info(`starting to listen to new pool: ${key}`);
       pool = new UniswapV3EventPool(
         this.dexKey,
         this.network,
@@ -167,25 +170,20 @@ export class UniswapV3
 
   async addMasterPool(poolKey: string) {
     const key =
-      `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
+      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
     const _pairs = await this.dexHelper.cache.rawget(key);
     if (!_pairs) {
       this.logger.warn(`did not find poolconfig in for key ${key}`);
       return;
     }
 
-    this.logger.info(`starting to listen to new pool: ${key}`);
-    const pairs: PoolPairsInfo = JSON.parse(_pairs);
+    const poolInfo: PoolPairsInfo = JSON.parse(_pairs);
 
-    await Promise.all(
-      this.supportedFees.map(async fee => {
-        this.getPool(
-          pairs.token0,
-          pairs.token1,
-          fee,
-          this.dexHelper.blockManager.getLatestBlockNumber(),
-        );
-      }),
+    this.getPool(
+      poolInfo.token0,
+      poolInfo.token1,
+      BigInt(poolInfo.fee),
+      this.dexHelper.blockManager.getLatestBlockNumber(),
     );
   }
 

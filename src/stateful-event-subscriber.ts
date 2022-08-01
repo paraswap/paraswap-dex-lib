@@ -36,14 +36,15 @@ export abstract class StatefulEventSubscriber<State>
     this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
     if (dexHelper.config.isSlave) {
       this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
+      this.logger.debug(`subscribe to ${this.name}`);
       this.dexHelper.cache.rawget(this.name).then(stateAsStr => {
         if (stateAsStr) {
           this.state = Utils.Parse(stateAsStr);
           this.logger.debug(`[${this.name}] got initial state from cache`);
         }
       });
+      this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
     }
-    this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
 
     if (isAlwaysTracking) {
       this.isTracking = () => true;
@@ -79,6 +80,8 @@ export abstract class StatefulEventSubscriber<State>
     const stateAsStr = Utils.Serialize(state);
     this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.rawsetex(this.name, stateAsStr);
+
+    this.logger.debug(`forward state for ${this.name}`);
   }
 
   //Function which transforms the given state for the given log event.

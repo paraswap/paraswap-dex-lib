@@ -63,7 +63,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     token1: Address,
     readonly poolIface = new Interface(UniswapV3PoolABI),
   ) {
-    super(`${parentName}_${token0}_${token1}_pool`, dexHelper, logger);
+    super(`${parentName}_${token0}_${token1}_${feeCode}`, dexHelper, logger);
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);

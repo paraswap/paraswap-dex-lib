@@ -249,7 +249,7 @@ export class UniswapV2
       this.getFeesMultiCallData(pair.exchange!) || {};
 
     const key =
-      `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${pair.token0.address}_${pair.token1.address}`.toLowerCase();
+      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${pair.token0.address}_${pair.token1.address}`.toLowerCase();
 
     await this.dexHelper.cache.rawsetex(
       key,
@@ -450,7 +450,7 @@ export class UniswapV2
 
   async addMasterPool(poolKey: string) {
     const key =
-      `${CACHE_PREFIX}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
+      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
     const _pairs = await this.dexHelper.cache.rawget(key);
     if (!_pairs) {
       this.logger.warn(`did not find poolconfig in for key ${key}`);
