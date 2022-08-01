@@ -427,7 +427,7 @@ export class Dystopia extends UniswapV2 {
       tokenOut: to.address,
       reservesIn: pairState.reserves0,
       reservesOut: pairState.reserves1,
-      fee,
+      fee: pairState.feeCode.toString(),
       direction: true,
       exchange: pair.exchange,
       decimalsIn: from.decimals,
