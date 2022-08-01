@@ -39,7 +39,11 @@ export abstract class StatefulEventSubscriber<State>
       this.logger.debug(`subscribe to ${this.name}`);
       this.dexHelper.cache.rawget(this.name).then(stateAsStr => {
         if (stateAsStr) {
-          this.state = Utils.Parse(stateAsStr);
+          try {
+            this.state = Utils.Parse(stateAsStr);
+          } catch (e) {
+            this.logger.error(`failed parsing ${stateAsStr}`, e);
+          }
           this.logger.debug(`[${this.name}] got initial state from cache`);
         }
       });
@@ -72,7 +76,11 @@ export abstract class StatefulEventSubscriber<State>
     }
 
     this.logger.debug(`[${this.name}] received state update from cache`);
-    this.state = Utils.Parse(stateMsg);
+    try {
+      this.state = Utils.Parse(stateMsg);
+    } catch (e) {
+      this.logger.error(`failed parsing ${stateMsg}`, e);
+    }
   }
 
   private _setState(state: DeepReadonly<State> | null) {
@@ -80,6 +88,7 @@ export abstract class StatefulEventSubscriber<State>
     const stateAsStr = Utils.Serialize(state);
     this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.rawsetex(this.name, stateAsStr);
+    console.log(stateAsStr);
 
     this.logger.debug(`forward state for ${this.name}`);
   }
