@@ -12,8 +12,7 @@ export const spiritSwapV2Config: Record<number, DexParams> = {
   [Network.FANTOM]: {
     factoryAddress: '0x9d3591719038752db0c8bEEe2040FfcC3B2c6B9c',
     // ParaSwap-compatible Router with stable pools support
-    // TODO: Update router address once it is deployed
-    router: '0x0E98A8e5ca6067B98d10Eb6476ec30E232346402',
+    router: '0x56a14A1954b5d5FD7C636a24137a93742bA708b9',
     initCode:
       '0x5442fb448d86f32a7d2a9dc1a457e64bf5a6c77415d98802aac4fb5a9dc5ecd9',
 
