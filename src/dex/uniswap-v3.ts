@@ -40,7 +40,7 @@ type UniswapV3BuyParam = {
   amountInMaximum: NumberAsString;
 };
 
-type UniswapV3Param = UniswapV3SellParam | UniswapV3BuyParam;
+export type UniswapV3Param = UniswapV3SellParam | UniswapV3BuyParam;
 
 enum UniswapV3Functions {
   exactInput = 'exactInput',
@@ -54,16 +54,19 @@ export class UniswapV3
   static dexKeys = ['uniswapv3'];
   exchangeRouterInterface: Interface;
   needWrapNative = true;
+  protected routerAddress: string;
 
   constructor(
     augustusAddress: Address,
-    private network: number,
+    protected network: number,
     provider: Web3,
+    routerAddress?: Address,
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(
       UniswapV3RouterABI as JsonFragment[],
     );
+    this.routerAddress = routerAddress || UNISWAP_V3_ROUTER_ADDRESSES[network];
   }
 
   private encodePath(
@@ -128,7 +131,7 @@ export class UniswapV3
     );
 
     return {
-      targetExchange: UNISWAP_V3_ROUTER_ADDRESSES[this.network], // warning
+      targetExchange: this.routerAddress,
       payload,
       networkFee: '0', // warning
     };
@@ -174,7 +177,7 @@ export class UniswapV3
       destToken,
       destAmount,
       swapData,
-      UNISWAP_V3_ROUTER_ADDRESSES[this.network], // warning
+      this.routerAddress,
     );
   }
 }

@@ -32,7 +32,7 @@ import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Nerve } from './nerve/nerve';
 import { IDexHelper } from '../dex-helper';
-import { SwapSide, Network } from '../constants';
+import { SwapSide } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
@@ -45,6 +45,7 @@ import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
+import { Algebra } from './algebra';
 
 const LegacyDexes = [
   Curve,
@@ -63,6 +64,7 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   UniswapV3,
+  Algebra,
   Jarvis,
   Lido,
   AugustusRFQOrder,
