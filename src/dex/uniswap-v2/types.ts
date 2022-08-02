@@ -128,6 +128,8 @@ export type DexParams = {
   feeCode: number;
   router?: Address;
   adapters?: { [side: string]: { name: string; index: number }[] | null };
+  stableFee?: number;
+  volatileFee?: number;
 };
 
 export interface UniswapV2PoolOrderedParams {
