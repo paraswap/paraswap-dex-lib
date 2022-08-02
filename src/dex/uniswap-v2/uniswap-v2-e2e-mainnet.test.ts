@@ -1048,6 +1048,52 @@ describe('UniswapV2 E2E Mainnet', () => {
     });
   });
 
+  describe('Fraxswap', () => {
+    const dexKey = 'Fraxswap';
+
+    describe('Simpleswap', () => {
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.newFRAX,
+          holders.ETH,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.newFRAX,
+          tokens.ETH,
+          holders.newFRAX,
+          '2000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.FXS,
+          tokens.newFRAX,
+          holders.FXS,
+          '2000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
   describe('SakeSwap', () => {
     const dexKey = 'SakeSwap';
 
