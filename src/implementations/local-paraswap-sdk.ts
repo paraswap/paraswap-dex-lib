@@ -9,7 +9,7 @@ import { TransactionBuilder } from '../transaction-builder';
 import { PricingHelper } from '../pricing-helper';
 import { DexAdapterService } from '../dex';
 import { Address, Token, OptimalRate, TxObject } from '../types';
-import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
+import { SwapSide, NULL_ADDRESS, ContractMethod, MAX_UINT } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
 
 export interface IParaSwapSDK {
@@ -99,9 +99,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     );
 
     if (!poolPrices || poolPrices.length == 0)
-      throw new Error('Fail to get price for ' + this.dexKey);
+      throw new Error('Fail to get prices for ' + this.dexKey);
 
-    const finalPrice = poolPrices[0];
+    const finalPrice = poolPrices?.find(
+      p => p.prices[p.prices.length - 1] !== BigInt(MAX_UINT),
+    );
+
+    if (!finalPrice)
+      throw new Error('Fail to get valid price for ' + this.dexKey);
+
     const quoteAmount = finalPrice.prices[chunks];
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount
