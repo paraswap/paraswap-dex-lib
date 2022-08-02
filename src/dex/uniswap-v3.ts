@@ -69,7 +69,7 @@ export class UniswapV3
     this.routerAddress = routerAddress || UNISWAP_V3_ROUTER_ADDRESSES[network];
   }
 
-  private encodePath(
+  protected encodePath(
     path: {
       tokenIn: Address;
       tokenOut: Address;
