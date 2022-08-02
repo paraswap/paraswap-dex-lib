@@ -1,0 +1,297 @@
+[
+  {
+    "inputs": [],
+    "name": "PRBMathSD59x18__DivInputTooSmall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAbs",
+        "type": "uint256"
+      }
+    ],
+    "name": "PRBMathSD59x18__DivOverflow",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PRBMathSD59x18__MulInputTooSmall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAbs",
+        "type": "uint256"
+      }
+    ],
+    "name": "PRBMathSD59x18__MulOverflow",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "x",
+        "type": "int256"
+      }
+    ],
+    "name": "PRBMathSD59x18__SqrtNegativeInput",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "x",
+        "type": "int256"
+      }
+    ],
+    "name": "PRBMathSD59x18__SqrtOverflow",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "prod1",
+        "type": "uint256"
+      }
+    ],
+    "name": "PRBMath__MulDivFixedPointOverflow",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "prod1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "denominator",
+        "type": "uint256"
+      }
+    ],
+    "name": "PRBMath__MulDivOverflow",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getAssetsInActiveBin",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "int256[3]",
+            "name": "base",
+            "type": "int256[3]"
+          },
+          {
+            "internalType": "int256[3]",
+            "name": "quote",
+            "type": "int256[3]"
+          },
+          {
+            "internalType": "int256",
+            "name": "L",
+            "type": "int256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "activeInd",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IEstimator.AssetInfo",
+        "name": "assetInfo",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getEstimationParameters",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "int256[3]",
+            "name": "lambdas",
+            "type": "int256[3]"
+          },
+          {
+            "internalType": "int256[3]",
+            "name": "gammas",
+            "type": "int256[3]"
+          },
+          {
+            "internalType": "int256",
+            "name": "gamma_bar",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "lambda_bar",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "gam_w",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "gam2_k",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "sw",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "sk",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "lamb_w",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "lamb2_w",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "binThreshold",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "ind_0_a2",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "ind_1_a2",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "ind_2_a2",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "lam2_kw",
+            "type": "int256"
+          },
+          {
+            "internalType": "uint32",
+            "name": "lastTimestamp",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint224",
+            "name": "twau",
+            "type": "uint224"
+          }
+        ],
+        "internalType": "struct IEstimator.EstimationParameters",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getSpreadFee",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "price",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "_price",
+        "type": "int256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "poolAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "swapForBase",
+        "type": "bool"
+      }
+    ],
+    "name": "swap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

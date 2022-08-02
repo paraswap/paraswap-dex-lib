@@ -1,4 +1,4 @@
-import { Provider } from '@ethersproject/providers';
+import Web3 from 'web3';
 import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
@@ -44,7 +44,7 @@ import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
-import Web3 from 'web3';
+import { Maverick } from './maverick/maverick';
 
 const LegacyDexes = [
   Curve,
@@ -87,6 +87,7 @@ const Dexes = [
   WooFi,
   Dystopia,
   ParaSwapLimitOrders,
+  Maverick,
 ];
 
 export type LegacyDexConstructor = new (
