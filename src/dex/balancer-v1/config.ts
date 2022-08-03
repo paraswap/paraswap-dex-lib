@@ -20,12 +20,11 @@ export const LogCallTopics = [
   '0x02c9674800000000000000000000000000000000000000000000000000000000',
 ];
 
-export const BALANCER_CHUNKS = 10;
 export const BALANCER_SWAP_GAS_COST = 120 * 1000;
 
 export const poolUrls: { [key: number]: string } = {
-  1: 'https://storageapi.fleek.co/balancer-bucket/balancer-exchange/pools',
-  42: 'https://storageapi.fleek.co/balancer-bucket/balancer-exchange-kovan/pools',
+  [Network.MAINNET]:
+    'https://storageapi.fleek.co/balancer-bucket/balancer-exchange/pools',
 };
 
 export const defaultfactoryAddress =
@@ -34,7 +33,6 @@ export const defaultMulticallAddress =
   '0x514053acec7177e277b947b1ebb5c08ab4c4580e';
 
 export const POOL_FETCH_TIMEOUT = 5000;
-export const SUBGRAPH_TIMEOUT = 1000 * 10;
 
 export const BalancerV1Config: DexConfigMap<DexParams> = {
   BalancerV1: {

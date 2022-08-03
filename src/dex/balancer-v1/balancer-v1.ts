@@ -15,7 +15,7 @@ import {
   Token,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network, MAX_UINT } from '../../constants';
+import { SwapSide, Network, MAX_UINT, SUBGRAPH_TIMEOUT } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   getDexKeysWithNetwork,
@@ -46,8 +46,6 @@ import {
   LogCallTopics,
   poolUrls,
   POOL_FETCH_TIMEOUT,
-  SUBGRAPH_TIMEOUT,
-  BALANCER_CHUNKS,
   BALANCER_SWAP_GAS_COST,
 } from './config';
 const BalancerV1PoolABI = require('../../abi/BalancerV1Pool.json');
