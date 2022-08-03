@@ -17,11 +17,7 @@ import {
 } from '../../types';
 import { SwapSide, Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import {
-  getDexKeysWithNetwork,
-  isETHAddress,
-  biginterify,
-} from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress, biginterify } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -254,7 +250,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return poolStateMap;
   }
 
-  async getPoolPrices(pool: OldPool, side: SwapSide, amount: bigint) {
+  getPoolPrices(pool: OldPool, side: SwapSide, amount: bigint) {
     if (
       side === SwapSide.BUY &&
       amount * 2n > BigInt(pool.balanceOut.toFixed(0))
@@ -450,18 +446,18 @@ export class BalancerV1
     return topPools.map(({ id }) => BalancerV1.getIdentifier(this.dexKey, id));
   }
 
-  async getPoolPrices(
+  getPoolPrices(
     amounts: bigint[],
     side: SwapSide,
     unitVolume: bigint,
     exchangeProxy: Address,
     pool: OldPool | null,
-  ): Promise<PoolPrices<BalancerV1Data> | null> {
+  ): PoolPrices<BalancerV1Data> | null {
     if (!pool) return null;
     try {
-      const unit = await this.eventPools.getPoolPrices(pool, side, unitVolume);
-      const prices = await Promise.all(
-        amounts.map(a => this.eventPools.getPoolPrices(pool, side, a)),
+      const unit = this.eventPools.getPoolPrices(pool, side, unitVolume);
+      const prices = amounts.map(a =>
+        this.eventPools.getPoolPrices(pool, side, a),
       );
 
       return {
@@ -532,58 +528,57 @@ export class BalancerV1
 
       if (!allowedPools || !allowedPools.length) return null;
 
-      const poolPrices = await Promise.all(
-        allowedPools
-          .map(async pool => {
-            const poolAddress = pool.id.toLowerCase();
-            const poolState = poolStates![poolAddress];
-            if (!poolState) {
-              this.logger.error(`Unable to find the poolState ${poolAddress}`);
-              return null;
-            }
-            const parsedOldPool = parsePoolPairData(
-              typecastReadOnlyPool(poolState),
-              _from.address,
-              _to.address,
-            );
+      const poolPrices = allowedPools
+        .map(pool => {
+          const poolAddress = pool.id.toLowerCase();
+          const poolState = poolStates![poolAddress];
+          if (!poolState) {
+            this.logger.error(`Unable to find the poolState ${poolAddress}`);
+            return null;
+          }
+          const parsedOldPool = parsePoolPairData(
+            typecastReadOnlyPool(poolState),
+            _from.address,
+            _to.address,
+          );
 
-            // TODO: re-check what should be the current block time stamp
-            try {
-              const res = await this.getPoolPrices(
-                amounts,
-                side,
-                unitVolume,
-                this.exchangeProxy,
-                parsedOldPool,
-              );
-              if (!res) return;
-              return {
-                unit: res.unit,
-                prices: res.prices,
-                data: {
-                  poolId: pool.id,
-                  exchangeProxy: this.exchangeProxy,
-                },
-                poolAddresses: [poolAddress],
-                exchange: this.dexKey,
-                gasCost: BALANCER_SWAP_GAS_COST,
-                poolIdentifier: BalancerV1.getIdentifier(
-                  this.dexKey,
-                  poolAddress,
-                ),
-              };
-            } catch (e) {
-              this.logger.error(
-                `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
-                  destToken.symbol || destToken.address
-                }, ${side}, ${pool.id}:`,
-                e,
-              );
-              return null;
-            }
-          })
-          .filter(p => !!p),
-      );
+          // TODO: re-check what should be the current block time stamp
+          try {
+            const res = this.getPoolPrices(
+              amounts,
+              side,
+              unitVolume,
+              this.exchangeProxy,
+              parsedOldPool,
+            );
+            if (!res) return;
+            return {
+              unit: res.unit,
+              prices: res.prices,
+              data: {
+                poolId: pool.id,
+                exchangeProxy: this.exchangeProxy,
+              },
+              poolAddresses: [poolAddress],
+              exchange: this.dexKey,
+              gasCost: BALANCER_SWAP_GAS_COST,
+              poolIdentifier: BalancerV1.getIdentifier(
+                this.dexKey,
+                poolAddress,
+              ),
+            };
+          } catch (e) {
+            this.logger.error(
+              `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
+                destToken.symbol || destToken.address
+              }, ${side}, ${pool.id}:`,
+              e,
+            );
+            return null;
+          }
+        })
+        .filter(p => !!p);
+
       return poolPrices as unknown as ExchangePrices<BalancerV1Data>;
     } catch (e) {
       this.logger.error(
