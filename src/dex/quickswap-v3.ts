@@ -5,11 +5,11 @@ import Web3 from 'web3';
 import { UniswapV3, UniswapV3Param } from './uniswap-v3';
 import { pack } from '@ethersproject/solidity';
 
-const ALGEBRA_ROUTER_ADDRESSES: { [network: number]: Address } = {
+const QUICKSWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
   [Network.POLYGON]: '0x1a5bC2d507465c3e343Ca4e8B5C37Dd6B580f2C2',
 };
 
-export type AlgebraData = {
+export type QuickSwapV3Data = {
   // ExactInputSingleParams
   deadline?: number;
   path: {
@@ -18,11 +18,11 @@ export type AlgebraData = {
   }[];
 };
 
-export class Algebra
+export class QuickSwapV3
   extends UniswapV3
-  implements IDexTxBuilder<AlgebraData, UniswapV3Param>
+  implements IDexTxBuilder<QuickSwapV3Data, UniswapV3Param>
 {
-  static dexKeys = ['algebra'];
+  static dexKeys = ['quickswapv3'];
 
   constructor(
     augustusAddress: Address,
@@ -33,11 +33,11 @@ export class Algebra
       augustusAddress,
       network,
       provider,
-      ALGEBRA_ROUTER_ADDRESSES[network],
+      QUICKSWAP_V3_ROUTER_ADDRESSES[network],
     );
   }
 
-  // override parent as Algebra handles fees dynamically.
+  // override parent as QuickSwapV3 handles fees dynamically.
   protected encodePath(
     path: {
       tokenIn: Address;

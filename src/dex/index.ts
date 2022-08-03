@@ -45,7 +45,7 @@ import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
-import { Algebra } from './algebra';
+import { QuickSwapV3 } from './quickswap-v3';
 
 const LegacyDexes = [
   Curve,
@@ -64,7 +64,7 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   UniswapV3,
-  Algebra,
+  QuickSwapV3,
   Jarvis,
   Lido,
   AugustusRFQOrder,
