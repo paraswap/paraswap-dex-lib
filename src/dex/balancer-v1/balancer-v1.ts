@@ -21,7 +21,6 @@ import {
   getDexKeysWithNetwork,
   isETHAddress,
   biginterify,
-  sliceCalls,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -50,6 +49,7 @@ import {
 const BalancerV1PoolABI = require('../../abi/BalancerV1Pool.json');
 const BalancerV1ExchangeProxyABI = require('../../abi/BalancerV1ExchangeProxy.json');
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
+import { AxiosResponse } from 'axios';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
 import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
@@ -57,8 +57,6 @@ import { parsePoolPairData, updatePoolState } from './sor-overload';
 import { BI_MAX_UINT } from '../../bigint-constants';
 
 const balancerV1PoolIface = new Interface(BalancerV1PoolABI);
-
-const BALANCER_POOL_MULTICALL_SHARD_SIZE = 500;
 
 export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -172,37 +170,23 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ): Promise<PoolStates> {
     if (pools.pools.length === 0) throw Error('There are no pools.');
 
-    let poolWithTokensAddresses: string[][] = [];
+    let addresses: string[][] = [];
+    let total = 0;
 
     for (let i = 0; i < pools.pools.length; i++) {
       let pool = pools.pools[i];
 
-      poolWithTokensAddresses.push([pool.id]);
+      addresses.push([pool.id]);
+      total++;
       pool.tokens.forEach(token => {
-        poolWithTokensAddresses[i].push(token.address);
+        addresses[i].push(token.address);
+        total++;
       });
     }
 
-    // Note: slicing here is done on first dimension only. If one slice they are many pools with >2 tokens we can still reach error.
-    // Won't address as case didn't show up and dex/protocol is deprecated.
-    const results = (
-      await Promise.all(
-        sliceCalls({
-          inputArray: poolWithTokensAddresses,
-          sliceLength: BALANCER_POOL_MULTICALL_SHARD_SIZE,
-          execute: (slicedPoolWithTokensAddresses: string[][]) => {
-            const total = slicedPoolWithTokensAddresses.reduce(
-              (acc, pool) => acc + pool.length,
-              0,
-            );
-
-            return this.balancerMulticall.methods
-              .getPoolInfo(slicedPoolWithTokensAddresses, total)
-              .call({}, blockNumber);
-          },
-        }),
-      )
-    ).flat();
+    let results = await this.balancerMulticall.methods
+      .getPoolInfo(addresses, total)
+      .call({}, blockNumber);
 
     let j = 0;
     let onChainPools: PoolStates = { pools: [] };
