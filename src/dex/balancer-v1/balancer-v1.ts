@@ -477,18 +477,10 @@ export class BalancerV1
   ): Promise<PoolPrices<BalancerV1Data> | null> {
     if (!pool) return null;
     try {
-      let unit = await this.eventPools.getPoolPrices(pool, side, unitVolume);
-
-      const _width = Math.floor((amounts.length - 1) / BALANCER_CHUNKS);
-      const _amounts = Array.from(Array(BALANCER_CHUNKS).keys()).map(
-        i => amounts[(i + 1) * _width],
+      const unit = await this.eventPools.getPoolPrices(pool, side, unitVolume);
+      const prices = await Promise.all(
+        amounts.map(a => this.eventPools.getPoolPrices(pool, side, a)),
       );
-
-      const _prices = await Promise.all(
-        _amounts.map(a => this.eventPools.getPoolPrices(pool, side, a)),
-      );
-
-      const prices = interpolate(_amounts, _prices, amounts, side);
 
       return {
         prices,
