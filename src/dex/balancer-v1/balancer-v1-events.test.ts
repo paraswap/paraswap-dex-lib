@@ -2,8 +2,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { BalancerV1, BalancerV1EventPool } from './balancer-v1';
-import { BalancerV1Config, SUBGRAPH_TIMEOUT } from './config';
-import { Network } from '../../constants';
+import { BalancerV1Config } from './config';
+import { Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import axios from 'axios';

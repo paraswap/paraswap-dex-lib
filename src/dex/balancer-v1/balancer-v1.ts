@@ -15,12 +15,11 @@ import {
   Token,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network, MAX_UINT, SUBGRAPH_TIMEOUT } from '../../constants';
+import { SwapSide, Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   getDexKeysWithNetwork,
   isETHAddress,
-  interpolate,
   biginterify,
   sliceCalls,
 } from '../../utils';
@@ -55,6 +54,7 @@ import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
 import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
 import { parsePoolPairData, updatePoolState } from './sor-overload';
+import { BI_MAX_UINT } from '../../bigint-constants';
 
 const balancerV1PoolIface = new Interface(BalancerV1PoolABI);
 
@@ -273,9 +273,9 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async getPoolPrices(pool: OldPool, side: SwapSide, amount: bigint) {
     if (
       side === SwapSide.BUY &&
-      amount * BigInt(2) > BigInt(pool.balanceOut.toFixed(0))
+      amount * 2n > BigInt(pool.balanceOut.toFixed(0))
     ) {
-      return BigInt(MAX_UINT);
+      return BI_MAX_UINT;
     }
     const _amount = new BigNumber(amount.toString());
     const res =
@@ -657,7 +657,7 @@ export class BalancerV1
       const _srcAmount = BigInt(srcAmount);
       const totalInParam = swaps.reduce(
         (acc, swap) => acc + BigInt(swap.tokenInParam),
-        BigInt(0),
+        0n,
       );
       swaps.forEach(swap => {
         swap.tokenInParam = (

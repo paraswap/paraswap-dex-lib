@@ -9,7 +9,7 @@ import { TransactionBuilder } from '../transaction-builder';
 import { PricingHelper } from '../pricing-helper';
 import { DexAdapterService } from '../dex';
 import { Address, Token, OptimalRate, TxObject } from '../types';
-import { SwapSide, NULL_ADDRESS, ContractMethod, MAX_UINT } from '../constants';
+import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
 import { BI_MAX_UINT } from '../bigint-constants';
 
