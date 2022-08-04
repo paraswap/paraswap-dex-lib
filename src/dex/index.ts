@@ -43,6 +43,7 @@ import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { Dystopia } from './uniswap-v2/dystopia/dystopia';
+import { SpiritSwapV2 } from './spirit-swap-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
@@ -66,6 +67,7 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
+  SpiritSwapV2,
 ];
 
 const Dexes = [
@@ -94,6 +96,7 @@ export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
   provider: Web3,
+  dexHelper?: IDexHelper,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -197,6 +200,9 @@ export class DexAdapterService {
         this.dexHelper.config.data.augustusAddress,
         this.network,
         this.dexHelper.web3Provider,
+        // Temporary addition before moving to dex-lib
+        // TODO: Remove this line after SpiritSwap migration
+        this.dexHelper,
       );
     }
 
