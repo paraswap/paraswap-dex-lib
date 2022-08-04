@@ -34,6 +34,8 @@ export const defaultMulticallAddress =
 
 export const POOL_FETCH_TIMEOUT = 5000;
 
+export const BALANCER_V1_POOL_BALANCES_MULTICALL_SLICE_SIZE = 500;
+
 export const BalancerV1Config: DexConfigMap<DexParams> = {
   BalancerV1: {
     [Network.MAINNET]: {

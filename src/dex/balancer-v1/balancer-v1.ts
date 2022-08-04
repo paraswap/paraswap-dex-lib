@@ -17,7 +17,12 @@ import {
 } from '../../types';
 import { SwapSide, Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, isETHAddress, biginterify } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  isETHAddress,
+  biginterify,
+  sliceCalls,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -41,11 +46,11 @@ import {
   poolUrls,
   POOL_FETCH_TIMEOUT,
   BALANCER_SWAP_GAS_COST,
+  BALANCER_V1_POOL_BALANCES_MULTICALL_SLICE_SIZE,
 } from './config';
 const BalancerV1PoolABI = require('../../abi/BalancerV1Pool.json');
 const BalancerV1ExchangeProxyABI = require('../../abi/BalancerV1ExchangeProxy.json');
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
-import { AxiosResponse } from 'axios';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
 import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
@@ -166,23 +171,40 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ): Promise<PoolStates> {
     if (pools.pools.length === 0) throw Error('There are no pools.');
 
-    let addresses: string[][] = [];
-    let total = 0;
+    const poolWithTokensAddresses: string[][] = [];
 
     for (let i = 0; i < pools.pools.length; i++) {
       let pool = pools.pools[i];
 
-      addresses.push([pool.id]);
-      total++;
+      poolWithTokensAddresses.push([pool.id]);
       pool.tokens.forEach(token => {
-        addresses[i].push(token.address);
-        total++;
+        poolWithTokensAddresses[i].push(token.address);
       });
     }
 
-    let results = await this.balancerMulticall.methods
-      .getPoolInfo(addresses, total)
-      .call({}, blockNumber);
+    // Note: slicing here is done on first dimension only. If one slice they are many pools with >2 tokens we can still reach error.
+    // Won't address as case didn't show up and dex/protocol is deprecated.
+    const poolTokensBalances = (
+      await Promise.all(
+        sliceCalls({
+          inputArray: poolWithTokensAddresses,
+          sliceLength: BALANCER_V1_POOL_BALANCES_MULTICALL_SLICE_SIZE,
+          execute: async (slicedPoolWithTokensAddresses: string[][]) => {
+            const totalTokensInPools = slicedPoolWithTokensAddresses.reduce(
+              (acc, pool) => acc + pool.length - 1, // skip pool addresses, multicall would just append extra zero. This doesn't play nice with sharded calls
+              0,
+            );
+
+            const slicedPoolTokensBalances =
+              await this.balancerMulticall.methods
+                .getPoolInfo(slicedPoolWithTokensAddresses, totalTokensInPools)
+                .call({}, blockNumber);
+
+            return slicedPoolTokensBalances;
+          },
+        }),
+      )
+    ).flat();
 
     let j = 0;
     let onChainPools: PoolStates = { pools: [] };
@@ -203,7 +225,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       };
 
       pools.pools[i].tokens.forEach(token => {
-        let bal = bmath.bnum(results[j]);
+        let bal = bmath.bnum(poolTokensBalances[j]);
         j++;
         p.tokens.push({
           address: token.address,
