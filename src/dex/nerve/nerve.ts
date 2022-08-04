@@ -125,7 +125,7 @@ export class Nerve
         let state = eventPool.getState(_blockNumber);
         if (!state || !state.isValid) {
           this.logger.info(
-            `State for ${this.dexKey} pool ${eventPool.name} is stale or invalid on block ${_blockNumber}. Generating new one`,
+            `State for ${this.dexKey} pool ${eventPool.name} on ${this.network} is stale or invalid on block ${_blockNumber}. Generating new one`,
           );
           const newState = await eventPool.generateState(_blockNumber);
           eventPool.setState(newState, _blockNumber);

@@ -2,7 +2,7 @@ import { Config, Address, Token } from './types';
 import { Network } from './constants';
 import { isETHAddress } from './utils';
 
-// Hardcoded and envionment values from which actual config is derived
+// Hardcoded and environment values from which actual config is derived
 type BaseConfig = {
   network: number;
   networkName: string;
@@ -134,7 +134,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
     adapterAddresses: {
-      FantomAdapter01: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
+      FantomAdapter01: '0x564B759c1A7976476649452e804A13B963610065',
       FantomBuyAdapter: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
     },
     uniswapV2ExchangeRouterAddress:
