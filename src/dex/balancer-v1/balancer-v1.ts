@@ -174,7 +174,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const poolWithTokensAddresses: string[][] = [];
 
     for (let i = 0; i < pools.pools.length; i++) {
-      let pool = pools.pools[i];
+      const pool = pools.pools[i];
 
       poolWithTokensAddresses.push([pool.id]);
       pool.tokens.forEach(token => {
@@ -207,12 +207,12 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     ).flat();
 
     let j = 0;
-    let onChainPools: PoolStates = { pools: [] };
+    const onChainPools: PoolStates = { pools: [] };
 
     for (let i = 0; i < pools.pools.length; i++) {
-      let tokens: SORToken[] = [];
+      const tokens: SORToken[] = [];
 
-      let p: PoolState = {
+      const p: PoolState = {
         id: pools.pools[i].id,
         swapFee: biginterify(
           bmath.scale(bmath.bnum(pools.pools[i].swapFee.toString()), 18),
@@ -225,7 +225,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       };
 
       pools.pools[i].tokens.forEach(token => {
-        let bal = bmath.bnum(poolTokensBalances[j]);
+        const bal = bmath.bnum(poolTokensBalances[j]);
         j++;
         p.tokens.push({
           address: token.address,

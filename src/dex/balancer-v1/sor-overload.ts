@@ -14,11 +14,11 @@ export async function updatePoolState(
 ): Promise<void> {
   if (pools.length === 0) throw Error('There are no pools.');
 
-  let addresses: string[][] = [];
+  const addresses: string[][] = [];
   let total = 0;
 
   for (let i = 0; i < pools.length; i++) {
-    let pool = pools[i];
+    const pool = pools[i];
 
     addresses.push([pool.id]);
     total++;
@@ -28,7 +28,7 @@ export async function updatePoolState(
     });
   }
 
-  let results = await balancerMulti.methods
+  const results = await balancerMulti.methods
     .getPoolInfo(addresses, total)
     .call({}, blockNumber);
 
@@ -50,16 +50,16 @@ export function parsePoolPairData(
   tokenIn: string,
   tokenOut: string,
 ): OldPool | null {
-  let tI = p.tokens.find(
+  const tI = p.tokens.find(
     t => t.address.toLowerCase() === tokenIn.toLowerCase(),
   );
-  let tO = p.tokens.find(
+  const tO = p.tokens.find(
     t => t.address.toLowerCase() === tokenOut.toLowerCase(),
   );
 
   if (!tI || !tO) return null;
 
-  let poolPairData = {
+  const poolPairData = {
     id: p.id,
     tokenIn: tokenIn,
     tokenOut: tokenOut,
