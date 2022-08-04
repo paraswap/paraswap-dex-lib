@@ -46,6 +46,7 @@ import { SpiritSwapV2 } from './spirit-swap-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
+import { Velodrome } from './velodrome';
 
 const LegacyDexes = [
   Curve,
@@ -68,6 +69,7 @@ const LegacyDexes = [
   Lido,
   AugustusRFQOrder,
   SpiritSwapV2,
+  Velodrome,
 ];
 
 const Dexes = [
