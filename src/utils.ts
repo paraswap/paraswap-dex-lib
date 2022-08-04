@@ -4,7 +4,6 @@ import { Address, Token, DexConfigMap } from './types';
 import _ from 'lodash';
 import BigNumber from 'bignumber.js';
 import { SwapSide } from 'paraswap-core';
-import { BN_10, BN_POWS } from './bignumber-constants';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();

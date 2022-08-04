@@ -80,14 +80,6 @@ const coder = new AbiCoder();
 const SETUP_RETRY_TIMEOUT = 5 * 1000;
 
 export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
-  static dexKeys = [
-    'curve',
-    'curve3',
-    'swerve',
-    'acryptos',
-    'beltfi',
-    'ellipsis',
-  ];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
@@ -136,6 +128,12 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           ? poolConf.baseToken.toLowerCase()
           : poolConf.baseToken,
         liquidityUSD: poolConf.liquidityUSD,
+        trackCoins: poolConf.trackCoins,
+        useLending: poolConf.useLending,
+        precisionMul: poolConf.precisionMul,
+        tokenAddress: poolConf.tokenAddress
+          ? poolConf.tokenAddress.toLowerCase()
+          : undefined,
       };
 
       return acc;
@@ -163,7 +161,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
     this.exchangeRouterInterface = new Interface(CurveABI as JsonFragment[]);
 
-    this.logger = dexHelper.getLogger('Curve');
+    this.logger = dexHelper.getLogger(dexKey);
 
     this.poolInterface = new Interface(StableSwapBBTC as any);
     this.factoryInterface = new Interface(FactoryRegistryABI as any);

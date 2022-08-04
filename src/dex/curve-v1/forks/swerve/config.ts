@@ -31,11 +31,11 @@ export const SwerveConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  [Network.BSC]: {
+  [Network.MAINNET]: {
     [SwapSide.SELL]: [
       {
-        name: 'BscAdapter01',
-        index: 2,
+        name: 'Adapter01',
+        index: 3,
       },
     ],
   },

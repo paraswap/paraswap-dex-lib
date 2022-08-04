@@ -5,7 +5,6 @@ import StableSwap3Pool from '../../../abi/curve/StableSwap3Pool.json';
 import { CurvePool, PoolState } from './curve-pool';
 import { IDexHelper } from '../../../dex-helper';
 import { BN_0 } from '../../../bignumber-constants';
-import { Logger } from 'log4js';
 import { bignumberify } from '../../../utils';
 import { stringify } from 'querystring';
 import BigNumber from 'bignumber.js';

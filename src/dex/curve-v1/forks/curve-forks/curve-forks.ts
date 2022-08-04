@@ -48,12 +48,19 @@ export class CurveFork extends CurveV1 {
     //   )
     // }
     if (
-      !config.tokenAddress ||
-      !config.precisionMul ||
-      !config.useLending ||
-      !config.trackCoins
+      config.tokenAddress === undefined ||
+      config.precisionMul === undefined ||
+      config.useLending === undefined ||
+      config.trackCoins === undefined
     ) {
-      throw new Error(`missing parameters for pool ${config}`);
+      console.log(this.pools);
+      console.log(
+        config.tokenAddress,
+        config.precisionMul,
+        config.useLending,
+        config.trackCoins,
+      );
+      throw new Error(`missing parameters for pool`);
     }
     return new ThreePool(
       'Acryptos_Pool',
@@ -64,7 +71,7 @@ export class CurveFork extends CurveV1 {
       config.trackCoins,
       StableSwap3Pool,
       config.coins.length,
-      config.precisionMul.map(bignumberify),
+      config.precisionMul!.map(bignumberify),
       config.useLending,
       config.coins,
     );

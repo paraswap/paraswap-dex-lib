@@ -1,7 +1,7 @@
 import { bignumberify, getDexKeysWithNetwork } from '../../../../utils';
 import { CurveV1 } from '../../curve-v1';
 import { CurvePool } from '../../pools/curve-pool';
-import StableSwap3Pool from '../../../../abi/curve/StableSwap3Pool.json';
+import StableSwapSUSD from '../../../../abi/curve/StableSwapSUSD.json';
 import { Network } from '../../../../constants';
 import { IDexHelper } from '../../../../dex-helper';
 import { Adapters, SwerveConfig } from './config';
@@ -10,6 +10,7 @@ import { SUSDPool } from '../../pools/sUSDpool';
 const pool = 'swerve';
 const swervePoolAddress =
   '0x329239599afB305DA0A2eC69c58F8a6697F9F88d'.toLowerCase();
+
 const tokenAddress = '0x77C6E4a580c0dCE4E5c7a17d0bc077188a83A059';
 const N_COINS: number = 4;
 const PRECISION_MUL = ['1', '1000000000000', '1000000000000', '1'].map(
@@ -33,7 +34,7 @@ export class SwervePool extends SUSDPool {
       swervePoolAddress,
       tokenAddress,
       trackCoins,
-      StableSwap3Pool,
+      StableSwapSUSD,
       N_COINS,
       PRECISION_MUL,
       USE_LENDING,
