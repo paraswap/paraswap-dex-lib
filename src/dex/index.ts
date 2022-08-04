@@ -1,6 +1,4 @@
-import { Provider } from '@ethersproject/providers';
 import { Address, UnoptimizedRate } from '../types';
-import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
@@ -33,7 +31,7 @@ import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Nerve } from './nerve/nerve';
 import { IDexHelper } from '../dex-helper';
-import { SwapSide, Network } from '../constants';
+import { SwapSide } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
@@ -48,9 +46,10 @@ import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
 import { MultiWrapper } from '../lib/multi-wrapper';
 import { CurveV1 } from './curve-v1/curve-v1';
+import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
+import { Swerve } from './curve-v1/forks/swerve/swerve';
 
 const LegacyDexes = [
-  // Curve,
   CurveV2,
   StablePool,
   Smoothy,
@@ -91,6 +90,8 @@ const Dexes = [
   Dystopia,
   ParaSwapLimitOrders,
   CurveV1,
+  CurveFork,
+  Swerve,
 ];
 
 export type LegacyDexConstructor = new (

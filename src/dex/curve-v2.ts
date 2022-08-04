@@ -1,5 +1,4 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -10,8 +9,16 @@ import {
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
-import type { CurveData } from './curve';
 import Web3 from 'web3';
+
+type CurveData = {
+  exchange: string;
+  i: string;
+  j: string;
+  deadline: string;
+  underlyingSwap: boolean;
+  v3: boolean;
+};
 
 type CurveV2Data = Omit<CurveData, 'deadline' | 'v3'>;
 

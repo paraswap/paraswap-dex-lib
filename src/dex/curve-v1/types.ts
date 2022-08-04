@@ -19,6 +19,10 @@ export type PoolConfig = {
   isMetapool: boolean;
   baseToken?: string;
   liquidityUSD?: number;
+  precisionMul?: string[];
+  tokenAddress?: string;
+  trackCoins?: boolean;
+  useLending?: boolean[];
 };
 
 export type TokenWithReasonableVolume = Token & {
@@ -28,7 +32,12 @@ export type TokenWithReasonableVolume = Token & {
 
 export type DexParams = {
   baseTokens: Record<string, TokenWithReasonableVolume>;
-  factoryAddress: string;
+  factoryAddress: string | null;
   eventSupportedPools: string[];
   pools: Record<string, PoolConfig>;
 };
+
+export enum CurveSwapFunctions {
+  exchange = 'exchange',
+  exchange_underlying = 'exchange_underlying',
+}

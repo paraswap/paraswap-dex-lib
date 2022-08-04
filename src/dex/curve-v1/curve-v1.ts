@@ -2,11 +2,7 @@ import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
 import BigNumber from 'bignumber.js';
 import CurveABI from '../../abi/Curve.json';
 import { Adapters, CurveV1Config } from './config';
-// import { MutexStore } from '../../mutex-store';
-//
-// import { Token } from '../../../models/token';
-// import { Connector } from '../connector';
-// import { providerManager } from '../../web3-provider';
+
 import {
   AdapterExchangeParam,
   Address,
@@ -16,7 +12,6 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-// import { NULL_ADDRESS, SwapSide } from '../../../../constants';
 import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
 import StableSwapBBTC from '../../abi/curve/StableSwapBBTC.json';
 import FactoryRegistryABI from '../../abi/curve/FactoryRegistry.json';
@@ -66,8 +61,12 @@ import {
 } from '../../lib/decoders';
 import { getManyPoolStates } from './pools/getstate-multicall';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
-import { CurveSwapFunctions } from '../curve';
-import { PoolConfig, CurveV1Data, TokenWithReasonableVolume } from './types';
+import {
+  PoolConfig,
+  CurveV1Data,
+  TokenWithReasonableVolume,
+  CurveSwapFunctions,
+} from './types';
 import { ETHER_ADDRESS } from 'paraswap';
 import { erc20Iface } from '../../lib/utils-interfaces';
 
@@ -104,7 +103,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
   protected pools: Record<string, PoolConfig>;
   protected eventSupportedPools: string[];
-  protected factoryAddress: string;
+  protected factoryAddress: string | null;
   protected baseTokens: Record<string, TokenWithReasonableVolume>;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -145,7 +144,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     this.eventSupportedPools = dexConfig.eventSupportedPools.map(addr =>
       addr.toLowerCase(),
     );
-    this.factoryAddress = dexConfig.factoryAddress.toLowerCase();
+
+    this.factoryAddress = dexConfig.factoryAddress
+      ? dexConfig.factoryAddress.toLowerCase()
+      : null;
 
     this.baseTokens = Object.keys(dexConfig.baseTokens).reduce<
       Record<string, TokenWithReasonableVolume>
@@ -168,6 +170,13 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   }
 
   async fetchFactoryPools() {
+    if (!this.factoryAddress) {
+      this.logger.warn(
+        `[OK] try to featch factory pools without factoryAddress ${this.dexKey}`,
+      );
+      return;
+    }
+
     const results = await this.dexHelper.multiWrapper!.tryAggregate(true, [
       {
         target: this.factoryAddress,

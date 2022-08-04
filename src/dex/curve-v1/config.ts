@@ -1276,16 +1276,80 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
       },
     },
   },
+  Beltfi: {
+    [Network.BSC]: {
+      baseTokens: {
+        '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC': {
+          address: '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC',
+          decimals: 18,
+          reasonableVolume: 1000000000000000000n,
+        },
+      },
+      factoryAddress: null,
+      eventSupportedPools: [],
+      pools: {
+        StableSwapB: {
+          underlying: [
+            '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3',
+            '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+            '0x55d398326f99059fF775485246999027B3197955',
+            '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+          ],
+          coins: [
+            '0xFDb22e3bF935C1C94254F050BBe093563f533534',
+            '0x08BED6851CADc4EFc91147E3Ca63C39406B31a2D',
+            '0x56A9452024AE2dEdB01e1179AcB1c152d50C0145',
+            '0x7c8Dd1e39cD8142414f24f0bA80638b2E2fa5234',
+          ],
+          address: '0xF16D312d119c13dD27fD0dC814b0bCdcaAa62dfD',
+          name: 'StableSwapB',
+          type: 1,
+          version: 3,
+          isLending: true,
+          isMetapool: false,
+          baseToken: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+        },
+        '4Belt': {
+          underlying: [
+            '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3', // dai
+            '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', // usdc
+            '0x55d398326f99059fF775485246999027B3197955', // usdt
+            '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', // busd
+          ],
+          coins: [
+            '0x9a86fc508a423ae8a243445dba7ed5364118ab1d', // beltDAI
+            '0x7a59bf07d529a5fdbab67d597d63d7d5a83e61e5', // bMultiUSDC
+            '0x55e1b1e49b969c018f2722445cd2dd9818ddcc25', // beltUSDT
+            '0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0', // beltBUSD
+          ],
+          address: '0xAEA4f7dcd172997947809CE6F12018a6D5c1E8b6',
+          name: '4Belt',
+          type: 1,
+          version: 3,
+          isLending: true,
+          isMetapool: false,
+          baseToken: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+        },
+      },
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
   [Network.MAINNET]: {
     [SwapSide.SELL]: [
       {
         name: 'Adapter01',
         index: 3,
+      },
+    ],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      // use for beltfi
+      {
+        name: 'BscAdapter01',
+        index: 2,
       },
     ],
   },
