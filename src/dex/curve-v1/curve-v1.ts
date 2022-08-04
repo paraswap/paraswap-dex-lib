@@ -48,7 +48,12 @@ import { USTPool, address as USTPoolAddress } from './pools/ustpool';
 import { SLINKPool, address as SLINKPoolAddress } from './pools/sLinkpool';
 
 import * as _ from 'lodash';
-import { getBigIntPow, interpolate, Utils } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  Utils,
+} from '../../utils';
 import { BN_0, getBigNumberPow } from '../../bignumber-constants';
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
@@ -101,6 +106,9 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   protected eventSupportedPools: string[];
   protected factoryAddress: string;
   protected baseTokens: Record<string, TokenWithReasonableVolume>;
+
+  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
+    getDexKeysWithNetwork(CurveV1Config);
 
   constructor(
     protected network: Network,

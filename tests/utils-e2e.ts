@@ -169,7 +169,6 @@ export async function testE2E(
   const amount = BigInt(_amount);
   const ts = new TenderlySimulation(network);
   await ts.setup();
-
   if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
     const allowanceTx = await ts.simulate(
       allowTokenTransferProxyParams(srcToken.address, senderAddress, network),

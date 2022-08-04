@@ -47,9 +47,10 @@ import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orde
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
 import { MultiWrapper } from '../lib/multi-wrapper';
+import { CurveV1 } from './curve-v1/curve-v1';
 
 const LegacyDexes = [
-  Curve,
+  // Curve,
   CurveV2,
   StablePool,
   Smoothy,
@@ -89,6 +90,7 @@ const Dexes = [
   UniswapV3,
   Dystopia,
   ParaSwapLimitOrders,
+  CurveV1,
 ];
 
 export type LegacyDexConstructor = new (
