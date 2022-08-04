@@ -46,6 +46,7 @@ import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
+import { MultiWrapper } from '../lib/multi-wrapper';
 
 const LegacyDexes = [
   Curve,
@@ -125,6 +126,10 @@ export class DexAdapterService {
     protected sellAdapters: Adapters = {},
     protected buyAdapters: Adapters = {},
   ) {
+    dexHelper.multiWrapper = new MultiWrapper(
+      dexHelper.multiContract,
+      dexHelper.getLogger('MultiWrapper'),
+    );
     LegacyDexes.forEach(DexAdapter => {
       DexAdapter.dexKeys.forEach(key => {
         this.dexToKeyMap[key.toLowerCase()] = DexAdapter;

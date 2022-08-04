@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "lib": ["es2019"],
+    "lib": ["es2020"],
     "module": "commonjs",
     "noImplicitAny": true,
     "outDir": "build",

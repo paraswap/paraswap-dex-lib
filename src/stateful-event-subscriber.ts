@@ -15,7 +15,7 @@ export abstract class StatefulEventSubscriber<State>
   protected state: DeepReadonly<State> | null = null;
   protected stateBlockNumber: number = 0;
 
-  protected addressesSubscribed: string[] = [];
+  public addressesSubscribed: string[] = [];
 
   //Derived classes should use setState() to record a new entry
   protected stateHistory: { [blockNumber: number]: DeepReadonly<State> } = {};
