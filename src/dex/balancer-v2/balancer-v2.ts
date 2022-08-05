@@ -141,7 +141,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
   };
 
-  tokensToPools: Record<string, BalancerV2PoolState[]> = {};
+  allPools: BalancerV2PoolState[] = [];
 
   vaultDecoder: (log: Log) => any;
 
@@ -254,16 +254,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         this.logger,
         subgraphBasePools[poolAddress],
       );
-      Object.keys(_state.tokens).forEach(_token => {
-        const token = _token.toLowerCase();
-        let pools = this.tokensToPools[token];
-        if (!pools) {
-          this.tokensToPools[token] = [];
-          pools = this.tokensToPools[token];
-        }
-        pool.setState(_state, blockNumber);
-        pools.push(pool);
-      });
+
+      pool.setState(_state, blockNumber);
+      this.allPools.push(pool);
 
       acc[poolAddress] = pool;
       return acc;
@@ -364,21 +357,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     const _amounts = [unitVolume, ...amounts.slice(1)];
 
-    const poolPairData = this.pools[pool.poolType].parsePoolPairData(
+    const _pool = this.pools[pool.poolType];
+
+    const poolPairData = _pool.parsePoolPairData(
       pool,
       poolState,
       from.address,
       to.address,
     );
 
-    if (
-      !this.pools[pool.poolType].checkBalance(
-        amounts,
-        unitVolume,
-        side,
-        poolPairData as any,
-      )
-    )
+    if (!_pool.checkBalance(amounts, unitVolume, side, poolPairData as any))
       return null;
 
     const _prices = this.pools[pool.poolType].onSell(
@@ -470,15 +458,17 @@ export class BalancerV2
   }
 
   getPools(from: Token, to: Token): BalancerV2PoolState[] {
-    const fromPools = this.eventPools.tokensToPools[
-      from.address.toLowerCase()
-    ].filter(pool =>
-      pool.info.tokens.some(
-        t => t.address.toLowerCase() === to.address.toLowerCase(),
-      ),
-    );
-
-    return [...fromPools].slice(0, 10);
+    return this.eventPools.allPools
+      .filter(
+        p =>
+          p.info.tokens.some(
+            token => token.address.toLowerCase() === from.address.toLowerCase(),
+          ) &&
+          p.info.tokens.some(
+            token => token.address.toLowerCase() === to.address.toLowerCase(),
+          ),
+      )
+      .slice(0, 10);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
