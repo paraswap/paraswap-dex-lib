@@ -12,7 +12,8 @@ export const VelodromConfig: Record<number, DexParams> = {
   [Network.OPTIMISM]: {
     subgraphURL: '', // none
     factoryAddress: '0x25cbddb98b35ab1ff77413456b31ec81a6b6b746',
-    router: '0x', // TODO replace // ParaSwap-compatible Router with stable pools support
+    // ParaSwap-compatible Router with stable pools support
+    router: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     initCode:
       '0xc1ac28b1c4ebe53c0cff67bab5878c4eb68759bb1e9f73977cd266b247d149f0',
     stableFee: 2,
