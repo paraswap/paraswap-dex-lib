@@ -53,17 +53,11 @@ export class CurveFork extends CurveV1 {
       config.useLending === undefined ||
       config.trackCoins === undefined
     ) {
-      console.log(this.pools);
-      console.log(
-        config.tokenAddress,
-        config.precisionMul,
-        config.useLending,
-        config.trackCoins,
-      );
       throw new Error(`missing parameters for pool`);
     }
+
     return new ThreePool(
-      'Acryptos_Pool',
+      this.dexKey,
       this.dexHelper,
       config.name,
       config.address,

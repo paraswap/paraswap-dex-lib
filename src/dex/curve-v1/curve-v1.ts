@@ -12,7 +12,7 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
+import { CACHE_PREFIX, Network, NULL_ADDRESS, SwapSide } from '../../constants';
 import StableSwapBBTC from '../../abi/curve/StableSwapBBTC.json';
 import FactoryRegistryABI from '../../abi/curve/FactoryRegistry.json';
 import { CurvePool } from './pools/curve-pool';
@@ -412,7 +412,16 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     if (!blockNumber) return unavailablePools;
     let poolsToFetch: (CurvePool | CurveMetapool)[] = [];
     for (const poolAddress of poolAddresses) {
+      const key =
+        `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolAddress}`.toLowerCase();
+
       // Check if the pool is already tracked
+      await this.dexHelper.cache.rawsetex(
+        key,
+        JSON.stringify({
+          address: poolAddress,
+        }),
+      );
       let pool = await this.getPoolByAddress(poolAddress);
       // If the pool is not stracked add it to the list of pools to fetch
       if (!pool) {
@@ -446,6 +455,23 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       this.logger.error(`Error_batchCatchUpPools`, e);
       throw e;
     }
+  }
+
+  async addMasterPool(poolKey: string) {
+    const key =
+      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
+    const poolAddressJson = await this.dexHelper.cache.rawget(key);
+    if (!poolAddressJson) {
+      this.logger.warn(`did not find poolconfig with ${key}`);
+      return;
+    }
+
+    this.logger.info(`starting to listen to new pool: ${key}`);
+    const poolAddress = JSON.parse(poolAddressJson).address;
+    this.batchCatchUpPools(
+      [poolAddress],
+      this.dexHelper.blockManager.getLatestBlockNumber(),
+    );
   }
 
   async getRatesEventPools(

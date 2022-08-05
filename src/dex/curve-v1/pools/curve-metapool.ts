@@ -10,11 +10,9 @@ import { ThreePool } from './3pool';
 import { BlockHeader } from 'web3-eth';
 // import { getManyPoolStates } from './getstate-multicall';
 
-import { MultiCallParams } from '../../../lib/multi-wrapper';
 import { BN_0, BN_600, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { uin256DecodeToBigNumber } from '../../../lib/decoders';
 import { bignumberify } from '../../../utils';
 import { stringify } from 'querystring';
 import { getManyPoolStates } from './getstate-multicall';
@@ -84,7 +82,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     public COINS: Address[],
     Basepool: new (name: string, dexHelper: IDexHelper) => ThreePool,
   ) {
-    super(parentName + ' ' + pool, dexHelper, logger);
+    super(`${parentName}_${pool}_${address}`, dexHelper, logger);
     this.MAX_COIN = N_COINS - 1;
 
     this.basepool = new Basepool(this.name, dexHelper);
