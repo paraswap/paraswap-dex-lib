@@ -10,7 +10,7 @@ const dexKey = 'Velodrome';
 
 export const VelodromConfig: Record<number, DexParams> = {
   [Network.OPTIMISM]: {
-    subgraphURL: '', // none
+    subgraphURL: 'https://api.thegraph.com/subgraphs/name/dmihal/velodrome',
     factoryAddress: '0x25cbddb98b35ab1ff77413456b31ec81a6b6b746',
     // ParaSwap-compatible Router with stable pools support
     router: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
