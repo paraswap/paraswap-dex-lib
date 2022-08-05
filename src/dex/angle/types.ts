@@ -1,8 +1,15 @@
 import { Address, Token } from '../../types';
 
 export type PoolState = {
-  collateralMaps: {
-    [token: string]: CollateralMap;
+  collateralRatio?: bigint;
+  pools: {
+    [token: string]: {
+      collateralMap: CollateralMap;
+      totalHedgeAmount?: bigint;
+      oracleRate?: bigint;
+      oracleRateLower?: bigint;
+      oracleRateUpper?: bigint;
+    };
   };
 };
 

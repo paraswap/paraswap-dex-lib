@@ -100,7 +100,7 @@ describe('Angle', function () {
     await angle.initializePricing(blockNumber);
   });
 
-  it.only('getPoolIdentifiers and getPricesVolume SELL', async function () {
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const pools = await angle.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -137,6 +137,20 @@ describe('Angle', function () {
       poolPrices![0].prices,
       angle.tokens[TokenA.address.toLowerCase()].poolManager,
     );
+  });
+
+  it.only('update State', async function () {
+    const pools = await angle.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await angle.getState();
   });
 
   // it('getPoolIdentifiers and getPricesVolume BUY', async function () {

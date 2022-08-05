@@ -18,13 +18,18 @@ import {
   CollateralMap,
   PoolState,
 } from './types';
+import flattenDeep from 'lodash/flattenDeep';
+
 import { SimpleExchange } from '../simple-exchange';
 import { AngleConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import { computeMint, computeBurn } from './helpers';
+import { AngleEventPool } from './angle-pool';
+
 import abiPoolManager from '../../abi/angle/pool-manager.json';
 import abiStableMaster from '../../abi/angle/stablemaster.json';
 import abiPerpetualManager from '../../abi/angle/perpetual-manager.json';
+import util from 'util';
 
 export class Angle extends SimpleExchange implements IDex<AngleData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -44,9 +49,10 @@ export class Angle extends SimpleExchange implements IDex<AngleData> {
       'function readUpper() external view returns (uint256 rate)',
     ]),
   };
+
   tokens: Record<Address, AngleToken>;
 
-  latestState: PoolState = { collateralMaps: {} };
+  latestState: PoolState = { pools: {} };
 
   constructor(
     protected network: Network,
@@ -75,36 +81,114 @@ export class Angle extends SimpleExchange implements IDex<AngleData> {
   }
 
   async getState(blockNumber: number | 'latest' = 'latest') {
+    let newState: PoolState = { pools: {} };
+
     const collaterals = Object.values(this.config.agEUR.collaterals);
 
-    for (let collateral of collaterals) {
-      const stableMasterData = await this.dexHelper.multiContract.methods
-        .aggregate([
-          {
-            target: this.config.agEUR.stableMaster,
-            callData: this.interfaces.stablemaster.encodeFunctionData(
-              'collateralMap',
-              [collateral.poolManager],
-            ),
-          },
-          {
-            target: this.config.agEUR.stableMaster,
-            callData: this.interfaces.stablemaster.encodeFunctionData(
-              'getCollateralRatio',
-              [],
-            ),
-          },
-        ])
-        .call({}, blockNumber);
+    const collateralMaps = collaterals.map(collateral => {
+      return {
+        target: this.config.agEUR.stableMaster,
+        callData: this.interfaces.stablemaster.encodeFunctionData(
+          'collateralMap',
+          [collateral.poolManager],
+        ),
+      };
+    });
 
+    const stableMasterData = await this.dexHelper.multiContract.methods
+      .aggregate([
+        {
+          target: this.config.agEUR.stableMaster,
+          callData: this.interfaces.stablemaster.encodeFunctionData(
+            'getCollateralRatio',
+            [],
+          ),
+        },
+        ...collateralMaps,
+      ])
+      .call({}, blockNumber);
+
+    const collateralRatio = this.interfaces.stablemaster
+      .decodeFunctionResult(
+        'getCollateralRatio',
+        stableMasterData.returnData[0],
+      )[0]
+      .toBigInt() as bigint;
+
+    newState.collateralRatio = collateralRatio;
+
+    for (let i = 1; i < stableMasterData.returnData.length; i++) {
       const collateralMap = this.interfaces.stablemaster.decodeFunctionResult(
         'collateralMap',
-        stableMasterData.returnData[0],
-      )[0] as CollateralMap;
+        stableMasterData.returnData[i],
+      ) as unknown as CollateralMap;
 
-      this.latestState.collateralMaps[collateral.address.toLowerCase()] =
-        collateralMap;
+      newState.pools[collaterals[i - 1].poolManager.toLowerCase()] = {
+        collateralMap,
+      };
     }
+
+    const oracleCallData = Object.values(newState.pools).map(pool => {
+      const collateralMap = pool.collateralMap;
+      return [
+        {
+          target: collateralMap.perpetualManager,
+          callData: this.interfaces.perpetualmanager.encodeFunctionData(
+            'totalHedgeAmount',
+            [],
+          ),
+        },
+        {
+          target: collateralMap.oracle,
+          callData: this.interfaces.oracle.encodeFunctionData('read', []),
+        },
+        {
+          target: collateralMap.oracle,
+          callData: this.interfaces.oracle.encodeFunctionData('readLower', []),
+        },
+        {
+          target: collateralMap.oracle,
+          callData: this.interfaces.oracle.encodeFunctionData('readUpper', []),
+        },
+      ];
+    });
+
+    const oracleData = await this.dexHelper.multiContract.methods
+      .aggregate(flattenDeep(oracleCallData))
+      .call({}, blockNumber);
+
+    // we get elements 4 by 4 (because we fetch 4 values)
+    for (let i = 0; i < Object.values(newState.pools).length; i++) {
+      const start = i * 4;
+
+      const totalHedgeAmount = this.interfaces.perpetualmanager
+        .decodeFunctionResult(
+          'totalHedgeAmount',
+          oracleData.returnData[start],
+        )[0]
+        .toBigInt() as bigint;
+      const oracleRate = this.interfaces.oracle
+        .decodeFunctionResult('read', oracleData.returnData[start + 1])[0]
+        .toBigInt() as bigint;
+      const oracleRateLower = this.interfaces.oracle
+        .decodeFunctionResult('readLower', oracleData.returnData[start + 2])[0]
+        .toBigInt() as bigint;
+      const oracleRateUpper = this.interfaces.oracle
+        .decodeFunctionResult('readUpper', oracleData.returnData[start + 3])[0]
+        .toBigInt() as bigint;
+
+      newState.pools[
+        collaterals[i].poolManager.toLowerCase()
+      ].totalHedgeAmount = totalHedgeAmount;
+      newState.pools[collaterals[i].poolManager.toLowerCase()].oracleRate =
+        oracleRate;
+      newState.pools[collaterals[i].poolManager.toLowerCase()].oracleRateLower =
+        oracleRateLower;
+      newState.pools[collaterals[i].poolManager.toLowerCase()].oracleRateUpper =
+        oracleRateUpper;
+    }
+
+    this.latestState = newState;
   }
 
   async initializePricing(blockNumber: number) {
@@ -176,72 +260,20 @@ export class Angle extends SimpleExchange implements IDex<AngleData> {
     const poolManager =
       type === 'mint' ? srcToken.poolManager : destToken.poolManager;
 
-    const stableMasterData = await this.dexHelper.multiContract.methods
-      .aggregate([
-        {
-          target: this.config.agEUR.stableMaster,
-          callData: this.interfaces.stablemaster.encodeFunctionData(
-            'collateralMap',
-            [poolManager],
-          ),
-        },
-        {
-          target: this.config.agEUR.stableMaster,
-          callData: this.interfaces.stablemaster.encodeFunctionData(
-            'getCollateralRatio',
-            [],
-          ),
-        },
-      ])
-      .call({}, blockNumber);
+    const collateralMap = this.latestState.pools[poolManager].collateralMap;
+    const collateralRatio = this.latestState.collateralRatio;
 
-    const collateralMap = this.interfaces.stablemaster.decodeFunctionResult(
-      'collateralMap',
-      stableMasterData.returnData[0],
-    ) as unknown as CollateralMap;
+    const totalHedgeAmount =
+      this.latestState.pools[poolManager].totalHedgeAmount;
+    const oracleRate = this.latestState.pools[poolManager].oracleRate;
+    const oracleRateLower = this.latestState.pools[poolManager].oracleRateLower;
+    const oracleRateUpper = this.latestState.pools[poolManager].oracleRateUpper;
 
-    const collateralRatio = this.interfaces.stablemaster
-      .decodeFunctionResult(
-        'getCollateralRatio',
-        stableMasterData.returnData[1],
-      )[0]
-      .toBigInt() as bigint;
-
-    const nextData = await this.dexHelper.multiContract.methods
-      .aggregate([
-        {
-          target: collateralMap.perpetualManager,
-          callData: this.interfaces.perpetualmanager.encodeFunctionData(
-            'totalHedgeAmount',
-            [],
-          ),
-        },
-        {
-          target: collateralMap.oracle,
-          callData: this.interfaces.oracle.encodeFunctionData('read', []),
-        },
-        {
-          target: collateralMap.oracle,
-          callData: this.interfaces.oracle.encodeFunctionData('readLower', []),
-        },
-        {
-          target: collateralMap.oracle,
-          callData: this.interfaces.oracle.encodeFunctionData('readUpper', []),
-        },
-      ])
-      .call({}, blockNumber);
-    const totalHedgeAmount = this.interfaces.perpetualmanager
-      .decodeFunctionResult('totalHedgeAmount', nextData.returnData[0])[0]
-      .toBigInt() as bigint;
-    const oracleRate = this.interfaces.oracle
-      .decodeFunctionResult('read', nextData.returnData[1])[0]
-      .toBigInt() as bigint;
-    const oracleRateLower = this.interfaces.oracle
-      .decodeFunctionResult('readLower', nextData.returnData[2])[0]
-      .toBigInt() as bigint;
-    const oracleRateUpper = this.interfaces.oracle
-      .decodeFunctionResult('readUpper', nextData.returnData[3])[0]
-      .toBigInt() as bigint;
+    if (!collateralRatio) throw 'collateralRatio is undefined';
+    if (!totalHedgeAmount) throw 'totalHedgeAmount is undefined';
+    if (!oracleRate) throw 'oracleRate is undefined';
+    if (!oracleRateLower) throw 'oracleRateLower is undefined';
+    if (!oracleRateUpper) throw 'oracleRateUpper is undefined';
 
     let prices: bigint[] = [];
 
@@ -426,7 +458,7 @@ export class Angle extends SimpleExchange implements IDex<AngleData> {
             },
           ],
           liquidityUSD: Number(
-            this.latestState.collateralMaps[tokenAddress.toLowerCase()]
+            this.latestState.pools[tokenAddress.toLowerCase()].collateralMap
               .stocksUsers,
           ),
         };
@@ -447,7 +479,7 @@ export class Angle extends SimpleExchange implements IDex<AngleData> {
             },
           ],
           liquidityUSD: Number(
-            this.latestState.collateralMaps[tokenAddress.toLowerCase()]
+            this.latestState.pools[tokenAddress.toLowerCase()].collateralMap
               .stocksUsers,
           ),
         },
