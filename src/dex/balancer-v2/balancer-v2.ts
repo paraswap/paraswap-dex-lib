@@ -219,6 +219,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     );
 
     pools.forEach((pool, index) => {
+      if (states[index] === undefined) {
+        this.logger.error(`generateState undefined state ${states[index]}`);
+      }
       pool.setState(states[index], blockNumber);
     });
     return this.state!;
@@ -247,6 +250,13 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       Record<string, BalancerV2PoolState>
     >((acc, _poolAddress) => {
       const poolAddress = _poolAddress.toLowerCase();
+
+      const poolInfo = subgraphBasePools[poolAddress];
+
+      if (!this.isSupportedPool(poolInfo.poolType)) {
+        return acc;
+      }
+
       const _state = poolStates[poolAddress];
       const pool = new BalancerV2PoolState(
         `${this.parentName}_${poolAddress}`,
