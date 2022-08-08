@@ -64,14 +64,14 @@ const amountsBuy = [
 const expectedPricesOnBuy = [
   0n,
   1000000000000000000n,
-  2025641025641025641n,
-  3052083333333333333n,
+  2025641025641025642n,
+  3052083333333333334n,
   4093750000000000000n,
-  5135416666666666666n,
-  6177083333333333333n,
-  7261780104712041884n,
-  8570680628272251308n,
-  9879581151832460732n,
+  5135416666666666667n,
+  6177083333333333334n,
+  7261780104712041885n,
+  8570680628272251309n,
+  9879581151832460733n,
 ];
 
 const dexKey = 'ParaSwapLimitOrders';
@@ -88,18 +88,30 @@ const dummyOrderBook = {
     {
       swappableMakerBalance: (100n * BI_POWS[TokenB.decimals]).toString(),
       swappableTakerBalance: (1n * BI_POWS[TokenA.decimals]).toString(),
+      isFillOrKill: false,
+      makerAmount: (100n * BI_POWS[TokenB.decimals]).toString(),
+      takerAmount: (1n * BI_POWS[TokenA.decimals]).toString(),
     },
     {
       swappableMakerBalance: (195n * BI_POWS[TokenB.decimals]).toString(),
       swappableTakerBalance: (2n * BI_POWS[TokenA.decimals]).toString(),
+      isFillOrKill: false,
+      makerAmount: (195n * BI_POWS[TokenB.decimals]).toString(),
+      takerAmount: (2n * BI_POWS[TokenA.decimals]).toString(),
     },
     {
       swappableMakerBalance: (480n * BI_POWS[TokenB.decimals]).toString(),
       swappableTakerBalance: (5n * BI_POWS[TokenA.decimals]).toString(),
+      isFillOrKill: false,
+      makerAmount: (480n * BI_POWS[TokenB.decimals]).toString(),
+      takerAmount: (5n * BI_POWS[TokenA.decimals]).toString(),
     },
     {
       swappableMakerBalance: (955n * BI_POWS[TokenB.decimals]).toString(),
       swappableTakerBalance: (10n * BI_POWS[TokenA.decimals]).toString(),
+      isFillOrKill: false,
+      makerAmount: (955n * BI_POWS[TokenB.decimals]).toString(),
+      takerAmount: (10n * BI_POWS[TokenA.decimals]).toString(),
     },
   ],
 };
@@ -264,10 +276,16 @@ describe('ParaSwapLimitOrders', function () {
       {
         swappableMakerBalance: (5n * BI_POWS[TokenB.decimals - 1]).toString(),
         swappableTakerBalance: (1n * BI_POWS[TokenA.decimals - 1]).toString(),
+        makerAmount: (5n * BI_POWS[TokenB.decimals - 1]).toString(),
+        takerAmount: (1n * BI_POWS[TokenA.decimals - 1]).toString(),
+        isFillOrKill: false,
       },
       {
         swappableMakerBalance: (7n * BI_POWS[TokenB.decimals - 1]).toString(),
         swappableTakerBalance: (2n * BI_POWS[TokenA.decimals - 1]).toString(),
+        makerAmount: (7n * BI_POWS[TokenB.decimals - 1]).toString(),
+        takerAmount: (2n * BI_POWS[TokenA.decimals - 1]).toString(),
+        isFillOrKill: false,
       },
     ];
 

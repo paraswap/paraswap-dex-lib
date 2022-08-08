@@ -36,6 +36,7 @@ import {
   OptimizedBalancerV2Data,
   SwapTypes,
   PoolStateMap,
+  PoolStateCache,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
@@ -443,6 +444,9 @@ export class BalancerV2
 
   logger: Logger;
 
+  // In memory pool state for non-event pools
+  nonEventPoolStateCache: PoolStateCache;
+
   constructor(
     protected network: Network,
     protected dexKey: string,
@@ -453,6 +457,8 @@ export class BalancerV2
     protected adapters = Adapters[network],
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
+    this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
       dexKey,
@@ -499,6 +505,35 @@ export class BalancerV2
     const pools = this.getPools(_from, _to);
 
     return pools.map(pool => `${this.dexKey}_${pool.poolAddress}`);
+  }
+
+  /**
+   * Returns cached poolState if blockNumber matches cached value. Resets if not.
+   */
+  private getNonEventPoolStateCache(blockNumber: number): PoolStateMap {
+    if (this.nonEventPoolStateCache.blockNumber !== blockNumber)
+      this.nonEventPoolStateCache.poolState = {};
+    return this.nonEventPoolStateCache.poolState;
+  }
+
+  /**
+   * Update poolState cache.
+   * If same blockNumber as current cache then update with new pool state.
+   * If different blockNumber overwrite cache with latest.
+   */
+  private updateNonEventPoolStateCache(
+    poolState: PoolStateMap,
+    blockNumber: number,
+  ): PoolStateMap {
+    if (this.nonEventPoolStateCache.blockNumber !== blockNumber) {
+      this.nonEventPoolStateCache.blockNumber = blockNumber;
+      this.nonEventPoolStateCache.poolState = poolState;
+    } else
+      this.nonEventPoolStateCache.poolState = {
+        ...this.nonEventPoolStateCache.poolState,
+        ...poolState,
+      };
+    return this.nonEventPoolStateCache.poolState;
   }
 
   async getPricesVolume(

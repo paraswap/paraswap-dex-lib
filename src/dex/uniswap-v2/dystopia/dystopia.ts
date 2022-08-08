@@ -1,10 +1,5 @@
-import { TOKEN_EXTRA_FEE, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
-import {
-  CACHE_PREFIX,
-  Network,
-  NULL_ADDRESS,
-  SUBGRAPH_TIMEOUT,
-} from '../../../constants';
+import { UniswapV2, UniswapV2Pair } from '../uniswap-v2';
+import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -58,27 +53,49 @@ export class Dystopia extends UniswapV2 {
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
+    isDynamicFees = false,
+    factoryAddress?: Address,
+    subgraphURL?: string,
+    initCode?: string,
+    feeCode?: number,
+    poolGasCost?: number,
+    routerAddress?: Address,
   ) {
     super(
       network,
       dexKey,
       dexHelper,
-      false,
-      DystopiaConfig[dexKey][network].factoryAddress,
-      DystopiaConfig[dexKey][network].subgraphURL,
-      DystopiaConfig[dexKey][network].initCode,
-      DystopiaConfig[dexKey][network].feeCode,
-      DystopiaConfig[dexKey][network].poolGasCost,
+      isDynamicFees,
+      factoryAddress !== undefined
+        ? factoryAddress
+        : DystopiaConfig[dexKey][network].factoryAddress,
+      subgraphURL === ''
+        ? undefined
+        : subgraphURL !== undefined
+        ? subgraphURL
+        : DystopiaConfig[dexKey][network].subgraphURL,
+      initCode !== undefined
+        ? initCode
+        : DystopiaConfig[dexKey][network].initCode,
+      feeCode !== undefined ? feeCode : DystopiaConfig[dexKey][network].feeCode,
+      poolGasCost !== undefined
+        ? poolGasCost
+        : DystopiaConfig[dexKey][network].poolGasCost,
       iface,
       Adapters[network] || undefined,
     );
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
       dystopiaFactoryABI as any,
-      DystopiaConfig[dexKey][network].factoryAddress,
+      factoryAddress !== undefined
+        ? factoryAddress
+        : DystopiaConfig[dexKey][network].factoryAddress,
     );
 
-    this.router = DystopiaConfig[dexKey][network].router || '';
+    this.router =
+      routerAddress !== undefined
+        ? routerAddress
+        : DystopiaConfig[dexKey][network].router || '';
   }
 
   async findDystopiaPair(from: Token, to: Token, stable: boolean) {
@@ -437,9 +454,7 @@ export class Dystopia extends UniswapV2 {
       );
       return null;
     }
-    const fee = (
-      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
-    ).toString();
+
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
     if (pairReversed) {
@@ -448,7 +463,7 @@ export class Dystopia extends UniswapV2 {
         tokenOut: to.address,
         reservesIn: pairState.reserves1,
         reservesOut: pairState.reserves0,
-        fee,
+        fee: pairState.feeCode.toString(),
         direction: false,
         exchange: pair.exchange,
         decimalsIn: from.decimals,
@@ -461,7 +476,7 @@ export class Dystopia extends UniswapV2 {
       tokenOut: to.address,
       reservesIn: pairState.reserves0,
       reservesOut: pairState.reserves1,
-      fee,
+      fee: pairState.feeCode.toString(),
       direction: true,
       exchange: pair.exchange,
       decimalsIn: from.decimals,

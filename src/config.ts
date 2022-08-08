@@ -3,7 +3,7 @@ import { Network } from './constants';
 import { isETHAddress } from './utils';
 import { ETHER_ADDRESS } from 'paraswap';
 
-// Hardcoded and envionment values from which actual config is derived
+// Hardcoded and environment values from which actual config is derived
 type BaseConfig = {
   network: number;
   networkName: string;
@@ -37,10 +37,10 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER,
     adapterAddresses: {
-      Adapter01: '0x3A0430bF7cd2633af111ce3204DB4b0990857a6F',
+      Adapter01: '0xBdd13a9dd364E5557e0710fC1d2Ac145B5e8f3bE',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0xe5993623FF3ecD1f550124059252dDff804b3879',
-      BuyAdapter: '0xe56823aC543c81f747eD95F3f095b5A19224bd3a',
+      BuyAdapter: '0x737E642eec6e5bD675022ADC6D726EB19FF74383',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -96,9 +96,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
-      PolygonAdapter01: '0xD458FA906121d9081970Ed3937df50C8Ba88E9c0',
+      PolygonAdapter01: '0xa41B5Ab708fe1fe11CD6121006497b8549e8A695',
       PolygonAdapter02: '0xAD1732884CF5aAB27B293707757a9b9011611bE6',
-      PolygonBuyAdapter: '0xDc514c500dB446F5a7Ab80872bAf3adDEfd00174',
+      PolygonBuyAdapter: '0xD7d3E2491cc495faAa9a770cBDC7535fD1446D8C',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -135,7 +135,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
     adapterAddresses: {
-      FantomAdapter01: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
+      FantomAdapter01: '0x564B759c1A7976476649452e804A13B963610065',
       FantomBuyAdapter: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
     },
     uniswapV2ExchangeRouterAddress:
