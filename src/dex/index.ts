@@ -4,6 +4,7 @@ import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
+import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
@@ -84,6 +85,7 @@ const Dexes = [
   Nerve,
   Platypus,
   GMX,
+  JarvisV6,
   WooFi,
   Dystopia,
   ParaSwapLimitOrders,
