@@ -47,6 +47,7 @@ import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orde
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
 import { Velodrome } from './velodrome';
+import { Solidly } from './solidly';
 
 const LegacyDexes = [
   Curve,
@@ -70,6 +71,7 @@ const LegacyDexes = [
   AugustusRFQOrder,
   SpiritSwapV2,
   Velodrome,
+  Solidly,
 ];
 
 const Dexes = [
