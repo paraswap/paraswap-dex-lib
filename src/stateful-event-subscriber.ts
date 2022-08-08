@@ -79,7 +79,7 @@ export abstract class StatefulEventSubscriber<State>
     try {
       this.state = Utils.Parse(stateMsg);
     } catch (e) {
-      this.logger.error(`failed parsing ${stateMsg}`, e);
+      this.logger.error(`failed parsing ${stateMsg}`, e, (e as Error).stack);
     }
   }
 
