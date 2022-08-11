@@ -18,9 +18,7 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
-  async initialize(): Promise<void> {
-    return;
-  }
+  isSyncing = true;
 
   async get(
     dexKey: string,

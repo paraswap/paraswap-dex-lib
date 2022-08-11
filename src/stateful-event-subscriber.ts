@@ -31,7 +31,6 @@ export abstract class StatefulEventSubscriber<State>
     _name: string,
     protected dexHelper: IDexHelper,
     protected logger: Logger,
-    isAlwaysTracking: boolean = false,
   ) {
     this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
     if (dexHelper.config.isSlave) {
@@ -48,10 +47,6 @@ export abstract class StatefulEventSubscriber<State>
         }
       });
       this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
-    }
-
-    if (isAlwaysTracking) {
-      this.isTracking = () => true;
     }
   }
 
@@ -85,7 +80,15 @@ export abstract class StatefulEventSubscriber<State>
 
   private _setState(state: DeepReadonly<State> | null) {
     this.state = state;
+
+    if (this.dexHelper.config.isSlave) {
+      return;
+    }
+
     const stateAsStr = Utils.Serialize(state);
+    if (stateAsStr === undefined) {
+      throw new Error('send undefined state');
+    }
     this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.rawsetex(this.name, stateAsStr);
 
@@ -238,7 +241,7 @@ export abstract class StatefulEventSubscriber<State>
   //setState.  In case isTracking() returns true, it is assumed that the stored
   //state is current and so the minBlockNumber will be disregarded.
   getState(minBlockNumber: number): DeepReadonly<State> | null {
-    if (this.dexHelper.config.isSlave) {
+    if (this.dexHelper.config.isSlave && this.dexHelper.cache.isSyncing) {
       return this.state;
     }
     if (!this.state || this.invalid) return null;

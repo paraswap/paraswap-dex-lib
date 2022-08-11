@@ -80,7 +80,7 @@ class BalancerV2PoolState extends StatefulEventSubscriber<PoolState> {
     logger: Logger,
     public info: SubgraphPoolBase,
   ) {
-    super(parentName, dexHelper, logger, true);
+    super(parentName, dexHelper, logger);
     this.poolAddress = info.address.toLowerCase();
   }
 

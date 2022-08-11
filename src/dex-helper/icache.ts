@@ -1,4 +1,6 @@
 export interface ICache {
+  isSyncing: boolean;
+
   get(
     dexKey: string,
     network: number,
