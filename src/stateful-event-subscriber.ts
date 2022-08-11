@@ -42,7 +42,7 @@ export abstract class StatefulEventSubscriber<State>
           try {
             this.state = Utils.Parse(stateAsStr);
           } catch (e) {
-            this.logger.error(`failed parsing ${stateAsStr}`, e);
+            this.logger.error(`failed parsing inital, ${stateAsStr}`, e);
           }
           this.logger.debug(`[${this.name}] got initial state from cache`);
         }

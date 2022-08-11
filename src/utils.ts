@@ -71,15 +71,21 @@ export function deepTypecast<T>(
   checker: (val: any) => boolean,
   caster: (val: T) => any,
 ): any {
-  return _.forEach(
-    obj,
-    (val: any, key: any, obj: any) =>
-      (obj[key] = checker(val)
-        ? caster(val)
-        : _.isObject(val)
-        ? deepTypecast(val, checker, caster)
-        : val),
-  );
+  return _.forEach(obj, (val: any, key: any, obj: any) => {
+    const checked = checker(val);
+
+    if (checked) {
+      const cast = caster(val);
+      obj[key] = cast;
+    } else {
+      const isObject = _.isObject(val);
+      if (isObject) {
+        deepTypecast(val, checker, caster);
+      } else {
+        obj[key] = val;
+      }
+    }
+  });
 }
 
 export class Utils {
