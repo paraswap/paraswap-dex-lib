@@ -48,8 +48,9 @@ import {
   BALANCER_SWAP_GAS_COST,
   BALANCER_V1_POOL_BALANCES_MULTICALL_SLICE_SIZE,
 } from './config';
-const BalancerV1PoolABI = require('../../abi/BalancerV1Pool.json');
-const BalancerV1ExchangeProxyABI = require('../../abi/BalancerV1ExchangeProxy.json');
+import BalancerV1PoolABI from '../../abi/BalancerV1Pool.json';
+import BalancerV1ExchangeProxyABI from '../../abi/BalancerV1ExchangeProxy.json';
+
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
