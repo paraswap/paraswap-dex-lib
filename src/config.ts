@@ -172,7 +172,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
     privateHttpProvider: process.env.HTTP_PROVIDER_10,
     adapterAddresses: {
-      OptimismAdapter01: '0x680bAedaf5ac0A90fe279d0fc26eFA591735F9d0',
+      OptimismAdapter01: '0xBc30AF9080cF750fb96fF831B7B1c52e5b604Ac7',
       OptimismBuyAdapter: '0xeef30844023B355408C44224B9d4031609D316d4',
     },
     uniswapV2ExchangeRouterAddress:
