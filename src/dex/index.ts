@@ -45,6 +45,7 @@ import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { SpiritSwapV2 } from './spirit-swap-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
+import { HodltreeFlashloanExchange } from './hodltree-flashloan-exchange/hodltree-flashloan-exchange';
 import Web3 from 'web3';
 import { Velodrome } from './velodrome';
 import { Solidly } from './solidly';
@@ -93,6 +94,7 @@ const Dexes = [
   WooFi,
   Dystopia,
   ParaSwapLimitOrders,
+  HodltreeFlashloanExchange,
 ];
 
 export type LegacyDexConstructor = new (
