@@ -25,7 +25,7 @@ import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow, Utils } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -67,7 +67,6 @@ enum BalancerPoolTypes {
   ERC4626Linear = 'ERC4626Linear',
 }
 
-const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1hr
 
@@ -80,12 +79,12 @@ class BalancerV2PoolState extends StatefulEventSubscriber<PoolState> {
     logger: Logger,
     public info: SubgraphPoolBase,
   ) {
-    super(parentName, dexHelper, logger);
+    super(parentName, dexHelper, logger, true);
     this.poolAddress = info.address.toLowerCase();
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    return this.state!;
+    return this.getState(blockNumber)!;
   }
 
   protected processLog(
@@ -219,17 +218,19 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       blockNumber,
     );
 
-    pools.forEach((pool, index) => {
-      if (states[index] === undefined) {
-        this.logger.error(`generateState undefined state ${states[index]}`);
+    pools.forEach(pool => {
+      if (states[pool.poolAddress] === undefined) {
+        this.logger.error(`generateState undefined state`, pool);
+        return;
       }
-      pool.setState(states[index], blockNumber);
+      pool.setState(states[pool.poolAddress], blockNumber);
     });
     return this.state!;
   }
 
   async initPools(blockNumber: number): Promise<void> {
     this.setState({}, blockNumber);
+
     const allPools = await this.fetchAllSubgraphPools();
     const eventSupportedPools = allPools.filter(
       pool =>
@@ -459,7 +460,7 @@ export class BalancerV2
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
     this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
-    this.logger = dexHelper.getLogger(dexKey);
+    this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
     this.eventPools = new BalancerV2EventPool(
       dexKey,
       dexHelper,

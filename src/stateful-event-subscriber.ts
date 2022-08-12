@@ -31,11 +31,12 @@ export abstract class StatefulEventSubscriber<State>
     _name: string,
     protected dexHelper: IDexHelper,
     protected logger: Logger,
+    private alwaysReturnCurrentState = false,
   ) {
     this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
     if (dexHelper.config.isSlave) {
       this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
-      this.logger.debug(`subscribe to ${this.name}`);
+      // this.logger.debug(`subscribe to ${this.name}`);
       this.dexHelper.cache.rawget(this.name).then(stateAsStr => {
         if (stateAsStr) {
           try {
@@ -43,7 +44,7 @@ export abstract class StatefulEventSubscriber<State>
           } catch (e) {
             this.logger.error(`failed parsing inital, ${stateAsStr}`, e);
           }
-          this.logger.debug(`[${this.name}] got initial state from cache`);
+          // this.logger.debug(`[${this.name}] got initial state from cache`);
         }
       });
       this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
@@ -70,7 +71,7 @@ export abstract class StatefulEventSubscriber<State>
       return;
     }
 
-    this.logger.debug(`[${this.name}] received state update from cache`);
+    // this.logger.debug(`[${this.name}] received state update from cache`);
     try {
       this.state = Utils.Parse(stateMsg);
     } catch (e) {
@@ -92,7 +93,7 @@ export abstract class StatefulEventSubscriber<State>
     this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.rawsetex(this.name, stateAsStr);
 
-    this.logger.debug(`forward state for ${this.name}`);
+    // this.logger.debug(`forward state for ${this.name}`);
   }
 
   //Function which transforms the given state for the given log event.
@@ -241,6 +242,10 @@ export abstract class StatefulEventSubscriber<State>
   //setState.  In case isTracking() returns true, it is assumed that the stored
   //state is current and so the minBlockNumber will be disregarded.
   getState(minBlockNumber: number): DeepReadonly<State> | null {
+    if (this.alwaysReturnCurrentState) {
+      return this.state;
+    }
+
     if (this.dexHelper.config.isSlave && this.dexHelper.cache.isSyncing) {
       return this.state;
     }
