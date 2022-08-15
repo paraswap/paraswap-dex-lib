@@ -49,6 +49,8 @@ import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
+export const RESERVE_LIMIT = 2n ** 112n - 1n;
+
 interface UniswapV2PoolState {
   reserves0: string;
   reserves1: string;

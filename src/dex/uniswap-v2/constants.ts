@@ -9,8 +9,6 @@ import { ExcaliburConfig } from './excalibur';
 // as they have a modified pool implementation which are not compatible with
 // standard contract methods
 
-export const RESERVE_LIMIT = 2n ** 112n - 1n;
-
 export const AllUniswapForks = [
   ...Object.keys(UniswapV2Config).filter(dexKey => dexKey !== 'BakerySwap'),
   ...Object.keys(MDEXConfig),

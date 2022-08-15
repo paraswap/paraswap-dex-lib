@@ -1,4 +1,4 @@
-import { RESERVE_LIMIT } from '../constants';
+import { RESERVE_LIMIT } from '../uniswap-v2';
 import { BI_POWS } from '../../../bigint-constants';
 import { DystopiaPoolOrderedParams } from './dystopia';
 import { SWAP_FEE_FACTOR } from './constants';

@@ -1,4 +1,4 @@
-import { RESERVE_LIMIT } from './constants';
+import { RESERVE_LIMIT } from './uniswap-v2';
 import { UniswapV2PoolOrderedParams } from './types';
 
 export class Uniswapv2ConstantProductPool {
