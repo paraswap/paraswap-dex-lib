@@ -1,4 +1,4 @@
-import { RESERVE_LIMIT } from '../uniswap-v2';
+import { RESERVE_LIMIT } from '../constants';
 import { UniswapV2PoolOrderedParams } from '../types';
 import { BI_MAX_UINT } from '../../../bigint-constants';
 import { SWAP_FEE_FACTOR } from './constants';
