@@ -1,4 +1,4 @@
-import { Interface } from '@ethersproject/abi';
+import { Interface, LogDescription } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
 import { DeepReadonly } from 'ts-essentials';
 import BigNumber from 'bignumber.js';
@@ -60,6 +60,89 @@ import { BI_MAX_INT } from '../../bigint-constants';
 
 const balancerV1PoolIface = new Interface(BalancerV1PoolABI);
 
+export class BalancerV1PoolState extends StatefulEventSubscriber<PoolState> {
+  private handlers: Record<
+    string,
+    (event: LogDescription, blockNumber: number) => void
+  > = {};
+
+  constructor(
+    parentName: string,
+    dexHelper: IDexHelper,
+    logger: Logger,
+    private address: string,
+  ) {
+    super(`${parentName}_${address}`, dexHelper, logger, true);
+
+    this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
+    this.handlers['LOG_EXIT'] = this.handleExitPool.bind(this);
+    this.handlers['LOG_SWAP'] = this.handleSwap.bind(this);
+  }
+
+  protected processLog(
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    return this.getState(blockNumber)! as Readonly<PoolState>;
+  }
+
+  handleEvent(event: LogDescription, blockNumber: number) {
+    if (event.name in this.handlers) {
+      this.handlers[event.name](event, blockNumber);
+    }
+  }
+
+  handleJoinPool(event: LogDescription, blockNumber: number): void {
+    const pool = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+
+    const tokenIn = event.args.tokenIn.toLowerCase();
+    const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
+    pool.tokens = pool.tokens.map(token => {
+      if (token.address.toLowerCase() === tokenIn)
+        token.balance = token.balance + tokenAmountIn;
+      return token;
+    });
+
+    this.setState(pool, blockNumber);
+  }
+
+  handleExitPool(event: LogDescription, blockNumber: number): void {
+    const pool = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+
+    const tokenOut = event.args.tokenOut.toLowerCase();
+    const tokenAmountOut = biginterify(event.args.tokenAmountOut.toString());
+    pool.tokens = pool.tokens.map(token => {
+      if (token.address.toLowerCase() === tokenOut)
+        token.balance = token.balance - tokenAmountOut;
+      return token;
+    });
+
+    this.setState(pool, blockNumber);
+  }
+
+  handleSwap(event: LogDescription, blockNumber: number): void {
+    const pool = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+
+    const tokenIn = event.args.tokenIn.toLowerCase();
+    const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
+    const tokenOut = event.args.tokenOut.toLowerCase();
+    const tokenAmountOut = biginterify(event.args.tokenAmountOut.toString());
+    pool.tokens = pool.tokens.map(token => {
+      if (token.address.toLowerCase() === tokenIn)
+        token.balance = token.balance + tokenAmountIn;
+      else if (token.address.toLowerCase() === tokenOut)
+        token.balance = token.balance - tokenAmountOut;
+      return token;
+    });
+
+    this.setState(pool, blockNumber);
+  }
+}
+
 export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
     [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
@@ -67,9 +150,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   logDecoder: (log: Log) => any;
 
-  public allPools: PoolState[] = [];
-
-  addressesSubscribed: string[];
+  poolStateMap: Record<string, BalancerV1PoolState> = {};
 
   balancerMulticall: Contract;
 
@@ -89,21 +170,12 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       BalancerCustomMulticallABI as any,
       this.multicallAddress,
     );
-
-    // Add handlers
-    this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
-    this.handlers['LOG_EXIT'] = this.handleExitPool.bind(this);
-    this.handlers['LOG_SWAP'] = this.handleSwap.bind(this);
   }
 
   protected processLog(
     state: DeepReadonly<PoolStateMap>,
     log: Readonly<Log>,
   ): DeepReadonly<PoolStateMap> | null {
-    const _state: PoolStateMap = {};
-    for (let pool of Object.values(state))
-      _state[pool.id] = typecastReadOnlyPool(pool);
-
     if (log.address == this.factoryAddress) {
       // Handle factory events
     } else {
@@ -112,12 +184,12 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       } else {
         try {
           const event = this.logDecoder(log);
-          if (event.name in this.handlers)
-            _state[log.address.toLowerCase()] = this.handlers[event.name](
-              event,
-              _state[log.address.toLowerCase()],
-              log,
-            );
+          const pool = this.poolStateMap[log.address.toLowerCase()];
+          if (pool) {
+            pool.handleEvent(event, log.blockNumber);
+          } else {
+            this.logger.warn(`missing pool for log received ${log.address}`);
+          }
         } catch (e) {
           this.logger.error(
             `Error_${this.name}_processLog could not parse the log with topic ${log.topics}:`,
@@ -126,44 +198,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
         }
       }
     }
-    return _state;
-  }
-
-  handleJoinPool(event: any, pool: PoolState, log: Log): PoolState {
-    const tokenIn = event.args.tokenIn.toLowerCase();
-    const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
-    pool.tokens = pool.tokens.map(token => {
-      if (token.address.toLowerCase() === tokenIn)
-        token.balance = token.balance + tokenAmountIn;
-      return token;
-    });
-    return pool;
-  }
-
-  handleExitPool(event: any, pool: PoolState, log: Log): PoolState {
-    const tokenOut = event.args.tokenOut.toLowerCase();
-    const tokenAmountOut = biginterify(event.args.tokenAmountOut.toString());
-    pool.tokens = pool.tokens.map(token => {
-      if (token.address.toLowerCase() === tokenOut)
-        token.balance = token.balance - tokenAmountOut;
-      return token;
-    });
-    return pool;
-  }
-
-  handleSwap(event: any, pool: PoolState, log: Log): PoolState {
-    const tokenIn = event.args.tokenIn.toLowerCase();
-    const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
-    const tokenOut = event.args.tokenOut.toLowerCase();
-    const tokenAmountOut = biginterify(event.args.tokenAmountOut.toString());
-    pool.tokens = pool.tokens.map(token => {
-      if (token.address.toLowerCase() === tokenIn)
-        token.balance = token.balance + tokenAmountIn;
-      else if (token.address.toLowerCase() === tokenOut)
-        token.balance = token.balance - tokenAmountOut;
-      return token;
-    });
-    return pool;
+    return {};
   }
 
   async getAllPoolDataOnChain(
@@ -242,7 +277,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return onChainPools;
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+  async setupEventPools(blockNumber: number) {
     // It is quicker to query the static url for all the pools than querying the subgraph
     // but the url doesn't take into account the blockNumber hence for testing purpose
     // the state should be passed to the setup function call.
@@ -261,16 +296,43 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       blockNumber,
     );
 
-    this.allPools = allPoolsNonZeroBalancesChain.pools;
+    allPoolsNonZeroBalancesChain.pools.forEach(pool => {
+      const address = pool.id.toLowerCase();
+      const poolState = new BalancerV1PoolState(
+        this.parentName,
+        this.dexHelper,
+        this.logger,
+        address,
+      );
+      poolState.setState(pool, blockNumber);
 
-    let poolStateMap: PoolStateMap = {};
-    allPoolsNonZeroBalancesChain.pools.forEach(
-      pool => (poolStateMap[pool.id.toLowerCase()] = pool),
-    );
-    // Subscribe to all the pools and the factory contract
-    this.addressesSubscribed = Object.keys(poolStateMap);
+      this.poolStateMap[address] = poolState;
+      this.addressesSubscribed.push(address);
+    });
     this.addressesSubscribed.push(this.factoryAddress);
-    return poolStateMap;
+
+    this.initialize(blockNumber);
+  }
+
+  async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+    const pools = Object.values(this.poolStateMap).map<PoolState>(
+      pool => pool.getState(blockNumber) as PoolState,
+    );
+    // It is important to the onchain query as the subgraph pool might not contain the
+    // latest balance because of slow block processing time
+    const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
+      {
+        pools,
+      },
+      blockNumber,
+    );
+
+    allPoolsNonZeroBalancesChain.pools.forEach(pool => {
+      const statePool = this.poolStateMap[pool.id.toLowerCase()];
+      statePool.setState(pool, blockNumber);
+    });
+
+    return {};
   }
 
   getPoolPrices(pool: OldPool, side: SwapSide, amount: bigint) {
@@ -392,13 +454,7 @@ export class BalancerV1
   }
 
   async setupEventPools(blockNumber: number) {
-    const poolState = await this.eventPools.generateState(blockNumber);
-    this.eventPools.setState(poolState, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.eventPools,
-      this.eventPools.addressesSubscribed,
-      blockNumber,
-    );
+    await this.eventPools.setupEventPools(blockNumber);
   }
 
   async initializePricing(blockNumber: number) {
@@ -425,30 +481,26 @@ export class BalancerV1
     const _from = this.dexHelper.config.wrapETH(srcToken);
     const _to = this.dexHelper.config.wrapETH(destToken);
 
-    const poolsWithTokens = this.eventPools.allPools.filter(pool => {
-      const tokenAddresses = pool.tokens.map(token => token.address);
-
-      return (
-        tokenAddresses.includes(_from.address) &&
-        tokenAddresses.includes(_to.address)
-      );
-    });
-
-    let poolStates = this.eventPools.getState(blockNumber);
     let isStale = false;
-    if (!poolStates) {
-      poolStates = this.eventPools.getStaleState();
-      if (!poolStates) {
-        this.logger.error(
-          'Error_getPrices: Neither updated nor stale state found',
+    const poolsWithTokens = Object.values(this.eventPools.poolStateMap)
+      .map<PoolState | null>(pool => {
+        const state = pool.getState(blockNumber);
+        if (!state) {
+          this.logger.warn(`Warning_getPrices: Stale state being used`);
+          isStale = true;
+          return pool.getStaleState() as PoolState;
+        }
+        return state as PoolState;
+      })
+      .filter(pool => pool !== null)
+      .filter(pool => {
+        const tokenAddresses = pool!.tokens.map(token => token.address);
+
+        return (
+          tokenAddresses.includes(_from.address) &&
+          tokenAddresses.includes(_to.address)
         );
-        return poolsWithTokens
-          .slice(0, 10)
-          .map(({ id }) => BalancerV1.getIdentifier(this.dexKey, id));
-      }
-      isStale = true;
-      this.logger.warn('Warning_getPrices: Stale state being used');
-    }
+      }) as PoolState[];
 
     const unitVolume = BigInt(
       10 ** (side === SwapSide.SELL ? _from : _to).decimals,
@@ -513,30 +565,27 @@ export class BalancerV1
       const _from = this.dexHelper.config.wrapETH(srcToken);
       const _to = this.dexHelper.config.wrapETH(destToken);
 
-      let poolStates = this.eventPools.getState(blockNumber);
       let isStale = false;
-      if (!poolStates) {
-        poolStates = this.eventPools.getStaleState();
-        if (!poolStates) {
-          this.logger.error(
-            'Error_getPrices: Neither updated nor stale state found',
-          );
-          return null;
-        }
-        isStale = true;
-        this.logger.warn('Warning_getPrices: Stale state being used');
-      }
+      const allPools = Object.values(this.eventPools.poolStateMap)
+        .map(pool => {
+          const state = pool.getState(blockNumber);
+          if (!state) {
+            isStale = true;
+            return pool.getStaleState();
+          }
+          return state;
+        })
+        .filter(pool => pool !== null) as PoolState[];
 
       const unitVolume = BigInt(
         10 ** (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const allPools = Object.values(poolStates).map(typecastReadOnlyPool);
       let minBalance = amounts[amounts.length - 1];
       if (unitVolume > minBalance) minBalance = unitVolume;
 
       const allowedPools = limitPools
-        ? this.eventPools.allPools.filter(({ id }) =>
+        ? allPools.filter(({ id }) =>
             limitPools.includes(BalancerV1.getIdentifier(this.dexKey, id)),
           )
         : await this.eventPools.getTopPools(
@@ -554,13 +603,8 @@ export class BalancerV1
       const poolPrices = allowedPools
         .map(pool => {
           const poolAddress = pool.id.toLowerCase();
-          const poolState = poolStates![poolAddress];
-          if (!poolState) {
-            this.logger.error(`Unable to find the poolState ${poolAddress}`);
-            return null;
-          }
           const parsedOldPool = parsePoolPairData(
-            typecastReadOnlyPool(poolState),
+            typecastReadOnlyPool(pool),
             _from.address,
             _to.address,
           );

@@ -1,5 +1,4 @@
 import { Address } from '../../types';
-import BigNumber from 'bignumber.js';
 
 export interface Token {
   address: string;
