@@ -31,9 +31,8 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   SpiritSwapV2: {
     [Network.FANTOM]: {
-      // Later in Dystopia constructor it will be replaced with undefined
-      // If we set here undefined, it will go search for non-existing config
-      subgraphURL: '',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/layer3org/spiritswap-v2',
       factoryAddress: '0x9d3591719038752db0c8bEEe2040FfcC3B2c6B9c',
       router: '0x56a14A1954b5d5FD7C636a24137a93742bA708b9', // ParaSwap-compatible Router with stable pools support
       initCode:
