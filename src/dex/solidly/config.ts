@@ -61,7 +61,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
 };
 
-// TODO: segment adapters by dex key
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.POLYGON]: {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
