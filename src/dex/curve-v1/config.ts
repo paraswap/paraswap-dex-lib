@@ -1412,4 +1412,12 @@ export const Adapters: Record<number, AdapterMappings> = {
       },
     ],
   },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'OptimismAdapter01',
+        index: 5,
+      },
+    ],
+  },
 };
