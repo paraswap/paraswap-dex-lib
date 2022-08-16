@@ -11,6 +11,7 @@ import { DexAdapterService } from '../dex';
 import { Address, Token, OptimalRate, TxObject } from '../types';
 import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
+import { BI_MAX_UINT } from '../bigint-constants';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -99,20 +100,21 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     );
 
     if (!poolPrices || poolPrices.length == 0)
-      throw new Error('Fail to get price for ' + this.dexKey);
+      throw new Error('Fail to get prices for ' + this.dexKey);
 
-    if (side === SwapSide.SELL) {
-    }
-
-    // Move best pool to the top
     const finalPrice = poolPrices
-      // Filter pools that didn't give latest output
-      .filter(poolPrices => poolPrices.prices.slice(-1)[0] !== 0n)
+      // Filter pools that don't have real prices
+      .filter(pool => {
+        return ![0n, BI_MAX_UINT].includes(pool.prices.slice(-1)[0]);
+      })
       .sort((a, b) => {
         return side === SwapSide.SELL
           ? Number(b.prices.slice(-1)[0] - a.prices.slice(-1)[0])
           : Number(a.prices.slice(-1)[0] - b.prices.slice(-1)[0]);
       })[0];
+
+    if (!finalPrice)
+      throw new Error('Fail to get valid price for ' + this.dexKey);
 
     const quoteAmount = finalPrice.prices[chunks];
     const srcAmount = (

@@ -19,6 +19,9 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.ARBITRUM]: {
       poolGasCost: WethGasCost,
     },
+    [Network.OPTIMISM]: {
+      poolGasCost: WethGasCost,
+    },
   },
   Wbnb: {
     [Network.BSC]: {
@@ -60,5 +63,8 @@ export const Adapters: {
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 1 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 1 }],
   },
 };

@@ -7,7 +7,8 @@ import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { uniswapV3Merge } from './uniswap-v3/optimizer';
-import { Balancer } from './balancer';
+import { BalancerV1 } from './balancer-v1/balancer-v1';
+import { balancerV1Merge } from './balancer-v1/optimizer';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
@@ -49,13 +50,14 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
+import { Velodrome } from './velodrome';
+import { Solidly } from './solidly';
 
 const LegacyDexes = [
   CurveV2,
   StablePool,
   Smoothy,
   ZeroX,
-  Balancer,
   Bancor,
   BProtocol,
   MStable,
@@ -69,9 +71,12 @@ const LegacyDexes = [
   Lido,
   AugustusRFQOrder,
   SpiritSwapV2,
+  Velodrome,
+  Solidly,
 ];
 
 const Dexes = [
+  BalancerV1,
   BalancerV2,
   UniswapV2,
   BiSwap,
@@ -121,6 +126,7 @@ export class DexAdapterService {
   uniswapV2Alias: string | null;
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
+    balancerV1Merge,
     balancerV2Merge,
     uniswapV2Merge,
     uniswapV3Merge,

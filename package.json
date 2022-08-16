@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@balancer-labs/sor": "^0.3.3",
     "@ethersproject/abi": "5.4.0",
     "@ethersproject/bytes": "^5.6.1",
     "@ethersproject/contracts": "5.4.1",

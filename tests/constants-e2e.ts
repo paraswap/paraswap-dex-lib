@@ -564,13 +564,36 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       decimals: 18,
     },
   },
+  [Network.OPTIMISM]: {
+    DAI: {
+      address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+      decimals: 18,
+    },
+    WETH: {
+      address: '0x4200000000000000000000000000000000000006',
+      decimals: 18,
+    },
+    ETH: { address: ETHER_ADDRESS, decimals: 18 },
+    USDC: {
+      address: '0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
+      decimals: 6,
+    },
+    USDT: {
+      address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
+      decimals: 6,
+    },
+    OP: {
+      address: '0x4200000000000000000000000000000000000042',
+      decimals: 18,
+    },
+  },
 };
 
 export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
-    ETH: '0x73BCEb1Cd57C711feaC4224D062b0F6ff338501e',
+    ETH: '0xbe0eb53f46cd790cd13851d5eff43d12404d33e8',
     USDC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     WBTC: '0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
@@ -705,6 +728,16 @@ export const Holders: {
     EURS: '0x4449dd09067dcaa55c15f40b465a5173778f8100',
     MIM: '0xf46bb6dda9709c49efb918201d97f6474eac5aea',
   },
+  [Network.OPTIMISM]: {
+    ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
+    DAI: '0x19537BADE509ea6C4BCc8101dC44c72042116Dda',
+    WETH: '0x68526A4295236D2f18cEda8A200CdDD5Aab9e2cC',
+    USDC: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
+    USDT: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
+    OP: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
+    aOptWETH: '0x9CBF099ff424979439dFBa03F00B5961784c06ce',
+    aOptUSDC: '0x70144e5b5bbf464cFf98d689254dc7C7223E01Ab',
+  },
 };
 
 export const NativeTokenSymbols: { [network: number]: string } = {
@@ -714,4 +747,5 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.AVALANCHE]: 'AVAX',
   [Network.FANTOM]: 'FTM',
   [Network.ARBITRUM]: 'ETH',
+  [Network.OPTIMISM]: 'ETH',
 };

@@ -329,6 +329,14 @@
     "@babel/helper-validator-identifier" "^7.14.5"
     to-fast-properties "^2.0.0"
 
+"@balancer-labs/sor@^0.3.3":
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-0.3.3.tgz#726a589094e4b9d25116cde5a1c0e154f132713e"
+  integrity sha512-hdPp55A2Hw+Koq81nhqTy15jNRCDW1k5ZT47nk2uEx7N5D9GiAx4BCNDzTiuJLErj6QHJTbEKK7Y5jei702c4g==
+  dependencies:
+    bignumber.js "^9.0.0"
+    isomorphic-fetch "^2.2.1"
+
 "@bcoe/v8-coverage@^0.2.3":
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
@@ -4073,7 +4081,7 @@ isobject@^3.0.0, isobject@^3.0.1:
   resolved "https://registry.yarnpkg.com/isobject/-/isobject-3.0.1.tgz#4e431e92b11a9731636aa1f9c8d1ccbcfdab78df"
   integrity sha1-TkMekrEalzFjaqH5yNHMvP2reN8=
 
-isomorphic-fetch@2.2.1:
+isomorphic-fetch@2.2.1, isomorphic-fetch@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/isomorphic-fetch/-/isomorphic-fetch-2.2.1.tgz#611ae1acf14f5e81f729507472819fe9733558a9"
   integrity sha1-YRrhrPFPXoH3KVB0coGf6XM1WKk=

@@ -30,6 +30,7 @@ export enum Network {
   AVALANCHE = 43114,
   FANTOM = 250,
   ARBITRUM = 42161,
+  OPTIMISM = 10,
   ZK_SYNC_MAINNET = 271,
   ZK_SYNC_ROPSTEN = 273,
 }

@@ -23,17 +23,22 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
   BeetsFi: {
     [Network.FANTOM]: {
       subgraphURL:
-        'https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx',
+        'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx',
       vaultAddress: '0x20dd72ed959b6147912c2e529f0a0c651c33c9ce',
     },
-  },
-  Embr: {
-    [Network.AVALANCHE]: {
+    [Network.OPTIMISM]: {
       subgraphURL:
-        'https://node-us.embr.finance/subgraphs/name/embrfinance/embr-avalanche-v2',
-      vaultAddress: '0xad68ea482860cd7077a5D0684313dD3a9BC70fbB',
+        'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-optimism',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
   },
+  //Embr: {
+  //  [Network.AVALANCHE]: {
+  //    subgraphURL:
+  //      'https://node-us.embr.finance/subgraphs/name/embrfinance/embr-avalanche-v2',
+  //    vaultAddress: '0xad68ea482860cd7077a5D0684313dD3a9BC70fbB',
+  //  },
+  //},
 };
 
 export const Adapters: {
@@ -61,6 +66,12 @@ export const Adapters: {
     {
       name: 'ArbitrumAdapter01',
       index: 5,
+    },
+  ],
+  [Network.OPTIMISM]: [
+    {
+      name: 'OptimismAdapter01',
+      index: 4,
     },
   ],
 };
