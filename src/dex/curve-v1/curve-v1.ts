@@ -422,7 +422,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           address: poolAddress,
         }),
       );
-      let pool = await this.getPoolByAddress(poolAddress);
+      let pool = this.getPoolByAddress(poolAddress);
       // If the pool is not stracked add it to the list of pools to fetch
       if (!pool) {
         let newPool = this.getEventPoolInstance(poolAddress);
@@ -431,6 +431,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             `Error_${this.dexKey} requested unsupported event pool with address ${poolAddress}`,
           );
         poolsToFetch.push(newPool);
+        newPool.initialize(blockNumber);
       } else if (!pool.getState(blockNumber)) {
         unavailablePools.push(poolAddress);
       }
@@ -447,7 +448,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
       for (let i = 0; i < poolsToFetch.length; i++) {
         await poolsToFetch[i].setup(blockNumber, poolStates[i] as any);
-        poolsToFetch[i].initialize(blockNumber);
         this.eventPools.push(poolsToFetch[i]);
       }
       return unavailablePools;
