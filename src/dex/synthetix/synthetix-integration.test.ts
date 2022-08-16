@@ -12,21 +12,7 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for Synthetix general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Synthetix specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorUniswapV3';
 
 const network = Network.MAINNET;
 const TokenASymbol = 'TokenASymbol';
@@ -93,11 +79,7 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
   const expectedPrices = [0n].concat(
-    decodeReaderResult(
-      readerResult,
-      readerIface,
-      funcName,
-    ),
+    decodeReaderResult(readerResult, readerIface, funcName),
   );
 
   expect(prices).toEqual(expectedPrices);
@@ -110,8 +92,8 @@ describe('Synthetix', function () {
   beforeAll(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
-    synthetix = new Synthetix(network, dexKey, dexHelper);
-    await synthetix.initializePricing(blockNumber);
+    // synthetix = new Synthetix(network, dexKey, dexHelper);
+    // await synthetix.initializePricing(blockNumber);
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -198,5 +180,18 @@ describe('Synthetix', function () {
     if (!synthetix.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
     }
+  });
+
+  it('Compute UniswapV3 address from token0, token1, fee in _computeAddress', async function () {
+    const uniswapV3Factory = '0x1f98431c8ad98523631ae4a59f267346ea31f984';
+    const computed = dexPriceAggregatorUniswapV3._computeAddress(
+      uniswapV3Factory,
+      {
+        token0: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        token1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        fee: 500n,
+      },
+    );
+    expect(computed).toEqual('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640');
   });
 });
