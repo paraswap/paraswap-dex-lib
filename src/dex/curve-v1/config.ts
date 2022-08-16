@@ -1275,6 +1275,33 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
         },
       },
     },
+    [Network.OPTIMISM]: {
+      baseTokens: {
+        '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1': {
+          address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+          decimals: 18,
+          reasonableVolume: 1000000000000000000000n,
+        },
+      },
+      factoryAddress: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
+      eventSupportedPools: [],
+      pools: {
+        '3pool': {
+          underlying: [],
+          coins: [
+            '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+            '0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
+            '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
+          ],
+          address: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
+          name: '3pool (3CRV)',
+          type: 2,
+          version: 3,
+          isLending: false,
+          isMetapool: false,
+        },
+      },
+    },
   },
   Beltfi: {
     [Network.BSC]: {
