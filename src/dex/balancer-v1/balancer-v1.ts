@@ -575,7 +575,8 @@ export class BalancerV1
           }
           return state;
         })
-        .filter(pool => pool !== null) as PoolState[];
+        .filter(pool => pool !== null)
+        .map(pool => typecastReadOnlyPool(pool));
 
       const unitVolume = BigInt(
         10 ** (side === SwapSide.SELL ? _from : _to).decimals,
