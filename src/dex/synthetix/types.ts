@@ -1,10 +1,43 @@
-import { Address } from '../../types';
+import { Address, Token } from '../../types';
+
+export type LatestRoundData = {
+  answer: bigint;
+  updatedAt: number;
+};
+
+export type Slot0 = {
+  sqrtPriceX96: bigint;
+  tick: bigint;
+  observationIndex: bigint;
+  observationCardinality: bigint;
+  observationCardinalityNext: bigint;
+  feeProtocol: bigint;
+};
+
+export type OracleObservation = {
+  blockTimestamp: bigint;
+  tickCumulative: bigint;
+  secondsPerLiquidityCumulativeX128: bigint;
+  initialized: boolean;
+};
 
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  atomicExchangeFeeRate: Record<string, bigint>;
+  exchangeFeeRate: Record<string, bigint>;
+  pureChainlinkPriceForAtomicSwapsEnabled: Record<string, boolean>;
+  atomicEquivalentForDexPricing: Record<string, Token>;
+  atomicTwapWindow: bigint;
+  aggregators: Record<string, LatestRoundData>;
+  dexPriceAggregator: {
+    weth: Address;
+    defaultPoolFee: bigint;
+    uniswapV3Factory: Address;
+    overriddenPoolForRoute: Record<string, Address>;
+    uniswapV3Slot0: Record<string, Slot0>;
+    // poolAddress -> observationIndex -> Observation
+    uniswapV3Observations: Record<string, Record<number, OracleObservation>>;
+  };
+  blockTimestamp: bigint;
 };
 
 export type SynthetixData = {
@@ -16,7 +49,5 @@ export type SynthetixData = {
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  readProxyAddressResolver: Address;
 };

@@ -75,7 +75,23 @@ export class SynthetixEventPool extends StatefulEventSubscriber<PoolState> {
    */
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     // TODO: complete me!
-    return {};
+    return {
+      atomicExchangeFeeRate: {},
+      exchangeFeeRate: {},
+      pureChainlinkPriceForAtomicSwapsEnabled: {},
+      atomicEquivalentForDexPricing: {},
+      atomicTwapWindow: 0n,
+      aggregators: {},
+      dexPriceAggregator: {
+        weth: '',
+        defaultPoolFee: 0n,
+        uniswapV3Factory: '',
+        overriddenPoolForRoute: {},
+        uniswapV3Slot0: {},
+        uniswapV3Observations: {},
+      },
+      blockTimestamp: 0n,
+    };
   }
 
   // Its just a dummy example
