@@ -56,7 +56,7 @@ import { Pool as OldPool } from '@balancer-labs/sor/dist/types';
 import { calcInGivenOut, calcOutGivenIn } from '@balancer-labs/sor/dist/bmath';
 import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
 import { parsePoolPairData, updatePoolState } from './sor-overload';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import { BI_MAX_INT } from '../../bigint-constants';
 
 const balancerV1PoolIface = new Interface(BalancerV1PoolABI);
 
@@ -81,7 +81,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     protected factoryAddress: Address = defaultfactoryAddress,
     protected multicallAddress: Address = defaultMulticallAddress,
   ) {
-    super(parentName, logger);
+    super(parentName, dexHelper, logger);
 
     this.logDecoder = (log: Log) => balancerV1PoolIface.parseLog(log);
     this.addressesSubscribed = []; // Will be filled in generateState function
@@ -278,7 +278,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
       side === SwapSide.BUY &&
       amount * 2n > BigInt(pool.balanceOut.toFixed(0))
     ) {
-      return BI_MAX_UINT;
+      return BI_MAX_INT;
     }
     const _amount = new BigNumber(amount.toString());
     const res =

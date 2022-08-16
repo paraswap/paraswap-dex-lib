@@ -11,7 +11,7 @@ import { DexAdapterService } from '../dex';
 import { Address, Token, OptimalRate, TxObject } from '../types';
 import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
-import { BI_MAX_UINT } from '../bigint-constants';
+import { BI_MAX_INT } from '../bigint-constants';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -105,7 +105,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     const finalPrice = poolPrices
       // Filter pools that don't have real prices
       .filter(pool => {
-        return ![0n, BI_MAX_UINT].includes(pool.prices.slice(-1)[0]);
+        return ![0n, BI_MAX_INT].includes(pool.prices.slice(-1)[0]);
       })
       .sort((a, b) => {
         return side === SwapSide.SELL
