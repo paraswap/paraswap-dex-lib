@@ -47,7 +47,7 @@ function _updatePriceComputationObjects<
   }
 }
 
-async function _priceComputationCycles(
+function _priceComputationCycles(
   poolState: DeepReadonly<PoolState>,
   ticksCopy: Record<NumberAsString, TickInfo>,
   slot0Start: Slot0,
@@ -56,17 +56,15 @@ async function _priceComputationCycles(
   sqrtPriceLimitX96: bigint,
   zeroForOne: boolean,
   exactInput: boolean,
-): Promise<
-  [
-    // result
-    PriceComputationState,
-    // Latest calculated full cycle state we can use for bigger amounts
-    {
-      latestFullCycleState: PriceComputationState;
-      latestFullCycleCache: PriceComputationCache;
-    },
-  ]
-> {
+): [
+  // result
+  PriceComputationState,
+  // Latest calculated full cycle state we can use for bigger amounts
+  {
+    latestFullCycleState: PriceComputationState;
+    latestFullCycleCache: PriceComputationCache;
+  },
+] {
   const latestFullCycleState: PriceComputationState = { ...state };
   const latestFullCycleCache: PriceComputationCache = { ...cache };
 
@@ -204,19 +202,17 @@ async function _priceComputationCycles(
     }
   }
 
-  await setImmediatePromise();
-
   return [state, { latestFullCycleState, latestFullCycleCache }];
 }
 
 class UniswapV3Math {
-  async queryOutputs(
+  queryOutputs(
     poolState: DeepReadonly<PoolState>,
     // Amounts must increase
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
-  ): Promise<bigint[]> {
+  ): bigint[] {
     const slot0Start = poolState.slot0;
 
     const isSell = side === SwapSide.SELL;
@@ -289,7 +285,7 @@ class UniswapV3Math {
 
       if (!isOutOfRange) {
         const [finalState, { latestFullCycleState, latestFullCycleCache }] =
-          await _priceComputationCycles(
+          _priceComputationCycles(
             poolState,
             ticksCopy,
             slot0Start,

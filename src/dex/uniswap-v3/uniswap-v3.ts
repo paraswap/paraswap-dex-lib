@@ -239,13 +239,23 @@ export class UniswapV3
 
       let selectedPools: UniswapV3EventPool[] = [];
       if (limitPools === undefined) {
-        selectedPools = (
-          await Promise.all(
-            this.supportedFees.map(async fee =>
-              this.getPool(_srcAddress, _destAddress, fee, blockNumber),
-            ),
-          )
-        ).filter(pool => pool) as UniswapV3EventPool[];
+        for (const fee of this.supportedFees) {
+          let pool =
+            this.eventPools[
+              this.getPoolIdentifier(_srcAddress, _destAddress, fee)
+            ];
+          if (!pool) {
+            pool = await this.getPool(
+              _srcAddress,
+              _destAddress,
+              fee,
+              blockNumber,
+            );
+          }
+          if (pool) {
+            selectedPools.push(pool);
+          }
+        }
       } else {
         const pairIdentifierWithoutFee = this.getPoolIdentifier(
           _srcAddress,
@@ -253,36 +263,48 @@ export class UniswapV3
           0n,
           // Trim from 0 fee postfix, so it become comparable
         ).slice(0, -1);
-        selectedPools = await this._getPoolsFromIdentifiers(
-          limitPools.filter(identifier =>
-            identifier.startsWith(pairIdentifierWithoutFee),
-          ),
-          blockNumber,
+
+        const poolIdentifiers = limitPools.filter(identifier =>
+          identifier.startsWith(pairIdentifierWithoutFee),
         );
+        for (const identifier of poolIdentifiers) {
+          let pool = this.eventPools[identifier];
+          if (!pool) {
+            const [, srcAddress, destAddress, fee] = identifier.split('_');
+            pool = await this.getPool(
+              srcAddress,
+              destAddress,
+              BigInt(fee),
+              blockNumber,
+            );
+          }
+
+          if (pool) {
+            selectedPools.push(pool);
+          }
+        }
       }
 
       if (selectedPools.length === 0) return null;
 
-      const states = await Promise.all(
-        selectedPools.map(async pool => {
-          let state = pool.getState(blockNumber);
-          if (state === null || !state.isValid) {
-            if (state === null) {
-              this.logger.trace(
-                `${this.dexKey}: State === null. Generating new one`,
-              );
-            } else if (!state.isValid) {
-              this.logger.trace(
-                `${this.dexKey}: State is invalid. Generating new one`,
-              );
-            }
+      const states = selectedPools.map(pool => {
+        let state = pool.getState(blockNumber);
+        // if (state === null || !state.isValid) {
+        //   if (state === null) {
+        //     this.logger.trace(
+        //       `${this.dexKey}: State === null. Generating new one`,
+        //     );
+        //   } else if (!state.isValid) {
+        //     this.logger.trace(
+        //       `${this.dexKey}: State is invalid. Generating new one`,
+        //     );
+        //   }
 
-            state = await pool.generateState(blockNumber);
-            pool.setState(state, blockNumber);
-          }
-          return state;
-        }),
-      );
+        // state = await pool.generateState(blockNumber);
+        // pool.setState(state, blockNumber);
+        // }
+        return state!;
+      });
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
@@ -294,42 +316,38 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result = await Promise.all(
-        selectedPools.map(async (pool, i) => {
-          const state = states[i];
+      const result = selectedPools.map((pool, i) => {
+        const state = states[i];
 
-          const [unit, prices] = await Promise.all([
-            this._getOutputs(state, [unitAmount], zeroForOne, side),
-            this._getOutputs(state, _amounts, zeroForOne, side),
-          ]);
+        const unit = this._getOutputs(state, [unitAmount], zeroForOne, side);
+        const prices = this._getOutputs(state, _amounts, zeroForOne, side);
 
-          if (!prices || !unit) {
-            throw new Error('Prices or unit is not calculated');
-          }
+        if (!prices || !unit) {
+          throw new Error('Prices or unit is not calculated');
+        }
 
-          return {
-            unit: unit[0],
-            prices: [0n, ...prices],
-            data: {
-              path: [
-                {
-                  tokenIn: _srcAddress,
-                  tokenOut: _destAddress,
-                  fee: pool.feeCode.toString(),
-                },
-              ],
-            },
-            poolIdentifier: this.getPoolIdentifier(
-              pool.token0,
-              pool.token1,
-              pool.feeCode,
-            ),
-            exchange: this.dexKey,
-            gasCost: UNISWAPV3_QUOTE_GASLIMIT,
-            poolAddresses: [pool.poolAddress],
-          };
-        }),
-      );
+        return {
+          unit: unit[0],
+          prices: [0n, ...prices],
+          data: {
+            path: [
+              {
+                tokenIn: _srcAddress,
+                tokenOut: _destAddress,
+                fee: pool.feeCode.toString(),
+              },
+            ],
+          },
+          poolIdentifier: this.getPoolIdentifier(
+            pool.token0,
+            pool.token1,
+            pool.feeCode,
+          ),
+          exchange: this.dexKey,
+          gasCost: UNISWAPV3_QUOTE_GASLIMIT,
+          poolAddresses: [pool.poolAddress],
+        };
+      });
       return result;
     } catch (e) {
       this.logger.error(
@@ -529,14 +547,14 @@ export class UniswapV3
     return newConfig;
   }
 
-  private async _getOutputs(
+  private _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
-  ): Promise<bigint[] | null> {
+  ): bigint[] | null {
     try {
-      const outputs = await uniswapV3Math.queryOutputs(
+      const outputs = uniswapV3Math.queryOutputs(
         state,
         amounts,
         zeroForOne,
