@@ -21,23 +21,55 @@ export type OracleObservation = {
   initialized: boolean;
 };
 
-export type PoolState = {
+export type TokenWithCurrencyKey = Token & { currencyKey?: string };
+
+export type OnchainConfigValues = {
+  lastUpdatedInMs: number;
+
   atomicExchangeFeeRate: Record<string, bigint>;
   exchangeFeeRate: Record<string, bigint>;
   pureChainlinkPriceForAtomicSwapsEnabled: Record<string, boolean>;
   atomicEquivalentForDexPricing: Record<string, Token>;
   atomicTwapWindow: bigint;
-  aggregators: Record<string, LatestRoundData>;
+
   dexPriceAggregator: {
     weth: Address;
     defaultPoolFee: bigint;
     uniswapV3Factory: Address;
     overriddenPoolForRoute: Record<string, Address>;
+  };
+
+  addressToToken: Record<Address, TokenWithCurrencyKey>;
+};
+
+export type PoolState = {
+  // currencyKey -> value. From flexibleStorage
+  atomicExchangeFeeRate: Record<string, bigint>;
+  exchangeFeeRate: Record<string, bigint>;
+  pureChainlinkPriceForAtomicSwapsEnabled: Record<string, boolean>;
+  atomicEquivalentForDexPricing: Record<string, Token>;
+
+  // currencyKey -> value. From chainLinkRequest
+  aggregators: Record<string, LatestRoundData>;
+
+  // from flexible Storage
+  atomicTwapWindow: bigint;
+
+  dexPriceAggregator: {
+    // from DexPriceAggregatorUniswapV3 instance
+    weth: Address;
+    defaultPoolFee: bigint;
+    uniswapV3Factory: Address;
+    // bytes from token0 and token1 ->
+    overriddenPoolForRoute: Record<string, Address>;
+
+    // UniswapV3 Pool
     uniswapV3Slot0: Record<string, Slot0>;
     // poolAddress -> observationIndex -> Observation
     uniswapV3Observations: Record<string, Record<number, OracleObservation>>;
     // poolAddress -> tickCumulatives. Taken from [twapWindow, 1n]
-    tickCumulatives: Record<string, [bigint, bigint]>;
+    // To pass readonly type check the latest value is in object
+    tickCumulatives: Record<string, Record<0 | 1, bigint>>;
   };
   blockTimestamp: bigint;
 };
@@ -52,4 +84,8 @@ export type SynthetixData = {
 
 export type DexParams = {
   readProxyAddressResolver: Address;
+  flexibleStorage: Address;
+
+  // List of available synths for atomic swap
+  synths: Address[];
 };

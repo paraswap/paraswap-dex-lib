@@ -11,18 +11,17 @@ import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { SynthetixData } from './types';
+import { OnchainConfigValues, SynthetixData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { SynthetixConfig, Adapters } from './config';
 import { SynthetixEventPool } from './synthetix-pool';
 
-export class Synthetix
-  extends SimpleExchange
-  implements IDex<SynthetixData>
-{
+export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   protected eventPools: SynthetixEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
+
+  onchainConfigValues?: OnchainConfigValues;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SynthetixConfig);
@@ -33,7 +32,8 @@ export class Synthetix
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
+    protected config = SynthetixConfig[dexKey][network],
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -45,12 +45,32 @@ export class Synthetix
     );
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    this.onchainConfigValues = await this.getOnchainConfigValues(blockNumber);
+  }
+
+  async getOnchainConfigValues(
+    blockNumber?: number,
+  ): Promise<OnchainConfigValues> {
+    const calldata = [];
+
+    return {
+      lastUpdatedInMs: Date.now(),
+
+      addressToToken: {},
+      atomicExchangeFeeRate: {},
+      exchangeFeeRate: {},
+      pureChainlinkPriceForAtomicSwapsEnabled: {},
+      atomicEquivalentForDexPricing: {},
+      atomicTwapWindow: 0n,
+
+      dexPriceAggregator: {
+        weth: '',
+        defaultPoolFee: 0n,
+        uniswapV3Factory: '',
+        overriddenPoolForRoute: {},
+      },
+    };
   }
 
   // Returns the list of contract adapters (name and index)
