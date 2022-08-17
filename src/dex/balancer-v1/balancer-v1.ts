@@ -602,6 +602,7 @@ export class BalancerV1
       if (!allowedPools || !allowedPools.length) return null;
 
       const poolPrices = allowedPools
+        .slice(0, 5)
         .map(pool => {
           const poolAddress = pool.id.toLowerCase();
           const parsedOldPool = parsePoolPairData(
