@@ -89,6 +89,7 @@ export class SynthetixEventPool extends StatefulEventSubscriber<PoolState> {
         overriddenPoolForRoute: {},
         uniswapV3Slot0: {},
         uniswapV3Observations: {},
+        tickCumulatives: {},
       },
       blockTimestamp: 0n,
     };

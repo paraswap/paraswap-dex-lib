@@ -36,6 +36,8 @@ export type PoolState = {
     uniswapV3Slot0: Record<string, Slot0>;
     // poolAddress -> observationIndex -> Observation
     uniswapV3Observations: Record<string, Record<number, OracleObservation>>;
+    // poolAddress -> tickCumulatives. Taken from [twapWindow, 1n]
+    tickCumulatives: Record<string, [bigint, bigint]>;
   };
   blockTimestamp: bigint;
 };

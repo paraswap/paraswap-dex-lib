@@ -7,7 +7,9 @@ export const BI_POWS = new Array(37)
   .map((_0, index) => BigInt(`1${'0'.repeat(index)}`));
 
 export const BI_MAX_INT = BigInt(MAX_INT);
-export const BI_MAX_UINT = 2n ** 256n - 1n;
+
 export const BI_MAX_UINT96 = 2n ** 96n - 1n;
+export const BI_MAX_UINT128 = 2n ** 128n - 1n;
+export const BI_MAX_UINT256 = 2n ** 256n - 1n;
 
 export const BI_ADDR_MASK = (1n << 160n) - 1n;

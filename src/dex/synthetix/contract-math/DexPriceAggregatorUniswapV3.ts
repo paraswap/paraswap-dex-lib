@@ -51,6 +51,7 @@ class DexPriceAggregatorUniswapV3 {
       ),
     );
     return this._fetchAmountFromSinglePool(
+      state,
       tokenIn,
       _ethAmountIn,
       _tokenOut,
@@ -75,6 +76,7 @@ class DexPriceAggregatorUniswapV3 {
       ),
     );
     return this._fetchAmountFromSinglePool(
+      state,
       _tokenIn,
       _amountIn,
       tokenOut,
@@ -101,6 +103,7 @@ class DexPriceAggregatorUniswapV3 {
     );
     if (overriddenPool !== NULL_ADDRESS) {
       return this._fetchAmountFromSinglePool(
+        state,
         _tokenIn,
         _amountIn,
         _tokenOut,
@@ -128,8 +131,8 @@ class DexPriceAggregatorUniswapV3 {
       ),
     );
 
-    const [spotTick1] = OracleLibrary.getBlockStartingTickAndLiquidity(pool1);
-    const [spotTick2] = OracleLibrary.getBlockStartingTickAndLiquidity(pool2);
+    const spotTick1 = OracleLibrary.getBlockStartingTick(state, pool1);
+    const spotTick2 = OracleLibrary.getBlockStartingTick(state, pool2);
     const spotAmountOut = this._getQuoteCrossingTicksThroughWeth(
       state,
       _tokenIn,
@@ -140,8 +143,8 @@ class DexPriceAggregatorUniswapV3 {
     );
 
     const castedTwapPeriod = BigInt.asUintN(32, _twapPeriod);
-    const [twapTick1] = OracleLibrary.consult(pool1, castedTwapPeriod);
-    const [twapTick2] = OracleLibrary.consult(pool2, castedTwapPeriod);
+    const twapTick1 = OracleLibrary.consult(state, pool1, castedTwapPeriod);
+    const twapTick2 = OracleLibrary.consult(state, pool2, castedTwapPeriod);
     const twapAmountOut = this._getQuoteCrossingTicksThroughWeth(
       state,
       _tokenIn,
@@ -193,6 +196,7 @@ class DexPriceAggregatorUniswapV3 {
   }
 
   private _fetchAmountFromSinglePool(
+    state: PoolState,
     _tokenIn: Address,
     _amountIn: bigint,
     _tokenOut: Address,
@@ -200,8 +204,9 @@ class DexPriceAggregatorUniswapV3 {
     _twapPeriod: bigint,
   ): bigint {
     // Leave ticks as int256s to avoid solidity casting
-    const [spotTick] = OracleLibrary.getBlockStartingTickAndLiquidity(_pool);
-    const [twapTick] = OracleLibrary.consult(
+    const spotTick = OracleLibrary.getBlockStartingTick(state, _pool);
+    const twapTick = OracleLibrary.consult(
+      state,
       _pool,
       BigInt.asUintN(32, _twapPeriod),
     );

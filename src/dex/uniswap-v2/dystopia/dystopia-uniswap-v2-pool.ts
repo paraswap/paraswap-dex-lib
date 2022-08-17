@@ -1,6 +1,6 @@
 import { RESERVE_LIMIT } from '../uniswap-v2';
 import { UniswapV2PoolOrderedParams } from '../types';
-import { BI_MAX_UINT } from '../../../bigint-constants';
+import { BI_MAX_UINT256 } from '../../../bigint-constants';
 import { SWAP_FEE_FACTOR } from './constants';
 
 export class DystopiaUniswapV2Pool {
@@ -36,7 +36,7 @@ export class DystopiaUniswapV2Pool {
     const denominator =
       (SWAP_FEE_FACTOR - 1n) * (BigInt(reservesOut) - destAmount);
 
-    if (denominator <= 0n) return BI_MAX_UINT;
+    if (denominator <= 0n) return BI_MAX_UINT256;
     return 1n + numerator / denominator;
   }
 }

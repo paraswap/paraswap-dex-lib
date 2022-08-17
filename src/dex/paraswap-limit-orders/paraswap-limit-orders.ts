@@ -27,7 +27,7 @@ import {
 } from './types';
 import { ParaSwapLimitOrdersConfig, Adapters } from './config';
 import { LimitOrderExchange } from '../limit-order-exchange';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import {
   MAX_ORDERS_MULTI_FACTOR,
@@ -372,7 +372,7 @@ export class ParaSwapLimitOrders
 
     const encodingValues: OrderInfo[] = new Array(orderInfos.length);
 
-    let minDeadline = BI_MAX_UINT;
+    let minDeadline = BI_MAX_UINT256;
     for (const [i, orderInfo] of orderInfos.entries()) {
       // Find minimum deadline value
       const { order } = orderInfo;
