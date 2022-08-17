@@ -315,18 +315,18 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
-    const pools = Object.values(this.poolStateMap).map<PoolState>(
-      pool => pool.getState(blockNumber) as PoolState,
-    );
+    const allPoolsNonZeroBalances =
+      await this.dexHelper.httpRequest.get<PoolStates>(
+        poolUrls[this.network],
+        POOL_FETCH_TIMEOUT,
+      );
+
     // It is important to the onchain query as the subgraph pool might not contain the
     // latest balance because of slow block processing time
     const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
-      {
-        pools,
-      },
+      allPoolsNonZeroBalances,
       blockNumber,
     );
-
     allPoolsNonZeroBalancesChain.pools.forEach(pool => {
       const statePool = this.poolStateMap[pool.id.toLowerCase()];
       statePool.setState(pool, blockNumber);
