@@ -97,7 +97,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<PoolState> {
   }
 
   handleJoinPool(event: LogDescription, blockNumber: number): void {
-    const pool = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+    const pool = typecastReadOnlyPool(this.getState(blockNumber));
 
     const tokenIn = event.args.tokenIn.toLowerCase();
     const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
@@ -111,7 +111,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<PoolState> {
   }
 
   handleExitPool(event: LogDescription, blockNumber: number): void {
-    const pool = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+    const pool = typecastReadOnlyPool(this.getState(blockNumber));
 
     const tokenOut = event.args.tokenOut.toLowerCase();
     const tokenAmountOut = biginterify(event.args.tokenAmountOut.toString());
@@ -125,7 +125,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<PoolState> {
   }
 
   handleSwap(event: LogDescription, blockNumber: number): void {
-    const pool = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+    const pool = typecastReadOnlyPool(this.getState(blockNumber));
 
     const tokenIn = event.args.tokenIn.toLowerCase();
     const tokenAmountIn = biginterify(event.args.tokenAmountIn.toString());
