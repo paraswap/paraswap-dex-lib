@@ -547,7 +547,6 @@ export class BalancerV1
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV1Data>> {
     try {
-      const start = Date.now();
       const _from = this.dexHelper.config.wrapETH(srcToken);
       const _to = this.dexHelper.config.wrapETH(destToken);
 
@@ -627,7 +626,6 @@ export class BalancerV1
         })
         .filter(p => !!p);
 
-      console.log(`elapsed ${Date.now() - start}`);
       return poolPrices as unknown as ExchangePrices<BalancerV1Data>;
     } catch (e) {
       this.logger.error(
