@@ -16,7 +16,7 @@ export const SynthetixConfig: DexConfigMap<DexParams> = {
         '0xF6b1C627e95BFc3c1b4c9B825a032Ff0fBf3e07d', // sJPY
         '0x97fe22E7341a0Cd8Db6F6C021A24Dc8f4DAD855F', // sGBP
         '0x269895a3dF4D73b077Fc823dD6dA1B95f72Aaf9B', // sKRW
-        '0xfb020CA7f4e8C4a5bBBe060f59a249c6275d2b69', // sAUD
+        '0xF48e200EAF9906362BB1442fca31e0835773b8B4', // sAUD
       ],
     },
     [Network.OPTIMISM]: {
