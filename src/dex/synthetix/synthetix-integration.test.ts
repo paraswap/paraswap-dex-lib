@@ -15,13 +15,24 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorUniswapV3';
 
 const network = Network.MAINNET;
-const TokenASymbol = 'TokenASymbol';
+const TokenASymbol = 'sBTC';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'TokenBSymbol';
+const TokenBSymbol = 'sETH';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [0n, BI_POWS[18], 2000000000000000000n];
+const amounts = [
+  0n,
+  1n * BI_POWS[TokenA.decimals],
+  2n * BI_POWS[TokenA.decimals],
+  3n * BI_POWS[TokenA.decimals],
+  4n * BI_POWS[TokenA.decimals],
+  5n * BI_POWS[TokenA.decimals],
+  6n * BI_POWS[TokenA.decimals],
+  7n * BI_POWS[TokenA.decimals],
+  8n * BI_POWS[TokenA.decimals],
+  9n * BI_POWS[TokenA.decimals],
+];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'Synthetix';
@@ -91,9 +102,8 @@ describe('Synthetix', function () {
 
   beforeAll(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-
-    // synthetix = new Synthetix(network, dexKey, dexHelper);
-    // await synthetix.initializePricing(blockNumber);
+    synthetix = new Synthetix(network, dexKey, dexHelper);
+    await synthetix.initializePricing(blockNumber);
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -122,43 +132,6 @@ describe('Synthetix', function () {
       checkConstantPoolPrices(poolPrices!, amounts, dexKey);
     } else {
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-    }
-
-    // Check if onchain pricing equals to calculated ones
-    await checkOnChainPricing(
-      synthetix,
-      '', // TODO: Put here the functionName to call
-      blockNumber,
-      poolPrices![0].prices,
-    );
-  });
-
-  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const pools = await synthetix.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.BUY,
-      blockNumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
-
-    expect(pools.length).toBeGreaterThan(0);
-
-    const poolPrices = await synthetix.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.BUY,
-      blockNumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
-
-    expect(poolPrices).not.toBeNull();
-    if (synthetix.hasConstantPriceLargeAmounts) {
-      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-    } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
     }
 
     // Check if onchain pricing equals to calculated ones

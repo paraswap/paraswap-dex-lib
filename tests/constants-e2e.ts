@@ -221,6 +221,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
       decimals: 18,
     },
+    sBTC: {
+      address: '0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6',
+      decimals: 18,
+    },
+    sETH: {
+      address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -636,6 +644,8 @@ export const Holders: {
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x3a3ee61f7c6e1994a2001762250a5e17b2061b6d',
+    sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
+    sETH: '0xa7b9789fe2603aa1138154306f208e8c110435be',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
