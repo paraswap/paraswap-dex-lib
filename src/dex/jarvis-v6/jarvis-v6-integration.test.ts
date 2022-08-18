@@ -31,73 +31,14 @@ import { Tokens } from '../../../tests/constants-e2e';
 const network = Network.POLYGON;
 const TokenASymbol = 'jEUR';
 const TokenA = Tokens[network][TokenASymbol];
+const TokenAAmounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const TokenBSymbol = 'USDC';
 const TokenB = Tokens[network][TokenBSymbol];
-
-const amounts = [0n, BI_POWS[18], 2000000000000000000n];
+const TokenBAmounts = [0n, BI_POWS[6], 2000000n];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'JarvisV6';
-
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
-  amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
-) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
-  }));
-}
-
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
-
-async function checkOnChainPricing(
-  jarvisV6: JarvisV6,
-  funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from jarvisV6.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
-  );
-
-  expect(prices).toEqual(expectedPrices);
-}
 
 describe('JarvisV6', function () {
   let blockNumber: number;
@@ -109,90 +50,130 @@ describe('JarvisV6', function () {
     jarvisV6 = new JarvisV6(network, dexKey, dexHelper);
     await jarvisV6.initializePricing(blockNumber);
   });
+  describe('Redeem() Swap Function', () => {
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const pools = await jarvisV6.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
 
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const pools = await jarvisV6.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.SELL,
-      blockNumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+      expect(pools.length).toBeGreaterThan(0);
 
-    expect(pools.length).toBeGreaterThan(0);
+      const poolPrices = await jarvisV6.getPricesVolume(
+        TokenA,
+        TokenB,
+        TokenAAmounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
 
-    const poolPrices = await jarvisV6.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.SELL,
-      blockNumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, TokenAAmounts, SwapSide.SELL, dexKey);
+    });
 
-    expect(poolPrices).not.toBeNull();
-    if (jarvisV6.hasConstantPriceLargeAmounts) {
-      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-    } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-    }
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const pools = await jarvisV6.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
 
-    // Check if onchain pricing equals to calculated ones
-    await checkOnChainPricing(
-      jarvisV6,
-      '', // TODO: Put here the functionName to call
-      blockNumber,
-      poolPrices![0].prices,
-    );
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await jarvisV6.getPricesVolume(
+        TokenA,
+        TokenB,
+        TokenBAmounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, TokenBAmounts, SwapSide.BUY, dexKey);
+    });
   });
+  describe('Mint() Swap Function', () => {
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const pools = await jarvisV6.getPoolIdentifiers(
+        TokenB,
+        TokenA,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(
+        `${TokenBSymbol} <> ${TokenASymbol} Pool Identifiers: `,
+        pools,
+      );
 
-  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const pools = await jarvisV6.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.BUY,
-      blockNumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+      expect(pools.length).toBeGreaterThan(0);
 
-    expect(pools.length).toBeGreaterThan(0);
+      const poolPrices = await jarvisV6.getPricesVolume(
+        TokenB,
+        TokenA,
+        TokenBAmounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenBSymbol} <> ${TokenASymbol} Pool Prices: `,
+        poolPrices,
+      );
 
-    const poolPrices = await jarvisV6.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.BUY,
-      blockNumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, TokenBAmounts, SwapSide.SELL, dexKey);
+    });
 
-    expect(poolPrices).not.toBeNull();
-    if (jarvisV6.hasConstantPriceLargeAmounts) {
-      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-    } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
-    }
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const pools = await jarvisV6.getPoolIdentifiers(
+        TokenB,
+        TokenA,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenBSymbol} <> ${TokenASymbol} Pool Identifiers: `,
+        pools,
+      );
 
-    // Check if onchain pricing equals to calculated ones
-    await checkOnChainPricing(
-      jarvisV6,
-      '', // TODO: Put here the functionName to call
-      blockNumber,
-      poolPrices![0].prices,
-    );
-  });
+      expect(pools.length).toBeGreaterThan(0);
 
-  it('getTopPoolsForToken', async function () {
-    const poolLiquidity = await jarvisV6.getTopPoolsForToken(
-      TokenA.address,
-      10,
-    );
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+      const poolPrices = await jarvisV6.getPricesVolume(
+        TokenB,
+        TokenA,
+        TokenAAmounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenBSymbol} <> ${TokenASymbol} Pool Prices: `,
+        poolPrices,
+      );
 
-    if (!jarvisV6.hasConstantPriceLargeAmounts) {
-      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
-    }
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, TokenAAmounts, SwapSide.BUY, dexKey);
+    });
   });
 });
