@@ -137,13 +137,11 @@ export class ParaSwapLimitOrders
         prices: [unit],
       } = this._getPrices([unitVolume], orderBook, isSell);
 
-      const { prices, gasCosts, nbOrders } = this._getPrices(
+      const { prices, gasCosts, maxOrdersCount } = this._getPrices(
         amounts,
         orderBook,
         isSell,
       );
-
-      const maxOrdersCount = Math.max(...nbOrders);
 
       if (unit === 0n) {
         // If we didn't fulfill unit amount, scale up latest amount till unit
@@ -418,10 +416,10 @@ export class ParaSwapLimitOrders
     amounts: bigint[],
     orderBook: ParaSwapOrderBook[],
     isSell: boolean,
-  ): { prices: bigint[]; gasCosts: bigint[]; nbOrders: number[] } {
+  ): { prices: bigint[]; gasCosts: bigint[]; maxOrdersCount: number } {
     const prices = new Array<bigint>(amounts.length).fill(0n);
     const gasCosts = new Array<bigint>(amounts.length).fill(0n);
-    const nbOrders = new Array<number>(amounts.length).fill(0);
+    let maxOrdersCount = 0;
 
     const calcOutFunc = isSell
       ? this._calcMakerFromTakerAmount
@@ -498,14 +496,14 @@ export class ParaSwapLimitOrders
         } else if (toFill === 0n) {
           prices[i] = filled;
           gasCosts[i] = numberOfOrders * ONE_ORDER_GASCOST;
-          nbOrders[i] = +numberOfOrders.toString();
+          maxOrdersCount = Math.max(maxOrdersCount, +numberOfOrders.toString());
         } else {
           prices[i] = 0n;
           gasCosts[i] = 0n;
         }
       }
     }
-    return { prices, gasCosts, nbOrders };
+    return { prices, gasCosts, maxOrdersCount };
   }
 
   private _calcTakerFromMakerAmount(
