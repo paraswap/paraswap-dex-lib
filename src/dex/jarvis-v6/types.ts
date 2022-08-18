@@ -1,22 +1,63 @@
-import { Address } from '../../types';
+import { Interface } from '@ethersproject/abi';
+import { Address, Token } from '../../types';
 
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  priceFeed: ChainLinkPriceFeedState;
+  pool: SynthereumPoolState;
+};
+
+export type ChainLinkPriceFeedState = {
+  usdcPrice: bigint;
+};
+
+export type SynthereumPoolState = {
+  feesPercentage: bigint;
 };
 
 export type JarvisV6Data = {
-  // TODO: JarvisV6Data is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
-  exchange: Address;
+  poolAddress: string;
+  swapFunction: JarvisSwapFunctions;
+};
+
+export type PoolConfig = {
+  address: Address;
+  priceFeedPair: string;
+  syntheticToken: Token;
+  collateralToken: Token;
+  chainLink: {
+    interface: Interface;
+    address: Address;
+  };
+};
+
+export type priceFeedData = {
+  interface: Interface;
+  address: Address;
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  poolInterface: Interface;
+  priceFeed: priceFeedData;
+  pools: PoolConfig[];
 };
+
+type JarvisV6MintParam = [
+  minNumTokens: string,
+  collateralAmount: string,
+  expiration: string,
+  recipient: string,
+];
+
+type JarvisV6RedeemParam = [
+  numTokens: string,
+  minCollateral: string,
+  expiration: string,
+  recipient: string,
+];
+
+export type JarvisV6Params = JarvisV6MintParam | JarvisV6RedeemParam;
+
+export enum JarvisSwapFunctions {
+  mint = 'mint',
+  redeem = 'redeem',
+}
