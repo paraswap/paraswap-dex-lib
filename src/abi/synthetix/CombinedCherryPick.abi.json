@@ -1,0 +1,104 @@
+[
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "target",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "internalType": "bytes32", "name": "name", "type": "bytes32" }
+    ],
+    "name": "getAddress",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "currencyKey",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "internalType": "bytes32", "name": "contractName", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "record", "type": "bytes32" }
+    ],
+    "name": "getAddressValue",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "internalType": "bytes32", "name": "contractName", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "record", "type": "bytes32" }
+    ],
+    "name": "getUIntValue",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "internalType": "bytes32", "name": "contractName", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "record", "type": "bytes32" }
+    ],
+    "name": "getBoolValue",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "uniswapV3Factory",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "weth",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "defaultPoolFee",
+    "outputs": [{ "internalType": "uint24", "name": "", "type": "uint24" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "name": "overriddenPoolForRoute",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [{ "name": "", "type": "uint8" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
