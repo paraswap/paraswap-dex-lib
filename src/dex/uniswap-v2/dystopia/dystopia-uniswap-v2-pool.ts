@@ -7,10 +7,10 @@ export class DystopiaUniswapV2Pool {
   // Dystopia non-stable pools has almost same formula like uniswap2,
   // but little changed in contract.
   // So we repeat formulas here to have same output.
-  static async getSellPrice(
+  static getSellPrice(
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     const { reservesIn, reservesOut } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
@@ -26,10 +26,10 @@ export class DystopiaUniswapV2Pool {
     return denominator === 0n ? 0n : numerator / denominator;
   }
 
-  static async getBuyPrice(
+  static getBuyPrice(
     priceParams: UniswapV2PoolOrderedParams,
     destAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     const { reservesIn, reservesOut } = priceParams;
 
     const numerator = BigInt(reservesIn) * destAmount * SWAP_FEE_FACTOR;

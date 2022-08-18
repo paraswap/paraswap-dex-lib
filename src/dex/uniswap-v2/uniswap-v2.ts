@@ -178,6 +178,7 @@ export class UniswapV2
   implements IDex<UniswapV2Data, UniswapParam>
 {
   pairs: { [key: string]: UniswapV2Pair } = {};
+  private missingPair = new Set<string>();
   feeFactor = 10000;
   factory: Contract;
 
@@ -277,10 +278,10 @@ export class UniswapV2
     pair.pool.initialize(blockNumber);
   }
 
-  async getBuyPrice(
+  getBuyPrice(
     priceParams: UniswapV2PoolOrderedParams,
     destAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     const { reservesIn, reservesOut, fee } = priceParams;
 
     const numerator = BigInt(reservesIn) * destAmount * BigInt(this.feeFactor);
@@ -292,10 +293,10 @@ export class UniswapV2
     return numerator === 0n ? 0n : 1n + numerator / denominator;
   }
 
-  async getSellPrice(
+  getSellPrice(
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     const { reservesIn, reservesOut, fee } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
@@ -312,29 +313,29 @@ export class UniswapV2
     return denominator === 0n ? 0n : numerator / denominator;
   }
 
-  async getBuyPricePath(
+  getBuyPricePath(
     amount: bigint,
     params: UniswapV2PoolOrderedParams[],
-  ): Promise<bigint> {
+  ): bigint {
     let price = amount;
     for (const param of params.reverse()) {
-      price = await this.getBuyPrice(param, price);
+      price = this.getBuyPrice(param, price);
     }
     return price;
   }
 
-  async getSellPricePath(
+  getSellPricePath(
     amount: bigint,
     params: UniswapV2PoolOrderedParams[],
-  ): Promise<bigint> {
+  ): bigint {
     let price = amount;
     for (const param of params) {
-      price = await this.getSellPrice(param, price);
+      price = this.getSellPrice(param, price);
     }
     return price;
   }
 
-  async findPair(from: Token, to: Token) {
+  syncFindPair(from: Token, to: Token): UniswapV2Pair | null {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
@@ -343,7 +344,18 @@ export class UniswapV2
 
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
-    if (pair) return pair;
+    return pair ? pair : null;
+  }
+
+  async findPairOnChain(from: Token, to: Token) {
+    if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
+    const [token0, token1] =
+      from.address.toLowerCase() < to.address.toLowerCase()
+        ? [from, to]
+        : [to, from];
+
+    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
+    let pair: UniswapV2Pair | null = null;
     const exchange = await this.factory.methods
       .getPair(token0.address, token1.address)
       .call();
@@ -412,12 +424,34 @@ export class UniswapV2
     }
   }
 
+  syncFindPairs(pairs: [Token, Token][]): UniswapV2Pair[] | boolean {
+    const uniPairs = new Array<UniswapV2Pair>(pairs.length);
+
+    let i = 0;
+    for (const pair of pairs) {
+      const uniPair = this.syncFindPair(pair[0], pair[1]);
+      if (!uniPair) {
+        return false;
+      }
+      uniPairs[i] = uniPair;
+      ++i;
+    }
+
+    return uniPairs;
+  }
+
   async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
     if (!blockNumber) return;
     const pairsToFetch: UniswapV2Pair[] = [];
     for (const _pair of pairs) {
-      const pair = await this.findPair(_pair[0], _pair[1]);
-      if (!(pair && pair.exchange)) continue;
+      const pair = await this.findPairOnChain(_pair[0], _pair[1]);
+      if (!pair) {
+        continue;
+      }
+      if (!pair.exchange) {
+        this.missingPair.add(`${_pair[0].address}_${_pair[1].address}`);
+        continue;
+      }
       if (!pair.pool) {
         pairsToFetch.push(pair);
       } else if (!pair.pool.getState(blockNumber)) {
@@ -468,12 +502,12 @@ export class UniswapV2
     );
   }
 
-  async getPairOrderedParams(
+  getPairOrderedParams(
     from: Token,
     to: Token,
     blockNumber: number,
-  ): Promise<UniswapV2PoolOrderedParams | null> {
-    const pair = await this.findPair(from, to);
+  ): UniswapV2PoolOrderedParams | null {
+    const pair = this.syncFindPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) return null;
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
@@ -545,14 +579,14 @@ export class UniswapV2
       const from = this.dexHelper.config.wrapETH(_from);
       const to = this.dexHelper.config.wrapETH(_to);
 
-      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      from.address = from.address.toLowerCase();
+      to.address = to.address.toLowerCase();
+
+      if (from.address === to.address) {
         return null;
       }
 
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
+      const tokenAddress = [from.address, to.address]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
@@ -561,9 +595,15 @@ export class UniswapV2
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
-
-      const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
+      let pairParam = this.getPairOrderedParams(from, to, blockNumber);
+      if (!pairParam) {
+        const id = `${from.address}_${to.address}`;
+        if (this.missingPair.has(id)) {
+          return null;
+        }
+        await this.batchCatchUpPairs([[from, to]], blockNumber);
+        pairParam = this.getPairOrderedParams(from, to, blockNumber);
+      }
 
       if (!pairParam) return null;
 
@@ -572,18 +612,13 @@ export class UniswapV2
       );
       const unit =
         side == SwapSide.BUY
-          ? await this.getBuyPricePath(unitAmount, [pairParam])
-          : await this.getSellPricePath(unitAmount, [pairParam]);
+          ? this.getBuyPricePath(unitAmount, [pairParam])
+          : this.getSellPricePath(unitAmount, [pairParam]);
 
       const prices =
         side == SwapSide.BUY
-          ? await Promise.all(
-              amounts.map(amount => this.getBuyPricePath(amount, [pairParam])),
-            )
-          : await Promise.all(
-              amounts.map(amount => this.getSellPricePath(amount, [pairParam])),
-            );
-
+          ? amounts.map(amount => this.getBuyPricePath(amount, [pairParam!]))
+          : amounts.map(amount => this.getSellPricePath(amount, [pairParam!]));
       // As uniswapv2 just has one pool per token pair
       return [
         {

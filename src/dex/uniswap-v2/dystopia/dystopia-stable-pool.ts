@@ -62,10 +62,10 @@ function _closeTo(a: bigint, b: bigint, target: bigint) {
 }
 
 export class DystopiaStablePool {
-  static async getSellPrice(
+  static getSellPrice(
     priceParams: DystopiaPoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     const { reservesIn, reservesOut, decimalsIn, decimalsOut } = priceParams;
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {

@@ -234,19 +234,19 @@ export class Dystopia extends UniswapV2 {
     }
   }
 
-  async getSellPrice(
+  getSellPrice(
     priceParams: DystopiaPoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     return priceParams.stable
       ? DystopiaStablePool.getSellPrice(priceParams, srcAmount)
       : DystopiaUniswapV2Pool.getSellPrice(priceParams, srcAmount);
   }
 
-  async getBuyPrice(
+  getBuyPrice(
     priceParams: DystopiaPoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     if (priceParams.stable) throw new Error(`Buy not supported`);
     return DystopiaUniswapV2Pool.getBuyPrice(priceParams, srcAmount);
   }
@@ -301,22 +301,14 @@ export class Dystopia extends UniswapV2 {
         const unit =
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY
-            ? await this.getBuyPricePath(unitAmount, [pairParam])
-            : await this.getSellPricePath(unitAmount, [pairParam]);
+            ? this.getBuyPricePath(unitAmount, [pairParam])
+            : this.getSellPricePath(unitAmount, [pairParam]);
 
         const prices =
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY
-            ? await Promise.all(
-                amounts.map(amount =>
-                  this.getBuyPricePath(amount, [pairParam]),
-                ),
-              )
-            : await Promise.all(
-                amounts.map(amount =>
-                  this.getSellPricePath(amount, [pairParam]),
-                ),
-              );
+            ? amounts.map(amount => this.getBuyPricePath(amount, [pairParam]))
+            : amounts.map(amount => this.getSellPricePath(amount, [pairParam]));
 
         return {
           prices: prices,
