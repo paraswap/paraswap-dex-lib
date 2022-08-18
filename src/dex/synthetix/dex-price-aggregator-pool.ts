@@ -6,7 +6,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { SynthetixData, PoolState } from './types';
 import { SynthetixConfig } from './config';
 
-export class SynthetixEventPool extends StatefulEventSubscriber<PoolState> {
+export class DexPriceAggregatorEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
   } = {};
