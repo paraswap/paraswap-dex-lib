@@ -519,10 +519,9 @@ export class UniswapV2
       return null;
     }
     const fee = (
-      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
+      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address] || 0)
     ).toString();
-    const pairReversed =
-      pair.token1.address.toLowerCase() === from.address.toLowerCase();
+    const pairReversed = pair.token1.address === from.address;
     if (pairReversed) {
       return {
         tokenIn: from.address,
@@ -554,11 +553,11 @@ export class UniswapV2
     const from = this.dexHelper.config.wrapETH(_from);
     const to = this.dexHelper.config.wrapETH(_to);
 
-    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+    if (from.address === to.address) {
       return [];
     }
 
-    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
+    const tokenAddress = [from.address, to.address]
       .sort((a, b) => (a > b ? 1 : -1))
       .join('_');
 
@@ -626,7 +625,7 @@ export class UniswapV2
           unit: unit,
           data: {
             router: this.router,
-            path: [from.address.toLowerCase(), to.address.toLowerCase()],
+            path: [from.address, to.address],
             factory: this.factoryAddress,
             initCode: this.initCode,
             feeFactor: this.feeFactor,
