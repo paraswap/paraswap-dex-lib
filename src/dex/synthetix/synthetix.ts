@@ -1,3 +1,5 @@
+import _ from 'lodash';
+import { ethers } from 'ethers';
 import {
   Token,
   Address,
@@ -7,21 +9,51 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork } from '../../utils';
+import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import { getDexKeysWithNetwork, _require } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { OnchainConfigValues, SynthetixData } from './types';
+import { OnchainConfigValues, PoolKey, SynthetixData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { SynthetixConfig, Adapters } from './config';
-import { SynthetixEventPool } from './synthetix-pool';
+import { Interface } from '@ethersproject/abi';
+import { MultiWrapper } from '../../lib/multi-wrapper';
+import {
+  addressDecode,
+  booleanDecode,
+  bytes32ToString,
+  uint24ToBigInt,
+  uint8ToNumber,
+  uintDecode,
+} from '../../lib/decoders';
+import { encodeStringToBytes32 } from './utils';
+import {
+  Contracts,
+  EXCHANGE_RATES_CONTRACT_NAME,
+  SETTING_ATOMIC_EQUIVALENT_FOR_DEX_PRICING,
+  SETTING_ATOMIC_EXCHANGE_FEE_RATE,
+  SETTING_ATOMIC_TWAP_WINDOW,
+  SETTING_CONTRACT_NAME,
+  SETTING_DEX_PRICE_AGGREGATOR,
+  SETTING_EXCHANGE_FEE_RATE,
+  SETTING_PURE_CHAINLINK_PRICE_FOR_ATOMIC_SWAPS_ENABLED,
+} from './constants';
+
+// There are so many ABIs, where I need only one or two functions
+// So, I decided to unite them into one combined interface
+import CombinedCherryPickABI from '../../abi/synthetix/CombinedCherryPick.abi.json';
+import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorUniswapV3';
 
 export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
-  protected eventPools: SynthetixEventPool;
+  // protected eventPools: SynthetixEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
 
   onchainConfigValues?: OnchainConfigValues;
+
+  readonly combinedIface: Interface;
+
+  readonly multiWrapper: MultiWrapper;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SynthetixConfig);
@@ -37,12 +69,18 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new SynthetixEventPool(
-      dexKey,
-      network,
-      dexHelper,
+    this.combinedIface = new Interface(CombinedCherryPickABI);
+    this.multiWrapper = new MultiWrapper(
+      this.dexHelper.multiContract,
       this.logger,
     );
+
+    // this.eventPools = new SynthetixEventPool(
+    //   dexKey,
+    //   network,
+    //   dexHelper,
+    //   this.logger,
+    // );
   }
 
   async initializePricing(blockNumber: number) {
@@ -52,23 +90,302 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   async getOnchainConfigValues(
     blockNumber?: number,
   ): Promise<OnchainConfigValues> {
-    const calldata = [];
+    // We do three onchain calls for one state update
+
+    const [
+      targetAddress,
+      dexPriceAggregatorAddress,
+      atomicTwapWindow,
+      ...synthsAddresses
+    ] = (
+      await this.multiWrapper.tryAggregate<string | bigint>(true, [
+        {
+          target: this.config.readProxyAddressResolver,
+          callData: this.combinedIface.encodeFunctionData('target', []),
+          decodeFunction: addressDecode,
+        },
+        {
+          target: this.config.flexibleStorage,
+          callData: this.combinedIface.encodeFunctionData('getAddressValue', [
+            encodeStringToBytes32(EXCHANGE_RATES_CONTRACT_NAME),
+            encodeStringToBytes32(SETTING_DEX_PRICE_AGGREGATOR),
+          ]),
+          decodeFunction: addressDecode,
+        },
+        {
+          target: this.config.flexibleStorage,
+          callData: this.combinedIface.encodeFunctionData('getUIntValue', [
+            encodeStringToBytes32(SETTING_CONTRACT_NAME),
+            encodeStringToBytes32(SETTING_ATOMIC_TWAP_WINDOW),
+          ]),
+          decodeFunction: uintDecode,
+        },
+        ...this.config.synths.map(synthAddress => ({
+          target: synthAddress,
+          callData: this.combinedIface.encodeFunctionData('target', []),
+          decodeFunction: addressDecode,
+        })),
+      ])
+    ).map(d => d.returnData);
+
+    const [
+      synthetixAddress,
+      exchangerAddress,
+      wethAddress,
+      uniswapV3Factory,
+      defaultPoolFee,
+      ...synthCurrencyKeys
+    ] = (
+      await this.multiWrapper.tryAggregate<string | number | bigint>(true, [
+        {
+          target: targetAddress as string,
+          callData: this.combinedIface.encodeFunctionData('getAddress', [
+            encodeStringToBytes32(Contracts.SYNTHETIX),
+          ]),
+          decodeFunction: addressDecode,
+        },
+        {
+          target: targetAddress as string,
+          callData: this.combinedIface.encodeFunctionData('getAddress', [
+            encodeStringToBytes32(Contracts.EXCHANGER),
+          ]),
+          decodeFunction: addressDecode,
+        },
+        {
+          target: dexPriceAggregatorAddress as string,
+          callData: this.combinedIface.encodeFunctionData('weth', []),
+          decodeFunction: addressDecode,
+        },
+        {
+          target: dexPriceAggregatorAddress as string,
+          callData: this.combinedIface.encodeFunctionData(
+            'uniswapV3Factory',
+            [],
+          ),
+          decodeFunction: addressDecode,
+        },
+        {
+          target: dexPriceAggregatorAddress as string,
+          callData: this.combinedIface.encodeFunctionData('defaultPoolFee', []),
+          decodeFunction: uint24ToBigInt,
+        },
+        ...synthsAddresses.map(address => ({
+          target: address as string,
+          callData: this.combinedIface.encodeFunctionData('currencyKey', []),
+          decodeFunction: bytes32ToString,
+        })),
+      ])
+    ).map(d => d.returnData);
+
+    _require(
+      synthCurrencyKeys.length === this.config.synths.length,
+      `Number of currencyKeys=${synthCurrencyKeys.length} doesn't match the number of synth=${this.config.synths.length} in config`,
+    );
+
+    const addressToKey = this.config.synths.reduce<Record<Address, string>>(
+      (acc, curr, i) => {
+        const _tokenAddress = curr.toLowerCase();
+        acc[_tokenAddress] = synthCurrencyKeys[i] as string;
+        return acc;
+      },
+      {},
+    );
+
+    // This value updated automatically and used later to make difference between different value in array
+    let packCounter = 0;
+    const results = (
+      await this.multiWrapper.tryAggregate<bigint | boolean | string>(
+        true,
+        synthCurrencyKeys
+          .map(key => {
+            const result = [
+              {
+                target: this.config.flexibleStorage,
+                callData: this.combinedIface.encodeFunctionData(
+                  'getUIntValue',
+                  [
+                    encodeStringToBytes32(SETTING_CONTRACT_NAME),
+                    ethers.utils.solidityKeccak256(
+                      ['bytes32', 'bytes32'],
+                      [
+                        encodeStringToBytes32(SETTING_ATOMIC_EXCHANGE_FEE_RATE),
+                        key,
+                      ],
+                    ),
+                  ],
+                ),
+                decodeFunction: uintDecode,
+              },
+              {
+                target: this.config.flexibleStorage,
+                callData: this.combinedIface.encodeFunctionData(
+                  'getUIntValue',
+                  [
+                    encodeStringToBytes32(SETTING_CONTRACT_NAME),
+                    ethers.utils.solidityKeccak256(
+                      ['bytes32', 'bytes32'],
+                      [encodeStringToBytes32(SETTING_EXCHANGE_FEE_RATE), key],
+                    ),
+                  ],
+                ),
+                decodeFunction: uintDecode,
+              },
+              {
+                target: this.config.flexibleStorage,
+                callData: this.combinedIface.encodeFunctionData(
+                  'getBoolValue',
+                  [
+                    encodeStringToBytes32(SETTING_CONTRACT_NAME),
+                    ethers.utils.solidityKeccak256(
+                      ['bytes32', 'bytes32'],
+                      [
+                        encodeStringToBytes32(
+                          SETTING_PURE_CHAINLINK_PRICE_FOR_ATOMIC_SWAPS_ENABLED,
+                        ),
+                        key,
+                      ],
+                    ),
+                  ],
+                ),
+                decodeFunction: booleanDecode,
+              },
+              {
+                target: this.config.flexibleStorage,
+                callData: this.combinedIface.encodeFunctionData(
+                  'getAddressValue',
+                  [
+                    encodeStringToBytes32(SETTING_CONTRACT_NAME),
+                    ethers.utils.solidityKeccak256(
+                      ['bytes32', 'bytes32'],
+                      [
+                        encodeStringToBytes32(
+                          SETTING_ATOMIC_EQUIVALENT_FOR_DEX_PRICING,
+                        ),
+                        key,
+                      ],
+                    ),
+                  ],
+                ),
+                decodeFunction: addressDecode,
+              },
+            ];
+            packCounter = result.length;
+            return result;
+          })
+          .flat(),
+      )
+    ).map(d => d.returnData);
+
+    const atomicExchangeFeeRate: Record<string, bigint> = {};
+    const exchangeFeeRate: Record<string, bigint> = {};
+    const pureChainlinkPriceForAtomicSwapsEnabled: Record<string, boolean> = {};
+    const atomicEquivalentForDexPricing: Record<string, Token> = {};
+
+    _.chunk(results, packCounter).map((result, i) => {
+      const [
+        atomicExchangeFeeRateValue,
+        exchangeFeeRateValue,
+        pureChainlinkPriceForAtomicSwapsEnabledValue,
+        atomicEquivalentForDexPricingValue,
+      ] = result;
+
+      atomicExchangeFeeRate[synthCurrencyKeys[i] as string] =
+        atomicExchangeFeeRateValue as bigint;
+      exchangeFeeRate[synthCurrencyKeys[i] as string] =
+        exchangeFeeRateValue as bigint;
+      pureChainlinkPriceForAtomicSwapsEnabled[synthCurrencyKeys[i] as string] =
+        pureChainlinkPriceForAtomicSwapsEnabledValue as boolean;
+      atomicEquivalentForDexPricing[synthCurrencyKeys[i] as string] = {
+        address: atomicEquivalentForDexPricingValue as Address,
+        decimals: 0,
+      };
+    });
+
+    const atomicEquivalentForDexPricingWithoutZeros = Object.entries(
+      atomicEquivalentForDexPricing,
+    ).reduce<Record<string, Token>>((acc, curr) => {
+      const [key, token] = curr;
+      if (token.address !== NULL_ADDRESS) {
+        acc[key] = token;
+      }
+      return acc;
+    }, {});
+
+    const tokenAddressesForCombination = Object.values(
+      atomicEquivalentForDexPricingWithoutZeros,
+    ).map(t => t.address);
+
+    const poolKeyCombinations: PoolKey[] = tokenAddressesForCombination.flatMap(
+      (address0, i) =>
+        tokenAddressesForCombination
+          .slice(i + 1)
+          .map(address1 =>
+            dexPriceAggregatorUniswapV3.getPoolKey(address0, address1, 0n),
+          ),
+    );
+
+    const overriddenPoolAndDecimals = (
+      await this.multiWrapper.tryAggregate<number | string>(true, [
+        ...poolKeyCombinations.map((key: PoolKey) => ({
+          target: dexPriceAggregatorAddress as string,
+          callData: this.combinedIface.encodeFunctionData(
+            'overriddenPoolForRoute',
+            [dexPriceAggregatorUniswapV3.identifyRouteFromPoolKey(key)],
+          ),
+          decodeFunction: addressDecode,
+        })),
+        ...Object.values(atomicEquivalentForDexPricing).map(token => ({
+          target: token.address,
+          callData: this.combinedIface.encodeFunctionData('decimals', []),
+          decodeFunction: uint8ToNumber,
+        })),
+      ])
+    ).map(d => d.returnData);
+
+    const overriddenPools = overriddenPoolAndDecimals.slice(
+      0,
+      poolKeyCombinations.length,
+    );
+
+    const overriddenPoolForRoute = overriddenPools.reduce<
+      Record<string, Address>
+    >((acc, curr, i) => {
+      acc[
+        dexPriceAggregatorUniswapV3.identifyRouteFromPoolKey(
+          poolKeyCombinations[i],
+        )
+      ] = curr as Address;
+      return acc;
+    }, {});
+
+    const equivalentDecimals = overriddenPoolAndDecimals.slice(
+      poolKeyCombinations.length,
+    );
+
+    Object.values(atomicEquivalentForDexPricing).forEach((t, i) => {
+      t.decimals = equivalentDecimals[i] as number;
+    });
 
     return {
       lastUpdatedInMs: Date.now(),
 
-      addressToToken: {},
-      atomicExchangeFeeRate: {},
-      exchangeFeeRate: {},
-      pureChainlinkPriceForAtomicSwapsEnabled: {},
-      atomicEquivalentForDexPricing: {},
-      atomicTwapWindow: 0n,
+      synthetixAddress: synthetixAddress as Address,
+      exchangerAddress: exchangerAddress as Address,
+      dexPriceAggregatorAddress: dexPriceAggregatorAddress as Address,
+
+      addressToKey,
+
+      atomicTwapWindow: atomicTwapWindow as bigint,
+      atomicExchangeFeeRate,
+      exchangeFeeRate,
+      pureChainlinkPriceForAtomicSwapsEnabled,
+      atomicEquivalentForDexPricing,
 
       dexPriceAggregator: {
-        weth: '',
-        defaultPoolFee: 0n,
-        uniswapV3Factory: '',
-        overriddenPoolForRoute: {},
+        weth: wethAddress as string,
+        defaultPoolFee: defaultPoolFee as bigint,
+        uniswapV3Factory: uniswapV3Factory as string,
+        overriddenPoolForRoute,
       },
     };
   }
