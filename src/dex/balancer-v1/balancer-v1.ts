@@ -2,7 +2,7 @@ import { Interface, LogDescription } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
 import { DeepReadonly } from 'ts-essentials';
 import BigNumber from 'bignumber.js';
-import _ from 'lodash';
+import _, { add, result } from 'lodash';
 import * as bmath from '@balancer-labs/sor/dist/bmath';
 import {
   Address,
@@ -58,7 +58,13 @@ import { mapFromOldPoolToPoolState, typecastReadOnlyPool } from './utils';
 import { parsePoolPairData, updatePoolState } from './sor-overload';
 import { BI_MAX_INT } from '../../bigint-constants';
 
+//TODO: find out how to regenerate state for separated pools object
 const balancerV1PoolIface = new Interface(BalancerV1PoolABI);
+
+type GetPoolStateResult = {
+  syncedPools: BalancerV1PoolState[];
+  invalidPools: BalancerV1PoolState[];
+};
 
 export class BalancerV1PoolState extends StatefulEventSubscriber<PoolState> {
   private handlers: Record<
@@ -66,17 +72,28 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<PoolState> {
     (event: LogDescription, blockNumber: number) => void
   > = {};
 
+  private tokenAddressesSet = new Set<string>();
+
   constructor(
     parentName: string,
     dexHelper: IDexHelper,
     logger: Logger,
-    private address: string,
+    public pool: PoolState,
+    public identifier: string,
   ) {
-    super(`${parentName}_${address}`, dexHelper, logger, true);
+    super(`${parentName}_${pool.id}`, dexHelper, logger, true);
 
     this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
     this.handlers['LOG_EXIT'] = this.handleExitPool.bind(this);
     this.handlers['LOG_SWAP'] = this.handleSwap.bind(this);
+
+    pool.tokens.forEach(token => {
+      this.tokenAddressesSet.add(token.address);
+    });
+  }
+
+  hasToken(token: Token) {
+    return this.tokenAddressesSet.has(token.address);
   }
 
   protected processLog(
@@ -277,7 +294,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return onChainPools;
   }
 
-  async setupEventPools(blockNumber: number) {
+  async setupEventPools(dexKey: string, blockNumber: number) {
     // It is quicker to query the static url for all the pools than querying the subgraph
     // but the url doesn't take into account the blockNumber hence for testing purpose
     // the state should be passed to the setup function call.
@@ -289,6 +306,14 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
         POOL_FETCH_TIMEOUT,
       );
 
+    // normalized all address to lowerCase
+    allPoolsNonZeroBalances.pools.forEach(pool => {
+      pool.id = pool.id.toLowerCase();
+      pool.tokens.forEach((token, index) => {
+        pool.tokens[index].address = token.address.toLowerCase();
+      });
+    });
+
     // It is important to the onchain query as the subgraph pool might not contain the
     // latest balance because of slow block processing time
     const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
@@ -297,17 +322,17 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     );
 
     allPoolsNonZeroBalancesChain.pools.forEach(pool => {
-      const address = pool.id.toLowerCase();
       const poolState = new BalancerV1PoolState(
         this.parentName,
         this.dexHelper,
         this.logger,
-        address,
+        pool,
+        BalancerV1.getIdentifier(dexKey, pool.id),
       );
       poolState.setState(pool, blockNumber);
 
-      this.poolStateMap[address] = poolState;
-      this.addressesSubscribed.push(address);
+      this.poolStateMap[pool.id] = poolState;
+      this.addressesSubscribed.push(pool.id);
     });
     this.addressesSubscribed.push(this.factoryAddress);
 
@@ -315,22 +340,22 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
-    const allPoolsNonZeroBalances =
-      await this.dexHelper.httpRequest.get<PoolStates>(
-        poolUrls[this.network],
-        POOL_FETCH_TIMEOUT,
-      );
-
-    // It is important to the onchain query as the subgraph pool might not contain the
-    // latest balance because of slow block processing time
-    const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
-      allPoolsNonZeroBalances,
-      blockNumber,
-    );
-    allPoolsNonZeroBalancesChain.pools.forEach(pool => {
-      const statePool = this.poolStateMap[pool.id.toLowerCase()];
-      statePool.setState(pool, blockNumber);
-    });
+    // const allPoolsNonZeroBalances =
+    //   await this.dexHelper.httpRequest.get<PoolStates>(
+    //     poolUrls[this.network],
+    //     POOL_FETCH_TIMEOUT,
+    //   );
+    //
+    // // It is important to the onchain query as the subgraph pool might not contain the
+    // // latest balance because of slow block processing time
+    // const allPoolsNonZeroBalancesChain = await this.getAllPoolDataOnChain(
+    //   allPoolsNonZeroBalances,
+    //   blockNumber,
+    // );
+    // allPoolsNonZeroBalancesChain.pools.forEach(pool => {
+    //   const statePool = this.poolStateMap[pool.id.toLowerCase()];
+    //   statePool.setState(pool, blockNumber);
+    // });
 
     return {};
   }
@@ -364,23 +389,48 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return BigInt(res.toFixed(0));
   }
 
-  async getTopPools(
+  syncGetPoolsState(
+    pools: BalancerV1PoolState[],
+    blockNumber: number,
+  ): GetPoolStateResult {
+    return pools.reduce<GetPoolStateResult>(
+      (acc, pool) => {
+        const state = pool.getState(blockNumber);
+        if (!state) {
+          acc.invalidPools.push(pool);
+        } else {
+          acc.syncedPools.push(pool);
+        }
+        return acc;
+      },
+      {
+        syncedPools: [],
+        invalidPools: [],
+      },
+    );
+  }
+
+  async restoreState(pools: BalancerV1PoolState[], blockNumber: number) {
+    const initialPoolsState = pools.map(pool => pool.pool);
+
+    await updatePoolState(
+      initialPoolsState,
+      this.balancerMulticall,
+      blockNumber,
+    );
+
+    pools.forEach(pool => {
+      pool.setState(pool.pool, blockNumber);
+    });
+  }
+
+  syncGetTopPools(
     from: Token,
     to: Token,
-    side: SwapSide,
-    pools: PoolState[],
-    minBalance: bigint,
-    isStale: boolean,
-    blockNumber: number,
+    poolsState: PoolState[],
     limit: number = 10,
-  ) {
-    const _minBalance = new BigNumber(minBalance.toString());
-    // Limits are from MAX_IN_RATIO/MAX_OUT_RATIO in the pool contracts
-    const checkBalance = (p: OldPool) =>
-      (side === SwapSide.SELL ? p.balanceIn.div(2) : p.balanceOut.div(3)).gt(
-        _minBalance,
-      );
-    const selectedPools = pools
+  ): PoolState[] | null {
+    const selectedPools = poolsState
       .map(p => parsePoolPairData(p, from.address, to.address))
       .sort(
         (p1, p2) =>
@@ -388,31 +438,10 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolStateMap> {
             p2!.balanceOut.times(1e18).idiv(p2!.weightOut).toFixed(0),
           ) -
           parseFloat(p1!.balanceOut.times(1e18).idiv(p1!.weightOut).toFixed(0)),
-      )
-      .slice(0, limit) as OldPool[];
+      ) as OldPool[];
 
     if (!selectedPools || !selectedPools.length) return null;
-    // This function mapFromOldPoolToPoolState is very extensive as it iterates
-    // pools.length * selectedPools.length. But it shouldn't be a problem since
-    // we limit to 10 before this
-    if (!isStale) return mapFromOldPoolToPoolState(selectedPools, pools);
-
-    const rawSelectedPools = pools.filter(p =>
-      selectedPools.some(sp => p.id.toLowerCase() === sp.id.toLowerCase()),
-    );
-    await updatePoolState(
-      rawSelectedPools,
-      this.balancerMulticall,
-      blockNumber,
-    );
-    const topOldPools = rawSelectedPools
-      .map(p => parsePoolPairData(p, from.address, to.address))
-      .filter(p => !!p && checkBalance(p));
-
-    // This function mapFromOldPoolToPoolState is very extensive as it iterates
-    // pools.length * selectedPools.length. But it shouldn't be a problem since
-    // we limit to 10 before this
-    return mapFromOldPoolToPoolState(topOldPools, rawSelectedPools);
+    return mapFromOldPoolToPoolState(selectedPools, poolsState).slice(0, limit);
   }
 }
 
@@ -454,7 +483,7 @@ export class BalancerV1
   }
 
   async setupEventPools(blockNumber: number) {
-    await this.eventPools.setupEventPools(blockNumber);
+    await this.eventPools.setupEventPools(this.dexKey, blockNumber);
   }
 
   async initializePricing(blockNumber: number) {
@@ -481,38 +510,28 @@ export class BalancerV1
     const _from = this.dexHelper.config.wrapETH(srcToken);
     const _to = this.dexHelper.config.wrapETH(destToken);
 
-    let isStale = false;
-    const poolsWithTokens = Object.values(this.eventPools.poolStateMap)
-      .map<PoolState | null>(pool => {
-        const state = pool.getState(blockNumber);
-        if (!state) {
-          this.logger.warn(`Warning_getPrices: Stale state being used`);
-          isStale = true;
-          return pool.getStaleState() as PoolState;
-        }
-        return state as PoolState;
-      })
-      .filter(pool => pool !== null)
-      .filter(pool => {
-        const tokenAddresses = pool!.tokens.map(token => token.address);
+    _from.address = _from.address.toLowerCase();
+    _to.address = _to.address.toLowerCase();
 
-        return (
-          tokenAddresses.includes(_from.address) &&
-          tokenAddresses.includes(_to.address)
-        );
-      }) as PoolState[];
-
-    const unitVolume = BigInt(
-      10 ** (side === SwapSide.SELL ? _from : _to).decimals,
+    const poolsWithTokens = Object.values(this.eventPools.poolStateMap).filter(
+      pool => pool.hasToken(_from) && pool.hasToken(_to),
     );
 
-    const topPools = await this.eventPools.getTopPools(
+    const results = this.eventPools.syncGetPoolsState(
+      poolsWithTokens,
+      blockNumber,
+    );
+
+    if (results.invalidPools.length !== 0) {
+      await this.eventPools.restoreState(results.invalidPools, blockNumber);
+    }
+
+    const topPools = this.eventPools.syncGetTopPools(
       _from,
       _to,
-      side,
-      poolsWithTokens,
-      unitVolume,
-      isStale,
+      [...results.syncedPools, ...results.invalidPools].map(
+        pool => pool.getState(blockNumber) as PoolState,
+      ),
       blockNumber,
     );
 
@@ -553,6 +572,15 @@ export class BalancerV1
     }
   }
 
+  private getPoolsSupportingPair(
+    from: Token,
+    to: Token,
+  ): BalancerV1PoolState[] {
+    return Object.values(this.eventPools.poolStateMap).filter(pool => {
+      return pool.hasToken(from) && pool.hasToken(to);
+    });
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -562,49 +590,46 @@ export class BalancerV1
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV1Data>> {
     try {
+      const start = Date.now();
       const _from = this.dexHelper.config.wrapETH(srcToken);
       const _to = this.dexHelper.config.wrapETH(destToken);
 
-      let isStale = false;
-      const allPools = Object.values(this.eventPools.poolStateMap)
-        .map(pool => {
-          const state = pool.getState(blockNumber);
-          if (!state) {
-            isStale = true;
-            return pool.getStaleState();
-          }
-          return state;
-        })
-        .filter(pool => pool !== null)
-        .map(pool => typecastReadOnlyPool(pool));
+      _from.address = _from.address.toLowerCase();
+      _to.address = _to.address.toLowerCase();
+
+      let allowedPools = this.getPoolsSupportingPair(_from, _to);
+      if (limitPools && limitPools.length !== 0) {
+        allowedPools = allowedPools.filter(pool =>
+          limitPools.includes(pool.identifier),
+        );
+      }
+
+      const results = this.eventPools.syncGetPoolsState(
+        allowedPools,
+        blockNumber,
+      );
 
       const unitVolume = BigInt(
         10 ** (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      let minBalance = amounts[amounts.length - 1];
-      if (unitVolume > minBalance) minBalance = unitVolume;
+      if (results.invalidPools.length !== 0) {
+        await this.eventPools.restoreState(results.invalidPools, blockNumber);
+      }
 
-      const allowedPools = limitPools
-        ? allPools.filter(({ id }) =>
-            limitPools.includes(BalancerV1.getIdentifier(this.dexKey, id)),
-          )
-        : await this.eventPools.getTopPools(
-            _from,
-            _to,
-            side,
-            allPools,
-            minBalance,
-            isStale,
-            blockNumber,
-          );
+      const topPools = this.eventPools.syncGetTopPools(
+        _from,
+        _to,
+        [...results.syncedPools, ...results.invalidPools].map(
+          p => p.getState(blockNumber) as PoolState,
+        ),
+        10,
+      );
 
-      if (!allowedPools || !allowedPools.length) return null;
+      if (!topPools || !topPools.length) return null;
 
-      const poolPrices = allowedPools
-        .slice(0, 5)
+      const poolPrices = topPools
         .map(pool => {
-          const poolAddress = pool.id.toLowerCase();
           const parsedOldPool = parsePoolPairData(
             typecastReadOnlyPool(pool),
             _from.address,
@@ -628,13 +653,10 @@ export class BalancerV1
                 poolId: pool.id,
                 exchangeProxy: this.exchangeProxy,
               },
-              poolAddresses: [poolAddress],
+              poolAddresses: [pool.id],
               exchange: this.dexKey,
               gasCost: BALANCER_SWAP_GAS_COST,
-              poolIdentifier: BalancerV1.getIdentifier(
-                this.dexKey,
-                poolAddress,
-              ),
+              poolIdentifier: BalancerV1.getIdentifier(this.dexKey, pool.id),
             };
           } catch (e) {
             this.logger.error(
@@ -648,6 +670,7 @@ export class BalancerV1
         })
         .filter(p => !!p);
 
+      console.log(`elapsed ${Date.now() - start}`);
       return poolPrices as unknown as ExchangePrices<BalancerV1Data>;
     } catch (e) {
       this.logger.error(
