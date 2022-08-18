@@ -203,7 +203,7 @@ export class JarvisV6
 
     return [
       {
-        prices, // [ amount final après priceFeed]
+        prices,
         unit,
         data: {
           swapFunction,
@@ -211,7 +211,7 @@ export class JarvisV6
         },
         poolAddresses: [eventPool.poolConfig.address],
         exchange: this.dexKey,
-        gasCost: 500 * 1000, //TODO: simulate and fix the gas cost
+        gasCost: 500 * 1000,
         poolIdentifier,
       },
     ];
