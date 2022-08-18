@@ -2,10 +2,9 @@ import { ethers } from 'ethers';
 import { NULL_ADDRESS } from '../../../constants';
 import { Address } from '../../../types';
 import { _require } from '../../../utils';
-import { PoolState } from '../types';
+import { PoolKey, PoolState } from '../types';
 import { OracleLibrary } from './OracleLibrary';
 
-type PoolKey = { token0: Address; token1: Address; fee: bigint };
 const POOL_INIT_CODE_HASH =
   '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 const defaultAbiCoder = ethers.utils.defaultAbiCoder;
@@ -44,7 +43,7 @@ class DexPriceAggregatorUniswapV3 {
     const tokenIn = state.dexPriceAggregator.weth;
     const pool = this._getPoolForRoute(
       state,
-      this._getPoolKey(
+      this.getPoolKey(
         tokenIn,
         _tokenOut,
         state.dexPriceAggregator.defaultPoolFee,
@@ -69,7 +68,7 @@ class DexPriceAggregatorUniswapV3 {
     const tokenOut = state.dexPriceAggregator.weth;
     const pool = this._getPoolForRoute(
       state,
-      this._getPoolKey(
+      this.getPoolKey(
         _tokenIn,
         tokenOut,
         state.dexPriceAggregator.defaultPoolFee,
@@ -95,7 +94,7 @@ class DexPriceAggregatorUniswapV3 {
     // If the tokenIn:tokenOut route was overridden to use a single pool, derive price directly from that pool
     const overriddenPool = this._getOverriddenPool(
       state,
-      this._getPoolKey(
+      this.getPoolKey(
         _tokenIn,
         _tokenOut,
         0n, // pool fee is unused
@@ -116,7 +115,7 @@ class DexPriceAggregatorUniswapV3 {
     // To keep consistency, we cross through with the same price source (spot vs. twap)
     const pool1 = this._getPoolForRoute(
       state,
-      this._getPoolKey(
+      this.getPoolKey(
         _tokenIn,
         state.dexPriceAggregator.weth,
         state.dexPriceAggregator.defaultPoolFee,
@@ -124,7 +123,7 @@ class DexPriceAggregatorUniswapV3 {
     );
     const pool2 = this._getPoolForRoute(
       state,
-      this._getPoolKey(
+      this.getPoolKey(
         _tokenOut,
         state.dexPriceAggregator.weth,
         state.dexPriceAggregator.defaultPoolFee,
@@ -229,7 +228,7 @@ class DexPriceAggregatorUniswapV3 {
     );
   }
 
-  private _getPoolKey(tokenA: Address, tokenB: Address, fee: bigint): PoolKey {
+  getPoolKey(tokenA: Address, tokenB: Address, fee: bigint): PoolKey {
     // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/PoolAddress.sol
     if (tokenA > tokenB) [tokenA, tokenB] = [tokenB, tokenA];
     return { token0: tokenA, token1: tokenB, fee };
@@ -237,7 +236,7 @@ class DexPriceAggregatorUniswapV3 {
 
   private _getOverriddenPool(state: PoolState, _poolKey: PoolKey): Address {
     return state.dexPriceAggregator.overriddenPoolForRoute[
-      this._identifyRouteFromPoolKey(_poolKey)
+      this.identifyRouteFromPoolKey(_poolKey)
     ];
   }
 
@@ -263,7 +262,7 @@ class DexPriceAggregatorUniswapV3 {
     );
   }
 
-  private _identifyRouteFromPoolKey(_poolKey: PoolKey): string {
+  identifyRouteFromPoolKey(_poolKey: PoolKey): string {
     return solidityKeccak256(
       ['address', 'address'],
       [_poolKey.token0, _poolKey.token1],

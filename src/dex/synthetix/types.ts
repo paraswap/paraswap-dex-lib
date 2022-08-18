@@ -14,6 +14,8 @@ export type Slot0 = {
   feeProtocol: bigint;
 };
 
+export type PoolKey = { token0: Address; token1: Address; fee: bigint };
+
 export type OracleObservation = {
   blockTimestamp: bigint;
   tickCumulative: bigint;
@@ -25,6 +27,10 @@ export type TokenWithCurrencyKey = Token & { currencyKey?: string };
 
 export type OnchainConfigValues = {
   lastUpdatedInMs: number;
+
+  synthetixAddress: Address;
+  exchangerAddress: Address;
+  dexPriceAggregatorAddress: Address;
 
   atomicExchangeFeeRate: Record<string, bigint>;
   exchangeFeeRate: Record<string, bigint>;
@@ -39,7 +45,7 @@ export type OnchainConfigValues = {
     overriddenPoolForRoute: Record<string, Address>;
   };
 
-  addressToToken: Record<Address, TokenWithCurrencyKey>;
+  addressToKey: Record<Address, string>;
 };
 
 export type PoolState = {
