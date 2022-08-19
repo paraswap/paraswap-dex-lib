@@ -209,7 +209,7 @@ export class JarvisV6
     side: SwapSide,
   ): AdapterExchangeParam {
     const { swapFunction } = data;
-    const type = [JarvisSwapFunctions.mint, JarvisSwapFunctions.redeem].indexOf(
+    const type = [JarvisSwapFunctions.MINT, JarvisSwapFunctions.REDEEM].indexOf(
       swapFunction,
     );
 
@@ -258,7 +258,7 @@ export class JarvisV6
 
     let swapFunctionParams: JarvisV6Params;
     switch (swapFunction) {
-      case JarvisSwapFunctions.mint:
+      case JarvisSwapFunctions.MINT:
         swapFunctionParams = [
           destAmount,
           srcAmount,
@@ -266,7 +266,7 @@ export class JarvisV6
           this.augustusAddress,
         ];
         break;
-      case JarvisSwapFunctions.redeem:
+      case JarvisSwapFunctions.REDEEM:
         swapFunctionParams = [
           srcAmount,
           destAmount,
@@ -358,7 +358,7 @@ export class JarvisV6
     poolState: PoolState,
   ): bigint[] {
     return amounts.map(amount => {
-      if (swapFunction === JarvisSwapFunctions.mint) {
+      if (swapFunction === JarvisSwapFunctions.MINT) {
         return this.computePriceForMint(
           amount,
           maxTokensCapacity,
@@ -367,7 +367,7 @@ export class JarvisV6
           pool.collateralToken.decimals,
         );
       }
-      if (swapFunction === JarvisSwapFunctions.redeem) {
+      if (swapFunction === JarvisSwapFunctions.REDEEM) {
         return this.computePriceForRedeem(
           amount,
           side,

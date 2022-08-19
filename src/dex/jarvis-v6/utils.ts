@@ -131,6 +131,6 @@ export function getJarvisSwapFunction(
 ): JarvisSwapFunctions {
   const srcAddress = srcToken.address.toLowerCase();
   if (srcAddress === pool.collateralToken.address.toLowerCase())
-    return JarvisSwapFunctions.mint;
-  return JarvisSwapFunctions.redeem;
+    return JarvisSwapFunctions.MINT;
+  return JarvisSwapFunctions.REDEEM;
 }

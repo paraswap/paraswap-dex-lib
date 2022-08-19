@@ -58,6 +58,6 @@ type JarvisV6RedeemParam = [
 export type JarvisV6Params = JarvisV6MintParam | JarvisV6RedeemParam;
 
 export enum JarvisSwapFunctions {
-  mint = 'mint',
-  redeem = 'redeem',
+  MINT = 'mint',
+  REDEEM = 'redeem',
 }
