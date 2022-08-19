@@ -54,7 +54,7 @@ describe('JarvisV6 E2E', () => {
   const dexKey = 'JarvisV6';
 
   describe('JarvisV6 MAINNET', () => {
-    const network = Network.MAINNET;
+    const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
     const provider = new StaticJsonRpcProvider(
@@ -63,12 +63,12 @@ describe('JarvisV6 E2E', () => {
     );
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const jEURSymbol: string = 'jEUR';
+    const USDCSymbol: string = 'USDC';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const jEURAmount: string = '1000000000000000000';
+    const USDCAmount: string = '1000000';
     const nativeTokenAmount = '1000000000000000000';
 
     // TODO: Add any direct swap contractMethod name if it exists
@@ -79,22 +79,54 @@ describe('JarvisV6 E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [
+        SwapSide.BUY,
+        [
+          ContractMethod.simpleBuy,
+          // ContractMethod.buy,
+        ],
+      ],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it(nativeTokenSymbol + ' -> TOKEN', async () => {
+          // it(nativeTokenSymbol + ' -> TOKEN', async () => {
+          //   await testE2E(
+          //     tokens[nativeTokenSymbol],
+          //     tokens[tokenASymbol],
+          //     holders[nativeTokenSymbol],
+          //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+          //     side,
+          //     dexKey,
+          //     contractMethod,
+          //     network,
+          //     provider,
+          //   );
+          // });
+          // it('TOKEN -> ' + nativeTokenSymbol, async () => {
+          //   await testE2E(
+          //     tokens[tokenASymbol],
+          //     tokens[nativeTokenSymbol],
+          //     holders[tokenASymbol],
+          //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+          //     side,
+          //     dexKey,
+          //     contractMethod,
+          //     network,
+          //     provider,
+          //   );
+          // });
+          it('jEUR -> USDC', async () => {
             await testE2E(
-              tokens[nativeTokenSymbol],
-              tokens[tokenASymbol],
-              holders[nativeTokenSymbol],
-              side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+              tokens[jEURSymbol],
+              tokens[USDCSymbol],
+              holders[jEURSymbol],
+              side === SwapSide.SELL ? jEURAmount : USDCAmount,
               side,
               dexKey,
               contractMethod,
@@ -102,25 +134,13 @@ describe('JarvisV6 E2E', () => {
               provider,
             );
           });
-          it('TOKEN -> ' + nativeTokenSymbol, async () => {
+
+          it('USDC -> jEUR', async () => {
             await testE2E(
-              tokens[tokenASymbol],
-              tokens[nativeTokenSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-          it('TOKEN -> TOKEN', async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[tokenBSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+              tokens[USDCSymbol],
+              tokens[jEURSymbol],
+              holders[USDCSymbol],
+              side === SwapSide.SELL ? USDCAmount : jEURAmount,
               side,
               dexKey,
               contractMethod,
@@ -131,7 +151,5 @@ describe('JarvisV6 E2E', () => {
         });
       }),
     );
-
-    // TODO: Add any additional test cases required to test JarvisV6
   });
 });
