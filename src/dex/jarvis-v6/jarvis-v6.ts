@@ -20,6 +20,8 @@ import {
   PoolState,
   priceFeedData,
 } from './types';
+import JarvisV6PoolABI from '../../abi/jarvis/jarvis-v6-pool.json';
+
 import { SimpleExchange } from '../simple-exchange';
 import { JarvisV6Config, Adapters } from './config';
 import { JarvisV6EventPool } from './jarvis-v6-events';
@@ -33,6 +35,8 @@ import {
 } from './utils';
 import { Interface } from '@ethersproject/abi';
 import { BI_POWS } from '../../bigint-constants';
+
+const POOL_CACHE_REFRESH_INTERVAL = 60 * 5; // 5 minutes
 
 export class JarvisV6
   extends SimpleExchange
@@ -152,7 +156,7 @@ export class JarvisV6
     const eventPool = this.getEventPool(srcToken, destToken);
 
     if (!eventPool) return null;
-
+    const poolAddress = eventPool.poolConfig.address.toLowerCase();
     const poolIdentifier = eventPool.getIdentifier();
     if (limitPools && !limitPools.includes(poolIdentifier)) return null;
 
@@ -163,10 +167,15 @@ export class JarvisV6
     );
 
     const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
+    const maxTokensCapacity = await this.getMaxTokensCapacity(
+      poolAddress,
+      blockNumber,
+    );
 
     const [unit, ...prices] = this.computePrices(
       [unitVolume, ...amounts],
       swapFunction,
+      maxTokensCapacity,
       side,
       eventPool.poolConfig,
       poolState,
@@ -178,9 +187,9 @@ export class JarvisV6
         unit,
         data: {
           swapFunction,
-          poolAddress: eventPool.poolConfig.address,
+          poolAddress,
         },
-        poolAddresses: [eventPool.poolConfig.address],
+        poolAddresses: [poolAddress],
         exchange: this.dexKey,
         gasCost: 475 * 1000, //between 450-500k gas
         poolIdentifier,
@@ -220,13 +229,13 @@ export class JarvisV6
       },
       {
         opType: type,
-        destPool: data.poolAddress || NULL_ADDRESS,
+        destPool: data.poolAddress.toLowerCase() || NULL_ADDRESS,
         expiration: (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0),
       },
     );
 
     return {
-      targetExchange: data.poolAddress,
+      targetExchange: data.poolAddress.toLowerCase(),
       payload,
       networkFee: '0',
     };
@@ -278,7 +287,7 @@ export class JarvisV6
       destToken,
       destAmount,
       swapData,
-      data.poolAddress,
+      data.poolAddress.toLowerCase(),
     );
   }
 
@@ -300,48 +309,126 @@ export class JarvisV6
     return [];
   }
 
+  async getMaxTokensCapacity(
+    poolAddress: Address,
+    blockNumber: number,
+  ): Promise<bigint> {
+    const cacheKey = `maxTokensCapacity_${poolAddress}`;
+    const cachedMaxTokensCapacity = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      cacheKey,
+    );
+
+    if (cachedMaxTokensCapacity) {
+      this.logger.info(
+        `Got maxTokensCapacity of ${this.dexKey}_${poolAddress} pool from cache`,
+      );
+      return BigInt(cachedMaxTokensCapacity);
+    }
+
+    this.logger.info(
+      `Get ${this.dexKey}_${this.network} MaxTokensCapacity from pool : ${poolAddress}`,
+    );
+
+    const poolContractInstance = new this.dexHelper.web3Provider.eth.Contract(
+      JarvisV6PoolABI as any,
+      poolAddress,
+    );
+
+    const maxTokensCapacity = await poolContractInstance.methods
+      .maxTokensCapacity()
+      .call({}, blockNumber);
+
+    if (!maxTokensCapacity)
+      throw new Error('Unable to get maxTokensCapacity from contract pool');
+
+    this.logger.info(
+      `Got maxTokensCapacity ${this.dexKey}_${this.network} from pool : ${poolAddress}`,
+    );
+    return BigInt(maxTokensCapacity);
+  }
+
   computePrices(
     amounts: bigint[],
     swapFunction: JarvisSwapFunctions,
+    maxTokensCapacity: bigint,
     side: SwapSide,
     pool: PoolConfig,
     poolState: PoolState,
   ): bigint[] {
-    const feePercentage = poolState.pool.feesPercentage;
-    const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
     return amounts.map(amount => {
       if (swapFunction === JarvisSwapFunctions.mint) {
-        if (side === SwapSide.SELL)
-          return this.getSyntheticAmountToReceive(
-            amount,
-            pool.collateralToken.decimals,
-            UsdcPriceFeed,
-            feePercentage,
-          );
-        return this.getCollateralAmountToReceive(
+        return this.computePriceForMint(
           amount,
+          maxTokensCapacity,
+          side,
+          poolState,
           pool.collateralToken.decimals,
-          UsdcPriceFeed,
-          feePercentage,
         );
       }
       if (swapFunction === JarvisSwapFunctions.redeem) {
-        if (side === SwapSide.SELL)
-          return this.getCollateralAmountToReceive(
-            amount,
-            pool.collateralToken.decimals,
-            UsdcPriceFeed,
-            feePercentage,
-          );
-        return this.getSyntheticAmountToReceive(
+        return this.computePriceForRedeem(
           amount,
+          side,
+          poolState,
           pool.collateralToken.decimals,
-          UsdcPriceFeed,
-          feePercentage,
         );
       }
       return 0n;
     });
+  }
+
+  computePriceForMint(
+    amount: bigint,
+    maxTokensCapacity: bigint,
+    side: SwapSide,
+    poolState: PoolState,
+    collateralDecimalsNumber: number,
+  ) {
+    const feePercentage = poolState.pool.feesPercentage;
+    const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
+    if (side === SwapSide.SELL) {
+      const syntheticAmount = this.getSyntheticAmountToReceive(
+        amount,
+        collateralDecimalsNumber,
+        UsdcPriceFeed,
+        feePercentage,
+      );
+      return syntheticAmount <= maxTokensCapacity ? syntheticAmount : 0n;
+    }
+
+    if (maxTokensCapacity <= amount) return 0n;
+    return this.getCollateralAmountToReceive(
+      amount,
+      collateralDecimalsNumber,
+      UsdcPriceFeed,
+      feePercentage,
+    );
+  }
+
+  computePriceForRedeem(
+    amount: bigint,
+    side: SwapSide,
+    poolState: PoolState,
+    collateralDecimalsNumber: number,
+  ) {
+    const feePercentage = poolState.pool.feesPercentage;
+    const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
+    if (side === SwapSide.SELL) {
+      return this.getCollateralAmountToReceive(
+        amount,
+        collateralDecimalsNumber,
+        UsdcPriceFeed,
+        feePercentage,
+      );
+    }
+    return this.getSyntheticAmountToReceive(
+      amount,
+      collateralDecimalsNumber,
+      UsdcPriceFeed,
+      feePercentage,
+    );
   }
 
   getSyntheticAmountToReceive(
