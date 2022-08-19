@@ -12,7 +12,7 @@ import {
 } from '../../types';
 import { Lens } from '../../lens';
 import { ChainLinkPriceFeedState } from './types';
-import { toNewDecimal } from './utils';
+import { convertToNewDecimals } from './utils';
 import { bigIntify } from '../nerve/utils';
 
 export class ChainLinkPriceFeed<State> extends PartialEventSubscriber<
@@ -42,7 +42,7 @@ export class ChainLinkPriceFeed<State> extends PartialEventSubscriber<
       const _state: ChainLinkPriceFeedState = _.cloneDeep(state);
       switch (parsed.name) {
         case 'AnswerUpdated': {
-          _state.usdcPrice = toNewDecimal(
+          _state.usdcPrice = convertToNewDecimals(
             bigIntify(parsed.args.current.toString()),
             8,
             18,

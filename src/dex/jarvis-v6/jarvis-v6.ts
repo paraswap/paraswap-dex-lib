@@ -31,7 +31,7 @@ import {
   getJarvisSwapFunction,
   getOnChainState,
   THIRTY_MINUTES,
-  toNewDecimal,
+  convertToNewDecimals,
 } from './utils';
 import { Interface } from '@ethersproject/abi';
 import { BI_POWS } from '../../bigint-constants';
@@ -437,7 +437,7 @@ export class JarvisV6
     UsdcPriceFeed: bigint,
     feePercentage: bigint,
   ) {
-    let collateralAmountIn18Decimals = toNewDecimal(
+    let collateralAmountIn18Decimals = convertToNewDecimals(
       collateralAmount,
       collateralDecimals,
       18,
@@ -461,6 +461,6 @@ export class JarvisV6
       (((syntheticAmount * UsdcPriceFeed) / BI_POWS[18]) * feePercentage) /
         BI_POWS[18];
     if (collateralDecimals === 18) return result;
-    return toNewDecimal(result, 18, collateralDecimals);
+    return convertToNewDecimals(result, 18, collateralDecimals);
   }
 }

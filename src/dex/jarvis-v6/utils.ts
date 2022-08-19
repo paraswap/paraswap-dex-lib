@@ -101,7 +101,7 @@ export function getJarvisPoolFromTokens(
   );
 }
 
-export function toNewDecimal(
+export function convertToNewDecimals(
   amount: bigint,
   currentDecimal: number,
   desireDecimal: number,
