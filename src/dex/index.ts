@@ -58,6 +58,7 @@ import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
 import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
+import { MaverickV1 } from './maverick-v1/maverick-v1';
 
 const LegacyDexes = [
   CurveV2,
@@ -113,6 +114,7 @@ const Dexes = [
   SwaapV1,
   WstETH,
   Hashflow,
+  MaverickV1
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
