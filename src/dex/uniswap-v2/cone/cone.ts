@@ -13,7 +13,7 @@ import { UniswapData, UniswapV2Data } from '../types';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../../utils';
 import coneFactoryABI from '../../../abi/uniswap-v2/ConeFactory.json';
 import conePairABI from '../../../abi/uniswap-v2/ConePair.json';
-import _, { ceil } from 'lodash';
+import _ from 'lodash';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { ConeUniswapV2Pool } from './cone-uniswap-v2-pool';
 import { ConeStablePool } from './cone-stable-pool';
@@ -54,7 +54,7 @@ export class Cone extends UniswapV2 {
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
-    isDynamicFees = false,
+    isDynamicFees = true,
     factoryAddress?: Address,
     subgraphURL?: string,
     initCode?: string,
@@ -142,6 +142,7 @@ export class Cone extends UniswapV2 {
     if (!pairsToFetch.length) return;
 
     const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
+    console.log('reserves', reserves);
 
     if (reserves.length !== pairsToFetch.length) {
       this.logger.error(
@@ -180,7 +181,7 @@ export class Cone extends UniswapV2 {
               callData: iface.encodeFunctionData('getReserves', []),
             },
           ];
-          if (this.isDynamicFees) calldata.push(multiCallFeeData[i]!.callEntry);
+          calldata.push(multiCallFeeData[i]!.callEntry);
           return calldata;
         })
         .flat();
@@ -190,17 +191,21 @@ export class Cone extends UniswapV2 {
           .aggregate(calldata)
           .call({}, blockNumber);
 
-      const returnData = _.chunk(data.returnData, this.isDynamicFees ? 2 : 1);
+      const returnData = _.chunk(data.returnData, 2);
+      console.log('returnData', returnData);
 
       return pairs.map((pair, i) => {
         const reservesDecodedData = coder.decode(
           ['uint112', 'uint112', 'uint32'],
           returnData[i][0],
         );
-        const feeDecodedData = coder.decode(['uint256'], returnData[i][1]);
-        const feeRate = feeDecodedData[0].toString();
+        const feeRate = multiCallFeeData[i]!.callDecoder(returnData[i][1]);
         console.log('feeRate', feeRate);
-        const feeCode = SWAP_FEE_BASE / feeRate;
+        // fee in cone is denominator only (10_000 for stable and 2_000 for volatile pools
+        // to convert to compatible integer fee we have to divide
+        // SWAP_FEE_BASE (10_000) to feeRate,
+        // and receive 1 for stable pools and 5 for volatile pools
+        const feeCode = Math.ceil(SWAP_FEE_BASE / feeRate);
         console.log('feeCode', feeCode);
         return {
           reserves0: reservesDecodedData[0].toString(),
@@ -537,11 +542,8 @@ export class Cone extends UniswapV2 {
       const feeStr = iface
         .decodeFunctionResult('swapFee', values)[0]
         .toString();
-      console.log('feeStr', feeStr);
-      const feeInt = parseInt(feeStr);
-      const fee = Math.ceil(feeInt);
-      console.log('fee   ', fee);
-      return fee;
+      // fee in cone is denominator only (10_000 for stable and 2_000 for volatile pools
+      return parseInt(feeStr);
     };
     return {
       callEntry,

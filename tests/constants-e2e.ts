@@ -385,6 +385,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x23b891e5C62E0955ae2bD185990103928Ab817b3',
       decimals: 18,
     },
+    CONE: {
+      address: '0xA60205802E1B5C6EC1CAFA3cAcd49dFeECe05AC9',
+      decimals: 18,
+    },
   },
   [Network.AVALANCHE]: {
     USDCe: {

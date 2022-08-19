@@ -13,7 +13,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import conePairABI from '../../../abi/uniswap-v2/DystPair.json';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
-const amounts6 = [0n, BI_POWS[6], BI_POWS[6] * 2n];
+// const amounts6 = [0n, BI_POWS[6], BI_POWS[6] * 2n];
 
 const dexKey = 'Cone';
 const network = Network.BSC;
@@ -72,6 +72,16 @@ async function checkOnChainPricing(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
 
+  console.log('prices', prices);
+  console.log('expectedPrices', expectedPrices);
+
+  const diff = expectedPrices.map((p, i) => {
+    const d = p === 0n ? -1 : (Number(prices[i]) / Number(p)) * 100;
+    console.log('p', p, prices[i], d);
+    return d;
+  });
+  console.log('diff', diff);
+
   expect(prices).toEqual(expectedPrices);
 }
 
@@ -79,7 +89,7 @@ describe('Cone', function () {
   describe('UniswapV2 like pool', function () {
     const TokenASymbol = 'WBNB';
     const tokenA = Tokens[network][TokenASymbol];
-    const TokenBSymbol = 'USDC';
+    const TokenBSymbol = 'CONE';
     const tokenB = Tokens[network][TokenBSymbol];
 
     const amounts = amounts18;
@@ -114,7 +124,6 @@ describe('Cone', function () {
       );
 
       expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
       // Check if onchain pricing equals to calculated ones
 
@@ -129,6 +138,8 @@ describe('Cone', function () {
           amounts,
         );
       }
+
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     });
 
     it('getTopPoolsForToken', async function () {
