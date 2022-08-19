@@ -1408,4 +1408,145 @@ describe('UniswapV2 E2E BSC', () => {
       });
     });
   });
+
+  describe('Cone', () => {
+    const dexKey = 'Cone';
+
+    describe('Simpleswap', () => {
+      it('BNB -> BUSD', async () => {
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
+          '100000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('BUSD -> BNB', async () => {
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('WBNB -> BUSD', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('WBNB -> CONE', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.CONE,
+          holders.WBNB,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('Multi', () => {
+      it('BNB -> BUSD', async () => {
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('BUSD -> BNB', async () => {
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('WBNB -> BUSD', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('Mega', () => {
+      it('BNB -> BUSD', async () => {
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('BUSD -> BNB', async () => {
+        await testE2E(
+          tokens.BUSD,
+          tokens.BNB,
+          holders.BUSD,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('BNB -> BUSD', async () => {
+        await testE2E(
+          tokens.BNB,
+          tokens.BUSD,
+          holders.BNB,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });
