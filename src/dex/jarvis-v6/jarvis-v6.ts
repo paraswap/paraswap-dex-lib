@@ -289,15 +289,6 @@ export class JarvisV6
     );
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
-
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
@@ -344,6 +335,14 @@ export class JarvisV6
     this.logger.info(
       `Got maxTokensCapacity ${this.dexKey}_${this.network} from pool : ${poolAddress}`,
     );
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      cacheKey,
+      POOL_CACHE_REFRESH_INTERVAL,
+      maxTokensCapacity,
+    );
+
     return BigInt(maxTokensCapacity);
   }
 
