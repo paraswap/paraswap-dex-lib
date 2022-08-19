@@ -36,7 +36,6 @@ export type priceFeedData = {
 };
 
 export type DexParams = {
-  poolInterface: Interface;
   priceFeed: priceFeedData;
   pools: PoolConfig[];
 };

@@ -12,7 +12,6 @@ import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  DexParams,
   JarvisSwapFunctions,
   JarvisV6Data,
   JarvisV6Params,
@@ -21,7 +20,6 @@ import {
   priceFeedData,
 } from './types';
 import JarvisV6PoolABI from '../../abi/jarvis/jarvis-v6-pool.json';
-
 import { SimpleExchange } from '../simple-exchange';
 import { JarvisV6Config, Adapters } from './config';
 import { JarvisV6EventPool } from './jarvis-v6-events';
@@ -49,14 +47,14 @@ export class JarvisV6
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(JarvisV6Config);
 
+  protected poolInterface: Interface = new Interface(JarvisV6PoolABI);
+
   logger: Logger;
   constructor(
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
-    protected poolInterface: Interface = JarvisV6Config[dexKey][network]
-      .poolInterface,
     protected poolConfigs: PoolConfig[] = JarvisV6Config[dexKey][network].pools,
     protected priceFeed: priceFeedData = JarvisV6Config[dexKey][network]
       .priceFeed,

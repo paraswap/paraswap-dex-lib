@@ -4,12 +4,10 @@ import { Network, SwapSide } from '../../constants';
 import { Interface } from '@ethersproject/abi';
 import ChainlinkAccessControlledOffchainAggregatorABI from './abis/ChainlinkAccessControlledOffchainAggregator.json';
 import SynthereumPriceFeedABI from './abis/SynthereumPriceFeed.json';
-import JarvisV6PoolABI from '../../abi/jarvis/jarvis-v6-pool.json';
 
 export const JarvisV6Config: DexConfigMap<DexParams> = {
   JarvisV6: {
     [Network.POLYGON]: {
-      poolInterface: new Interface(JarvisV6PoolABI),
       priceFeed: {
         interface: new Interface(SynthereumPriceFeedABI),
         address: '0x12F513D977B47D1d155bC5ED4d295c1B10D6D027',

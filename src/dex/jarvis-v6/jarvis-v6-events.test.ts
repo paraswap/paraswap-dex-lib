@@ -1,17 +1,19 @@
 import dotenv from 'dotenv';
 dotenv.config();
-
+import JarvisV6PoolABI from '../../abi/jarvis/jarvis-v6-pool.json';
 import { JarvisV6EventPool } from './jarvis-v6-events';
 import { JarvisV6Config } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
+import { Interface } from '@ethersproject/abi';
 
 jest.setTimeout(50 * 1000);
 const dexKey = 'JarvisV6';
 const network = Network.POLYGON;
 const config = JarvisV6Config[dexKey][network];
+const poolInterface = new Interface(JarvisV6PoolABI);
 
 async function fetchPoolState(
   jarvisV6Pools: JarvisV6EventPool,
@@ -40,7 +42,7 @@ describe('JarvisV6 Event', function () {
             logger,
             firstPool,
             config.priceFeed,
-            config.poolInterface,
+            poolInterface,
           );
 
           await testEventSubscriber(
