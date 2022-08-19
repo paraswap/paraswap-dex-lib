@@ -1,7 +1,9 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// @ts-ignore
 import { testE2E } from '../../../tests/utils-e2e';
+// @ts-ignore
 import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
