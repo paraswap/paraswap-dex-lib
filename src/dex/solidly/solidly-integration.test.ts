@@ -70,6 +70,146 @@ const constructCheckOnChainPricing =
   };
 
 describe('Solidly integration tests', () => {
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+    const dexHelper = new DummyDexHelper(network);
+    const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
+
+    describe('Solidly', function () {
+      const dexKey = 'Solidly';
+      const soldily = new Solidly(network, dexKey, dexHelper);
+
+      describe('UniswapV2 like pool', function () {
+        const TokenASymbol = 'WFTM';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'FUSDT';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts18;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await soldily.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await soldily.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              soldily,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const poolLiquidity = await soldily.getTopPoolsForToken(
+            tokenA.address,
+            10,
+          );
+          console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+          checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+        });
+      });
+
+      describe('Curve like stable pool', function () {
+        const TokenASymbol = 'FUSDT';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'USDC';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts18; // amounts6;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await soldily.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await soldily.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              soldily,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const poolLiquidity = await soldily.getTopPoolsForToken(
+            tokenA.address,
+            10,
+          );
+          console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+          checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+        });
+      });
+    });
+  });
+
   describe('Polygon', () => {
     const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
