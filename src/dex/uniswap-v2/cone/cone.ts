@@ -356,7 +356,6 @@ export class Cone extends UniswapV2 {
           decimals
         }
         reserveUSD
-        fee
       }
       pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
         id
@@ -370,7 +369,6 @@ export class Cone extends UniswapV2 {
           decimals
         }
         reserveUSD
-        fee
       }
     }`;
 
