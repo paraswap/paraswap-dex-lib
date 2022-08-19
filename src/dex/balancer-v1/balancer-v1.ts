@@ -1,7 +1,7 @@
 import { Interface, LogDescription } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
 import { DeepReadonly } from 'ts-essentials';
-import _, { before } from 'lodash';
+import _ from 'lodash';
 import * as BigNumberLib from 'bignumber.js';
 import * as BigNumberEthers from '@ethersproject/bignumber';
 import {
@@ -219,7 +219,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
 }
 
 export class BalancerV1EventPool {
-  poolStateMap: Record<string, BalancerV1PoolState> = {};
+  allpools: BalancerV1PoolState[] = [];
 
   private balancerMulticall: Contract;
 
@@ -349,7 +349,7 @@ export class BalancerV1EventPool {
       poolState.setState(poolState.getMinimalPoolState(), blockNumber);
       poolState.initialize(blockNumber);
 
-      this.poolStateMap[pool.id] = poolState;
+      this.allpools.push(poolState);
     });
   }
 
@@ -511,7 +511,7 @@ export class BalancerV1
     _from.address = _from.address.toLowerCase();
     _to.address = _to.address.toLowerCase();
 
-    const poolsWithTokens = Object.values(this.eventPools.poolStateMap).filter(
+    const poolsWithTokens = this.eventPools.allpools.filter(
       pool => pool.hasToken(_from) && pool.hasToken(_to),
     );
 
@@ -577,7 +577,7 @@ export class BalancerV1
     from: Token,
     to: Token,
   ): BalancerV1PoolState[] {
-    return Object.values(this.eventPools.poolStateMap).filter(pool => {
+    return this.eventPools.allpools.filter(pool => {
       return pool.hasToken(from) && pool.hasToken(to);
     });
   }
@@ -629,7 +629,6 @@ export class BalancerV1
 
       const poolPrices = topPools
         .map(pool => {
-          pool.loadState(blockNumber);
           const poolData = pool.weightedPool.parsePoolPairData(
             _from.address,
             _to.address,
