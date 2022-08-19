@@ -19,7 +19,6 @@ import { ConeUniswapV2Pool } from './cone-uniswap-v2-pool';
 import { ConeStablePool } from './cone-stable-pool';
 import { Adapters, ConeConfig } from './config';
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import { SWAP_FEE_BASE } from './constants';
 
 // to calculate prices for stable pool, we need decimals of the stable tokens
 // so, we are extending UniswapV2PoolOrderedParams with token decimals
@@ -199,13 +198,7 @@ export class Cone extends UniswapV2 {
           ['uint112', 'uint112', 'uint32'],
           returnData[i][0],
         );
-        const feeRate = multiCallFeeData[i]!.callDecoder(returnData[i][1]);
-        console.log('feeRate', feeRate);
-        // fee in cone is denominator only (10_000 for stable and 2_000 for volatile pools
-        // to convert to compatible integer fee we have to divide
-        // SWAP_FEE_BASE (10_000) to feeRate,
-        // and receive 1 for stable pools and 5 for volatile pools
-        const feeCode = Math.ceil(SWAP_FEE_BASE / feeRate);
+        const feeCode = multiCallFeeData[i]!.callDecoder(returnData[i][1]);
         console.log('feeCode', feeCode);
         return {
           reserves0: reservesDecodedData[0].toString(),

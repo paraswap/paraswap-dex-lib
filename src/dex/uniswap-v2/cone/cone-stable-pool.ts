@@ -1,7 +1,6 @@
 import { RESERVE_LIMIT } from '../uniswap-v2';
 import { BI_POWS } from '../../../bigint-constants';
 import { ConePoolOrderedParams } from './cone';
-import { SWAP_FEE_BASE, SWAP_FEE_BASE_BN } from './constants';
 
 const e18 = BI_POWS[18];
 
@@ -66,15 +65,18 @@ export class ConeStablePool {
     priceParams: ConePoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
+    if (srcAmount === 0n) return 0n;
+
     const { reservesIn, reservesOut, decimalsIn, decimalsOut, fee } =
       priceParams;
+    const feeBI = BigInt(fee);
     console.log('ConeStablePool fee', fee);
 
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
       return 0n;
     }
 
-    const amountIn = srcAmount - srcAmount / SWAP_FEE_BASE_BN;
+    const amountIn = srcAmount - srcAmount / feeBI;
 
     const reservesInN = BigInt(reservesIn);
     const reservesOutN = BigInt(reservesOut);

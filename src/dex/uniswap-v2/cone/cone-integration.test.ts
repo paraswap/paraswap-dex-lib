@@ -1,16 +1,16 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { DummyDexHelper } from '../../../dex-helper';
-import { Network, SwapSide } from '../../../constants';
 // @ts-ignore
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../../tests/utils';
-import { BI_POWS } from '../../../bigint-constants';
-import { Cone } from './cone';
 // @ts-ignore
 import { Tokens } from '../../../../tests/constants-e2e';
+import { DummyDexHelper } from '../../../dex-helper';
+import { Network, SwapSide } from '../../../constants';
+import { BI_POWS } from '../../../bigint-constants';
+import { Cone } from './cone';
 import { Interface, Result } from '@ethersproject/abi';
-import conePairABI from '../../../abi/uniswap-v2/DystPair.json';
+import conePairABI from '../../../abi/uniswap-v2/ConePair.json';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
 // const amounts6 = [0n, BI_POWS[6], BI_POWS[6] * 2n];
@@ -74,13 +74,6 @@ async function checkOnChainPricing(
 
   console.log('prices', prices);
   console.log('expectedPrices', expectedPrices);
-
-  const diff = expectedPrices.map((p, i) => {
-    const d = p === 0n ? -1 : (Number(prices[i]) / Number(p)) * 100;
-    console.log('p', p, prices[i], d);
-    return d;
-  });
-  console.log('diff', diff);
 
   expect(prices).toEqual(expectedPrices);
 }
