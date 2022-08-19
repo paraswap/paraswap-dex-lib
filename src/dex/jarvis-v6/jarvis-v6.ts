@@ -24,6 +24,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { JarvisV6Config, Adapters } from './config';
 import { JarvisV6EventPool } from './jarvis-v6-events';
 import {
+  getBigIntPow,
   getJarvisPoolFromTokens,
   getJarvisSwapFunction,
   getOnChainState,
@@ -157,49 +158,19 @@ export class JarvisV6
 
     const poolState = await this.getPoolState(eventPool, blockNumber);
 
+    const unitVolume = getBigIntPow(
+      (side === SwapSide.SELL ? srcToken : destToken).decimals,
+    );
+
     const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
-    const pool = eventPool.poolConfig;
-    const feePercentage = poolState.pool.feesPercentage;
-    const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
 
-    const prices = amounts.map(amount => {
-      if (swapFunction === JarvisSwapFunctions.mint) {
-        if (side === SwapSide.SELL)
-          return this.getSyntheticAmountToReceive(
-            amount,
-            pool.collateralToken.decimals,
-            UsdcPriceFeed,
-            feePercentage,
-          );
-        return this.getCollateralAmountToReceive(
-          amount,
-          pool.collateralToken.decimals,
-          UsdcPriceFeed,
-          feePercentage,
-        );
-      }
-      if (swapFunction === JarvisSwapFunctions.redeem) {
-        if (side === SwapSide.SELL)
-          return this.getCollateralAmountToReceive(
-            amount,
-            pool.collateralToken.decimals,
-            UsdcPriceFeed,
-            feePercentage,
-          );
-        return this.getSyntheticAmountToReceive(
-          amount,
-          pool.collateralToken.decimals,
-          UsdcPriceFeed,
-          feePercentage,
-        );
-      }
-      return 0n;
-    });
-
-    const unit =
-      swapFunction === JarvisSwapFunctions.mint
-        ? (1n * BI_POWS[18] * BI_POWS[18]) / UsdcPriceFeed
-        : UsdcPriceFeed;
+    const [unit, ...prices] = this.computePrices(
+      [unitVolume, ...amounts],
+      swapFunction,
+      side,
+      eventPool.poolConfig,
+      poolState,
+    );
 
     return [
       {
@@ -211,7 +182,7 @@ export class JarvisV6
         },
         poolAddresses: [eventPool.poolConfig.address],
         exchange: this.dexKey,
-        gasCost: 500 * 1000,
+        gasCost: 475 * 1000, //between 450-500k gas
         poolIdentifier,
       },
     ];
@@ -238,6 +209,7 @@ export class JarvisV6
         `Jarvis: Invalid OpType ${swapFunction}, Should be one of ['mint', 'redeem']`,
       );
     }
+
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -326,6 +298,50 @@ export class JarvisV6
     limit: number,
   ): Promise<PoolLiquidity[]> {
     return [];
+  }
+
+  computePrices(
+    amounts: bigint[],
+    swapFunction: JarvisSwapFunctions,
+    side: SwapSide,
+    pool: PoolConfig,
+    poolState: PoolState,
+  ): bigint[] {
+    const feePercentage = poolState.pool.feesPercentage;
+    const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
+    return amounts.map(amount => {
+      if (swapFunction === JarvisSwapFunctions.mint) {
+        if (side === SwapSide.SELL)
+          return this.getSyntheticAmountToReceive(
+            amount,
+            pool.collateralToken.decimals,
+            UsdcPriceFeed,
+            feePercentage,
+          );
+        return this.getCollateralAmountToReceive(
+          amount,
+          pool.collateralToken.decimals,
+          UsdcPriceFeed,
+          feePercentage,
+        );
+      }
+      if (swapFunction === JarvisSwapFunctions.redeem) {
+        if (side === SwapSide.SELL)
+          return this.getCollateralAmountToReceive(
+            amount,
+            pool.collateralToken.decimals,
+            UsdcPriceFeed,
+            feePercentage,
+          );
+        return this.getSyntheticAmountToReceive(
+          amount,
+          pool.collateralToken.decimals,
+          UsdcPriceFeed,
+          feePercentage,
+        );
+      }
+      return 0n;
+    });
   }
 
   getSyntheticAmountToReceive(
