@@ -6,11 +6,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { JarvisV6 } from './jarvis-v6';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
 /*
@@ -46,7 +42,6 @@ describe('JarvisV6', function () {
 
   beforeAll(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-
     jarvisV6 = new JarvisV6(network, dexKey, dexHelper);
     await jarvisV6.initializePricing(blockNumber);
   });
