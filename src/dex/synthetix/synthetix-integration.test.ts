@@ -42,13 +42,15 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  sourceCurrencyKey: string,
+  destCurrencyKey: string,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
       amount,
+      sourceCurrencyKey,
+      destCurrencyKey,
     ]),
   }));
 }
@@ -58,7 +60,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -71,18 +72,17 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = '0xD64D83829D92B5bdA881f6f61A4e4E27Fc185387';
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from synthetix.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = synthetix.combinedIface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    synthetix.onchainConfigValues!.addressToKey[TokenA.address.toLowerCase()],
+    synthetix.onchainConfigValues!.addressToKey[TokenB.address.toLowerCase()],
   );
   const readerResult = (
     await dexHelper.multiContract.methods
@@ -101,7 +101,8 @@ describe('Synthetix', function () {
   let synthetix: Synthetix;
 
   beforeAll(async () => {
-    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    blockNumber = 15372730;
     synthetix = new Synthetix(network, dexKey, dexHelper);
     await synthetix.initializePricing(blockNumber);
   });
@@ -128,16 +129,12 @@ describe('Synthetix', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    if (synthetix.hasConstantPriceLargeAmounts) {
-      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-    } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-    }
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
     // Check if onchain pricing equals to calculated ones
     await checkOnChainPricing(
       synthetix,
-      '', // TODO: Put here the functionName to call
+      'getAmountsForAtomicExchange',
       blockNumber,
       poolPrices![0].prices,
     );
