@@ -3,7 +3,7 @@ import { IDexHelper } from '../../dex-helper';
 import { Address, Token } from '../../types';
 import { bigIntify } from '../nerve/utils';
 import { JarvisSwapFunctions, PoolConfig, PoolState } from './types';
-import SynthereumPriceFeedABI from './abis/SynthereumPriceFeed.json';
+import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 import { Interface } from '@ethersproject/abi';
 import { BI_POWS } from '../../bigint-constants';
 

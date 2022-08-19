@@ -2,8 +2,8 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { Interface } from '@ethersproject/abi';
-import ChainlinkAccessControlledOffchainAggregatorABI from './abis/ChainlinkAccessControlledOffchainAggregator.json';
-import SynthereumPriceFeedABI from './abis/SynthereumPriceFeed.json';
+import ChainlinkAccessControlledOffchainAggregatorABI from '../../abi/jarvis/ChainlinkAccessControlledOffchainAggregator.json';
+import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 
 export const JarvisV6Config: DexConfigMap<DexParams> = {
   JarvisV6: {
