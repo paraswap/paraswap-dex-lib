@@ -329,12 +329,11 @@
     "@babel/helper-validator-identifier" "^7.14.5"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/sor@^0.3.3":
-  version "0.3.3"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-0.3.3.tgz#726a589094e4b9d25116cde5a1c0e154f132713e"
-  integrity sha512-hdPp55A2Hw+Koq81nhqTy15jNRCDW1k5ZT47nk2uEx7N5D9GiAx4BCNDzTiuJLErj6QHJTbEKK7Y5jei702c4g==
+"@balancer-labs/sor@^4.0.1-beta2":
+  version "4.0.1-beta.2"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.0.1-beta.2.tgz#aa033fdc20012fc73568405a767a4f31a2b1d920"
+  integrity sha512-5TLCTW3FR11Pe5Fflcll5R3BccWQVk4UNZNbv84lGPyUuIyoz2i+Oj5DMDPtzWSyIjo5uC0nrrADMKYApMw4Uw==
   dependencies:
-    bignumber.js "^9.0.0"
     isomorphic-fetch "^2.2.1"
 
 "@bcoe/v8-coverage@^0.2.3":

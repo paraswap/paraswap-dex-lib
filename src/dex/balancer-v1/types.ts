@@ -1,20 +1,43 @@
+import { BigNumber } from '@ethersproject/bignumber';
 import { Address } from '../../types';
 
 export interface Token {
   address: string;
-  balance: bigint;
+  balance: BigNumber;
   decimals: number;
-  denormWeight: bigint;
+  denormWeight: BigNumber;
+}
+
+export interface TokenAsString {
+  address: string;
+  balance: string;
+  decimals: number;
+  denormWeight: string;
 }
 
 export type PoolState = {
   id: string;
-  swapFee: bigint;
-  totalWeight: bigint;
+  swapFee: BigNumber;
+  totalWeight: BigNumber;
   tokens: Token[];
   tokensList: string[];
   publicSwap?: string;
 };
+
+export type MinimalPoolState = Pick<PoolState, 'tokens'>;
+
+export type PoolStateAsString = {
+  id: string;
+  swapFee: string;
+  totalWeight: string;
+  tokens: TokenAsString[];
+  tokensList: string[];
+  publicSwap?: string;
+};
+
+export interface PoolStatesAsString {
+  pools: PoolStateAsString[];
+}
 
 export interface PoolStates {
   pools: PoolState[];
