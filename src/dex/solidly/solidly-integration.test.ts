@@ -89,7 +89,6 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const dystopia = new Solidly(network, dexKey, dexHelper);
           const pools = await dystopia.getPoolIdentifiers(
             tokenA,
             tokenB,
@@ -135,9 +134,6 @@ describe('Solidly integration tests', () => {
         });
 
         it('getTopPoolsForToken', async function () {
-          const dexHelper = new DummyDexHelper(Network.POLYGON);
-          const dystopia = new Solidly(Network.POLYGON, dexKey, dexHelper);
-
           const poolLiquidity = await dystopia.getTopPoolsForToken(
             tokenA.address,
             10,
@@ -157,7 +153,6 @@ describe('Solidly integration tests', () => {
         const amounts = amounts18; // amounts6;
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
-          const dexHelper = new DummyDexHelper(Network.POLYGON);
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
           const pools = await dystopia.getPoolIdentifiers(
             tokenA,
@@ -203,14 +198,7 @@ describe('Solidly integration tests', () => {
         });
 
         it('getTopPoolsForToken', async function () {
-          const dexHelper = new DummyDexHelper(Network.POLYGON);
-          const dystopiaStable = new Solidly(
-            Network.POLYGON,
-            dexKey,
-            dexHelper,
-          );
-
-          const poolLiquidity = await dystopiaStable.getTopPoolsForToken(
+          const poolLiquidity = await dystopia.getTopPoolsForToken(
             tokenA.address,
             10,
           );
