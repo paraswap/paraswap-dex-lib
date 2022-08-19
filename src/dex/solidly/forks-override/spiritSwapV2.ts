@@ -18,10 +18,9 @@ const SpiritSwapV2PairABI = [
 ];
 
 const spiritSwapV2PairIface = new Interface(SpiritSwapV2PairABI);
-const FEE_FACTOR = 1e9;
 
 export class SpiritSwapV2 extends Solidly {
-  feeFactor = FEE_FACTOR;
+  feeFactor = 1e9;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(_.pick(SolidlyConfig, ['SpiritSwapV2']));
@@ -50,7 +49,7 @@ export class SpiritSwapV2 extends Solidly {
       );
       if (!fees) return 0;
 
-      const feeCode = Math.ceil(FEE_FACTOR / fees);
+      const feeCode = Math.ceil(this.feeFactor / fees);
       return feeCode;
     };
 
