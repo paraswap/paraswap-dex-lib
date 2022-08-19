@@ -15,6 +15,7 @@ export class SynthetixMath {
       sourceCurrencyKey,
       destinationCurrencyKey,
     );
+    return amountReceived;
   }
 
   private _getAmountsForAtomicExchangeMinusFees(

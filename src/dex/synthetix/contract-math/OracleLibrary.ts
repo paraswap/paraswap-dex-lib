@@ -30,9 +30,10 @@ export class OracleLibrary {
       return tick;
     }
 
-    const prevIndex =
-      (BigInt.asUintN(256, observationIndex) + observationCardinality - 1n) %
-      BigInt(observationCardinality);
+    const prevIndex = OracleLibrary.getPrevIndex(
+      observationIndex,
+      observationCardinality,
+    );
 
     const {
       blockTimestamp: prevObservationTimestamp,
@@ -50,6 +51,16 @@ export class OracleLibrary {
     const delta = observationTimestamp - prevObservationTimestamp;
     tick = BigInt.asIntN(24, (tickCumulative - prevTickCumulative) / delta);
     return tick;
+  }
+
+  static getPrevIndex(
+    observationIndex: bigint,
+    observationCardinality: bigint,
+  ) {
+    return (
+      (BigInt.asUintN(256, observationIndex) + observationCardinality - 1n) %
+      BigInt(observationCardinality)
+    );
   }
 
   static consult(state: PoolState, pool: Address, secondsAgo: bigint): bigint {

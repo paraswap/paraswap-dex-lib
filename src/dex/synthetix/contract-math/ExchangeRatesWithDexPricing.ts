@@ -5,7 +5,8 @@ import { PoolState } from '../types';
 import { dexPriceAggregatorUniswapV3 } from './DexPriceAggregatorUniswapV3';
 import { SafeDecimalMath } from './SafeDecimalMath';
 
-const sUSD = 'sUSD';
+const sUSD =
+  '0x7355534400000000000000000000000000000000000000000000000000000000';
 
 class ExchangeRatesWithDexPricing {
   effectiveAtomicValueAndRates(

@@ -41,8 +41,9 @@ class DexPriceAggregatorUniswapV3 {
     _twapPeriod: bigint,
   ): bigint {
     const tokenIn = state.dexPriceAggregator.weth;
-    const pool = this._getPoolForRoute(
-      state,
+    const pool = this.getPoolForRoute(
+      state.dexPriceAggregator.uniswapV3Factory,
+      state.dexPriceAggregator.overriddenPoolForRoute,
       this.getPoolKey(
         tokenIn,
         _tokenOut,
@@ -66,8 +67,9 @@ class DexPriceAggregatorUniswapV3 {
     _twapPeriod: bigint,
   ): bigint {
     const tokenOut = state.dexPriceAggregator.weth;
-    const pool = this._getPoolForRoute(
-      state,
+    const pool = this.getPoolForRoute(
+      state.dexPriceAggregator.uniswapV3Factory,
+      state.dexPriceAggregator.overriddenPoolForRoute,
       this.getPoolKey(
         _tokenIn,
         tokenOut,
@@ -93,7 +95,7 @@ class DexPriceAggregatorUniswapV3 {
   ): bigint {
     // If the tokenIn:tokenOut route was overridden to use a single pool, derive price directly from that pool
     const overriddenPool = this._getOverriddenPool(
-      state,
+      state.dexPriceAggregator.overriddenPoolForRoute,
       this.getPoolKey(
         _tokenIn,
         _tokenOut,
@@ -113,16 +115,18 @@ class DexPriceAggregatorUniswapV3 {
 
     // Otherwise, derive the price by "crossing" through tokenIn:ETH -> ETH:tokenOut
     // To keep consistency, we cross through with the same price source (spot vs. twap)
-    const pool1 = this._getPoolForRoute(
-      state,
+    const pool1 = this.getPoolForRoute(
+      state.dexPriceAggregator.uniswapV3Factory,
+      state.dexPriceAggregator.overriddenPoolForRoute,
       this.getPoolKey(
         _tokenIn,
         state.dexPriceAggregator.weth,
         state.dexPriceAggregator.defaultPoolFee,
       ),
     );
-    const pool2 = this._getPoolForRoute(
-      state,
+    const pool2 = this.getPoolForRoute(
+      state.dexPriceAggregator.uniswapV3Factory,
+      state.dexPriceAggregator.overriddenPoolForRoute,
       this.getPoolKey(
         _tokenOut,
         state.dexPriceAggregator.weth,
@@ -157,13 +161,14 @@ class DexPriceAggregatorUniswapV3 {
     return spotAmountOut < twapAmountOut ? spotAmountOut : twapAmountOut;
   }
 
-  private _getPoolForRoute(state: PoolState, _poolKey: PoolKey): Address {
-    let pool = this._getOverriddenPool(state, _poolKey);
+  getPoolForRoute(
+    uniswapV3Factory: Address,
+    overriddenPoolForRoute: Record<string, string>,
+    _poolKey: PoolKey,
+  ): Address {
+    let pool = this._getOverriddenPool(overriddenPoolForRoute, _poolKey);
     if (pool === NULL_ADDRESS) {
-      pool = this._computeAddress(
-        state.dexPriceAggregator.uniswapV3Factory,
-        _poolKey,
-      );
+      pool = this._computeAddress(uniswapV3Factory, _poolKey);
     }
     return pool;
   }
@@ -234,10 +239,11 @@ class DexPriceAggregatorUniswapV3 {
     return { token0: tokenA, token1: tokenB, fee };
   }
 
-  private _getOverriddenPool(state: PoolState, _poolKey: PoolKey): Address {
-    return state.dexPriceAggregator.overriddenPoolForRoute[
-      this.identifyRouteFromPoolKey(_poolKey)
-    ];
+  private _getOverriddenPool(
+    overriddenPoolForRoute: Record<string, string>,
+    _poolKey: PoolKey,
+  ): Address {
+    return overriddenPoolForRoute[this.identifyRouteFromPoolKey(_poolKey)];
   }
 
   private _getQuoteCrossingTicksThroughWeth(
