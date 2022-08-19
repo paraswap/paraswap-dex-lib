@@ -4,7 +4,7 @@ import { parseInt } from 'lodash';
 import { BN_0 } from '../bignumber-constants';
 import { MultiResult } from './multi-wrapper';
 
-function generalDecoder<T, D>(
+export function generalDecoder<T, D>(
   result: MultiResult<BytesLike>,
   type: string,
   defaultValue: T,
