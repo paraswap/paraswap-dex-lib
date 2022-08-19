@@ -1,14 +1,8 @@
 import { ethers } from 'ethers';
-import { Contract } from 'web3-eth-contract';
 import { IDexHelper } from '../../dex-helper';
 import { Address, Token } from '../../types';
 import { bigIntify } from '../nerve/utils';
-import {
-  JarvisSwapFunctions,
-  PoolConfig,
-  PoolState,
-  priceFeedData,
-} from './types';
+import { JarvisSwapFunctions, PoolConfig, PoolState } from './types';
 import SynthereumPriceFeedABI from './abis/SynthereumPriceFeed.json';
 import { Interface } from '@ethersproject/abi';
 import { BI_POWS } from '../../bigint-constants';
