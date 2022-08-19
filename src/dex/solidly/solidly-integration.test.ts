@@ -146,9 +146,9 @@ describe('Solidly integration tests', () => {
 
       describe('Curve like stable pool', function () {
         const TokenASymbol = 'DAI'; // 'USDT';
-        const tokenA = Tokens[Network.POLYGON][TokenASymbol];
+        const tokenA = Tokens[network][TokenASymbol];
         const TokenBSymbol = 'USDC';
-        const tokenB = Tokens[Network.POLYGON][TokenBSymbol];
+        const tokenB = Tokens[network][TokenBSymbol];
 
         const amounts = amounts18; // amounts6;
 
