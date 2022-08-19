@@ -1,4 +1,4 @@
-import { Provider } from '@ethersproject/providers';
+import { Angle } from './angle/angle';
 import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
@@ -75,6 +75,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Angle,
   BalancerV2,
   UniswapV2,
   BiSwap,
