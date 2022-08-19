@@ -6,12 +6,9 @@ export type LatestRoundData = {
 };
 
 export type Slot0 = {
-  sqrtPriceX96: bigint;
   tick: bigint;
   observationIndex: bigint;
   observationCardinality: bigint;
-  observationCardinalityNext: bigint;
-  feeProtocol: bigint;
 };
 
 export type PoolKey = { token0: Address; token1: Address; fee: bigint };
@@ -25,27 +22,13 @@ export type OracleObservation = {
 
 export type TokenWithCurrencyKey = Token & { currencyKey?: string };
 
-export type OnchainConfigValues = {
-  lastUpdatedInMs: number;
-
-  synthetixAddress: Address;
-  exchangerAddress: Address;
-  dexPriceAggregatorAddress: Address;
-
-  atomicExchangeFeeRate: Record<string, bigint>;
-  exchangeFeeRate: Record<string, bigint>;
-  pureChainlinkPriceForAtomicSwapsEnabled: Record<string, boolean>;
-  atomicEquivalentForDexPricing: Record<string, Token>;
-  atomicTwapWindow: bigint;
-
-  dexPriceAggregator: {
-    weth: Address;
-    defaultPoolFee: bigint;
-    uniswapV3Factory: Address;
-    overriddenPoolForRoute: Record<string, Address>;
-  };
-
-  addressToKey: Record<Address, string>;
+export type DexPriceAggregatorWithoutOracleState = {
+  // from DexPriceAggregatorUniswapV3 instance
+  weth: Address;
+  defaultPoolFee: bigint;
+  uniswapV3Factory: Address;
+  // bytes from token0 and token1 ->
+  overriddenPoolForRoute: Record<string, Address>;
 };
 
 export type PoolState = {
@@ -61,14 +44,7 @@ export type PoolState = {
   // from flexible Storage
   atomicTwapWindow: bigint;
 
-  dexPriceAggregator: {
-    // from DexPriceAggregatorUniswapV3 instance
-    weth: Address;
-    defaultPoolFee: bigint;
-    uniswapV3Factory: Address;
-    // bytes from token0 and token1 ->
-    overriddenPoolForRoute: Record<string, Address>;
-
+  dexPriceAggregator: DexPriceAggregatorWithoutOracleState & {
     // UniswapV3 Pool
     uniswapV3Slot0: Record<string, Slot0>;
     // poolAddress -> observationIndex -> Observation
@@ -78,6 +54,27 @@ export type PoolState = {
     tickCumulatives: Record<string, Record<0 | 1, bigint>>;
   };
   blockTimestamp: bigint;
+};
+
+export type OnchainConfigValues = Pick<
+  PoolState,
+  | 'atomicExchangeFeeRate'
+  | 'exchangeFeeRate'
+  | 'pureChainlinkPriceForAtomicSwapsEnabled'
+  | 'atomicEquivalentForDexPricing'
+  | 'atomicTwapWindow'
+> & {
+  lastUpdatedInMs: number;
+
+  synthetixAddress: Address;
+  exchangerAddress: Address;
+  dexPriceAggregatorAddress: Address;
+
+  addressToKey: Record<Address, string>;
+
+  dexPriceAggregator: DexPriceAggregatorWithoutOracleState;
+  poolKeys: PoolKey[];
+  aggregatorsAddresses: Record<string, string>;
 };
 
 export type SynthetixData = {

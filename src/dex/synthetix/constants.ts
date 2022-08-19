@@ -1,6 +1,10 @@
+// TODO: Get proper estimation of gas cost
+export const SYNTHETIX_GAS_COST = 1;
+
 export enum Contracts {
   SYNTHETIX = 'Synthetix',
   EXCHANGER = 'Exchanger',
+  EXCHANGE_RATES = 'ExchangeRates',
 }
 
 // Encoded lookups in the flexible contract
