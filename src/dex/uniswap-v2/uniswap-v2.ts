@@ -45,10 +45,11 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
-
-export const RESERVE_LIMIT = 2n ** 112n - 1n;
+import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
+
+export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
 interface UniswapV2PoolState {
   reserves0: string;
@@ -69,12 +70,12 @@ export const directUniswapFunctionName = [
   UniswapV2Functions.buyOnUniswapV2Fork,
 ];
 
-export type UniswapV2Pair = {
+export interface UniswapV2Pair {
   token0: Token;
   token1: Token;
   exchange?: Address;
   pool?: UniswapV2EventPool;
-};
+}
 
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => this.iface.parseLog(log);
@@ -164,10 +165,13 @@ export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
   '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f': 200,
 };
 
-function encodePools(pools: UniswapPool[]): NumberAsString[] {
+function encodePools(
+  pools: UniswapPool[],
+  feeFactor: number,
+): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000 - fee) << 161n) +
+      (BigInt(feeFactor - fee) << 161n) +
       ((direction ? 0n : 1n) << 160n) +
       BigInt(address)
     ).toString();
@@ -230,7 +234,7 @@ export class UniswapV2
 
   // getFeesMultiCallData should be override
   // when isDynamicFees is set to true
-  protected getFeesMultiCallData(poolAddress: Address):
+  protected getFeesMultiCallData(pair: UniswapV2Pair):
     | undefined
     | {
         callEntry: { target: Address; callData: string };
@@ -246,8 +250,7 @@ export class UniswapV2
     feeCode: number,
     blockNumber: number,
   ) {
-    const { callEntry, callDecoder } =
-      this.getFeesMultiCallData(pair.exchange!) || {};
+    const { callEntry, callDecoder } = this.getFeesMultiCallData(pair) || {};
     pair.pool = new UniswapV2EventPool(
       this.dexKey,
       this.dexHelper,
@@ -275,35 +278,22 @@ export class UniswapV2
     priceParams: UniswapV2PoolOrderedParams,
     destAmount: bigint,
   ): Promise<bigint> {
-    const { reservesIn, reservesOut, fee } = priceParams;
-
-    const numerator = BigInt(reservesIn) * destAmount * BigInt(this.feeFactor);
-    const denominator =
-      (BigInt(this.feeFactor) - BigInt(fee)) *
-      (BigInt(reservesOut) - destAmount);
-
-    if (denominator <= 0n) return 0n;
-    return numerator === 0n ? 0n : 1n + numerator / denominator;
+    return Uniswapv2ConstantProductPool.getBuyPrice(
+      priceParams,
+      destAmount,
+      this.feeFactor,
+    );
   }
 
   async getSellPrice(
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
-    const { reservesIn, reservesOut, fee } = priceParams;
-
-    if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return 0n;
-    }
-
-    const amountInWithFee = srcAmount * BigInt(this.feeFactor - parseInt(fee));
-
-    const numerator = amountInWithFee * BigInt(reservesOut);
-
-    const denominator =
-      BigInt(reservesIn) * BigInt(this.feeFactor) + amountInWithFee;
-
-    return denominator === 0n ? 0n : numerator / denominator;
+    return Uniswapv2ConstantProductPool.getSellPrice(
+      priceParams,
+      srcAmount,
+      this.feeFactor,
+    );
   }
 
   async getBuyPricePath(
@@ -356,7 +346,7 @@ export class UniswapV2
   ): Promise<UniswapV2PoolState[]> {
     try {
       const multiCallFeeData = pairs.map(pair =>
-        this.getFeesMultiCallData(pair.exchange!),
+        this.getFeesMultiCallData(pair),
       );
       const calldata = pairs
         .map((pair, i) => {
@@ -700,7 +690,7 @@ export class UniswapV2
     data: UniswapData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const pools = encodePools(data.pools);
+    const pools = encodePools(data.pools, this.feeFactor);
     const weth = this.getWETHAddress(srcToken, destToken, data.weth);
     const payload = this.abiCoder.encodeParameter(
       {
@@ -726,7 +716,7 @@ export class UniswapV2
     data: UniswapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const pools = encodePools(data.pools);
+    const pools = encodePools(data.pools, this.feeFactor);
     const weth = this.getWETHAddress(src, dest, data.weth);
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
@@ -782,7 +772,7 @@ export class UniswapV2
             srcAmount,
             destAmount,
             this.getWETHAddress(srcToken, destToken, _data.weth),
-            encodePools(_data.pools),
+            encodePools(_data.pools, this.feeFactor),
           ];
 
         case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
@@ -792,7 +782,7 @@ export class UniswapV2
             srcAmount,
             destAmount,
             this.getWETHAddress(srcToken, destToken, _data.weth),
-            encodePools(_data.pools),
+            encodePools(_data.pools, this.feeFactor),
             permit,
           ];
 
