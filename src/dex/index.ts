@@ -41,8 +41,6 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
-import { Dystopia } from './uniswap-v2/dystopia/dystopia';
-import { SpiritSwapV2 } from './spirit-swap-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
@@ -50,8 +48,9 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
-import { Velodrome } from './velodrome';
-import { Solidly } from './solidly';
+import { Solidly } from './solidly/solidly';
+import { Velodrome } from './solidly/forks-override/velodrome';
+import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 
 const LegacyDexes = [
   CurveV2,
@@ -70,9 +69,6 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
-  SpiritSwapV2,
-  Velodrome,
-  Solidly,
 ];
 
 const Dexes = [
@@ -94,8 +90,10 @@ const Dexes = [
   GMX,
   WooFi,
   UniswapV3,
-  Dystopia,
   ParaSwapLimitOrders,
+  Solidly,
+  SpiritSwapV2,
+  Velodrome,
   CurveV1,
   CurveFork,
   Swerve,

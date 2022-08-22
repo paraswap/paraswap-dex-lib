@@ -1,7 +1,6 @@
-import { RESERVE_LIMIT } from '../uniswap-v2';
-import { BI_POWS } from '../../../bigint-constants';
-import { DystopiaPoolOrderedParams } from './dystopia';
-import { SWAP_FEE_FACTOR } from './constants';
+import { BI_POWS } from '../../bigint-constants';
+import { RESERVE_LIMIT } from '../uniswap-v2/uniswap-v2';
+import { SolidlyPoolOrderedParams } from './types';
 
 const e18 = BI_POWS[18];
 
@@ -61,18 +60,21 @@ function _closeTo(a: bigint, b: bigint, target: bigint) {
   return false;
 }
 
-export class DystopiaStablePool {
+export class SolidlyStablePool {
   static getSellPrice(
-    priceParams: DystopiaPoolOrderedParams,
+    priceParams: SolidlyPoolOrderedParams,
     srcAmount: bigint,
+    feeFactor: number,
   ): bigint {
-    const { reservesIn, reservesOut, decimalsIn, decimalsOut } = priceParams;
+    const { reservesIn, reservesOut, decimalsIn, decimalsOut, fee } =
+      priceParams;
 
+    // FIXME: some dexes use uint112 others use uint256
     if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
       return 0n;
     }
 
-    const amountIn = srcAmount - srcAmount / SWAP_FEE_FACTOR;
+    const amountIn = srcAmount - (srcAmount * BigInt(fee)) / BigInt(feeFactor);
 
     const reservesInN = BigInt(reservesIn);
     const reservesOutN = BigInt(reservesOut);
