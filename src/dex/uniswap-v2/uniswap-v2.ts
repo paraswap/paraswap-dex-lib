@@ -292,10 +292,10 @@ export class UniswapV2
     );
   }
 
-  async getBuyPrice(
+  getBuyPrice(
     priceParams: UniswapV2PoolOrderedParams,
     destAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     return Uniswapv2ConstantProductPool.getBuyPrice(
       priceParams,
       destAmount,
@@ -303,10 +303,10 @@ export class UniswapV2
     );
   }
 
-  async getSellPrice(
+  getSellPrice(
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     return Uniswapv2ConstantProductPool.getSellPrice(
       priceParams,
       srcAmount,
@@ -314,24 +314,24 @@ export class UniswapV2
     );
   }
 
-  async getBuyPricePath(
+  getBuyPricePath(
     amount: bigint,
     params: UniswapV2PoolOrderedParams[],
-  ): Promise<bigint> {
+  ): bigint {
     let price = amount;
     for (const param of params.reverse()) {
-      price = await this.getBuyPrice(param, price);
+      price = this.getBuyPrice(param, price);
     }
     return price;
   }
 
-  async getSellPricePath(
+  getSellPricePath(
     amount: bigint,
     params: UniswapV2PoolOrderedParams[],
-  ): Promise<bigint> {
+  ): bigint {
     let price = amount;
     for (const param of params) {
-      price = await this.getSellPrice(param, price);
+      price = this.getSellPrice(param, price);
     }
     return price;
   }
@@ -557,17 +557,13 @@ export class UniswapV2
       );
       const unit =
         side == SwapSide.BUY
-          ? await this.getBuyPricePath(unitAmount, [pairParam])
-          : await this.getSellPricePath(unitAmount, [pairParam]);
+          ? this.getBuyPricePath(unitAmount, [pairParam])
+          : this.getSellPricePath(unitAmount, [pairParam]);
 
       const prices =
         side == SwapSide.BUY
-          ? await Promise.all(
-              amounts.map(amount => this.getBuyPricePath(amount, [pairParam])),
-            )
-          : await Promise.all(
-              amounts.map(amount => this.getSellPricePath(amount, [pairParam])),
-            );
+          ? amounts.map(amount => this.getBuyPricePath(amount, [pairParam]))
+          : amounts.map(amount => this.getSellPricePath(amount, [pairParam]));
 
       // As uniswapv2 just has one pool per token pair
       return [

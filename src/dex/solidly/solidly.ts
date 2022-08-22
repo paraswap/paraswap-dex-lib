@@ -236,10 +236,10 @@ export class Solidly extends UniswapV2 {
     }
   }
 
-  async getSellPrice(
+  getSellPrice(
     priceParams: SolidlyPoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     return priceParams.stable
       ? SolidlyStablePool.getSellPrice(priceParams, srcAmount, this.feeFactor)
       : Uniswapv2ConstantProductPool.getSellPrice(
@@ -249,10 +249,10 @@ export class Solidly extends UniswapV2 {
         );
   }
 
-  async getBuyPrice(
+  getBuyPrice(
     priceParams: SolidlyPoolOrderedParams,
     srcAmount: bigint,
-  ): Promise<bigint> {
+  ): bigint {
     if (priceParams.stable) throw new Error(`Buy not supported`);
     return Uniswapv2ConstantProductPool.getBuyPrice(
       priceParams,
