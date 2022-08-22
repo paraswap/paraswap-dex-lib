@@ -414,24 +414,42 @@ export class BalancerV1EventPool {
     from: Token,
     to: Token,
     poolsState: BalancerV1PoolState[],
+    _minBalance: bigint,
+    side: SwapSide,
     blockNumber: number,
     limit: number = 10,
   ): BalancerV1PoolState[] | null {
     const valuesPlusIndexes = poolsState
       .slice(0, 15)
-      .map<ValuePlusIndexType>((pool, index) => {
+      .reduce<ValuePlusIndexType[]>((acc, pool, index) => {
         pool.loadState(blockNumber);
         const poolData = pool.weightedPool.parsePoolPairData(
           from.address,
           to.address,
         );
 
+        if (
+          side === SwapSide.SELL &&
+          poolData.balanceIn.div(2).lt(_minBalance)
+        ) {
+          return acc;
+        }
+
+        if (
+          side === SwapSide.BUY &&
+          poolData.balanceOut.div(3).lt(_minBalance)
+        ) {
+          return acc;
+        }
+
         const value = poolData.balanceIn.div(poolData.weightOut);
-        return {
+        acc.push({
           value,
           index,
-        };
-      });
+        });
+
+        return acc;
+      }, []);
 
     const selectedPools = valuesPlusIndexes.sort((p1, p2) => {
       return p2.value.gt(p1.value) ? 1 : -1;
@@ -524,10 +542,16 @@ export class BalancerV1
       await this.eventPools.restoreState(results.invalidPools, blockNumber);
     }
 
+    const unitVolume = BigInt(
+      10 ** (side === SwapSide.SELL ? _from : _to).decimals,
+    );
+
     const topPools = this.eventPools.syncGetTopPools(
       _from,
       _to,
       [...results.syncedPools, ...results.invalidPools],
+      unitVolume,
+      side,
       blockNumber,
     );
 
@@ -617,10 +641,15 @@ export class BalancerV1
         await this.eventPools.restoreState(results.invalidPools, blockNumber);
       }
 
+      let minBalance = amounts[amounts.length - 1];
+      if (unitVolume > minBalance) minBalance = unitVolume;
+
       const topPools = this.eventPools.syncGetTopPools(
         _from,
         _to,
         [...results.syncedPools, ...results.invalidPools],
+        minBalance,
+        side,
         blockNumber,
         10,
       );
@@ -667,7 +696,6 @@ export class BalancerV1
           }
         })
         .filter(p => !!p);
-
       return poolPrices as unknown as ExchangePrices<BalancerV1Data>;
     } catch (e) {
       this.logger.error(
