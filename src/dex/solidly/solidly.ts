@@ -311,8 +311,8 @@ export class Solidly extends UniswapV2 {
         const unit =
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY
-            ? await this.getBuyPricePath(unitAmount, [pairParam])
-            : await this.getSellPricePath(unitAmount, [pairParam]);
+            ? this.getBuyPricePath(unitAmount, [pairParam])
+            : this.getSellPricePath(unitAmount, [pairParam]);
 
         const prices =
           // @ts-expect-error Buy side is not implemented yet

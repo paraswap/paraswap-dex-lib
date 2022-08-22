@@ -103,15 +103,17 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     state: DeepReadonly<UniswapV2PoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<UniswapV2PoolState> | null> {
-    const event = this.decoder(log);
-    switch (event.name) {
-      case 'Sync':
-        return {
-          reserves0: event.args.reserve0.toString(),
-          reserves1: event.args.reserve1.toString(),
-          feeCode: state.feeCode,
-        };
-    }
+    try {
+      const event = this.decoder(log);
+      switch (event.name) {
+        case 'Sync':
+          return {
+            reserves0: event.args.reserve0.toString(),
+            reserves1: event.args.reserve1.toString(),
+            feeCode: state.feeCode,
+          };
+      }
+    } catch (e) {}
     return null;
   }
 
@@ -428,6 +430,7 @@ export class UniswapV2
     }
 
     if (!pairsToFetch.length) return;
+    console.log(pairsToFetch.length);
 
     const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
 
@@ -453,12 +456,40 @@ export class UniswapV2
     }
   }
 
-  async getPairOrderedParams(
+  syncFindPair(from: Token, to: Token): UniswapV2Pair | null {
+    if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
+    const [token0, token1] =
+      from.address.toLowerCase() < to.address.toLowerCase()
+        ? [from, to]
+        : [to, from];
+
+    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
+    let pair = this.pairs[key];
+    return pair ? pair : null;
+  }
+
+  syncFindPairs(pairs: [Token, Token][]): UniswapV2Pair[] | boolean {
+    const uniPairs = new Array<UniswapV2Pair>(pairs.length);
+
+    let i = 0;
+    for (const pair of pairs) {
+      const uniPair = this.syncFindPair(pair[0], pair[1]);
+      if (!uniPair) {
+        return false;
+      }
+      uniPairs[i] = uniPair;
+      ++i;
+    }
+
+    return uniPairs;
+  }
+
+  getPairOrderedParams(
     from: Token,
     to: Token,
     blockNumber: number,
-  ): Promise<UniswapV2PoolOrderedParams | null> {
-    const pair = await this.findPair(from, to);
+  ): UniswapV2PoolOrderedParams | null {
+    const pair = this.syncFindPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) return null;
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
@@ -548,7 +579,7 @@ export class UniswapV2
 
       await this.batchCatchUpPairs([[from, to]], blockNumber);
 
-      const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
+      const pairParam = this.getPairOrderedParams(from, to, blockNumber);
 
       if (!pairParam) return null;
 
