@@ -30,8 +30,8 @@ async function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
   ]);
@@ -69,7 +69,7 @@ async function testForNetwork(
           await testE2E(
             tokens[tokenChainlinkSymbol],
             tokens[sUSDSymbol],
-            holders[tokenChainlinkAmount],
+            holders[tokenChainlinkSymbol],
             side === SwapSide.SELL ? tokenChainlinkAmount : sUSDAmount,
             side,
             dexKey,
@@ -95,7 +95,7 @@ async function testForNetwork(
           await testE2E(
             tokens[tokenChainlinkSymbol],
             tokens[tokenDexAggregatorSymbol],
-            holders[tokenChainlinkAmount],
+            holders[tokenChainlinkSymbol],
             side === SwapSide.SELL
               ? tokenChainlinkAmount
               : tokenDexAggregatorAmount,
@@ -110,7 +110,7 @@ async function testForNetwork(
           await testE2E(
             tokens[tokenDexAggregatorSymbol],
             tokens[tokenChainlinkSymbol],
-            holders[tokenDexAggregatorAmount],
+            holders[tokenDexAggregatorSymbol],
             side === SwapSide.SELL
               ? tokenDexAggregatorAmount
               : tokenChainlinkAmount,
@@ -149,25 +149,25 @@ describe('Synthetix E2E', () => {
     );
   });
 
-  describe('Synthetix OPTIMISM', () => {
-    const network = Network.OPTIMISM;
+  // describe('Synthetix OPTIMISM', () => {
+  //   const network = Network.OPTIMISM;
 
-    const tokenChainlinkSymbol = 'sETH';
-    const tokenDexAggregatorSymbol = 'sBTC';
-    const sUSDSymbol = 'sUSD';
+  //   const tokenChainlinkSymbol = 'sETH';
+  //   const tokenDexAggregatorSymbol = 'sBTC';
+  //   const sUSDSymbol = 'sUSD';
 
-    const tokenChainlinkAmount = '1000000000000000000';
-    const tokenDexAggregatorAmount = '1000000000000000000';
-    const sUSDAmount = '1000000000000000000';
+  //   const tokenChainlinkAmount = '1000000000000000000';
+  //   const tokenDexAggregatorAmount = '1000000000000000000';
+  //   const sUSDAmount = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      tokenChainlinkSymbol,
-      tokenDexAggregatorSymbol,
-      sUSDSymbol,
-      tokenChainlinkAmount,
-      tokenDexAggregatorAmount,
-      sUSDAmount,
-    );
-  });
+  //   testForNetwork(
+  //     network,
+  //     tokenChainlinkSymbol,
+  //     tokenDexAggregatorSymbol,
+  //     sUSDSymbol,
+  //     tokenChainlinkAmount,
+  //     tokenDexAggregatorAmount,
+  //     sUSDAmount,
+  //   );
+  // });
 });
