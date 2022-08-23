@@ -229,6 +229,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
       decimals: 18,
     },
+    sUSD: {
+      address: '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -594,6 +598,18 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x4200000000000000000000000000000000000042',
       decimals: 18,
     },
+    sBTC: {
+      address: '0x298B9B95708152ff6968aafd889c6586e9169f1D',
+      decimals: 18,
+    },
+    sETH: {
+      address: '0xE405de8F52ba7559f9df3C368500B6E6ae6Cee49',
+      decimals: 18,
+    },
+    sUSD: {
+      address: '0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9',
+      decimals: 18,
+    },
   },
 };
 
@@ -646,6 +662,7 @@ export const Holders: {
     BBAUSD: '0x3a3ee61f7c6e1994a2001762250a5e17b2061b6d',
     sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
     sETH: '0xa7b9789fe2603aa1138154306f208e8c110435be',
+    sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -747,6 +764,9 @@ export const Holders: {
     OP: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     aOptWETH: '0x9CBF099ff424979439dFBa03F00B5961784c06ce',
     aOptUSDC: '0x70144e5b5bbf464cFf98d689254dc7C7223E01Ab',
+    sBTC: '0xbbb33d2e7bd7ddc722e53da9ca8ee97df41cfabf',
+    sETH: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
+    sUSD: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
   },
 };
 
