@@ -224,5 +224,14 @@
     "payable": false,
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "name": "currencyKeyDecimals",
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
