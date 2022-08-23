@@ -255,7 +255,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
     const swapData = this.combinedIface.encodeFunctionData(
       'exchangeAtomically',
-      [srcKey, srcAmount, destKey, '0x', '1'],
+      [srcKey, srcAmount, destKey, ethers.utils.hexZeroPad('0x', 32), '1'],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
