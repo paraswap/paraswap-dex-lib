@@ -48,6 +48,7 @@ import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
 import { Velodrome } from './velodrome';
 import { Solidly } from './solidly';
+import { Synthetix } from './synthetix/synthetix';
 
 const LegacyDexes = [
   Curve,
@@ -93,6 +94,7 @@ const Dexes = [
   WooFi,
   Dystopia,
   ParaSwapLimitOrders,
+  Synthetix,
 ];
 
 export type LegacyDexConstructor = new (
