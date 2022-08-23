@@ -1,6 +1,6 @@
+import _ from 'lodash';
 import { ethers } from 'ethers';
 import { Interface } from '@ethersproject/abi';
-import _ from 'lodash';
 import { Address } from 'paraswap';
 import { NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';

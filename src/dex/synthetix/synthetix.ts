@@ -101,8 +101,8 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     if (_srcAddress === _destAddress) return [];
 
     if (
-      this.onchainConfigValues?.addressToKey[_srcAddress] !== undefined &&
-      this.onchainConfigValues?.addressToKey[_destAddress] !== undefined
+      this.onchainConfigValues.addressToKey[_srcAddress] !== undefined &&
+      this.onchainConfigValues.addressToKey[_destAddress] !== undefined
     ) {
       return [this.getPoolIdentifier(_srcAddress, _destAddress)];
     }
@@ -118,13 +118,6 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SynthetixData>> {
-    if (this.onchainConfigValues === undefined) {
-      this.logger.error(
-        `${this.dexKey} is not initialized, but received pricing request`,
-      );
-      return null;
-    }
-
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
       const _destToken = this.dexHelper.config.wrapETH(destToken);
