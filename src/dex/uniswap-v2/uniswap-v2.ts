@@ -287,9 +287,10 @@ export class UniswapV2
     }
 
     this.logger.info(`starting to listen to new pool: ${key}`);
-    const pairs: [Token, Token] = JSON.parse(_pairs);
+    const pair: [Token, Token] = JSON.parse(_pairs);
     this.batchCatchUpPairs(
-      [pairs],
+      pair[0],
+      pair[1],
       this.dexHelper.blockManager.getLatestBlockNumber(),
     );
   }
@@ -339,13 +340,11 @@ export class UniswapV2
   }
 
   async findPair(from: Token, to: Token) {
-    if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
+    if (from.address === to.address) return null;
     const [token0, token1] =
-      from.address.toLowerCase() < to.address.toLowerCase()
-        ? [from, to]
-        : [to, from];
+      from.address < to.address ? [from, to] : [to, from];
 
-    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
+    const key = `${token0.address}-${token1.address}`;
     let pair = this.pairs[key];
     if (pair) return pair;
     const exchange = await this.factory.methods
@@ -416,43 +415,38 @@ export class UniswapV2
     }
   }
 
-  async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
+  async batchCatchUpPairs(from: Token, to: Token, blockNumber: number) {
     if (!blockNumber) return;
-    const pairsToFetch: UniswapV2Pair[] = [];
-    for (const _pair of pairs) {
-      const pair = await this.findPair(_pair[0], _pair[1]);
-      if (!(pair && pair.exchange)) continue;
-      if (!pair.pool) {
-        pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
-        pairsToFetch.push(pair);
-      }
+
+    const _pair = await this.findPair(from, to);
+    if (!_pair || !_pair.exchange) {
+      return;
     }
 
-    if (!pairsToFetch.length) return;
-    console.log(pairsToFetch.length);
+    const reserves = await this.getManyPoolReserves([_pair], blockNumber);
 
-    const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
-
-    if (reserves.length !== pairsToFetch.length) {
+    if (!reserves.length) {
       this.logger.error(
         `Error_getManyPoolReserves didn't get any pool reserves`,
       );
     }
+    const pairState = reserves[0];
 
-    for (let i = 0; i < pairsToFetch.length; i++) {
-      const pairState = reserves[i];
-      const pair = pairsToFetch[i];
-      if (!pair.pool) {
-        await this.addPool(
-          '',
-          pair,
-          pairState.reserves0,
-          pairState.reserves1,
-          pairState.feeCode,
-          blockNumber,
-        );
-      } else pair.pool.setState(pairState, blockNumber);
+    if (!pairState) {
+      return;
+    }
+
+    if (!_pair.pool) {
+      await this.addPool(
+        '',
+        _pair,
+        pairState.reserves0,
+        pairState.reserves1,
+        pairState.feeCode,
+        blockNumber,
+      );
+    } else {
+      _pair.pool.setState(pairState, blockNumber);
     }
   }
 
@@ -466,22 +460,6 @@ export class UniswapV2
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     return pair ? pair : null;
-  }
-
-  syncFindPairs(pairs: [Token, Token][]): UniswapV2Pair[] | boolean {
-    const uniPairs = new Array<UniswapV2Pair>(pairs.length);
-
-    let i = 0;
-    for (const pair of pairs) {
-      const uniPair = this.syncFindPair(pair[0], pair[1]);
-      if (!uniPair) {
-        return false;
-      }
-      uniPairs[i] = uniPair;
-      ++i;
-    }
-
-    return uniPairs;
   }
 
   getPairOrderedParams(
@@ -503,8 +481,7 @@ export class UniswapV2
     const fee = (
       pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
     ).toString();
-    const pairReversed =
-      pair.token1.address.toLowerCase() === from.address.toLowerCase();
+    const pairReversed = pair.token1.address === from.address;
     if (pairReversed) {
       return {
         tokenIn: from.address,
@@ -561,14 +538,14 @@ export class UniswapV2
       const from = this.dexHelper.config.wrapETH(_from);
       const to = this.dexHelper.config.wrapETH(_to);
 
+      from.address = from.address.toLowerCase();
+      to.address = to.address.toLowerCase();
+
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
       }
 
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
+      const tokenAddress = [from.address, to.address]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
@@ -577,10 +554,16 @@ export class UniswapV2
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
+      const pair = this.syncFindPair(from, to);
+      if (!pair) {
+        await this.batchCatchUpPairs(from, to, blockNumber);
+      }
+
+      if (pair && !pair.exchange) {
+        return null;
+      }
 
       const pairParam = this.getPairOrderedParams(from, to, blockNumber);
-
       if (!pairParam) return null;
 
       const unitAmount = getBigIntPow(

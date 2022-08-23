@@ -1,5 +1,10 @@
 import { UniswapV2 } from '../uniswap-v2/uniswap-v2';
-import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../constants';
+import {
+  CACHE_PREFIX,
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+} from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -86,7 +91,11 @@ export class Solidly extends UniswapV2 {
         : SolidlyConfig[dexKey][network].router || '';
   }
 
-  async findSolidlyPair(from: Token, to: Token, stable: boolean) {
+  syncFindPairSolidly(
+    from: Token,
+    to: Token,
+    stable: boolean,
+  ): SolidlyPair | null {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
@@ -96,88 +105,136 @@ export class Solidly extends UniswapV2 {
     const typePostfix = this.poolPostfix(stable);
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}-${typePostfix}`;
     let pair = this.pairs[key];
-    if (pair) return pair;
-
-    let exchange = await this.factory.methods
-      // Solidly has additional boolean parameter "StablePool"
-      // At first we look for uniswap-like volatile pool
-      .getPair(token0.address, token1.address, stable)
-      .call();
-
-    if (exchange === NULL_ADDRESS) {
-      pair = { token0, token1, stable };
-    } else {
-      pair = { token0, token1, exchange, stable };
+    if (pair) {
+      return pair;
     }
-    this.pairs[key] = pair;
-    return pair;
+
+    return null;
   }
 
-  async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
-    if (!blockNumber) return;
+  syncFindPairs(from: Token, to: Token): SolidlyPair[] {
+    const pairs: SolidlyPair[] = [];
+    if (from.address.toLowerCase() === to.address.toLowerCase()) return pairs;
+    const [token0, token1] =
+      from.address.toLowerCase() < to.address.toLowerCase()
+        ? [from, to]
+        : [to, from];
 
-    const stableArray = [false, true];
-    const stablePairsToFetch: SolidlyPair[] = [];
-    const notStablePairsToFetch: SolidlyPair[] = [];
-    for (const _pair of pairs) {
-      for (const stable of stableArray) {
-        const pair = await this.findSolidlyPair(_pair[0], _pair[1], stable);
-        if (!(pair && pair.exchange)) continue;
-        if (!pair.pool) {
-          stable
-            ? stablePairsToFetch.push(pair)
-            : notStablePairsToFetch.push(pair);
-        } else if (!pair.pool.getState(blockNumber)) {
-          stable
-            ? stablePairsToFetch.push(pair)
-            : notStablePairsToFetch.push(pair);
-        }
+    [false, true].map(stable => {
+      const typePostfix = this.poolPostfix(stable);
+      const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}-${typePostfix}`;
+      let pair = this.pairs[key];
+      if (pair) {
+        pairs.push(pair);
       }
+    });
+
+    return pairs;
+  }
+
+  async findSolidlyPairsOnChains(
+    from: Token,
+    to: Token,
+  ): Promise<SolidlyPair[]> {
+    const pairs = this.syncFindPairs(from, to);
+    if (pairs.length !== 0) {
+      return pairs;
     }
 
-    if (!notStablePairsToFetch.length && !stablePairsToFetch.length) return;
+    const [token0, token1] =
+      from.address < to.address ? [from, to] : [to, from];
 
-    const stableReserves = await this.getManyPoolReserves(
-      stablePairsToFetch,
-      blockNumber,
-    );
-    const notStableReserves = await this.getManyPoolReserves(
-      notStablePairsToFetch,
-      blockNumber,
-    );
+    const _pairs = await Promise.all(
+      [false, true].map(async stable => {
+        let exchange = await this.factory.methods
+          // Solidly has additional boolean parameter "StablePool"
+          // At first we look for uniswap-like volatile pool
+          .getPair(token0.address, token1.address, stable)
+          .call();
 
-    if (
-      stableReserves.length !== stablePairsToFetch.length &&
-      notStableReserves.length !== notStablePairsToFetch.length
-    ) {
+        let pair: SolidlyPair | undefined = undefined;
+        if (exchange === NULL_ADDRESS) {
+          pair = { token0, token1, stable };
+        } else {
+          pair = { token0, token1, exchange, stable };
+        }
+
+        const typePostfix = this.poolPostfix(stable);
+        const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}-${typePostfix}`;
+        this.pairs[key] = pair;
+
+        return pair;
+      }),
+    );
+    return _pairs;
+  }
+
+  async batchCatchUpPairsSolidly(
+    from: Token,
+    to: Token,
+    blockNumber: number,
+  ): Promise<SolidlyPair[]> {
+    if (!blockNumber) return [];
+
+    const pairs = await this.findSolidlyPairsOnChains(from, to);
+
+    if (pairs.length === 0) {
+      return [];
+    }
+
+    const pairsToFetch = pairs.filter(p => p.exchange !== undefined);
+
+    const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
+
+    if (reserves.length !== pairsToFetch.length) {
       this.logger.error(
         `Error_getManyPoolReserves didn't get any pool reserves`,
       );
     }
 
-    const toFetch = [stablePairsToFetch, notStablePairsToFetch];
-    const reservesStableAndNotStable = [stableReserves, notStableReserves];
+    const _pairs = await Promise.all(
+      reserves.map(async (pairState, index) => {
+        if (!pairState) {
+          return null;
+        }
 
-    for (let index = 0; index < toFetch.length; ++index) {
-      const pairsToFetch = toFetch[index];
-      const reserves = reservesStableAndNotStable[index];
-      const stable = stableArray[index];
-
-      for (let i = 0; i < pairsToFetch.length; i++) {
-        const pairState = reserves[i];
-        const pair = pairsToFetch[i];
-        if (!pair.pool) {
+        const _pair = pairsToFetch[index];
+        if (!_pair.pool) {
           await this.addPool(
-            '_' + (stable ? 'stable' : 'notStable'),
-            pair,
+            '_' + (_pair.stable ? 'stable' : 'notstable'),
+            _pair,
             pairState.reserves0,
             pairState.reserves1,
             pairState.feeCode,
             blockNumber,
           );
-        } else pair.pool.setState(pairState, blockNumber);
-      }
+        } else {
+          _pair.pool.setState(pairState, blockNumber);
+        }
+        return _pair;
+      }),
+    );
+
+    _pairs.filter;
+    return _pairs.filter(pair => pair !== null) as SolidlyPair[];
+  }
+
+  async addMasterPool(poolKey: string) {
+    const key =
+      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
+    const _pairs = await this.dexHelper.cache.rawget(key);
+    if (!_pairs) {
+      this.logger.warn(`did not find poolconfig in for key ${key}`);
+      return;
     }
+
+    this.logger.info(`starting to listen to new pool: ${key}`);
+    const pair: [Token, Token] = JSON.parse(_pairs);
+    this.batchCatchUpPairsSolidly(
+      pair[0],
+      pair[1],
+      this.dexHelper.blockManager.getLatestBlockNumber(),
+    );
   }
 
   async getManyPoolReserves(
@@ -272,34 +329,37 @@ export class Solidly extends UniswapV2 {
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
+
       const from = this.dexHelper.config.wrapETH(_from);
       const to = this.dexHelper.config.wrapETH(_to);
+      from.address = from.address.toLowerCase();
+      to.address = to.address.toLowerCase();
 
-      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      if (from.address === to.address) {
         return null;
       }
 
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
+      const tokenAddress = [from.address, to.address]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
+      let pairs = this.syncFindPairs(from, to);
+      if (!pairs.length) {
+        pairs = await this.batchCatchUpPairsSolidly(from, to, blockNumber);
+      }
 
-      const resultPromises = [false, true].map(async stable => {
+      const results = pairs.map(pair => {
         const poolIdentifier =
-          `${this.dexKey}_${tokenAddress}` + this.poolPostfix(stable);
+          `${this.dexKey}_${tokenAddress}` + this.poolPostfix(pair.stable);
 
         if (limitPools && limitPools.every(p => p !== poolIdentifier))
           return null;
 
-        const pairParam = await this.getSolidlyPairOrderedParams(
+        const pairParam = this.getSolidlyPairOrderedParams(
           from,
           to,
           blockNumber,
-          stable,
+          pair.stable,
         );
 
         if (!pairParam) return null;
@@ -317,16 +377,8 @@ export class Solidly extends UniswapV2 {
         const prices =
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY
-            ? await Promise.all(
-                amounts.map(amount =>
-                  this.getBuyPricePath(amount, [pairParam]),
-                ),
-              )
-            : await Promise.all(
-                amounts.map(amount =>
-                  this.getSellPricePath(amount, [pairParam]),
-                ),
-              );
+            ? amounts.map(amount => this.getBuyPricePath(amount, [pairParam]))
+            : amounts.map(amount => this.getSellPricePath(amount, [pairParam]));
 
         return {
           prices: prices,
@@ -352,9 +404,7 @@ export class Solidly extends UniswapV2 {
         };
       });
 
-      const resultPools = (await Promise.all(
-        resultPromises,
-      )) as ExchangePrices<UniswapV2Data>;
+      const resultPools = results as ExchangePrices<UniswapV2Data>;
       const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
       return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
     } catch (e) {
@@ -450,13 +500,13 @@ export class Solidly extends UniswapV2 {
   }
 
   // Same as at uniswap-v2-pool.json, but extended with decimals and stable
-  async getSolidlyPairOrderedParams(
+  getSolidlyPairOrderedParams(
     from: Token,
     to: Token,
     blockNumber: number,
     stable: boolean,
-  ): Promise<SolidlyPoolOrderedParams | null> {
-    const pair = await this.findSolidlyPair(from, to, stable);
+  ): SolidlyPoolOrderedParams | null {
+    const pair = this.syncFindPairSolidly(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
