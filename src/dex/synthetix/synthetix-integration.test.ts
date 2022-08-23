@@ -101,8 +101,7 @@ describe('Synthetix', function () {
   let synthetix: Synthetix;
 
   beforeAll(async () => {
-    // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    blockNumber = 15372730;
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     synthetix = new Synthetix(network, dexKey, dexHelper);
     await synthetix.initializePricing(blockNumber);
   });
