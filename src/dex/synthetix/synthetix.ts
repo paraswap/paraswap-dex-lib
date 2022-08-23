@@ -200,6 +200,8 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
           prices: [0n, ...prices.slice(1)],
           data: {
             exchange: this.onchainConfigValues.synthetixAddress,
+            srcKey: this.onchainConfigValues.addressToKey[_srcAddress],
+            destKey: this.onchainConfigValues.addressToKey[_destAddress],
           },
           poolIdentifier: currentIdentifier,
           exchange: this.dexKey,
@@ -247,11 +249,14 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     data: SynthetixData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    // Encode here the transaction arguments
-    const swapData = '';
+    const { exchange, srcKey, destKey } = data;
+
+    const swapData = this.combinedIface.encodeFunctionData(
+      'exchangeAtomically',
+      [srcKey, srcAmount, destKey, '0x', '1'],
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,

@@ -82,10 +82,8 @@ export type OnchainConfigValues = Pick<
 };
 
 export type SynthetixData = {
-  // TODO: SynthetixData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
+  srcKey: string;
+  destKey: string;
   exchange: Address;
 };
 
