@@ -82,7 +82,7 @@ export const decodeLatestRoundData = (
   if (!result.success || result.returnData === '0x') {
     return {
       answer: 0n,
-      updatedAt: 0,
+      updatedAt: 0n,
     };
   }
 
@@ -95,6 +95,6 @@ export const decodeLatestRoundData = (
 
   return {
     answer: BigInt(decoded.answer),
-    updatedAt: parseInt(decoded.updatedAt, 10),
+    updatedAt: BigInt(decoded.updatedAt),
   };
 };

@@ -2,7 +2,7 @@ import { Address, Token } from '../../types';
 
 export type LatestRoundData = {
   answer: bigint;
-  updatedAt: number;
+  updatedAt: bigint;
 };
 
 export type Slot0 = {
@@ -38,6 +38,9 @@ export type PoolState = {
   pureChainlinkPriceForAtomicSwapsEnabled: Record<string, boolean>;
   atomicEquivalentForDexPricing: Record<string, Token>;
 
+  // currencyKey -> value from chainlink contract
+  aggregatorDecimals: Record<string, number>;
+
   // currencyKey -> value. From chainLinkRequest
   aggregators: Record<string, LatestRoundData>;
 
@@ -63,6 +66,7 @@ export type OnchainConfigValues = Pick<
   | 'pureChainlinkPriceForAtomicSwapsEnabled'
   | 'atomicEquivalentForDexPricing'
   | 'atomicTwapWindow'
+  | 'aggregatorDecimals'
 > & {
   lastUpdatedInMs: number;
 

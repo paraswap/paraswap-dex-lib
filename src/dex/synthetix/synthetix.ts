@@ -385,7 +385,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       return acc;
     }, {});
 
-    const newState = {
+    const newState: PoolState = {
       atomicExchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
       exchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
       pureChainlinkPriceForAtomicSwapsEnabled:
@@ -405,6 +405,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         uniswapV3Observations,
         tickCumulatives,
       },
+      aggregatorDecimals: this.onchainConfigValues.aggregatorDecimals,
       blockTimestamp: BigInt(block.timestamp),
       aggregators,
     };
@@ -487,7 +488,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       );
 
     const results = (
-      await this.multiWrapper.tryAggregate<bigint | boolean | string>(
+      await this.multiWrapper.tryAggregate<bigint | boolean | string | number>(
         true,
         flexibleStorageCurrencyCallData,
         blockNumber,
@@ -499,6 +500,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     const pureChainlinkPriceForAtomicSwapsEnabled: Record<string, boolean> = {};
     const atomicEquivalentForDexPricing: Record<string, Token> = {};
     const aggregatorsAddresses: Record<string, Address> = {};
+    const aggregatorDecimals: Record<string, number> = {};
 
     _.chunk(results, packCounter).map((result, i) => {
       const currencyKey = synthCurrencyKeys[i];
@@ -508,7 +510,8 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         pureChainlinkPriceForAtomicSwapsEnabledValue,
         atomicEquivalentForDexPricingValue,
         aggregatorAddress,
-      ] = result as [bigint, bigint, boolean, Address, Address];
+        aggregatorDecimal,
+      ] = result as [bigint, bigint, boolean, Address, Address, number];
 
       atomicExchangeFeeRate[currencyKey] = atomicExchangeFeeRateValue;
       exchangeFeeRate[currencyKey] = exchangeFeeRateValue;
@@ -519,6 +522,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         decimals: 0,
       };
       aggregatorsAddresses[currencyKey] = aggregatorAddress;
+      aggregatorDecimals[currencyKey] = aggregatorDecimal;
     });
 
     const atomicEquivalentForDexPricingWithoutZeros = Object.entries(
@@ -590,6 +594,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
       addressToKey,
 
+      aggregatorDecimals,
       atomicTwapWindow,
       atomicExchangeFeeRate,
       exchangeFeeRate,
@@ -705,7 +710,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   private _buildFlexibleStorageCurrencyCallData(
     synthCurrencyKeys: string[],
     exchangeRatesAddress: Address,
-  ): [number, MultiCallParams<bigint | boolean | Address>[]] {
+  ): [number, MultiCallParams<bigint | boolean | Address | number>[]] {
     let packCounter = 0;
     const callData = synthCurrencyKeys
       .map(key => {
@@ -770,6 +775,14 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
               key,
             ]),
             decodeFunction: addressDecode,
+          },
+          {
+            target: exchangeRatesAddress,
+            callData: this.combinedIface.encodeFunctionData(
+              'currencyKeyDecimals',
+              [key],
+            ),
+            decodeFunction: uint8ToNumber,
           },
         ];
         packCounter = result.length;

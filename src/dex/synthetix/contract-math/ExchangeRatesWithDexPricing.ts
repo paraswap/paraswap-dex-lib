@@ -100,15 +100,52 @@ class ExchangeRatesWithDexPricing {
   private _getRateAndUpdatedTime(
     state: PoolState,
     currencyKey: string,
-  ): { rate: bigint; time: number } {
+  ): { rate: bigint; time: bigint } {
     if (currencyKey === sUSD) {
-      return { rate: SafeDecimalMath.unit, time: 0 };
+      return { rate: SafeDecimalMath.unit, time: 0n };
     } else {
       const aggregator = state.aggregators[currencyKey];
       return aggregator !== undefined
-        ? { rate: aggregator.answer, time: aggregator.updatedAt }
-        : { rate: 0n, time: 0 };
+        ? {
+            rate: BigInt.asUintN(
+              216,
+              this._formatAggregatorAnswer(
+                state,
+                currencyKey,
+                aggregator.answer,
+              ),
+            ),
+            time: BigInt.asUintN(40, aggregator.updatedAt),
+          }
+        : { rate: 0n, time: 0n };
     }
+  }
+
+  private _formatAggregatorAnswer(
+    state: PoolState,
+    currencyKey: string,
+    rate: bigint,
+  ): bigint {
+    _require(
+      rate >= 0,
+      'Negative rate not supported',
+      { rate, currencyKey },
+      'rate >= 0',
+    );
+    const decimals = state.aggregatorDecimals[currencyKey];
+    let result = BigInt.asUintN(256, rate);
+    if (decimals === 0 || decimals === 18) {
+      // do not convert for 0 (part of implicit interface), and not needed for 18
+    } else if (decimals < 18) {
+      // increase precision to 18
+      const multiplier = getBigIntPow(18 - decimals); // SafeMath not needed since decimals is small
+      result = result * multiplier;
+    } else if (decimals > 18) {
+      // decrease precision to 18
+      const divisor = getBigIntPow(decimals - 18); // SafeMath not needed since decimals is small
+      result = result / divisor;
+    }
+    return result;
   }
 
   private _getPureChainlinkPriceForAtomicSwapsEnabled(
@@ -184,7 +221,7 @@ class ExchangeRatesWithDexPricing {
       'result !== 0n',
     );
 
-    return destCurrencyKey == 'sUSD'
+    return destCurrencyKey === sUSD
       ? result
       : SafeDecimalMath.divideDecimalRound(SafeDecimalMath.unit, result);
   }
