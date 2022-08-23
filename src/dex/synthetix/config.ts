@@ -41,7 +41,10 @@ export const SynthetixConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter03', index: 11 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 9 }],
+  },
 };
