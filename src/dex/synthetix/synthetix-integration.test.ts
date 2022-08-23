@@ -6,11 +6,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { Synthetix } from './synthetix';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorUniswapV3';
 
