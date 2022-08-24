@@ -44,7 +44,7 @@ export type PoolState = {
   // currencyKey -> value. From chainLinkRequest
   aggregators: Record<string, LatestRoundData>;
 
-  // from flexible Storage
+  // from FlexibleStorage
   atomicTwapWindow: bigint;
 
   sUSDCurrencyKey: string;

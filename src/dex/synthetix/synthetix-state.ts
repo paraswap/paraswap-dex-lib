@@ -119,7 +119,7 @@ export class SynthetixState {
       this.onchainConfigValues.addressToKey,
     ).reduce<Record<string, boolean>>((acc, curr, i) => {
       acc[curr] =
-        synthSuspensions[i] === false && synthExchangeSuspensions[i] === false;
+        synthSuspensions[i] === true || synthExchangeSuspensions[i] === true;
       return acc;
     }, {});
 
@@ -144,29 +144,45 @@ export class SynthetixState {
       return acc;
     }, {});
 
-    const [_packCounter, observationsAndRoundCallData] =
-      this._buildObservationsAndRoundCallData(
+    const [_packCounter, observationsRoundAndOverriddenCallData] =
+      this._buildObservationsRoundAndOverriddenCallData(
         addressesFromPK,
         uniswapV3Slot0,
         aggregatorAddressesWithoutZeros,
       );
 
-    const [block, observationsAndLatestRoundData] = await Promise.all([
+    const [block, observationsRoundDataAndOverridden] = await Promise.all([
       this.dexHelper.web3Provider.eth.getBlock(blockNumber || 'latest'),
-      this.multiWrapper.tryAggregate<OracleObservation | LatestRoundData>(
-        true,
-        observationsAndRoundCallData,
-        blockNumber,
-      ),
+      this.multiWrapper.tryAggregate<
+        OracleObservation | LatestRoundData | string
+      >(true, observationsRoundAndOverriddenCallData, blockNumber),
     ]);
 
-    const observations = observationsAndLatestRoundData
+    const observations = observationsRoundDataAndOverridden
       .slice(0, addressesFromPK.length * packCounter)
       .map(e => e.returnData) as OracleObservation[];
 
-    const latestRoundDatas = observationsAndLatestRoundData
-      .slice(addressesFromPK.length * packCounter)
+    const latestRoundDatas = observationsRoundDataAndOverridden
+      .slice(
+        addressesFromPK.length * packCounter,
+        -this.onchainConfigValues.poolKeys.length,
+      )
       .map(e => e.returnData) as LatestRoundData[];
+
+    const overriddenPools = observationsRoundDataAndOverridden
+      .slice(-this.onchainConfigValues.poolKeys.length)
+      .map(e => e.returnData) as string[];
+
+    const overriddenPoolForRoute = overriddenPools.reduce<
+      Record<string, Address>
+    >((acc, curr, i) => {
+      acc[
+        dexPriceAggregatorUniswapV3.identifyRouteFromPoolKey(
+          this.onchainConfigValues!.poolKeys[i],
+        )
+      ] = curr;
+      return acc;
+    }, {});
 
     const aggregators = latestRoundDatas.reduce<
       Record<Address, LatestRoundData>
@@ -209,8 +225,7 @@ export class SynthetixState {
           this.onchainConfigValues.dexPriceAggregator.defaultPoolFee,
         uniswapV3Factory:
           this.onchainConfigValues.dexPriceAggregator.uniswapV3Factory,
-        overriddenPoolForRoute:
-          this.onchainConfigValues.dexPriceAggregator.overriddenPoolForRoute,
+        overriddenPoolForRoute,
         uniswapV3Slot0,
         uniswapV3Observations,
         tickCumulatives,
@@ -488,11 +503,11 @@ export class SynthetixState {
     return [packCounter, callData];
   }
 
-  private _buildObservationsAndRoundCallData(
+  private _buildObservationsRoundAndOverriddenCallData(
     addressesFromPK: Address[],
     uniswapV3Slot0: Record<Address, Slot0>,
     aggregatorAddressesWithoutZeros: Record<string, Address>,
-  ): [number, MultiCallParams<OracleObservation | LatestRoundData>[]] {
+  ): [number, MultiCallParams<OracleObservation | LatestRoundData | string>[]] {
     let packCounter = 0;
     const callData = [
       ...addressesFromPK
@@ -527,8 +542,35 @@ export class SynthetixState {
         callData: this.combinedIface.encodeFunctionData('latestRoundData', []),
         decodeFunction: decodeLatestRoundData,
       })),
+      ...this._buildOverriddenCallData(
+        this.onchainConfigValues!.poolKeys,
+        this.onchainConfigValues!.dexPriceAggregatorAddress,
+      ),
     ];
     return [packCounter, callData];
+  }
+
+  private _buildOneOverriddenCallData(
+    dexPriceAggregatorAddress: Address,
+    key: PoolKey,
+  ) {
+    return {
+      target: dexPriceAggregatorAddress,
+      callData: this.combinedIface.encodeFunctionData(
+        'overriddenPoolForRoute',
+        [dexPriceAggregatorUniswapV3.identifyRouteFromPoolKey(key)],
+      ),
+      decodeFunction: addressDecode,
+    };
+  }
+
+  private _buildOverriddenCallData(
+    poolKeyCombinations: PoolKey[],
+    dexPriceAggregatorAddress: Address,
+  ) {
+    return poolKeyCombinations.map((key: PoolKey) =>
+      this._buildOneOverriddenCallData(dexPriceAggregatorAddress, key),
+    );
   }
 
   private _buildOverriddenAndDecimalsCallData(
