@@ -7,6 +7,7 @@ import {
   AdapterExchangeParam,
   Address,
   ExchangePrices,
+  PoolPrices,
   Log,
   Logger,
   PoolLiquidity,
@@ -30,6 +31,7 @@ import {
   NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
 } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { IDexHelper } from '../../dex-helper';
@@ -593,6 +595,24 @@ export class UniswapV2
       this.logger.error(`Error_getPrices:`, e);
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<UniswapV2Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> weth
+      CALLDATA_GAS_COST.ADDRESS +
+      // ParentStruct -> pools[] header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> pools[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> pools[0]
+      CALLDATA_GAS_COST.wordNonZeroBytes(22)
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {

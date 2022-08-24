@@ -4,6 +4,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -14,6 +15,7 @@ import {
   PreprocessTransactionOptions,
 } from '../../types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -164,6 +166,57 @@ export class ParaSwapLimitOrders
       );
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(
+    poolPrices: PoolPrices<ParaSwapLimitOrdersData>,
+  ): number | number[] {
+    return (poolPrices.gasCost as number[]).map(g => {
+      if (!g) return 0;
+      const numOrders = Number(BigInt(g) / ONE_ORDER_GASCOST);
+      return (
+        CALLDATA_GAS_COST.DEX_NO_PAYLOAD +
+        CALLDATA_GAS_COST.LENGTH_LARGE +
+        // Struct header
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        // Struct -> orderInfos[] header
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        // Struct -> orderInfos[]
+        CALLDATA_GAS_COST.LENGTH_SMALL +
+        // Struct -> orderInfos[0:numOrders] headers
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        CALLDATA_GAS_COST.OFFSET_LARGE * (numOrders - 1) +
+        // Struct -> orderInfos[0:numOrders]
+        numOrders *
+          // Struct -> orderInfos[i] -> order
+          (CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.TIMESTAMP +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.AMOUNT +
+            CALLDATA_GAS_COST.AMOUNT +
+            // Struct -> orderInfos[i] -> signature header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> takerTokenFillAmount
+            CALLDATA_GAS_COST.AMOUNT +
+            // Struct -> orderInfos[i] -> permitTakerAsset header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> permitMakerAsset header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> signature
+            CALLDATA_GAS_COST.LENGTH_SMALL +
+            CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.wordNonZeroBytes(1) +
+            // Struct -> orderInfos[i] -> permitTakerAsset
+            CALLDATA_GAS_COST.ZERO +
+            // Struct -> orderInfos[i] -> permitMakerAsset
+            CALLDATA_GAS_COST.ZERO)
+      );
+    });
   }
 
   async preProcessTransaction?(

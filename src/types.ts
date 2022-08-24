@@ -193,6 +193,7 @@ export type PoolPrices<T> = {
   poolIdentifier?: string;
   exchange: string;
   gasCost: number | number[];
+  gasCostL2?: number | number[];
   poolAddresses?: Array<Address>;
 };
 
