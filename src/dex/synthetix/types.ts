@@ -91,6 +91,7 @@ export type SynthetixData = {
   srcKey: string;
   destKey: string;
   exchange: Address;
+  exchangeType: number;
 };
 
 export type DexParams = {

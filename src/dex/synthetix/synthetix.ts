@@ -9,7 +9,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, _require } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -196,6 +196,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
             exchange: this.onchainConfigValues.synthetixAddress,
             srcKey: this.onchainConfigValues.addressToKey[_srcAddress],
             destKey: this.onchainConfigValues.addressToKey[_destAddress],
+            exchangeType: 0,
           },
           poolIdentifier: currentIdentifier,
           exchange: this.dexKey,
@@ -224,11 +225,20 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     data: SynthetixData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
+    const { exchange, srcKey, destKey, exchangeType } = data;
 
     // Encode here the payload for adapter
-    const payload = '';
+    const payload = this.abiCoder.encodeParameter(
+      'tuple(bytes32 trackingCode, address rewardAddress, bytes32 srcCurrencyKey, bytes32 destCurrencyKey, int8 exchangeType)',
+      [
+        ethers.utils.hexZeroPad('0x', 32),
+        // TODO: Set proper address when adding Optimism
+        NULL_ADDRESS,
+        srcKey,
+        destKey,
+        exchangeType,
+      ],
+    );
 
     return {
       targetExchange: exchange,
