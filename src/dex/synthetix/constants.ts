@@ -5,7 +5,7 @@ export enum Contracts {
   SYNTHETIX = 'Synthetix',
   EXCHANGER = 'Exchanger',
   EXCHANGE_RATES = 'ExchangeRates',
-  SYSTEM_STATUS = 'SystemStatus'
+  SYSTEM_STATUS = 'SystemStatus',
 }
 
 // Encoded lookups in the flexible contract
@@ -20,3 +20,6 @@ export const SETTING_PURE_CHAINLINK_PRICE_FOR_ATOMIC_SWAPS_ENABLED =
   'pureChainlinkForAtomicsEnabled';
 export const SETTING_ATOMIC_EQUIVALENT_FOR_DEX_PRICING =
   'atomicEquivalentForDexPricing';
+
+// Once for every 24 hours
+export const ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS = 1000 * 60 * 60 * 24;

@@ -37,6 +37,7 @@ import {
 import {
   Contracts,
   EXCHANGE_RATES_CONTRACT_NAME,
+  ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS,
   SETTING_ATOMIC_EQUIVALENT_FOR_DEX_PRICING,
   SETTING_ATOMIC_EXCHANGE_FEE_RATE,
   SETTING_ATOMIC_TWAP_WINDOW,
@@ -52,7 +53,11 @@ export class SynthetixState {
   // updatedAt may be blockNumber or timestamp
   fullState?: { blockNumber: number; updatedAtInS: number; values: PoolState };
 
-  onchainConfigValues?: OnchainConfigValues;
+  _onchainConfigValues: {
+    values?: OnchainConfigValues;
+    updatedAtInMs: number;
+    isUpdating: boolean;
+  } = { updatedAtInMs: 0, isUpdating: false };
 
   constructor(
     private dexKey: string,
@@ -64,8 +69,42 @@ export class SynthetixState {
     this.logger = this.dexHelper.getLogger('SynthetixState');
   }
 
+  get onchainConfigValues(): OnchainConfigValues {
+    if (this._onchainConfigValues.values === undefined) {
+      throw new Error(
+        `${this.dexKey}: onchain config values are not initialized`,
+      );
+    }
+    if (
+      Date.now() - ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS <
+        this._onchainConfigValues.updatedAtInMs &&
+      !this._onchainConfigValues.isUpdating
+    ) {
+      // We can just create promise and don't wait while it is resolved. When it is resolved, the values will be updated automatically
+      // There is no reason to wait it
+      this._onchainConfigValues.isUpdating = true;
+      this.updateOnchainConfigValues()
+        .then(() => {
+          this.logger.info(`${this.dexKey}: _onchainConfigValues are updated`);
+          this._onchainConfigValues.isUpdating = false;
+        })
+        .catch(e => {
+          this.logger.error(
+            `${this.dexKey}: failed to update _onchainConfigValues. Retrying`,
+          );
+          this._onchainConfigValues.isUpdating = false;
+          // Call one more time to retry
+          this.onchainConfigValues;
+        });
+    }
+    return this._onchainConfigValues.values;
+  }
+
   async updateOnchainConfigValues(blockNumber?: number) {
-    this.onchainConfigValues = await this.getOnchainConfigValues(blockNumber);
+    this._onchainConfigValues.values = await this.getOnchainConfigValues(
+      blockNumber,
+    );
+    this._onchainConfigValues.updatedAtInMs = Date.now();
   }
 
   getState(blockNumber?: number, timeStampInS?: number): PoolState | undefined {
