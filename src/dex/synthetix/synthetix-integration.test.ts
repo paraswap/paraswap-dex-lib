@@ -9,6 +9,8 @@ import { Synthetix } from './synthetix';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorUniswapV3';
+import { SynthetixState } from './synthetix-state';
+import { MultiWrapper } from '../../lib/multi-wrapper';
 
 const network = Network.MAINNET;
 const TokenASymbol = 'sBTC';
@@ -158,5 +160,30 @@ describe('Synthetix', function () {
       },
     );
     expect(computed).toEqual('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640');
+  });
+  it('Check state invalidating mechanism for onchainConfigValues', async () => {
+    const updateFrequency = 500;
+    const synthState = new SynthetixState(
+      dexKey,
+      dexHelper,
+      new MultiWrapper(dexHelper.multiContract, dexHelper.getLogger()),
+      synthetix.combinedIface,
+      synthetix.config,
+      updateFrequency,
+    );
+    await synthState.updateOnchainConfigValues();
+    const firstUpdate = synthState._onchainConfigValues.updatedAtInMs;
+    const secondUpdateTime = await new Promise<number>(resolve => {
+      // wait before triggering the update
+      setTimeout(() => {
+        synthState.onchainConfigValues;
+        setTimeout(() => {
+          const secondUpdate = synthState._onchainConfigValues.updatedAtInMs;
+          resolve(secondUpdate);
+          // I expect that in 1 sec the state will be updated after the request
+        }, 1000);
+      }, updateFrequency);
+    });
+    expect(firstUpdate + updateFrequency).toBeLessThan(secondUpdateTime);
   });
 });
