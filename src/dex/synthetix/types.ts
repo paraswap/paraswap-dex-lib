@@ -59,6 +59,9 @@ export type PoolState = {
     tickCumulatives: Record<string, Record<0 | 1, bigint>>;
   };
   blockTimestamp: bigint;
+  isSystemSuspended: boolean;
+  // proxyAddress -> boolean. It requires both exchange and active values to be true
+  areSynthsSuspended: Record<string, boolean>;
 };
 
 export type OnchainConfigValues = Pick<
@@ -81,6 +84,7 @@ export type OnchainConfigValues = Pick<
   dexPriceAggregator: DexPriceAggregatorWithoutOracleState;
   poolKeys: PoolKey[];
   aggregatorsAddresses: Record<string, string>;
+  systemStatusAddress: Address;
 };
 
 export type SynthetixData = {

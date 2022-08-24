@@ -167,6 +167,14 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         state = await this.synthetixState.getOnchainState(blockNumber);
       }
 
+      if (
+        state.isSystemSuspended ||
+        state.areSynthsSuspended[_srcAddress] ||
+        state.areSynthsSuspended[_destAddress]
+      ) {
+        return null;
+      }
+
       const prices = _amounts.map(amount =>
         synthetixMath.getAmountsForAtomicExchange(
           state!,

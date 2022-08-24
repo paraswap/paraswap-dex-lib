@@ -1,5 +1,6 @@
-import { defaultAbiCoder } from '@ethersproject/abi';
+import { defaultAbiCoder, Result } from '@ethersproject/abi';
 import { BytesLike, ethers } from 'ethers';
+import { generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { LatestRoundData, OracleObservation, Slot0 } from './types';
 
@@ -98,3 +99,13 @@ export const decodeLatestRoundData = (
     updatedAt: BigInt(decoded.updatedAt),
   };
 };
+
+export function synthStatusDecoder(result: MultiResult<BytesLike>): boolean[] {
+  return generalDecoder(
+    result,
+    ['bool[]', 'uint256[]'],
+    [false],
+    (toParse: Result) =>
+      toParse[0].map((isSuspended: boolean) => !!isSuspended),
+  );
+}

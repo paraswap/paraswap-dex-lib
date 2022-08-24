@@ -5,6 +5,7 @@ export enum Contracts {
   SYNTHETIX = 'Synthetix',
   EXCHANGER = 'Exchanger',
   EXCHANGE_RATES = 'ExchangeRates',
+  SYSTEM_STATUS = 'SystemStatus'
 }
 
 // Encoded lookups in the flexible contract

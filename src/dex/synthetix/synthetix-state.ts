@@ -32,6 +32,7 @@ import {
   decodeOracleObservation,
   decodeUniswapV3Slot0,
   encodeStringToBytes32,
+  synthStatusDecoder,
 } from './utils';
 import {
   Contracts,
@@ -91,15 +92,36 @@ export class SynthetixState {
       ),
     );
 
-    const [packCounter, observeAndSlot0CallData] =
-      this._buildObserveAndSlot0CallData(addressesFromPK);
-    const slot0AndTickCumulatives = (
-      await this.multiWrapper.tryAggregate<Record<0 | 1, bigint> | Slot0>(
-        true,
-        observeAndSlot0CallData,
-        blockNumber,
-      )
-    ).map(d => d.returnData) as Record<0 | 1, bigint>[];
+    const [packCounter, slot0TickCumulativesAndSuspensionsCallData] =
+      this._buildObserveSlot0AndSuspensionsCallData(addressesFromPK);
+    const slot0TickCumulativesAndSuspensions = (
+      await this.multiWrapper.tryAggregate<
+        Record<0 | 1, bigint> | Slot0 | boolean[] | boolean
+      >(true, slot0TickCumulativesAndSuspensionsCallData, blockNumber)
+    ).map(d => d.returnData) as (Record<0 | 1, bigint> | boolean | boolean[])[];
+
+    const slot0AndTickCumulatives = slot0TickCumulativesAndSuspensions.slice(
+      0,
+      addressesFromPK.length * packCounter,
+    );
+
+    const suspensions = slot0TickCumulativesAndSuspensions.slice(
+      addressesFromPK.length * packCounter,
+    );
+
+    const isSystemSuspended = suspensions[0] as boolean;
+
+    const synthSuspensions = suspensions[1] as boolean[];
+
+    const synthExchangeSuspensions = suspensions[2] as boolean[];
+
+    const areSynthsSuspended = Object.keys(
+      this.onchainConfigValues.addressToKey,
+    ).reduce<Record<string, boolean>>((acc, curr, i) => {
+      acc[curr] =
+        synthSuspensions[i] === false && synthExchangeSuspensions[i] === false;
+      return acc;
+    }, {});
 
     const uniswapV3Slot0: Record<Address, Slot0> = {};
     const tickCumulatives: Record<Address, Record<0 | 1, bigint>> = {};
@@ -193,10 +215,13 @@ export class SynthetixState {
         uniswapV3Observations,
         tickCumulatives,
       },
-      sUSDCurrencyKey: this.onchainConfigValues.addressToKey[this.config.sUSDAddress],
+      sUSDCurrencyKey:
+        this.onchainConfigValues.addressToKey[this.config.sUSDAddress],
       aggregatorDecimals: this.onchainConfigValues.aggregatorDecimals,
       blockTimestamp: BigInt(block.timestamp),
       aggregators,
+      isSystemSuspended,
+      areSynthsSuspended,
     };
 
     this.fullState = {
@@ -231,6 +256,7 @@ export class SynthetixState {
       synthetixAddress,
       exchangerAddress,
       exchangeRatesAddress,
+      systemStatusAddress,
       weth,
       uniswapV3Factory,
       defaultPoolFee,
@@ -246,6 +272,7 @@ export class SynthetixState {
         blockNumber,
       )
     ).map(d => d.returnData) as [
+      Address,
       Address,
       Address,
       Address,
@@ -401,14 +428,20 @@ export class SynthetixState {
         return pk;
       }),
       aggregatorsAddresses,
+      systemStatusAddress,
     };
   }
 
-  private _buildObserveAndSlot0CallData(
+  private _buildObserveSlot0AndSuspensionsCallData(
     addressesFromPK: Address[],
-  ): [number, MultiCallParams<Record<0 | 1, bigint> | Slot0>[]] {
+  ): [
+    number,
+    MultiCallParams<Record<0 | 1, bigint> | Slot0 | boolean[] | boolean>[],
+  ] {
     let packCounter = 0;
-    const callData = addressesFromPK
+    let callData: MultiCallParams<
+      Record<0 | 1, bigint> | Slot0 | boolean[] | boolean
+    >[] = addressesFromPK
       .map(address => {
         const _callData = [
           {
@@ -428,6 +461,30 @@ export class SynthetixState {
         return _callData;
       })
       .flat();
+
+    const currencyKeys = Object.values(this.onchainConfigValues!.addressToKey);
+    callData = callData.concat([
+      {
+        target: this.onchainConfigValues!.systemStatusAddress,
+        callData: this.combinedIface.encodeFunctionData('systemSuspended', []),
+        decodeFunction: booleanDecode,
+      },
+      {
+        target: this.onchainConfigValues!.systemStatusAddress,
+        callData: this.combinedIface.encodeFunctionData('getSynthSuspensions', [
+          currencyKeys,
+        ]),
+        decodeFunction: synthStatusDecoder,
+      },
+      {
+        target: this.onchainConfigValues!.systemStatusAddress,
+        callData: this.combinedIface.encodeFunctionData(
+          'getSynthExchangeSuspensions',
+          [currencyKeys],
+        ),
+        decodeFunction: synthStatusDecoder,
+      },
+    ]);
     return [packCounter, callData];
   }
 
@@ -605,6 +662,13 @@ export class SynthetixState {
         target: targetAddress,
         callData: this.combinedIface.encodeFunctionData('getAddress', [
           encodeStringToBytes32(Contracts.EXCHANGE_RATES),
+        ]),
+        decodeFunction: addressDecode,
+      },
+      {
+        target: targetAddress,
+        callData: this.combinedIface.encodeFunctionData('getAddress', [
+          encodeStringToBytes32(Contracts.SYSTEM_STATUS),
         ]),
         decodeFunction: addressDecode,
       },

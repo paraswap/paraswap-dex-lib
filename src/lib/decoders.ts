@@ -1,20 +1,21 @@
+import { Result } from '@ethersproject/abi';
 import BigNumber from 'bignumber.js';
 import { BytesLike, defaultAbiCoder } from 'ethers/lib/utils';
 import { parseInt } from 'lodash';
 import { BN_0 } from '../bignumber-constants';
 import { MultiResult } from './multi-wrapper';
 
-export function generalDecoder<T, D>(
+export function generalDecoder<T>(
   result: MultiResult<BytesLike>,
-  type: string,
+  types: string[],
   defaultValue: T,
-  parser?: (v: D) => T,
+  parser?: (v: Result) => T,
 ): T {
   if (!result.success || result.returnData === '0x') {
     return defaultValue;
   }
-  const decoded = defaultAbiCoder.decode([type], result.returnData)[0];
-  return parser ? parser(decoded) : decoded;
+  const decoded = defaultAbiCoder.decode(types, result.returnData);
+  return parser ? parser(decoded) : decoded[0];
 }
 
 export const uintDecode = (result: MultiResult<string>): bigint => {
@@ -93,25 +94,25 @@ export const addressDecode = (result: MultiResult<string>): string => {
 };
 
 export const bytes32ToString = (result: MultiResult<BytesLike>): string => {
-  return generalDecoder(result, 'bytes32', '', (value: string) =>
-    value.toLowerCase(),
+  return generalDecoder(result, ['bytes32'], '', value =>
+    value[0].toLowerCase(),
   );
 };
 
 export const uint8ToNumber = (result: MultiResult<BytesLike>): number => {
-  return generalDecoder(result, 'uint8', 0, (value: number) =>
-    parseInt(value.toString(), 10),
+  return generalDecoder(result, ['uint8'], 0, value =>
+    parseInt(value[0].toString(), 10),
   );
 };
 
 export const uint24ToNumber = (result: MultiResult<BytesLike>): number => {
-  return generalDecoder(result, 'uint24', 0, (value: number) =>
-    parseInt(value.toString(), 10),
+  return generalDecoder(result, ['uint24'], 0, value =>
+    parseInt(value[0].toString(), 10),
   );
 };
 
 export const uint24ToBigInt = (result: MultiResult<BytesLike>): bigint => {
-  return generalDecoder(result, 'uint24', 0n, (value: bigint) =>
-    BigInt(value.toString()),
+  return generalDecoder(result, ['uint24'], 0n, value =>
+    BigInt(value[0].toString()),
   );
 };
