@@ -283,5 +283,46 @@
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "systemSuspended",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "internalType": "bytes32[]", "name": "synths", "type": "bytes32[]" }
+    ],
+    "name": "getSynthSuspensions",
+    "outputs": [
+      { "internalType": "bool[]", "name": "suspensions", "type": "bool[]" },
+      { "internalType": "uint256[]", "name": "reasons", "type": "uint256[]" }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "internalType": "bytes32[]", "name": "synths", "type": "bytes32[]" }
+    ],
+    "name": "getSynthExchangeSuspensions",
+    "outputs": [
+      {
+        "internalType": "bool[]",
+        "name": "exchangeSuspensions",
+        "type": "bool[]"
+      },
+      { "internalType": "uint256[]", "name": "reasons", "type": "uint256[]" }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
