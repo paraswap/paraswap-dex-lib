@@ -50,7 +50,7 @@ export class SynthetixState {
   logger: Logger;
 
   // updatedAt may be blockNumber or timestamp
-  fullState?: { updatedAt: number; values: PoolState };
+  fullState?: { blockNumber: number; updatedAtInS: number; values: PoolState };
 
   onchainConfigValues?: OnchainConfigValues;
 
@@ -68,10 +68,16 @@ export class SynthetixState {
     this.onchainConfigValues = await this.getOnchainConfigValues(blockNumber);
   }
 
-  getState(validForTime?: number): PoolState | undefined {
+  getState(blockNumber?: number, timeStampInS?: number): PoolState | undefined {
     if (
-      validForTime === undefined ||
-      (this.fullState && this.fullState.updatedAt < validForTime)
+      // blockNumber condition
+      (blockNumber &&
+        this.fullState &&
+        this.fullState.blockNumber === blockNumber) ||
+      // timeStamp condition
+      (timeStampInS &&
+        this.fullState &&
+        timeStampInS < this.fullState.updatedAtInS)
     ) {
       return this.fullState?.values;
     }
@@ -240,7 +246,8 @@ export class SynthetixState {
     };
 
     this.fullState = {
-      updatedAt: blockNumber || 0,
+      updatedAtInS: Number(block.timestamp),
+      blockNumber: blockNumber || block.number,
       values: newState,
     };
 
