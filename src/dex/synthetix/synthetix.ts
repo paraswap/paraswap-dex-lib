@@ -13,7 +13,7 @@ import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, _require } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { SynthetixData } from './types';
+import { DexParams, PoolState, SynthetixData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { SynthetixConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
@@ -64,6 +64,16 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       this.combinedIface,
       this.config,
     );
+    this.config = this.normalizeConfig(this.config);
+  }
+
+  private normalizeConfig(config: DexParams): DexParams {
+    return {
+      readProxyAddressResolver: config.readProxyAddressResolver.toLowerCase(),
+      flexibleStorage: config.flexibleStorage.toLowerCase(),
+      synths: config.synths.map(s => s.toLowerCase()),
+      sUSDAddress: config.sUSDAddress.toLowerCase(),
+    };
   }
 
   get onchainConfigValues() {

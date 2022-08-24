@@ -1,6 +1,6 @@
 import { BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
-import { Address, Token, DexConfigMap } from './types';
+import { DexConfigMap } from './types';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
