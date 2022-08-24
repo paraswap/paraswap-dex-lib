@@ -93,4 +93,5 @@ export type DexParams = {
 
   // List of available synths for atomic swap
   synths: Address[];
+  sUSDAddress: Address;
 };

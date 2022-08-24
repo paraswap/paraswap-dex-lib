@@ -18,6 +18,7 @@ export const SynthetixConfig: DexConfigMap<DexParams> = {
         '0x269895a3dF4D73b077Fc823dD6dA1B95f72Aaf9B', // sKRW
         '0xF48e200EAF9906362BB1442fca31e0835773b8B4', // sAUD
       ],
+      sUSDAddress: '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
     },
     [Network.OPTIMISM]: {
       readProxyAddressResolver: '0x1Cb059b7e74fD21665968C908806143E744D5F30',
@@ -36,6 +37,7 @@ export const SynthetixConfig: DexConfigMap<DexParams> = {
         '0x8b2F7Ae8cA8EE8428B6D76dE88326bB413db2766', // sSOL
         '0xf5a6115Aa582Fd1BEEa22BC93B7dC7a785F60d03', // sUNI
       ],
+      sUSDAddress: '0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9',
     },
   },
 };

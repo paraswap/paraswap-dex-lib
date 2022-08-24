@@ -1,5 +1,5 @@
-// TODO: Get proper estimation of gas cost
-export const SYNTHETIX_GAS_COST = 1;
+export const SYNTHETIX_GAS_COST_WITH_SUSD = 480_000;
+export const SYNTHETIX_GAS_COST_WITHOUT_SUSD = 680_000;
 
 export enum Contracts {
   SYNTHETIX = 'Synthetix',

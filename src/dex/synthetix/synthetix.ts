@@ -18,7 +18,10 @@ import { SimpleExchange } from '../simple-exchange';
 import { SynthetixConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import { MultiWrapper } from '../../lib/multi-wrapper';
-import { SYNTHETIX_GAS_COST } from './constants';
+import {
+  SYNTHETIX_GAS_COST_WITHOUT_SUSD,
+  SYNTHETIX_GAS_COST_WITH_SUSD,
+} from './constants';
 import { synthetixMath } from './contract-math/synthetix-math';
 import { SynthetixState } from './synthetix-state';
 // There are so many ABIs, where I need only one or two functions
@@ -163,6 +166,10 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         ),
       );
 
+      const isSUSDInRoute =
+        _srcAddress === this.config.sUSDAddress ||
+        _destAddress === this.config.sUSDAddress;
+
       return [
         {
           unit: prices[0],
@@ -174,7 +181,9 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
           },
           poolIdentifier: currentIdentifier,
           exchange: this.dexKey,
-          gasCost: SYNTHETIX_GAS_COST,
+          gasCost: isSUSDInRoute
+            ? SYNTHETIX_GAS_COST_WITH_SUSD
+            : SYNTHETIX_GAS_COST_WITHOUT_SUSD,
           poolAddresses: [this.onchainConfigValues.synthetixAddress],
         },
       ];
