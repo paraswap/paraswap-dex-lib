@@ -48,7 +48,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    protected config = SynthetixConfig[dexKey][network],
+    readonly config = SynthetixConfig[dexKey][network],
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.config = this.normalizeConfig(this.config);

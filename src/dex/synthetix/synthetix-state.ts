@@ -65,6 +65,7 @@ export class SynthetixState {
     private multiWrapper: MultiWrapper,
     private combinedIface: Interface,
     private config: DexParams,
+    private onchainConfigValueUpdateFrequencyInMs = ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS,
   ) {
     this.logger = this.dexHelper.getLogger('SynthetixState');
   }
@@ -76,7 +77,7 @@ export class SynthetixState {
       );
     }
     if (
-      Date.now() - ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS <
+      Date.now() - this.onchainConfigValueUpdateFrequencyInMs >
         this._onchainConfigValues.updatedAtInMs &&
       !this._onchainConfigValues.isUpdating
     ) {
