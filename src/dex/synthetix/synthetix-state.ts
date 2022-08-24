@@ -193,6 +193,7 @@ export class SynthetixState {
         uniswapV3Observations,
         tickCumulatives,
       },
+      sUSDCurrencyKey: this.onchainConfigValues.addressToKey[this.config.sUSDAddress],
       aggregatorDecimals: this.onchainConfigValues.aggregatorDecimals,
       blockTimestamp: BigInt(block.timestamp),
       aggregators,

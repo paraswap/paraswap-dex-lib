@@ -51,6 +51,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     protected config = SynthetixConfig[dexKey][network],
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    this.config = this.normalizeConfig(this.config);
     this.logger = dexHelper.getLogger(dexKey);
     this.combinedIface = new Interface(CombinedCherryPickABI);
     this.multiWrapper = new MultiWrapper(
@@ -64,7 +65,6 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       this.combinedIface,
       this.config,
     );
-    this.config = this.normalizeConfig(this.config);
   }
 
   private normalizeConfig(config: DexParams): DexParams {

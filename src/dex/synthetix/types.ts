@@ -47,6 +47,8 @@ export type PoolState = {
   // from flexible Storage
   atomicTwapWindow: bigint;
 
+  sUSDCurrencyKey: string;
+
   dexPriceAggregator: DexPriceAggregatorWithoutOracleState & {
     // UniswapV3 Pool
     uniswapV3Slot0: Record<string, Slot0>;

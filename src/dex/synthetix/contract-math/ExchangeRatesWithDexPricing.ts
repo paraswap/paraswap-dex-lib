@@ -5,9 +5,6 @@ import { PoolState } from '../types';
 import { dexPriceAggregatorUniswapV3 } from './DexPriceAggregatorUniswapV3';
 import { SafeDecimalMath } from './SafeDecimalMath';
 
-const sUSD =
-  '0x7355534400000000000000000000000000000000000000000000000000000000';
-
 class ExchangeRatesWithDexPricing {
   effectiveAtomicValueAndRates(
     state: PoolState,
@@ -44,7 +41,7 @@ class ExchangeRatesWithDexPricing {
         this._getPriceFromDexAggregator(
           state,
           sourceCurrencyKey,
-          sUSD,
+          state.sUSDCurrencyKey,
           sourceAmount,
         ),
       );
@@ -57,7 +54,7 @@ class ExchangeRatesWithDexPricing {
         systemDestinationRate,
         this._getPriceFromDexAggregator(
           state,
-          sUSD,
+          state.sUSDCurrencyKey,
           destinationCurrencyKey,
           sourceAmount,
         ),
@@ -101,7 +98,7 @@ class ExchangeRatesWithDexPricing {
     state: PoolState,
     currencyKey: string,
   ): { rate: bigint; time: bigint } {
-    if (currencyKey === sUSD) {
+    if (currencyKey === state.sUSDCurrencyKey) {
       return { rate: SafeDecimalMath.unit, time: 0n };
     } else {
       const aggregator = state.aggregators[currencyKey];
@@ -176,7 +173,8 @@ class ExchangeRatesWithDexPricing {
       'amount !== 0n',
     );
     _require(
-      sourceCurrencyKey === sUSD || destCurrencyKey === sUSD,
+      sourceCurrencyKey === state.sUSDCurrencyKey ||
+        destCurrencyKey === state.sUSDCurrencyKey,
       'Atomic swaps must go through sUSD',
       { sourceCurrencyKey, destCurrencyKey },
       `sourceCurrencyKey === sUSD || destCurrencyKey === sUSD`,
@@ -221,7 +219,7 @@ class ExchangeRatesWithDexPricing {
       'result !== 0n',
     );
 
-    return destCurrencyKey === sUSD
+    return destCurrencyKey === state.sUSDCurrencyKey
       ? result
       : SafeDecimalMath.divideDecimalRound(SafeDecimalMath.unit, result);
   }
