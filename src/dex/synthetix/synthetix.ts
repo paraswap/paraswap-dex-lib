@@ -9,11 +9,11 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, _require } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { DexParams, PoolState, SynthetixData } from './types';
+import { DexParams, SynthetixData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { SynthetixConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
@@ -26,7 +26,7 @@ import { synthetixMath } from './contract-math/synthetix-math';
 import { SynthetixState } from './synthetix-state';
 // There are so many ABIs, where I need only one or two functions
 // So, I decided to unite them into one combined interface
-import CombinedCherryPickABI from '../../abi/synthetix/CombinedCherryPick.abi.json';
+import CombinedSynthetixABI from '../../abi/synthetix/CombinedSynthetix.abi.json';
 
 export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -53,7 +53,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.config = this.normalizeConfig(this.config);
     this.logger = dexHelper.getLogger(dexKey);
-    this.combinedIface = new Interface(CombinedCherryPickABI);
+    this.combinedIface = new Interface(CombinedSynthetixABI);
     this.multiWrapper = new MultiWrapper(
       this.dexHelper.multiContract,
       this.logger,
