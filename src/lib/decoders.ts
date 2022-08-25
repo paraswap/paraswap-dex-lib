@@ -29,7 +29,9 @@ export const uint256ArrayDecode = (result: MultiResult<string>): bigint => {
   if (!result.success) {
     return 0n;
   }
-  return BigInt(defaultAbiCoder.decode(['uint256[]'], result.returnData)[0]);
+  return defaultAbiCoder
+    .decode(['uint256[]'], result.returnData)[0]
+    .map((r: BigNumber) => BigInt(r.toString()));
 };
 
 export const uin256DecodeToBigNumber = (
