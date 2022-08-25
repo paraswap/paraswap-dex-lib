@@ -72,14 +72,14 @@ class ExchangeRatesWithDexPricing {
     sourceAmount: bigint,
     destinationCurrencyKey: string,
   ): [bigint, bigint, bigint] {
-    const sourceRate = this._getRate(state, sourceCurrencyKey);
+    const sourceRate = this.getRate(state, sourceCurrencyKey);
     let value = 0n;
     let destinationRate = 0n;
     if (sourceCurrencyKey === destinationCurrencyKey) {
       destinationRate = sourceRate;
       value = sourceAmount;
     } else {
-      destinationRate = this._getRate(state, destinationCurrencyKey);
+      destinationRate = this.getRate(state, destinationCurrencyKey);
       if (destinationRate > 0n) {
         value = SafeDecimalMath.divideDecimalRound(
           SafeDecimalMath.multiplyDecimalRound(sourceAmount, sourceRate),
@@ -90,7 +90,7 @@ class ExchangeRatesWithDexPricing {
     return [value, sourceRate, destinationRate];
   }
 
-  private _getRate(state: PoolState, currencyKey: string): bigint {
+  getRate(state: PoolState, currencyKey: string): bigint {
     return this._getRateAndUpdatedTime(state, currencyKey).rate;
   }
 
@@ -106,19 +106,19 @@ class ExchangeRatesWithDexPricing {
         ? {
             rate: BigInt.asUintN(
               216,
-              this._formatAggregatorAnswer(
+              this.formatAggregatorAnswer(
                 state,
                 currencyKey,
-                aggregator.answer,
+                aggregator.latestRoundData.answer,
               ),
             ),
-            time: BigInt.asUintN(40, aggregator.updatedAt),
+            time: BigInt.asUintN(40, aggregator.latestRoundData.updatedAt),
           }
         : { rate: 0n, time: 0n };
     }
   }
 
-  private _formatAggregatorAnswer(
+  formatAggregatorAnswer(
     state: PoolState,
     currencyKey: string,
     rate: bigint,

@@ -5,11 +5,12 @@ import { Address } from 'paraswap';
 import { NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';
-import { Logger, Token } from '../../types';
+import { BigIntAsString, Logger, Token } from '../../types';
 import { _require } from '../../utils';
 import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorUniswapV3';
 import { OracleLibrary } from './contract-math/OracleLibrary';
 import {
+  ChainlinkData,
   DexParams,
   LatestRoundData,
   OnchainConfigValues,
@@ -23,6 +24,7 @@ import {
   booleanDecode,
   bytes32ToString,
   uint24ToBigInt,
+  uint256ArrayDecode,
   uint8ToNumber,
   uintDecode,
 } from '../../lib/decoders';
@@ -43,7 +45,11 @@ import {
   SETTING_ATOMIC_TWAP_WINDOW,
   SETTING_CONTRACT_NAME,
   SETTING_DEX_PRICE_AGGREGATOR,
+  SETTING_EXCHANGE_DYNAMIC_FEE_ROUNDS,
+  SETTING_EXCHANGE_DYNAMIC_FEE_THRESHOLD,
+  SETTING_EXCHANGE_DYNAMIC_FEE_WEIGHT_DECAY,
   SETTING_EXCHANGE_FEE_RATE,
+  SETTING_EXCHANGE_MAX_DYNAMIC_FEE,
   SETTING_PURE_CHAINLINK_PRICE_FOR_ATOMIC_SWAPS_ENABLED,
 } from './constants';
 
@@ -117,7 +123,7 @@ export class SynthetixState {
       // timeStamp condition
       (timeStampInS &&
         this.fullState &&
-        timeStampInS < this.fullState.updatedAtInS)
+        this.fullState.updatedAtInS < timeStampInS)
     ) {
       return this.fullState?.values;
     }
@@ -138,27 +144,52 @@ export class SynthetixState {
       ),
     );
 
-    const [packCounter, slot0TickCumulativesAndSuspensionsCallData] =
-      this._buildObserveSlot0AndSuspensionsCallData(addressesFromPK);
-    const slot0TickCumulativesAndSuspensions = (
+    const aggregatorAddressesWithoutZeros = Object.entries(
+      this.onchainConfigValues.aggregatorsAddresses,
+    ).reduce<Record<string, Address>>((acc, curr) => {
+      const [key, address] = curr;
+      if (address !== NULL_ADDRESS) {
+        acc[key] = address;
+      }
+      return acc;
+    }, {});
+
+    const [packCounter, slot0TickCumulativesSuspensionsLatestRoundCallData] =
+      this._buildObserveSlot0SuspensionsLatestRoundCallData(
+        addressesFromPK,
+        aggregatorAddressesWithoutZeros,
+      );
+
+    const slot0TickCumulativesSuspensionsLatestRound = (
       await this.multiWrapper.tryAggregate<
-        Record<0 | 1, bigint> | Slot0 | boolean[] | boolean
-      >(true, slot0TickCumulativesAndSuspensionsCallData, blockNumber)
-    ).map(d => d.returnData) as (Record<0 | 1, bigint> | boolean | boolean[])[];
+        Record<0 | 1, bigint> | Slot0 | boolean[] | boolean | LatestRoundData
+      >(true, slot0TickCumulativesSuspensionsLatestRoundCallData, blockNumber)
+    ).map(d => d.returnData) as (
+      | Record<0 | 1, bigint>
+      | boolean
+      | boolean[]
+      | LatestRoundData
+    )[];
 
-    const slot0AndTickCumulatives = slot0TickCumulativesAndSuspensions.slice(
-      0,
-      addressesFromPK.length * packCounter,
+    let addressesFromPKBoundary = addressesFromPK.length * packCounter;
+    const slot0AndTickCumulatives =
+      slot0TickCumulativesSuspensionsLatestRound.slice(
+        0,
+        addressesFromPKBoundary,
+      );
+
+    const suspensions = slot0TickCumulativesSuspensionsLatestRound.slice(
+      addressesFromPKBoundary,
+      // Number of suspension requests
+      addressesFromPKBoundary + 3,
     );
 
-    const suspensions = slot0TickCumulativesAndSuspensions.slice(
-      addressesFromPK.length * packCounter,
-    );
+    const latestRoundDatas = slot0TickCumulativesSuspensionsLatestRound.slice(
+      addressesFromPKBoundary + 3,
+    ) as LatestRoundData[];
 
     const isSystemSuspended = suspensions[0] as boolean;
-
     const synthSuspensions = suspensions[1] as boolean[];
-
     const synthExchangeSuspensions = suspensions[2] as boolean[];
 
     const areSynthsSuspended = Object.keys(
@@ -180,21 +211,12 @@ export class SynthetixState {
       tickCumulatives[address] = tickCumulative;
     });
 
-    const aggregatorAddressesWithoutZeros = Object.entries(
-      this.onchainConfigValues.aggregatorsAddresses,
-    ).reduce<Record<string, Address>>((acc, curr) => {
-      const [key, address] = curr;
-      if (address !== NULL_ADDRESS) {
-        acc[key] = address;
-      }
-      return acc;
-    }, {});
-
     const [_packCounter, observationsRoundAndOverriddenCallData] =
       this._buildObservationsRoundAndOverriddenCallData(
         addressesFromPK,
         uniswapV3Slot0,
         aggregatorAddressesWithoutZeros,
+        latestRoundDatas,
       );
 
     const [block, observationsRoundDataAndOverridden] = await Promise.all([
@@ -204,20 +226,29 @@ export class SynthetixState {
       >(true, observationsRoundAndOverriddenCallData, blockNumber),
     ]);
 
+    addressesFromPKBoundary = addressesFromPK.length * packCounter;
     const observations = observationsRoundDataAndOverridden
-      .slice(0, addressesFromPK.length * packCounter)
+      .slice(0, addressesFromPKBoundary)
       .map(e => e.returnData) as OracleObservation[];
 
-    const latestRoundDatas = observationsRoundDataAndOverridden
+    const overriddenPools = observationsRoundDataAndOverridden
       .slice(
-        addressesFromPK.length * packCounter,
-        -this.onchainConfigValues.poolKeys.length,
+        addressesFromPKBoundary,
+        addressesFromPKBoundary + this.onchainConfigValues.poolKeys.length,
       )
+      .map(e => e.returnData) as string[];
+
+    const otherRoundDatas = observationsRoundDataAndOverridden
+      .slice(addressesFromPKBoundary + this.onchainConfigValues.poolKeys.length)
       .map(e => e.returnData) as LatestRoundData[];
 
-    const overriddenPools = observationsRoundDataAndOverridden
-      .slice(-this.onchainConfigValues.poolKeys.length)
-      .map(e => e.returnData) as string[];
+    const chunkedOtherRoundDatas =
+      this.onchainConfigValues.exchangeDynamicFeeConfig.rounds > 0n
+        ? _.chunk(
+            otherRoundDatas,
+            Number(this.onchainConfigValues.exchangeDynamicFeeConfig.rounds),
+          )
+        : new Array<LatestRoundData[]>(latestRoundDatas.length).fill([]);
 
     const overriddenPoolForRoute = overriddenPools.reduce<
       Record<string, Address>
@@ -230,12 +261,30 @@ export class SynthetixState {
       return acc;
     }, {});
 
-    const aggregators = latestRoundDatas.reduce<
-      Record<Address, LatestRoundData>
-    >((acc, cur, i) => {
-      acc[Object.keys(aggregatorAddressesWithoutZeros)[i]] = cur;
-      return acc;
-    }, {});
+    _require(
+      latestRoundDatas.length === chunkedOtherRoundDatas.length,
+      'Something is wrong with indexes while getting OnchainState',
+      { chunkedOtherRoundDatas, latestRoundDatas },
+      'latestRoundDatas.length === chunkedOtherRoundDatas.length',
+    );
+
+    const aggregators = latestRoundDatas.reduce<Record<Address, ChainlinkData>>(
+      (acc, cur, i) => {
+        const getRoundData = chunkedOtherRoundDatas[i].reduce<
+          Record<BigIntAsString, LatestRoundData>
+        >((roundAcc, currRound) => {
+          roundAcc[currRound.roundId.toString()] = currRound;
+          return roundAcc;
+        }, {});
+
+        acc[Object.keys(aggregatorAddressesWithoutZeros)[i]] = {
+          latestRoundData: cur,
+          getRoundData,
+        };
+        return acc;
+      },
+      {},
+    );
 
     const uniswapV3Observations = _.chunk(observations, packCounter).reduce<
       Record<Address, Record<number, OracleObservation>>
@@ -259,7 +308,9 @@ export class SynthetixState {
 
     const newState: PoolState = {
       atomicExchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
-      exchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
+      exchangeFeeRate: this.onchainConfigValues.exchangeFeeRate,
+      exchangeDynamicFeeConfig:
+        this.onchainConfigValues.exchangeDynamicFeeConfig,
       pureChainlinkPriceForAtomicSwapsEnabled:
         this.onchainConfigValues.pureChainlinkPriceForAtomicSwapsEnabled,
       atomicEquivalentForDexPricing:
@@ -366,12 +417,18 @@ export class SynthetixState {
       );
 
     const results = (
-      await this.multiWrapper.tryAggregate<bigint | boolean | string | number>(
-        true,
-        flexibleStorageCurrencyCallData,
-        blockNumber,
-      )
+      await this.multiWrapper.tryAggregate<
+        bigint | boolean | string | number | bigint[]
+      >(true, flexibleStorageCurrencyCallData, blockNumber)
     ).map(d => d.returnData);
+
+    const exchangeDynamicFeeConfigResult = results.pop() as bigint[];
+    const exchangeDynamicFeeConfig = {
+      threshold: exchangeDynamicFeeConfigResult[0],
+      weightDecay: exchangeDynamicFeeConfigResult[1],
+      rounds: exchangeDynamicFeeConfigResult[2],
+      maxFee: exchangeDynamicFeeConfigResult[3],
+    };
 
     const atomicExchangeFeeRate: Record<string, bigint> = {};
     const exchangeFeeRate: Record<string, bigint> = {};
@@ -491,18 +548,22 @@ export class SynthetixState {
       }),
       aggregatorsAddresses,
       systemStatusAddress,
+      exchangeDynamicFeeConfig,
     };
   }
 
-  private _buildObserveSlot0AndSuspensionsCallData(
+  private _buildObserveSlot0SuspensionsLatestRoundCallData(
     addressesFromPK: Address[],
+    aggregatorAddressesWithoutZeros: Record<string, string>,
   ): [
     number,
-    MultiCallParams<Record<0 | 1, bigint> | Slot0 | boolean[] | boolean>[],
+    MultiCallParams<
+      Record<0 | 1, bigint> | Slot0 | boolean[] | boolean | LatestRoundData
+    >[],
   ] {
     let packCounter = 0;
     let callData: MultiCallParams<
-      Record<0 | 1, bigint> | Slot0 | boolean[] | boolean
+      Record<0 | 1, bigint> | Slot0 | boolean[] | boolean | LatestRoundData
     >[] = addressesFromPK
       .map(address => {
         const _callData = [
@@ -546,6 +607,11 @@ export class SynthetixState {
         ),
         decodeFunction: synthStatusDecoder,
       },
+      ...Object.values(aggregatorAddressesWithoutZeros).map(address => ({
+        target: address,
+        callData: this.combinedIface.encodeFunctionData('latestRoundData', []),
+        decodeFunction: decodeLatestRoundData,
+      })),
     ]);
     return [packCounter, callData];
   }
@@ -553,8 +619,9 @@ export class SynthetixState {
   private _buildObservationsRoundAndOverriddenCallData(
     addressesFromPK: Address[],
     uniswapV3Slot0: Record<Address, Slot0>,
-    aggregatorAddressesWithoutZeros: Record<string, Address>,
-  ): [number, MultiCallParams<OracleObservation | LatestRoundData | string>[]] {
+    aggregatorAddressesWithoutZeros: Record<string, string>,
+    latestRoundDatas: LatestRoundData[],
+  ): [number, MultiCallParams<OracleObservation | string | LatestRoundData>[]] {
     let packCounter = 0;
     const callData = [
       ...addressesFromPK
@@ -584,15 +651,25 @@ export class SynthetixState {
           return _callData;
         })
         .flat(),
-      ...Object.values(aggregatorAddressesWithoutZeros).map(address => ({
-        target: address,
-        callData: this.combinedIface.encodeFunctionData('latestRoundData', []),
-        decodeFunction: decodeLatestRoundData,
-      })),
       ...this._buildOverriddenCallData(
         this.onchainConfigValues!.poolKeys,
         this.onchainConfigValues!.dexPriceAggregatorAddress,
       ),
+      ...Object.values(aggregatorAddressesWithoutZeros)
+        .map((aggregatorAddress, i) =>
+          // If exchangeDynamicFeeConfig.rounds === 0, then it will return []
+          _.range(
+            0,
+            Number(this.onchainConfigValues.exchangeDynamicFeeConfig.rounds),
+          ).map(round => ({
+            target: aggregatorAddress,
+            callData: this.combinedIface.encodeFunctionData('getRoundData', [
+              latestRoundDatas[i].roundId - BigInt(round),
+            ]),
+            decodeFunction: decodeLatestRoundData,
+          })),
+        )
+        .flat(),
     ];
     return [packCounter, callData];
   }
@@ -645,7 +722,10 @@ export class SynthetixState {
   private _buildFlexibleStorageCurrencyCallData(
     synthCurrencyKeys: string[],
     exchangeRatesAddress: Address,
-  ): [number, MultiCallParams<bigint | boolean | Address | number>[]] {
+  ): [
+    number,
+    MultiCallParams<bigint | boolean | Address | number | bigint[]>[],
+  ] {
     let packCounter = 0;
     const callData = synthCurrencyKeys
       .map(key => {
@@ -724,6 +804,20 @@ export class SynthetixState {
         return result;
       })
       .flat();
+    callData.push({
+      target: this.config.flexibleStorage,
+      callData: this.combinedIface.encodeFunctionData('getUIntValues', [
+        encodeStringToBytes32(SETTING_CONTRACT_NAME),
+        [
+          encodeStringToBytes32(SETTING_EXCHANGE_DYNAMIC_FEE_THRESHOLD),
+          encodeStringToBytes32(SETTING_EXCHANGE_DYNAMIC_FEE_WEIGHT_DECAY),
+          encodeStringToBytes32(SETTING_EXCHANGE_DYNAMIC_FEE_ROUNDS),
+          encodeStringToBytes32(SETTING_EXCHANGE_MAX_DYNAMIC_FEE),
+        ],
+      ]),
+      decodeFunction: uint256ArrayDecode,
+    });
+
     return [packCounter, callData];
   }
 

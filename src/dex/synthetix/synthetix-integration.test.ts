@@ -12,29 +12,6 @@ import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorU
 import { SynthetixState } from './synthetix-state';
 import { MultiWrapper } from '../../lib/multi-wrapper';
 
-const network = Network.MAINNET;
-const TokenASymbol = 'sBTC';
-const TokenA = Tokens[network][TokenASymbol];
-
-const TokenBSymbol = 'sETH';
-const TokenB = Tokens[network][TokenBSymbol];
-
-const amounts = [
-  0n,
-  1n * BI_POWS[TokenA.decimals],
-  2n * BI_POWS[TokenA.decimals],
-  3n * BI_POWS[TokenA.decimals],
-  4n * BI_POWS[TokenA.decimals],
-  5n * BI_POWS[TokenA.decimals],
-  6n * BI_POWS[TokenA.decimals],
-  7n * BI_POWS[TokenA.decimals],
-  8n * BI_POWS[TokenA.decimals],
-  9n * BI_POWS[TokenA.decimals],
-];
-
-const dexHelper = new DummyDexHelper(network);
-const dexKey = 'Synthetix';
-
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
@@ -69,9 +46,11 @@ async function checkOnChainPricing(
   funcName: string,
   blockNumber: number,
   prices: bigint[],
+  amounts: bigint[],
+  srcTokenSymbol: string,
+  destTokenSymbol: string,
 ) {
-  const exchangeAddress = '0xD64D83829D92B5bdA881f6f61A4e4E27Fc185387';
-
+  const exchangeAddress = synthetix.onchainConfigValues.exchangerAddress;
   const readerIface = synthetix.combinedIface;
 
   const readerCallData = getReaderCalldata(
@@ -79,11 +58,16 @@ async function checkOnChainPricing(
     readerIface,
     amounts.slice(1),
     funcName,
-    synthetix.onchainConfigValues!.addressToKey[TokenA.address.toLowerCase()],
-    synthetix.onchainConfigValues!.addressToKey[TokenB.address.toLowerCase()],
+    synthetix.onchainConfigValues!.addressToKey[
+      Tokens[synthetix.network][srcTokenSymbol].address.toLowerCase()
+    ],
+    synthetix.onchainConfigValues!.addressToKey[
+      Tokens[synthetix.network][destTokenSymbol].address.toLowerCase()
+    ],
   );
+
   const readerResult = (
-    await dexHelper.multiContract.methods
+    await synthetix.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -94,96 +78,211 @@ async function checkOnChainPricing(
   expect(prices).toEqual(expectedPrices);
 }
 
+async function testPricingOnNetwork(
+  synthetix: Synthetix,
+  network: Network,
+  dexKey: string,
+  blockNumber: number,
+  srcTokenSymbol: string,
+  destTokenSymbol: string,
+  amounts: bigint[],
+  funcNameToCheck: string,
+) {
+  const networkTokens = Tokens[network];
+
+  const pools = await synthetix.getPoolIdentifiers(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    SwapSide.SELL,
+    blockNumber,
+  );
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
+    pools,
+  );
+
+  expect(pools.length).toBeGreaterThan(0);
+
+  const poolPrices = await synthetix.getPricesVolume(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    amounts,
+    SwapSide.SELL,
+    blockNumber,
+    pools,
+  );
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
+    poolPrices,
+  );
+
+  expect(poolPrices).not.toBeNull();
+  checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+  // Check if onchain pricing equals to calculated ones
+  await checkOnChainPricing(
+    synthetix,
+    funcNameToCheck,
+    blockNumber,
+    poolPrices![0].prices,
+    amounts,
+    srcTokenSymbol,
+    destTokenSymbol,
+  );
+}
+
 describe('Synthetix', function () {
+  const dexKey = 'Synthetix';
+
   let blockNumber: number;
   let synthetix: Synthetix;
 
-  beforeAll(async () => {
-    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    synthetix = new Synthetix(network, dexKey, dexHelper);
-    await synthetix.initializePricing(blockNumber);
-  });
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    const srcTokenSymbol = 'sBTC';
+    const destTokenSymbol = 'sETH';
 
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const pools = await synthetix.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.SELL,
-      blockNumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    const amounts = [
+      0n,
+      1n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      2n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      3n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      4n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      5n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      6n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      7n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      8n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      9n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+    ];
 
-    expect(pools.length).toBeGreaterThan(0);
+    const dexHelper = new DummyDexHelper(network);
 
-    const poolPrices = await synthetix.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.SELL,
-      blockNumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
-
-    expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-
-    // Check if onchain pricing equals to calculated ones
-    await checkOnChainPricing(
-      synthetix,
-      'getAmountsForAtomicExchange',
-      blockNumber,
-      poolPrices![0].prices,
-    );
-  });
-
-  it('getTopPoolsForToken', async function () {
-    const poolLiquidity = await synthetix.getTopPoolsForToken(
-      TokenA.address,
-      10,
-    );
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
-
-    if (!synthetix.hasConstantPriceLargeAmounts) {
-      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
-    }
-  });
-
-  it('Compute UniswapV3 address from token0, token1, fee in _computeAddress', async function () {
-    const uniswapV3Factory = '0x1f98431c8ad98523631ae4a59f267346ea31f984';
-    const computed = dexPriceAggregatorUniswapV3._computeAddress(
-      uniswapV3Factory,
-      {
-        token0: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-        token1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-        fee: 500n,
-      },
-    );
-    expect(computed).toEqual('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640');
-  });
-  it('Check state invalidating mechanism for onchainConfigValues', async () => {
-    const updateFrequency = 500;
-    const synthState = new SynthetixState(
-      dexKey,
-      dexHelper,
-      new MultiWrapper(dexHelper.multiContract, dexHelper.getLogger()),
-      synthetix.combinedIface,
-      synthetix.config,
-      updateFrequency,
-    );
-    await synthState.updateOnchainConfigValues();
-    const firstUpdate = synthState._onchainConfigValues.updatedAtInMs;
-    const secondUpdateTime = await new Promise<number>(resolve => {
-      // wait before triggering the update
-      setTimeout(() => {
-        synthState.onchainConfigValues;
-        setTimeout(() => {
-          const secondUpdate = synthState._onchainConfigValues.updatedAtInMs;
-          resolve(secondUpdate);
-          // I expect that in 1 sec the state will be updated after the request
-        }, 1000);
-      }, updateFrequency);
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      synthetix = new Synthetix(network, dexKey, dexHelper);
+      await synthetix.initializePricing(blockNumber);
     });
-    expect(firstUpdate + updateFrequency).toBeLessThan(secondUpdateTime);
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async () => {
+      await testPricingOnNetwork(
+        synthetix,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        amounts,
+        'getAmountsForAtomicExchange',
+      );
+    });
+    it('getTopPoolsForToken', async function () {
+      const poolLiquidity = await synthetix.getTopPoolsForToken(
+        Tokens[network][srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!synthetix.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+
+    it('Compute UniswapV3 address from token0, token1, fee in _computeAddress', async function () {
+      const uniswapV3Factory = '0x1f98431c8ad98523631ae4a59f267346ea31f984';
+      const computed = dexPriceAggregatorUniswapV3._computeAddress(
+        uniswapV3Factory,
+        {
+          token0: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          token1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+          fee: 500n,
+        },
+      );
+      expect(computed).toEqual('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640');
+    });
+
+    it('Check state invalidating mechanism for onchainConfigValues', async () => {
+      const updateFrequency = 500;
+      const synthState = new SynthetixState(
+        dexKey,
+        dexHelper,
+        new MultiWrapper(dexHelper.multiContract, dexHelper.getLogger()),
+        synthetix.combinedIface,
+        synthetix.config,
+        updateFrequency,
+      );
+      await synthState.updateOnchainConfigValues();
+      const firstUpdate = synthState._onchainConfigValues.updatedAtInMs;
+      const secondUpdateTime = await new Promise<number>(resolve => {
+        // wait before triggering the update
+        setTimeout(() => {
+          synthState.onchainConfigValues;
+          setTimeout(() => {
+            const secondUpdate = synthState._onchainConfigValues.updatedAtInMs;
+            resolve(secondUpdate);
+            // I expect that in 1 sec the state will be updated after the request
+          }, 1000);
+        }, updateFrequency);
+      });
+      expect(firstUpdate + updateFrequency).toBeLessThan(secondUpdateTime);
+    });
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+    const srcTokenSymbol = 'sBTC';
+    const destTokenSymbol = 'sETH';
+
+    const amounts = [
+      0n,
+      1n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      2n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      3n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      4n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      5n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      6n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      7n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      8n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+      9n * BI_POWS[Tokens[network][srcTokenSymbol].decimals],
+    ];
+
+    const dexHelper = new DummyDexHelper(network);
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      synthetix = new Synthetix(network, dexKey, dexHelper);
+      await synthetix.initializePricing(blockNumber);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async () => {
+      await testPricingOnNetwork(
+        synthetix,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        amounts,
+        'getAmountsForExchange',
+      );
+    });
+    it('getTopPoolsForToken', async function () {
+      const poolLiquidity = await synthetix.getTopPoolsForToken(
+        Tokens[network][srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!synthetix.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
   });
 });

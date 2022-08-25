@@ -19,6 +19,7 @@ import { SynthetixConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import { MultiWrapper } from '../../lib/multi-wrapper';
 import {
+  OPTIMISM_STATE_TTL_IN_S,
   SYNTHETIX_GAS_COST_WITHOUT_SUSD,
   SYNTHETIX_GAS_COST_WITH_SUSD,
 } from './constants';
@@ -44,9 +45,9 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     getDexKeysWithNetwork(SynthetixConfig);
 
   constructor(
-    protected network: Network,
+    readonly network: Network,
     protected dexKey: string,
-    protected dexHelper: IDexHelper,
+    readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly config = SynthetixConfig[dexKey][network],
   ) {
@@ -76,6 +77,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         return s;
       }),
       sUSDAddress: config.sUSDAddress.toLowerCase(),
+      trackingCode: config.trackingCode.toLowerCase(),
     };
   }
 
@@ -164,9 +166,19 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
       const _amounts = [unitVolume, ...amounts.slice(1)];
 
-      let state = this.synthetixState.getState(blockNumber);
+      const isOptimism = this.network === Network.OPTIMISM;
+
+      let state = isOptimism
+        ? this.synthetixState.getState(
+            undefined,
+            Math.floor(Date.now() / 1000) - OPTIMISM_STATE_TTL_IN_S,
+          )
+        : this.synthetixState.getState(blockNumber);
 
       if (!state) {
+        this.logger.info(
+          `${this.dexKey} onchain state update on network=${this.network}`,
+        );
         state = await this.synthetixState.getOnchainState(blockNumber);
       }
 
@@ -179,12 +191,20 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       }
 
       const prices = _amounts.map(amount =>
-        synthetixMath.getAmountsForAtomicExchange(
-          state!,
-          amount,
-          this.onchainConfigValues!.addressToKey[_srcAddress],
-          this.onchainConfigValues!.addressToKey[_destAddress],
-        ),
+        // For there is different pricing logic
+        isOptimism
+          ? synthetixMath.getAmountsForExchange(
+              state!,
+              amount,
+              this.onchainConfigValues!.addressToKey[_srcAddress],
+              this.onchainConfigValues!.addressToKey[_destAddress],
+            )
+          : synthetixMath.getAmountsForAtomicExchange(
+              state!,
+              amount,
+              this.onchainConfigValues!.addressToKey[_srcAddress],
+              this.onchainConfigValues!.addressToKey[_destAddress],
+            ),
       );
 
       const isSUSDInRoute =
@@ -199,7 +219,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
             exchange: this.onchainConfigValues.synthetixAddress,
             srcKey: this.onchainConfigValues.addressToKey[_srcAddress],
             destKey: this.onchainConfigValues.addressToKey[_destAddress],
-            exchangeType: 0,
+            exchangeType: isOptimism ? 1 : 0,
           },
           poolIdentifier: currentIdentifier,
           exchange: this.dexKey,
@@ -233,7 +253,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     const payload = this.abiCoder.encodeParameter(
       'tuple(bytes32 trackingCode, address rewardAddress, bytes32 srcCurrencyKey, bytes32 destCurrencyKey, int8 exchangeType)',
       [
-        ethers.utils.hexZeroPad('0x', 32),
+        this.config.trackingCode,
         // TODO: Set proper address when adding Optimism
         NULL_ADDRESS,
         srcKey,
@@ -261,10 +281,20 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
     const { exchange, srcKey, destKey } = data;
 
-    const swapData = this.combinedIface.encodeFunctionData(
-      'exchangeAtomically',
-      [srcKey, srcAmount, destKey, ethers.utils.hexZeroPad('0x', 32), '1'],
-    );
+    const swapData =
+      this.network === Network.OPTIMISM
+        ? this.combinedIface.encodeFunctionData('exchange', [
+            srcKey,
+            srcAmount,
+            destKey,
+          ])
+        : this.combinedIface.encodeFunctionData('exchangeAtomically', [
+            srcKey,
+            srcAmount,
+            destKey,
+            this.config.trackingCode,
+            '1',
+          ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,

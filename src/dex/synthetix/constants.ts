@@ -20,6 +20,13 @@ export const SETTING_PURE_CHAINLINK_PRICE_FOR_ATOMIC_SWAPS_ENABLED =
   'pureChainlinkForAtomicsEnabled';
 export const SETTING_ATOMIC_EQUIVALENT_FOR_DEX_PRICING =
   'atomicEquivalentForDexPricing';
+export const SETTING_EXCHANGE_DYNAMIC_FEE_THRESHOLD =
+  'exchangeDynamicFeeThreshold';
+export const SETTING_EXCHANGE_DYNAMIC_FEE_WEIGHT_DECAY =
+  'exchangeDynamicFeeWeightDecay';
+export const SETTING_EXCHANGE_DYNAMIC_FEE_ROUNDS = 'exchangeDynamicFeeRounds';
+export const SETTING_EXCHANGE_MAX_DYNAMIC_FEE = 'exchangeMaxDynamicFee';
 
 // Once for every 24 hours
 export const ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS = 1000 * 60 * 60 * 24;
+export const OPTIMISM_STATE_TTL_IN_S = 30;

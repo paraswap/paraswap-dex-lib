@@ -84,6 +84,7 @@ export const decodeLatestRoundData = (
     return {
       answer: 0n,
       updatedAt: 0n,
+      roundId: 0n,
     };
   }
 
@@ -97,6 +98,7 @@ export const decodeLatestRoundData = (
   return {
     answer: BigInt(decoded.answer),
     updatedAt: BigInt(decoded.updatedAt),
+    roundId: BigInt(decoded.roundId),
   };
 };
 
