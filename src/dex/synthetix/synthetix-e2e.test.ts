@@ -149,25 +149,25 @@ describe('Synthetix E2E', () => {
     );
   });
 
-  // describe('Synthetix OPTIMISM', () => {
-  //   const network = Network.OPTIMISM;
+  describe('Synthetix OPTIMISM', () => {
+    const network = Network.OPTIMISM;
 
-  //   const tokenChainlinkSymbol = 'sETH';
-  //   const tokenDexAggregatorSymbol = 'sBTC';
-  //   const sUSDSymbol = 'sUSD';
+    const tokenChainlinkSymbol = 'sETH';
+    const tokenDexAggregatorSymbol = 'sBTC';
+    const sUSDSymbol = 'sUSD';
 
-  //   const tokenChainlinkAmount = '1000000000000000000';
-  //   const tokenDexAggregatorAmount = '1000000000000000000';
-  //   const sUSDAmount = '1000000000000000000';
+    const tokenChainlinkAmount = '1000000000000000000';
+    const tokenDexAggregatorAmount = '1000000000000000000';
+    const sUSDAmount = '1000000000000000000';
 
-  //   testForNetwork(
-  //     network,
-  //     tokenChainlinkSymbol,
-  //     tokenDexAggregatorSymbol,
-  //     sUSDSymbol,
-  //     tokenChainlinkAmount,
-  //     tokenDexAggregatorAmount,
-  //     sUSDAmount,
-  //   );
-  // });
+    testForNetwork(
+      network,
+      tokenChainlinkSymbol,
+      tokenDexAggregatorSymbol,
+      sUSDSymbol,
+      tokenChainlinkAmount,
+      tokenDexAggregatorAmount,
+      sUSDAmount,
+    );
+  });
 });
