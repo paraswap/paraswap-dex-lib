@@ -26,7 +26,6 @@ export const SynthetixConfig: DexConfigMap<DexParams> = {
       readProxyAddressResolver: '0x1Cb059b7e74fD21665968C908806143E744D5F30',
       flexibleStorage: '0x47649022380d182DA8010Ae5d257fea4227b21ff',
       synths: [
-        { address: '0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4', decimals: 18 }, // SNX
         { address: '0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9', decimals: 18 }, // sUSD
         { address: '0x00B8D5a5e1Ac97Cb4341c4Bc4367443c8776e8d9', decimals: 18 }, // sAAVE
         { address: '0xB2b42B231C68cbb0b4bF2FFEbf57782Fd97D3dA4', decimals: 18 }, // sAVAX

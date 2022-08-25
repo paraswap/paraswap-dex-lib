@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { BytesLike, defaultAbiCoder } from 'ethers/lib/utils';
 import { parseInt } from 'lodash';
 import { BN_0 } from '../bignumber-constants';
+import { NULL_ADDRESS } from '../constants';
 import { MultiResult } from './multi-wrapper';
 
 export function generalDecoder<T>(
@@ -87,12 +88,9 @@ export const booleanDecode = (result: MultiResult<string>): boolean => {
 };
 
 export const addressDecode = (result: MultiResult<string>): string => {
-  if (!result.success) {
-    return '';
-  }
-  return defaultAbiCoder
-    .decode(['address'], result.returnData)[0]
-    .toLowerCase();
+  return generalDecoder(result, ['address'], NULL_ADDRESS, v =>
+    v[0].toLowerCase(),
+  );
 };
 
 export const bytes32ToString = (result: MultiResult<BytesLike>): string => {

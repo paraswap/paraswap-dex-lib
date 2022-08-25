@@ -308,7 +308,7 @@ export class SynthetixState {
 
     const newState: PoolState = {
       atomicExchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
-      exchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
+      exchangeFeeRate: this.onchainConfigValues.exchangeFeeRate,
       exchangeDynamicFeeConfig:
         this.onchainConfigValues.exchangeDynamicFeeConfig,
       pureChainlinkPriceForAtomicSwapsEnabled:

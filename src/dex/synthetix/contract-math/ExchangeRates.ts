@@ -10,7 +10,28 @@ export class ExchangeRates {
     sourceAmount: bigint,
     destinationCurrencyKey: string,
   ): bigint {
-    return 0n;
+    const sourceRate = exchangeRatesWithDexPricing.getRate(
+      state,
+      sourceCurrencyKey,
+    );
+    // If there's no change in the currency, then just return the amount they gave us
+    if (sourceCurrencyKey === destinationCurrencyKey) {
+      return sourceAmount;
+    } else {
+      // Calculate the effective value by going from source -> USD -> destination
+      const destinationRate = exchangeRatesWithDexPricing.getRate(
+        state,
+        destinationCurrencyKey,
+      );
+      // prevent divide-by 0 error (this happens if the dest is not a valid rate)
+      if (destinationRate > 0n) {
+        return SafeDecimalMath.divideDecimalRound(
+          SafeDecimalMath.multiplyDecimalRound(sourceAmount, sourceRate),
+          destinationRate,
+        );
+      }
+      return 0n;
+    }
   }
 
   getCurrentRoundId(state: PoolState, currencyKey: string): bigint {
