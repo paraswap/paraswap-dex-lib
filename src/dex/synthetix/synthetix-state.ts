@@ -123,7 +123,7 @@ export class SynthetixState {
       // timeStamp condition
       (timeStampInS &&
         this.fullState &&
-        timeStampInS < this.fullState.updatedAtInS)
+        this.fullState.updatedAtInS < timeStampInS)
     ) {
       return this.fullState?.values;
     }

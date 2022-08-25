@@ -116,4 +116,5 @@ export type DexParams = {
   // List of available synths for atomic swap
   synths: Token[];
   sUSDAddress: Address;
+  trackingCode: string;
 };
