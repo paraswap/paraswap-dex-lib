@@ -50,8 +50,7 @@ async function checkOnChainPricing(
   srcTokenSymbol: string,
   destTokenSymbol: string,
 ) {
-  const exchangeAddress = '0xD64D83829D92B5bdA881f6f61A4e4E27Fc185387';
-
+  const exchangeAddress = synthetix.onchainConfigValues.exchangerAddress;
   const readerIface = synthetix.combinedIface;
 
   const readerCallData = getReaderCalldata(
@@ -87,6 +86,7 @@ async function testPricingOnNetwork(
   srcTokenSymbol: string,
   destTokenSymbol: string,
   amounts: bigint[],
+  funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
 
@@ -122,7 +122,7 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     synthetix,
-    'getAmountsForAtomicExchange',
+    funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
     amounts,
@@ -172,6 +172,7 @@ describe('Synthetix', function () {
         srcTokenSymbol,
         destTokenSymbol,
         amounts,
+        'getAmountsForAtomicExchange',
       );
     });
     it('getTopPoolsForToken', async function () {
@@ -265,6 +266,7 @@ describe('Synthetix', function () {
         srcTokenSymbol,
         destTokenSymbol,
         amounts,
+        'getAmountsForExchange',
       );
     });
     it('getTopPoolsForToken', async function () {
