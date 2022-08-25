@@ -71,7 +71,10 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     return {
       readProxyAddressResolver: config.readProxyAddressResolver.toLowerCase(),
       flexibleStorage: config.flexibleStorage.toLowerCase(),
-      synths: config.synths.map(s => s.toLowerCase()),
+      synths: config.synths.map(s => {
+        s.address = s.address.toLowerCase();
+        return s;
+      }),
       sUSDAddress: config.sUSDAddress.toLowerCase(),
     };
   }
@@ -227,7 +230,6 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   ): AdapterExchangeParam {
     const { exchange, srcKey, destKey, exchangeType } = data;
 
-    // Encode here the payload for adapter
     const payload = this.abiCoder.encodeParameter(
       'tuple(bytes32 trackingCode, address rewardAddress, bytes32 srcCurrencyKey, bytes32 destCurrencyKey, int8 exchangeType)',
       [
@@ -286,7 +288,17 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    const _tokenAddress = tokenAddress.toLowerCase();
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.onchainConfigValues.synthetixAddress,
+        connectorTokens: this.config.synths.filter(
+          s => s.address !== _tokenAddress,
+        ),
+        liquidityUSD: Number.MAX_SAFE_INTEGER,
+      },
+    ];
   }
 }

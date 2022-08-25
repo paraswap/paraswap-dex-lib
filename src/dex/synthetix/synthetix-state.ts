@@ -351,7 +351,7 @@ export class SynthetixState {
 
     const addressToKey = this.config.synths.reduce<Record<Address, string>>(
       (acc, curr, i) => {
-        const _tokenAddress = curr.toLowerCase();
+        const _tokenAddress = curr.address.toLowerCase();
         acc[_tokenAddress] = synthCurrencyKeys[i];
         return acc;
       },
@@ -807,8 +807,8 @@ export class SynthetixState {
         ]),
         decodeFunction: uintDecode,
       },
-      ...this.config.synths.map(synthAddress => ({
-        target: synthAddress,
+      ...this.config.synths.map(synth => ({
+        target: synth.address,
         callData: this.combinedIface.encodeFunctionData('target', []),
         decodeFunction: addressDecode,
       })),

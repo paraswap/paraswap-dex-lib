@@ -8,15 +8,15 @@ export const SynthetixConfig: DexConfigMap<DexParams> = {
       readProxyAddressResolver: '0x4E3b31eB0E5CB73641EE1E65E7dCEFe520bA3ef2',
       flexibleStorage: '0xc757aCBa3c0506218b3022266a9DC7F3612d85f5',
       synths: [
-        '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb', // sETH
-        '0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6', // sBTC
-        '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51', // sUSD
-        '0xD71eCFF9342A5Ced620049e616c5035F1dB98620', // sEUR
-        '0x0F83287FF768D1c1e17a42F44d644D7F22e8ee1d', // sCHF
-        '0xF6b1C627e95BFc3c1b4c9B825a032Ff0fBf3e07d', // sJPY
-        '0x97fe22E7341a0Cd8Db6F6C021A24Dc8f4DAD855F', // sGBP
-        '0x269895a3dF4D73b077Fc823dD6dA1B95f72Aaf9B', // sKRW
-        '0xF48e200EAF9906362BB1442fca31e0835773b8B4', // sAUD
+        { address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb', decimals: 18 }, // sETH
+        { address: '0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6', decimals: 18 }, // sBTC
+        { address: '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51', decimals: 18 }, // sUSD
+        { address: '0xD71eCFF9342A5Ced620049e616c5035F1dB98620', decimals: 18 }, // sEUR
+        { address: '0x0F83287FF768D1c1e17a42F44d644D7F22e8ee1d', decimals: 18 }, // sCHF
+        { address: '0xF6b1C627e95BFc3c1b4c9B825a032Ff0fBf3e07d', decimals: 18 }, // sJPY
+        { address: '0x97fe22E7341a0Cd8Db6F6C021A24Dc8f4DAD855F', decimals: 18 }, // sGBP
+        { address: '0x269895a3dF4D73b077Fc823dD6dA1B95f72Aaf9B', decimals: 18 }, // sKRW
+        { address: '0xF48e200EAF9906362BB1442fca31e0835773b8B4', decimals: 18 }, // sAUD
       ],
       sUSDAddress: '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
     },

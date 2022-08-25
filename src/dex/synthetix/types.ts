@@ -99,6 +99,6 @@ export type DexParams = {
   flexibleStorage: Address;
 
   // List of available synths for atomic swap
-  synths: Address[];
+  synths: Token[];
   sUSDAddress: Address;
 };
