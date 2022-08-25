@@ -353,5 +353,28 @@
     "payable": false,
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "sourceCurrencyKey",
+        "type": "bytes32"
+      },
+      { "internalType": "uint256", "name": "sourceAmount", "type": "uint256" },
+      {
+        "internalType": "bytes32",
+        "name": "destinationCurrencyKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "exchange",
+    "outputs": [
+      { "internalType": "uint256", "name": "amountReceived", "type": "uint256" }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]
