@@ -106,19 +106,19 @@ class ExchangeRatesWithDexPricing {
         ? {
             rate: BigInt.asUintN(
               216,
-              this._formatAggregatorAnswer(
+              this.formatAggregatorAnswer(
                 state,
                 currencyKey,
-                aggregator.answer,
+                aggregator.latestRoundData.answer,
               ),
             ),
-            time: BigInt.asUintN(40, aggregator.updatedAt),
+            time: BigInt.asUintN(40, aggregator.latestRoundData.updatedAt),
           }
         : { rate: 0n, time: 0n };
     }
   }
 
-  private _formatAggregatorAnswer(
+  formatAggregatorAnswer(
     state: PoolState,
     currencyKey: string,
     rate: bigint,

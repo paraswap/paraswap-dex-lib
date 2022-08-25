@@ -41,4 +41,9 @@ export class SafeDecimalMath {
 
     return quotientTimesTen / 10n;
   }
+
+  static divideDecimal(x: bigint, y: bigint): bigint {
+    /* Reintroduce the UNIT factor that will be divided out by y. */
+    return (x * UNIT) / y;
+  }
 }

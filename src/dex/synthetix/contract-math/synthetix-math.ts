@@ -1,5 +1,6 @@
 import { _require } from '../../../utils';
 import { PoolState } from '../types';
+import { exchangeRates } from './ExchangeRates';
 import { exchangeRatesWithDexPricing } from './ExchangeRatesWithDexPricing';
 import { SafeDecimalMath } from './SafeDecimalMath';
 
@@ -19,87 +20,164 @@ export class SynthetixMath {
     return amountReceived;
   }
 
-  // TODO: Implement pricing for Optimism
-  // getAmountsForExchange(
-  //   state: PoolState,
-  //   sourceAmount: bigint,
-  //   sourceCurrencyKey: string,
-  //   destinationCurrencyKey: string,
-  // ) {
-  //   const [exchangeFeeRate, tooVolatile] = this._feeRateForExchange(
-  //     sourceCurrencyKey,
-  //     destinationCurrencyKey,
-  //   );
+  getAmountsForExchange(
+    state: PoolState,
+    sourceAmount: bigint,
+    sourceCurrencyKey: string,
+    destinationCurrencyKey: string,
+  ) {
+    const [exchangeFeeRate, tooVolatile] = this._feeRateForExchange(
+      state,
+      sourceCurrencyKey,
+      destinationCurrencyKey,
+    );
 
-  //   // check rates volatility result
-  //   _require(
-  //     !tooVolatile,
-  //     'exchange rates too volatile',
-  //     { sourceAmount, sourceCurrencyKey, destinationCurrencyKey, tooVolatile },
-  //     '!tooVolatile',
-  //   );
+    // check rates volatility result
+    _require(
+      !tooVolatile,
+      'exchange rates too volatile',
+      { sourceAmount, sourceCurrencyKey, destinationCurrencyKey, tooVolatile },
+      '!tooVolatile',
+    );
 
-  //   const destinationAmount = _effectiveValueAndRates(
-  //     sourceCurrencyKey,
-  //     sourceAmount,
-  //     destinationCurrencyKey,
-  //   );
+    const destinationAmount = exchangeRates.effectiveValueAndRates(
+      state,
+      sourceCurrencyKey,
+      sourceAmount,
+      destinationCurrencyKey,
+    );
 
-  //   return this._deductFeesFromAmount(destinationAmount, exchangeFeeRate);
-  // }
+    return this._deductFeesFromAmount(destinationAmount, exchangeFeeRate);
+  }
 
-  // private _feeRateForExchange(
-  //   state: PoolState,
-  //   sourceCurrencyKey: string,
-  //   destinationCurrencyKey: string,
-  // ): [bigint, boolean] {
-  //   // Get the exchange fee rate as per the source currencyKey and destination currencyKey
-  //   const baseRate =
-  //     this._getExchangeFeeRate(state, sourceCurrencyKey) +
-  //     this._getExchangeFeeRate(state, destinationCurrencyKey);
+  private _feeRateForExchange(
+    state: PoolState,
+    sourceCurrencyKey: string,
+    destinationCurrencyKey: string,
+  ): [bigint, boolean] {
+    // Get the exchange fee rate as per the source currencyKey and destination currencyKey
+    const baseRate =
+      this._getExchangeFeeRate(state, sourceCurrencyKey) +
+      this._getExchangeFeeRate(state, destinationCurrencyKey);
 
-  //   const [dynamicFee, tooVolatile] = this._dynamicFeeRateForExchange(
-  //     state,
-  //     sourceCurrencyKey,
-  //     destinationCurrencyKey,
-  //   );
-  //   return [baseRate + dynamicFee, tooVolatile];
-  // }
+    const [dynamicFee, tooVolatile] = this._dynamicFeeRateForExchange(
+      state,
+      sourceCurrencyKey,
+      destinationCurrencyKey,
+    );
+    return [baseRate + dynamicFee, tooVolatile];
+  }
 
-  // private _dynamicFeeRateForExchange(
-  //   state: PoolState,
-  //   sourceCurrencyKey: string,
-  //   destinationCurrencyKey: string,
-  // ): [bigint, boolean] {
-  //   const config = getExchangeDynamicFeeConfig();
-  //   const [dynamicFeeDst, dstVolatile] = this._dynamicFeeRateForCurrency(
-  //     state,
-  //     destinationCurrencyKey,
-  //     config,
-  //   );
-  //   const [dynamicFeeSrc, srcVolatile] = this._dynamicFeeRateForCurrency(
-  //     state,
-  //     sourceCurrencyKey,
-  //     config,
-  //   );
-  //   let dynamicFee = dynamicFeeDst + dynamicFeeSrc;
-  //   // cap to maxFee
-  //   const overMax = dynamicFee > config.maxFee;
-  //   dynamicFee = overMax ? config.maxFee : dynamicFee;
-  //   return [dynamicFee, overMax || dstVolatile || srcVolatile];
-  // }
+  private _dynamicFeeRateForExchange(
+    state: PoolState,
+    sourceCurrencyKey: string,
+    destinationCurrencyKey: string,
+  ): [bigint, boolean] {
+    const [dynamicFeeDst, dstVolatile] = this._dynamicFeeRateForCurrency(
+      state,
+      destinationCurrencyKey,
+    );
+    const [dynamicFeeSrc, srcVolatile] = this._dynamicFeeRateForCurrency(
+      state,
+      sourceCurrencyKey,
+    );
+    let dynamicFee = dynamicFeeDst + dynamicFeeSrc;
+    // cap to maxFee
+    const overMax = dynamicFee > state.exchangeDynamicFeeConfig.maxFee;
+    dynamicFee = overMax ? state.exchangeDynamicFeeConfig.maxFee : dynamicFee;
+    return [dynamicFee, overMax || dstVolatile || srcVolatile];
+  }
 
-  // private _dynamicFeeRateForCurrency(
-  //   state: PoolState,
-  //   currencyKey: string,
-  // ): [bigint, boolean] {
-  //   // no dynamic dynamicFee for sUSD or too few rounds
-  //   if (currencyKey === state.sUSDCurrencyKey || config.rounds <= 1) {
-  //     return [0n, false];
-  //   }
-  //   const roundId = exchangeRates().getCurrentRoundId(currencyKey);
-  //   return _dynamicFeeRateForCurrencyRound(currencyKey, roundId, config);
-  // }
+  private _dynamicFeeRateForCurrency(
+    state: PoolState,
+    currencyKey: string,
+  ): [bigint, boolean] {
+    // no dynamic dynamicFee for sUSD or too few rounds
+    if (
+      currencyKey === state.sUSDCurrencyKey ||
+      state.exchangeDynamicFeeConfig.rounds <= 1
+    ) {
+      return [0n, false];
+    }
+    const roundId = exchangeRates.getCurrentRoundId(state, currencyKey);
+    return this._dynamicFeeRateForCurrencyRound(state, currencyKey, roundId);
+  }
+
+  private _dynamicFeeRateForCurrencyRound(
+    state: PoolState,
+    currencyKey: string,
+    roundId: bigint,
+  ): [bigint, boolean] {
+    // no dynamic dynamicFee for sUSD or too few rounds
+    if (
+      currencyKey == state.sUSDCurrencyKey ||
+      state.exchangeDynamicFeeConfig.rounds <= 1
+    ) {
+      return [0n, false];
+    }
+    const [prices] = exchangeRates.ratesAndUpdatedTimeForCurrencyLastNRounds(
+      state,
+      currencyKey,
+      state.exchangeDynamicFeeConfig.rounds,
+      roundId,
+    );
+    let dynamicFee = this._dynamicFeeCalculation(
+      prices,
+      state.exchangeDynamicFeeConfig.threshold,
+      state.exchangeDynamicFeeConfig.weightDecay,
+    );
+    // cap to maxFee
+    const overMax = dynamicFee > state.exchangeDynamicFeeConfig.maxFee;
+    dynamicFee = overMax ? state.exchangeDynamicFeeConfig.maxFee : dynamicFee;
+    return [dynamicFee, overMax];
+  }
+
+  private _dynamicFeeCalculation(
+    prices: bigint[],
+    threshold: bigint,
+    weightDecay: bigint,
+  ): bigint {
+    // don't underflow
+    if (prices.length == 0) {
+      return 0n;
+    }
+
+    let dynamicFee = 0n; // start with 0
+    // go backwards in price array
+    for (let i = prices.length - 1; i > 0; i--) {
+      // apply decay from previous round (will be 0 for first round)
+      dynamicFee = SafeDecimalMath.multiplyDecimal(dynamicFee, weightDecay);
+      // calculate price deviation
+      const deviation = this._thresholdedAbsDeviationRatio(
+        prices[i - 1],
+        prices[i],
+        threshold,
+      );
+      // add to total fee
+      dynamicFee = dynamicFee + deviation;
+    }
+    return dynamicFee;
+  }
+
+  private _thresholdedAbsDeviationRatio(
+    price: bigint,
+    previousPrice: bigint,
+    threshold: bigint,
+  ): bigint {
+    if (previousPrice === 0n) {
+      return 0n; // don't divide by zero
+    }
+    // abs difference between prices
+    const absDelta =
+      price > previousPrice ? price - previousPrice : previousPrice - price;
+    // relative to previous price
+    const deviationRatio = SafeDecimalMath.divideDecimal(
+      absDelta,
+      previousPrice,
+    );
+    // only the positive difference from threshold
+    return deviationRatio > threshold ? deviationRatio - threshold : 0n;
+  }
 
   private _getAmountsForAtomicExchangeMinusFees(
     state: PoolState,

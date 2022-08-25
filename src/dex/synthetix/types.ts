@@ -1,14 +1,22 @@
-import { Address, Token } from '../../types';
+import { Address, BigIntAsString, Token } from '../../types';
 
 export type LatestRoundData = {
   answer: bigint;
   updatedAt: bigint;
+  roundId: bigint;
 };
 
 export type Slot0 = {
   tick: bigint;
   observationIndex: bigint;
   observationCardinality: bigint;
+};
+
+export type ExchangeDynamicFeeConfig = {
+  threshold: bigint;
+  weightDecay: bigint;
+  rounds: bigint;
+  maxFee: bigint;
 };
 
 export type PoolKey = { token0: Address; token1: Address; fee: bigint };
@@ -31,6 +39,11 @@ export type DexPriceAggregatorWithoutOracleState = {
   overriddenPoolForRoute: Record<string, Address>;
 };
 
+export type ChainlinkData = {
+  latestRoundData: LatestRoundData;
+  getRoundData: Record<BigIntAsString, LatestRoundData>;
+};
+
 export type PoolState = {
   // currencyKey -> value. From flexibleStorage
   atomicExchangeFeeRate: Record<string, bigint>;
@@ -42,7 +55,7 @@ export type PoolState = {
   aggregatorDecimals: Record<string, number>;
 
   // currencyKey -> value. From chainLinkRequest
-  aggregators: Record<string, LatestRoundData>;
+  aggregators: Record<string, ChainlinkData>;
 
   // from FlexibleStorage
   atomicTwapWindow: bigint;
@@ -62,6 +75,7 @@ export type PoolState = {
   isSystemSuspended: boolean;
   // proxyAddress -> boolean. It requires both exchange and active values to be true
   areSynthsSuspended: Record<string, boolean>;
+  exchangeDynamicFeeConfig: ExchangeDynamicFeeConfig;
 };
 
 export type OnchainConfigValues = Pick<
@@ -72,6 +86,7 @@ export type OnchainConfigValues = Pick<
   | 'atomicEquivalentForDexPricing'
   | 'atomicTwapWindow'
   | 'aggregatorDecimals'
+  | 'exchangeDynamicFeeConfig'
 > & {
   lastUpdatedInMs: number;
 
