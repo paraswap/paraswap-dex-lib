@@ -316,6 +316,10 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   ): Promise<PoolLiquidity[]> {
     const _tokenAddress = tokenAddress.toLowerCase();
 
+    if (this.onchainConfigValues.addressToKey[_tokenAddress] === undefined) {
+      return [];
+    }
+
     return [
       {
         exchange: this.dexKey,
