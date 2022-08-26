@@ -251,15 +251,8 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     const { exchange, srcKey, destKey, exchangeType } = data;
 
     const payload = this.abiCoder.encodeParameter(
-      'tuple(bytes32 trackingCode, address rewardAddress, bytes32 srcCurrencyKey, bytes32 destCurrencyKey, int8 exchangeType)',
-      [
-        this.config.trackingCode,
-        // TODO: Set proper address when adding Optimism
-        NULL_ADDRESS,
-        srcKey,
-        destKey,
-        exchangeType,
-      ],
+      'tuple(bytes32 trackingCode, bytes32 srcCurrencyKey, bytes32 destCurrencyKey, int8 exchangeType)',
+      [this.config.trackingCode, srcKey, destKey, exchangeType],
     );
 
     return {
