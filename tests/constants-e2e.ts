@@ -661,7 +661,7 @@ export const Holders: {
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x3a3ee61f7c6e1994a2001762250a5e17b2061b6d',
     sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
-    sETH: '0xa7b9789fe2603aa1138154306f208e8c110435be',
+    sETH: '0x5fe009d78afabc1b04abd2d4361f8e95cd402648',
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
   },
   [Network.ROPSTEN]: {
