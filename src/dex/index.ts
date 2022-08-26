@@ -98,7 +98,6 @@ export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
   provider: Web3,
-  dexHelper?: IDexHelper,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -201,9 +200,6 @@ export class DexAdapterService {
         this.dexHelper.config.data.augustusAddress,
         this.network,
         this.dexHelper.web3Provider,
-        // Temporary addition before moving to dex-lib
-        // TODO: Remove this line after SpiritSwap migration
-        this.dexHelper,
       );
     }
 
