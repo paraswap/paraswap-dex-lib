@@ -9,7 +9,7 @@ export class FullMath {
       result <= BI_MAX_UINT256,
       '',
       { result, BI_MAX_UINT: BI_MAX_UINT256 },
-      'result <= BI_MAX_UINT',
+      'result <= BI_MAX_UINT256',
     );
 
     return result;
