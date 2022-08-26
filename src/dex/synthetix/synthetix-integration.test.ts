@@ -176,13 +176,15 @@ describe('Synthetix', function () {
       );
     });
     it('getTopPoolsForToken', async function () {
-      const poolLiquidity = await synthetix.getTopPoolsForToken(
+      const newSynthetix = new Synthetix(network, dexKey, dexHelper);
+      await newSynthetix.updatePoolState();
+      const poolLiquidity = await newSynthetix.getTopPoolsForToken(
         Tokens[network][srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!synthetix.hasConstantPriceLargeAmounts) {
+      if (!newSynthetix.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,
@@ -215,12 +217,14 @@ describe('Synthetix', function () {
         updateFrequency,
       );
       await synthState.updateOnchainConfigValues();
+      // @ts-expect-error
       const firstUpdate = synthState._onchainConfigValues.updatedAtInMs;
       const secondUpdateTime = await new Promise<number>(resolve => {
         // wait before triggering the update
         setTimeout(() => {
           synthState.onchainConfigValues;
           setTimeout(() => {
+            // @ts-expect-error
             const secondUpdate = synthState._onchainConfigValues.updatedAtInMs;
             resolve(secondUpdate);
             // I expect that in 1 sec the state will be updated after the request
@@ -270,13 +274,15 @@ describe('Synthetix', function () {
       );
     });
     it('getTopPoolsForToken', async function () {
-      const poolLiquidity = await synthetix.getTopPoolsForToken(
+      const newSynthetix = new Synthetix(network, dexKey, dexHelper);
+      await newSynthetix.updatePoolState();
+      const poolLiquidity = await newSynthetix.getTopPoolsForToken(
         Tokens[network][srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!synthetix.hasConstantPriceLargeAmounts) {
+      if (!newSynthetix.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,
