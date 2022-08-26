@@ -350,6 +350,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x74b23882a30290451A17c44f4F05243b6b58C76d',
       decimals: 18,
     },
+    SPIRIT: {
+      address: '0x5cc61a78f164885776aa610fb0fe1257df78e59b',
+      decimals: 18,
+    },
   },
   [Network.BSC]: {
     DAI: {
@@ -700,6 +704,7 @@ export const Holders: {
     FRAX: '0x4423ac71f53ca92e2f2be5917a9c2468e7412f4a',
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
     WETH: '0x2400bb4d7221ba530daee061d5afe219e9223eae',
+    SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
