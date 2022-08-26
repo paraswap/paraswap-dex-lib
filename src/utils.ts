@@ -76,10 +76,10 @@ export function _require(
     const keyValueStr = Object.entries(values)
       .map(([k, v]) => `${k}=${stringifyWithBigInt(v)}`)
       .join(', ');
-    receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated`;
+    receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated. `;
   }
   if (!b)
     throw new Error(
-      `${receivedValues}. Error message: ${message ? message : 'undefined'}`,
+      `${receivedValues}Error message: ${message ? message : 'undefined'}`,
     );
 }

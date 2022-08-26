@@ -11,7 +11,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
       initCode:
         '0x57ae84018c47ebdaf7ddb2d1216c8c36389d12481309af65428eb6d460f747a4',
-      // Fixed Fees, same for volative and stable pools
+      // Fixed Fees, same for volatile and stable pools
       feeCode: 1,
       poolGasCost: 180 * 1000,
     },
@@ -24,7 +24,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       router: '0xc8DB3501281c192fFE9697A1b905b161ca0cd64d',
       initCode:
         '0x009bce6d7eb00d3d075e5bd9851068137f44bba159f1cde806a268e20baaf2e8',
-      // Fixed Fees, same for volative and stable pools
+      // Fixed Fees, same for volatile and stable pools
       feeCode: 5,
       poolGasCost: 180 * 1000,
     },
