@@ -6,7 +6,7 @@ import { NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';
 import { BigIntAsString, Logger, Token } from '../../types';
-import { _require } from '../../utils';
+import { getBigIntPow, _require } from '../../utils';
 import { dexPriceAggregatorUniswapV3 } from './contract-math/DexPriceAggregatorUniswapV3';
 import { OracleLibrary } from './contract-math/OracleLibrary';
 import {
@@ -39,6 +39,7 @@ import {
 import {
   Contracts,
   EXCHANGE_RATES_CONTRACT_NAME,
+  LIQUIDITY_ESTIMATION_FACTOR,
   ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS,
   SETTING_ATOMIC_EQUIVALENT_FOR_DEX_PRICING,
   SETTING_ATOMIC_EXCHANGE_FEE_RATE,
@@ -356,6 +357,7 @@ export class SynthetixState {
       targetAddress,
       dexPriceAggregatorAddress,
       atomicTwapWindow,
+      sUSDTotalSupply,
       ...synthsAddresses
     ] = (
       await this.multiWrapper.tryAggregate<string | bigint>(
@@ -363,7 +365,13 @@ export class SynthetixState {
         this._buildInitialStateCallData(),
         blockNumber,
       )
-    ).map(d => d.returnData) as [Address, Address, bigint, ...Address[]];
+    ).map(d => d.returnData) as [
+      Address,
+      Address,
+      bigint,
+      bigint,
+      ...Address[]
+    ];
 
     const [
       synthetixAddress,
@@ -549,6 +557,15 @@ export class SynthetixState {
       aggregatorsAddresses,
       systemStatusAddress,
       exchangeDynamicFeeConfig,
+      liquidityEstimationInUSD:
+        Number(
+          sUSDTotalSupply /
+            getBigIntPow(
+              this.config.synths.filter(
+                s => s.address === this.config.sUSDAddress,
+              )[0].decimals,
+            ),
+        ) * LIQUIDITY_ESTIMATION_FACTOR,
     };
   }
 
@@ -899,6 +916,11 @@ export class SynthetixState {
           encodeStringToBytes32(SETTING_CONTRACT_NAME),
           encodeStringToBytes32(SETTING_ATOMIC_TWAP_WINDOW),
         ]),
+        decodeFunction: uintDecode,
+      },
+      {
+        target: this.config.sUSDAddress,
+        callData: this.combinedIface.encodeFunctionData('totalSupply', []),
         decodeFunction: uintDecode,
       },
       ...this.config.synths.map(synth => ({

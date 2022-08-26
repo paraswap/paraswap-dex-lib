@@ -30,3 +30,7 @@ export const SETTING_EXCHANGE_MAX_DYNAMIC_FEE = 'exchangeMaxDynamicFee';
 // Once for every 24 hours
 export const ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS = 1000 * 60 * 60 * 24;
 export const OPTIMISM_STATE_TTL_IN_S = 30;
+
+// We are doubling the liquidity of sUSD to estimate pool liquidity because in exchange
+// there are two tokens involved
+export const LIQUIDITY_ESTIMATION_FACTOR = 2;

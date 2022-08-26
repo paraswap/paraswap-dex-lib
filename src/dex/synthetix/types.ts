@@ -100,6 +100,7 @@ export type OnchainConfigValues = Pick<
   poolKeys: PoolKey[];
   aggregatorsAddresses: Record<string, string>;
   systemStatusAddress: Address;
+  liquidityEstimationInUSD: number;
 };
 
 export type SynthetixData = {

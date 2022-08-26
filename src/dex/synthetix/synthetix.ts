@@ -327,7 +327,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         connectorTokens: this.config.synths.filter(
           s => s.address !== _tokenAddress,
         ),
-        liquidityUSD: Number.MAX_SAFE_INTEGER,
+        liquidityUSD: this.onchainConfigValues.liquidityEstimationInUSD,
       },
     ];
   }
