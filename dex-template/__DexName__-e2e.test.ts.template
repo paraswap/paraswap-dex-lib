@@ -135,7 +135,7 @@ async function testForNetwork(
 describe('__DexName__ E2E', () => {
   const dexKey = '__DexName__';
 
-  describe('__DexName__ MAINNET', () => {
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;

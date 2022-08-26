@@ -23,6 +23,8 @@ export class __DexName__
   protected eventPools: __DexName__EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
+  // TODO: set true here if protocols works only with wrapped asset
+  readonly needWrapNative = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(__DexName__Config);

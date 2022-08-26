@@ -1,8 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { __DexName__EventPool } from './__DexNameParam__';
-import { __DexName__Config } from './config';
+import { __DexName__EventPool } from './__DexNameParam__-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -50,6 +49,7 @@ async function fetchPoolState(
   poolAddress: string,
 ): Promise<PoolState> {
   // TODO: complete me!
+  return {};
 }
 
 // eventName -> blockNumbers
@@ -66,8 +66,6 @@ describe('__DexName__ EventPool Mainnet', function () {
   const eventsToTest: Record<Address, EventMappings> = {
     // TODO: complete me!
   };
-
-  let __DexNameCamel__: __DexName__EventPool;
 
   beforeEach(async () => {
     __DexNameCamel__Pool = new __DexName__EventPool(

@@ -12,7 +12,6 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { Holders } from '../tests/constants-e2e';
 
 /*
   README
@@ -128,7 +127,11 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+  if (__DexNameCamel__.hasConstantPriceLargeAmounts) {
+    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+  } else {
+    checkPoolPrices(poolPrices!, amounts, side, dexKey);
+  }
 
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
@@ -221,17 +224,17 @@ describe('__DexName__', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const new__DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
-      if (new__DexNameCamel__.updatePoolState) {
-        await new__DexNameCamel__.updatePoolState();
+      const new__DexName__ = new __DexName__(network, dexKey, dexHelper);
+      if (new__DexName__.updatePoolState) {
+        await new__DexName__.updatePoolState();
       }
-      const poolLiquidity = await new__DexNameCamel__.getTopPoolsForToken(
+      const poolLiquidity = await new__DexName__.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!new__DexNameCamel__.hasConstantPriceLargeAmounts) {
+      if (!new__DexName__.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,
