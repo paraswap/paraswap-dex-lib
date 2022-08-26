@@ -4,6 +4,7 @@ dotenv.config();
 import { __DexName__EventPool } from './__DexNameParam__';
 import { __DexName__Config } from './config';
 import { Network } from '../../constants';
+import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
@@ -42,9 +43,6 @@ import { PoolState } from './types';
 */
 
 jest.setTimeout(50 * 1000);
-const dexKey = '__DexName__';
-const network = Network.MAINNET;
-const config = __DexName__Config[dexKey][network];
 
 async function fetchPoolState(
   __DexNameCamel__Pools: __DexName__EventPool,
@@ -54,36 +52,60 @@ async function fetchPoolState(
   // TODO: complete me!
 }
 
-describe('__DexName__ Event', function () {
-  const blockNumbers: { [eventName: string]: number[] } = {
+// eventName -> blockNumbers
+type EventMappings = Record<string, number[]>;
+
+describe('__DexName__ EventPool Mainnet', function () {
+  const dexKey = '__DexName__';
+  const network = Network.MAINNET;
+  const dexHelper = new DummyDexHelper(network);
+  const logger = dexHelper.getLogger(dexKey);
+  let __DexNameCamel__Pool: __DexName__EventPool;
+
+  // poolAddress -> EventMappings
+  const eventsToTest: Record<Address, EventMappings> = {
     // TODO: complete me!
   };
 
-  describe('__DexName__EventPool', function () {
-    Object.keys(blockNumbers).forEach((event: string) => {
-      blockNumbers[event].forEach((blockNumber: number) => {
-        it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
-          const dexHelper = new DummyDexHelper(network);
-          const logger = dexHelper.getLogger(dexKey);
+  let __DexNameCamel__: __DexName__EventPool;
 
-          const __DexNameCamel__Pools = new __DexName__EventPool(
-            dexKey,
-            network,
-            dexHelper,
-            logger,
-          );
-
-          await testEventSubscriber(
-            __DexNameCamel__Pools,
-            __DexNameCamel__Pools.addressesSubscribed,
-            (_blockNumber: number) =>
-              fetchPoolState(__DexNameCamel__Pools, _blockNumber, poolAddress),
-            blockNumber,
-            `${dexKey}_${poolAddress}`,
-            dexHelper.provider,
-          );
-        });
-      });
-    });
+  beforeEach(async () => {
+    __DexNameCamel__Pool = new __DexName__EventPool(
+      dexKey,
+      network,
+      dexHelper,
+      logger,
+      /* TODO: Put here additional constructor arguments if needed */
+    );
   });
+
+  Object.entries(eventsToTest).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async function () {
+                  await testEventSubscriber(
+                    __DexNameCamel__Pool,
+                    __DexNameCamel__Pool.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchPoolState(
+                        __DexNameCamel__Pool,
+                        _blockNumber,
+                        poolAddress,
+                      ),
+                    blockNumber,
+                    `${dexKey}_${poolAddress}`,
+                    dexHelper.provider,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
 });
