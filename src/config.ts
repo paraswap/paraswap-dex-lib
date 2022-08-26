@@ -38,7 +38,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       Adapter01: '0xBdd13a9dd364E5557e0710fC1d2Ac145B5e8f3bE',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-      Adapter03: '0xe5993623FF3ecD1f550124059252dDff804b3879',
+      Adapter03: '0xe609AEAb29245b235F63dDc23a34eD911524818a',
       BuyAdapter: '0x737E642eec6e5bD675022ADC6D726EB19FF74383',
     },
     uniswapV2ExchangeRouterAddress:
@@ -76,7 +76,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
     adapterAddresses: {
-      BscAdapter01: '0xC9229EeC07B176AcC448BE33177c2834c9575ec5',
+      BscAdapter01: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
       BscBuyAdapter: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
     },
     uniswapV2ExchangeRouterAddress:
@@ -96,7 +96,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
       PolygonAdapter01: '0xa41B5Ab708fe1fe11CD6121006497b8549e8A695',
-      PolygonAdapter02: '0xAD1732884CF5aAB27B293707757a9b9011611bE6',
+      PolygonAdapter02: '0x74Ef12c4aCb03D131bb7cf2ff5cE7D03675d91Fa',
       PolygonBuyAdapter: '0xD7d3E2491cc495faAa9a770cBDC7535fD1446D8C',
     },
     uniswapV2ExchangeRouterAddress:
@@ -115,7 +115,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
     privateHttpProvider: process.env.HTTP_PROVIDER_43114,
     adapterAddresses: {
-      AvalancheAdapter01: '0xb41Ec6e014e2AD12Ae8514216EAb2592b74F19e7',
+      AvalancheAdapter01: '0x6e8b66CC92fCD7fE1332664182BEB1161DBFc82d',
       AvalancheBuyAdapter: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     },
     uniswapV2ExchangeRouterAddress:
@@ -134,7 +134,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
     adapterAddresses: {
-      FantomAdapter01: '0x564B759c1A7976476649452e804A13B963610065',
+      FantomAdapter01: '0x2A1b5Da9E380314602579aD269A99981DD01409c',
       FantomBuyAdapter: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
     },
     uniswapV2ExchangeRouterAddress:
@@ -172,7 +172,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
     privateHttpProvider: process.env.HTTP_PROVIDER_10,
     adapterAddresses: {
-      OptimismAdapter01: '0xBc30AF9080cF750fb96fF831B7B1c52e5b604Ac7',
+      OptimismAdapter01: '0x0aA8b0ef37c482ff80f9D214F9E09B2Aef089265',
       OptimismBuyAdapter: '0xeef30844023B355408C44224B9d4031609D316d4',
     },
     uniswapV2ExchangeRouterAddress:
