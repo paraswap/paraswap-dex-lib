@@ -30,7 +30,7 @@ export const SynthetixConfig: DexConfigMap<DexParams> = {
         { address: '0x00B8D5a5e1Ac97Cb4341c4Bc4367443c8776e8d9', decimals: 18 }, // sAAVE
         { address: '0xB2b42B231C68cbb0b4bF2FFEbf57782Fd97D3dA4', decimals: 18 }, // sAVAX
         { address: '0x298B9B95708152ff6968aafd889c6586e9169f1D', decimals: 18 }, // sBTC
-        { address: '0xE405de8F52ba7559f9df3C368500B6E6ae6Cee49', decimals: 18 }, // sBTC
+        { address: '0xE405de8F52ba7559f9df3C368500B6E6ae6Cee49', decimals: 18 }, // sETH
         { address: '0xFBc4198702E81aE77c06D58f81b629BDf36f0a71', decimals: 18 }, // sEUR
         { address: '0xa3A538EA5D5838dC32dde15946ccD74bDd5652fF', decimals: 18 }, // sINR
         { address: '0xc5Db22719A06418028A40A9B5E9A7c02959D0d08', decimals: 18 }, // sLINK
