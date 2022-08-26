@@ -204,7 +204,7 @@ export class SynthetixState {
     const uniswapV3Slot0: Record<Address, Slot0> = {};
     const tickCumulatives: Record<Address, Record<0 | 1, bigint>> = {};
 
-    _.chunk(slot0AndTickCumulatives, packCounter).map((result, i) => {
+    _.chunk(slot0AndTickCumulatives, packCounter).forEach((result, i) => {
       const address = addressesFromPK[i];
       const [tickCumulative, slot0] = result as [Record<0 | 1, bigint>, Slot0];
 
