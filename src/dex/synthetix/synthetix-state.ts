@@ -59,7 +59,7 @@ export class SynthetixState {
   // updatedAt may be blockNumber or timestamp
   fullState?: { blockNumber: number; updatedAtInS: number; values: PoolState };
 
-  _onchainConfigValues: {
+  private readonly _onchainConfigValues: {
     values?: OnchainConfigValues;
     updatedAtInMs: number;
     isUpdating: boolean;

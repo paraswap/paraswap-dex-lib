@@ -82,10 +82,6 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   }
 
   get onchainConfigValues() {
-    if (this.synthetixState.onchainConfigValues === undefined)
-      throw new Error(
-        `${this.dexKey} is not initialized, but received pricing request`,
-      );
     return this.synthetixState.onchainConfigValues;
   }
 
@@ -300,10 +296,17 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   }
 
   async updatePoolState(): Promise<void> {
-    if (this.synthetixState.onchainConfigValues === undefined) {
-      await this.initializePricing(
-        await this.dexHelper.web3Provider.eth.getBlockNumber(),
-      );
+    try {
+      this.synthetixState.onchainConfigValues;
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message.endsWith('onchain config values are not initialized')
+      ) {
+        await this.initializePricing(
+          await this.dexHelper.web3Provider.eth.getBlockNumber(),
+        );
+      }
     }
   }
 
