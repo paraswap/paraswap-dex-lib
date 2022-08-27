@@ -9,7 +9,7 @@ import {
   Token,
 } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
-import { UniswapData, UniswapV2Data } from '../types';
+import { UniswapData, UniswapPool, UniswapV2Data } from '../types';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../../utils';
 import coneFactoryABI from '../../../abi/uniswap-v2/ConeFactory.json';
 import conePairABI from '../../../abi/uniswap-v2/ConePair.json';
@@ -44,8 +44,28 @@ export interface ConePoolState {
 const iface = new Interface(conePairABI);
 const coder = new AbiCoder();
 
+function encodePools(
+  pools: UniswapPool[],
+  feeFactor: number,
+): NumberAsString[] {
+  return pools.map(({ fee, direction, address }) => {
+    // fee at Cone is the just rate (10_000 is 1 uniswap like fee, 2_000 - 5 fee)
+    const feeFactorBI = BigInt(feeFactor);
+    // TODO for Paraswap: Using this formula fee value passed to Swapper contract
+    //  can not be greater than 10000 (fee factor), but it can be greater at the pool.
+    //  So, I guess better to improve Swapper contract to accept Cone fee rate
+    const feeBI = BigInt(Math.min(fee, feeFactor));
+    const amountWithFee = feeFactorBI - feeFactorBI / feeBI;
+    return (
+      (amountWithFee << 161n) +
+      ((direction ? 0n : 1n) << 160n) +
+      BigInt(address)
+    ).toString();
+  });
+}
+
 export class Cone extends UniswapV2 {
-  feeFactor = 0;
+  feeFactor = 10_000;
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(ConeConfig);
 
@@ -503,8 +523,23 @@ export class Cone extends UniswapV2 {
     data: UniswapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    return super.getSimpleParam(src, dest, srcAmount, destAmount, data, side);
+    const pools = encodePools(data.pools, this.feeFactor);
+    const weth = this.getWETHAddress(src, dest, data.weth);
+    const swapData = this.exchangeRouterInterface.encodeFunctionData('swap', [
+      src,
+      srcAmount,
+      destAmount,
+      weth,
+      pools,
+    ]);
+    return this.buildSimpleParamWithoutWETHConversion(
+      src,
+      srcAmount,
+      dest,
+      destAmount,
+      swapData,
+      data.router,
+    );
   }
 
   getAdapterParam(
