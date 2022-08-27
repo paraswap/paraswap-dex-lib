@@ -221,6 +221,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
       decimals: 18,
     },
+    FXS: {
+      address: '0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -611,6 +615,7 @@ export const Holders: {
     DAI: '0x0f4ee9631f4be0a63756515141281a3e2b293bbe',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
+    FXS: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
     BAL: '0x7514f531ef3721b8d2ff8d3a841d7c05011eecca',
     WISE: '0x25c315e0758beeab30ee048a4e2080e7084b64b3',

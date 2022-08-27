@@ -258,6 +258,17 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  Fraxswap: {
+    [Network.MAINNET]: {
+      subgraphURL:
+        'https://gateway.thegraph.com/api/9c670884f39d914802bc0a7cd9d74e4d/subgraphs/id/9MAjo2x53jaxttJpShGh2EfSVAoDMW7vK36uU5cawQz2',
+      factoryAddress: '0xB076b06F669e682609fb4a8C6646D2619717Be4b',
+      initCode:
+        '0x56d8137e6dc7681d67b2c0b0ecb99a25da51343f540d36e93a2d172fea4597f7',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
+  },
   JulSwap: {
     [Network.BSC]: {
       // subgraphURL:
