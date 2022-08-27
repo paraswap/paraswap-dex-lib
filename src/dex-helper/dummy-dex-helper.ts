@@ -11,6 +11,11 @@ import { Address, LoggerConstructor, Token } from '../types';
 import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
+// TODO remove
+log4js.configure({
+  appenders: { out: { type: 'stdout' } },
+  categories: { default: { appenders: ['out'], level: 'info' } },
+});
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';

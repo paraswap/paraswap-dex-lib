@@ -46,6 +46,7 @@ import Web3 from 'web3';
 import { Solidly } from './solidly/solidly';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
+import { Cone } from './uniswap-v2/cone/cone';
 
 const LegacyDexes = [
   Curve,
@@ -90,6 +91,7 @@ const Dexes = [
   Solidly,
   SpiritSwapV2,
   Velodrome,
+  Cone,
 ];
 
 export type LegacyDexConstructor = new (
