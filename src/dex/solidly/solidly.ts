@@ -32,7 +32,9 @@ export class Solidly extends UniswapV2 {
   volatileFee?: number;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2']));
+    getDexKeysWithNetwork(
+      _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone']),
+    );
 
   constructor(
     protected network: Network,
