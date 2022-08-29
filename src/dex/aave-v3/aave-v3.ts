@@ -33,13 +33,12 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   private pool: Interface;
   private wethGateway: Interface;
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected config = Config[dexKey][network],
-    protected adapters = Adapters[network],
+    protected dexKey: string,
+    protected config = Config[dexKey][dexHelper.network],
+    protected adapters = Adapters[dexHelper.network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.wethGateway = new Interface(WETH_GATEWAY_ABI);
     this.pool = new Interface(POOL_ABI);

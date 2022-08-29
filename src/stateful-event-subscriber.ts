@@ -27,17 +27,27 @@ export abstract class StatefulEventSubscriber<State>
 
   public readonly name: string;
 
+  protected network: number;
+
+  private mapKey: string;
+
   constructor(
-    _name: string,
     protected dexHelper: IDexHelper,
+    protected parentName: string,
+    protected poolKey: string,
     protected logger: Logger,
     private alwaysReturnCurrentState = false,
   ) {
-    this.name = `${CACHE_PREFIX}_${dexHelper.network}_${_name}`.toLowerCase();
+    this.name =
+      `${CACHE_PREFIX}_${dexHelper.network}_${parentName}_${poolKey}`.toLowerCase();
+    this.mapKey =
+      `${CACHE_PREFIX}_${dexHelper.network}_${parentName}_states`.toLowerCase();
+    this.poolKey = this.poolKey.toLowerCase();
+    this.network = dexHelper.network;
+
     if (dexHelper.config.isSlave) {
       this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
-      // this.logger.debug(`subscribe to ${this.name}`);
-      this.dexHelper.cache.rawget(this.name).then(stateAsStr => {
+      this.dexHelper.cache.hget(this.mapKey, this.poolKey).then(stateAsStr => {
         if (stateAsStr) {
           try {
             this.state = Utils.Parse(stateAsStr);
@@ -91,7 +101,7 @@ export abstract class StatefulEventSubscriber<State>
       throw new Error('send undefined state');
     }
     this.dexHelper.cache.publish(this.name, stateAsStr);
-    this.dexHelper.cache.rawsetex(this.name, stateAsStr);
+    this.dexHelper.cache.hset(this.mapKey, this.poolKey, stateAsStr);
 
     // this.logger.debug(`forward state for ${this.name}`);
   }

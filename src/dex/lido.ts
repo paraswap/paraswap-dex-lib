@@ -6,6 +6,7 @@ import { IDexTxBuilder } from './idex';
 import stETHAbi from '../abi/stETH.json';
 import { NULL_ADDRESS } from '../constants';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export const stETH: any = {
   1: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -23,11 +24,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
 
   needWrapNative = false;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
+  constructor(private dexHelper: IDexHelper, dexKey: string) {
     this.stETHInterface = new Interface(stETHAbi as JsonFragment[]);
   }
 
@@ -40,7 +37,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: stETH[this.network],
+      targetExchange: stETH[this.dexHelper.network],
       payload: '0x',
       networkFee: '0',
     };
@@ -60,7 +57,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
     );
 
     return {
-      callees: [stETH[this.network]],
+      callees: [stETH[this.dexHelper.network]],
       calldata: [swapData],
       values: [srcAmount],
       networkFee: '0',

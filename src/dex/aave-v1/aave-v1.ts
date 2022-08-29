@@ -44,11 +44,10 @@ export class AaveV1
   aContract: Interface;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper, // TODO: add any additional optional params to support other fork DEXes
+    protected dexKey: string,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V1 as JsonFragment[]);
     this.aContract = new Interface(ERC20 as JsonFragment[]);

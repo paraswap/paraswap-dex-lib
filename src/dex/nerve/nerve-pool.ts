@@ -1,8 +1,8 @@
-import _ from 'lodash';
+import _, { map } from 'lodash';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
-import { Address, Log, Logger } from '../../types';
+import { Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { EventHandler, NervePoolConfig, PoolState } from './types';
@@ -28,14 +28,16 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   private _tokenAddresses?: string[];
 
   constructor(
-    protected parentName: string,
-    protected network: number,
     protected dexHelper: IDexHelper,
+    protected parentName: string,
     logger: Logger,
     protected poolName: string,
-    public poolConfig: NervePoolConfig = NerveConfig[parentName][network]
-      .poolConfigs[poolName],
-    protected poolABI: JsonFragment[] = NerveConfig[parentName][network].abi,
+    public poolConfig: NervePoolConfig = NerveConfig[parentName][
+      dexHelper.config.data.network
+    ].poolConfigs[poolName],
+    protected poolABI: JsonFragment[] = NerveConfig[parentName][
+      dexHelper.config.data.network
+    ].abi,
   ) {
     if (poolConfig === undefined) {
       logger.error(
@@ -43,7 +45,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       );
     }
 
-    super(`${parentName}_${poolConfig.name}`, dexHelper, logger);
+    super(dexHelper, parentName, poolName, logger);
     this.math = new NervePoolMath(this.name, this.logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);

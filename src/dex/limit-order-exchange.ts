@@ -1,7 +1,6 @@
-import Web3 from 'web3';
 import { LIMIT_ORDER_PROVIDERS } from '../constants';
+import { IDexHelper } from '../dex-helper';
 import { ILimitOrderProvider } from '../dex-helper/ilimit-order-provider';
-import { Address } from '../types';
 import { SimpleExchange } from './simple-exchange';
 
 export abstract class LimitOrderExchange<
@@ -13,8 +12,8 @@ export abstract class LimitOrderExchange<
     LimitOrderPriceSummaryResponse
   >;
 
-  constructor(augustusAddress: Address, provider: Web3) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper, dexKey: string) {
+    super(dexHelper, dexKey);
   }
 
   abstract get limitOrderProviderName(): LIMIT_ORDER_PROVIDERS;

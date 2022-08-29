@@ -90,17 +90,17 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
   bytes32Tout =
     '0x746f757400000000000000000000000000000000000000000000000000000000'; // bytes32('tout')
   bytes32Tin =
-    '0x74696e0000000000000000000000000000000000000000000000000000000000'; // bytes32('tin')
+    '0x7469 6e0000000000000000000000000000000000000000000000000000000000'; // bytes32('tin')
 
   constructor(
-    protected parentName: string,
-    protected network: number,
     dexHelper: IDexHelper,
-    logger: Logger,
+    protected parentName: string,
+    mapKey: string,
     public poolConfig: PoolConfig,
     protected vatAddress: Address,
+    logger: Logger,
   ) {
-    super(`${parentName}_${poolConfig.psmAddress}`, dexHelper, logger);
+    super(dexHelper, mapKey, `${poolConfig.psmAddress}`, logger);
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];
@@ -196,26 +196,28 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network],
-    protected dai: Token = MakerPsmConfig[dexKey][network].dai,
-    protected vatAddress: Address = MakerPsmConfig[dexKey][network].vatAddress,
-    protected poolConfigs: PoolConfig[] = MakerPsmConfig[dexKey][network].pools,
+    protected dexKey: string,
+    protected adapters = Adapters[dexHelper.network],
+    protected dai: Token = MakerPsmConfig[dexKey][dexHelper.network].dai,
+    protected vatAddress: Address = MakerPsmConfig[dexKey][dexHelper.network]
+      .vatAddress,
+    protected poolConfigs: PoolConfig[] = MakerPsmConfig[dexKey][
+      dexHelper.network
+    ].pools,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
     poolConfigs.forEach(
       p =>
         (this.eventPools[p.gem.address.toLowerCase()] = new MakerPsmEventPool(
-          dexKey,
-          network,
           dexHelper,
-          this.logger,
+          this.dexKey,
+          dexKey,
           p,
           this.vatAddress,
+          this.logger,
         )),
     );
   }

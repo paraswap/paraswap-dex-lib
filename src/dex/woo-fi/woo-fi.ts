@@ -76,13 +76,12 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
-    readonly config = WooFiConfig[dexKey][network],
+    protected dexKey: string,
+    protected adapters = Adapters[dexHelper.network] || {},
+    readonly config = WooFiConfig[dexKey][dexHelper.network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
     // Normalise once all config addresses and use across all scenarios

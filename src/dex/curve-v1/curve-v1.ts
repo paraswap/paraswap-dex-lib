@@ -102,14 +102,13 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     getDexKeysWithNetwork(CurveV1Config);
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    dexConfig = CurveV1Config[dexKey][network],
+    protected dexKey: string,
+    dexConfig = CurveV1Config[dexKey][dexHelper.network],
 
-    protected adapters = Adapters[network],
+    protected adapters = Adapters[dexHelper.network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.pools = Object.keys(dexConfig.pools).reduce<
       Record<string, PoolConfig>
     >((acc, key) => {
@@ -412,12 +411,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     if (!blockNumber) return unavailablePools;
     let poolsToFetch: (CurvePool | CurveMetapool)[] = [];
     for (const poolAddress of poolAddresses) {
-      const key =
-        `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolAddress}`.toLowerCase();
-
       // Check if the pool is already tracked
-      await this.dexHelper.cache.rawsetex(
-        key,
+      await this.dexHelper.cache.hset(
+        this.dexmapKey,
+        poolAddress,
         JSON.stringify({
           address: poolAddress,
         }),
@@ -458,15 +455,20 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   }
 
   async addMasterPool(poolKey: string) {
-    const key =
-      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
-    const poolAddressJson = await this.dexHelper.cache.rawget(key);
+    const poolAddressJson = await this.dexHelper.cache.hget(
+      this.dexmapKey,
+      poolKey,
+    );
     if (!poolAddressJson) {
-      this.logger.warn(`did not find poolconfig with ${key}`);
+      this.logger.warn(
+        `did not find poolconfig with ${this.dexmapKey} ${poolKey}`,
+      );
       return;
     }
 
-    this.logger.info(`starting to listen to new pool: ${key}`);
+    this.logger.info(
+      `starting to listen to new pool: ${this.dexmapKey} ${poolKey}`,
+    );
     const poolAddress = JSON.parse(poolAddressJson).address;
     this.batchCatchUpPools(
       [poolAddress],

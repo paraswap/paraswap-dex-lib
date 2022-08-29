@@ -97,14 +97,14 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
   }
 
   constructor(
-    parentName: string,
     dexHelper: IDexHelper,
-    logger: Logger,
+    parentName: string,
     public pool: PoolStateAsString,
     public identifier: string,
     private balancerMulticall: Contract,
+    logger: Logger,
   ) {
-    super(`${parentName}_${pool.id}`, dexHelper, logger);
+    super(dexHelper, parentName, pool.id, logger);
     const tokensAsString = pool.tokens.map(t => {
       const tokenAsString = {
         address: t.address,
@@ -224,9 +224,8 @@ export class BalancerV1EventPool {
   private balancerMulticall: Contract;
 
   constructor(
-    protected parentName: string,
-    protected network: number,
     protected dexHelper: IDexHelper,
+    private dexKey: string,
     protected logger: Logger,
     protected factoryAddress: Address = defaultfactoryAddress,
     protected multicallAddress: Address = defaultMulticallAddress,
@@ -317,7 +316,7 @@ export class BalancerV1EventPool {
     // const poolsHelper = new SOR.POOLS();
     const allPoolsNonZeroBalances =
       await this.dexHelper.httpRequest.get<PoolStatesAsString>(
-        poolUrls[this.network],
+        poolUrls[this.dexHelper.config.data.network],
         POOL_FETCH_TIMEOUT,
       );
 
@@ -338,12 +337,12 @@ export class BalancerV1EventPool {
 
     allPoolsNonZeroBalancesChain.pools.forEach(pool => {
       const poolState = new BalancerV1PoolState(
-        this.parentName,
         this.dexHelper,
-        this.logger,
+        this.dexKey,
         pool,
         BalancerV1.getIdentifier(dexKey, pool.id),
         this.balancerMulticall,
+        this.logger,
       );
 
       poolState.setState(poolState.getMinimalPoolState(), blockNumber);
@@ -480,21 +479,15 @@ export class BalancerV1
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
+    dexKey: string,
+    protected adapters = Adapters[dexHelper.network] || {},
     protected subgraphURL: string = BalancerV1Config[dexKey] &&
-      BalancerV1Config[dexKey][network].subgraphURL,
+      BalancerV1Config[dexKey][dexHelper.network].subgraphURL,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new BalancerV1EventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
+    this.eventPools = new BalancerV1EventPool(dexHelper, dexKey, this.logger);
     this.exchangeRouterInterface = new Interface(BalancerV1ExchangeProxyABI);
   }
 

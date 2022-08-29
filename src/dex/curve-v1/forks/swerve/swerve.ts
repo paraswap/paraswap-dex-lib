@@ -48,13 +48,12 @@ export class Swerve extends CurveV1 {
     getDexKeysWithNetwork(SwerveConfig);
 
   constructor(
-    network: Network,
-    dexKey: string,
     dexHelper: IDexHelper,
-    dexConfig = SwerveConfig[dexKey][network],
-    adapters = Adapters[network],
+    dexKey: string,
+    dexConfig = SwerveConfig[dexKey][dexHelper.network],
+    adapters = Adapters[dexHelper.network],
   ) {
-    super(network, dexKey, dexHelper, dexConfig, adapters);
+    super(dexHelper, dexKey, dexConfig, adapters);
   }
 
   getEventPoolInstance(poolAddress: string): CurvePool | null {

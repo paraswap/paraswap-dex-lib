@@ -1,10 +1,5 @@
 import { UniswapV2 } from '../uniswap-v2/uniswap-v2';
-import {
-  CACHE_PREFIX,
-  Network,
-  NULL_ADDRESS,
-  SUBGRAPH_TIMEOUT,
-} from '../../constants';
+import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -40,9 +35,8 @@ export class Solidly extends UniswapV2 {
     getDexKeysWithNetwork(_.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2']));
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
+    protected dexKey: string,
     isDynamicFees = false,
     factoryAddress?: Address,
     subgraphURL?: string,
@@ -52,43 +46,44 @@ export class Solidly extends UniswapV2 {
     routerAddress?: Address,
   ) {
     super(
-      network,
-      dexKey,
       dexHelper,
+      dexKey,
       isDynamicFees,
       factoryAddress !== undefined
         ? factoryAddress
-        : SolidlyConfig[dexKey][network].factoryAddress,
+        : SolidlyConfig[dexKey][dexHelper.network].factoryAddress,
       subgraphURL === ''
         ? undefined
         : subgraphURL !== undefined
         ? subgraphURL
-        : SolidlyConfig[dexKey][network].subgraphURL,
+        : SolidlyConfig[dexKey][dexHelper.network].subgraphURL,
       initCode !== undefined
         ? initCode
-        : SolidlyConfig[dexKey][network].initCode,
-      feeCode !== undefined ? feeCode : SolidlyConfig[dexKey][network].feeCode,
+        : SolidlyConfig[dexKey][dexHelper.network].initCode,
+      feeCode !== undefined
+        ? feeCode
+        : SolidlyConfig[dexKey][dexHelper.network].feeCode,
       poolGasCost !== undefined
         ? poolGasCost
-        : SolidlyConfig[dexKey][network].poolGasCost,
+        : SolidlyConfig[dexKey][dexHelper.network].poolGasCost,
       solidlyPairIface,
-      Adapters[network] || undefined,
+      Adapters[dexHelper.network] || undefined,
     );
 
-    this.stableFee = SolidlyConfig[dexKey][network].stableFee;
-    this.volatileFee = SolidlyConfig[dexKey][network].volatileFee;
+    this.stableFee = SolidlyConfig[dexKey][dexHelper.network].stableFee;
+    this.volatileFee = SolidlyConfig[dexKey][dexHelper.network].volatileFee;
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
       solidlyFactoryABI as any,
       factoryAddress !== undefined
         ? factoryAddress
-        : SolidlyConfig[dexKey][network].factoryAddress,
+        : SolidlyConfig[dexKey][dexHelper.network].factoryAddress,
     );
 
     this.router =
       routerAddress !== undefined
         ? routerAddress
-        : SolidlyConfig[dexKey][network].router || '';
+        : SolidlyConfig[dexKey][dexHelper.network].router || '';
   }
 
   syncFindPairSolidly(
@@ -220,15 +215,17 @@ export class Solidly extends UniswapV2 {
   }
 
   async addMasterPool(poolKey: string) {
-    const key =
-      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
-    const _pairs = await this.dexHelper.cache.rawget(key);
+    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
     if (!_pairs) {
-      this.logger.warn(`did not find poolconfig in for key ${key}`);
+      this.logger.warn(
+        `did not find poolconfig in for key ${this.dexmapKey} ${poolKey}`,
+      );
       return;
     }
 
-    this.logger.info(`starting to listen to new pool: ${key}`);
+    this.logger.info(
+      `starting to listen to new pool: ${this.dexmapKey} ${poolKey}`,
+    );
     const pair: [Token, Token] = JSON.parse(_pairs);
     this.batchCatchUpPairsSolidly(
       pair[0],

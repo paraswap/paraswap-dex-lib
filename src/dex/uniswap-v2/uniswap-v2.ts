@@ -25,7 +25,6 @@ import {
 } from './types';
 import { IDex } from '../idex';
 import {
-  CACHE_PREFIX,
   ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
@@ -82,20 +81,20 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   decoder = (log: Log) => this.iface.parseLog(log);
 
   constructor(
-    protected parentName: string,
     protected dexHelper: IDexHelper,
+    mapKey: string,
     private poolAddress: Address,
     private suffix: string,
     // feeCode is ignored if DynamicFees is set to true
     private feeCode: number,
-    logger: Logger,
     private dynamicFees = false,
+    logger: Logger,
     // feesMultiCallData is only used if dynamicFees is set to true
     private feesMultiCallEntry?: { target: Address; callData: string },
     private feesMultiCallDecoder?: (values: any[]) => number,
     private iface: Interface = uniswapV2Iface,
   ) {
-    super(`${parentName}_${poolAddress}${suffix}`, dexHelper, logger);
+    super(dexHelper, mapKey, `${poolAddress}${suffix}`, logger);
     this.addressesSubscribed.push(poolAddress);
   }
 
@@ -193,29 +192,31 @@ export class UniswapV2
     getDexKeysWithNetwork(UniswapV2Config);
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
+    dexKey: string,
     protected isDynamicFees = false,
-    protected factoryAddress: Address = UniswapV2Config[dexKey][network]
-      .factoryAddress,
+    protected factoryAddress: Address = UniswapV2Config[dexKey][
+      dexHelper.network
+    ].factoryAddress,
     protected subgraphURL: string | undefined = UniswapV2Config[dexKey] &&
-      UniswapV2Config[dexKey][network].subgraphURL,
-    protected initCode: string = UniswapV2Config[dexKey][network].initCode,
+      UniswapV2Config[dexKey][dexHelper.network].subgraphURL,
+    protected initCode: string = UniswapV2Config[dexKey][dexHelper.network]
+      .initCode,
     // feeCode is ignored when isDynamicFees is set to true
-    protected feeCode: number = UniswapV2Config[dexKey][network].feeCode,
+    protected feeCode: number = UniswapV2Config[dexKey][dexHelper.network]
+      .feeCode,
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
-      UniswapV2Config[dexKey][network].poolGasCost) ??
+      UniswapV2Config[dexKey][dexHelper.network].poolGasCost) ??
       DefaultUniswapV2PoolGasCost,
     protected decoderIface: Interface = uniswapV2Iface,
     protected adapters = (UniswapV2Config[dexKey] &&
-      UniswapV2Config[dexKey][network].adapters) ??
-      Adapters[network],
+      UniswapV2Config[dexKey][dexHelper.network].adapters) ??
+      Adapters[dexHelper.network],
     protected router = (UniswapV2Config[dexKey] &&
-      UniswapV2Config[dexKey][network].router) ??
+      UniswapV2Config[dexKey][dexHelper.network].router) ??
       dexHelper.config.data.uniswapV2ExchangeRouterAddress,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
@@ -248,21 +249,21 @@ export class UniswapV2
   ) {
     const { callEntry, callDecoder } = this.getFeesMultiCallData(pair) || {};
 
-    const key =
-      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${pair.exchange}${suffix}`.toLowerCase();
+    const poolKey = `${pair.exchange}${suffix}`.toLowerCase();
 
-    await this.dexHelper.cache.rawsetex(
-      key,
+    await this.dexHelper.cache.hset(
+      this.dexmapKey,
+      poolKey,
       JSON.stringify([pair.token0, pair.token1]),
     );
     pair.pool = new UniswapV2EventPool(
-      this.dexKey,
       this.dexHelper,
+      this.dexKey,
       pair.exchange!,
       suffix,
       feeCode,
-      this.logger,
       this.isDynamicFees,
+      this.logger,
       callEntry,
       callDecoder,
       this.decoderIface,
@@ -278,15 +279,17 @@ export class UniswapV2
   }
 
   async addMasterPool(poolKey: string) {
-    const key =
-      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
-    const _pairs = await this.dexHelper.cache.rawget(key);
+    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
     if (!_pairs) {
-      this.logger.warn(`did not find poolconfig in for key ${key}`);
+      this.logger.warn(
+        `did not find poolconfig in for key ${this.dexmapKey} ${poolKey}`,
+      );
       return;
     }
 
-    this.logger.info(`starting to listen to new pool: ${key}`);
+    this.logger.info(
+      `starting to listen to new pool: ${this.dexmapKey}${poolKey}`,
+    );
     const pair: [Token, Token] = JSON.parse(_pairs);
     this.batchCatchUpPairs(
       pair[0],

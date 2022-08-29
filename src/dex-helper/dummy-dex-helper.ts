@@ -40,11 +40,11 @@ class DummyCache implements ICache {
     return;
   }
 
-  async rawsetex(key: string, value: string): Promise<void> {
+  async hset(mapKey: string, key: string, value: string): Promise<void> {
     return;
   }
 
-  async rawget(key: string): Promise<string | null> {
+  async hget(mapKey: string, key: string): Promise<string | null> {
     return null;
   }
 

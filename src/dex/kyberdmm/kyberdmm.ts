@@ -61,13 +61,12 @@ export class KyberDmm
     getDexKeysWithNetwork(KyberDmmConfig);
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected config = KyberDmmConfig[dexKey][network],
-    protected adapters = Adapters[network],
+    protected dexKey: string,
+    protected config = KyberDmmConfig[dexKey][dexHelper.network],
+    protected adapters = Adapters[dexHelper.network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
 
     this.logger = dexHelper.getLogger(dexKey);
 
@@ -241,17 +240,17 @@ export class KyberDmm
       pair.exchanges.find(p => p === poolAddress) &&
       !(poolAddress in pair.pools)
     ) {
-      const key =
-        `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${pair.token0.address}_${pair.token1.address}`.toLowerCase();
+      const key = `${pair.token0.address}_${pair.token1.address}`.toLowerCase();
 
-      await this.dexHelper.cache.rawsetex(
+      await this.dexHelper.cache.hset(
+        this.dexmapKey,
         key,
         JSON.stringify([pair.token0, pair.token1]),
       );
 
       const pool = new KyberDmmPool(
-        this.dexKey,
         this.dexHelper,
+        this.dexKey,
         poolAddress,
         pair.token0,
         pair.token1,
@@ -266,11 +265,9 @@ export class KyberDmm
   }
 
   async addMasterPool(poolKey: string) {
-    const key =
-      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
-    const _pairs = await this.dexHelper.cache.rawget(key);
+    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
     if (!_pairs) {
-      this.logger.warn(`did not find poolconfig in for key ${key}`);
+      this.logger.warn(`did not find poolconfig in for key ${poolKey}`);
       return;
     }
     const pairs: [Token, Token] = JSON.parse(_pairs);

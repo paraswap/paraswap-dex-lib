@@ -23,15 +23,10 @@ export class Velodrome extends Solidly {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(_.pick(SolidlyConfig, ['Velodrome']));
 
-  constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
-  ) {
+  constructor(protected dexHelper: IDexHelper, protected dexKey: string) {
     super(
-      network,
-      dexKey,
       dexHelper,
+      dexKey,
       true, // dynamic fees
     );
   }

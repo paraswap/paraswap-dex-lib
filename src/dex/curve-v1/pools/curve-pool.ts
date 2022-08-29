@@ -49,7 +49,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     public USE_LENDING: boolean[],
     public COINS: Address[],
   ) {
-    super(`${parentName}_${address}`, dexHelper, logger);
+    super(dexHelper, parentName, address, logger);
 
     this.addressesSubscribed = [this.address];
     if (trackCoins) {

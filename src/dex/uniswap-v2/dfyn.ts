@@ -32,21 +32,16 @@ export class Dfyn extends UniswapV2 {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DfynConfig);
 
-  constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
-  ) {
+  constructor(protected dexHelper: IDexHelper, protected dexKey: string) {
     super(
-      network,
-      dexKey,
       dexHelper,
+      dexKey,
       false,
-      DfynConfig[dexKey][network].factoryAddress,
-      DfynConfig[dexKey][network].subgraphURL,
-      DfynConfig[dexKey][network].initCode,
-      DfynConfig[dexKey][network].feeCode,
-      DfynConfig[dexKey][network].poolGasCost,
+      DfynConfig[dexKey][dexHelper.network].factoryAddress,
+      DfynConfig[dexKey][dexHelper.network].subgraphURL,
+      DfynConfig[dexKey][dexHelper.network].initCode,
+      DfynConfig[dexKey][dexHelper.network].feeCode,
+      DfynConfig[dexKey][dexHelper.network].poolGasCost,
     );
   }
 

@@ -25,21 +25,16 @@ export class BiSwap extends UniswapV2 {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BiSwapConfig);
 
-  constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
-  ) {
+  constructor(protected dexHelper: IDexHelper, protected dexKey: string) {
     super(
-      network,
-      dexKey,
       dexHelper,
+      dexKey,
       true,
-      BiSwapConfig[dexKey][network].factoryAddress,
-      BiSwapConfig[dexKey][network].subgraphURL,
-      BiSwapConfig[dexKey][network].initCode,
-      BiSwapConfig[dexKey][network].feeCode,
-      BiSwapConfig[dexKey][network].poolGasCost,
+      BiSwapConfig[dexKey][dexHelper.network].factoryAddress,
+      BiSwapConfig[dexKey][dexHelper.network].subgraphURL,
+      BiSwapConfig[dexKey][dexHelper.network].initCode,
+      BiSwapConfig[dexKey][dexHelper.network].feeCode,
+      BiSwapConfig[dexKey][dexHelper.network].poolGasCost,
     );
     this.biSwapPool = new Interface(BiSwapPoolABI);
   }

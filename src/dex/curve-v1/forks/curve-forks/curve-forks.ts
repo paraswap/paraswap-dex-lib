@@ -12,13 +12,12 @@ export class CurveFork extends CurveV1 {
     getDexKeysWithNetwork(CurveForksConfig);
 
   constructor(
-    network: Network,
-    dexKey: string,
     dexHelper: IDexHelper,
-    dexConfig = CurveForksConfig[dexKey][network],
-    adapters = Adapters[network],
+    dexKey: string,
+    dexConfig = CurveForksConfig[dexKey][dexHelper.network],
+    adapters = Adapters[dexHelper.network],
   ) {
-    super(network, dexKey, dexHelper, dexConfig, adapters);
+    super(dexHelper, dexKey, dexConfig, adapters);
   }
 
   getEventPoolInstance(poolAddress: string): CurvePool | null {

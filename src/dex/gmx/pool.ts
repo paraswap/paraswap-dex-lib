@@ -1,6 +1,6 @@
 import { DeepReadonly } from 'ts-essentials';
-import { Lens, lens } from '../../lens';
-import { Address, Log, Logger, MultiCallInput } from '../../types';
+import { lens } from '../../lens';
+import { Address, MultiCallInput } from '../../types';
 import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, DexParams, PoolConfig } from './types';
@@ -19,10 +19,9 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
   vault: Vault<PoolState>;
 
   constructor(
+    protected dexHelper: IDexHelper,
     protected parentName: string,
     protected network: number,
-    protected dexHelper: IDexHelper,
-    logger: Logger,
     config: PoolConfig,
   ) {
     const chainlinkMap = Object.entries(config.chainlink).reduce(
@@ -68,9 +67,10 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       dexHelper.getLogger(`${parentName}-${network} vault`),
     );
     super(
-      parentName,
-      dexHelper.getLogger(`${parentName}-${network}`),
       dexHelper,
+      parentName,
+      'global',
+      dexHelper.getLogger(`${parentName}-${network}`),
       [...Object.values(chainlinkMap), fastPriceFeed, usdg, vault],
       {
         primaryPrices: {},

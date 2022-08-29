@@ -20,7 +20,6 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ParaSwapLimitOrdersData,
   ParaSwapOrderResponse,
-  ParaSwapLimitOrderPriceSummary,
   ParaSwapOrderBookResponse,
   OrderInfo,
   ParaSwapOrderBook,
@@ -49,16 +48,17 @@ export class ParaSwapLimitOrders
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network] ? Adapters[network] : {},
+    protected dexKey: string,
+    protected adapters = Adapters[dexHelper.network]
+      ? Adapters[dexHelper.network]
+      : {},
     protected augustusRFQAddress = ParaSwapLimitOrdersConfig[dexKey][
-      network
+      dexHelper.network
     ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 

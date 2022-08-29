@@ -25,21 +25,16 @@ export class MDEX extends UniswapV2 {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MDEXConfig);
 
-  constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
-  ) {
+  constructor(protected dexHelper: IDexHelper, protected dexKey: string) {
     super(
-      network,
-      dexKey,
       dexHelper,
+      dexKey,
       true,
-      MDEXConfig[dexKey][network].factoryAddress,
-      MDEXConfig[dexKey][network].subgraphURL,
-      MDEXConfig[dexKey][network].initCode,
-      MDEXConfig[dexKey][network].feeCode,
-      MDEXConfig[dexKey][network].poolGasCost,
+      MDEXConfig[dexKey][dexHelper.network].factoryAddress,
+      MDEXConfig[dexKey][dexHelper.network].subgraphURL,
+      MDEXConfig[dexKey][dexHelper.network].initCode,
+      MDEXConfig[dexKey][dexHelper.network].feeCode,
+      MDEXConfig[dexKey][dexHelper.network].poolGasCost,
     );
     this.mdexFactory = new Interface(MDEXFactoryABI);
   }

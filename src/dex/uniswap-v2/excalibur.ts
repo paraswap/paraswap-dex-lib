@@ -24,20 +24,15 @@ export class Excalibur extends UniswapV2 {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(ExcaliburConfig);
 
-  constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
-  ) {
+  constructor(protected dexHelper: IDexHelper, protected dexKey: string) {
     super(
-      network,
-      dexKey,
       dexHelper,
+      dexKey,
       true,
-      ExcaliburConfig[dexKey][network].factoryAddress,
-      ExcaliburConfig[dexKey][network].subgraphURL,
-      ExcaliburConfig[dexKey][network].initCode,
-      ExcaliburConfig[dexKey][network].feeCode,
+      ExcaliburConfig[dexKey][dexHelper.network].factoryAddress,
+      ExcaliburConfig[dexKey][dexHelper.network].subgraphURL,
+      ExcaliburConfig[dexKey][dexHelper.network].initCode,
+      ExcaliburConfig[dexKey][dexHelper.network].feeCode,
     );
     this.excaliburPool = new Interface(excaliburPoolABI);
   }

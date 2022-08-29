@@ -5,6 +5,7 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import JarvisABI from '../abi/Jarvis.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 const THIRTY_MINUTES = 60 * 30;
 
@@ -62,12 +63,8 @@ export class Jarvis
   poolInterface: Interface;
   needWrapNative = false;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper, dexKey: string) {
+    super(dexHelper, dexKey);
     this.poolInterface = new Interface(JarvisABI as JsonFragment[]);
   }
 
@@ -130,6 +127,7 @@ export class Jarvis
   ): Promise<SimpleExchangeParam> {
     const swapFunction = data.method;
     const timestamp = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
+
     let swapFunctionParams: JarvisParam;
     switch (swapFunction) {
       case JarvisFunctions.mint:

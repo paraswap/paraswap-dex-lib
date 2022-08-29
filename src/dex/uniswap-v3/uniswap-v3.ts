@@ -55,15 +55,14 @@ export class UniswapV3
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
+    protected dexKey: string,
+    protected adapters = Adapters[dexHelper.network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI),
-    protected config = UniswapV3Config[dexKey][network],
-    protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
+    protected config = UniswapV3Config[dexKey][dexHelper.network],
+    protected poolsToPreload = PoolsToPreload[dexKey][dexHelper.network] || [],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
     // To receive revert reasons
@@ -111,10 +110,10 @@ export class UniswapV3
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
-      const key =
-        `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${token0}_${token1}_${fee}`.toLowerCase();
+      const key = `${token0}_${token1}_${fee}`.toLowerCase();
 
-      await this.dexHelper.cache.rawsetex(
+      await this.dexHelper.cache.hset(
+        this.dexmapKey,
         key,
         JSON.stringify({
           token0,
@@ -125,15 +124,14 @@ export class UniswapV3
 
       this.logger.info(`starting to listen to new pool: ${key}`);
       pool = new UniswapV3EventPool(
-        this.dexKey,
-        this.network,
         this.dexHelper,
-        this.logger,
+        this.dexKey,
         this.config.stateMulticall,
         this.config.factory,
         fee,
         token0,
         token1,
+        this.logger,
       );
 
       let newState;
@@ -169,11 +167,11 @@ export class UniswapV3
   }
 
   async addMasterPool(poolKey: string) {
-    const key =
-      `${CACHE_PREFIX}_${this.dexHelper.network}_${this.dexKey}_poolconfig_${poolKey}`.toLowerCase();
-    const _pairs = await this.dexHelper.cache.rawget(key);
+    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
     if (!_pairs) {
-      this.logger.warn(`did not find poolconfig in for key ${key}`);
+      this.logger.warn(
+        `did not find poolconfig in for key ${this.dexmapKey} ${poolKey}`,
+      );
       return;
     }
 

@@ -10,6 +10,7 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 type CurveData = {
   exchange: string;
@@ -44,12 +45,8 @@ export class CurveV2
   minConversionRate = '1';
   needWrapNative = true;
 
-  constructor(
-    augustusAddress: Address,
-    public network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper, dexKey: string) {
+    super(dexHelper, dexKey);
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
   }
 

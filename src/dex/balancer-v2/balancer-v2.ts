@@ -74,12 +74,13 @@ class BalancerV2PoolState extends StatefulEventSubscriber<PoolState> {
   public poolAddress: string;
 
   constructor(
-    parentName: string,
     dexHelper: IDexHelper,
+    parentName: string,
+    key: string,
     logger: Logger,
     public info: SubgraphPoolBase,
   ) {
-    super(parentName, dexHelper, logger, true);
+    super(dexHelper, parentName, key, logger, true);
     this.poolAddress = info.address.toLowerCase();
   }
 
@@ -161,13 +162,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ].map(s => s.toLowerCase());
 
   constructor(
-    protected parentName: string,
     protected dexHelper: IDexHelper,
+    protected parentName: string,
     protected vaultAddress: Address,
     protected subgraphURL: string,
     logger: Logger,
   ) {
-    super(parentName, dexHelper, logger);
+    super(dexHelper, parentName, vaultAddress, logger);
+
     this.vaultInterface = new Interface(VaultABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
@@ -261,8 +263,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
       const _state = poolStates[poolAddress];
       const pool = new BalancerV2PoolState(
-        `${this.parentName}_${poolAddress}`,
         this.dexHelper,
+        this.parentName,
+        poolAddress,
         this.logger,
         subgraphBasePools[poolAddress],
       );
@@ -449,21 +452,21 @@ export class BalancerV2
   nonEventPoolStateCache: PoolStateCache;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected vaultAddress: Address = BalancerConfig[dexKey][network]
+    dexKey: string,
+    protected vaultAddress: Address = BalancerConfig[dexKey][dexHelper.network]
       .vaultAddress,
-    protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
-    protected adapters = Adapters[network],
+    protected subgraphURL: string = BalancerConfig[dexKey][dexHelper.network]
+      .subgraphURL,
+    protected adapters = Adapters[dexHelper.network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
     this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
-    this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
+    this.logger = dexHelper.getLogger(`${dexKey}-${dexHelper.network}`);
     this.eventPools = new BalancerV2EventPool(
-      dexKey,
       dexHelper,
+      dexKey,
       vaultAddress,
       subgraphURL,
       this.logger,

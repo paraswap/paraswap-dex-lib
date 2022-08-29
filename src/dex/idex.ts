@@ -157,7 +157,7 @@ export interface DexContructor<
   DirectParam = null,
   OptimizedExchangeData = ExchangeData,
 > {
-  new (network: Network, dexKey: string, dexHelper: IDexHelper): IDex<
+  new (dexHelper: IDexHelper, dexKey: string): IDex<
     ExchangeData,
     DirectParam,
     OptimizedExchangeData

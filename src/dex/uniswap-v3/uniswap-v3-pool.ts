@@ -51,19 +51,19 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     params: unknown[];
   };
 
+  private readonly poolIface = new Interface(UniswapV3PoolABI);
+
   constructor(
-    protected parentName: string,
-    protected network: number,
     readonly dexHelper: IDexHelper,
-    logger: Logger,
+    protected parentName: string,
     stateMultiAddress: Address,
     protected readonly factoryAddress: Address,
     readonly feeCode: bigint,
     token0: Address,
     token1: Address,
-    readonly poolIface = new Interface(UniswapV3PoolABI),
+    logger: Logger,
   ) {
-    super(`${parentName}_${token0}_${token1}_${feeCode}`, dexHelper, logger);
+    super(dexHelper, parentName, `${token0}_${token1}_${feeCode}`, logger);
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);

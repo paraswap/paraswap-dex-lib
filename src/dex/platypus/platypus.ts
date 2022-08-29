@@ -56,14 +56,13 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
+    protected dexKey: string,
+    protected adapters = Adapters[dexHelper.network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
-    this.config = PlatypusConfig[dexKey][network];
-    this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
+    super(dexHelper, dexKey);
+    this.config = PlatypusConfig[dexKey][dexHelper.network];
+    this.logger = dexHelper.getLogger(`${dexKey}-${dexHelper.network}`);
   }
 
   async generateConfigInfo(blockNumber: number): Promise<PlatypusConfigInfo> {

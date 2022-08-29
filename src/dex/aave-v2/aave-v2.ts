@@ -60,14 +60,10 @@ export class AaveV2
 
   private aavePool: Interface;
   private wethGateway: Interface;
-  constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
-  ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+  constructor(protected dexHelper: IDexHelper, protected dexKey: string) {
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.wethGateway = new Interface(WETH_GATEWAY_ABI[network]);
+    this.wethGateway = new Interface(WETH_GATEWAY_ABI[dexHelper.network]);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V2);
   }
 

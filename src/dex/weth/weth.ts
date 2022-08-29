@@ -37,14 +37,13 @@ export class Weth
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
+    protected dexKey: string,
+    protected adapters = Adapters[dexHelper.network] || {},
     protected unitPrice = BI_POWS[18],
-    protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
+    protected poolGasCost = WethConfig[dexKey][dexHelper.network].poolGasCost,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.address = dexHelper.config.data.wrappedNativeTokenAddress;
     this.logger = dexHelper.getLogger(dexKey);
   }

@@ -18,7 +18,7 @@ const printFrequency = 100;
 const network = Network.MAINNET;
 const dexHelper = new DummyDexHelper(network);
 
-const uniV3 = new UniswapV3(network, 'UniswapV3', dexHelper);
+const uniV3 = new UniswapV3(dexHelper, 'UniswapV3');
 
 // USDC
 const srcToken = {

@@ -62,20 +62,13 @@ describe('GMX Event', function () {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
-          const logger = dexHelper.getLogger(dexKey);
 
           const config = await GMXEventPool.getConfig(
             params,
             blockNumber,
             dexHelper.multiContract,
           );
-          const gmxPool = new GMXEventPool(
-            dexKey,
-            network,
-            dexHelper,
-            logger,
-            config,
-          );
+          const gmxPool = new GMXEventPool(dexHelper, dexKey, network, config);
 
           await testEventSubscriber(
             gmxPool,

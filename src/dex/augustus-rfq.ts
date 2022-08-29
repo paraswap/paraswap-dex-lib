@@ -8,6 +8,7 @@ import AugustusRFQABI from '../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import PermitABI from '../abi/permit/IERC20Permit.json';
 import PermitLegacyABI from '../abi/permit/IERC20PermitLegacy.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 const PERMIT_SIGHASH = new Interface(PermitABI).getSighash('permit');
 const PERMIT_LEGACY_SIGHASH = new Interface(PermitLegacyABI).getSighash(
@@ -82,12 +83,8 @@ export class AugustusRFQOrder
   rfqInterface: Interface;
   needWrapNative = true;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper, dexKey: string) {
+    super(dexHelper, dexKey);
     this.rfqInterface = new Interface(AugustusRFQABI as JsonFragment[]);
   }
 

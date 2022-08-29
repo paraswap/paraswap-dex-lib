@@ -51,14 +51,13 @@ export class Nerve
   }
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
-    protected poolConfigs = NerveConfig[dexKey][network].poolConfigs,
+    protected dexKey: string,
+    protected adapters = Adapters[dexHelper.network] || {},
+    protected poolConfigs = NerveConfig[dexKey][dexHelper.network].poolConfigs,
     protected nervePoolIface = new Interface(nervePoolABIDefault),
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -71,9 +70,8 @@ export class Nerve
 
     if (!poolConfig.isMetapool) {
       const newPool = new NerveEventPool(
-        this.dexKey,
-        this.network,
         this.dexHelper,
+        this.dexKey,
         this.logger,
         poolConfig.name,
       );

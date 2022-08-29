@@ -6,7 +6,6 @@ import { KyberDmmAbiEvents, TradeInfo } from './types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BI_POWS } from '../../bigint-constants';
 
 export type KyberDmmPools = { [poolAddress: string]: KyberDmmPool };
 
@@ -52,8 +51,8 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     iface.parseLog(log) as any as KyberDmmAbiEvents;
 
   constructor(
-    protected parentName: string,
     protected dexHelper: IDexHelper,
+    parentName: string,
     private poolAddress: Address,
 
     token0: Token,
@@ -62,11 +61,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
 
     logger: Logger,
   ) {
-    super(
-      `${parentName}_${token0.address}_${token1.address}`,
-      dexHelper,
-      logger,
-    );
+    super(dexHelper, parentName, `${token0.address}_${token1.address}`, logger);
     this.addressesSubscribed.push(poolAddress);
   }
 

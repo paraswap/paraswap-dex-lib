@@ -82,7 +82,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     public COINS: Address[],
     Basepool: new (name: string, dexHelper: IDexHelper) => ThreePool,
   ) {
-    super(`${parentName}_${pool}_${address}`, dexHelper, logger);
+    super(dexHelper, parentName, `${pool}_${address}`, logger);
     this.MAX_COIN = N_COINS - 1;
 
     this.basepool = new Basepool(this.name, dexHelper);

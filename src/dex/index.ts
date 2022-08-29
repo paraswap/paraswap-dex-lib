@@ -100,10 +100,8 @@ const Dexes = [
 ];
 
 export type LegacyDexConstructor = new (
-  augustusAddress: Address,
-  network: number,
-  provider: Web3,
-  dexHelper?: IDexHelper,
+  dexHelper: IDexHelper,
+  dexKey: string,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -153,11 +151,7 @@ export class DexAdapterService {
           const _key = key.toLowerCase();
           this.isLegacy[_key] = false;
           this.dexKeys.push(key);
-          this.dexInstances[_key] = new DexAdapter(
-            this.network,
-            key,
-            this.dexHelper,
-          );
+          this.dexInstances[_key] = new DexAdapter(this.dexHelper, key);
 
           const sellAdaptersDex = (
             this.dexInstances[_key] as IDex<any, any, any>
@@ -209,12 +203,10 @@ export class DexAdapterService {
         );
 
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
-        this.dexHelper.config.data.augustusAddress,
-        this.network,
-        this.dexHelper.web3Provider,
         // Temporary addition before moving to dex-lib
         // TODO: Remove this line after SpiritSwap migration
         this.dexHelper,
+        _dexKey,
       );
     }
 

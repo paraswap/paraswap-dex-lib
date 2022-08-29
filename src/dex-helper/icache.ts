@@ -15,8 +15,8 @@ export interface ICache {
     value: string,
   ): Promise<void>;
 
-  rawsetex(key: string, value: string): Promise<void>;
-  rawget(key: string): Promise<string | null>;
+  hset(mapKey: string, key: string, value: string): Promise<void>;
+  hget(mapKey: string, key: string): Promise<string | null>;
 
   publish(channel: string, msg: string): Promise<void>;
   subscribe(
