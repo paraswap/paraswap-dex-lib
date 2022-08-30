@@ -211,7 +211,6 @@ describe('Synthetix', function () {
       const synthState = new SynthetixState(
         dexKey,
         dexHelper,
-        new MultiWrapper(dexHelper.multiContract, dexHelper.getLogger()),
         synthetix.combinedIface,
         synthetix.config,
         updateFrequency,

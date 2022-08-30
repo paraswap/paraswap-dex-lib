@@ -124,7 +124,7 @@ export interface IDexPricing<ExchangeData> {
 
   // If you have any timers or other resources that are need to be released,
   // you must put it here
-  releaseResources(): AsyncOrSync<void>;
+  releaseResources?(): AsyncOrSync<void>;
 }
 
 export interface IDexPooltracker {
