@@ -344,6 +344,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         `${this.dexKey}: clearing statePollingTimer timer before shutting down`,
       );
       clearInterval(this.statePollingTimer);
+      this.statePollingTimer = undefined;
     }
   }
 }
