@@ -126,7 +126,7 @@ export class DummyDexHelper implements IDexHelper {
       Number(amount / BigInt(10 ** token.decimals));
     this.multiWrapper = new MultiWrapper(
       this.multiContract,
-      this.getLogger(`MultWrapper`),
+      this.getLogger(`MultiWrapper`),
     );
   }
 }
