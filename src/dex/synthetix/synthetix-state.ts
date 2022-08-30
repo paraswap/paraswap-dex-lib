@@ -52,13 +52,16 @@ import {
   SETTING_EXCHANGE_FEE_RATE,
   SETTING_EXCHANGE_MAX_DYNAMIC_FEE,
   SETTING_PURE_CHAINLINK_PRICE_FOR_ATOMIC_SWAPS_ENABLED,
+  STATE_TTL_IN_MS,
 } from './constants';
 
 export class SynthetixState {
   logger: Logger;
 
   // updatedAt may be blockNumber or timestamp
-  fullState?: { blockNumber: number; updatedAtInS: number; values: PoolState };
+  fullState?: { blockNumber: number; updatedAtInMs: number; values: PoolState };
+
+  isStateSynching = false;
 
   private readonly _onchainConfigValues: {
     values?: OnchainConfigValues;
@@ -118,162 +121,183 @@ export class SynthetixState {
     this._onchainConfigValues.updatedAtInMs = Date.now();
   }
 
-  getState(blockNumber?: number, timeStampInS?: number): PoolState | undefined {
-    if (
-      // blockNumber condition
-      (blockNumber &&
-        this.fullState &&
-        this.fullState.blockNumber === blockNumber) ||
-      // timeStamp condition
-      (timeStampInS &&
-        this.fullState &&
-        this.fullState.updatedAtInS < timeStampInS)
-    ) {
-      return this.fullState?.values;
+  getState(): PoolState | undefined {
+    if (this.fullState) {
+      // If last updated time is exceeding twice normal update frequency we have to alarm about it
+      if (Date.now() - this.fullState.updatedAtInMs > STATE_TTL_IN_MS * 2) {
+        this.logger.error(
+          `${this.dexKey}: state was not updated since ${
+            this.fullState.updatedAtInMs
+          } (apr. ${Math.floor(
+            (Date.now() - this.fullState.updatedAtInMs) / 1000,
+          )} sec. ago)`,
+        );
+        // We don't want to serve very outdated pricing
+        return undefined;
+      }
+      return this.fullState.values;
     }
     return undefined;
   }
 
-  async getOnchainState(blockNumber?: number): Promise<PoolState> {
+  async updateOnchainState(
+    blockNumber?: number,
+  ): Promise<PoolState | undefined> {
     if (this.onchainConfigValues === undefined)
       throw new Error(
         `${this.dexKey} is not initialized, but received pricing request`,
       );
 
-    const addressesFromPK = this.onchainConfigValues.poolKeys.map(pk =>
-      dexPriceAggregatorUniswapV3.getPoolForRoute(
-        this.onchainConfigValues!.dexPriceAggregator.uniswapV3Factory,
-        this.onchainConfigValues!.dexPriceAggregator.overriddenPoolForRoute,
-        pk,
-      ),
-    );
+    if (this.isStateSynching) {
+      this.logger.error(
+        `${this.dexKey}: getOnchainState was called before previous request has finished. It must not be happening. Something is wrong`,
+      );
+      return;
+    }
 
-    const aggregatorAddressesWithoutZeros = Object.entries(
-      this.onchainConfigValues.aggregatorsAddresses,
-    ).reduce<Record<string, Address>>((acc, curr) => {
-      const [key, address] = curr;
-      if (address !== NULL_ADDRESS) {
-        acc[key] = address;
-      }
-      return acc;
-    }, {});
+    this.isStateSynching = true;
 
-    const [packCounter, slot0TickCumulativesSuspensionsLatestRoundCallData] =
-      this._buildObserveSlot0SuspensionsLatestRoundCallData(
-        addressesFromPK,
-        aggregatorAddressesWithoutZeros,
+    try {
+      const addressesFromPK = this.onchainConfigValues.poolKeys.map(pk =>
+        dexPriceAggregatorUniswapV3.getPoolForRoute(
+          this.onchainConfigValues!.dexPriceAggregator.uniswapV3Factory,
+          this.onchainConfigValues!.dexPriceAggregator.overriddenPoolForRoute,
+          pk,
+        ),
       );
 
-    const slot0TickCumulativesSuspensionsLatestRound = (
-      await this.multiWrapper.tryAggregate<
-        Record<0 | 1, bigint> | Slot0 | boolean[] | boolean | LatestRoundData
-      >(true, slot0TickCumulativesSuspensionsLatestRoundCallData, blockNumber)
-    ).map(d => d.returnData) as (
-      | Record<0 | 1, bigint>
-      | boolean
-      | boolean[]
-      | LatestRoundData
-    )[];
+      const aggregatorAddressesWithoutZeros = Object.entries(
+        this.onchainConfigValues.aggregatorsAddresses,
+      ).reduce<Record<string, Address>>((acc, curr) => {
+        const [key, address] = curr;
+        if (address !== NULL_ADDRESS) {
+          acc[key] = address;
+        }
+        return acc;
+      }, {});
 
-    let addressesFromPKBoundary = addressesFromPK.length * packCounter;
-    const slot0AndTickCumulatives =
-      slot0TickCumulativesSuspensionsLatestRound.slice(
-        0,
+      const [packCounter, slot0TickCumulativesSuspensionsLatestRoundCallData] =
+        this._buildObserveSlot0SuspensionsLatestRoundCallData(
+          addressesFromPK,
+          aggregatorAddressesWithoutZeros,
+        );
+
+      const slot0TickCumulativesSuspensionsLatestRound = (
+        await this.multiWrapper.tryAggregate<
+          Record<0 | 1, bigint> | Slot0 | boolean[] | boolean | LatestRoundData
+        >(true, slot0TickCumulativesSuspensionsLatestRoundCallData, blockNumber)
+      ).map(d => d.returnData) as (
+        | Record<0 | 1, bigint>
+        | boolean
+        | boolean[]
+        | LatestRoundData
+      )[];
+
+      let addressesFromPKBoundary = addressesFromPK.length * packCounter;
+      const slot0AndTickCumulatives =
+        slot0TickCumulativesSuspensionsLatestRound.slice(
+          0,
+          addressesFromPKBoundary,
+        );
+
+      const suspensions = slot0TickCumulativesSuspensionsLatestRound.slice(
         addressesFromPKBoundary,
+        // Number of suspension requests
+        addressesFromPKBoundary + 3,
       );
 
-    const suspensions = slot0TickCumulativesSuspensionsLatestRound.slice(
-      addressesFromPKBoundary,
-      // Number of suspension requests
-      addressesFromPKBoundary + 3,
-    );
+      const latestRoundDatas = slot0TickCumulativesSuspensionsLatestRound.slice(
+        addressesFromPKBoundary + 3,
+      ) as LatestRoundData[];
 
-    const latestRoundDatas = slot0TickCumulativesSuspensionsLatestRound.slice(
-      addressesFromPKBoundary + 3,
-    ) as LatestRoundData[];
+      const isSystemSuspended = suspensions[0] as boolean;
+      const synthSuspensions = suspensions[1] as boolean[];
+      const synthExchangeSuspensions = suspensions[2] as boolean[];
 
-    const isSystemSuspended = suspensions[0] as boolean;
-    const synthSuspensions = suspensions[1] as boolean[];
-    const synthExchangeSuspensions = suspensions[2] as boolean[];
+      const areSynthsSuspended = Object.keys(
+        this.onchainConfigValues.addressToKey,
+      ).reduce<Record<string, boolean>>((acc, curr, i) => {
+        acc[curr] =
+          synthSuspensions[i] === true || synthExchangeSuspensions[i] === true;
+        return acc;
+      }, {});
 
-    const areSynthsSuspended = Object.keys(
-      this.onchainConfigValues.addressToKey,
-    ).reduce<Record<string, boolean>>((acc, curr, i) => {
-      acc[curr] =
-        synthSuspensions[i] === true || synthExchangeSuspensions[i] === true;
-      return acc;
-    }, {});
+      const uniswapV3Slot0: Record<Address, Slot0> = {};
+      const tickCumulatives: Record<Address, Record<0 | 1, bigint>> = {};
 
-    const uniswapV3Slot0: Record<Address, Slot0> = {};
-    const tickCumulatives: Record<Address, Record<0 | 1, bigint>> = {};
+      _.chunk(slot0AndTickCumulatives, packCounter).forEach((result, i) => {
+        const address = addressesFromPK[i];
+        const [tickCumulative, slot0] = result as [
+          Record<0 | 1, bigint>,
+          Slot0,
+        ];
 
-    _.chunk(slot0AndTickCumulatives, packCounter).forEach((result, i) => {
-      const address = addressesFromPK[i];
-      const [tickCumulative, slot0] = result as [Record<0 | 1, bigint>, Slot0];
+        uniswapV3Slot0[address] = slot0;
+        tickCumulatives[address] = tickCumulative;
+      });
 
-      uniswapV3Slot0[address] = slot0;
-      tickCumulatives[address] = tickCumulative;
-    });
+      const [_packCounter, observationsRoundAndOverriddenCallData] =
+        this._buildObservationsRoundAndOverriddenCallData(
+          addressesFromPK,
+          uniswapV3Slot0,
+          aggregatorAddressesWithoutZeros,
+          latestRoundDatas,
+        );
 
-    const [_packCounter, observationsRoundAndOverriddenCallData] =
-      this._buildObservationsRoundAndOverriddenCallData(
-        addressesFromPK,
-        uniswapV3Slot0,
-        aggregatorAddressesWithoutZeros,
-        latestRoundDatas,
-      );
+      const [block, observationsRoundDataAndOverridden] = await Promise.all([
+        this.dexHelper.web3Provider.eth.getBlock(blockNumber || 'latest'),
+        this.multiWrapper.tryAggregate<
+          OracleObservation | LatestRoundData | string
+        >(true, observationsRoundAndOverriddenCallData, blockNumber),
+      ]);
 
-    const [block, observationsRoundDataAndOverridden] = await Promise.all([
-      this.dexHelper.web3Provider.eth.getBlock(blockNumber || 'latest'),
-      this.multiWrapper.tryAggregate<
-        OracleObservation | LatestRoundData | string
-      >(true, observationsRoundAndOverriddenCallData, blockNumber),
-    ]);
+      addressesFromPKBoundary = addressesFromPK.length * _packCounter;
+      const observations = observationsRoundDataAndOverridden
+        .slice(0, addressesFromPKBoundary)
+        .map(e => e.returnData) as OracleObservation[];
 
-    addressesFromPKBoundary = addressesFromPK.length * _packCounter;
-    const observations = observationsRoundDataAndOverridden
-      .slice(0, addressesFromPKBoundary)
-      .map(e => e.returnData) as OracleObservation[];
-
-    const overriddenPools = observationsRoundDataAndOverridden
-      .slice(
-        addressesFromPKBoundary,
-        addressesFromPKBoundary + this.onchainConfigValues.poolKeys.length,
-      )
-      .map(e => e.returnData) as string[];
-
-    const otherRoundDatas = observationsRoundDataAndOverridden
-      .slice(addressesFromPKBoundary + this.onchainConfigValues.poolKeys.length)
-      .map(e => e.returnData) as LatestRoundData[];
-
-    const chunkedOtherRoundDatas =
-      this.onchainConfigValues.exchangeDynamicFeeConfig.rounds > 0n
-        ? _.chunk(
-            otherRoundDatas,
-            Number(this.onchainConfigValues.exchangeDynamicFeeConfig.rounds),
-          )
-        : new Array<LatestRoundData[]>(latestRoundDatas.length).fill([]);
-
-    const overriddenPoolForRoute = overriddenPools.reduce<
-      Record<string, Address>
-    >((acc, curr, i) => {
-      acc[
-        dexPriceAggregatorUniswapV3.identifyRouteFromPoolKey(
-          this.onchainConfigValues!.poolKeys[i],
+      const overriddenPools = observationsRoundDataAndOverridden
+        .slice(
+          addressesFromPKBoundary,
+          addressesFromPKBoundary + this.onchainConfigValues.poolKeys.length,
         )
-      ] = curr;
-      return acc;
-    }, {});
+        .map(e => e.returnData) as string[];
 
-    _require(
-      latestRoundDatas.length === chunkedOtherRoundDatas.length,
-      'Something is wrong with indexes while getting OnchainState',
-      { chunkedOtherRoundDatas, latestRoundDatas },
-      'latestRoundDatas.length === chunkedOtherRoundDatas.length',
-    );
+      const otherRoundDatas = observationsRoundDataAndOverridden
+        .slice(
+          addressesFromPKBoundary + this.onchainConfigValues.poolKeys.length,
+        )
+        .map(e => e.returnData) as LatestRoundData[];
 
-    const aggregators = latestRoundDatas.reduce<Record<Address, ChainlinkData>>(
-      (acc, cur, i) => {
+      const chunkedOtherRoundDatas =
+        this.onchainConfigValues.exchangeDynamicFeeConfig.rounds > 0n
+          ? _.chunk(
+              otherRoundDatas,
+              Number(this.onchainConfigValues.exchangeDynamicFeeConfig.rounds),
+            )
+          : new Array<LatestRoundData[]>(latestRoundDatas.length).fill([]);
+
+      const overriddenPoolForRoute = overriddenPools.reduce<
+        Record<string, Address>
+      >((acc, curr, i) => {
+        acc[
+          dexPriceAggregatorUniswapV3.identifyRouteFromPoolKey(
+            this.onchainConfigValues!.poolKeys[i],
+          )
+        ] = curr;
+        return acc;
+      }, {});
+
+      _require(
+        latestRoundDatas.length === chunkedOtherRoundDatas.length,
+        'Something is wrong with indexes while getting OnchainState',
+        { chunkedOtherRoundDatas, latestRoundDatas },
+        'latestRoundDatas.length === chunkedOtherRoundDatas.length',
+      );
+
+      const aggregators = latestRoundDatas.reduce<
+        Record<Address, ChainlinkData>
+      >((acc, cur, i) => {
         const getRoundData = chunkedOtherRoundDatas[i].reduce<
           Record<BigIntAsString, LatestRoundData>
         >((roundAcc, currRound) => {
@@ -286,67 +310,68 @@ export class SynthetixState {
           getRoundData,
         };
         return acc;
-      },
-      {},
-    );
+      }, {});
 
-    const uniswapV3Observations = _.chunk(observations, _packCounter).reduce<
-      Record<Address, Record<number, OracleObservation>>
-    >((acc, cur, i) => {
-      const address = addressesFromPK[i];
-      const slot0 = uniswapV3Slot0[address];
-      const [currentObservation, prevObservation] = cur;
-      acc[address] = {
-        [Number(slot0.observationIndex)]: currentObservation,
-        [Number(
-          slot0.observationCardinality !== 0n
-            ? OracleLibrary.getPrevIndex(
-                slot0.observationIndex,
-                slot0.observationCardinality,
-              )
-            : 0n,
-        )]: prevObservation,
+      const uniswapV3Observations = _.chunk(observations, _packCounter).reduce<
+        Record<Address, Record<number, OracleObservation>>
+      >((acc, cur, i) => {
+        const address = addressesFromPK[i];
+        const slot0 = uniswapV3Slot0[address];
+        const [currentObservation, prevObservation] = cur;
+        acc[address] = {
+          [Number(slot0.observationIndex)]: currentObservation,
+          [Number(
+            slot0.observationCardinality !== 0n
+              ? OracleLibrary.getPrevIndex(
+                  slot0.observationIndex,
+                  slot0.observationCardinality,
+                )
+              : 0n,
+          )]: prevObservation,
+        };
+        return acc;
+      }, {});
+
+      const newState: PoolState = {
+        atomicExchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
+        exchangeFeeRate: this.onchainConfigValues.exchangeFeeRate,
+        exchangeDynamicFeeConfig:
+          this.onchainConfigValues.exchangeDynamicFeeConfig,
+        pureChainlinkPriceForAtomicSwapsEnabled:
+          this.onchainConfigValues.pureChainlinkPriceForAtomicSwapsEnabled,
+        atomicEquivalentForDexPricing:
+          this.onchainConfigValues.atomicEquivalentForDexPricing,
+        atomicTwapWindow: this.onchainConfigValues.atomicTwapWindow,
+        dexPriceAggregator: {
+          weth: this.onchainConfigValues.dexPriceAggregator.weth,
+          defaultPoolFee:
+            this.onchainConfigValues.dexPriceAggregator.defaultPoolFee,
+          uniswapV3Factory:
+            this.onchainConfigValues.dexPriceAggregator.uniswapV3Factory,
+          overriddenPoolForRoute,
+          uniswapV3Slot0,
+          uniswapV3Observations,
+          tickCumulatives,
+        },
+        sUSDCurrencyKey:
+          this.onchainConfigValues.addressToKey[this.config.sUSDAddress],
+        aggregatorDecimals: this.onchainConfigValues.aggregatorDecimals,
+        blockTimestamp: BigInt(block.timestamp),
+        aggregators,
+        isSystemSuspended,
+        areSynthsSuspended,
       };
-      return acc;
-    }, {});
 
-    const newState: PoolState = {
-      atomicExchangeFeeRate: this.onchainConfigValues.atomicExchangeFeeRate,
-      exchangeFeeRate: this.onchainConfigValues.exchangeFeeRate,
-      exchangeDynamicFeeConfig:
-        this.onchainConfigValues.exchangeDynamicFeeConfig,
-      pureChainlinkPriceForAtomicSwapsEnabled:
-        this.onchainConfigValues.pureChainlinkPriceForAtomicSwapsEnabled,
-      atomicEquivalentForDexPricing:
-        this.onchainConfigValues.atomicEquivalentForDexPricing,
-      atomicTwapWindow: this.onchainConfigValues.atomicTwapWindow,
-      dexPriceAggregator: {
-        weth: this.onchainConfigValues.dexPriceAggregator.weth,
-        defaultPoolFee:
-          this.onchainConfigValues.dexPriceAggregator.defaultPoolFee,
-        uniswapV3Factory:
-          this.onchainConfigValues.dexPriceAggregator.uniswapV3Factory,
-        overriddenPoolForRoute,
-        uniswapV3Slot0,
-        uniswapV3Observations,
-        tickCumulatives,
-      },
-      sUSDCurrencyKey:
-        this.onchainConfigValues.addressToKey[this.config.sUSDAddress],
-      aggregatorDecimals: this.onchainConfigValues.aggregatorDecimals,
-      blockTimestamp: BigInt(block.timestamp),
-      aggregators,
-      isSystemSuspended,
-      areSynthsSuspended,
-    };
+      this.fullState = {
+        updatedAtInMs: Date.now(),
+        blockNumber: blockNumber || block.number,
+        values: newState,
+      };
 
-    this.fullState = {
-      updatedAtInS: Number(block.timestamp),
-      blockNumber: blockNumber || block.number,
-      values: newState,
-    };
-
-    return newState;
+      return newState;
+    } finally {
+      this.isStateSynching = false;
+    }
   }
 
   async getOnchainConfigValues(

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { ethers } from 'ethers';
+import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -9,7 +9,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, _require } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -17,9 +17,8 @@ import { DexParams, SynthetixData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { SynthetixConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
-import { MultiWrapper } from '../../lib/multi-wrapper';
 import {
-  OPTIMISM_STATE_TTL_IN_S,
+  STATE_TTL_IN_MS,
   SYNTHETIX_GAS_COST_WITHOUT_SUSD,
   SYNTHETIX_GAS_COST_WITH_SUSD,
 } from './constants';
@@ -38,6 +37,9 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   logger: Logger;
 
   synthetixState: SynthetixState;
+
+  // It is intermediate measure before we have event base Oracles
+  statePollingTimer?: NodeJS.Timer;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SynthetixConfig);
@@ -84,6 +86,17 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
   async initializePricing(blockNumber: number) {
     await this.synthetixState.updateOnchainConfigValues(blockNumber);
+    await this.synthetixState.updateOnchainState();
+    this.statePollingTimer = setInterval(async () => {
+      try {
+        await this.synthetixState.updateOnchainState();
+      } catch (e) {
+        this.logger.error(
+          `${this.dexKey}: Failed to update onchain state: `,
+          e,
+        );
+      }
+    }, STATE_TTL_IN_MS);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -161,18 +174,13 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
       const isOptimism = this.network === Network.OPTIMISM;
 
-      let state = isOptimism
-        ? this.synthetixState.getState(
-            undefined,
-            Math.floor(Date.now() / 1000) - OPTIMISM_STATE_TTL_IN_S,
-          )
-        : this.synthetixState.getState(blockNumber);
+      let state = this.synthetixState.getState();
 
       if (!state) {
-        this.logger.info(
-          `${this.dexKey} onchain state update on network=${this.network}`,
+        this.logger.error(
+          `${this.dexKey} couldn't receive valid state. Pricing is not working. Check logs`,
         );
-        state = await this.synthetixState.getOnchainState(blockNumber);
+        return null;
       }
 
       if (
@@ -327,5 +335,10 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         liquidityUSD: this.onchainConfigValues.liquidityEstimationInUSD,
       },
     ];
+    ``;
+  }
+
+  releaseResources(): AsyncOrSync<void> {
+    if (this.statePollingTimer) clearInterval(this.statePollingTimer);
   }
 }
