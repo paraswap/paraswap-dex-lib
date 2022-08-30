@@ -87,19 +87,21 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   async initializePricing(blockNumber: number) {
     await this.synthetixState.updateOnchainConfigValues(blockNumber);
     await this.synthetixState.updateOnchainState();
-    this.statePollingTimer = setInterval(async () => {
-      try {
-        await this.synthetixState.updateOnchainState();
-        this.logger.info(
-          `${this.dexKey}: onchain state was updated for network=${this.network}`,
-        );
-      } catch (e) {
-        this.logger.error(
-          `${this.dexKey}: Failed to update onchain state: `,
-          e,
-        );
-      }
-    }, STATE_TTL_IN_MS);
+    if (!this.statePollingTimer) {
+      this.statePollingTimer = setInterval(async () => {
+        try {
+          await this.synthetixState.updateOnchainState();
+          this.logger.info(
+            `${this.dexKey}: onchain state was updated for network=${this.network}`,
+          );
+        } catch (e) {
+          this.logger.error(
+            `${this.dexKey}: Failed to update onchain state: `,
+            e,
+          );
+        }
+      }, STATE_TTL_IN_MS);
+    }
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -311,9 +313,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         e instanceof Error &&
         e.message.endsWith('onchain config values are not initialized')
       ) {
-        await this.initializePricing(
-          await this.dexHelper.web3Provider.eth.getBlockNumber(),
-        );
+        await this.synthetixState.updateOnchainConfigValues();
       }
     }
   }
