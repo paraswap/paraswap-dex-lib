@@ -69,12 +69,15 @@ export class SynthetixState {
   constructor(
     private dexKey: string,
     private dexHelper: IDexHelper,
-    private multiWrapper: MultiWrapper,
     private combinedIface: Interface,
     private config: DexParams,
     private onchainConfigValueUpdateFrequencyInMs = ONCHAIN_CONFIG_VALUE_UPDATE_FREQUENCY_IN_MS,
   ) {
     this.logger = this.dexHelper.getLogger('SynthetixState');
+  }
+
+  get multiWrapper() {
+    return this.dexHelper.multiWrapper;
   }
 
   get onchainConfigValues(): OnchainConfigValues {

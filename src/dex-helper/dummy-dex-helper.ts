@@ -14,6 +14,7 @@ import log4js from 'log4js';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';
+import { MultiWrapper } from '../lib/multi-wrapper';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
@@ -95,6 +96,7 @@ export class DummyDexHelper implements IDexHelper {
   httpRequest: IRequestWrapper;
   provider: Provider;
   multiContract: Contract;
+  multiWrapper: MultiWrapper;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
   web3Provider: Web3;
@@ -122,5 +124,9 @@ export class DummyDexHelper implements IDexHelper {
     // For testing use only full parts like 1, 2, 3 ETH, not 0.1 ETH etc
     this.getTokenUSDPrice = async (token, amount) =>
       Number(amount / BigInt(10 ** token.decimals));
+    this.multiWrapper = new MultiWrapper(
+      this.multiContract,
+      this.getLogger(`MultoWrapper`),
+    );
   }
 }

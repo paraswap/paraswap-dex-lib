@@ -35,8 +35,6 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
   readonly combinedIface: Interface;
 
-  readonly multiWrapper: MultiWrapper;
-
   logger: Logger;
 
   synthetixState: SynthetixState;
@@ -55,17 +53,16 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     this.config = this.normalizeConfig(this.config);
     this.logger = dexHelper.getLogger(dexKey);
     this.combinedIface = new Interface(CombinedSynthetixABI);
-    this.multiWrapper = new MultiWrapper(
-      this.dexHelper.multiContract,
-      this.logger,
-    );
     this.synthetixState = new SynthetixState(
       this.dexKey,
       this.dexHelper,
-      this.multiWrapper,
       this.combinedIface,
       this.config,
     );
+  }
+
+  get multiWrapper() {
+    return this.dexHelper.multiWrapper;
   }
 
   private normalizeConfig(config: DexParams): DexParams {
