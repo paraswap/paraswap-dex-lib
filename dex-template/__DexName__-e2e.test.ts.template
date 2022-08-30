@@ -50,7 +50,7 @@ import { generateConfig } from '../../config';
   (This comment should be removed from the final implementation)
 */
 
-async function testForNetwork(
+function testForNetwork(
   network: Network,
   dexKey: string,
   tokenASymbol: string,

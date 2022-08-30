@@ -103,7 +103,7 @@ async function testPricingOnNetwork(
   const pools = await __DexNameCamel__.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
-    SwapSide.SELL,
+    side,
     blockNumber,
   );
   console.log(

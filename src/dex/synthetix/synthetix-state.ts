@@ -230,7 +230,7 @@ export class SynthetixState {
       >(true, observationsRoundAndOverriddenCallData, blockNumber),
     ]);
 
-    addressesFromPKBoundary = addressesFromPK.length * packCounter;
+    addressesFromPKBoundary = addressesFromPK.length * _packCounter;
     const observations = observationsRoundDataAndOverridden
       .slice(0, addressesFromPKBoundary)
       .map(e => e.returnData) as OracleObservation[];
@@ -290,7 +290,7 @@ export class SynthetixState {
       {},
     );
 
-    const uniswapV3Observations = _.chunk(observations, packCounter).reduce<
+    const uniswapV3Observations = _.chunk(observations, _packCounter).reduce<
       Record<Address, Record<number, OracleObservation>>
     >((acc, cur, i) => {
       const address = addressesFromPK[i];
