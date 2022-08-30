@@ -343,6 +343,7 @@ export class Solidly extends UniswapV2 {
       let pairs = this.syncFindPairs(from, to);
       if (!pairs.length) {
         pairs = await this.batchCatchUpPairsSolidly(from, to, blockNumber);
+        pairs = this.syncFindPairs(from, to);
       }
 
       const results = pairs.map(pair => {

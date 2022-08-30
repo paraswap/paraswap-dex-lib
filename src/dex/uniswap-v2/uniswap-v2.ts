@@ -82,7 +82,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
 
   constructor(
     protected dexHelper: IDexHelper,
-    mapKey: string,
+    parentName: string,
     private poolAddress: Address,
     private suffix: string,
     // feeCode is ignored if DynamicFees is set to true
@@ -94,7 +94,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private feesMultiCallDecoder?: (values: any[]) => number,
     private iface: Interface = uniswapV2Iface,
   ) {
-    super(dexHelper, mapKey, `${poolAddress}${suffix}`, logger);
+    super(dexHelper, parentName, `${poolAddress}${suffix}`, logger);
     this.addressesSubscribed.push(poolAddress);
   }
 
@@ -557,13 +557,19 @@ export class UniswapV2
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
 
-      const pair = this.syncFindPair(from, to);
+      let pair = this.syncFindPair(from, to);
       if (!pair) {
         await this.batchCatchUpPairs(from, to, blockNumber);
+        pair = this.syncFindPair(from, to);
       }
 
-      if (pair && !pair.exchange) {
+      if (!pair || !pair.exchange || !pair.pool) {
         return null;
+      }
+
+      const state = pair.pool.getState(blockNumber);
+      if (!state) {
+        await this.batchCatchUpPairs(from, to, blockNumber);
       }
 
       const pairParam = this.getPairOrderedParams(from, to, blockNumber);

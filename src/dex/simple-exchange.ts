@@ -23,7 +23,7 @@ export class SimpleExchange {
   protected dexKey: string;
 
   constructor(protected dexHelper: IDexHelper, name: string) {
-    this.dexKey = name.toLowerCase();
+    this.dexKey = name;
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
     this.abiCoder = Web3Abi as unknown as AbiCoder;
@@ -31,7 +31,8 @@ export class SimpleExchange {
     this.network = dexHelper.network;
     this.augustusAddress = dexHelper.config.data.augustusAddress;
     this.provider = dexHelper.web3Provider;
-    this.dexmapKey = `${CACHE_PREFIX}_${dexHelper.network}_${this.dexKey}_poolconfigs`;
+    this.dexmapKey =
+      `${CACHE_PREFIX}_${dexHelper.network}_${this.dexKey}_poolconfigs`.toLowerCase();
   }
 
   private async hasAugustusAllowance(
