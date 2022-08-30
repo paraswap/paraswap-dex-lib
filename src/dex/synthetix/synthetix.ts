@@ -338,7 +338,6 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         liquidityUSD: this.onchainConfigValues.liquidityEstimationInUSD,
       },
     ];
-    ``;
   }
 
   releaseResources(): AsyncOrSync<void> {
