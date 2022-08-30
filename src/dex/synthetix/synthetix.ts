@@ -339,6 +339,11 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   }
 
   releaseResources(): AsyncOrSync<void> {
-    if (this.statePollingTimer) clearInterval(this.statePollingTimer);
+    if (this.statePollingTimer) {
+      this.logger.info(
+        `${this.dexKey}: clearing statePollingTimer timer before shutting down`,
+      );
+      clearInterval(this.statePollingTimer);
+    }
   }
 }
