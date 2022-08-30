@@ -90,6 +90,9 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     this.statePollingTimer = setInterval(async () => {
       try {
         await this.synthetixState.updateOnchainState();
+        this.logger.info(
+          `${this.dexKey}: onchain state was updated for network=${this.network}`,
+        );
       } catch (e) {
         this.logger.error(
           `${this.dexKey}: Failed to update onchain state: `,
