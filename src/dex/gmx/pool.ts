@@ -220,7 +220,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       multiContract,
     );
 
-    // get price chainlink pricefeed
+    // get price chainlink price feed
     const getPriceFeedCalldata = tokens.map(t => {
       return {
         callData: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [
