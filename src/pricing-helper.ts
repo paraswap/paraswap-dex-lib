@@ -36,12 +36,6 @@ export class PricingHelper {
 
   private async initializeDex(dexKey: string, blockNumber: number) {
     try {
-      // Sometimes here comes blockNumber === 0
-      if (blockNumber === 0) {
-        blockNumber =
-          await this.dexAdapterService.dexHelper.web3Provider.eth.getBlockNumber();
-      }
-
       const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
 
       if (!dexInstance.initializePricing) return;
