@@ -210,38 +210,44 @@ export async function testE2E(
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
-  const priceRoute = await paraswap.getPrices(
-    srcToken,
-    destToken,
-    amount,
-    swapSide,
-    contractMethod,
-    poolIdentifiers,
-  );
-  expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
-
-  // Slippage to be 7%
-  const minMaxAmount =
-    (swapSide === SwapSide.SELL
-      ? BigInt(priceRoute.destAmount) * 93n
-      : BigInt(priceRoute.srcAmount) * 107n) / 100n;
-  const swapParams = await paraswap.buildTransaction(
-    priceRoute,
-    minMaxAmount,
-    senderAddress,
-  );
-
-  const swapTx = await ts.simulate(swapParams);
-  console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
-  // Only log gas estimate if testing against API
-  if (useAPI)
-    console.log(
-      `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
-        swapTx!.gasUsed
-      }, Difference: ${
-        parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
-      }`,
+  try {
+    const priceRoute = await paraswap.getPrices(
+      srcToken,
+      destToken,
+      amount,
+      swapSide,
+      contractMethod,
+      poolIdentifiers,
     );
-  console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
-  expect(swapTx!.success).toEqual(true);
+    expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
+
+    // Slippage to be 7%
+    const minMaxAmount =
+      (swapSide === SwapSide.SELL
+        ? BigInt(priceRoute.destAmount) * 93n
+        : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+    const swapParams = await paraswap.buildTransaction(
+      priceRoute,
+      minMaxAmount,
+      senderAddress,
+    );
+
+    const swapTx = await ts.simulate(swapParams);
+    console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+    // Only log gas estimate if testing against API
+    if (useAPI)
+      console.log(
+        `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
+          swapTx!.gasUsed
+        }, Difference: ${
+          parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
+        }`,
+      );
+    console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+    expect(swapTx!.success).toEqual(true);
+  } finally {
+    if (paraswap.releaseResources) {
+      await paraswap.releaseResources();
+    }
+  }
 }
