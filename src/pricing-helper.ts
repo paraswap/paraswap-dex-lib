@@ -35,16 +35,23 @@ export class PricingHelper {
   }
 
   private async initializeDex(dexKey: string, blockNumber: number) {
+    let _blockNumber = blockNumber;
     try {
+      // Sometimes here comes blockNumber === 0
+      if (_blockNumber === 0) {
+        _blockNumber =
+          await this.dexAdapterService.dexHelper.web3Provider.eth.getBlockNumber();
+      }
+
       const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
 
       if (!dexInstance.initializePricing) return;
 
-      return await dexInstance.initializePricing(blockNumber);
+      return await dexInstance.initializePricing(_blockNumber);
     } catch (e) {
       this.logger.error(`Error_startListening_${dexKey}:`, e);
       setTimeout(
-        () => this.initializeDex(dexKey, blockNumber),
+        () => this.initializeDex(dexKey, _blockNumber),
         SETUP_RETRY_TIMEOUT,
       );
     }
