@@ -1,3 +1,4 @@
+import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -23,6 +24,8 @@ export class __DexName__
   protected eventPools: __DexName__EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
+  // TODO: set true here if protocols works only with wrapped asset
+  readonly needWrapNative = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(__DexName__Config);
@@ -30,9 +33,9 @@ export class __DexName__
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
+    readonly network: Network,
+    readonly dexKey: string,
+    readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
@@ -158,5 +161,11 @@ export class __DexName__
   ): Promise<PoolLiquidity[]> {
     //TODO: complete me!
     return [];
+  }
+
+  // This is optional function in case if your implementation has acquired any resources
+  // you need to release for graceful shutdown. For example, it may be any interval timer
+  releaseResources(): AsyncOrSync<void> {
+    // TODO: complete me!
   }
 }

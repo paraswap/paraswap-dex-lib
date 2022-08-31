@@ -46,6 +46,7 @@ import Web3 from 'web3';
 import { Solidly } from './solidly/solidly';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
+import { Synthetix } from './synthetix/synthetix';
 
 const LegacyDexes = [
   Curve,
@@ -90,13 +91,13 @@ const Dexes = [
   Solidly,
   SpiritSwapV2,
   Velodrome,
+  Synthetix,
 ];
 
 export type LegacyDexConstructor = new (
   augustusAddress: Address,
   network: number,
   provider: Web3,
-  dexHelper?: IDexHelper,
 ) => IDexTxBuilder<any, any>;
 
 interface IGetDirectFunctionName {
@@ -199,9 +200,6 @@ export class DexAdapterService {
         this.dexHelper.config.data.augustusAddress,
         this.network,
         this.dexHelper.web3Provider,
-        // Temporary addition before moving to dex-lib
-        // TODO: Remove this line after SpiritSwap migration
-        this.dexHelper,
       );
     }
 
