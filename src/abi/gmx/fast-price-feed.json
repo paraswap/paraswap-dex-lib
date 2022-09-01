@@ -8,6 +8,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "_maxPriceUpdateDelay",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "_minBlockInterval",
         "type": "uint256"
       },
@@ -58,8 +63,110 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "refPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fastPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "cumulativeRefDelta",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "cumulativeFastDelta",
+        "type": "uint256"
+      }
+    ],
+    "name": "MaxCumulativeDeltaDiffExceeded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "refPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fastPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "cumulativeRefDelta",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "cumulativeFastDelta",
+        "type": "uint256"
+      }
+    ],
+    "name": "PriceData",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "BASIS_POINTS_DIVISOR",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "BITMASK_32",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "CUMULATIVE_DELTA_PRECISION",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_CUMULATIVE_FAST_DELTA",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_CUMULATIVE_REF_DELTA",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
@@ -73,7 +180,7 @@
   },
   {
     "inputs": [],
-    "name": "PRICE_BITMASK",
+    "name": "MAX_REF_PRICE",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
@@ -121,7 +228,9 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      { "internalType": "address", "name": "_token", "type": "address" }
+    ],
     "name": "favorFastPrice",
     "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
@@ -135,6 +244,20 @@
     ],
     "name": "getPrice",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_token", "type": "address" }
+    ],
+    "name": "getPriceData",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" },
+      { "internalType": "uint256", "name": "", "type": "uint256" },
+      { "internalType": "uint256", "name": "", "type": "uint256" },
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -203,8 +326,22 @@
     "type": "function"
   },
   {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "maxCumulativeDeltaDiffs",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "maxDeviationBasisPoints",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxPriceUpdateDelay",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
@@ -234,6 +371,33 @@
     "inputs": [],
     "name": "positionRouter",
     "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "priceData",
+    "outputs": [
+      { "internalType": "uint160", "name": "refPrice", "type": "uint160" },
+      { "internalType": "uint32", "name": "refTime", "type": "uint32" },
+      {
+        "internalType": "uint32",
+        "name": "cumulativeRefDelta",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "cumulativeFastDelta",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceDataInterval",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -307,6 +471,20 @@
   },
   {
     "inputs": [
+      { "internalType": "address[]", "name": "_tokens", "type": "address[]" },
+      {
+        "internalType": "uint256[]",
+        "name": "_maxCumulativeDeltaDiffs",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "setMaxCumulativeDeltaDiffs",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "uint256",
         "name": "_maxDeviationBasisPoints",
@@ -314,6 +492,19 @@
       }
     ],
     "name": "setMaxDeviationBasisPoints",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_maxPriceUpdateDelay",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxPriceUpdateDelay",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -353,6 +544,19 @@
       }
     ],
     "name": "setMinBlockInterval",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_priceDataInterval",
+        "type": "uint256"
+      }
+    ],
+    "name": "setPriceDataInterval",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -400,6 +604,16 @@
         "internalType": "uint256",
         "name": "_endIndexForDecreasePositions",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxIncreasePositions",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxDecreasePositions",
+        "type": "uint256"
       }
     ],
     "name": "setPricesWithBitsAndExecute",
@@ -413,6 +627,32 @@
       { "internalType": "bool", "name": "_isActive", "type": "bool" }
     ],
     "name": "setSigner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_spreadBasisPointsIfChainError",
+        "type": "uint256"
+      }
+    ],
+    "name": "setSpreadBasisPointsIfChainError",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_spreadBasisPointsIfInactive",
+        "type": "uint256"
+      }
+    ],
+    "name": "setSpreadBasisPointsIfInactive",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -453,14 +693,28 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_volBasisPoints",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "_vaultPriceFeed",
+        "type": "address"
       }
     ],
-    "name": "setVolBasisPoints",
+    "name": "setVaultPriceFeed",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "spreadBasisPointsIfChainError",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "spreadBasisPointsIfInactive",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -486,8 +740,8 @@
   },
   {
     "inputs": [],
-    "name": "volBasisPoints",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "vaultPriceFeed",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   }
