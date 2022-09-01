@@ -255,6 +255,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
 
     const fastPriceFeedConfigCallData = FastPriceFeed.getConfigMulticallInputs(
       dexParams.fastPriceFeed,
+      tokens,
     );
     multiCallData.push(...fastPriceFeedConfigCallData);
     multicallSlices.push([i, i + fastPriceFeedConfigCallData.length]);
@@ -296,6 +297,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     );
     const fastPriceFeedConfig = FastPriceFeed.getConfig(
       fastPriceFeedConfigResults,
+      tokens,
     );
 
     const vaultPriceFeedConfigResults = configResults.slice(
