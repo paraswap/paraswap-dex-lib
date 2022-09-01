@@ -85,9 +85,11 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   }
 
   async initializePricing(blockNumber: number) {
-    await this.synthetixState.updateOnchainConfigValues(blockNumber);
-    await this.synthetixState.updateOnchainState();
+    if (this.synthetixState.onchainConfigValuesWithUndefined === undefined) {
+      await this.synthetixState.updateOnchainConfigValues(blockNumber);
+    }
     if (!this.statePollingTimer) {
+      await this.synthetixState.updateOnchainState();
       this.statePollingTimer = setInterval(async () => {
         try {
           await this.synthetixState.updateOnchainState();
@@ -314,7 +316,9 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
         e.message.endsWith('onchain config values are not initialized')
       ) {
         await this.synthetixState.updateOnchainConfigValues();
+        return;
       }
+      throw e;
     }
   }
 

@@ -83,12 +83,11 @@ export class SynthetixState {
     return this.dexHelper.multiWrapper;
   }
 
+  get onchainConfigValuesWithUndefined(): OnchainConfigValues | undefined {
+    return this._onchainConfigValues.values;
+  }
+
   get onchainConfigValues(): OnchainConfigValues {
-    if (this._onchainConfigValues.values === undefined) {
-      throw new Error(
-        `${this.dexKey}: onchain config values are not initialized`,
-      );
-    }
     if (
       Date.now() - this.onchainConfigValueUpdateFrequencyInMs >
         this._onchainConfigValues.updatedAtInMs &&
@@ -107,9 +106,16 @@ export class SynthetixState {
             `${this.dexKey}: failed to update _onchainConfigValues. Retrying`,
           );
           this._onchainConfigValues.isUpdating = false;
-          // Call one more time to retry
-          this.onchainConfigValues;
+          // Retry after 1 sec
+          setTimeout(() => {
+            this.onchainConfigValues;
+          }, 1000);
         });
+    }
+    if (this._onchainConfigValues.values === undefined) {
+      throw new Error(
+        `${this.dexKey}: onchain config values are not initialized`,
+      );
     }
     return this._onchainConfigValues.values;
   }
@@ -119,6 +125,9 @@ export class SynthetixState {
       blockNumber,
     );
     this._onchainConfigValues.updatedAtInMs = Date.now();
+    this.logger.info(
+      `${this.dexKey}: onchain config values are successfully updated`,
+    );
   }
 
   getState(): PoolState | undefined {
