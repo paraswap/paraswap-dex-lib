@@ -229,7 +229,7 @@ export class ConfigHelper {
     );
   }
 
-  unwrapEth(tokenAddress: string): string {
+  unwrapETH(tokenAddress: string): string {
     return this.isWETH(tokenAddress) ? ETHER_ADDRESS : tokenAddress;
   }
 }
