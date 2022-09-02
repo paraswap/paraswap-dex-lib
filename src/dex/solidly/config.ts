@@ -85,7 +85,6 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
   },
   [Network.BSC]: {
-    // TODO for ParaSwap: Check what it is right adapter and index for BSC for Cone
-    [SwapSide.SELL]: [{ name: 'BscAdapter01', index: 3 }], // cone
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // cone
   },
 };
