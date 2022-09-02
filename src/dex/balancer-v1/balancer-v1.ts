@@ -75,7 +75,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
       event: LogDescription,
       state: DeepReadonly<MinimalPoolState>,
       blockNumber: number,
-    ) => void
+    ) => MinimalPoolState
   > = {};
 
   private tokenAddressesSet = new Set<string>();
@@ -144,9 +144,9 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
   ): DeepReadonly<MinimalPoolState> | null {
     const event = poolParseLog(log);
     if (event.name in this.handlers) {
-      this.handlers[event.name](event, state, log.blockNumber);
+      return this.handlers[event.name](event, state, log.blockNumber);
     }
-    return null;
+    return state;
   }
 
   /* not use because we prefer to use restoreState which batch multiple generate state in one  */
@@ -161,52 +161,52 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
   handleJoinPool(
     event: LogDescription,
     state: DeepReadonly<MinimalPoolState>,
-    blockNumber: number,
-  ): void {
-    let tokens = _.cloneDeep(state.tokens) as SORToken[];
+  ): MinimalPoolState {
+    const _state = _.cloneDeep(state) as MinimalPoolState;
+    let tokens = _state.tokens as SORToken[];
 
     const tokenIn = event.args.tokenIn.toLowerCase();
     const tokenAmountIn = event.args.tokenAmountIn;
-    tokens = tokens.map(token => {
+    _state.tokens = tokens.map(token => {
       if (token.address.toLowerCase() === tokenIn)
         token.balance = token.balance.add(tokenAmountIn);
       return token;
     });
 
-    this.setState({ tokens }, blockNumber);
+    return _state;
   }
 
   handleExitPool(
     event: LogDescription,
     state: DeepReadonly<MinimalPoolState>,
-    blockNumber: number,
-  ): void {
-    let tokens = _.cloneDeep(state.tokens) as SORToken[];
+  ): MinimalPoolState {
+    const _state = _.cloneDeep(state) as MinimalPoolState;
+    let tokens = _state.tokens as SORToken[];
 
     const tokenOut = event.args.tokenOut.toLowerCase();
     const tokenAmountOut = event.args.tokenAmountOut;
-    tokens = tokens.map(token => {
+    _state.tokens = tokens.map(token => {
       if (token.address.toLowerCase() === tokenOut)
         token.balance = token.balance.sub(tokenAmountOut);
       return token;
     });
 
-    this.setState({ tokens }, blockNumber);
+    return _state;
   }
 
   handleSwap(
     event: LogDescription,
     state: DeepReadonly<MinimalPoolState>,
-    blockNumber: number,
-  ): void {
-    let tokens = _.cloneDeep(state.tokens) as SORToken[];
+  ): MinimalPoolState {
+    const _state = _.cloneDeep(state) as MinimalPoolState;
+    let tokens = _state.tokens as SORToken[];
 
     const tokenIn = event.args.tokenIn.toLowerCase();
     const tokenAmountIn = event.args.tokenAmountIn;
 
     const tokenOut = event.args.tokenOut.toLowerCase();
     const tokenAmountOut = event.args.tokenAmountOut;
-    tokens = tokens.map(token => {
+    _state.tokens = tokens.map(token => {
       if (token.address.toLowerCase() === tokenIn)
         token.balance = token.balance + tokenAmountIn;
       else if (token.address.toLowerCase() === tokenOut)
@@ -214,7 +214,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
       return token;
     });
 
-    this.setState({ tokens }, blockNumber);
+    return _state;
   }
 }
 
