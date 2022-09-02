@@ -7,8 +7,6 @@ import BigNumber from 'bignumber.js';
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
 
-const ZERO_UINT = BigInt('0');
-
 export const prependWithOx = (str: string) =>
   str.startsWith('0x') ? str : '0x' + str;
 
