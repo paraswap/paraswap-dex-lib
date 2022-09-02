@@ -103,7 +103,9 @@ export abstract class SimpleRouterBase<RouterParam>
           // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
           // Also that it is a direct swap.
           const _srcAmount =
-            swapIndex > 0 || this.side === SwapSide.SELL
+            swapIndex > 0 ||
+            this.side === SwapSide.SELL ||
+            this.dexAdapterService.getDexKeySpecial(se.exchange) === 'zerox'
               ? se.srcAmount
               : (
                   (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /

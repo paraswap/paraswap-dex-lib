@@ -58,6 +58,20 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 2,
     },
   },
+  Cone: {
+    [Network.BSC]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/cone-exchange/cone',
+      factoryAddress: '0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016',
+      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
+      initCode:
+        '04b89f6ddaef769d145acd66e1700a76b1b7c369dfe9558e67ed6495b3b93fe4',
+      // Variable fees. Defaults:
+      // Stable: 10000 (0,01%) ('1' in uniswap)
+      // Volatile: 2000 (0,05%) ('5' in uniswap)
+      poolGasCost: 180 * 1000,
+      feeCode: 0, // variable
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -69,5 +83,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // cone
   },
 };

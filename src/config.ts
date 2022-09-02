@@ -77,6 +77,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
     adapterAddresses: {
       BscAdapter01: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
+      BscAdapter02: '0x5e09f0F5A1d1dE32b56ab8D16A6F687ed763e0E8',
       BscBuyAdapter: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
     },
     uniswapV2ExchangeRouterAddress:
