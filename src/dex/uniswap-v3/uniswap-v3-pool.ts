@@ -51,7 +51,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     params: unknown[];
   };
 
-  private readonly poolIface = new Interface(UniswapV3PoolABI);
+  public readonly poolIface = new Interface(UniswapV3PoolABI);
 
   constructor(
     readonly dexHelper: IDexHelper,
