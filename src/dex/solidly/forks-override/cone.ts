@@ -40,27 +40,28 @@ export class Cone extends Solidly {
     );
   }
 
+  private callDecoder(values: any[]) {
+    const fees = parseInt(
+      conePairIface
+        .decodeFunctionResult(swapFeeFunctionName, values)[0]
+        .toString(),
+    );
+    if (!fees) return 0;
+
+    // noinspection UnnecessaryLocalVariableJS
+    const feeCode = Math.ceil(this.feeFactor / fees);
+    return feeCode;
+  }
+
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: pair.exchange!,
       callData: conePairIface.encodeFunctionData(swapFeeFunctionName, []),
     };
-    const callDecoder = (values: any[]) => {
-      const fees = parseInt(
-        conePairIface
-          .decodeFunctionResult(swapFeeFunctionName, values)[0]
-          .toString(),
-      );
-      if (!fees) return 0;
-
-      // noinspection UnnecessaryLocalVariableJS
-      const feeCode = Math.ceil(this.feeFactor / fees);
-      return feeCode;
-    };
 
     return {
       callEntry,
-      callDecoder,
+      callDecoder: this.callDecoder,
     };
   }
 }
