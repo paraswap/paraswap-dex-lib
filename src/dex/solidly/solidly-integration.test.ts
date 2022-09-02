@@ -10,8 +10,10 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { Interface, Result } from '@ethersproject/abi';
 import solidlyPairABI from '../../abi/solidly/SolidlyPair.json';
 import { SpiritSwapV2 } from './forks-override/spiritSwapV2';
+import { Cone } from './forks-override/cone';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
+const amounts6 = [0n, BI_POWS[6], 2000000n];
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -476,6 +478,146 @@ describe('Solidly integration tests', () => {
 
         it('getTopPoolsForToken', async function () {
           const poolLiquidity = await dystopia.getTopPoolsForToken(
+            tokenA.address,
+            10,
+          );
+          console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+          checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+        });
+      });
+    });
+  });
+
+  describe('BSC', () => {
+    const network = Network.BSC;
+    const dexHelper = new DummyDexHelper(network);
+    const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
+
+    describe('Cone', function () {
+      const dexKey = 'Cone';
+      const cone = new Cone(network, dexKey, dexHelper);
+
+      describe('UniswapV2 like pool', function () {
+        const TokenASymbol = 'WBNB';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'BUSD';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts18;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await cone.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await cone.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              cone,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const poolLiquidity = await cone.getTopPoolsForToken(
+            tokenA.address,
+            10,
+          );
+          console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+          checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+        });
+      });
+
+      describe('Curve like stable pool', function () {
+        const TokenASymbol = 'USDT';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'BUSD';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts6;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await cone.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await cone.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              cone,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const poolLiquidity = await cone.getTopPoolsForToken(
             tokenA.address,
             10,
           );
