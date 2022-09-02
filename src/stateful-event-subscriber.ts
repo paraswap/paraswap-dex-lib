@@ -256,7 +256,10 @@ export abstract class StatefulEventSubscriber<State>
       return this.state;
     }
 
-    if (this.dexHelper.config.isSlave && this.dexHelper.cache.isSyncing) {
+    if (
+      this.dexHelper.config.isSlave &&
+      this.dexHelper.blockManager.isSyncing
+    ) {
       return this.state;
     }
     if (!this.state || this.invalid) return null;

@@ -18,8 +18,6 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
-  isSyncing = true;
-
   async get(
     dexKey: string,
     network: number,
@@ -99,6 +97,8 @@ class DummyRequestWrapper implements IRequestWrapper {
 }
 
 class DummyBlockManager implements IBlockManager {
+  isSyncing = true;
+
   private blockNumber: number = 0;
 
   constructor(private provider: Web3) {}

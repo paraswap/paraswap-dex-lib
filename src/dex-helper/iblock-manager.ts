@@ -43,6 +43,7 @@ export interface EventSubscriber {
 }
 
 export interface IBlockManager {
+  isSyncing: boolean;
   getLatestBlockNumber(): number;
   subscribeToLogs(
     subscriber: EventSubscriber,
