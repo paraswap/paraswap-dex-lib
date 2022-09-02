@@ -277,8 +277,6 @@ export abstract class StatefulEventSubscriber<State>
   //can be reset.
   setState(state: DeepReadonly<State>, blockNumber: number): void {
     if (this.dexHelper.config.isSlave) {
-      this.stateBlockNumber = blockNumber;
-      this.stateHistory[blockNumber] = state;
       this.state = state;
       return;
     }
