@@ -45,8 +45,10 @@ export type DexParams = {
 export type FastPriceFeedConfig = {
   priceDuration: number;
   maxDeviationBasisPoints: bigint;
-  favorFastPrice: boolean;
-  volBasisPoints: bigint;
+  favorFastPrice: Record<string, boolean>;
+  spreadBasisPointsIfInactive: bigint;
+  spreadBasisPointsIfChainError: bigint;
+  maxPriceUpdateDelay: number;
 };
 
 export type VaultPriceFeedConfig = {
