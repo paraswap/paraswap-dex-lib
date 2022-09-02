@@ -61,7 +61,7 @@ export class Cone extends Solidly {
 
     return {
       callEntry,
-      callDecoder: this.callDecoder,
+      callDecoder: this.callDecoder.bind(this),
     };
   }
 }
