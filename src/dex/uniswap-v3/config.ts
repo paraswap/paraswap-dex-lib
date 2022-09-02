@@ -5,7 +5,7 @@ import { Address } from 'paraswap';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
 
-// Pools tha will be initialized on app startup
+// Pools that will be initialized on app startup
 // They are added for testing
 export const PoolsToPreload: DexConfigMap<
   { token0: Address; token1: Address }[]
