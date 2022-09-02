@@ -62,7 +62,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
     [Network.BSC]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/cone-exchange/cone',
       factoryAddress: '0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016',
-      router: '0x69a457CD13Ee72b0CA1b483aB17C36D80a23422f', // ParaSwap-compatible Router with stable pools support
+      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
       initCode:
         '04b89f6ddaef769d145acd66e1700a76b1b7c369dfe9558e67ed6495b3b93fe4',
       // Variable fees. Defaults:
