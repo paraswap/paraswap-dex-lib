@@ -44,7 +44,6 @@ const amounts = [0n, ...bigPowAmounts];
 const amountToUse = amounts.slice(1);
 
 const dexHelper = new DummyDexHelper(network);
-dexHelper.init();
 const dexKey = 'CurveV1';
 
 function getReaderCalldata(
@@ -106,9 +105,10 @@ describe('CurveV1', function () {
   let curveV1: CurveV1;
 
   beforeAll(async () => {
+    await dexHelper.init();
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
-    curveV1 = new CurveV1(network, dexKey, dexHelper);
+    curveV1 = new CurveV1(dexHelper, dexKey);
     await curveV1.startListening();
   });
 

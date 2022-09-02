@@ -93,7 +93,7 @@ describe('AaveV1', function () {
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(network);
-      const aaveV1 = new AaveV1(network, dexKey, dexHelper);
+      const aaveV1 = new AaveV1(dexHelper, dexKey);
 
       const poolLiquidity = await aaveV1.getTopPoolsForToken(USDT.address, 10);
       console.log(`${USDTSymbol} Top Pools:`, poolLiquidity);

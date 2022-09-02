@@ -215,7 +215,7 @@ describe('Solidly integration tests', () => {
 
     describe('SpiritSwapV2', function () {
       const dexKey = 'SpiritSwapV2';
-      const spiritSwapV2 = new SpiritSwapV2(network, dexKey, dexHelper);
+      const spiritSwapV2 = new SpiritSwapV2(dexHelper, dexKey);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'WFTM';

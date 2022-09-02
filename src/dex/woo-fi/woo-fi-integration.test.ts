@@ -90,10 +90,10 @@ describe('WooFi', function () {
   beforeAll(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
-    wooFi = new WooFi(network, dexKey, dexHelper);
+    wooFi = new WooFi(dexHelper, dexKey);
     await wooFi.initializePricing(blockNumber);
 
-    wooFiNotInitialized = new WooFi(network, dexKey, dexHelper);
+    wooFiNotInitialized = new WooFi(dexHelper, dexKey);
 
     console.log(`Current state for block number ${blockNumber} is:`);
     console.log(

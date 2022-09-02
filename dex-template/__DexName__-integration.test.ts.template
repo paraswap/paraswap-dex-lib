@@ -111,7 +111,7 @@ describe('__DexName__', function () {
   beforeAll(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
-    __DexNameCamel__ = new __DexName__(network, dexKey, dexHelper);
+    __DexNameCamel__ = new __DexName__(dexHelper, dexKey);
     await __DexNameCamel__.initializePricing(blockNumber);
   });
 

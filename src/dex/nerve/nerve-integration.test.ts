@@ -64,7 +64,7 @@ describe('Nerve BSC', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const nerve = new Nerve(network, dexKey, dexHelper);
+    const nerve = new Nerve(dexHelper, dexKey);
 
     const poolLiquidity = await nerve.getTopPoolsForToken(TokenA.address, 10);
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
