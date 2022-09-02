@@ -35,8 +35,9 @@ describe('BalancerV2', function () {
   describe('Weighted', () => {
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      await dexHelper.init();
+      const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+      const balancerV2 = new BalancerV2(dexHelper, dexKey);
 
       await balancerV2.initializePricing(blocknumber);
 
@@ -66,7 +67,8 @@ describe('BalancerV2', function () {
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      await dexHelper.init();
+      const balancerV2 = new BalancerV2(dexHelper, dexKey);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         WETH.address,
@@ -81,8 +83,9 @@ describe('BalancerV2', function () {
   describe('Linear', () => {
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      await dexHelper.init();
+      const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+      const balancerV2 = new BalancerV2(dexHelper, dexKey);
 
       await balancerV2.initializePricing(blocknumber);
 
@@ -112,7 +115,8 @@ describe('BalancerV2', function () {
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      await dexHelper.init();
+      const balancerV2 = new BalancerV2(dexHelper, dexKey);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         BBADAI.address,
@@ -165,7 +169,8 @@ describe('BalancerV2', function () {
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      await dexHelper.init();
+      const balancerV2 = new BalancerV2(dexHelper, dexKey);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         BBAUSD.address,

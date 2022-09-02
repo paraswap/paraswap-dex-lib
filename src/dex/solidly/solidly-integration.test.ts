@@ -76,11 +76,12 @@ describe('Solidly integration tests', () => {
   describe('Fantom', () => {
     const network = Network.FANTOM;
     const dexHelper = new DummyDexHelper(network);
+    dexHelper.init();
     const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
 
     describe('Solidly', function () {
       const dexKey = 'Solidly';
-      const soldily = new Solidly(network, dexKey, dexHelper);
+      const soldily = new Solidly(dexHelper, dexKey);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'WFTM';
@@ -347,14 +348,15 @@ describe('Solidly integration tests', () => {
     });
   });
 
-  describe('Polygon', () => {
+  describe('Polygon', async () => {
     const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
+    await dexHelper.init();
     const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
 
     describe('Dystopia', function () {
       const dexKey = 'Dystopia';
-      const dystopia = new Solidly(network, dexKey, dexHelper);
+      const dystopia = new Solidly(dexHelper, dexKey);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'WETH';

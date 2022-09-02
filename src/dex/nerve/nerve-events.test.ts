@@ -28,17 +28,12 @@ describe('Nerve Event Pool BSC', async () => {
   const network = Network.BSC;
   const testPoolAddress = '0x1B3771a66ee31180906972580adE9b81AFc5fCDc'; // 3Pool
   const dexHelper = new DummyDexHelper(network);
+  await dexHelper.init();
   const logger = dexHelper.getLogger(dexKey);
   let nervePool: NerveEventPool;
 
   beforeEach(async () => {
-    nervePool = new NerveEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      poolName,
-    );
+    nervePool = new NerveEventPool(dexHelper, dexKey, logger, poolName);
   });
 
   // TokenSwap -> 0xc6c1e0630dbe9130cc068028486c0d118ddcea348550819defd5cb8c257f8a38
@@ -412,17 +407,12 @@ describe('Saddle Event Pool Mainnet', async () => {
   const poolName = 'D4';
   const testPoolAddress = '0xc69ddcd4dfef25d8a793241834d4cc4b3668ead6'; // D4
   const dexHelper = new DummyDexHelper(network);
+  await dexHelper.init();
   const logger = dexHelper.getLogger(dexKey);
   let nervePool: NerveEventPool;
 
   beforeEach(async () => {
-    nervePool = new NerveEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      poolName,
-    );
+    nervePool = new NerveEventPool(dexHelper, dexKey, logger, poolName);
   });
 
   // TokenSwap -> 0xc6c1e0630dbe9130cc068028486c0d118ddcea348550819defd5cb8c257f8a38
@@ -680,17 +670,12 @@ describe('IronV2 Event Pool Polygon', async () => {
   const network = Network.POLYGON;
   const testPoolAddress = '0x837503e8A8753ae17fB8C8151B8e6f586defCb57'; // IS3USD
   const dexHelper = new DummyDexHelper(network);
+  await dexHelper.init();
   const logger = dexHelper.getLogger(dexKey);
   let nervePool: NerveEventPool;
 
   beforeEach(async () => {
-    nervePool = new NerveEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      poolName,
-    );
+    nervePool = new NerveEventPool(dexHelper, dexKey, logger, poolName);
   });
 
   // TokenExchange -> 0xb2e76ae99761dc136e598d4a629bb347eccb9532a5f8bbd72e18467c3c34cc98
@@ -983,17 +968,12 @@ describe('Synapse Event Pool Arbitrum', async () => {
   const poolName = 'nUSDV3';
   const testPoolAddress = '0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40'; // nUSDV3
   const dexHelper = new DummyDexHelper(network);
+  await dexHelper.init();
   const logger = dexHelper.getLogger(dexKey);
   let nervePool: NerveEventPool;
 
   beforeEach(async () => {
-    nervePool = new NerveEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      poolName,
-    );
+    nervePool = new NerveEventPool(dexHelper, dexKey, logger, poolName);
   });
 
   // TokenSwap -> 0xc6c1e0630dbe9130cc068028486c0d118ddcea348550819defd5cb8c257f8a38

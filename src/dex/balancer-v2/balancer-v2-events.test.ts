@@ -105,14 +105,14 @@ describe('BalancerV2 Event', function () {
       blockNumbers[event].forEach(([blockNumber, poolAddress]) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
+          dexHelper.init();
           const logger = dexHelper.getLogger(dexKey);
 
           const balancerPools = new BalancerV2EventPool(
+            dexHelper,
             dexKey,
-            network,
             config.vaultAddress,
             config.subgraphURL,
-            dexHelper,
             logger,
           );
 

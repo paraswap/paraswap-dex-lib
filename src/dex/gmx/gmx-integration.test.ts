@@ -39,8 +39,9 @@ const readerAddress = '0x67b789D48c926006F5132BFCe4e976F0A7A63d5D';
 describe('GMX', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const gmx = new GMX(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const gmx = new GMX(dexHelper, dexKey);
 
     await gmx.initializePricing(blocknumber);
 
@@ -98,7 +99,8 @@ describe('GMX', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const gmx = new GMX(network, dexKey, dexHelper);
+    dexHelper.init();
+    const gmx = new GMX(dexHelper, dexKey);
 
     await gmx.updatePoolState();
     const poolLiquidity = await gmx.getTopPoolsForToken(TokenA.address, 10);

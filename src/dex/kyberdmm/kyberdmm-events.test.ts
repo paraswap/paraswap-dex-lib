@@ -95,11 +95,12 @@ describe('KyberDmm Event', function () {
       blockNumbers[event].forEach(([blockNumber, poolParam]) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
+          await dexHelper.init();
           const logger = dexHelper.getLogger(dexKey);
 
           const kyberDmmPool = new KyberDmmPool(
-            dexKey,
             dexHelper,
+            dexKey,
             poolParam.address,
             tokens[poolParam.token0Symbol],
             tokens[poolParam.token1Symbol],

@@ -62,6 +62,7 @@ describe('GMX Event', function () {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
+          await dexHelper.init();
 
           const config = await GMXEventPool.getConfig(
             params,

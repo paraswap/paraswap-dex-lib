@@ -95,12 +95,11 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     dexHelper: IDexHelper,
     protected parentName: string,
-    mapKey: string,
     public poolConfig: PoolConfig,
     protected vatAddress: Address,
     logger: Logger,
   ) {
-    super(dexHelper, mapKey, `${poolConfig.psmAddress}`, logger);
+    super(dexHelper, parentName, `${poolConfig.psmAddress}`, logger);
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];
@@ -214,7 +213,6 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
         (this.eventPools[p.gem.address.toLowerCase()] = new MakerPsmEventPool(
           dexHelper,
           this.dexKey,
-          dexKey,
           p,
           this.vatAddress,
           this.logger,

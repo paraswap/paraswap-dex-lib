@@ -36,15 +36,15 @@ describe('MakerPsm Event', function () {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
+          await dexHelper.init();
           const logger = dexHelper.getLogger(dexKey);
 
           const makerPsmPool = new MakerPsmEventPool(
-            dexKey,
-            network,
             dexHelper,
-            logger,
+            dexKey,
             config.pools[0],
             config.vatAddress,
+            logger,
           );
 
           await testEventSubscriber(

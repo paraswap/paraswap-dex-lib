@@ -35,7 +35,7 @@ export interface IParaSwapSDK {
 const chunks = 10;
 
 export class LocalParaswapSDK implements IParaSwapSDK {
-  dexHelper: IDexHelper;
+  dexHelper: DummyDexHelper;
   dexAdapterService: DexAdapterService;
   pricingHelper: PricingHelper;
   transactionBuilder: TransactionBuilder;
@@ -63,7 +63,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   }
 
   async initializePricing() {
-    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.dexHelper.init();
+    const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
     await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
   }
 

@@ -82,14 +82,10 @@ export async function executeFullEventTest(
   poolAddress: string,
 ) {
   const dexHelper = new DummyDexHelper(network);
+  await dexHelper.init();
   const logger = dexHelper.getLogger(dexKey);
 
-  const balancerV1Pools = new BalancerV1EventPool(
-    dexKey,
-    network,
-    dexHelper,
-    logger,
-  );
+  const balancerV1Pools = new BalancerV1EventPool(dexHelper, dexKey, logger);
   await balancerV1Pools.generateState(blockNumber - 1);
   await testEventSubscriber(
     balancerV1Pools,

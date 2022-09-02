@@ -44,6 +44,7 @@ const amounts = [0n, ...bigPowAmounts];
 const amountToUse = amounts.slice(1);
 
 const dexHelper = new DummyDexHelper(network);
+dexHelper.init();
 const dexKey = 'CurveV1';
 
 function getReaderCalldata(

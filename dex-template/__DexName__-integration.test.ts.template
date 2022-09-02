@@ -38,6 +38,7 @@ const TokenB = Tokens[network][TokenBSymbol];
 const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexHelper = new DummyDexHelper(network);
+dexHelper.init();
 const dexKey = '__DexName__';
 
 function getReaderCalldata(

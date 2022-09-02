@@ -70,18 +70,19 @@ describe('UniswapV3 Event', function () {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`${event}:${blockNumber} - should return correct state`, async function () {
           const dexHelper = new DummyDexHelper(network);
+          await dexHelper.init();
+
           const logger = dexHelper.getLogger(dexKey);
 
           const uniswapV3Pool = new UniswapV3EventPool(
-            dexKey,
-            network,
             dexHelper,
-            logger,
+            dexKey,
             config.stateMulticall,
             config.factory,
             poolFeeCode,
             token0,
             token1,
+            logger,
           );
 
           // It is done in generateState. But here have to make it manually

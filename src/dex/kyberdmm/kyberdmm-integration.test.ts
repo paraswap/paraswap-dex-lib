@@ -22,8 +22,10 @@ const dexKey = 'KyberDmm';
 describe('KyberDmm', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const kyberDmm = new KyberDmm(network, dexKey, dexHelper);
+    await dexHelper.init();
+
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const kyberDmm = new KyberDmm(dexHelper, dexKey);
 
     const pools = await kyberDmm.getPoolIdentifiers(
       TokenA,
@@ -51,8 +53,10 @@ describe('KyberDmm', function () {
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const kyberDmm = new KyberDmm(network, dexKey, dexHelper);
+    await dexHelper.init();
+
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const kyberDmm = new KyberDmm(dexHelper, dexKey);
 
     const pools = await kyberDmm.getPoolIdentifiers(
       TokenA,
@@ -80,7 +84,8 @@ describe('KyberDmm', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const kyberDmm = new KyberDmm(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const kyberDmm = new KyberDmm(dexHelper, dexKey);
 
     const poolLiquidity = await kyberDmm.getTopPoolsForToken(
       TokenA.address,

@@ -75,10 +75,11 @@ describe('Platypus Event', function () {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
+          await dexHelper.init();
 
           let cfgInfo = getSavedConfig<PlatypusConfigInfo>(blockNumber, dexKey);
           if (!cfgInfo) {
-            const dex = new Platypus(network, dexKey, dexHelper);
+            const dex = new Platypus(dexHelper, dexKey);
             cfgInfo = await dex.generateConfigInfo(blockNumber);
             saveConfig(blockNumber, dexKey, cfgInfo);
           }
@@ -129,10 +130,11 @@ describe('Platypus Event', function () {
       blockNumbersAvax[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
+          dexHelper.init();
 
           let cfgInfo = getSavedConfig<PlatypusConfigInfo>(blockNumber, dexKey);
           if (!cfgInfo) {
-            const dex = new Platypus(network, dexKey, dexHelper);
+            const dex = new Platypus(dexHelper, dexKey);
             cfgInfo = await dex.generateConfigInfo(blockNumber);
             saveConfig(blockNumber, dexKey, cfgInfo);
           }

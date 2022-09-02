@@ -22,8 +22,9 @@ const dexKey = 'Weth';
 describe('Weth', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const weth = new Weth(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const weth = new Weth(dexHelper, dexKey);
 
     const pools = await weth.getPoolIdentifiers(
       EthToken,

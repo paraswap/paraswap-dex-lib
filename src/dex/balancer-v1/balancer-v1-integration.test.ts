@@ -33,8 +33,9 @@ const dexKey = 'BalancerV1';
 describe('BalancerV1', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const balancerV1 = new BalancerV1(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const balancerV1 = new BalancerV1(dexHelper, dexKey);
 
     await balancerV1.setupEventPools(blocknumber);
 
@@ -64,8 +65,10 @@ describe('BalancerV1', function () {
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.provider.getBlockNumber();
-    const balancerV1 = new BalancerV1(network, dexKey, dexHelper);
+    await dexHelper.init();
+
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const balancerV1 = new BalancerV1(dexHelper, dexKey);
 
     await balancerV1.setupEventPools(blocknumber);
 
@@ -95,7 +98,8 @@ describe('BalancerV1', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const balancerV1 = new BalancerV1(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const balancerV1 = new BalancerV1(dexHelper, dexKey);
 
     const poolLiquidity = await balancerV1.getTopPoolsForToken(
       TokenA.address,

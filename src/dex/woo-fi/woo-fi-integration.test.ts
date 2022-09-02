@@ -25,6 +25,7 @@ const amounts = [0n, BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 
 const dexKey = 'WooFi';
 const dexHelper = new DummyDexHelper(network);
+dexHelper.init();
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -187,6 +188,8 @@ describe('WooFi', function () {
     // reusable variables in in `beforeAll` and use separate describe for each network
     const _network = Network.AVALANCHE;
     const _dexHelper = new DummyDexHelper(_network);
+    await _dexHelper.init();
+
     const _amounts = [
       0n,
       1n * BI_POWS[6],
@@ -195,9 +198,9 @@ describe('WooFi', function () {
       4n * BI_POWS[6],
     ];
 
-    const _blockNumber = await _dexHelper.web3Provider.eth.getBlockNumber();
+    const _blockNumber = _dexHelper.blockManager.getLatestBlockNumber();
 
-    const _wooFi = new WooFi(_network, dexKey, _dexHelper);
+    const _wooFi = new WooFi(_dexHelper, dexKey);
     await _wooFi.initializePricing(_blockNumber);
 
     console.log(`Current state for block number ${_blockNumber} is:`);
@@ -251,6 +254,7 @@ describe('WooFi', function () {
     // reusable variables in in `beforeAll` and use separate describe for each network
     const _network = Network.FANTOM;
     const _dexHelper = new DummyDexHelper(_network);
+    await _dexHelper.init();
     const _amounts = [
       0n,
       10n * BI_POWS[6],
@@ -261,7 +265,7 @@ describe('WooFi', function () {
 
     const _blockNumber = await _dexHelper.web3Provider.eth.getBlockNumber();
 
-    const _wooFi = new WooFi(_network, dexKey, _dexHelper);
+    const _wooFi = new WooFi(dexHelper, dexKey);
     await _wooFi.initializePricing(_blockNumber);
 
     console.log(`Current state for block number ${_blockNumber} is:`);
@@ -367,10 +371,11 @@ describe('WooFi', function () {
     // I found this test condition state only for Fantom
     const _network = Network.FANTOM;
     const _dexHelper = new DummyDexHelper(_network);
+    await _dexHelper.init();
 
     const _blockNumber = 38145311;
 
-    const _wooFi = new WooFi(_network, dexKey, _dexHelper);
+    const _wooFi = new WooFi(dexHelper, dexKey);
     await _wooFi.initializePricing(_blockNumber);
 
     const baseSymbol = 'WFTM';

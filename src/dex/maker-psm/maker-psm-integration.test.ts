@@ -24,8 +24,9 @@ const dexKey = 'MakerPsm';
 describe('MakerPsm', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const makerPsm = new MakerPsm(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const makerPsm = new MakerPsm(dexHelper, dexKey);
 
     await makerPsm.initializePricing(blocknumber);
 
@@ -55,8 +56,9 @@ describe('MakerPsm', function () {
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const makerPsm = new MakerPsm(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const makerPsm = new MakerPsm(dexHelper, dexKey);
 
     await makerPsm.initializePricing(blocknumber);
 
@@ -86,7 +88,8 @@ describe('MakerPsm', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const makerPsm = new MakerPsm(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const makerPsm = new MakerPsm(dexHelper, dexKey);
 
     const poolLiquidity = await makerPsm.getTopPoolsForToken(
       TokenA.address,

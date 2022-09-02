@@ -99,8 +99,16 @@ class DummyRequestWrapper implements IRequestWrapper {
 }
 
 class DummyBlockManager implements IBlockManager {
+  private blockNumber: number = 0;
+
+  constructor(private provider: Web3) {}
+
+  async init() {
+    this.blockNumber = await this.provider.eth.getBlockNumber();
+  }
+
   getLatestBlockNumber(): number {
-    return 1;
+    return this.blockNumber;
   }
 
   subscribeToLogs(
@@ -121,7 +129,7 @@ export class DummyDexHelper implements IDexHelper {
   httpRequest: IRequestWrapper;
   provider: Provider;
   multiContract: Contract;
-  blockManager: IBlockManager;
+  blockManager: DummyBlockManager;
   getLogger: LoggerConstructor;
   web3Provider: Web3;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
@@ -140,7 +148,7 @@ export class DummyDexHelper implements IDexHelper {
       multiABIV2 as any,
       this.config.data.multicallV2Address,
     );
-    this.blockManager = new DummyBlockManager();
+    this.blockManager = new DummyBlockManager(this.web3Provider);
     this.getLogger = name => {
       const logger = log4js.getLogger(name);
       logger.level = 'debug';
@@ -154,5 +162,9 @@ export class DummyDexHelper implements IDexHelper {
       this.multiContract,
       this.getLogger('MultiWrapper'),
     );
+  }
+
+  async init() {
+    await this.blockManager.init();
   }
 }

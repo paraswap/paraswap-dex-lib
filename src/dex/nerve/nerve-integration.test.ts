@@ -32,8 +32,9 @@ describe('Nerve BSC', function () {
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const nerve = new Nerve(network, dexKey, dexHelper);
+    await dexHelper.init();
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const nerve = new Nerve(dexHelper, dexKey);
 
     await nerve.initializePricing(blocknumber);
 

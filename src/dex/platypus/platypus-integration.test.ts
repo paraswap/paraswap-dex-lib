@@ -37,8 +37,10 @@ const poolInterface = new Interface(PoolABI);
 describe('Platypus', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const platypus = new Platypus(network, dexKey, dexHelper);
+    await dexHelper.init();
+
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const platypus = new Platypus(dexHelper, dexKey);
 
     await platypus.initializePricing(blocknumber);
 
@@ -101,8 +103,10 @@ describe('Platypus', function () {
 
   it('getPoolIdentifiers and getPricesVolume SELL WAVAX->sAVAX', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const platypus = new Platypus(network, dexKey, dexHelper);
+    await dexHelper.init();
+
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const platypus = new Platypus(dexHelper, dexKey);
 
     await platypus.initializePricing(blocknumber);
 
@@ -171,8 +175,10 @@ describe('Platypus', function () {
 
   it('getPoolIdentifiers and getPricesVolume SELL sAVAX->WAVAX', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const platypus = new Platypus(network, dexKey, dexHelper);
+    dexHelper.init();
+
+    const blocknumber = dexHelper.blockManager.getLatestBlockNumber();
+    const platypus = new Platypus(dexHelper, dexKey);
 
     await platypus.initializePricing(blocknumber);
 
@@ -241,7 +247,9 @@ describe('Platypus', function () {
 
   it('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(network);
-    const platypus = new Platypus(network, dexKey, dexHelper);
+    await dexHelper.init();
+
+    const platypus = new Platypus(dexHelper, dexKey);
 
     const poolLiquidity = await platypus.getTopPoolsForToken(
       TokenA.address,

@@ -17,6 +17,7 @@ const runsNumber = 1000;
 const printFrequency = 100;
 const network = Network.MAINNET;
 const dexHelper = new DummyDexHelper(network);
+dexHelper.init();
 
 const uniV3 = new UniswapV3(dexHelper, 'UniswapV3');
 
