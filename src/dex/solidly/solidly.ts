@@ -1,5 +1,5 @@
-import { TOKEN_EXTRA_FEE, UniswapV2, UniswapV2Pair } from '../uniswap-v2';
-import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../../constants';
+import { UniswapV2 } from '../uniswap-v2/uniswap-v2';
+import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -7,76 +7,88 @@ import {
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
-} from '../../../types';
-import { IDexHelper } from '../../../dex-helper';
-import { UniswapData, UniswapV2Data } from '../types';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../../utils';
-import dystopiaFactoryABI from '../../../abi/uniswap-v2/DystFactory.json';
-import dystPairABI from '../../../abi/uniswap-v2/DystPair.json';
+} from '../../types';
+import { IDexHelper } from '../../dex-helper';
+import erc20ABI from '../../abi/erc20.json';
+import { UniswapData, UniswapV2Data } from '../uniswap-v2/types';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import solidlyFactoryABI from '../../abi/solidly/SolidlyFactory.json';
+import solidlyPair from '../../abi/solidly/SolidlyPair.json';
 import _ from 'lodash';
 import { NumberAsString, SwapSide } from 'paraswap-core';
-import { DystopiaUniswapV2Pool } from './dystopia-uniswap-v2-pool';
-import { DystopiaStablePool } from './dystopia-stable-pool';
-import { Adapters, DystopiaConfig } from './config';
-import { AbiCoder, Interface } from '@ethersproject/abi';
+import { Interface, AbiCoder } from '@ethersproject/abi';
+import { SolidlyStablePool } from './solidly-stable-pool';
+import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';
+import { PoolState, SolidlyPair, SolidlyPoolOrderedParams } from './types';
+import { SolidlyConfig, Adapters } from './config';
 
-// to calculate prices for stable pool, we need decimals of the stable tokens
-// so, we are extending UniswapV2PoolOrderedParams with token decimals
-export interface DystopiaPoolOrderedParams {
-  tokenIn: string;
-  tokenOut: string;
-  reservesIn: string;
-  reservesOut: string;
-  fee: string;
-  direction: boolean;
-  exchange: string;
-  decimalsIn: number;
-  decimalsOut: number;
-  stable: boolean;
-}
+const erc20Iface = new Interface(erc20ABI);
+const solidlyPairIface = new Interface(solidlyPair);
+const defaultAbiCoder = new AbiCoder();
 
-export interface DystopiaPoolState {
-  reserves0: string;
-  reserves1: string;
-  feeCode: number;
-}
+export class Solidly extends UniswapV2 {
+  pairs: { [key: string]: SolidlyPair } = {};
+  stableFee?: number;
+  volatileFee?: number;
 
-const iface = new Interface(dystPairABI);
-const coder = new AbiCoder();
-
-export class Dystopia extends UniswapV2 {
-  feeFactor = 20000;
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(DystopiaConfig);
+    getDexKeysWithNetwork(
+      _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone']),
+    );
 
   constructor(
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
+    isDynamicFees = false,
+    factoryAddress?: Address,
+    subgraphURL?: string,
+    initCode?: string,
+    feeCode?: number,
+    poolGasCost?: number,
+    routerAddress?: Address,
   ) {
     super(
       network,
       dexKey,
       dexHelper,
-      false,
-      DystopiaConfig[dexKey][network].factoryAddress,
-      DystopiaConfig[dexKey][network].subgraphURL,
-      DystopiaConfig[dexKey][network].initCode,
-      DystopiaConfig[dexKey][network].feeCode,
-      DystopiaConfig[dexKey][network].poolGasCost,
-      iface,
+      isDynamicFees,
+      factoryAddress !== undefined
+        ? factoryAddress
+        : SolidlyConfig[dexKey][network].factoryAddress,
+      subgraphURL === ''
+        ? undefined
+        : subgraphURL !== undefined
+        ? subgraphURL
+        : SolidlyConfig[dexKey][network].subgraphURL,
+      initCode !== undefined
+        ? initCode
+        : SolidlyConfig[dexKey][network].initCode,
+      feeCode !== undefined ? feeCode : SolidlyConfig[dexKey][network].feeCode,
+      poolGasCost !== undefined
+        ? poolGasCost
+        : SolidlyConfig[dexKey][network].poolGasCost,
+      solidlyPairIface,
       Adapters[network] || undefined,
     );
 
+    this.stableFee = SolidlyConfig[dexKey][network].stableFee;
+    this.volatileFee = SolidlyConfig[dexKey][network].volatileFee;
+
     this.factory = new dexHelper.web3Provider.eth.Contract(
-      dystopiaFactoryABI as any,
-      DystopiaConfig[dexKey][network].factoryAddress,
+      solidlyFactoryABI as any,
+      factoryAddress !== undefined
+        ? factoryAddress
+        : SolidlyConfig[dexKey][network].factoryAddress,
     );
 
-    this.router = DystopiaConfig[dexKey][network].router || '';
+    this.router =
+      routerAddress !== undefined
+        ? routerAddress
+        : SolidlyConfig[dexKey][network].router || '';
   }
 
-  async findDystopiaPair(from: Token, to: Token, stable: boolean) {
+  async findSolidlyPair(from: Token, to: Token, stable: boolean) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
@@ -89,15 +101,15 @@ export class Dystopia extends UniswapV2 {
     if (pair) return pair;
 
     let exchange = await this.factory.methods
-      // Dystopia has additional boolean parameter "StablePool"
+      // Solidly has additional boolean parameter "StablePool"
       // At first we look for uniswap-like volatile pool
       .getPair(token0.address, token1.address, stable)
       .call();
 
     if (exchange === NULL_ADDRESS) {
-      pair = { token0, token1 };
+      pair = { token0, token1, stable };
     } else {
-      pair = { token0, token1, exchange };
+      pair = { token0, token1, exchange, stable };
     }
     this.pairs[key] = pair;
     return pair;
@@ -105,10 +117,10 @@ export class Dystopia extends UniswapV2 {
 
   async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
     if (!blockNumber) return;
-    const pairsToFetch: UniswapV2Pair[] = [];
+    const pairsToFetch: SolidlyPair[] = [];
     for (const _pair of pairs) {
       for (const stable of [false, true]) {
-        const pair = await this.findDystopiaPair(_pair[0], _pair[1], stable);
+        const pair = await this.findSolidlyPair(_pair[0], _pair[1], stable);
         if (!(pair && pair.exchange)) continue;
         if (!pair.pool) {
           pairsToFetch.push(pair);
@@ -144,18 +156,31 @@ export class Dystopia extends UniswapV2 {
   }
 
   async getManyPoolReserves(
-    pairs: UniswapV2Pair[],
+    pairs: SolidlyPair[],
     blockNumber: number,
-  ): Promise<DystopiaPoolState[]> {
+  ): Promise<PoolState[]> {
     try {
+      const multiCallFeeData = pairs.map(pair =>
+        this.getFeesMultiCallData(pair),
+      );
       const calldata = pairs
-        .map(pair => {
-          return [
+        .map((pair, i) => {
+          let calldata = [
             {
-              target: pair.exchange,
-              callData: iface.encodeFunctionData('getReserves', []),
+              target: pair.token0.address,
+              callData: erc20Iface.encodeFunctionData('balanceOf', [
+                pair.exchange!,
+              ]),
+            },
+            {
+              target: pair.token1.address,
+              callData: erc20Iface.encodeFunctionData('balanceOf', [
+                pair.exchange!,
+              ]),
             },
           ];
+          if (this.isDynamicFees) calldata.push(multiCallFeeData[i]!.callEntry);
+          return calldata;
         })
         .flat();
 
@@ -164,18 +189,19 @@ export class Dystopia extends UniswapV2 {
           .aggregate(calldata)
           .call({}, blockNumber);
 
-      return pairs.map((pair, i) => {
-        const decodedData = coder.decode(
-          ['uint112', 'uint112', 'uint32'],
-          data.returnData[i],
-        );
+      const returnData = _.chunk(data.returnData, this.isDynamicFees ? 3 : 2);
 
-        return {
-          reserves0: decodedData[0].toString(),
-          reserves1: decodedData[1].toString(),
-          feeCode: this.feeCode,
-        };
-      });
+      return pairs.map((pair, i) => ({
+        reserves0: defaultAbiCoder
+          .decode(['uint256'], returnData[i][0])[0]
+          .toString(),
+        reserves1: defaultAbiCoder
+          .decode(['uint256'], returnData[i][1])[0]
+          .toString(),
+        feeCode: this.isDynamicFees
+          ? multiCallFeeData[i]!.callDecoder(returnData[i][2])
+          : (pair.stable ? this.stableFee : this.volatileFee) || this.feeCode,
+      }));
     } catch (e) {
       this.logger.error(
         `Error_getManyPoolReserves could not get reserves with error:`,
@@ -186,20 +212,28 @@ export class Dystopia extends UniswapV2 {
   }
 
   async getSellPrice(
-    priceParams: DystopiaPoolOrderedParams,
+    priceParams: SolidlyPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
     return priceParams.stable
-      ? DystopiaStablePool.getSellPrice(priceParams, srcAmount)
-      : DystopiaUniswapV2Pool.getSellPrice(priceParams, srcAmount);
+      ? SolidlyStablePool.getSellPrice(priceParams, srcAmount, this.feeFactor)
+      : Uniswapv2ConstantProductPool.getSellPrice(
+          priceParams,
+          srcAmount,
+          this.feeFactor,
+        );
   }
 
   async getBuyPrice(
-    priceParams: DystopiaPoolOrderedParams,
+    priceParams: SolidlyPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
     if (priceParams.stable) throw new Error(`Buy not supported`);
-    return DystopiaUniswapV2Pool.getBuyPrice(priceParams, srcAmount);
+    return Uniswapv2ConstantProductPool.getBuyPrice(
+      priceParams,
+      srcAmount,
+      this.feeFactor,
+    );
   }
 
   async getPricesVolume(
@@ -211,7 +245,6 @@ export class Dystopia extends UniswapV2 {
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
-    this.logger.trace(`${this.dexKey}: getPricesVolume limitPools`, limitPools);
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
       const from = this.dexHelper.config.wrapETH(_from);
@@ -237,7 +270,7 @@ export class Dystopia extends UniswapV2 {
         if (limitPools && limitPools.every(p => p !== poolIdentifier))
           return null;
 
-        const pairParam = await this.getDystopiaPairOrderedParams(
+        const pairParam = await this.getSolidlyPairOrderedParams(
           from,
           to,
           blockNumber,
@@ -261,12 +294,16 @@ export class Dystopia extends UniswapV2 {
           side === SwapSide.BUY
             ? await Promise.all(
                 amounts.map(amount =>
-                  this.getBuyPricePath(amount, [pairParam]),
+                  amount === 0n
+                    ? 0n
+                    : this.getBuyPricePath(amount, [pairParam]),
                 ),
               )
             : await Promise.all(
                 amounts.map(amount =>
-                  this.getSellPricePath(amount, [pairParam]),
+                  amount === 0n
+                    ? 0n
+                    : this.getSellPricePath(amount, [pairParam]),
                 ),
               );
 
@@ -298,11 +335,7 @@ export class Dystopia extends UniswapV2 {
         resultPromises,
       )) as ExchangePrices<UniswapV2Data>;
       const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
-      const resultPoolsSorted = resultPoolsFiltered.sort((a, b) =>
-        Number(b.unit - a.unit),
-      );
-      this.logger.trace(`${this.dexKey}: resultPoolsSorted`, resultPoolsSorted);
-      return resultPoolsSorted.length > 0 ? resultPoolsSorted : null;
+      return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
@@ -318,10 +351,14 @@ export class Dystopia extends UniswapV2 {
     count: number,
   ): Promise<PoolLiquidity[]> {
     if (!this.subgraphURL) return [];
+
+    const stableFieldKey =
+      this.dexKey.toLowerCase() === 'solidly' ? 'stable' : 'isStable';
+
     const query = `query ($token: Bytes!, $count: Int) {
       pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
         id
-        isStable
+        ${stableFieldKey}
         token0 {
           id
           decimals
@@ -334,7 +371,7 @@ export class Dystopia extends UniswapV2 {
       }
       pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
         id
-        isStable
+        ${stableFieldKey}
         token0 {
           id
           decimals
@@ -360,7 +397,7 @@ export class Dystopia extends UniswapV2 {
       throw new Error("Couldn't fetch the pools from the subgraph");
     const pools0 = _.map(data.pools0, pool => ({
       exchange: this.dexKey,
-      stable: pool.isStable,
+      stable: pool[stableFieldKey],
       address: pool.id.toLowerCase(),
       connectorTokens: [
         {
@@ -373,7 +410,7 @@ export class Dystopia extends UniswapV2 {
 
     const pools1 = _.map(data.pools1, pool => ({
       exchange: this.dexKey,
-      stable: pool.isStable,
+      stable: pool[stableFieldKey],
       address: pool.id.toLowerCase(),
       connectorTokens: [
         {
@@ -392,14 +429,13 @@ export class Dystopia extends UniswapV2 {
   }
 
   // Same as at uniswap-v2-pool.json, but extended with decimals and stable
-
-  async getDystopiaPairOrderedParams(
+  async getSolidlyPairOrderedParams(
     from: Token,
     to: Token,
     blockNumber: number,
     stable: boolean,
-  ): Promise<DystopiaPoolOrderedParams | null> {
-    const pair = await this.findDystopiaPair(from, to, stable);
+  ): Promise<SolidlyPoolOrderedParams | null> {
+    const pair = await this.findSolidlyPair(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
@@ -410,9 +446,7 @@ export class Dystopia extends UniswapV2 {
       );
       return null;
     }
-    const fee = (
-      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
-    ).toString();
+
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
     if (pairReversed) {
@@ -421,7 +455,7 @@ export class Dystopia extends UniswapV2 {
         tokenOut: to.address,
         reservesIn: pairState.reserves1,
         reservesOut: pairState.reserves0,
-        fee,
+        fee: pairState.feeCode.toString(),
         direction: false,
         exchange: pair.exchange,
         decimalsIn: from.decimals,
@@ -434,7 +468,7 @@ export class Dystopia extends UniswapV2 {
       tokenOut: to.address,
       reservesIn: pairState.reserves0,
       reservesOut: pairState.reserves1,
-      fee,
+      fee: pairState.feeCode.toString(),
       direction: true,
       exchange: pair.exchange,
       decimalsIn: from.decimals,

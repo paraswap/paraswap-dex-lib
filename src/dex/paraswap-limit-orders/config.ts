@@ -25,6 +25,9 @@ export const ParaSwapLimitOrdersConfig: DexConfigMap<DexParams> = {
     [Network.ARBITRUM]: {
       rfqAddress: '0x0927FD43a7a87E3E8b81Df2c44B03C4756849F6D',
     },
+    [Network.OPTIMISM]: {
+      rfqAddress: '0x0927FD43a7a87E3E8b81Df2c44B03C4756849F6D',
+    },
   },
 };
 
@@ -55,6 +58,10 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 13 }],
-    [SwapSide.BUY]: [{ name: 'ArbitrumAdapter01', index: 13 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 3 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 7 }],
+    [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 3 }],
   },
 };

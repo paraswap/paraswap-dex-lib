@@ -42,7 +42,7 @@ export class PricingHelper {
 
       return await dexInstance.initializePricing(blockNumber);
     } catch (e) {
-      this.logger.error('Error_startListening:', e);
+      this.logger.error(`Error_startListening_${dexKey}:`, e);
       setTimeout(
         () => this.initializeDex(dexKey, blockNumber),
         SETUP_RETRY_TIMEOUT,
@@ -71,6 +71,23 @@ export class PricingHelper {
     return await Promise.all(
       dexKeys.map(key => this.initializeDex(key, blockNumber)),
     );
+  }
+
+  public async releaseResources(dexKeys: string[]) {
+    return await Promise.all(dexKeys.map(key => this.releaseDexResources(key)));
+  }
+
+  private async releaseDexResources(dexKey: string) {
+    try {
+      const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+
+      if (!dexInstance.releaseResources) return;
+
+      return await dexInstance.releaseResources();
+    } catch (e) {
+      this.logger.error(`Error_releaseResources_${dexKey}:`, e);
+      setTimeout(() => this.releaseDexResources(dexKey), SETUP_RETRY_TIMEOUT);
+    }
   }
 
   public async getPoolIdentifiers(
