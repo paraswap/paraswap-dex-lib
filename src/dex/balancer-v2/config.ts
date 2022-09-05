@@ -32,13 +32,14 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
   },
-  Embr: {
-   [Network.AVALANCHE]: {
-     subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/embrfinance/embr-avalanche-v2',
-     vaultAddress: '0xad68ea482860cd7077a5D0684313dD3a9BC70fbB',
-   },
-  },
+  // There is almost no liquidity: <12k$. Do not re-enable if protocol is not revived
+  // Embr: {
+  //  [Network.AVALANCHE]: {
+  //    subgraphURL:
+  //       'https://api.thegraph.com/subgraphs/name/embrfinance/embr-avalanche-v2',
+  //    vaultAddress: '0xad68ea482860cd7077a5D0684313dD3a9BC70fbB',
+  //  },
+  // },
 };
 
 export const Adapters: {
