@@ -644,7 +644,7 @@ export class BalancerV1
         minBalance,
         side,
         blockNumber,
-        10,
+        5,
       );
 
       if (!topPools || !topPools.length) return null;
