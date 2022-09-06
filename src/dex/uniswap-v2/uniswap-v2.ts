@@ -53,6 +53,11 @@ const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
 export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
+const LogCallTopics = [
+  '0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1', // event Sync(uint112 reserve0, uint112 reserve1) // uni-V2 and most forks
+  '0xcf2aa50876cdfbb541206f89af0ee78d44a2abf8d328e37fa4917f982149848a', // event Sync(uint256 reserve0, uint256 reserve1) // commonly seen in solidly & forks
+];
+
 interface UniswapV2PoolState {
   reserves0: string;
   reserves1: string;
@@ -112,6 +117,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     state: DeepReadonly<UniswapV2PoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<UniswapV2PoolState> | null> {
+    if (!LogCallTopics.includes(log.topics[0])) return null;
+
     const event = this.decoder(log);
     switch (event.name) {
       case 'Sync':

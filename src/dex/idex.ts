@@ -126,6 +126,10 @@ export interface IDexPricing<ExchangeData> {
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null;
+
+  // If you have any timers or other resources that are need to be released,
+  // you must put it here
+  releaseResources?(): AsyncOrSync<void>;
 }
 
 export interface IDexPooltracker {

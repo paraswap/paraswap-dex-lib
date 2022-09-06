@@ -115,6 +115,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       wooOracleAddress: this.config.wooOracleAddress.toLowerCase(),
       wooFeeManagerAddress: this.config.wooFeeManagerAddress.toLowerCase(),
       wooGuardianAddress: this.config.wooGuardianAddress.toLowerCase(),
+      rebateTo: this.config.rebateTo.toLowerCase(),
       quoteToken: {
         ...this.config.quoteToken,
         address: this.config.quoteToken.address.toLowerCase(),
@@ -520,9 +521,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
+    const payload = this.abiCoder.encodeParameter(
+      'address',
+      this.config.rebateTo,
+    );
+
     return {
       targetExchange: this.config.wooPPAddress,
-      payload: '0x',
+      payload,
       networkFee: '0',
     };
   }
@@ -562,7 +568,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       _amount, // amount
       MIN_CONVERSION_RATE, // minAmount
       this.augustusAddress, // to
-      NULL_ADDRESS, // rebateTo
+      this.config.rebateTo, // rebateTo
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(

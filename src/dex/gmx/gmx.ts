@@ -85,7 +85,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   }
 
   // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifers must be unique
+  // for a given swap. poolIdentifiers must be unique
   // across DEXes.
   async getPoolIdentifiers(
     srcToken: Token,

@@ -73,6 +73,23 @@ export class PricingHelper {
     );
   }
 
+  public async releaseResources(dexKeys: string[]) {
+    return await Promise.all(dexKeys.map(key => this.releaseDexResources(key)));
+  }
+
+  private async releaseDexResources(dexKey: string) {
+    try {
+      const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+
+      if (!dexInstance.releaseResources) return;
+
+      return await dexInstance.releaseResources();
+    } catch (e) {
+      this.logger.error(`Error_releaseResources_${dexKey}:`, e);
+      setTimeout(() => this.releaseDexResources(dexKey), SETUP_RETRY_TIMEOUT);
+    }
+  }
+
   public async getPoolIdentifiers(
     from: Token,
     to: Token,

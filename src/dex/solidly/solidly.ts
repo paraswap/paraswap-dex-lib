@@ -32,7 +32,9 @@ export class Solidly extends UniswapV2 {
   volatileFee?: number;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2']));
+    getDexKeysWithNetwork(
+      _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone']),
+    );
 
   constructor(
     protected network: Network,
@@ -292,12 +294,16 @@ export class Solidly extends UniswapV2 {
           side === SwapSide.BUY
             ? await Promise.all(
                 amounts.map(amount =>
-                  this.getBuyPricePath(amount, [pairParam]),
+                  amount === 0n
+                    ? 0n
+                    : this.getBuyPricePath(amount, [pairParam]),
                 ),
               )
             : await Promise.all(
                 amounts.map(amount =>
-                  this.getSellPricePath(amount, [pairParam]),
+                  amount === 0n
+                    ? 0n
+                    : this.getSellPricePath(amount, [pairParam]),
                 ),
               );
 
