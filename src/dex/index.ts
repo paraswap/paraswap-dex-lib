@@ -43,7 +43,6 @@ import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
-import Web3 from 'web3';
 import { MultiWrapper } from '../lib/multi-wrapper';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
@@ -51,6 +50,8 @@ import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { Solidly } from './solidly/solidly';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
+import { Synthetix } from './synthetix/synthetix';
+import { Cone } from './solidly/forks-override/cone';
 
 const LegacyDexes = [
   CurveV2,
@@ -94,6 +95,8 @@ const Dexes = [
   Solidly,
   SpiritSwapV2,
   Velodrome,
+  Cone,
+  Synthetix,
   CurveV1,
   CurveFork,
   Swerve,

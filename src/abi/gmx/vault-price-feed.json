@@ -127,6 +127,15 @@
   },
   {
     "inputs": [
+      { "internalType": "address", "name": "_token", "type": "address" }
+    ],
+    "name": "getLatestPrimaryPrice",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       { "internalType": "address", "name": "_pair", "type": "address" },
       { "internalType": "bool", "name": "_divByReserve0", "type": "bool" }
     ],

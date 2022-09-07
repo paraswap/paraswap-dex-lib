@@ -44,6 +44,7 @@ import {
   BALANCER_SWAP_GAS_COST,
   BALANCER_V1_POOL_BALANCES_MULTICALL_SLICE_SIZE,
 } from './config';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import BalancerV1PoolABI from '../../abi/BalancerV1Pool.json';
 import BalancerV1ExchangeProxyABI from '../../abi/BalancerV1ExchangeProxy.json';
 
@@ -729,6 +730,26 @@ export class BalancerV1
       payload,
       networkFee: '0',
     };
+  }
+
+  getCalldataGasCost(
+    poolPrices: PoolPrices<BalancerV1Data | OptimizedBalancerV1Data>,
+  ): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[] header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> swaps[0]
+      CALLDATA_GAS_COST.ADDRESS +
+      CALLDATA_GAS_COST.AMOUNT +
+      CALLDATA_GAS_COST.AMOUNT +
+      CALLDATA_GAS_COST.FULL_WORD
+    );
   }
 
   getSimpleParam(

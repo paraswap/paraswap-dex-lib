@@ -8,6 +8,7 @@ import {
   SUBGRAPH_TIMEOUT,
   SwapSide,
 } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -19,6 +20,7 @@ import {
 import {
   AdapterExchangeParam,
   ExchangePrices,
+  PoolPrices,
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
@@ -334,6 +336,21 @@ export class KyberDmm
       this.logger.error(`${this.dexKey}_getPrices`, e);
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<KyberDmmData>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_LARGE +
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS * 2
+    );
   }
 
   private async getPoolPrice(

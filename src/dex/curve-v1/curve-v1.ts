@@ -12,7 +12,8 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { CACHE_PREFIX, Network, NULL_ADDRESS, SwapSide } from '../../constants';
+import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import StableSwapBBTC from '../../abi/curve/StableSwapBBTC.json';
 import FactoryRegistryABI from '../../abi/curve/FactoryRegistry.json';
 import { CurvePool } from './pools/curve-pool';
@@ -899,6 +900,17 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       payload,
       networkFee: '0',
     };
+  }
+
+  getCalldataGasCost(poolPrices: PoolPrices<CurveV1Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.INDEX +
+      CALLDATA_GAS_COST.INDEX +
+      CALLDATA_GAS_COST.TIMESTAMP +
+      CALLDATA_GAS_COST.BOOL
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {

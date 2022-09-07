@@ -10,8 +10,10 @@ import {
   PoolLiquidity,
   Logger,
   NumberAsString,
+  PoolPrices,
 } from '../../types';
-import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
+import { SwapSide, Network } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -387,6 +389,23 @@ export class UniswapV3
       payload,
       networkFee: '0',
     };
+  }
+
+  getCalldataGasCost(poolPrices: PoolPrices<UniswapV3Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> path header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> deadline
+      CALLDATA_GAS_COST.TIMESTAMP +
+      // ParentStruct -> path (20+3+20 = 43 = 32+11 bytes)
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.FULL_WORD +
+      CALLDATA_GAS_COST.wordNonZeroBytes(11)
+    );
   }
 
   async getSimpleParam(

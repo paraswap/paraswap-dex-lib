@@ -32,7 +32,9 @@ export class Solidly extends UniswapV2 {
   volatileFee?: number;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2']));
+    getDexKeysWithNetwork(
+      _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone']),
+    );
 
   constructor(
     protected dexHelper: IDexHelper,
@@ -375,8 +377,12 @@ export class Solidly extends UniswapV2 {
         const prices =
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY
-            ? amounts.map(amount => this.getBuyPricePath(amount, [pairParam]))
-            : amounts.map(amount => this.getSellPricePath(amount, [pairParam]));
+            ? amounts.map(amount =>
+                amount === 0n ? 0n : this.getBuyPricePath(amount, [pairParam]),
+              )
+            : amounts.map(amount =>
+                amount === 0n ? 0n : this.getSellPricePath(amount, [pairParam]),
+              );
 
         return {
           prices: prices,

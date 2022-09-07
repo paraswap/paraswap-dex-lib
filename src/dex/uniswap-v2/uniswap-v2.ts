@@ -7,6 +7,7 @@ import {
   AdapterExchangeParam,
   Address,
   ExchangePrices,
+  PoolPrices,
   Log,
   Logger,
   PoolLiquidity,
@@ -30,6 +31,7 @@ import {
   NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
 } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { SimpleExchange } from '../simple-exchange';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { IDexHelper } from '../../dex-helper';
@@ -50,6 +52,11 @@ import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
 export const RESERVE_LIMIT = 2n ** 112n - 1n;
+
+const LogCallTopics = [
+  '0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1', // event Sync(uint112 reserve0, uint112 reserve1) // uni-V2 and most forks
+  '0xcf2aa50876cdfbb541206f89af0ee78d44a2abf8d328e37fa4917f982149848a', // event Sync(uint256 reserve0, uint256 reserve1) // commonly seen in solidly & forks
+];
 
 interface UniswapV2PoolState {
   reserves0: string;
@@ -102,6 +109,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     state: DeepReadonly<UniswapV2PoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<UniswapV2PoolState> | null> {
+    if (!LogCallTopics.includes(log.topics[0])) return null;
+
     try {
       const event = this.decoder(log);
       switch (event.name) {
@@ -621,6 +630,24 @@ export class UniswapV2
       this.logger.error(`Error_getPrices:`, e);
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<UniswapV2Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> weth
+      CALLDATA_GAS_COST.ADDRESS +
+      // ParentStruct -> pools[] header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> pools[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> pools[0]
+      CALLDATA_GAS_COST.wordNonZeroBytes(22)
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {

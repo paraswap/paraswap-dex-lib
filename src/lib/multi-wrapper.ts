@@ -1,5 +1,4 @@
 import { Logger } from 'log4js';
-import * as _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 
 export type MultiResult<T> = {
@@ -24,7 +23,11 @@ export class MultiWrapper {
     blockNumber?: number | string,
     batchSize: number = 500,
   ): Promise<MultiResult<T>[]> {
-    const allCalls = _.chunk(calls, batchSize);
+    const allCalls = [];
+    for (let i = 0; i < calls.length; i += batchSize) {
+      const batch = calls.slice(i, i + batchSize);
+      allCalls.push(batch);
+    }
 
     const aggregatedResult = await Promise.all(
       allCalls.map(batch =>
@@ -53,9 +56,17 @@ export class MultiWrapper {
         } as MultiResult<T>;
       }
 
+      try {
+        const res = {
+          success: true,
+          returnData: calls[index].decodeFunction(result),
+        } as MultiResult<T>;
+      } catch (e) {
+        console.log(e, requested);
+      }
       const res = {
         success: true,
-        returnData: requested.decodeFunction(result),
+        returnData: calls[index].decodeFunction(result),
       } as MultiResult<T>;
       if (requested.cb) {
         requested.cb(res.returnData);

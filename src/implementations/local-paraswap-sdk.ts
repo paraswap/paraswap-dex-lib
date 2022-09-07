@@ -30,6 +30,8 @@ export interface IParaSwapSDK {
   ): Promise<TxObject>;
 
   initializePricing?(): Promise<void>;
+
+  releaseResources?(): Promise<void>;
 }
 
 const chunks = 10;
@@ -66,6 +68,10 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     await this.dexHelper.init();
     const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
     await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
+  }
+
+  async releaseResources() {
+    await this.pricingHelper.releaseResources([this.dexKey]);
   }
 
   async getPrices(

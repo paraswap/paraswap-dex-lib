@@ -32,6 +32,7 @@ const DEPLOYER_ADDRESS: { [nid: number]: string } = {
   [Network.POLYGON]: '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
   [Network.FANTOM]: '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
   [Network.AVALANCHE]: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
+  [Network.OPTIMISM]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
 };
 
 const MULTISIG: { [nid: number]: string } = {
@@ -40,6 +41,7 @@ const MULTISIG: { [nid: number]: string } = {
   [Network.POLYGON]: '0x46DF4eb6f7A3B0AdF526f6955b15d3fE02c618b7',
   [Network.FANTOM]: '0xECaB2dac955b94e49Ec09D6d68672d3B397BbdAd',
   [Network.AVALANCHE]: '0x1e2ECA5e812D08D2A7F8664D69035163ff5BfEC2',
+  [Network.OPTIMISM]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
 };
 
 class APIParaswapSDK implements IParaSwapSDK {
@@ -207,38 +209,44 @@ export async function testE2E(
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
-  const priceRoute = await paraswap.getPrices(
-    srcToken,
-    destToken,
-    amount,
-    swapSide,
-    contractMethod,
-    poolIdentifiers,
-  );
-  expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
-
-  // Slippage to be 7%
-  const minMaxAmount =
-    (swapSide === SwapSide.SELL
-      ? BigInt(priceRoute.destAmount) * 93n
-      : BigInt(priceRoute.srcAmount) * 107n) / 100n;
-  const swapParams = await paraswap.buildTransaction(
-    priceRoute,
-    minMaxAmount,
-    senderAddress,
-  );
-
-  const swapTx = await ts.simulate(swapParams);
-  console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
-  // Only log gas estimate if testing against API
-  if (useAPI)
-    console.log(
-      `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
-        swapTx!.gasUsed
-      }, Difference: ${
-        parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
-      }`,
+  try {
+    const priceRoute = await paraswap.getPrices(
+      srcToken,
+      destToken,
+      amount,
+      swapSide,
+      contractMethod,
+      poolIdentifiers,
     );
-  console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
-  expect(swapTx!.success).toEqual(true);
+    expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
+
+    // Slippage to be 7%
+    const minMaxAmount =
+      (swapSide === SwapSide.SELL
+        ? BigInt(priceRoute.destAmount) * 93n
+        : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+    const swapParams = await paraswap.buildTransaction(
+      priceRoute,
+      minMaxAmount,
+      senderAddress,
+    );
+
+    const swapTx = await ts.simulate(swapParams);
+    console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+    // Only log gas estimate if testing against API
+    if (useAPI)
+      console.log(
+        `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
+          swapTx!.gasUsed
+        }, Difference: ${
+          parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
+        }`,
+      );
+    console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+    expect(swapTx!.success).toEqual(true);
+  } finally {
+    if (paraswap.releaseResources) {
+      await paraswap.releaseResources();
+    }
+  }
 }

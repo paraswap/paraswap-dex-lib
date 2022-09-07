@@ -5,6 +5,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   Log,
   AdapterExchangeParam,
   SimpleExchangeParam,
@@ -12,6 +13,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -366,6 +368,21 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
         poolIdentifier,
       },
     ];
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<MakerPsmData>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS +
+      // TODO: pools have toll as zero currently but may change
+      CALLDATA_GAS_COST.ZERO +
+      // Either 1 (18 decimals) or 1e12 = 0xe8d4a51000 (6 decimals)
+      CALLDATA_GAS_COST.wordNonZeroBytes(
+        poolPrices.data.gemDecimals === 6 ? 4 : 1,
+      )
+    );
   }
 
   getPsmParams(
