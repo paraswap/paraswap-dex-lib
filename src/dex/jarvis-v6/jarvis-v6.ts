@@ -302,7 +302,7 @@ export class JarvisV6
     poolAddress: Address,
     blockNumber: number,
   ): Promise<bigint> {
-    const cacheKey = `maxTokensCapacity_${poolAddress}`;
+    const cacheKey = `${this.dexKey}_maxTokensCapacity_${poolAddress}`;
     const cachedMaxTokensCapacity = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
