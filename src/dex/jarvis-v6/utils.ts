@@ -17,13 +17,6 @@ export async function getOnChainState(
   poolInterface: Interface,
   blockNumber: number | 'latest',
 ): Promise<PoolState[]> {
-  const pricesFeedResults = await _getPricesFeedValue(
-    dexHelper,
-    poolConfigs,
-    priceFeedAddress,
-    blockNumber,
-  );
-
   const multiContract = dexHelper.multiContract;
   const PoolCallData = poolConfigs
     .map(pool => [
@@ -33,11 +26,12 @@ export async function getOnChainState(
       },
     ])
     .flat();
-  const poolDataCalled = await multiContract.methods
-    .aggregate(PoolCallData)
-    .call({}, blockNumber);
 
-  let i = 0;
+  const [pricesFeedResults, poolDataCalled] = await Promise.all([
+    _getPricesFeedValue(dexHelper, poolConfigs, priceFeedAddress, blockNumber),
+    multiContract.methods.aggregate(PoolCallData).call({}, blockNumber),
+  ]);
+
   return poolConfigs.map((pool, index) => {
     return {
       priceFeed: {
@@ -47,7 +41,7 @@ export async function getOnChainState(
         feesPercentage: bigIntify(
           poolInterface.decodeFunctionResult(
             'feePercentage',
-            poolDataCalled.returnData[i++],
+            poolDataCalled.returnData[index],
           )[0],
         ),
       },
