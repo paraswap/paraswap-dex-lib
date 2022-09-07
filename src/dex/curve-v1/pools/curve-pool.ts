@@ -83,22 +83,28 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
+    let _state: PoolState = {
+      A: bignumberify(state.A),
+      fee: bignumberify(state.fee),
+      admin_fee: bignumberify(state.admin_fee),
+      supply: bignumberify(state.supply),
+      balances: state.balances.map(bignumberify),
+    };
     try {
       const event = this.decoder(log);
-      let _state: PoolState = {
-        A: bignumberify(state.A),
-        fee: bignumberify(state.fee),
-        admin_fee: bignumberify(state.admin_fee),
-        supply: bignumberify(state.supply),
-        balances: state.balances.map(bignumberify),
-      };
-      if (event.name in this.handlers)
+
+      if (event.name in this.handlers) {
         return this.handlers[event.name](event, _state, log);
+      }
       return _state;
     } catch (e) {
-      this.logger.error(`Error: unexpected error handling log:`, e);
+      if (e instanceof Error) {
+        if (!e.name.includes('no matching event')) {
+          this.logger.error(`Error: unexpected error handling log:`, e);
+        }
+      }
     }
-    return state;
+    return _state;
   }
 
   async setup(blockNumber: number, poolState: PoolState | null = null) {
