@@ -32,6 +32,7 @@ import {
 } from './utils';
 import { Interface } from '@ethersproject/abi';
 import { BI_POWS } from '../../bigint-constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 
 const POOL_CACHE_REFRESH_INTERVAL = 60 * 5; // 5 minutes
 
@@ -459,6 +460,13 @@ export class JarvisV6
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<JarvisV6Data>): number | number[] {
-    return 0; // TODO
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // opType
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // expiration
+      CALLDATA_GAS_COST.TIMESTAMP
+    );
   }
 }
