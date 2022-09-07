@@ -3,12 +3,14 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -90,6 +92,14 @@ export class __DexName__
   ): Promise<null | ExchangePrices<__DexName__Data>> {
     // TODO: complete me!
     return null;
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(
+    poolPrices: PoolPrices<__DexName__Data>,
+  ): number | number[] {
+    // TODO: update if there is any payload in getAdapterParam
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
   // Encode params required by the exchange adapter

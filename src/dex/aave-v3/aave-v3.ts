@@ -3,12 +3,14 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, isETHAddress, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -109,6 +111,15 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
         poolAddresses: [fromAToken ? srcToken.address : destToken.address],
       },
     ];
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS
+    );
   }
 
   getAdapterParam(

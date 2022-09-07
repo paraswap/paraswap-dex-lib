@@ -7,6 +7,7 @@ import {
   NumberAsString,
   Token,
   ExchangePrices,
+  PoolPrices,
   PoolLiquidity,
   OptimalSwapExchange,
   ExchangeTxInfo,
@@ -111,6 +112,10 @@ export interface IDexPricing<ExchangeData> {
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
   ): Promise<ExchangePrices<ExchangeData> | null>;
+
+  // Returns estimated gas cost for calldata for DEX when used in multiSwap.
+  // Output type/length corresponds to that of gasCost inside the poolPrices.
+  getCalldataGasCost(poolPrices: PoolPrices<ExchangeData>): number | number[];
 
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration

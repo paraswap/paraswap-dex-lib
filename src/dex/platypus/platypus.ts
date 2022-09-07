@@ -11,6 +11,7 @@ import {
   MultiCallInput,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, getBigIntPow, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -420,6 +421,11 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
           ),
       )
     ).filter((p): p is PoolPrices<PlatypusData> => !!p);
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<PlatypusData>): number | number[] {
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
   // Encode params required by the exchange adapter
