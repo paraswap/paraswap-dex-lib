@@ -41,7 +41,7 @@ describe('JarvisV6 Event', function () {
             dexHelper,
             logger,
             firstPool,
-            config.priceFeed,
+            config.priceFeedAddress,
             poolInterface,
           );
 

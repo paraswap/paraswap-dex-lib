@@ -3,12 +3,12 @@ import { Logger } from '../../types';
 import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { lens } from '../../lens';
-import { PoolConfig, PoolState, priceFeedData } from './types';
+import { PoolConfig, PoolState } from './types';
 import { getOnChainState } from './utils';
 import { Interface } from '@ethersproject/abi';
 import { ChainLinkPriceFeed } from './chainLinkpriceFeed-event';
 import { SynthereumPoolEvent } from './syntheteumPool-event';
-
+import { Address } from 'paraswap';
 export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
   constructor(
     protected parentName: string,
@@ -16,12 +16,11 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
-    public priceFeed: priceFeedData,
+    public priceFeedAdress: Address,
     public poolInterface: Interface,
   ) {
     const chainLinkEvent = new ChainLinkPriceFeed(
-      poolConfig.chainLink.address,
-      poolConfig.chainLink.interface,
+      poolConfig.chainLinkAggregatorAddress,
       lens<DeepReadonly<PoolState>>().priceFeed,
       logger,
     );
@@ -59,7 +58,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     return (
       await getOnChainState(
         this.dexHelper,
-        this.priceFeed.address,
+        this.priceFeedAdress,
         [this.poolConfig],
         this.poolInterface,
         blockNumber,

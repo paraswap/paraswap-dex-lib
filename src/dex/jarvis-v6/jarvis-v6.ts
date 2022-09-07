@@ -17,7 +17,6 @@ import {
   JarvisV6Params,
   PoolConfig,
   PoolState,
-  priceFeedData,
 } from './types';
 import JarvisV6PoolABI from '../../abi/jarvis/jarvis-v6-pool.json';
 import { SimpleExchange } from '../simple-exchange';
@@ -55,8 +54,8 @@ export class JarvisV6
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
     protected poolConfigs: PoolConfig[] = JarvisV6Config[dexKey][network].pools,
-    protected priceFeed: priceFeedData = JarvisV6Config[dexKey][network]
-      .priceFeed,
+    protected priceFeedAddress: Address = JarvisV6Config[dexKey][network]
+      .priceFeedAddress,
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -70,7 +69,7 @@ export class JarvisV6
           dexHelper,
           this.logger,
           pool,
-          this.priceFeed,
+          this.priceFeedAddress,
           this.poolInterface,
         )),
     );
@@ -83,7 +82,7 @@ export class JarvisV6
   async initializePricing(blockNumber: number) {
     const poolStates = await getOnChainState(
       this.dexHelper,
-      this.priceFeed.address,
+      this.priceFeedAddress,
       this.poolConfigs,
       this.poolInterface,
       blockNumber,

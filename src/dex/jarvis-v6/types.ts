@@ -24,19 +24,11 @@ export type PoolConfig = {
   priceFeedPair: string;
   syntheticToken: Token;
   collateralToken: Token;
-  chainLink: {
-    interface: Interface;
-    address: Address;
-  };
-};
-
-export type priceFeedData = {
-  interface: Interface;
-  address: Address;
+  chainLinkAggregatorAddress: Address;
 };
 
 export type DexParams = {
-  priceFeed: priceFeedData;
+  priceFeedAddress: Address;
   pools: PoolConfig[];
 };
 

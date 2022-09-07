@@ -14,14 +14,17 @@ import { Lens } from '../../lens';
 import { ChainLinkPriceFeedState } from './types';
 import { convertToNewDecimals } from './utils';
 import { bigIntify } from '../nerve/utils';
+import ChainlinkAccessControlledOffchainAggregatorABI from '../../abi/jarvis/ChainlinkAccessControlledOffchainAggregator.json';
 
 export class ChainLinkPriceFeed<State> extends PartialEventSubscriber<
   State,
   ChainLinkPriceFeedState
 > {
+  protected chainLinkInterface: Interface = new Interface(
+    ChainlinkAccessControlledOffchainAggregatorABI,
+  );
   constructor(
     private chainLinkAddress: Address,
-    protected chainLinkInterface: Interface,
     lens: Lens<DeepReadonly<State>, DeepReadonly<ChainLinkPriceFeedState>>,
     logger: Logger,
   ) {

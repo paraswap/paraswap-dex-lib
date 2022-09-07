@@ -2,16 +2,12 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { Interface } from '@ethersproject/abi';
-import ChainlinkAccessControlledOffchainAggregatorABI from '../../abi/jarvis/ChainlinkAccessControlledOffchainAggregator.json';
 import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 
 export const JarvisV6Config: DexConfigMap<DexParams> = {
   JarvisV6: {
     [Network.POLYGON]: {
-      priceFeed: {
-        interface: new Interface(SynthereumPriceFeedABI),
-        address: '0x12F513D977B47D1d155bC5ED4d295c1B10D6D027',
-      },
+      priceFeedAddress: '0x12F513D977B47D1d155bC5ED4d295c1B10D6D027',
       pools: [
         {
           address: '0x65a7b4Ff684C2d08c115D55a4B089bf4E92F5003',
@@ -26,12 +22,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x310990E8091b5cF083fA55F500F140CFBb959016',
-          },
+          chainLinkAggregatorAddress:
+            '0x310990E8091b5cF083fA55F500F140CFBb959016',
         },
         {
           address: '0x8734CF40A402D4191BD4D7a64bEeF12E4c452DeF',
@@ -46,12 +38,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x8123bEaCB5bca3AfA0C9ff71B28549d58cEc8176',
-          },
+          chainLinkAggregatorAddress:
+            '0x8123bEaCB5bca3AfA0C9ff71B28549d58cEc8176',
         },
         {
           address: '0x36d6D1d6249fbC6EBd0fC28fd46C846fB69b9074',
@@ -66,12 +54,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x3F7f90e0f782E325401f6323BA93E717f519F382',
-          },
+          chainLinkAggregatorAddress:
+            '0x3F7f90e0f782E325401f6323BA93E717f519F382',
         },
         {
           address: '0x8aE34663B4622336818e334dC42f92C41eFbfa35',
@@ -86,12 +70,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x8a2355ec4678186164dc17dfc2c5d0d083d7fd66',
-          },
+          chainLinkAggregatorAddress:
+            '0x8a2355ec4678186164dc17dfc2c5d0d083d7fd66',
         },
         {
           address: '0xBE813590e1B191120f5df3343368f8a2F579514C',
@@ -106,12 +86,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x45ede0ea5cbbe380c663c7c3015cc7c986669fec',
-          },
+          chainLinkAggregatorAddress:
+            '0x45ede0ea5cbbe380c663c7c3015cc7c986669fec',
         },
         {
           address: '0x06440a2DA257233790B5355322dAD82C10F0389A',
@@ -126,12 +102,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x88b79bfce730bbb74f23ab8940b37b86859caa2e',
-          },
+          chainLinkAggregatorAddress:
+            '0x88b79bfce730bbb74f23ab8940b37b86859caa2e',
         },
         {
           address: '0xAEc757BF73cc1f4609a1459205835Dd40b4e3F29',
@@ -146,12 +118,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0xeaf35f06410014234bee87980a902c21f78cb426',
-          },
+          chainLinkAggregatorAddress:
+            '0xeaf35f06410014234bee87980a902c21f78cb426',
         },
         {
           address: '0xc8442072CF1E131506eaC7df33eA8910e1d5cFDd',
@@ -166,12 +134,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x542d2af7f89a61205f3da2d3d13e29b56bde7b46',
-          },
+          chainLinkAggregatorAddress:
+            '0x542d2af7f89a61205f3da2d3d13e29b56bde7b46',
         },
         {
           address: '0x36572797Cc569A74731E0738Ef56e3b8ce3F309c',
@@ -186,12 +150,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x0a9823c5cd84099fde8566a1adf0f2bb41cc6e7d',
-          },
+          chainLinkAggregatorAddress:
+            '0x0a9823c5cd84099fde8566a1adf0f2bb41cc6e7d',
         },
         {
           address: '0x72E7Da7C0dD3C082Dfe8f22343D6AD70286e07bd',
@@ -206,12 +166,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0xf07eac7a48eb772613479d6a8fc42675f1befb47',
-          },
+          chainLinkAggregatorAddress:
+            '0xf07eac7a48eb772613479d6a8fc42675f1befb47',
         },
         {
           address: '0x4FDA1B4b16f5F2535482b91314018aE5A2fda602',
@@ -226,12 +182,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0xe63032a70f6eb617970829fbfa365d7c44bdbbbf',
-          },
+          chainLinkAggregatorAddress:
+            '0xe63032a70f6eb617970829fbfa365d7c44bdbbbf',
         },
         {
           address: '0x166e4B3Ec3F81F32f0863B9cD63621181d6bFED5',
@@ -246,12 +198,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x08f8d217e6f07ae423a2ad2ffb226ffcb577708d',
-          },
+          chainLinkAggregatorAddress:
+            '0x08f8d217e6f07ae423a2ad2ffb226ffcb577708d',
         },
         {
           address: '0x25E9F976f5020F6BF2d417b231e5f414b7700E31',
@@ -266,12 +214,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0x2e2ed40fc4f1774def278830f8fe3b6e77956ec8',
-          },
+          chainLinkAggregatorAddress:
+            '0x2e2ed40fc4f1774def278830f8fe3b6e77956ec8',
         },
         {
           address: '0x7aC6515f4772fcB6EEeF978f60D996B21C56089D',
@@ -286,12 +230,8 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             decimals: 6,
             symbol: 'USDC',
           },
-          chainLink: {
-            interface: new Interface(
-              ChainlinkAccessControlledOffchainAggregatorABI,
-            ),
-            address: '0xfd54f97a6c408561b5df798c04ae08b27ca0d7f7',
-          },
+          chainLinkAggregatorAddress:
+            '0xfd54f97a6c408561b5df798c04ae08b27ca0d7f7',
         },
       ],
     },
