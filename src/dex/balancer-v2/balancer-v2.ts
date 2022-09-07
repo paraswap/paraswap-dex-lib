@@ -5,6 +5,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   Log,
   AdapterExchangeParam,
   SimpleExchangeParam,
@@ -20,6 +21,7 @@ import {
   Network,
   SUBGRAPH_TIMEOUT,
 } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
@@ -574,6 +576,55 @@ export class BalancerV2
       );
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(
+    poolPrices: PoolPrices<BalancerV2Data>,
+  ): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_LARGE +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[] header
+      CALLDATA_GAS_COST.OFFSET_LARGE +
+      // ParentStruct -> assets[] header
+      CALLDATA_GAS_COST.OFFSET_LARGE +
+      // ParentStruct -> funds
+      CALLDATA_GAS_COST.ADDRESS +
+      CALLDATA_GAS_COST.BOOL +
+      CALLDATA_GAS_COST.ADDRESS +
+      CALLDATA_GAS_COST.BOOL +
+      // ParentStruct -> limits[] header
+      CALLDATA_GAS_COST.OFFSET_LARGE +
+      // ParentStruct -> deadline
+      CALLDATA_GAS_COST.TIMESTAMP +
+      // ParentStruct -> swaps[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> swaps[0] header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[0] -> poolId
+      CALLDATA_GAS_COST.FULL_WORD +
+      // ParentStruct -> swaps[0] -> assetInIndex
+      CALLDATA_GAS_COST.INDEX +
+      // ParentStruct -> swaps[0] -> assetOutIndex
+      CALLDATA_GAS_COST.INDEX +
+      // ParentStruct -> swaps[0] -> amount
+      CALLDATA_GAS_COST.AMOUNT +
+      // ParentStruct -> swaps[0] -> userData header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[0] -> userData
+      CALLDATA_GAS_COST.ZERO +
+      // ParentStruct -> assets[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> assets[0:2]
+      CALLDATA_GAS_COST.ADDRESS * 2 +
+      // ParentStruct -> limits[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> limits[0:2]
+      CALLDATA_GAS_COST.FULL_WORD * 2
+    );
   }
 
   getAdapterParam(

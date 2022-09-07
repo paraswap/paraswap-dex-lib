@@ -73,6 +73,23 @@ export class PricingHelper {
     );
   }
 
+  public async releaseResources(dexKeys: string[]) {
+    return await Promise.all(dexKeys.map(key => this.releaseDexResources(key)));
+  }
+
+  private async releaseDexResources(dexKey: string) {
+    try {
+      const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+
+      if (!dexInstance.releaseResources) return;
+
+      return await dexInstance.releaseResources();
+    } catch (e) {
+      this.logger.error(`Error_releaseResources_${dexKey}:`, e);
+      setTimeout(() => this.releaseDexResources(dexKey), SETUP_RETRY_TIMEOUT);
+    }
+  }
+
   public async getPoolIdentifiers(
     from: Token,
     to: Token,
@@ -134,6 +151,7 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     limitPoolsMap: { [key: string]: string[] | null } | null,
+    rollupL1ToL2GasRatio?: number,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
@@ -160,7 +178,48 @@ export class PricingHelper {
                   blockNumber,
                   limitPools ? limitPools : undefined,
                 )
-                .then(resolve, reject)
+                .then(poolPrices => {
+                  try {
+                    if (!poolPrices || !rollupL1ToL2GasRatio) {
+                      return resolve(poolPrices);
+                    }
+                    return resolve(
+                      poolPrices.map(pp => {
+                        pp.gasCostL2 = pp.gasCost;
+                        const gasCostL1 = dexInstance.getCalldataGasCost(pp);
+                        if (
+                          typeof pp.gasCost === 'number' &&
+                          typeof gasCostL1 === 'number'
+                        ) {
+                          pp.gasCost += Math.ceil(
+                            rollupL1ToL2GasRatio * gasCostL1,
+                          );
+                        } else if (
+                          typeof pp.gasCost !== 'number' &&
+                          typeof gasCostL1 !== 'number'
+                        ) {
+                          if (pp.gasCost.length !== gasCostL1.length) {
+                            throw new Error(
+                              `getCalldataGasCost returned wrong array length in dex ${key}`,
+                            );
+                          }
+                          pp.gasCost = pp.gasCost.map(
+                            (g, i) =>
+                              g +
+                              Math.ceil(rollupL1ToL2GasRatio * gasCostL1[i]),
+                          );
+                        } else {
+                          throw new Error(
+                            `getCalldataGasCost returned wrong type in dex ${key}`,
+                          );
+                        }
+                        return pp;
+                      }),
+                    );
+                  } catch (e) {
+                    reject(e);
+                  }
+                }, reject)
                 .finally(() => {
                   clearTimeout(timer);
                 });

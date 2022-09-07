@@ -7,12 +7,14 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { Token } from '../types';
 import { ConfigHelper } from '../config';
+import { MultiWrapper } from '../lib/multi-wrapper';
 
 export interface IDexHelper {
   config: ConfigHelper;
   cache: ICache;
   httpRequest: IRequestWrapper;
   multiContract: Contract;
+  multiWrapper: MultiWrapper;
   provider: Provider;
   web3Provider: Web3;
   blockManager: IBlockManager;
