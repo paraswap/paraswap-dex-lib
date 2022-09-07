@@ -28,15 +28,27 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
   UniswapV3: {
     [Network.MAINNET]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+      router: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x9c764D2e92dA68E4CDfD784B902283A095ff8b63',
     },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+      router: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x6Dc993Fe1e945A640576B4Dca81281d8e998DF71',
+    },
+    [Network.ARBITRUM]: {
+      factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
+      router: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
+    },
+    [Network.OPTIMISM]: {
+      factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
+      router: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x4FF0dEC5f9a763Aa1E5C2a962aa6f4eDFeE4f9eA',
     },
   },
 };
@@ -49,5 +61,13 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.POLYGON]: {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 13 }],
     [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 2 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 3 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 2 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 3 }],
+    [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 2 }],
   },
 };
