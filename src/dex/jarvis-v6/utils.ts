@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { IDexHelper } from '../../dex-helper';
 import { Address, Token } from '../../types';
 import { bigIntify } from '../nerve/utils';
+import { getBigIntPow } from '../../utils';
 import { JarvisSwapFunctions, PoolConfig, PoolState } from './types';
 import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 import { Interface } from '@ethersproject/abi';
@@ -109,14 +110,6 @@ export function convertToNewDecimals(
   );
 
   return isDecimalIncrease ? amount * bigIntPow : amount / bigIntPow;
-}
-
-// This is needed in order to not modify existing logic and use this wrapper
-// to be safe if we receive not cached decimals
-export function getBigIntPow(decimals: number): bigint {
-  const value = BI_POWS[decimals];
-  // It is not accurate to create 10 ** 23 and more decimals from number type
-  return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
 }
 
 export function getJarvisSwapFunction(

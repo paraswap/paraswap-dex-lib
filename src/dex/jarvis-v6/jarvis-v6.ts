@@ -8,7 +8,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -24,7 +24,6 @@ import { SimpleExchange } from '../simple-exchange';
 import { JarvisV6Config, Adapters } from './config';
 import { JarvisV6EventPool } from './jarvis-v6-events';
 import {
-  getBigIntPow,
   getJarvisPoolFromTokens,
   getJarvisSwapFunction,
   getOnChainState,
