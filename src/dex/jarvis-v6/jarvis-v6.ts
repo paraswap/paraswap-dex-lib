@@ -6,6 +6,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  PoolPrices,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
@@ -219,13 +220,11 @@ export class JarvisV6
       {
         ParentStruct: {
           opType: 'uint',
-          destPool: 'address',
           expiration: 'uint128',
         },
       },
       {
         opType: type,
-        destPool: data.poolAddress.toLowerCase() || NULL_ADDRESS,
         expiration: (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0),
       },
     );
@@ -457,5 +456,9 @@ export class JarvisV6
         BI_POWS[18];
     if (collateralDecimals === 18) return result;
     return convertToNewDecimals(result, 18, collateralDecimals);
+  }
+
+  getCalldataGasCost(poolPrices: PoolPrices<JarvisV6Data>): number | number[] {
+    return 0; // TODO
   }
 }

@@ -239,10 +239,7 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
   [Network.POLYGON]: {
-    [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 0 }],
-    [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 1 }],
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 5 }],
   },
 };
