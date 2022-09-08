@@ -1,4 +1,3 @@
-import { Provider } from '@ethersproject/providers';
 import { Address, UnoptimizedRate } from '../types';
 import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
@@ -33,7 +32,7 @@ import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy';
 import { Nerve } from './nerve/nerve';
 import { IDexHelper } from '../dex-helper';
-import { SwapSide, Network } from '../constants';
+import { SwapSide } from '../constants';
 import { Adapters } from '../types';
 import { Lido } from './lido';
 import { Excalibur } from './uniswap-v2/excalibur';
@@ -42,10 +41,14 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
-import { Dystopia } from './uniswap-v2/dystopia/dystopia';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import Web3 from 'web3';
+import { Solidly } from './solidly/solidly';
+import { Velodrome } from './solidly/forks-override/velodrome';
+import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
+import { Synthetix } from './synthetix/synthetix';
+import { Cone } from './solidly/forks-override/cone';
 
 const LegacyDexes = [
   Curve,
@@ -87,8 +90,12 @@ const Dexes = [
   GMX,
   JarvisV6,
   WooFi,
-  Dystopia,
   ParaSwapLimitOrders,
+  Solidly,
+  SpiritSwapV2,
+  Velodrome,
+  Cone,
+  Synthetix,
 ];
 
 export type LegacyDexConstructor = new (

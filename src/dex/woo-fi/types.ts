@@ -50,4 +50,5 @@ export type DexParams = {
   wooGuardianAddress: Address;
   quoteToken: Token;
   baseTokens: Record<string, Token>;
+  rebateTo: Address;
 };

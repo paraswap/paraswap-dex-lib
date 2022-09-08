@@ -1,4 +1,4 @@
-import { UniswapV2 } from './uniswap-v2';
+import { UniswapV2, UniswapV2Pair } from './uniswap-v2';
 import { Network } from '../../constants';
 import { Address, DexConfigMap } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
@@ -44,9 +44,9 @@ export class BiSwap extends UniswapV2 {
     this.biSwapPool = new Interface(BiSwapPoolABI);
   }
 
-  protected getFeesMultiCallData(poolAddress: Address) {
+  protected getFeesMultiCallData(pair: UniswapV2Pair) {
     const callEntry = {
-      target: poolAddress,
+      target: pair.exchange!,
       callData: this.biSwapPool.encodeFunctionData('swapFee', []),
     };
     const callDecoder = (values: any[]) =>

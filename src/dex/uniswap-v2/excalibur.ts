@@ -1,4 +1,4 @@
-import { UniswapV2 } from './uniswap-v2';
+import { UniswapV2, UniswapV2Pair } from './uniswap-v2';
 import { Network } from '../../constants';
 import { Address, DexConfigMap } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
@@ -42,9 +42,9 @@ export class Excalibur extends UniswapV2 {
     this.excaliburPool = new Interface(excaliburPoolABI);
   }
 
-  protected getFeesMultiCallData(poolAddress: Address) {
+  protected getFeesMultiCallData(pair: UniswapV2Pair) {
     const callEntry = {
-      target: poolAddress,
+      target: pair.exchange!,
       callData: this.excaliburPool.encodeFunctionData('feeAmount', []),
     };
     const callDecoder = (values: any[]) =>
