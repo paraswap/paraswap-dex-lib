@@ -440,7 +440,7 @@ export class JarvisV6
       CALLDATA_GAS_COST.DEX_OVERHEAD +
       CALLDATA_GAS_COST.LENGTH_SMALL +
       // opType
-      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.INDEX +
       // expiration
       CALLDATA_GAS_COST.TIMESTAMP
     );
