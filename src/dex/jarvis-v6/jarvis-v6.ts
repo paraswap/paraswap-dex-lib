@@ -160,14 +160,13 @@ export class JarvisV6
     amounts: bigint[],
     side: SwapSide,
     blockNumber: number,
-    limitPools?: string[],
+    limitPools?: string[], // unusued since DEX is constant price, safe to reuse pools
   ): Promise<null | ExchangePrices<JarvisV6Data>> {
     const eventPool = this.getEventPool(srcToken, destToken);
 
     if (!eventPool) return null;
     const poolAddress = eventPool.poolConfig.address.toLowerCase();
     const poolIdentifier = eventPool.getIdentifier();
-    if (limitPools && !limitPools.includes(poolIdentifier)) return null;
 
     const poolState = await this.getPoolState(eventPool, blockNumber);
 
