@@ -23,7 +23,6 @@ class DummyCache implements ICache {
     network: number,
     cacheKey: string,
   ): Promise<string | null> {
-    // console.log('Cache Requested: ', dexKey, network, key);
     return null;
   }
 
@@ -31,10 +30,9 @@ class DummyCache implements ICache {
     dexKey: string,
     network: number,
     cacheKey: string,
-    seconds: number,
+    ttlSeconds: number,
     value: string,
   ): Promise<void> {
-    // console.log('Cache Stored: ', dexKey, network, cacheKey, seconds, value);
     return;
   }
 
@@ -42,7 +40,7 @@ class DummyCache implements ICache {
     dexKey: string,
     network: number,
     cacheKey: string,
-    ttl: number,
+    ttlSeconds: number,
   ): Promise<string | null> {
     return null;
   }
@@ -51,7 +49,7 @@ class DummyCache implements ICache {
     dexKey: string,
     network: number,
     cacheKey: string,
-    seconds: number,
+    ttlSeconds: number,
     value: string,
   ): Promise<void> {
     return;
