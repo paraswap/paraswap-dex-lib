@@ -634,7 +634,7 @@ describe('Solidly integration tests', () => {
 
         describe('Printyfinance', function () {
           const dexKey = 'Printyfinance';
-          const printyfinance = new Printyfinance, dexKey, dexHelper);
+          const printyfinance = new Printyfinance (network, dexKey, dexHelper);
 
           describe('UniswapV2 like pool', function () {
             const TokenASymbol = 'AVAX';
