@@ -162,17 +162,17 @@ export class JarvisV6
     blockNumber: number,
     limitPools?: string[], // unusued since DEX is constant price, safe to reuse pools
   ): Promise<null | ExchangePrices<JarvisV6Data>> {
-    const eventPool = this.getEventPool(srcToken, destToken);
+    if (side !== SwapSide.SELL) return null;
 
+    const eventPool = this.getEventPool(srcToken, destToken);
     if (!eventPool) return null;
+
     const poolAddress = eventPool.poolConfig.address.toLowerCase();
     const poolIdentifier = eventPool.getIdentifier();
 
     const poolState = await this.getPoolState(eventPool, blockNumber);
 
-    const unitVolume = getBigIntPow(
-      (side === SwapSide.SELL ? srcToken : destToken).decimals,
-    );
+    const unitVolume = getBigIntPow(srcToken.decimals);
 
     const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
     const maxTokensCapacity = await this.getMaxTokensCapacity(
@@ -184,7 +184,6 @@ export class JarvisV6
       [unitVolume, ...amounts],
       swapFunction,
       maxTokensCapacity,
-      side,
       eventPool.poolConfig,
       poolState,
     );
@@ -358,7 +357,6 @@ export class JarvisV6
     amounts: bigint[],
     swapFunction: JarvisSwapFunctions,
     maxTokensCapacity: bigint,
-    side: SwapSide,
     pool: PoolConfig,
     poolState: PoolState,
   ): bigint[] {
@@ -367,7 +365,6 @@ export class JarvisV6
         return this.computePriceForMint(
           amount,
           maxTokensCapacity,
-          side,
           poolState,
           pool.collateralToken.decimals,
         );
@@ -375,7 +372,6 @@ export class JarvisV6
       if (swapFunction === JarvisSwapFunctions.REDEEM) {
         return this.computePriceForRedeem(
           amount,
-          side,
           poolState,
           pool.collateralToken.decimals,
         );
@@ -387,48 +383,28 @@ export class JarvisV6
   computePriceForMint(
     amount: bigint,
     maxTokensCapacity: bigint,
-    side: SwapSide,
     poolState: PoolState,
     collateralDecimalsNumber: number,
   ) {
     const feePercentage = poolState.pool.feesPercentage;
     const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
-    if (side === SwapSide.SELL) {
-      const syntheticAmount = this.getSyntheticAmountToReceive(
-        amount,
-        collateralDecimalsNumber,
-        UsdcPriceFeed,
-        feePercentage,
-      );
-      return syntheticAmount <= maxTokensCapacity ? syntheticAmount : 0n;
-    }
-
-    if (maxTokensCapacity <= amount) return 0n;
-    return this.getCollateralAmountToReceive(
+    const syntheticAmount = this.getSyntheticAmountToReceive(
       amount,
       collateralDecimalsNumber,
       UsdcPriceFeed,
       feePercentage,
     );
+    return syntheticAmount <= maxTokensCapacity ? syntheticAmount : 0n;
   }
 
   computePriceForRedeem(
     amount: bigint,
-    side: SwapSide,
     poolState: PoolState,
     collateralDecimalsNumber: number,
   ) {
     const feePercentage = poolState.pool.feesPercentage;
     const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
-    if (side === SwapSide.SELL) {
-      return this.getCollateralAmountToReceive(
-        amount,
-        collateralDecimalsNumber,
-        UsdcPriceFeed,
-        feePercentage,
-      );
-    }
-    return this.getSyntheticAmountToReceive(
+    return this.getCollateralAmountToReceive(
       amount,
       collateralDecimalsNumber,
       UsdcPriceFeed,
