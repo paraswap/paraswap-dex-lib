@@ -264,20 +264,10 @@ export class JarvisV6
     let swapFunctionParams: JarvisV6Params;
     switch (swapFunction) {
       case JarvisSwapFunctions.MINT:
-        swapFunctionParams = [
-          destAmount,
-          srcAmount,
-          timestamp,
-          this.augustusAddress,
-        ];
+        swapFunctionParams = ['1', srcAmount, timestamp, this.augustusAddress];
         break;
       case JarvisSwapFunctions.REDEEM:
-        swapFunctionParams = [
-          srcAmount,
-          destAmount,
-          timestamp,
-          this.augustusAddress,
-        ];
+        swapFunctionParams = [srcAmount, '1', timestamp, this.augustusAddress];
         break;
       default:
         throw new Error(`Unknown function ${swapFunction}`);
