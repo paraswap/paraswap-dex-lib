@@ -492,11 +492,15 @@ export class BalancerV2
         (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const eventPoolStates = await this.eventPools.getState(blockNumber);
-      if (!eventPoolStates) {
+      let _eventPoolStates = await this.eventPools.getState(blockNumber);
+      if (!_eventPoolStates) {
         this.logger.error(`getState returned null`);
-        return null;
+        _eventPoolStates = await this.eventPools.generateState(blockNumber);
+        if (!_eventPoolStates) return null;
+        this.eventPools.setState(_eventPoolStates, blockNumber);
       }
+
+      const eventPoolStates = _eventPoolStates; // to appease ts
 
       // Fetch previously cached non-event pool states
       let nonEventPoolStates = this.getNonEventPoolStateCache(blockNumber);
