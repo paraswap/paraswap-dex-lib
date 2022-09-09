@@ -74,7 +74,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Printyfinance: {
     [Network.AVALANCHE]: {
-      //subgraphURL: '',
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/printyfi/printyfinance',
       factoryAddress: '0xc62Ca231Cd2b0c530C622269dA02374134511a36',
       router: '0xfC7466f164c3BED39f2f218F1dccE26DF01A4035',
       initCode:
