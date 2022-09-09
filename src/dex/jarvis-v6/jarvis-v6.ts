@@ -300,11 +300,13 @@ export class JarvisV6
     blockNumber: number,
   ): Promise<bigint> {
     const cacheKey = `${this.dexKey}_maxTokensCapacity_${poolAddress}`;
-    const cachedMaxTokensCapacity = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      cacheKey,
-    );
+    const cachedMaxTokensCapacity =
+      await this.dexHelper.cache.getAndCacheLocally(
+        this.dexKey,
+        this.network,
+        cacheKey,
+        POOL_CACHE_REFRESH_INTERVAL,
+      );
 
     if (cachedMaxTokensCapacity) {
       this.logger.info(
@@ -332,7 +334,7 @@ export class JarvisV6
     this.logger.info(
       `Got maxTokensCapacity ${this.dexKey}_${this.network} from pool : ${poolAddress}`,
     );
-    this.dexHelper.cache.setex(
+    this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       cacheKey,

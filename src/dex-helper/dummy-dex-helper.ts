@@ -37,6 +37,25 @@ class DummyCache implements ICache {
     // console.log('Cache Stored: ', dexKey, network, cacheKey, seconds, value);
     return;
   }
+
+  async getAndCacheLocally(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+    ttl: number,
+  ): Promise<string | null> {
+    return null;
+  }
+
+  async setexAndCacheLocally(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+    seconds: number,
+    value: string,
+  ): Promise<void> {
+    return;
+  }
 }
 
 class DummyRequestWrapper implements IRequestWrapper {
