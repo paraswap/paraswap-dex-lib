@@ -19,6 +19,7 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   DexParams,
+  OutputResult,
   PoolState,
   UniswapV3Data,
   UniswapV3Functions,
@@ -30,8 +31,9 @@ import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
-  UNISWAPV3_QUOTE_GASLIMIT,
+  UNISWAPV3_FUNCTION_CALL_GAS_COST,
   UNISWAPV3_SUBGRAPH_URL,
+  UNISWAPV3_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
@@ -287,24 +289,19 @@ export class UniswapV3
 
       if (selectedPools.length === 0) return null;
 
-      const states = selectedPools.map(pool => {
-        let state = pool.getState(blockNumber);
-        // if (state === null || !state.isValid) {
-        //   if (state === null) {
-        //     this.logger.trace(
-        //       `${this.dexKey}: State === null. Generating new one`,
-        //     );
-        //   } else if (!state.isValid) {
-        //     this.logger.trace(
-        //       `${this.dexKey}: State is invalid. Generating new one`,
-        //     );
-        //   }
-
-        // state = await pool.generateState(blockNumber);
-        // pool.setState(state, blockNumber);
-        // }
-        return state!;
-      });
+      const states = await Promise.all(
+        selectedPools.map(async pool => {
+          let state = pool.getState(blockNumber);
+          if (state === null) {
+            this.logger.trace(
+              `${this.dexKey}: State === null. Generating new one`,
+            );
+            state = await pool.generateState(blockNumber);
+            pool.setState(state, blockNumber);
+          }
+          return state!;
+        }),
+      );
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
@@ -319,16 +316,26 @@ export class UniswapV3
       const result = selectedPools.map((pool, i) => {
         const state = states[i];
 
-        const unit = this._getOutputs(state, [unitAmount], zeroForOne, side);
-        const prices = this._getOutputs(state, _amounts, zeroForOne, side);
+        const unitResult = this._getOutputs(
+          state,
+          [unitAmount],
+          zeroForOne,
+          side,
+        );
+        const pricesResult = this._getOutputs(
+          state,
+          _amounts,
+          zeroForOne,
+          side,
+        );
 
-        if (!prices || !unit) {
+        if (!unitResult || !pricesResult) {
           throw new Error('Prices or unit is not calculated');
         }
 
         return {
-          unit: unit[0],
-          prices: [0n, ...prices],
+          unit: unitResult.outputs[0],
+          prices: [0n, ...pricesResult.outputs],
           data: {
             path: [
               {
@@ -344,7 +351,13 @@ export class UniswapV3
             pool.feeCode,
           ),
           exchange: this.dexKey,
-          gasCost: UNISWAPV3_QUOTE_GASLIMIT,
+          gasCost: [
+            0,
+            ...pricesResult.tickCounts.map(
+              t =>
+                UNISWAPV3_FUNCTION_CALL_GAS_COST + t * UNISWAPV3_TICK_GAS_COST,
+            ),
+          ],
           poolAddresses: [pool.poolAddress],
         };
       });
@@ -569,15 +582,9 @@ export class UniswapV3
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
-  ): bigint[] | null {
+  ): OutputResult | null {
     try {
-      const outputs = uniswapV3Math.queryOutputs(
-        state,
-        amounts,
-        zeroForOne,
-        side,
-      );
-      return outputs;
+      return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
     } catch (e) {
       this.logger.error(
         `${this.dexKey}: received error in _getSellOutputs while calculating outputs`,

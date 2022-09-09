@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { PoolState, Slot0, TickInfo } from '../types';
+import { OutputResult, PoolState, Slot0, TickInfo } from '../types';
 import { LiquidityMath } from './LiquidityMath';
 import { Oracle } from './Oracle';
 import { SqrtPriceMath } from './SqrtPriceMath';
@@ -12,7 +12,6 @@ import { DeepReadonly } from 'ts-essentials';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { BI_MAX_INT } from '../../../bigint-constants';
 import { OUT_OF_RANGE_ERROR_POSTFIX } from '../constants';
-import { setImmediatePromise } from '../utils';
 
 type ModifyPositionParams = {
   tickLower: bigint;
@@ -37,6 +36,7 @@ type PriceComputationCache = {
   secondsPerLiquidityCumulativeX128: bigint;
   tickCumulative: bigint;
   computedLatestObservation: boolean;
+  tickCount: number;
 };
 
 function _updatePriceComputationObjects<
@@ -66,15 +66,22 @@ function _priceComputationCycles(
   },
 ] {
   const latestFullCycleState: PriceComputationState = { ...state };
+
+  if (cache.tickCount == 0) {
+    cache.tickCount = 1;
+  }
   const latestFullCycleCache: PriceComputationCache = { ...cache };
 
   // We save tick before any change. Later we use this to restore
   // state before last step
   let lastTicksCopy: { index: number; tick: TickInfo } | undefined;
 
-  while (
+  let i = 0;
+  for (
+    ;
     state.amountSpecifiedRemaining !== 0n &&
-    state.sqrtPriceX96 !== sqrtPriceLimitX96
+    state.sqrtPriceX96 !== sqrtPriceLimitX96;
+    ++i
   ) {
     const step = {
       sqrtPriceStartX96: 0n,
@@ -202,6 +209,10 @@ function _priceComputationCycles(
     }
   }
 
+  if (i > 1) {
+    latestFullCycleCache.tickCount += i - 1;
+  }
+
   return [state, { latestFullCycleState, latestFullCycleCache }];
 }
 
@@ -212,7 +223,7 @@ class UniswapV3Math {
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
-  ): bigint[] {
+  ): OutputResult {
     const slot0Start = poolState.slot0;
 
     const isSell = side === SwapSide.SELL;
@@ -234,6 +245,7 @@ class UniswapV3Math {
       secondsPerLiquidityCumulativeX128: 0n,
       tickCumulative: 0n,
       computedLatestObservation: false,
+      tickCount: 0,
     };
 
     const state: PriceComputationState = {
@@ -251,9 +263,11 @@ class UniswapV3Math {
     let previousAmount = 0n;
 
     const outputs = new Array(amounts.length);
+    const tickCounts = new Array(amounts.length);
     for (const [i, amount] of amounts.entries()) {
       if (amount === 0n) {
         outputs[i] = 0n;
+        tickCounts[i] = 0;
         continue;
       }
 
@@ -295,13 +309,13 @@ class UniswapV3Math {
             zeroForOne,
             exactInput,
           );
-
         if (
           finalState.amountSpecifiedRemaining === 0n &&
           finalState.amountCalculated === 0n
         ) {
           isOutOfRange = true;
           outputs[i] = 0n;
+          tickCounts[i] = 0;
           continue;
         }
 
@@ -326,19 +340,25 @@ class UniswapV3Math {
 
         if (isSell) {
           outputs[i] = BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
+          tickCounts[i] = latestFullCycleCache.tickCount;
           continue;
         } else {
           outputs[i] = zeroForOne
             ? BigInt.asUintN(256, amount0)
             : BigInt.asUintN(256, amount1);
+          tickCounts[i] = latestFullCycleCache.tickCount;
           continue;
         }
       } else {
         outputs[i] = 0n;
+        tickCounts[i] = 0;
       }
     }
 
-    return outputs;
+    return {
+      outputs,
+      tickCounts,
+    };
   }
 
   swapFromEvent(

@@ -92,3 +92,8 @@ export type TickBitMapMappings = {
   index: number;
   value: bigint;
 };
+
+export type OutputResult = {
+  outputs: bigint[];
+  tickCounts: number[];
+};
