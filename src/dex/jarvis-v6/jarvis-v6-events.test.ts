@@ -8,6 +8,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import { Interface } from '@ethersproject/abi';
+import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 
 jest.setTimeout(50 * 1000);
 const dexKey = 'JarvisV6';
@@ -35,6 +36,10 @@ describe('JarvisV6 Event', function () {
           const dexHelper = new DummyDexHelper(network);
           const logger = dexHelper.getLogger(dexKey);
           const firstPool = config.pools[0];
+          const priceFeedContract = new dexHelper.web3Provider.eth.Contract(
+            SynthereumPriceFeedABI as any,
+            config.priceFeedAddress,
+          );
           const jarvisV6Pools = new JarvisV6EventPool(
             dexKey,
             network,
@@ -43,6 +48,7 @@ describe('JarvisV6 Event', function () {
             firstPool,
             config.priceFeedAddress,
             poolInterface,
+            priceFeedContract,
           );
 
           await testEventSubscriber(
