@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
@@ -76,37 +75,6 @@ describe('JarvisV6', function () {
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, TokenAAmounts, SwapSide.SELL, dexKey);
     });
-
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      const pools = await jarvisV6.getPoolIdentifiers(
-        TokenA,
-        TokenB,
-        SwapSide.BUY,
-        blockNumber,
-      );
-      console.log(
-        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
-        pools,
-      );
-
-      expect(pools.length).toBeGreaterThan(0);
-
-      const poolPrices = await jarvisV6.getPricesVolume(
-        TokenA,
-        TokenB,
-        TokenBAmounts,
-        SwapSide.BUY,
-        blockNumber,
-        pools,
-      );
-      console.log(
-        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
-        poolPrices,
-      );
-
-      expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, TokenBAmounts, SwapSide.BUY, dexKey);
-    });
   });
   describe('Mint() Swap Function', () => {
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -138,37 +106,6 @@ describe('JarvisV6', function () {
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, TokenBAmounts, SwapSide.SELL, dexKey);
-    });
-
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      const pools = await jarvisV6.getPoolIdentifiers(
-        TokenB,
-        TokenA,
-        SwapSide.BUY,
-        blockNumber,
-      );
-      console.log(
-        `${TokenBSymbol} <> ${TokenASymbol} Pool Identifiers: `,
-        pools,
-      );
-
-      expect(pools.length).toBeGreaterThan(0);
-
-      const poolPrices = await jarvisV6.getPricesVolume(
-        TokenB,
-        TokenA,
-        TokenAAmounts,
-        SwapSide.BUY,
-        blockNumber,
-        pools,
-      );
-      console.log(
-        `${TokenBSymbol} <> ${TokenASymbol} Pool Prices: `,
-        poolPrices,
-      );
-
-      expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, TokenAAmounts, SwapSide.BUY, dexKey);
     });
   });
 });

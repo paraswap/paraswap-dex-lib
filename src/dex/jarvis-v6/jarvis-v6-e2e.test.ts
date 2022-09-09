@@ -2,11 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -62,17 +58,11 @@ describe('JarvisV6 E2E', () => {
       network,
     );
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const jEURSymbol: string = 'jEUR';
     const USDCSymbol: string = 'USDC';
-    const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const jEURAmount: string = '1000000000000000000';
     const USDCAmount: string = '1000000';
-    const nativeTokenAmount = '1000000000000000000';
-
-    // TODO: Add any direct swap contractMethod name if it exists
-    // TODO: If buy is not supported remove the buy contract methods
 
     const sideToContractMethods = new Map([
       [
@@ -83,44 +73,11 @@ describe('JarvisV6 E2E', () => {
           // ContractMethod.megaSwap,
         ],
       ],
-      [
-        SwapSide.BUY,
-        [
-          ContractMethod.simpleBuy,
-          // ContractMethod.buy,
-        ],
-      ],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          // it(nativeTokenSymbol + ' -> TOKEN', async () => {
-          //   await testE2E(
-          //     tokens[nativeTokenSymbol],
-          //     tokens[tokenASymbol],
-          //     holders[nativeTokenSymbol],
-          //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-          //     side,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
-          // it('TOKEN -> ' + nativeTokenSymbol, async () => {
-          //   await testE2E(
-          //     tokens[tokenASymbol],
-          //     tokens[nativeTokenSymbol],
-          //     holders[tokenASymbol],
-          //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-          //     side,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
           it('jEUR -> USDC', async () => {
             await testE2E(
               tokens[jEURSymbol],
