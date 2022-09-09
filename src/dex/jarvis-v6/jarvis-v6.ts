@@ -33,6 +33,8 @@ import {
 import { Interface } from '@ethersproject/abi';
 import { BI_POWS } from '../../bigint-constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { Contract } from 'web3-eth-contract';
+import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 
 const POOL_CACHE_REFRESH_INTERVAL = 60 * 5; // 5 minutes
 
@@ -48,6 +50,7 @@ export class JarvisV6
     getDexKeysWithNetwork(JarvisV6Config);
 
   protected poolInterface: Interface = new Interface(JarvisV6PoolABI);
+  protected priceFeedContract: Contract;
 
   logger: Logger;
   constructor(
@@ -63,6 +66,11 @@ export class JarvisV6
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
 
+    this.priceFeedContract = new dexHelper.web3Provider.eth.Contract(
+      SynthereumPriceFeedABI as any,
+      priceFeedAddress,
+    );
+
     poolConfigs.forEach(
       pool =>
         (this.eventPools[pool.address.toLowerCase()] = new JarvisV6EventPool(
@@ -73,6 +81,7 @@ export class JarvisV6
           pool,
           this.priceFeedAddress,
           this.poolInterface,
+          this.priceFeedContract,
         )),
     );
   }
@@ -84,10 +93,12 @@ export class JarvisV6
   async initializePricing(blockNumber: number) {
     const poolStates = await getOnChainState(
       this.dexHelper,
-      this.priceFeedAddress,
       this.poolConfigs,
-      this.poolInterface,
       blockNumber,
+      {
+        poolInterface: this.poolInterface,
+        priceFeedContract: this.priceFeedContract,
+      },
     );
 
     this.poolConfigs.forEach((pool, index) => {

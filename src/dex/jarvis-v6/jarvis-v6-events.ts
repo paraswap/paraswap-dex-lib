@@ -9,6 +9,7 @@ import { Interface } from '@ethersproject/abi';
 import { ChainLinkPriceFeed } from './chainLinkpriceFeed-event';
 import { SynthereumPoolEvent } from './syntheteumPool-event';
 import { Address } from 'paraswap';
+import { Contract } from 'web3-eth-contract';
 export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
   constructor(
     protected parentName: string,
@@ -18,6 +19,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     public poolConfig: PoolConfig,
     public priceFeedAdress: Address,
     public poolInterface: Interface,
+    public priceFeedContract: Contract,
   ) {
     const chainLinkEvent = new ChainLinkPriceFeed(
       poolConfig.chainLinkAggregatorAddress,
@@ -56,13 +58,10 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
    */
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     return (
-      await getOnChainState(
-        this.dexHelper,
-        this.priceFeedAdress,
-        [this.poolConfig],
-        this.poolInterface,
-        blockNumber,
-      )
+      await getOnChainState(this.dexHelper, [this.poolConfig], blockNumber, {
+        poolInterface: this.poolInterface,
+        priceFeedContract: this.priceFeedContract,
+      })
     )[0];
   }
 }
