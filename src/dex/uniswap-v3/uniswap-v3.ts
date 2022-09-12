@@ -289,19 +289,19 @@ export class UniswapV3
 
       if (selectedPools.length === 0) return null;
 
-      const states = await Promise.all(
-        selectedPools.map(async pool => {
-          let state = pool.getState(blockNumber);
-          if (state === null) {
-            this.logger.trace(
-              `${this.dexKey}: State === null. Generating new one`,
-            );
-            state = await pool.generateState(blockNumber);
-            pool.setState(state, blockNumber);
-          }
-          return state!;
-        }),
-      );
+      const statesPromises = selectedPools.map(async pool => {
+        let state = pool.getState(blockNumber);
+        if (state === null) {
+          this.logger.trace(
+            `${this.dexKey}: State === null. Generating new one`,
+          );
+          state = await pool.generateState(blockNumber);
+          pool.setState(state, blockNumber);
+        }
+        return state!;
+      });
+
+      const states = (await Promise.all(statesPromises)).filter(state => state);
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
