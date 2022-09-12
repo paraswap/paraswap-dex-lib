@@ -16,6 +16,7 @@ import {
   JarvisSwapFunctions,
   JarvisV6Data,
   JarvisV6Params,
+  JarvisV6SytemMaxVars,
   PoolConfig,
   PoolState,
 } from './types';
@@ -176,15 +177,12 @@ export class JarvisV6
     const unitVolume = getBigIntPow(srcToken.decimals);
 
     const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
-    const maxTokensCapacity = await this.getMaxTokensCapacity(
-      poolAddress,
-      blockNumber,
-    );
+    const systemMaxVar = await this.getSystemMaxVars(poolAddress, blockNumber);
 
     const [unit, ...prices] = this.computePrices(
       [unitVolume, ...amounts],
       swapFunction,
-      maxTokensCapacity,
+      systemMaxVar,
       eventPool.poolConfig,
       poolState,
     );
@@ -296,29 +294,27 @@ export class JarvisV6
     return [];
   }
 
-  async getMaxTokensCapacity(
+  async getSystemMaxVars(
     poolAddress: Address,
     blockNumber: number,
-  ): Promise<bigint> {
-    const cacheKey = `${this.dexKey}_maxTokensCapacity_${poolAddress}`;
-    const cachedMaxTokensCapacity =
-      await this.dexHelper.cache.getAndCacheLocally(
-        this.dexKey,
-        this.network,
-        cacheKey,
-        POOL_CACHE_REFRESH_INTERVAL,
-      );
-
-    if (cachedMaxTokensCapacity) {
-      this.logger.info(
-        `Got maxTokensCapacity of ${this.dexKey}_${poolAddress} pool from cache`,
-      );
-      return BigInt(cachedMaxTokensCapacity);
-    }
-
-    this.logger.info(
-      `Get ${this.dexKey}_${this.network} MaxTokensCapacity from pool : ${poolAddress}`,
+  ): Promise<JarvisV6SytemMaxVars> {
+    const cacheKey = `${this.dexKey}_systemMaxVars_${poolAddress}`;
+    const cachedSystemMaxVars = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.network,
+      cacheKey,
+      POOL_CACHE_REFRESH_INTERVAL,
     );
+
+    if (cachedSystemMaxVars) {
+      const { maxTokensCapacity, totalSyntheticTokens } =
+        JSON.parse(cachedSystemMaxVars);
+
+      return {
+        maxTokensCapacity: BigInt(maxTokensCapacity),
+        totalSyntheticTokens: BigInt(totalSyntheticTokens),
+      };
+    }
 
     const multiContract = this.dexHelper.multiContract;
     const encodedResp = (await multiContract.methods
@@ -330,34 +326,48 @@ export class JarvisV6
             [],
           ),
         },
+        {
+          target: poolAddress,
+          callData: this.poolInterface.encodeFunctionData(
+            'totalSyntheticTokens',
+            [],
+          ),
+        },
       ])
-      .call({}, blockNumber)) as { returnData: [string] };
+      .call({}, blockNumber)) as { returnData: [string, string] };
 
     const maxTokensCapacity = this.poolInterface
-      .decodeFunctionResult('maxTokensCapacity', encodedResp.returnData[0])?.[0]
-      ?.toString();
+      .decodeFunctionResult('maxTokensCapacity', encodedResp.returnData[0])[0]
+      .toString();
+    const totalSyntheticTokens = this.poolInterface
+      .decodeFunctionResult(
+        'totalSyntheticTokens',
+        encodedResp.returnData[1],
+      )[0]
+      .toString();
 
-    if (!maxTokensCapacity)
-      throw new Error('Unable to get maxTokensCapacity from contract pool');
-
-    this.logger.info(
-      `Got maxTokensCapacity ${this.dexKey}_${this.network} from pool : ${poolAddress}`,
-    );
+    const systemMaxVarStr = JSON.stringify({
+      maxTokensCapacity,
+      totalSyntheticTokens,
+    });
     this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       cacheKey,
       POOL_CACHE_REFRESH_INTERVAL,
-      maxTokensCapacity,
+      systemMaxVarStr,
     );
 
-    return BigInt(maxTokensCapacity);
+    return {
+      maxTokensCapacity: BigInt(maxTokensCapacity),
+      totalSyntheticTokens: BigInt(totalSyntheticTokens),
+    };
   }
 
   computePrices(
     amounts: bigint[],
     swapFunction: JarvisSwapFunctions,
-    maxTokensCapacity: bigint,
+    { maxTokensCapacity, totalSyntheticTokens }: JarvisV6SytemMaxVars,
     pool: PoolConfig,
     poolState: PoolState,
   ): bigint[] {
@@ -371,6 +381,8 @@ export class JarvisV6
         );
       }
       if (swapFunction === JarvisSwapFunctions.REDEEM) {
+        if (amount > totalSyntheticTokens) return 0n;
+
         return this.computePriceForRedeem(
           amount,
           poolState,
