@@ -111,7 +111,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       }
       return state;
     } catch (e) {
-      catchParseLogError(e, this.logger);
+      if (!catchParseLogError(e, this.logger)) {
+        return state; // ignore unrecognized event
+      }
       return null;
     }
   }
