@@ -8,7 +8,7 @@ import {
   Logger,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -320,14 +320,22 @@ export class JarvisV6
       `Get ${this.dexKey}_${this.network} MaxTokensCapacity from pool : ${poolAddress}`,
     );
 
-    const poolContractInstance = new this.dexHelper.web3Provider.eth.Contract(
-      JarvisV6PoolABI as any,
-      poolAddress,
-    );
+    const multiContract = this.dexHelper.multiContract;
+    const encodedResp = (await multiContract.methods
+      .aggregate([
+        {
+          target: poolAddress,
+          callData: this.poolInterface.encodeFunctionData(
+            'maxTokensCapacity',
+            [],
+          ),
+        },
+      ])
+      .call({}, blockNumber)) as { returnData: [string] };
 
-    const maxTokensCapacity = await poolContractInstance.methods
-      .maxTokensCapacity()
-      .call({}, blockNumber);
+    const maxTokensCapacity = this.poolInterface
+      .decodeFunctionResult('maxTokensCapacity', encodedResp.returnData[0])?.[0]
+      ?.toString();
 
     if (!maxTokensCapacity)
       throw new Error('Unable to get maxTokensCapacity from contract pool');
