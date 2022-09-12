@@ -40,7 +40,7 @@ export class Vault<State> extends PartialEventSubscriber<State, VaultState> {
   protected totalTokenWeights: bigint;
 
   constructor(
-    protected vaultAddress: Address,
+    public readonly vaultAddress: Address,
     protected tokenAddresses: Address[],
     config: VaultConfig,
     protected vaultPriceFeed: VaultPriceFeed<State>,
