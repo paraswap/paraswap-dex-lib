@@ -3,6 +3,7 @@ import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { DexConfigMap } from './types';
 import _ from 'lodash';
 import BigNumber from 'bignumber.js';
+import { Logger } from './types';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -245,3 +246,11 @@ export function sliceCalls<T, U>({
 
   return results as [U, ...U[]];
 }
+
+export const catchParseLogError = (e: any, logger: Logger) => {
+  if (e instanceof Error) {
+    if (!e.message.includes('not matching event')) {
+      logger.error('Failed parse event', e);
+    }
+  }
+};

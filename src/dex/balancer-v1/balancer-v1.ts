@@ -1,7 +1,7 @@
 import { Interface, LogDescription } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
 import { DeepReadonly } from 'ts-essentials';
-import _ from 'lodash';
+import _, { includes } from 'lodash';
 import * as BigNumberLib from 'bignumber.js';
 import * as BigNumberEthers from '@ethersproject/bignumber';
 import {
@@ -17,7 +17,12 @@ import {
 } from '../../types';
 import { SwapSide, Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, isETHAddress, sliceCalls } from '../../utils';
+import {
+  catchParseLogError,
+  getDexKeysWithNetwork,
+  isETHAddress,
+  sliceCalls,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -143,10 +148,16 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     state: DeepReadonly<MinimalPoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<MinimalPoolState> | null {
-    const event = poolParseLog(log);
-    if (event.name in this.handlers) {
-      return this.handlers[event.name](event, state, log.blockNumber);
+    try {
+      const event = poolParseLog(log);
+      if (event.name in this.handlers) {
+        return this.handlers[event.name](event, state, log.blockNumber);
+      }
+      return state;
+    } catch (e) {
+      catchParseLogError(e, this.logger);
     }
+
     return state;
   }
 

@@ -14,7 +14,7 @@ import {
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
-import { bigIntify } from '../../utils';
+import { bigIntify, catchParseLogError } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { NumberAsString } from 'paraswap-core';
 import {
@@ -111,10 +111,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       }
       return state;
     } catch (e) {
-      this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
-        e,
-      );
+      catchParseLogError(e, this.logger);
       return null;
     }
   }
