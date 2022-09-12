@@ -9,7 +9,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { BN_0, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bignumberify } from '../../../utils';
+import { bignumberify, catchParseLogError } from '../../../utils';
 import { stringify } from 'querystring';
 import { getManyPoolStates } from './getstate-multicall';
 
@@ -98,11 +98,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
       }
       return _state;
     } catch (e) {
-      if (e instanceof Error) {
-        if (!e.name.includes('no matching event')) {
-          this.logger.error(`Error: unexpected error handling log:`, e);
-        }
-      }
+      catchParseLogError(e, this.logger);
     }
     return _state;
   }
