@@ -81,13 +81,21 @@ class BalancerV2PoolState extends StatefulEventSubscriber<PoolState> {
     key: string,
     logger: Logger,
     public info: SubgraphPoolBase,
+    private pool: WeightedPool | StablePool | LinearPool | PhantomStablePool,
   ) {
     super(dexHelper, parentName, key, logger, true);
     this.poolAddress = info.address.toLowerCase();
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    return this.getState(blockNumber)!;
+    const calls = this.pool.getOnChainCalls(this.info);
+    const results = await this.dexHelper.multiContract.methods
+      .tryAggregate(true, calls)
+      .call({}, blockNumber);
+
+    const newState = this.pool.decodeOnChainCalls(this.info, results, 0);
+
+    return newState[0][this.info.address];
   }
 
   protected processLog(
@@ -264,12 +272,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       }
 
       const _state = poolStates[poolAddress];
+      const subgraphPool = subgraphBasePools[poolAddress];
       const pool = new BalancerV2PoolState(
         this.dexHelper,
         this.parentName,
         poolAddress,
         this.logger,
-        subgraphBasePools[poolAddress],
+        subgraphPool,
+        this.pools[subgraphPool.poolType],
       );
 
       pool.setState(_state, blockNumber);
@@ -568,68 +578,55 @@ export class BalancerV2
         (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const quoteUnitVolume = getBigIntPow(
-        (side === SwapSide.SELL ? _to : _from).decimals,
-      );
-
-      // const poolStates = await this.eventPools.getState(blockNumber);
-      // if (!poolStates) {
-      //   this.logger.error(`getState returned null`);
-      //   return null;
-      // }
-
-      // const missingPools = allowedPools.filter(
-      //   pool => !(pool.poolAddress in poolStates),
-      // );
-      //
-      // const missingPoolsStateMap = missingPools.length
-      //   ? await this.eventPools.getOnChainState(missingPools, blockNumber)
-      //   : {};
-
-      const poolPrices = allowedPools
-        .map(pool => {
-          const poolAddress = pool.poolAddress;
-          const poolState = pool.getState(blockNumber);
-          // poolStates[poolAddress] || missingPoolsStateMap[poolAddress];
-          if (!poolState) {
+      const poolPricesPromises = allowedPools.map(async pool => {
+        const poolAddress = pool.poolAddress;
+        let poolState = pool.getState(blockNumber);
+        // poolStates[poolAddress] || missingPoolsStateMap[poolAddress];
+        if (!poolState) {
+          const newState = await pool.generateState(blockNumber);
+          if (!newState) {
             this.logger.error(`Unable to find the poolState ${poolAddress}`);
             return null;
           }
-          // TODO: re-check what should be the current block time stamp
-          try {
-            const res = this.eventPools.getPricesPool(
-              _from,
-              _to,
-              pool.info,
-              poolState,
-              amounts,
-              unitVolume,
-              side,
-            );
-            if (!res) return;
-            return {
-              unit: res.unit,
-              prices: res.prices,
-              data: {
-                poolId: pool.info.id,
-              },
-              poolAddresses: [poolAddress],
-              exchange: this.dexKey,
-              gasCost: 150 * 1000,
-              poolIdentifier: `${this.dexKey}_${poolAddress}`,
-            };
-          } catch (e) {
-            this.logger.error(
-              `Error_getPrices ${from.symbol || from.address}, ${
-                to.symbol || to.address
-              }, ${side}, ${poolAddress}:`,
-              e,
-            );
-            return null;
-          }
-        })
-        .filter(p => !!p);
-      return poolPrices as ExchangePrices<BalancerV2Data>;
+          poolState = newState;
+          pool.setState(newState, blockNumber);
+        }
+        // TODO: re-check what should be the current block time stamp
+        try {
+          const res = this.eventPools.getPricesPool(
+            _from,
+            _to,
+            pool.info,
+            poolState,
+            amounts,
+            unitVolume,
+            side,
+          );
+          if (!res) return;
+          return {
+            unit: res.unit,
+            prices: res.prices,
+            data: {
+              poolId: pool.info.id,
+            },
+            poolAddresses: [poolAddress],
+            exchange: this.dexKey,
+            gasCost: 150 * 1000,
+            poolIdentifier: `${this.dexKey}_${poolAddress}`,
+          };
+        } catch (e) {
+          this.logger.error(
+            `Error_getPrices ${from.symbol || from.address}, ${
+              to.symbol || to.address
+            }, ${side}, ${poolAddress}:`,
+            e,
+          );
+          return null;
+        }
+      });
+      const poolPrices = await Promise.all(poolPricesPromises);
+
+      return poolPrices.filter(p => !!p) as ExchangePrices<BalancerV2Data>;
     } catch (e) {
       this.logger.error(
         `Error_getPrices ${from.symbol || from.address}, ${
