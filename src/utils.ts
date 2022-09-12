@@ -249,7 +249,7 @@ export function sliceCalls<T, U>({
 
 export const catchParseLogError = (e: any, logger: Logger): boolean => {
   if (e instanceof Error) {
-    if (!e.message.includes('not matching event')) {
+    if (!e.message.includes('no matching event')) {
       logger.error('Failed parse event', e);
       return false;
     }
