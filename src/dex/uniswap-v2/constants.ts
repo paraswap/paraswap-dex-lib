@@ -4,7 +4,6 @@ import { MDEXConfig } from './mdex';
 import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
-import { DystopiaConfig } from './dystopia/config';
 
 // BakerySwap and Dystopia were removed from AllUniswapForks and UniswapForksWithNetwork
 // as they have a modified pool implementation which are not compatible with
@@ -53,4 +52,6 @@ export const UniswapV2Alias: { [network: number]: string } = {
   [Network.POLYGON]: 'quickswap',
   [Network.AVALANCHE]: 'pangolinswap',
   [Network.FANTOM]: 'spookyswap',
+  [Network.ARBITRUM]: 'sushiswap',
+  [Network.OPTIMISM]: 'zipswap',
 };

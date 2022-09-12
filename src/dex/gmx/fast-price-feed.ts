@@ -10,7 +10,7 @@ import {
   Log,
   BlockHeader,
 } from '../../types';
-import { PoolState, FastPriceFeedConfig, FastPriceFeedState } from './types';
+import { FastPriceFeedConfig, FastPriceFeedState } from './types';
 import FastPriceFeedAbi from '../../abi/gmx/fast-price-feed.json';
 import FastPriceEventsAbi from '../../abi/gmx/fast-price-events.json';
 import { Lens } from '../../lens';
@@ -25,12 +25,14 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
   BASIS_POINTS_DIVISOR = 10000n;
   protected priceDuration: number;
   protected maxDeviationBasisPoints: bigint;
-  protected favorFastPrice: boolean;
-  protected volBasisPoints: bigint;
+  protected favorFastPrice: Record<string, boolean>;
+  private spreadBasisPointsIfInactive: bigint;
+  private spreadBasisPointsIfChainError: bigint;
+  private maxPriceUpdateDelay: number;
 
   constructor(
     private fastPriceFeedAddress: Address,
-    private fastPriceEventsAddress: Address,
+    fastPriceEventsAddress: Address,
     private tokenAddresses: Address[],
     config: FastPriceFeedConfig,
     lens: Lens<DeepReadonly<State>, DeepReadonly<FastPriceFeedState>>,
@@ -40,7 +42,9 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
     this.priceDuration = config.priceDuration;
     this.maxDeviationBasisPoints = config.maxDeviationBasisPoints;
     this.favorFastPrice = config.favorFastPrice;
-    this.volBasisPoints = config.volBasisPoints;
+    this.spreadBasisPointsIfInactive = config.spreadBasisPointsIfInactive;
+    this.spreadBasisPointsIfChainError = config.spreadBasisPointsIfChainError;
+    this.maxPriceUpdateDelay = config.maxPriceUpdateDelay;
   }
 
   public processLog(
@@ -80,62 +84,68 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
     const state = this.lens.get()(_state);
 
     const timestamp = Math.floor(Date.now() / 1000);
+
+    if (timestamp > state.lastUpdatedAt + this.maxPriceUpdateDelay) {
+      if (_maximise) {
+        return (
+          (_refPrice *
+            (this.BASIS_POINTS_DIVISOR + this.spreadBasisPointsIfChainError)) /
+          this.BASIS_POINTS_DIVISOR
+        );
+      }
+
+      return (
+        (_refPrice *
+          (this.BASIS_POINTS_DIVISOR - this.spreadBasisPointsIfChainError)) /
+        this.BASIS_POINTS_DIVISOR
+      );
+    }
+
     if (timestamp > state.lastUpdatedAt + this.priceDuration) {
-      return _refPrice;
+      if (_maximise) {
+        return (
+          (_refPrice *
+            (this.BASIS_POINTS_DIVISOR + this.spreadBasisPointsIfInactive)) /
+          this.BASIS_POINTS_DIVISOR
+        );
+      }
+
+      return (
+        (_refPrice *
+          (this.BASIS_POINTS_DIVISOR - this.spreadBasisPointsIfInactive)) /
+        this.BASIS_POINTS_DIVISOR
+      );
     }
 
     const fastPrice = state.prices[_token];
-    if (fastPrice == 0n) {
-      return _refPrice;
-    }
+    if (fastPrice === 0n) return _refPrice;
 
-    const maxPrice =
-      (_refPrice * (this.BASIS_POINTS_DIVISOR + this.maxDeviationBasisPoints)) /
-      this.BASIS_POINTS_DIVISOR;
-    const minPrice =
-      (_refPrice * (this.BASIS_POINTS_DIVISOR - this.maxDeviationBasisPoints)) /
-      this.BASIS_POINTS_DIVISOR;
+    let diffBasisPoints =
+      _refPrice > fastPrice ? _refPrice - fastPrice : fastPrice - _refPrice;
+    diffBasisPoints = (diffBasisPoints * this.BASIS_POINTS_DIVISOR) / _refPrice;
 
-    if (this.favorFastPrice) {
-      if (fastPrice >= minPrice && fastPrice <= maxPrice) {
-        if (_maximise) {
-          if (_refPrice > fastPrice) {
-            const volPrice =
-              (fastPrice * (this.BASIS_POINTS_DIVISOR + this.volBasisPoints)) /
-              this.BASIS_POINTS_DIVISOR;
-            // the volPrice should not be more than _refPrice
-            return volPrice > _refPrice ? _refPrice : volPrice;
-          }
-          return fastPrice;
-        }
+    // create a spread between the _refPrice and the fastPrice if the maxDeviationBasisPoints is exceeded
+    // or if watchers have flagged an issue with the fast price
+    const hasSpread =
+      !this.favorFastPrice[_token] ||
+      diffBasisPoints > this.maxDeviationBasisPoints;
 
-        if (_refPrice < fastPrice) {
-          const volPrice =
-            (fastPrice * (this.BASIS_POINTS_DIVISOR - this.volBasisPoints)) /
-            this.BASIS_POINTS_DIVISOR;
-          // the volPrice should not be less than _refPrice
-          return volPrice < _refPrice ? _refPrice : volPrice;
-        }
-
-        return fastPrice;
+    if (hasSpread) {
+      // return the higher of the two prices
+      if (_maximise) {
+        return _refPrice > fastPrice ? _refPrice : fastPrice;
       }
+
+      // return the lower of the two prices
+      return _refPrice < fastPrice ? _refPrice : fastPrice;
     }
 
-    if (_maximise) {
-      if (_refPrice > fastPrice) {
-        return _refPrice;
-      }
-      return fastPrice > maxPrice ? maxPrice : fastPrice;
-    }
-
-    if (_refPrice < fastPrice) {
-      return _refPrice;
-    }
-    return fastPrice < minPrice ? minPrice : fastPrice;
+    return fastPrice;
   }
 
   static getConfigMulticallInputs(
     fastPriceFeedAddress: Address,
+    tokenAddresses: Address[],
   ): MultiCallInput[] {
     return [
       {
@@ -150,16 +160,35 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
       },
       {
         target: fastPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData('favorFastPrice'),
+        callData: FastPriceFeed.interface.encodeFunctionData(
+          'spreadBasisPointsIfInactive',
+        ),
       },
       {
         target: fastPriceFeedAddress,
-        callData: FastPriceFeed.interface.encodeFunctionData('volBasisPoints'),
+        callData: FastPriceFeed.interface.encodeFunctionData(
+          'spreadBasisPointsIfChainError',
+        ),
       },
+      {
+        target: fastPriceFeedAddress,
+        callData: FastPriceFeed.interface.encodeFunctionData(
+          'maxPriceUpdateDelay',
+        ),
+      },
+      ...tokenAddresses.map(t => ({
+        target: fastPriceFeedAddress,
+        callData: FastPriceFeed.interface.encodeFunctionData('favorFastPrice', [
+          t,
+        ]),
+      })),
     ];
   }
 
-  static getConfig(multicallOutputs: MultiCallOutput[]): FastPriceFeedConfig {
+  static getConfig(
+    multicallOutputs: MultiCallOutput[],
+    tokenAddresses: Address[],
+  ): FastPriceFeedConfig {
     return {
       priceDuration: parseInt(
         FastPriceFeed.interface
@@ -174,15 +203,36 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
           )[0]
           .toString(),
       ),
-      favorFastPrice: FastPriceFeed.interface.decodeFunctionResult(
-        'favorFastPrice',
-        multicallOutputs[2],
-      )[0],
-      volBasisPoints: BigInt(
+      spreadBasisPointsIfInactive: BigInt(
         FastPriceFeed.interface
-          .decodeFunctionResult('volBasisPoints', multicallOutputs[3])[0]
+          .decodeFunctionResult(
+            'spreadBasisPointsIfInactive',
+            multicallOutputs[2],
+          )[0]
           .toString(),
       ),
+      spreadBasisPointsIfChainError: BigInt(
+        FastPriceFeed.interface
+          .decodeFunctionResult(
+            'spreadBasisPointsIfChainError',
+            multicallOutputs[3],
+          )[0]
+          .toString(),
+      ),
+      maxPriceUpdateDelay: parseInt(
+        FastPriceFeed.interface
+          .decodeFunctionResult('maxPriceUpdateDelay', multicallOutputs[4])[0]
+          .toString(),
+      ),
+      favorFastPrice: multicallOutputs
+        .slice(5)
+        .reduce<Record<string, boolean>>((acc, curr, i) => {
+          acc[tokenAddresses[i]] = FastPriceFeed.interface.decodeFunctionResult(
+            'favorFastPrice',
+            curr,
+          )[0];
+          return acc;
+        }, {}),
     };
   }
 

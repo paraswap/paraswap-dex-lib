@@ -4,6 +4,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -14,6 +15,7 @@ import {
   PreprocessTransactionOptions,
 } from '../../types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -27,7 +29,7 @@ import {
 } from './types';
 import { ParaSwapLimitOrdersConfig, Adapters } from './config';
 import { LimitOrderExchange } from '../limit-order-exchange';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import {
   MAX_ORDERS_MULTI_FACTOR,
@@ -137,7 +139,11 @@ export class ParaSwapLimitOrders
         prices: [unit],
       } = this._getPrices([unitVolume], orderBook, isSell);
 
-      const { prices, gasCosts } = this._getPrices(amounts, orderBook, isSell);
+      const { prices, gasCosts, maxOrdersCount } = this._getPrices(
+        amounts,
+        orderBook,
+        isSell,
+      );
 
       if (unit === 0n) {
         // If we didn't fulfill unit amount, scale up latest amount till unit
@@ -148,7 +154,10 @@ export class ParaSwapLimitOrders
         {
           unit,
           prices,
-          data: { orderInfos: null },
+          data: {
+            orderInfos: null,
+            maxOrdersCount,
+          },
           poolIdentifier: expectedIdentifier,
           exchange: this.dexKey,
           gasCost: gasCosts.map(v => Number(v)),
@@ -164,6 +173,57 @@ export class ParaSwapLimitOrders
       );
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(
+    poolPrices: PoolPrices<ParaSwapLimitOrdersData>,
+  ): number | number[] {
+    return (poolPrices.gasCost as number[]).map(g => {
+      if (!g) return 0;
+      const numOrders = Number(BigInt(g) / ONE_ORDER_GASCOST);
+      return (
+        CALLDATA_GAS_COST.DEX_NO_PAYLOAD +
+        CALLDATA_GAS_COST.LENGTH_LARGE +
+        // Struct header
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        // Struct -> orderInfos[] header
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        // Struct -> orderInfos[]
+        CALLDATA_GAS_COST.LENGTH_SMALL +
+        // Struct -> orderInfos[0:numOrders] headers
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        CALLDATA_GAS_COST.OFFSET_LARGE * (numOrders - 1) +
+        // Struct -> orderInfos[0:numOrders]
+        numOrders *
+          // Struct -> orderInfos[i] -> order
+          (CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.TIMESTAMP +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.AMOUNT +
+            CALLDATA_GAS_COST.AMOUNT +
+            // Struct -> orderInfos[i] -> signature header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> takerTokenFillAmount
+            CALLDATA_GAS_COST.AMOUNT +
+            // Struct -> orderInfos[i] -> permitTakerAsset header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> permitMakerAsset header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> signature
+            CALLDATA_GAS_COST.LENGTH_SMALL +
+            CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.wordNonZeroBytes(1) +
+            // Struct -> orderInfos[i] -> permitTakerAsset
+            CALLDATA_GAS_COST.ZERO +
+            // Struct -> orderInfos[i] -> permitMakerAsset
+            CALLDATA_GAS_COST.ZERO)
+      );
+    });
   }
 
   async preProcessTransaction?(
@@ -372,7 +432,7 @@ export class ParaSwapLimitOrders
 
     const encodingValues: OrderInfo[] = new Array(orderInfos.length);
 
-    let minDeadline = BI_MAX_UINT;
+    let minDeadline = BI_MAX_UINT256;
     for (const [i, orderInfo] of orderInfos.entries()) {
       // Find minimum deadline value
       const { order } = orderInfo;
@@ -409,9 +469,10 @@ export class ParaSwapLimitOrders
     amounts: bigint[],
     orderBook: ParaSwapOrderBook[],
     isSell: boolean,
-  ): { prices: bigint[]; gasCosts: bigint[] } {
+  ): { prices: bigint[]; gasCosts: bigint[]; maxOrdersCount: number } {
     const prices = new Array<bigint>(amounts.length).fill(0n);
     const gasCosts = new Array<bigint>(amounts.length).fill(0n);
+    let maxOrdersCount = 0;
 
     const calcOutFunc = isSell
       ? this._calcMakerFromTakerAmount
@@ -488,13 +549,14 @@ export class ParaSwapLimitOrders
         } else if (toFill === 0n) {
           prices[i] = filled;
           gasCosts[i] = numberOfOrders * ONE_ORDER_GASCOST;
+          maxOrdersCount = Math.max(maxOrdersCount, +numberOfOrders.toString());
         } else {
           prices[i] = 0n;
           gasCosts[i] = 0n;
         }
       }
     }
-    return { prices, gasCosts };
+    return { prices, gasCosts, maxOrdersCount };
   }
 
   private _calcTakerFromMakerAmount(

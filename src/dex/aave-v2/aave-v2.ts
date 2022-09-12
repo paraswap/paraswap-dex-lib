@@ -3,12 +3,14 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { isETHAddress, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { AaveV2Data, AaveV2Param, AaveV2PoolAndWethFunctions } from './types';
 
@@ -145,6 +147,15 @@ export class AaveV2
         poolAddresses: [fromAToken ? srcToken.address : destToken.address],
       },
     ];
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<AaveV2Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS
+    );
   }
 
   // Encode params required by the exchange adapter
