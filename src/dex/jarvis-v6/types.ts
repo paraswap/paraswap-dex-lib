@@ -53,7 +53,7 @@ export enum JarvisSwapFunctions {
   REDEEM = 'redeem',
 }
 
-export type JarvisV6SytemMaxVars = {
+export type JarvisV6SystemMaxVars = {
   maxTokensCapacity: bigint;
   totalSyntheticTokens: bigint;
 };

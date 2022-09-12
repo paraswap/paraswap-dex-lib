@@ -16,7 +16,7 @@ import {
   JarvisSwapFunctions,
   JarvisV6Data,
   JarvisV6Params,
-  JarvisV6SytemMaxVars,
+  JarvisV6SystemMaxVars,
   PoolConfig,
   PoolState,
 } from './types';
@@ -177,12 +177,12 @@ export class JarvisV6
     const unitVolume = getBigIntPow(srcToken.decimals);
 
     const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
-    const systemMaxVar = await this.getSystemMaxVars(poolAddress, blockNumber);
+    const systemMaxVars = await this.getSystemMaxVars(poolAddress, blockNumber);
 
     const [unit, ...prices] = this.computePrices(
       [unitVolume, ...amounts],
       swapFunction,
-      systemMaxVar,
+      systemMaxVars,
       eventPool.poolConfig,
       poolState,
     );
@@ -297,7 +297,7 @@ export class JarvisV6
   async getSystemMaxVars(
     poolAddress: Address,
     blockNumber: number,
-  ): Promise<JarvisV6SytemMaxVars> {
+  ): Promise<JarvisV6SystemMaxVars> {
     const cacheKey = `${this.dexKey}_systemMaxVars_${poolAddress}`;
     const cachedSystemMaxVars = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
@@ -367,7 +367,7 @@ export class JarvisV6
   computePrices(
     amounts: bigint[],
     swapFunction: JarvisSwapFunctions,
-    { maxTokensCapacity, totalSyntheticTokens }: JarvisV6SytemMaxVars,
+    { maxTokensCapacity, totalSyntheticTokens }: JarvisV6SystemMaxVars,
     pool: PoolConfig,
     poolState: PoolState,
   ): bigint[] {
