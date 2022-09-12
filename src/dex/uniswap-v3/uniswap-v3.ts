@@ -405,7 +405,7 @@ export class UniswapV3
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<UniswapV3Data>): number | number[] {
-    return (
+    const gasCost =
       CALLDATA_GAS_COST.DEX_OVERHEAD +
       CALLDATA_GAS_COST.LENGTH_SMALL +
       // ParentStruct header
@@ -417,8 +417,16 @@ export class UniswapV3
       // ParentStruct -> path (20+3+20 = 43 = 32+11 bytes)
       CALLDATA_GAS_COST.LENGTH_SMALL +
       CALLDATA_GAS_COST.FULL_WORD +
-      CALLDATA_GAS_COST.wordNonZeroBytes(11)
-    );
+      CALLDATA_GAS_COST.wordNonZeroBytes(11);
+    const arr = new Array(poolPrices.prices.length);
+    poolPrices.prices.forEach((p, index) => {
+      if (p == 0n) {
+        arr[index] = 0;
+      } else {
+        arr[index] = gasCost;
+      }
+    });
+    return arr;
   }
 
   async getSimpleParam(

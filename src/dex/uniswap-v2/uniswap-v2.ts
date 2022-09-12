@@ -480,10 +480,10 @@ export class UniswapV2
     blockNumber: number,
   ): UniswapV2PoolOrderedParams | null {
     const pair = this.syncFindPair(from, to);
-    if (!(pair && pair.pool && pair.exchange)) return null;
+    if (!pair || !pair.pool || !pair.exchange) return null;
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
-      this.logger.error(
+      this.logger.warn(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
           from.symbol || from.address
         } ${to.symbol || to.address}`,

@@ -213,7 +213,7 @@ export class PricingHelper {
                           );
                         } else {
                           throw new Error(
-                            `getCalldataGasCost returned wrong type in dex ${key}`,
+                            `getCalldataGasCost returned wrong type in dex ${key} ${typeof gasCostL1} ${typeof pp.gasCost}`,
                           );
                         }
                         return pp;
