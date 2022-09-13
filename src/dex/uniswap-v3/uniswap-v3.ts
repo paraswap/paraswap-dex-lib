@@ -145,6 +145,7 @@ export class UniswapV3
         if (currentState && this.dexHelper.config.isSlave) {
           pool.poolAddress = currentState.pool;
         } else {
+          this.logger.info('did not find any state generate new one');
           newState = await pool.generateState(blockNumber);
           pool.setState(newState, blockNumber);
         }
@@ -336,9 +337,24 @@ export class UniswapV3
           throw new Error('Prices or unit is not calculated');
         }
 
+        const prices = [0n, ...pricesResult.outputs];
+        const gasCost = [
+          0,
+          ...pricesResult.outputs.map((p, index) => {
+            if (p == 0n) {
+              return 0;
+            } else {
+              return (
+                UNISWAPV3_FUNCTION_CALL_GAS_COST +
+                pricesResult.tickCounts[index] *
+                  UNISWAPV3_FUNCTION_CALL_GAS_COST
+              );
+            }
+          }),
+        ];
         return {
           unit: unitResult.outputs[0],
-          prices: [0n, ...pricesResult.outputs],
+          prices,
           data: {
             path: [
               {
@@ -354,13 +370,7 @@ export class UniswapV3
             pool.feeCode,
           ),
           exchange: this.dexKey,
-          gasCost: [
-            0,
-            ...pricesResult.tickCounts.map(
-              t =>
-                UNISWAPV3_FUNCTION_CALL_GAS_COST + t * UNISWAPV3_TICK_GAS_COST,
-            ),
-          ],
+          gasCost: gasCost,
           poolAddresses: [pool.poolAddress],
         };
       });
