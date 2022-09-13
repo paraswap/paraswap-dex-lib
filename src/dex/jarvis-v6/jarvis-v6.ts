@@ -203,97 +203,6 @@ export class JarvisV6
     ];
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: JarvisV6Data,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    const { swapFunction } = data;
-    const type = [JarvisSwapFunctions.MINT, JarvisSwapFunctions.REDEEM].indexOf(
-      swapFunction,
-    );
-
-    if (type === undefined) {
-      throw new Error(
-        `Jarvis: Invalid OpType ${swapFunction}, Should be one of ['mint', 'redeem']`,
-      );
-    }
-
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          opType: 'uint',
-          expiration: 'uint128',
-        },
-      },
-      {
-        opType: type,
-        expiration: (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0),
-      },
-    );
-
-    return {
-      targetExchange: data.poolAddress.toLowerCase(),
-      payload,
-      networkFee: '0',
-    };
-  }
-
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: JarvisV6Data,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const { swapFunction } = data;
-    const timestamp = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
-
-    let swapFunctionParams: JarvisV6Params;
-    switch (swapFunction) {
-      case JarvisSwapFunctions.MINT:
-        swapFunctionParams = ['1', srcAmount, timestamp, this.augustusAddress];
-        break;
-      case JarvisSwapFunctions.REDEEM:
-        swapFunctionParams = [srcAmount, '1', timestamp, this.augustusAddress];
-        break;
-      default:
-        throw new Error(`Unknown function ${swapFunction}`);
-    }
-    const swapData = this.poolInterface.encodeFunctionData(swapFunction, [
-      swapFunctionParams,
-    ]);
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      data.poolAddress.toLowerCase(),
-    );
-  }
-
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
-  async getTopPoolsForToken(
-    tokenAddress: Address,
-    limit: number,
-  ): Promise<PoolLiquidity[]> {
-    return [];
-  }
-
   async getSystemMaxVars(
     poolAddress: Address,
     blockNumber: number,
@@ -456,6 +365,97 @@ export class JarvisV6
         BI_POWS[18];
     if (collateralDecimals === 18) return result;
     return convertToNewDecimals(result, 18, collateralDecimals);
+  }
+
+  // Encode params required by the exchange adapter
+  // Used for multiSwap, buy & megaSwap
+  // Hint: abiCoder.encodeParameter() could be useful
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: JarvisV6Data,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    const { swapFunction } = data;
+    const type = [JarvisSwapFunctions.MINT, JarvisSwapFunctions.REDEEM].indexOf(
+      swapFunction,
+    );
+
+    if (type === undefined) {
+      throw new Error(
+        `Jarvis: Invalid OpType ${swapFunction}, Should be one of ['mint', 'redeem']`,
+      );
+    }
+
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          opType: 'uint',
+          expiration: 'uint128',
+        },
+      },
+      {
+        opType: type,
+        expiration: (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0),
+      },
+    );
+
+    return {
+      targetExchange: data.poolAddress.toLowerCase(),
+      payload,
+      networkFee: '0',
+    };
+  }
+
+  // Encode call data used by simpleSwap like routers
+  // Used for simpleSwap & simpleBuy
+  // Hint: this.buildSimpleParamWithoutWETHConversion
+  // could be useful
+  async getSimpleParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: JarvisV6Data,
+    side: SwapSide,
+  ): Promise<SimpleExchangeParam> {
+    const { swapFunction } = data;
+    const timestamp = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
+
+    let swapFunctionParams: JarvisV6Params;
+    switch (swapFunction) {
+      case JarvisSwapFunctions.MINT:
+        swapFunctionParams = ['1', srcAmount, timestamp, this.augustusAddress];
+        break;
+      case JarvisSwapFunctions.REDEEM:
+        swapFunctionParams = [srcAmount, '1', timestamp, this.augustusAddress];
+        break;
+      default:
+        throw new Error(`Unknown function ${swapFunction}`);
+    }
+    const swapData = this.poolInterface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      data.poolAddress.toLowerCase(),
+    );
+  }
+
+  // Returns list of top pools based on liquidity. Max
+  // limit number pools should be returned.
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    limit: number,
+  ): Promise<PoolLiquidity[]> {
+    return [];
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<JarvisV6Data>): number | number[] {
