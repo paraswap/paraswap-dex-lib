@@ -251,8 +251,6 @@ export class UniswapV2
   protected async addPool(
     suffix: string,
     pair: UniswapV2Pair,
-    reserves0: string,
-    reserves1: string,
     feeCode: number,
     blockNumber: number,
   ) {
@@ -277,8 +275,15 @@ export class UniswapV2
       callDecoder,
       this.decoderIface,
     );
-    pair.pool.initialize(blockNumber);
-    pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
+    await pair.pool.initialize(blockNumber);
+    const currentState = pair.pool.getState(blockNumber);
+    if (!currentState || !this.dexHelper.config.isSlave) {
+      this.logger.info(
+        `did not find current state in cache generating new one ${pair.exchange}, ${pair.token0.address}, ${pair.token1.address}`,
+      );
+      const newState = await pair.pool.generateState(blockNumber);
+      pair.pool.setState(newState, blockNumber);
+    }
   }
 
   async addMasterPool(poolKey: string) {
@@ -294,7 +299,7 @@ export class UniswapV2
       `starting to listen to new pool: ${this.dexmapKey}${poolKey}`,
     );
     const pair: [Token, Token] = JSON.parse(_pairs);
-    this.batchCatchUpPairs(
+    await this.batchCatchUpPairs(
       pair[0],
       pair[1],
       this.dexHelper.blockManager.getLatestBlockNumber(),
@@ -365,94 +370,17 @@ export class UniswapV2
     return pair;
   }
 
-  async getManyPoolReserves(
-    pairs: UniswapV2Pair[],
-    blockNumber: number,
-  ): Promise<UniswapV2PoolState[]> {
-    try {
-      const multiCallFeeData = pairs.map(pair =>
-        this.getFeesMultiCallData(pair),
-      );
-      const calldata = pairs
-        .map((pair, i) => {
-          let calldata = [
-            {
-              target: pair.token0.address,
-              callData: erc20iface.encodeFunctionData('balanceOf', [
-                pair.exchange!,
-              ]),
-            },
-            {
-              target: pair.token1.address,
-              callData: erc20iface.encodeFunctionData('balanceOf', [
-                pair.exchange!,
-              ]),
-            },
-          ];
-          if (this.isDynamicFees) calldata.push(multiCallFeeData[i]!.callEntry);
-          return calldata;
-        })
-        .flat();
-
-      // const data: { returnData: any[] } =
-      //   await this.dexHelper.multiContract.callStatic.aggregate(calldata, {
-      //     blockTag: blockNumber,
-      //   });
-
-      const data: { returnData: any[] } =
-        await this.dexHelper.multiContract.methods
-          .aggregate(calldata)
-          .call({}, blockNumber);
-
-      const returnData = _.chunk(data.returnData, this.isDynamicFees ? 3 : 2);
-      return pairs.map((pair, i) => ({
-        reserves0: coder.decode(['uint256'], returnData[i][0])[0].toString(),
-        reserves1: coder.decode(['uint256'], returnData[i][1])[0].toString(),
-        feeCode: this.isDynamicFees
-          ? multiCallFeeData[i]!.callDecoder(returnData[i][2])
-          : this.feeCode,
-      }));
-    } catch (e) {
-      this.logger.error(
-        `Error_getManyPoolReserves could not get reserves with error:`,
-        e,
-      );
-      return [];
-    }
-  }
-
   async batchCatchUpPairs(from: Token, to: Token, blockNumber: number) {
-    if (!blockNumber) return;
-
     const _pair = await this.findPair(from, to);
     if (!_pair || !_pair.exchange) {
       return;
     }
 
-    const reserves = await this.getManyPoolReserves([_pair], blockNumber);
-
-    if (!reserves.length) {
-      this.logger.error(
-        `Error_getManyPoolReserves didn't get any pool reserves`,
-      );
-    }
-    const pairState = reserves[0];
-
-    if (!pairState) {
-      return;
-    }
-
     if (!_pair.pool) {
-      await this.addPool(
-        '',
-        _pair,
-        pairState.reserves0,
-        pairState.reserves1,
-        pairState.feeCode,
-        blockNumber,
-      );
+      await this.addPool('', _pair, this.feeCode, blockNumber);
     } else {
-      _pair.pool.setState(pairState, blockNumber);
+      const newState = await _pair.pool.generateState(blockNumber);
+      _pair.pool.setState(newState, blockNumber);
     }
   }
 
@@ -478,9 +406,7 @@ export class UniswapV2
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
       this.logger.warn(
-        `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
-          from.symbol || from.address
-        } ${to.symbol || to.address}`,
+        `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${pair.exchange} ${from.address} ${to.address}`,
       );
       return null;
     }
@@ -547,7 +473,7 @@ export class UniswapV2
       from.address = from.address.toLowerCase();
       to.address = to.address.toLowerCase();
 
-      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      if (from.address === to.address) {
         return null;
       }
 

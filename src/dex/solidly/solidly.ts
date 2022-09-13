@@ -180,40 +180,25 @@ export class Solidly extends UniswapV2 {
     }
 
     const pairsToFetch = pairs.filter(p => p.exchange !== undefined);
-
-    const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
-
-    if (reserves.length !== pairsToFetch.length) {
-      this.logger.error(
-        `Error_getManyPoolReserves didn't get any pool reserves`,
-      );
-    }
-
     const _pairs = await Promise.all(
-      reserves.map(async (pairState, index) => {
-        if (!pairState) {
-          return null;
-        }
-
-        const _pair = pairsToFetch[index];
-        if (!_pair.pool) {
+      pairsToFetch.map(async pair => {
+        if (!pair.pool) {
+          let feeCode = pair.stable ? this.stableFee : this.volatileFee;
+          if (!feeCode) {
+            feeCode = this.feeCode;
+          }
           await this.addPool(
-            '_' + (_pair.stable ? 'stable' : 'notstable'),
-            _pair,
-            pairState.reserves0,
-            pairState.reserves1,
-            pairState.feeCode,
+            '_' + (pair.stable ? 'stable' : 'notstable'),
+            pair,
+            this.feeCode,
             blockNumber,
           );
-        } else {
-          _pair.pool.setState(pairState, blockNumber);
         }
-        return _pair;
+        return pair;
       }),
     );
 
-    _pairs.filter;
-    return _pairs.filter(pair => pair !== null) as SolidlyPair[];
+    return _pairs.filter(pair => pair.pool) as SolidlyPair[];
   }
 
   async addMasterPool(poolKey: string) {
@@ -229,67 +214,11 @@ export class Solidly extends UniswapV2 {
       `starting to listen to new pool: ${this.dexmapKey} ${poolKey}`,
     );
     const pair: [Token, Token] = JSON.parse(_pairs);
-    this.batchCatchUpPairsSolidly(
+    await this.batchCatchUpPairsSolidly(
       pair[0],
       pair[1],
       this.dexHelper.blockManager.getLatestBlockNumber(),
     );
-  }
-
-  async getManyPoolReserves(
-    pairs: SolidlyPair[],
-    blockNumber: number,
-  ): Promise<PoolState[]> {
-    try {
-      const multiCallFeeData = pairs.map(pair =>
-        this.getFeesMultiCallData(pair),
-      );
-      const calldata = pairs
-        .map((pair, i) => {
-          let calldata = [
-            {
-              target: pair.token0.address,
-              callData: erc20Iface.encodeFunctionData('balanceOf', [
-                pair.exchange!,
-              ]),
-            },
-            {
-              target: pair.token1.address,
-              callData: erc20Iface.encodeFunctionData('balanceOf', [
-                pair.exchange!,
-              ]),
-            },
-          ];
-          if (this.isDynamicFees) calldata.push(multiCallFeeData[i]!.callEntry);
-          return calldata;
-        })
-        .flat();
-
-      const data: { returnData: any[] } =
-        await this.dexHelper.multiContract.methods
-          .aggregate(calldata)
-          .call({}, blockNumber);
-
-      const returnData = _.chunk(data.returnData, this.isDynamicFees ? 3 : 2);
-
-      return pairs.map((pair, i) => ({
-        reserves0: defaultAbiCoder
-          .decode(['uint256'], returnData[i][0])[0]
-          .toString(),
-        reserves1: defaultAbiCoder
-          .decode(['uint256'], returnData[i][1])[0]
-          .toString(),
-        feeCode: this.isDynamicFees
-          ? multiCallFeeData[i]!.callDecoder(returnData[i][2])
-          : (pair.stable ? this.stableFee : this.volatileFee) || this.feeCode,
-      }));
-    } catch (e) {
-      this.logger.error(
-        `Error_getManyPoolReserves could not get reserves with error:`,
-        e,
-      );
-      return [];
-    }
   }
 
   getSellPrice(
@@ -342,10 +271,16 @@ export class Solidly extends UniswapV2 {
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
-      let pairs = this.syncFindPairs(from, to);
+      let pairs = this.syncFindPairs(from, to).filter(pair => {
+        if (!pair || !pair.exchange || !pair.pool) {
+          return false;
+        }
+        return true;
+      });
+
       if (!pairs.length) {
+        this.logger.info('did not found any pairs');
         pairs = await this.batchCatchUpPairsSolidly(from, to, blockNumber);
-        pairs = this.syncFindPairs(from, to);
       }
 
       const results = pairs.map(pair => {
@@ -358,6 +293,7 @@ export class Solidly extends UniswapV2 {
         const pairParam = this.getSolidlyPairOrderedParams(
           from,
           to,
+          pair,
           blockNumber,
           pair.stable,
         );
@@ -507,17 +443,18 @@ export class Solidly extends UniswapV2 {
   getSolidlyPairOrderedParams(
     from: Token,
     to: Token,
+    pair: SolidlyPair,
     blockNumber: number,
     stable: boolean,
   ): SolidlyPoolOrderedParams | null {
-    const pair = this.syncFindPairSolidly(from, to, stable);
-    if (!(pair && pair.pool && pair.exchange)) return null;
+    if (!pair.pool || !pair.exchange) {
+      this.logger.error(`Error_orderPairParams: missing pool or exchange`);
+      return null;
+    }
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
       this.logger.error(
-        `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
-          from.symbol || from.address
-        } ${to.symbol || to.address}`,
+        `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${pair.exchange} ${from.address} ${to.address}`,
       );
       return null;
     }
@@ -532,7 +469,7 @@ export class Solidly extends UniswapV2 {
         reservesOut: pairState.reserves0,
         fee: pairState.feeCode.toString(),
         direction: false,
-        exchange: pair.exchange,
+        exchange: pair.exchange!,
         decimalsIn: from.decimals,
         decimalsOut: to.decimals,
         stable,

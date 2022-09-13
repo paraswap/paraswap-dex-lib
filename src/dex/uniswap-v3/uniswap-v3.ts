@@ -142,7 +142,7 @@ export class UniswapV3
       try {
         await pool.initialize(blockNumber);
         const currentState = pool.getState(blockNumber);
-        if (currentState) {
+        if (currentState && this.dexHelper.config.isSlave) {
           pool.poolAddress = currentState.pool;
         } else {
           newState = await pool.generateState(blockNumber);

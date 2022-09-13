@@ -56,11 +56,10 @@ export abstract class StatefulEventSubscriber<State>
       if (stateAsStr) {
         try {
           this.state = Utils.Parse(stateAsStr);
+          // this.logger.debug(`[${this.name}] got initial state from cache`);
         } catch (e) {
           this.logger.error(`failed parsing initial, ${stateAsStr}`, e);
         }
-        this.logger.debug(`[${this.name}] got initial state from cache`);
-        console.log('la', this.mapKey, this.poolKey);
       }
       this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
     }
