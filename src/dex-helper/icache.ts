@@ -9,7 +9,22 @@ export interface ICache {
     dexKey: string,
     network: number,
     cacheKey: string,
-    seconds: number,
+    ttlSeconds: number,
+    value: string,
+  ): Promise<void>;
+
+  getAndCacheLocally(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+    ttlSeconds: number,
+  ): Promise<string | null>;
+
+  setexAndCacheLocally(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+    ttlSeconds: number,
     value: string,
   ): Promise<void>;
 }
