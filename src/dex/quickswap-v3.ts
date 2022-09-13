@@ -6,7 +6,7 @@ import { UniswapV3, UniswapV3Param } from './uniswap-v3';
 import { pack } from '@ethersproject/solidity';
 
 const QUICKSWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
-  [Network.POLYGON]: '0x1a5bC2d507465c3e343Ca4e8B5C37Dd6B580f2C2',
+  [Network.POLYGON]: '0xf5b509bb0909a69b1c207e495f687a596c168e12',
 };
 
 export type QuickSwapV3Data = {
