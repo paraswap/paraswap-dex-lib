@@ -1143,8 +1143,8 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           decimals: 8,
           reasonableVolume: 1000000n,
         },
-        '0x47AFa96Cdc9fAb46904A55a6ad4bf6660B53c38a': {
-          address: '0x47AFa96Cdc9fAb46904A55a6ad4bf6660B53c38a',
+        '0x130966628846BFd36ff31a822705796e8cb8C18D': {
+          address: '0x130966628846BFd36ff31a822705796e8cb8C18D',
           decimals: 18,
           reasonableVolume: 1000000000000000000000n,
         },
@@ -1191,7 +1191,7 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           version: 3,
           isLending: true,
           isMetapool: false,
-          baseToken: '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
+          baseToken: '0x50b7545627a5162F82A992c33b87aDc75187B218',
         },
         MIM: {
           underlying: [
@@ -1210,7 +1210,7 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           version: 3,
           isLending: false,
           isMetapool: true,
-          baseToken: '0x47AFa96Cdc9fAb46904A55a6ad4bf6660B53c38a',
+          baseToken: '0x130966628846BFd36ff31a822705796e8cb8C18D',
         },
         '3PoolV2': {
           underlying: [],
@@ -1225,7 +1225,7 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           version: 3,
           isLending: false,
           isMetapool: false,
-          baseToken: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
+          baseToken: '0x130966628846BFd36ff31a822705796e8cb8C18D',
         },
       },
     },
@@ -1306,8 +1306,8 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
   Beltfi: {
     [Network.BSC]: {
       baseTokens: {
-        '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC': {
-          address: '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC',
+        '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56': {
+          address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
           decimals: 18,
           reasonableVolume: 1000000000000000000n,
         },

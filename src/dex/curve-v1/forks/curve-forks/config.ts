@@ -7,8 +7,8 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
   Acryptos: {
     [Network.BSC]: {
       baseTokens: {
-        '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC': {
-          address: '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC',
+        '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56': {
+          address: '0xe9e7CEA3DedcA598478Bafc599bD69ADd087D56',
           decimals: 18,
           reasonableVolume: 1000000000000000000n,
         },
@@ -106,7 +106,7 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
           isMetapool: true,
           trackCoins: true,
           useLending: [false, false],
-          baseToken: '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC',
+          baseToken: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
         },
       },
     },
@@ -114,8 +114,8 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
   Ellipsis: {
     [Network.BSC]: {
       baseTokens: {
-        '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC': {
-          address: '0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC',
+        '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56': {
+          address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
           decimals: 18,
           reasonableVolume: 1000000000000000000n,
         },

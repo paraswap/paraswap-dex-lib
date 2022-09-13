@@ -1072,6 +1072,11 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
         let liquidityUSD = 0;
         if (pool.baseToken) {
+          if (!this.baseTokens[pool.baseToken]) {
+            throw new Error(
+              `missing base token ${pool.baseToken} for ${this.dexKey}`,
+            );
+          }
           liquidityUSD =
             sumLiquidity * Number(this.baseTokens[pool.baseToken].tokenPrice!);
         }
