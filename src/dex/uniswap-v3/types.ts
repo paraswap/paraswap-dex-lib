@@ -32,6 +32,7 @@ export type Slot0 = {
 };
 
 export type PoolState = {
+  pool: string;
   blockTimestamp: bigint;
   tickSpacing: bigint;
   fee: bigint;

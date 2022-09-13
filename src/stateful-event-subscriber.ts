@@ -44,24 +44,26 @@ export abstract class StatefulEventSubscriber<State>
       `${CACHE_PREFIX}_${dexHelper.network}_${parentName}_states`.toLowerCase();
     this.poolKey = this.poolKey.toLowerCase();
     this.network = dexHelper.network;
-
-    if (dexHelper.config.isSlave) {
-      this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
-      this.dexHelper.cache.hget(this.mapKey, this.poolKey).then(stateAsStr => {
-        if (stateAsStr) {
-          try {
-            this.state = Utils.Parse(stateAsStr);
-          } catch (e) {
-            this.logger.error(`failed parsing initial, ${stateAsStr}`, e);
-          }
-          // this.logger.debug(`[${this.name}] got initial state from cache`);
-        }
-      });
-      this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
-    }
   }
 
-  initialize(blockNumber: number) {
+  async initialize(blockNumber: number) {
+    if (this.dexHelper.config.isSlave) {
+      this.dexHelper.cache.subscribe(this.name, this.slaveSetState.bind(this));
+      const stateAsStr = await this.dexHelper.cache.hget(
+        this.mapKey,
+        this.poolKey,
+      );
+      if (stateAsStr) {
+        try {
+          this.state = Utils.Parse(stateAsStr);
+        } catch (e) {
+          this.logger.error(`failed parsing initial, ${stateAsStr}`, e);
+        }
+        this.logger.debug(`[${this.name}] got initial state from cache`);
+        console.log('la', this.mapKey, this.poolKey);
+      }
+      this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
+    }
     if (!this.dexHelper.config.isSlave) {
       this.dexHelper.blockManager.subscribeToLogs(
         this,
@@ -103,7 +105,7 @@ export abstract class StatefulEventSubscriber<State>
     this.dexHelper.cache.publish(this.name, stateAsStr);
     this.dexHelper.cache.hset(this.mapKey, this.poolKey, stateAsStr);
 
-    // this.logger.debug(`forward state for ${this.name}`);
+    this.logger.debug(`forward state for ${this.name}`);
   }
 
   //Function which transforms the given state for the given log event.

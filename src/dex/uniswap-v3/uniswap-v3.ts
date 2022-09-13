@@ -140,11 +140,14 @@ export class UniswapV3
 
       let newState;
       try {
-        newState = await pool.generateState(blockNumber);
-
-        pool.setState(newState, blockNumber);
-
-        pool.initialize(blockNumber);
+        await pool.initialize(blockNumber);
+        const currentState = pool.getState(blockNumber);
+        if (currentState) {
+          pool.poolAddress = currentState.pool;
+        } else {
+          newState = await pool.generateState(blockNumber);
+          pool.setState(newState, blockNumber);
+        }
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
           // Pool does not exist for this feeCode, so we can set it to null

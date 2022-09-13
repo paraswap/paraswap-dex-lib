@@ -175,6 +175,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickSpacing = bigIntify(_state.tickSpacing);
 
     return {
+      pool: _state.pool,
       blockTimestamp: bigIntify(_state.blockTimestamp),
       slot0: {
         sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
