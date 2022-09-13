@@ -247,12 +247,10 @@ export function sliceCalls<T, U>({
   return results as [U, ...U[]];
 }
 
-export const catchParseLogError = (e: any, logger: Logger): boolean => {
+export const catchParseLogError = (e: any, logger: Logger) => {
   if (e instanceof Error) {
     if (!e.message.includes('no matching event')) {
       logger.error('Failed parse event', e);
-      return false;
     }
   }
-  return true;
 };

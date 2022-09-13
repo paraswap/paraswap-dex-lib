@@ -103,7 +103,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ): DeepReadonly<PoolState> | null {
     if (!state || !state.blockTimestamp) {
       this.logger.warn('get null state during process');
-      return null;
+      return state;
     }
     try {
       const event = this.logDecoder(log);
@@ -115,10 +115,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       }
       return state;
     } catch (e) {
-      if (!catchParseLogError(e, this.logger)) {
-        return state; // ignore unrecognized event
-      }
-      return null;
+      catchParseLogError(e, this.logger);
+      return state; // ignore unrecognized event
     }
   }
 
