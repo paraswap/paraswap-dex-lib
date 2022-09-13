@@ -45,7 +45,7 @@ export class JarvisV6
 {
   protected eventPools: { [poolAddress: string]: JarvisV6EventPool };
 
-  // opt out for pool allocation has dex allows for constant price swaps
+  // opt out of pool allocation as dex allows for constant price swaps
   readonly hasConstantPriceLargeAmounts = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
