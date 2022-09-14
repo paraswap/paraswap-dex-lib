@@ -57,10 +57,10 @@ const fetchAllPools = `query ($count: Int) {
   }
 }`;
 
-const fetchWeightUpdating = `query ($count: Int, $timestampNow: Int, $timestampNext: Int) {
+const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestampFuture: Int) {
   gradualWeightUpdates(
     first: $count,
-    where: {startTimestamp_lt: $timestampNext, endTimestamp_gt: $timestampNow }
+    where: {startTimestamp_lt: $timestampFuture, endTimestamp_gt: $timestampPast }
   ) {
     poolId {
       address
@@ -82,8 +82,9 @@ enum BalancerPoolTypes {
 
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
-const POOL_CACHE_TTL = 60 * 60; // 1hr
-const POOL_EVENT_DISABLED_TTL = 5 * 60; // 5min
+const POOL_CACHE_TTL = 60 * 60; // 1 hr
+const POOL_EVENT_DISABLED_TTL = 5 * 60; // 5 min
+const POOL_EVENT_REENABLE_DELAY = 7 * 24 * 60 * 60; // 1 week
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;
@@ -432,8 +433,8 @@ export class BalancerV2
     const timeNow = Math.floor(Date.now() / 1000);
     const variables = {
       count: MAX_POOL_CNT,
-      timestampNow: timeNow,
-      timestampNext: timeNow + POOL_EVENT_DISABLED_TTL,
+      timestampPast: timeNow - POOL_EVENT_REENABLE_DELAY,
+      timestampFuture: timeNow + POOL_EVENT_DISABLED_TTL,
     };
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
@@ -447,8 +448,10 @@ export class BalancerV2
       );
     }
 
-    this.eventDisabledPools = data.gradualWeightUpdates.map(
-      (wu: { poolId: { address: Address } }) => wu.poolId.address,
+    this.eventDisabledPools = _.uniq(
+      data.gradualWeightUpdates.map(
+        (wu: { poolId: { address: Address } }) => wu.poolId.address,
+      ),
     );
     const poolAddressList = JSON.stringify(this.eventDisabledPools);
     this.logger.info(
