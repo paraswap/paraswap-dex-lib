@@ -254,3 +254,12 @@ export const catchParseLogError = (e: any, logger: Logger) => {
     }
   }
 };
+
+export function stringifyWithBigInt(obj: unknown): string {
+  return typeof obj === 'object'
+    ? JSON.stringify(
+        obj,
+        (key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+      )
+    : '';
+}
