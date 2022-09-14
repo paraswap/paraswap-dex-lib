@@ -30,6 +30,7 @@ export type GMXData = {
 
 export type DexParams = {
   vault: Address;
+  reader: Address;
   priceFeed: Address;
   fastPriceFeed: Address;
   fastPriceEvents: Address;
@@ -80,6 +81,7 @@ export type VaultConfig = {
 
 export type PoolConfig = {
   vaultAddress: Address;
+  readerAddress: Address;
   priceFeed: Address;
   fastPriceFeed: Address;
   fastPriceEvents: Address;

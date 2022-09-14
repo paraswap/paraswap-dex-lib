@@ -51,7 +51,6 @@ export abstract class ComposedEventSubscriber<
   ) {
     super(dexHelper, parentName, name, logger);
 
-    this.addressesSubscribed = [];
     for (const p of this.parts) {
       for (const a of p.addressesSubscribed) {
         const k = a.toLowerCase();
