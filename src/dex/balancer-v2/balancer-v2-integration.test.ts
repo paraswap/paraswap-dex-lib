@@ -62,6 +62,8 @@ describe('BalancerV2', function () {
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      await balancerV2.releaseResources();
     });
 
     it('getTopPoolsForToken', async function () {
@@ -108,6 +110,8 @@ describe('BalancerV2', function () {
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      await balancerV2.releaseResources();
     });
 
     it('getTopPoolsForToken', async function () {
@@ -161,6 +165,8 @@ describe('BalancerV2', function () {
 
     //   expect(poolPrices).not.toBeNull();
     //   checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    //   await balancerV2.releaseResources();
     // });
 
     it('getTopPoolsForToken', async function () {
