@@ -242,7 +242,7 @@ export class KyberDmm
       pair.exchanges.find(p => p === poolAddress) &&
       !(poolAddress in pair.pools)
     ) {
-      const key = `${pair.token0.address}_${pair.token1.address}`.toLowerCase();
+      const key = poolAddress.toLowerCase();
 
       await this.dexHelper.cache.hset(
         this.dexmapKey,
@@ -254,8 +254,6 @@ export class KyberDmm
         this.dexHelper,
         this.dexKey,
         poolAddress,
-        pair.token0,
-        pair.token1,
         poolData.ampBps,
         this.logger,
       );
