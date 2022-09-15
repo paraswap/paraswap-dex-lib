@@ -88,6 +88,7 @@ class BalancerV2PoolState extends StatefulEventSubscriber<PoolState> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    this.logger.warn('balancer-v2 generating new state');
     const calls = this.pool.getOnChainCalls(this.info);
     const results = await this.dexHelper.multiContract.methods
       .tryAggregate(true, calls)
@@ -447,6 +448,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 }
 
+type PoolToFetchResult = {
+  poolsWithState: BalancerV2PoolState[];
+  poolsWithoutState: BalancerV2PoolState[];
+};
+
 export class BalancerV2
   extends SimpleExchange
   implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
@@ -515,6 +521,7 @@ export class BalancerV2
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
+
     const _from = this.dexHelper.config.wrapETH(from);
     const _to = this.dexHelper.config.wrapETH(to);
 
@@ -566,6 +573,7 @@ export class BalancerV2
       const _to = this.dexHelper.config.wrapETH(to);
 
       const allPools = this.getPools(_from, _to);
+
       const allowedPools = limitPools
         ? allPools.filter(pool =>
             limitPools.includes(`${this.dexKey}_${pool.poolAddress}`),
@@ -578,26 +586,53 @@ export class BalancerV2
         (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const poolPricesPromises = allowedPools.map(async pool => {
+      const pools = allowedPools.reduce<PoolToFetchResult>(
+        (acc, pool) => {
+          const state = pool.getState(blockNumber);
+          if (!state) {
+            acc.poolsWithoutState.push(pool);
+          } else {
+            acc.poolsWithState.push(pool);
+          }
+          return acc;
+        },
+        {
+          poolsWithState: [],
+          poolsWithoutState: [],
+        },
+      );
+
+      if (pools.poolsWithoutState.length > 0) {
+        const results = await Promise.all(
+          pools.poolsWithoutState.map(async pool => {
+            const newState = await pool.generateState(blockNumber);
+            if (!newState) {
+              this.logger.error(
+                `Unable to find the poolState ${pool.poolAddress}`,
+              );
+              return null;
+            }
+            pool.setState(newState, blockNumber);
+            return pool;
+          }),
+        );
+        results.forEach(res => {
+          if (res) {
+            pools.poolsWithState.push(res);
+          }
+        });
+      }
+
+      const poolPrices = pools.poolsWithState.map(pool => {
         const poolAddress = pool.poolAddress;
         let poolState = pool.getState(blockNumber);
-        // poolStates[poolAddress] || missingPoolsStateMap[poolAddress];
-        if (!poolState) {
-          const newState = await pool.generateState(blockNumber);
-          if (!newState) {
-            this.logger.error(`Unable to find the poolState ${poolAddress}`);
-            return null;
-          }
-          poolState = newState;
-          pool.setState(newState, blockNumber);
-        }
         // TODO: re-check what should be the current block time stamp
         try {
           const res = this.eventPools.getPricesPool(
             _from,
             _to,
             pool.info,
-            poolState,
+            poolState as PoolState,
             amounts,
             unitVolume,
             side,
@@ -624,7 +659,6 @@ export class BalancerV2
           return null;
         }
       });
-      const poolPrices = await Promise.all(poolPricesPromises);
 
       return poolPrices.filter(p => !!p) as ExchangePrices<BalancerV2Data>;
     } catch (e) {
