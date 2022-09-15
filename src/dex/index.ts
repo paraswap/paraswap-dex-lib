@@ -49,6 +49,7 @@ import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
+import { QuickSwapV3 } from './quickswap-v3';
 
 const LegacyDexes = [
   Curve,
@@ -67,6 +68,7 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   UniswapV3,
+  QuickSwapV3,
   Jarvis,
   Lido,
   AugustusRFQOrder,
