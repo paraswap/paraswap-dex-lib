@@ -468,6 +468,142 @@ describe('UniswapV2 E2E Avalanche', () => {
     });
   });
 
+  describe('Swapsicle', () => {
+    const dexKey = 'Swapsicle';
+
+    describe('simpleSwap', () => {
+      it('USDC -> MIM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MIM,
+          holders.USDC,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('MIM -> USDC', async () => {
+        await testE2E(
+          tokens.MIM,
+          tokens.USDC,
+          holders.MIM,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> USDCe', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDCe,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('multiSwap', () => {
+      it('USDC -> MIM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MIM,
+          holders.USDC,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('MIM -> USDC', async () => {
+        await testE2E(
+          tokens.MIM,
+          tokens.USDC,
+          holders.MIM,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> USDCe', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDCe,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('megaSwap', () => {
+      it('USDC -> MIM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MIM,
+          holders.USDC,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('MIM -> USDC', async () => {
+        await testE2E(
+          tokens.MIM,
+          tokens.USDC,
+          holders.MIM,
+          '30000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> USDCe', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDCe,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
   describe('CanarySwap', () => {
     const dexKey = 'CanarySwap';
 
