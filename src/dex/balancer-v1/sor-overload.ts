@@ -1,6 +1,4 @@
 import { Contract } from 'web3-eth-contract';
-import { PoolTypes } from '@balancer-labs/sor/dist/index';
-import BigNumber from 'bignumber.js';
 import { PoolStateAsString } from './types';
 
 // Has almost the same logic as getAllPoolDataOnChain
@@ -34,7 +32,7 @@ export async function updatePoolState(
   let j = 0;
   for (let i = 0; i < pools.length; i++) {
     pools[i].tokens.forEach(token => {
-      token.balance = results[j];
+      token.balance = results[j].toString();
       j++;
     });
   }

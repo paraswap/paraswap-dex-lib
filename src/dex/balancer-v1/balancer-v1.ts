@@ -1,9 +1,7 @@
 import { Interface, LogDescription } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
 import { DeepReadonly } from 'ts-essentials';
-import _, { includes } from 'lodash';
-import * as BigNumberLib from 'bignumber.js';
-import * as BigNumberEthers from '@ethersproject/bignumber';
+import _ from 'lodash';
 import {
   Address,
   ExchangePrices,
@@ -27,7 +25,6 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   BalancerV1Data,
-  PoolState,
   DexParams,
   OptimizedBalancerV1Data,
   BalancerParam,
@@ -57,6 +54,7 @@ import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { WeightedPool } from '@balancer-labs/sor/dist/index';
 import { BI_MAX_INT } from '../../bigint-constants';
 import { updatePoolState } from './sor-overload';
+import BigNumber from 'bignumber.js';
 
 //TODO: find out how to regenerate state for separated pools object
 const balancerV1PoolIface = new Interface(BalancerV1PoolABI);
@@ -67,14 +65,13 @@ type GetPoolStateResult = {
 };
 
 type ValuePlusIndexType = {
-  value: BigNumberEthers.BigNumber;
+  value: BigNumber;
   index: number;
 };
 
 const poolParseLog = (log: Log) => balancerV1PoolIface.parseLog(log);
 
 export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolState> {
-  public weightedPool: WeightedPool;
   private handlers: Record<
     string,
     (
@@ -86,20 +83,28 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
 
   private tokenAddressesSet = new Set<string>();
 
-  // TODO: only send actual baalnce as it's the only needed field
-  public getMinimalPoolState(): MinimalPoolState {
-    return {
-      tokens: this.weightedPool.tokens as unknown as SORToken[],
-    };
-  }
-
-  public loadState(blockNumber: number) {
+  public loadState(blockNumber: number): WeightedPool | null {
     const tokensObj = this.getState(blockNumber);
     if (!tokensObj) {
-      return;
+      return null;
     }
 
-    this.weightedPool.tokens = tokensObj.tokens as any;
+    const _tokens = tokensObj.tokens.map(token => ({
+      address: token.address,
+      decimals: token.decimals,
+      balance: token.balance,
+      weight: token.denormWeight,
+    }));
+
+    return new WeightedPool(
+      this.pool.id,
+      this.pool.id,
+      this.pool.swapFee,
+      this.pool.totalWeight,
+      '0',
+      _tokens,
+      this.pool.tokensList,
+    );
   }
 
   constructor(
@@ -111,24 +116,6 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     logger: Logger,
   ) {
     super(dexHelper, parentName, pool.id, logger);
-    const tokensAsString = pool.tokens.map(t => {
-      const tokenAsString = {
-        address: t.address,
-        balance: t.balance,
-        decimals: t.decimals,
-        weight: t.denormWeight,
-      };
-      return tokenAsString;
-    });
-    this.weightedPool = new WeightedPool(
-      pool.id,
-      pool.id,
-      pool.swapFee,
-      pool.totalWeight,
-      '0',
-      tokensAsString as any,
-      pool.tokensList,
-    );
 
     this.addressesSubscribed.push(pool.id);
     this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
@@ -166,8 +153,9 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     blockNumber: number,
   ): Promise<Readonly<MinimalPoolState>> {
     await updatePoolState([this.pool], this.balancerMulticall, blockNumber);
-
-    return this.state as PoolState;
+    return {
+      tokens: this.pool.tokens,
+    };
   }
 
   handleJoinPool(
@@ -175,13 +163,15 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     state: DeepReadonly<MinimalPoolState>,
   ): MinimalPoolState {
     const _state = _.cloneDeep(state) as MinimalPoolState;
-    let tokens = _state.tokens as SORToken[];
 
     const tokenIn = event.args.tokenIn.toLowerCase();
-    const tokenAmountIn = event.args.tokenAmountIn;
-    _state.tokens = tokens.map(token => {
-      if (token.address.toLowerCase() === tokenIn)
-        token.balance = token.balance.add(tokenAmountIn);
+    const tokenAmountIn = new BigNumber(event.args.tokenAmountIn.toString());
+    _state.tokens = _state.tokens.map(token => {
+      if (token.address.toLowerCase() === tokenIn) {
+        token.balance = new BigNumber(token.balance)
+          .plus(tokenAmountIn)
+          .toString();
+      }
       return token;
     });
 
@@ -193,13 +183,14 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     state: DeepReadonly<MinimalPoolState>,
   ): MinimalPoolState {
     const _state = _.cloneDeep(state) as MinimalPoolState;
-    let tokens = _state.tokens as SORToken[];
 
     const tokenOut = event.args.tokenOut.toLowerCase();
-    const tokenAmountOut = event.args.tokenAmountOut;
-    _state.tokens = tokens.map(token => {
+    const tokenAmountOut = new BigNumber(event.args.tokenAmountOut.toString());
+    _state.tokens = _state.tokens.map(token => {
       if (token.address.toLowerCase() === tokenOut)
-        token.balance = token.balance.sub(tokenAmountOut);
+        token.balance = new BigNumber(token.balance)
+          .minus(tokenAmountOut)
+          .toString();
       return token;
     });
 
@@ -211,18 +202,21 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     state: DeepReadonly<MinimalPoolState>,
   ): MinimalPoolState {
     const _state = _.cloneDeep(state) as MinimalPoolState;
-    let tokens = _state.tokens as SORToken[];
 
     const tokenIn = event.args.tokenIn.toLowerCase();
     const tokenAmountIn = event.args.tokenAmountIn;
 
     const tokenOut = event.args.tokenOut.toLowerCase();
-    const tokenAmountOut = event.args.tokenAmountOut;
-    _state.tokens = tokens.map(token => {
+    const tokenAmountOut = new BigNumber(event.args.tokenAmountOut.toString());
+    _state.tokens = _state.tokens.map(token => {
       if (token.address.toLowerCase() === tokenIn)
-        token.balance = token.balance.add(tokenAmountIn);
+        token.balance = new BigNumber(token.balance)
+          .plus(tokenAmountIn)
+          .toString();
       else if (token.address.toLowerCase() === tokenOut)
-        token.balance = token.balance.sub(tokenAmountOut);
+        token.balance = new BigNumber(token.balance)
+          .plus(tokenAmountOut)
+          .toString();
       return token;
     });
 
@@ -357,7 +351,19 @@ export class BalancerV1EventPool {
         this.logger,
       );
 
-      poolState.setState(poolState.getMinimalPoolState(), blockNumber);
+      const tokensAsString: Readonly<MinimalPoolState> = {
+        tokens: pool.tokens.map(t => {
+          const tokenAsString = {
+            address: t.address,
+            balance: t.balance,
+            decimals: t.decimals,
+            denormWeight: t.denormWeight,
+          };
+          return tokenAsString;
+        }),
+      };
+
+      poolState.setState(tokensAsString, blockNumber);
       poolState.initialize(blockNumber);
 
       this.allpools.push(poolState);
@@ -376,14 +382,12 @@ export class BalancerV1EventPool {
     ) {
       return BI_MAX_INT;
     }
-    const _amount = new BigNumberLib.BigNumber(amount.toString());
+    const _amount = new BigNumber(amount.toString());
     const res =
       side === SwapSide.SELL
         ? pool._exactTokenInForTokenOut(poolData as any, _amount)
         : pool._tokenInForExactTokenOut(poolData as any, _amount);
-    return BigInt(
-      res.integerValue(BigNumberLib.BigNumber.ROUND_FLOOR).toString(),
-    );
+    return BigInt(res.integerValue(BigNumber.ROUND_FLOOR).toString());
   }
 
   syncGetPoolsState(
@@ -416,8 +420,11 @@ export class BalancerV1EventPool {
       blockNumber,
     );
 
-    pools.forEach(pool => {
-      pool.setState(pool.getMinimalPoolState(), blockNumber);
+    pools.forEach((pool, index) => {
+      const tokens: Readonly<MinimalPoolState> = {
+        tokens: initialPoolsState[index].tokens,
+      };
+      pool.setState(tokens, blockNumber);
     });
   }
 
@@ -433,8 +440,12 @@ export class BalancerV1EventPool {
     const valuesPlusIndexes = poolsState
       .slice(0, 15)
       .reduce<ValuePlusIndexType[]>((acc, pool, index) => {
-        pool.loadState(blockNumber);
-        const poolData = pool.weightedPool.parsePoolPairData(
+        const weightedPool = pool.loadState(blockNumber);
+        if (!weightedPool) {
+          this.logger.error('missing state');
+          return acc;
+        }
+        const poolData = weightedPool.parsePoolPairData(
           from.address,
           to.address,
         );
@@ -453,7 +464,9 @@ export class BalancerV1EventPool {
           return acc;
         }
 
-        const value = poolData.balanceIn.div(poolData.weightOut);
+        const value = new BigNumber(
+          poolData.balanceIn.div(poolData.weightOut).toString(),
+        );
         acc.push({
           value,
           index,
@@ -663,7 +676,8 @@ export class BalancerV1
 
       const poolPrices = topPools
         .map(pool => {
-          const poolData = pool.weightedPool.parsePoolPairData(
+          const weightedPool = pool.loadState(blockNumber)!;
+          const poolData = weightedPool.parsePoolPairData(
             _from.address,
             _to.address,
           );
@@ -674,7 +688,7 @@ export class BalancerV1
               side,
               unitVolume,
               this.exchangeProxy,
-              pool.weightedPool,
+              weightedPool,
               poolData,
             );
             if (!res) return;
