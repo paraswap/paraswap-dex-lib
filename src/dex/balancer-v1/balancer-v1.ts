@@ -220,7 +220,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     const tokenAmountOut = event.args.tokenAmountOut;
     _state.tokens = tokens.map(token => {
       if (token.address.toLowerCase() === tokenIn)
-        token.balance = token.balance + tokenAmountIn;
+        token.balance = token.balance.add(tokenAmountIn);
       else if (token.address.toLowerCase() === tokenOut)
         token.balance = token.balance.sub(tokenAmountOut);
       return token;
