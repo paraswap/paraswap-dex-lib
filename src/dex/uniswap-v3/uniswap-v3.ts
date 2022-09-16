@@ -346,8 +346,7 @@ export class UniswapV3
             } else {
               return (
                 UNISWAPV3_FUNCTION_CALL_GAS_COST +
-                pricesResult.tickCounts[index] *
-                  UNISWAPV3_FUNCTION_CALL_GAS_COST
+                pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
               );
             }
           }),
