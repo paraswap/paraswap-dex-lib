@@ -140,14 +140,25 @@ export class UniswapV3
 
       let newState;
       try {
-        await pool.initialize(blockNumber);
-        const currentState = pool.getState(blockNumber);
-        if (currentState && this.dexHelper.config.isSlave) {
-          pool.poolAddress = currentState.pool;
+        if (this.dexHelper.config.isSlave) {
+          await pool.initialize(blockNumber); // get state from cache
+          const currentState = pool.getState(blockNumber);
+          if (currentState && this.dexHelper.config.isSlave) {
+            pool.poolAddress = currentState.pool; // initialize poolAddress. Normally it's in generateState
+          } else {
+            this.logger.info('did not find any state generate new one');
+            newState = await pool.generateState(blockNumber);
+            pool.setState(newState, blockNumber);
+          }
         } else {
-          this.logger.info('did not find any state generate new one');
-          newState = await pool.generateState(blockNumber);
-          pool.setState(newState, blockNumber);
+          try {
+            newState = await pool.generateState(blockNumber);
+            pool.setState(newState, blockNumber);
+            await pool.initialize(blockNumber); // subcribeToLogs
+          } catch (e) {
+            this.logger.error(e);
+            throw new Error('Not able to generate uniswap-v3 state');
+          }
         }
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
