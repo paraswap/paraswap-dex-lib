@@ -319,9 +319,7 @@ export class PhantomStablePool extends BasePool {
     pool: SubgraphPoolBase,
     data: { success: boolean; returnData: any }[],
     startIndex: number,
-  ): [{ [address: string]: PoolState }, number] {
-    const pools = {} as { [address: string]: PoolState };
-
+  ): [PoolState, number] {
     const poolTokens = decodeThrowError(
       this.vaultInterface,
       'getPoolTokens',
@@ -369,9 +367,7 @@ export class PhantomStablePool extends BasePool {
       poolState.amp = BigInt(amp.value.toString());
     }
 
-    pools[pool.address] = poolState;
-
-    return [pools, startIndex];
+    return [poolState, startIndex];
   }
 
   /*
