@@ -681,11 +681,16 @@ export class BalancerV2
 
       const pools = allowedPools.reduce<PoolToFetchResult>(
         (acc, pool) => {
-          if (this.eventDisabledPools.has(pool.address.toLowerCase())) {
+          const poolAddress = pool.address.toLowerCase();
+          if (
+            this.eventDisabledPools.has(poolAddress) &&
+            poolAddress in this.eventPools.allEventBasedPools
+          ) {
             acc.nonEventBasedPools.push(pool);
           } else {
             acc.eventBasedPools.push(pool);
           }
+
           return acc;
         },
         {
