@@ -80,28 +80,95 @@ enum BalancerPoolTypes {
   ERC4626Linear = 'ERC4626Linear',
 }
 
-const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1 hr
 const POOL_EVENT_DISABLED_TTL = 5 * 60; // 5 min
 const POOL_EVENT_REENABLE_DELAY = 7 * 24 * 60 * 60; // 1 week
 
-function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
-  return _.cloneDeep(pool) as PoolState;
+class BalancerV2PoolState extends StatefulEventSubscriber<PoolState> {
+  public poolAddress: string;
+
+  constructor(
+    private dexHelper: IDexHelper,
+    parentName: string,
+    key: string,
+    logger: Logger,
+    public info: SubgraphPoolBase,
+    private pool: WeightedPool | StablePool | LinearPool | PhantomStablePool,
+  ) {
+    super(`${parentName}_key`, logger);
+    this.poolAddress = info.address.toLowerCase();
+  }
+
+  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    this.logger.warn('balancer-v2 generating new state');
+    const calls = this.pool.getOnChainCalls(this.info);
+    const results = await this.dexHelper.multiContract.methods
+      .tryAggregate(true, calls)
+      .call({}, blockNumber);
+
+    const newState = this.pool.decodeOnChainCalls(this.info, results, 0);
+
+    return newState[0];
+  }
+
+  protected processLog(
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleSwap(event: any, blockNumber: number): void {
+    const state = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+
+    const tokenIn = event.args.tokenIn.toLowerCase();
+    const amountIn = BigInt(event.args.amountIn.toString());
+    const tokenOut = event.args.tokenOut.toLowerCase();
+    const amountOut = BigInt(event.args.amountOut.toString());
+    state.tokens[tokenIn].balance += amountIn;
+    state.tokens[tokenOut].balance -= amountOut;
+
+    this.setState(state, blockNumber);
+  }
+
+  handlePoolBalanceChanged(event: any, blockNumber: number): void {
+    const state = _.cloneDeep(this.getState(blockNumber)) as PoolState;
+
+    const tokens = event.args.tokens.map((t: string) => t.toLowerCase());
+    const deltas = event.args.deltas.map((d: any) => BigInt(d.toString()));
+    const fees = event.args.protocolFeeAmounts.map((d: any) =>
+      BigInt(d.toString()),
+    ) as bigint[];
+    tokens.forEach((t: string, i: number) => {
+      const diff = deltas[i] - fees[i];
+      state.tokens[t].balance += diff;
+    });
+
+    this.setState(state, blockNumber);
+  }
 }
 
 export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   public vaultInterface: Interface;
 
+  private poolsState: Record<string, BalancerV2PoolState> = {};
+
   handlers: {
-    [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
+    [event: string]: (
+      event: any,
+      pool: BalancerV2PoolState,
+      blockNumber: number,
+    ) => void;
   } = {};
 
   pools: {
     [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
   };
 
-  public allPools: SubgraphPoolBase[] = [];
+  allEventBasedPools: { [address: string]: BalancerV2PoolState } = {};
+  allPools: SubgraphPoolBase[] = [];
+
   vaultDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
@@ -123,14 +190,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ).map(s => s.toLowerCase());
 
   constructor(
-    protected parentName: string,
     protected network: number,
+    protected dexHelper: IDexHelper,
+    protected parentName: string,
     protected vaultAddress: Address,
     protected subgraphURL: string,
-    protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, logger);
+    super(`${parentName}_${vaultAddress}`, logger);
+
     this.vaultInterface = new Interface(VaultABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
@@ -162,28 +230,107 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.handlePoolBalanceChanged.bind(this);
   }
 
+  handleSwap(event: any, pool: BalancerV2PoolState, blockNumber: number) {
+    pool.handleSwap(event, blockNumber);
+  }
+
+  handlePoolBalanceChanged(
+    event: any,
+    pool: BalancerV2PoolState,
+    blockNumber: number,
+  ) {
+    pool.handlePoolBalanceChanged(event, blockNumber);
+  }
+
+  async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+    const pools = Object.values(this.poolsState);
+    const states = await this.getOnChainState(
+      pools.map(pool => pool.info),
+      blockNumber,
+    );
+
+    pools.forEach((pool, index) => {
+      if (states[index] === undefined) {
+        this.logger.error(`generateState undefined state`, pool);
+        return;
+      }
+      pool.setState(states[index], blockNumber);
+    });
+    return this.state!;
+  }
+
+  async initPools(blockNumber: number): Promise<void> {
+    this.setState({}, blockNumber);
+
+    this.allPools = await this.fetchAllSubgraphPools();
+    const eventSupportedPools = this.allPools.filter(
+      pool =>
+        this.eventSupportedPoolTypes.includes(pool.poolType) &&
+        !this.eventRemovedPools.includes(pool.address.toLowerCase()),
+    );
+
+    const subgraphBasePools = eventSupportedPools.reduce<
+      Record<string, SubgraphPoolBase>
+    >((acc, subgraphInfo) => {
+      acc[subgraphInfo.address.toLowerCase()] = subgraphInfo;
+      return acc;
+    }, {});
+    const poolStates = await this.getOnChainState(
+      eventSupportedPools,
+      blockNumber,
+    );
+    this.poolsState = eventSupportedPools.reduce<
+      Record<string, BalancerV2PoolState>
+    >((acc, info, index) => {
+      if (!this.isSupportedPool(info.poolType)) {
+        return acc;
+      }
+
+      const poolAddress = info.address.toLowerCase();
+      const _state = poolStates[index];
+
+      const subgraphPool = subgraphBasePools[poolAddress];
+      const pool = new BalancerV2PoolState(
+        this.dexHelper,
+        this.parentName,
+        poolAddress,
+        this.logger,
+        subgraphPool,
+        this.pools[subgraphPool.poolType],
+      );
+
+      pool.setState(_state, blockNumber);
+      this.allEventBasedPools[poolAddress] = pool;
+
+      acc[poolAddress] = pool;
+      return acc;
+    }, {});
+
+    this.dexHelper.blockManager.subscribeToLogs(
+      this,
+      this.addressesSubscribed,
+      blockNumber,
+    );
+  }
+
   protected processLog(
     state: DeepReadonly<PoolStateMap>,
     log: Readonly<Log>,
   ): DeepReadonly<PoolStateMap> | null {
-    const _state: PoolStateMap = {};
-    for (const [address, pool] of Object.entries(state))
-      _state[address] = typecastReadOnlyPoolState(pool);
-
     try {
       const event = this.vaultDecoder(log);
       if (event.name in this.handlers) {
         const poolAddress = event.args.poolId.slice(0, 42).toLowerCase();
         // Only update the _state if we are tracking the pool
-        if (poolAddress in _state) {
-          _state[poolAddress] = this.handlers[event.name](
+        if (poolAddress in this.poolsState) {
+          this.handlers[event.name](
             event,
-            _state[poolAddress],
-            log,
+            this.poolsState[poolAddress],
+            log.blockNumber,
           );
         }
       }
-      return _state;
+      return null;
     } catch (e) {
       this.logger.error(
         `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
@@ -201,11 +348,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       cacheKey,
     );
     if (cachedPools) {
-      const allPools = JSON.parse(cachedPools);
+      const allEventBasedPools = JSON.parse(cachedPools);
       this.logger.info(
-        `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
+        `Got ${allEventBasedPools.length} ${this.parentName}_${this.network} pools from cache`,
       );
-      return allPools;
+      return allEventBasedPools;
     }
 
     this.logger.info(
@@ -230,49 +377,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       POOL_CACHE_TTL,
       JSON.stringify(data.pools),
     );
-    const allPools = data.pools;
+    const allPools: SubgraphPoolBase[] = data.pools;
+    allPools.forEach(p => (p.address = p.address.toLowerCase()));
     this.logger.info(
       `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
     );
     return allPools;
-  }
-
-  async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
-    const allPools = await this.fetchAllSubgraphPools();
-    this.allPools = allPools;
-    const eventSupportedPools = allPools.filter(
-      pool =>
-        this.eventSupportedPoolTypes.includes(pool.poolType) &&
-        !this.eventRemovedPools.includes(pool.address.toLowerCase()),
-    );
-    const allPoolsLatestState = await this.getOnChainState(
-      eventSupportedPools,
-      blockNumber,
-    );
-    return allPoolsLatestState;
-  }
-
-  handleSwap(event: any, pool: PoolState, log: Log): PoolState {
-    const tokenIn = event.args.tokenIn.toLowerCase();
-    const amountIn = BigInt(event.args.amountIn.toString());
-    const tokenOut = event.args.tokenOut.toLowerCase();
-    const amountOut = BigInt(event.args.amountOut.toString());
-    pool.tokens[tokenIn].balance += amountIn;
-    pool.tokens[tokenOut].balance -= amountOut;
-    return pool;
-  }
-
-  handlePoolBalanceChanged(event: any, pool: PoolState, log: Log): PoolState {
-    const tokens = event.args.tokens.map((t: string) => t.toLowerCase());
-    const deltas = event.args.deltas.map((d: any) => BigInt(d.toString()));
-    const fees = event.args.protocolFeeAmounts.map((d: any) =>
-      BigInt(d.toString()),
-    ) as bigint[];
-    tokens.forEach((t: string, i: number) => {
-      const diff = deltas[i] - fees[i];
-      pool.tokens[t].balance += diff;
-    });
-    return pool;
   }
 
   isSupportedPool(poolType: string): boolean {
@@ -296,21 +406,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     const _amounts = [unitVolume, ...amounts.slice(1)];
 
-    const poolPairData = this.pools[pool.poolType].parsePoolPairData(
+    const _pool = this.pools[pool.poolType];
+
+    const poolPairData = _pool.parsePoolPairData(
       pool,
       poolState,
       from.address,
       to.address,
     );
 
-    if (
-      !this.pools[pool.poolType].checkBalance(
-        amounts,
-        unitVolume,
-        side,
-        poolPairData as any,
-      )
-    )
+    if (!_pool.checkBalance(amounts, unitVolume, side, poolPairData as any))
       return null;
 
     const _prices = this.pools[pool.poolType].onSell(
@@ -323,7 +428,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async getOnChainState(
     subgraphPoolBase: SubgraphPoolBase[],
     blockNumber: number,
-  ): Promise<PoolStateMap> {
+  ): Promise<PoolState[]> {
     const multiCallData = subgraphPoolBase
       .map(pool => {
         if (!this.isSupportedPool(pool.poolType)) return [];
@@ -346,23 +451,27 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     ).flat();
 
     let i = 0;
-    const onChainStateMap = subgraphPoolBase.reduce(
-      (acc: { [address: string]: PoolState }, pool) => {
-        if (!this.isSupportedPool(pool.poolType)) return acc;
-
-        const [decoded, newIndex] = this.pools[
-          pool.poolType
-        ].decodeOnChainCalls(pool, returnData, i);
-        i = newIndex;
-        acc = { ...acc, ...decoded };
-        return acc;
-      },
-      {},
-    );
-
-    return onChainStateMap;
+    return subgraphPoolBase.map<PoolState>(pool => {
+      const [decoded, newIndex] = this.pools[pool.poolType].decodeOnChainCalls(
+        pool,
+        returnData,
+        i,
+      );
+      i = newIndex;
+      return decoded;
+    });
   }
 }
+
+type PoolToFetchResult = {
+  eventBasedPools: SubgraphPoolBase[];
+  nonEventBasedPools: SubgraphPoolBase[];
+};
+
+type PoolWithState = {
+  info: SubgraphPoolBase;
+  state: PoolState;
+};
 
 export class BalancerV2
   extends SimpleExchange
@@ -381,7 +490,7 @@ export class BalancerV2
   nonEventPoolStateCache: PoolStateCache;
 
   eventDisabledPoolsTimer?: NodeJS.Timer;
-  eventDisabledPools: Address[] = [];
+  eventDisabledPools = new Set<Address>();
 
   constructor(
     protected network: Network,
@@ -395,24 +504,14 @@ export class BalancerV2
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
     this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
-    this.logger = dexHelper.getLogger(dexKey);
+    this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
     this.eventPools = new BalancerV2EventPool(
-      dexKey,
       network,
+      dexHelper,
+      dexKey,
       vaultAddress,
       subgraphURL,
-      dexHelper,
       this.logger,
-    );
-  }
-
-  async setupEventPools(blockNumber: number) {
-    const poolState = await this.eventPools.generateState(blockNumber);
-    this.eventPools.setState(poolState, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.eventPools,
-      this.eventPools.addressesSubscribed,
-      blockNumber,
     );
   }
 
@@ -424,7 +523,7 @@ export class BalancerV2
       cacheKey,
     );
     if (poolAddressListFromCache) {
-      this.eventDisabledPools = JSON.parse(poolAddressListFromCache);
+      this.eventDisabledPools = new Set(JSON.parse(poolAddressListFromCache));
       return;
     }
     this.logger.info(
@@ -448,12 +547,15 @@ export class BalancerV2
       );
     }
 
-    this.eventDisabledPools = _.uniq(
-      data.gradualWeightUpdates.map(
-        (wu: { poolId: { address: Address } }) => wu.poolId.address,
-      ),
+    this.eventDisabledPools = data.gradualWeightUpdates.reduce(
+      (acc: Set<Address>, pool: { poolId: { address: Address } }) => {
+        acc.add(pool.poolId.address.toLowerCase());
+        return acc;
+      },
+      new Set<Address>(),
     );
-    const poolAddressList = JSON.stringify(this.eventDisabledPools);
+
+    const poolAddressList = JSON.stringify(Array.from(this.eventDisabledPools));
     this.logger.info(
       `Pools blocked from event based on ${this.dexKey}_${this.network}: ${poolAddressList}`,
     );
@@ -466,6 +568,15 @@ export class BalancerV2
     );
   }
 
+  releaseResources(): void {
+    if (this.eventDisabledPoolsTimer) {
+      clearInterval(this.eventDisabledPoolsTimer);
+      this.eventDisabledPoolsTimer = undefined;
+      this.logger.info(
+        `${this.dexKey}: cleared eventDisabledPoolsTimer before shutting down`,
+      );
+    }
+  }
   async initializePricing(blockNumber: number) {
     if (!this.eventDisabledPoolsTimer) {
       await this.fetchEventDisabledPools();
@@ -480,17 +591,7 @@ export class BalancerV2
         }
       }, POOL_EVENT_DISABLED_TTL * 1000);
     }
-    await this.setupEventPools(blockNumber);
-  }
-
-  releaseResources(): void {
-    if (this.eventDisabledPoolsTimer) {
-      clearInterval(this.eventDisabledPoolsTimer);
-      this.eventDisabledPoolsTimer = undefined;
-      this.logger.info(
-        `${this.dexKey}: cleared eventDisabledPoolsTimer before shutting down`,
-      );
-    }
+    await this.eventPools.initPools(blockNumber);
   }
 
   getPools(from: Token, to: Token): SubgraphPoolBase[] {
@@ -519,14 +620,13 @@ export class BalancerV2
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
+
     const _from = this.dexHelper.config.wrapETH(from);
     const _to = this.dexHelper.config.wrapETH(to);
 
     const pools = this.getPools(_from, _to);
 
-    return pools.map(
-      ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
-    );
+    return pools.map(pool => `${this.dexKey}_${pool.address.toLowerCase()}`);
   }
 
   /**
@@ -584,83 +684,145 @@ export class BalancerV2
         (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const eventPoolStatesRO = await this.eventPools.getState(blockNumber);
-      if (!eventPoolStatesRO) {
-        this.logger.error(`getState returned null`);
-        return null;
-      }
-      const eventPoolStates = { ...eventPoolStatesRO };
-      for (const addr of this.eventDisabledPools) delete eventPoolStates[addr];
+      const pools = allowedPools.reduce<PoolToFetchResult>(
+        (acc, pool) => {
+          const poolAddress = pool.address.toLowerCase();
+          if (!(poolAddress in this.eventPools.allEventBasedPools)) {
+            acc.nonEventBasedPools.push(pool);
+          } else {
+            acc.eventBasedPools.push(pool);
+          }
 
-      // Fetch previously cached non-event pool states
-      let nonEventPoolStates = this.getNonEventPoolStateCache(blockNumber);
-
-      // Missing pools are pools that don't already exist in event or non-event
-      const missingPools = allowedPools.filter(
-        pool =>
-          !(
-            pool.address.toLowerCase() in eventPoolStates ||
-            pool.address.toLowerCase() in nonEventPoolStates
-          ),
+          return acc;
+        },
+        {
+          eventBasedPools: [],
+          nonEventBasedPools: [],
+        },
       );
 
-      // Retrieve onchain state for any missing pools
-      if (missingPools.length > 0) {
-        const missingPoolsStateMap = await this.eventPools.getOnChainState(
-          missingPools,
-          blockNumber,
-        );
-        // Update non-event pool state cache with newly retrieved data so it can be reused in future
-        nonEventPoolStates = this.updateNonEventPoolStateCache(
-          missingPoolsStateMap,
-          blockNumber,
-        );
+      const eventBasedP = pools.eventBasedPools.reduce(async (accP, pool) => {
+        const acc = await accP;
+        const eventPool = this.eventPools.allEventBasedPools[pool.address];
+        if (!eventPool) {
+          this.logger.warn(`missing pool ${pool.address}`);
+          return acc;
+        }
+        let state = eventPool.getState(blockNumber);
+        if (!state) {
+          state = await eventPool.generateState(blockNumber);
+          if (state) {
+            eventPool.setState(state, blockNumber);
+          } else {
+            this.logger.error(
+              `failed to generateState for pool ${pool.address}`,
+            );
+            return acc;
+          }
+        }
+        acc.push({
+          info: pool,
+          state,
+        });
+
+        return acc;
+      }, Promise.resolve([] as PoolWithState[]));
+
+      let nonEventPoolStates = this.getNonEventPoolStateCache(blockNumber);
+
+      const notEventBasedPools = pools.nonEventBasedPools.reduce(
+        (acc, p) => {
+          if (p.address in nonEventPoolStates) {
+            acc.poolsWithState.push({
+              info: p,
+              state: nonEventPoolStates[p.address],
+            });
+          } else {
+            acc.toFetch.push(p);
+          }
+
+          return acc;
+        },
+        {
+          toFetch: [] as SubgraphPoolBase[],
+          poolsWithState: [] as PoolWithState[],
+        },
+      );
+      const nonEventBasedStatesP = this.eventPools.getOnChainState(
+        notEventBasedPools.toFetch,
+        blockNumber,
+      );
+
+      const [eventBased, nonEventBasedState] = await Promise.all([
+        eventBasedP,
+        nonEventBasedStatesP,
+      ]);
+
+      const nonEventBasedPoolsWithState = nonEventBasedState.map<PoolWithState>(
+        (state, index) => {
+          const info = notEventBasedPools.toFetch[index];
+          if (!info) {
+            this.logger.error(`did not find in all pools`);
+          }
+
+          return {
+            info,
+            state,
+          };
+        },
+      );
+
+      if (nonEventBasedPoolsWithState.length !== 0) {
+        const statesMap = nonEventBasedPoolsWithState.reduce((acc, pool) => {
+          acc[pool.info.address] = pool.state;
+          return acc;
+        }, {} as PoolStateMap);
+        this.updateNonEventPoolStateCache(statesMap, blockNumber);
       }
 
-      const poolPrices = allowedPools
-        .map((pool: SubgraphPoolBase) => {
-          const poolAddress = pool.address.toLowerCase();
-          const poolState =
-            eventPoolStates[poolAddress] || nonEventPoolStates[poolAddress];
-          if (!poolState) {
-            this.logger.error(`Unable to find the poolState ${poolAddress}`);
-            return null;
-          }
-          // TODO: re-check what should be the current block time stamp
-          try {
-            const res = this.eventPools.getPricesPool(
-              _from,
-              _to,
-              pool,
-              poolState,
-              amounts,
-              unitVolume,
-              side,
-            );
-            if (!res) return;
-            return {
-              unit: res.unit,
-              prices: res.prices,
-              data: {
-                poolId: pool.id,
-              },
-              poolAddresses: [poolAddress],
-              exchange: this.dexKey,
-              gasCost: 150 * 1000,
-              poolIdentifier: `${this.dexKey}_${poolAddress}`,
-            };
-          } catch (e) {
-            this.logger.error(
-              `Error_getPrices ${from.symbol || from.address}, ${
-                to.symbol || to.address
-              }, ${side}, ${pool.address}:`,
-              e,
-            );
-            return null;
-          }
-        })
-        .filter(p => !!p);
-      return poolPrices as ExchangePrices<BalancerV2Data>;
+      const poolsStates = [
+        ...eventBased,
+        ...notEventBasedPools.poolsWithState,
+        ...nonEventBasedPoolsWithState,
+      ];
+
+      const poolPrices = poolsStates.map(pool => {
+        // TODO: re-check what should be the current block time stamp
+        const poolAddress = pool.info.address;
+        try {
+          const res = this.eventPools.getPricesPool(
+            _from,
+            _to,
+            pool.info,
+            pool.state,
+            amounts,
+            unitVolume,
+            side,
+          );
+          if (!res) return;
+          return {
+            unit: res.unit,
+            prices: res.prices,
+            data: {
+              poolId: pool.info.id,
+            },
+            poolAddresses: [poolAddress],
+            exchange: this.dexKey,
+            gasCost: 150 * 1000,
+            poolIdentifier: `${this.dexKey}_${poolAddress}`,
+          };
+        } catch (e) {
+          this.logger.error(
+            `Error_getPrices ${from.symbol || from.address}, ${
+              to.symbol || to.address
+            }, ${side}, ${poolAddress}:`,
+            e,
+          );
+          return null;
+        }
+      });
+
+      return poolPrices.filter(p => !!p) as ExchangePrices<BalancerV2Data>;
     } catch (e) {
       this.logger.error(
         `Error_getPrices ${from.symbol || from.address}, ${

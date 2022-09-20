@@ -452,9 +452,7 @@ export class StablePool extends BaseGeneralPool {
     pool: SubgraphPoolBase,
     data: { success: boolean; returnData: any }[],
     startIndex: number,
-  ): [{ [address: string]: PoolState }, number] {
-    const pools = {} as { [address: string]: PoolState };
-
+  ): [PoolState, number] {
     const poolTokens = decodeThrowError(
       this.vaultInterface,
       'getPoolTokens',
@@ -493,9 +491,7 @@ export class StablePool extends BaseGeneralPool {
       poolState.amp = BigInt(amp.value.toString());
     }
 
-    pools[pool.address] = poolState;
-
-    return [pools, startIndex];
+    return [poolState, startIndex];
   }
 
   /*
@@ -661,9 +657,7 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
     pool: SubgraphPoolBase,
     data: { success: boolean; returnData: any }[],
     startIndex: number,
-  ): [{ [address: string]: PoolState }, number] {
-    const pools = {} as { [address: string]: PoolState };
-
+  ): [PoolState, number] {
     const poolTokens = decodeThrowError(
       this.vaultInterface,
       'getPoolTokens',
@@ -701,9 +695,7 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
       ),
     };
 
-    pools[pool.address] = poolState;
-
-    return [pools, startIndex];
+    return [poolState, startIndex];
   }
 
   /*
@@ -715,12 +707,11 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
     side: SwapSide,
     poolPairData: WeightedPoolPairData,
   ): boolean {
-    const swapMax =
-      ((side === SwapSide.SELL
+    const input =
+      side === SwapSide.SELL
         ? poolPairData.tokenInBalance
-        : poolPairData.tokenOutBalance) *
-        3n) /
-      10n;
+        : poolPairData.tokenOutBalance;
+    const swapMax = (input * 3n) / 10n;
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

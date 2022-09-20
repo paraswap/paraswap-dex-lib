@@ -362,9 +362,7 @@ export class LinearPool extends BasePool {
     pool: SubgraphPoolBase,
     data: { success: boolean; returnData: any }[],
     startIndex: number,
-  ): [{ [address: string]: PoolState }, number] {
-    const pools = {} as { [address: string]: PoolState };
-
+  ): [PoolState, number] {
     const poolTokens = decodeThrowError(
       this.vaultInterface,
       'getPoolTokens',
@@ -417,9 +415,7 @@ export class LinearPool extends BasePool {
       ),
     };
 
-    pools[pool.address] = poolState;
-
-    return [pools, startIndex];
+    return [poolState, startIndex];
   }
 
   /*

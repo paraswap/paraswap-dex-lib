@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { BalancerV2EventPool } from './balancer-v2';
-import { SubgraphPoolBase, PoolStateMap } from './types';
+import { SubgraphPoolBase, PoolStateMap, PoolState } from './types';
 import { BalancerConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -49,15 +49,12 @@ async function fetchOnePoolState(
   balancerPools: BalancerV2EventPool,
   blockNumber: number,
   poolAddress: string,
-): Promise<PoolStateMap> {
+): Promise<PoolState[]> {
   const subPools: SubgraphPoolBase[] = [
     await getSubgraphPool(poolAddress, blockNumber),
   ];
-  const poolsStateMap = await balancerPools.getOnChainState(
-    subPools,
-    blockNumber,
-  );
-  return poolsStateMap;
+  const states = await balancerPools.getOnChainState(subPools, blockNumber);
+  return states;
 }
 
 describe('BalancerV2 Event', function () {
@@ -108,11 +105,10 @@ describe('BalancerV2 Event', function () {
           const logger = dexHelper.getLogger(dexKey);
 
           const balancerPools = new BalancerV2EventPool(
+            dexHelper,
             dexKey,
-            network,
             config.vaultAddress,
             config.subgraphURL,
-            dexHelper,
             logger,
           );
 
