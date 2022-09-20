@@ -259,6 +259,17 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return this.state!;
   }
 
+  getState(minBlockNumber: number) {
+    return Object.keys(this.poolsState).reduce((acc, key) => {
+      const pool = this.poolsState[key];
+      const state = pool.getState(minBlockNumber);
+      if (state) {
+        acc[key] = state;
+      }
+      return acc;
+    }, {} as PoolStateMap);
+  }
+
   async initPools(blockNumber: number): Promise<void> {
     this.setState({}, blockNumber);
 
@@ -305,7 +316,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       acc[poolAddress] = pool;
       return acc;
     }, {});
-
     this.dexHelper.blockManager.subscribeToLogs(
       this,
       this.addressesSubscribed,
@@ -690,7 +700,11 @@ export class BalancerV2
           if (!(poolAddress in this.eventPools.allEventBasedPools)) {
             acc.nonEventBasedPools.push(pool);
           } else {
-            acc.eventBasedPools.push(pool);
+            if (this.eventDisabledPools.has(poolAddress)) {
+              acc.nonEventBasedPools.push(pool);
+            } else {
+              acc.eventBasedPools.push(pool);
+            }
           }
 
           return acc;
