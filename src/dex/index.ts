@@ -50,9 +50,11 @@ import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { QuickSwapV3 } from './quickswap-v3';
+import { CurveV1 } from './curve-v1/curve-v1';
+import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
+import { Swerve } from './curve-v1/forks/swerve/swerve';
 
 const LegacyDexes = [
-  Curve,
   CurveV2,
   StablePool,
   Smoothy,
@@ -75,6 +77,9 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  CurveV1,
+  CurveFork,
+  Swerve,
   BalancerV2,
   UniswapV2,
   BiSwap,
@@ -223,7 +228,7 @@ export class DexAdapterService {
   getDexByKey(key: string): IDex<any, any, any> {
     const _key = key.toLowerCase();
     if (!(_key in this.isLegacy) || this.isLegacy[_key])
-      throw new Error('Invalid Dex Key');
+      throw new Error(`Invalid Dex Key ${key}`);
 
     return this.dexInstances[_key] as IDex<any, any, any>;
   }

@@ -1,6 +1,7 @@
 import { Config, Address, Token } from './types';
 import { Network } from './constants';
 import { isETHAddress } from './utils';
+import { ETHER_ADDRESS } from 'paraswap';
 
 // Hardcoded and environment values from which actual config is derived
 type BaseConfig = {
@@ -221,6 +222,10 @@ export class ConfigHelper {
     return isETHAddress(token.address)
       ? { address: this.data.wrappedNativeTokenAddress, decimals: 18 }
       : token;
+  }
+
+  unwrapETH(tokenAddress: string): string {
+    return this.isWETH(tokenAddress) ? ETHER_ADDRESS : tokenAddress;
   }
 
   isWETH(tokenAddress: Address): boolean {
