@@ -587,9 +587,8 @@ export class BalancerV2
       const eventPoolStatesRO = await this.eventPools.getState(blockNumber);
       if (!eventPoolStatesRO) {
         this.logger.error(`getState returned null`);
-        return null;
       }
-      const eventPoolStates = { ...eventPoolStatesRO };
+      const eventPoolStates = { ...(eventPoolStatesRO || {}) };
       for (const addr of this.eventDisabledPools) delete eventPoolStates[addr];
 
       // Fetch previously cached non-event pool states
