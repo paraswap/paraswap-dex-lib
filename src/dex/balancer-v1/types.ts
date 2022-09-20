@@ -39,7 +39,7 @@ export type BalancerSwap = {
 
 export type BalancerV1Data = {
   exchangeProxy: Address;
-  pool: Address;
+  poolId: Address;
 };
 
 export type OptimizedBalancerV1Data = {

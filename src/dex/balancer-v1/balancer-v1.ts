@@ -377,6 +377,8 @@ export class BalancerV1EventPool {
   }
 
   getPoolPrices(
+    from: Token,
+    to: Token,
     pool: WeightedPool,
     poolData: any,
     side: SwapSide,
@@ -384,8 +386,11 @@ export class BalancerV1EventPool {
   ) {
     if (
       side === SwapSide.BUY &&
-      amount * 2n > BigInt(poolData.balanceOut.toFixed(0))
+      amount * 2n >
+        BigInt(poolData.balanceOut.toString().slice(0, -to.decimals))
     ) {
+      console.log(poolData.balanceOut.toString(), amount * 2n);
+      console.log(BI_MAX_INT);
       return BI_MAX_INT;
     }
     const _amount = new BigNumber(amount.toString());
@@ -443,6 +448,7 @@ export class BalancerV1EventPool {
     blockNumber: number,
     limit: number = 10,
   ): BalancerV1PoolState[] | null {
+    const minBalance = new BigNumber(_minBalance.toString());
     const valuesPlusIndexes = poolsState
       .slice(0, 15)
       .reduce<ValuePlusIndexType[]>((acc, pool, index) => {
@@ -456,22 +462,29 @@ export class BalancerV1EventPool {
           to.address,
         );
 
-        if (
-          side === SwapSide.SELL &&
-          poolData.balanceIn.div(2).lt(_minBalance)
-        ) {
+        const _balanceIn = poolData.balanceIn.toString();
+        const _balanceOut = poolData.balanceOut.toString();
+        const balanceIn = new BigNumber(
+          _balanceIn.length > from.decimals
+            ? _balanceIn.slice(0, -from.decimals)
+            : 0,
+        );
+        const balanceOut = new BigNumber(
+          _balanceOut.length > to.decimals
+            ? _balanceOut.slice(0, -to.decimals)
+            : 0,
+        );
+
+        if (side === SwapSide.SELL && balanceIn.div(2).lt(minBalance)) {
           return acc;
         }
 
-        if (
-          side === SwapSide.BUY &&
-          poolData.balanceOut.div(3).lt(_minBalance)
-        ) {
+        if (side === SwapSide.BUY && balanceOut.div(3).lt(minBalance)) {
           return acc;
         }
 
         const value = new BigNumber(
-          poolData.balanceIn.div(poolData.weightOut).toString(),
+          balanceIn.div(new BigNumber(poolData.weightOut.toString())),
         );
         acc.push({
           value,
@@ -586,6 +599,8 @@ export class BalancerV1
   }
 
   getPoolPrices(
+    from: Token,
+    to: Token,
     amounts: bigint[],
     side: SwapSide,
     unitVolume: bigint,
@@ -596,19 +611,21 @@ export class BalancerV1
     if (!pool) return null;
     try {
       const unit = this.eventPools.getPoolPrices(
+        from,
+        to,
         pool,
         poolData,
         side,
         unitVolume,
       );
       const prices = amounts.map(a =>
-        this.eventPools.getPoolPrices(pool, poolData, side, a),
+        this.eventPools.getPoolPrices(from, to, pool, poolData, side, a),
       );
       return {
         prices,
         unit,
         data: {
-          pool: pool.id,
+          poolId: pool.id,
           exchangeProxy,
         },
         poolAddresses: [pool.id],
@@ -683,14 +700,22 @@ export class BalancerV1
 
       const poolPrices = topPools
         .map(pool => {
-          const weightedPool = pool.loadState(blockNumber)!;
+          const weightedPool = pool.loadState(blockNumber);
+          if (!weightedPool) {
+            return null;
+          }
           const poolData = weightedPool.parsePoolPairData(
             _from.address,
             _to.address,
           );
+          if (!poolData) {
+            return null;
+          }
           // TODO: re-check what should be the current block time stamp
           try {
             const res = this.getPoolPrices(
+              _from,
+              _to,
               amounts,
               side,
               unitVolume,
@@ -703,8 +728,8 @@ export class BalancerV1
               unit: res.unit,
               prices: res.prices,
               data: {
-                poolId: pool.pool.id,
                 exchangeProxy: this.exchangeProxy,
+                poolId: pool.pool.id,
               },
               poolAddresses: [pool.pool.id],
               exchange: this.dexKey,
@@ -722,7 +747,7 @@ export class BalancerV1
           }
         })
         .filter(p => !!p);
-      return poolPrices as unknown as ExchangePrices<BalancerV1Data>;
+      return poolPrices as ExchangePrices<BalancerV1Data>;
     } catch (e) {
       this.logger.error(
         `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
@@ -825,7 +850,6 @@ export class BalancerV1
             BalancerFunctions.batchEthOutSwapExactIn,
             [swaps, srcToken, srcAmount, destAmount],
           ];
-
         return [
           BalancerFunctions.batchSwapExactIn,
           [swaps, srcToken, destToken, srcAmount, destAmount],

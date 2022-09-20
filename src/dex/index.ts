@@ -51,6 +51,7 @@ import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { QuickSwapV3 } from './quickswap-v3';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
+import { balancerV1Merge } from './balancer-v1/optimizer';
 
 const LegacyDexes = [
   Curve,
@@ -126,6 +127,7 @@ export class DexAdapterService {
   uniswapV2Alias: string | null;
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
+    balancerV1Merge,
     balancerV2Merge,
     uniswapMerge,
   ];

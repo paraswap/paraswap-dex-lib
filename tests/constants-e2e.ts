@@ -625,8 +625,8 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
-    ETH: '0x73BCEb1Cd57C711feaC4224D062b0F6ff338501e',
-    USDC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
+    ETH: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
+    USDC: '0x99F5F9d77D802adB49f0C35C3139d16043735c9c',
     WBTC: '0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',

@@ -36,6 +36,7 @@
     "prepare": "husky install && yarn build"
   },
   "dependencies": {
+    "@balancer-labs/sor": "4.0.1-beta.2",
     "@0x/utils": "^4.5.2",
     "@ethersproject/abi": "5.4.0",
     "@ethersproject/bytes": "^5.6.1",
