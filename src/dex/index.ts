@@ -50,6 +50,7 @@ import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { QuickSwapV3 } from './quickswap-v3';
+import { BalancerV1 } from './balancer-v1/balancer-v1';
 
 const LegacyDexes = [
   Curve,
@@ -75,6 +76,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  BalancerV1,
   BalancerV2,
   UniswapV2,
   BiSwap,

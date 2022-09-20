@@ -1,3 +1,4 @@
+import { Logger } from './types';
 import { BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap } from './types';
@@ -83,3 +84,39 @@ export function _require(
       `${receivedValues}Error message: ${message ? message : 'undefined'}`,
     );
 }
+
+interface SliceCallsInput<T, U> {
+  inputArray: T[];
+  execute: (inputSlice: T[], sliceIndex: number) => U;
+  sliceLength: number;
+}
+
+// author: @velenir. source: https://github.com/paraswap/paraswap-volume-tracker/blob/ceaf5e267c9720b190b19c17465b438f57f41851/src/lib/utils/helpers.ts#L20
+export function sliceCalls<T, U>({
+  inputArray,
+  execute,
+  sliceLength,
+}: SliceCallsInput<T, U>): [U, ...U[]] {
+  if (sliceLength >= inputArray.length) return [execute(inputArray, 0)];
+  const results: U[] = [];
+
+  for (
+    let i = 0, sliceIndex = 0;
+    i < inputArray.length;
+    i += sliceLength, ++sliceIndex
+  ) {
+    const inputSlice = inputArray.slice(i, i + sliceLength);
+    const resultOfSlice = execute(inputSlice, sliceIndex);
+    results.push(resultOfSlice);
+  }
+
+  return results as [U, ...U[]];
+}
+
+export const catchParseLogError = (e: any, logger: Logger) => {
+  if (e instanceof Error) {
+    if (!e.message.includes('no matching event')) {
+      logger.error('Failed parse event', e);
+    }
+  }
+};
