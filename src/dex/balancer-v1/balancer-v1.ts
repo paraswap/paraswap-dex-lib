@@ -206,7 +206,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
     const _state = _.cloneDeep(state) as MinimalPoolState;
 
     const tokenIn = event.args.tokenIn.toLowerCase();
-    const tokenAmountIn = event.args.tokenAmountIn;
+    const tokenAmountIn = new BigNumber(event.args.tokenAmountIn.toString());
 
     const tokenOut = event.args.tokenOut.toLowerCase();
     const tokenAmountOut = new BigNumber(event.args.tokenAmountOut.toString());
@@ -217,7 +217,7 @@ export class BalancerV1PoolState extends StatefulEventSubscriber<MinimalPoolStat
           .toString();
       else if (token.address.toLowerCase() === tokenOut)
         token.balance = new BigNumber(token.balance)
-          .plus(tokenAmountOut)
+          .minus(tokenAmountOut)
           .toString();
       return token;
     });
