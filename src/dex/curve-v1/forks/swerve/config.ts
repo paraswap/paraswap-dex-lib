@@ -6,7 +6,13 @@ import { DexParams } from '../../types';
 export const SwerveConfig: DexConfigMap<DexParams> = {
   Swerve: {
     [Network.MAINNET]: {
-      baseTokens: {},
+      baseTokens: {
+        '0x6b175474e89094c44da98b954eedeac495271d0f': {
+          address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+          decimals: 18,
+          reasonableVolume: 100000000000000000000n,
+        },
+      },
       factoryAddress: null,
       eventSupportedPools: ['0x329239599afb305da0a2ec69c58f8a6697f9f88d'],
       pools: {
