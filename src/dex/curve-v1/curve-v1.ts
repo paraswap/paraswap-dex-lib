@@ -1078,7 +1078,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const _tokenAddress = this.dexHelper.config.unwrapETH(tokenAddress);
+    const _tokenAddress = this.dexHelper.config.unwrapETH({
+      address: tokenAddress,
+      decimals: 18,
+    }).address;
     // In general case a token can be in the coins or underlying
     // In case of the metapool the token might be in both at the same time
     // It is important to note that the connector tokens might not be

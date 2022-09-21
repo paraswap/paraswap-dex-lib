@@ -224,8 +224,10 @@ export class ConfigHelper {
       : token;
   }
 
-  unwrapETH(tokenAddress: string): string {
-    return this.isWETH(tokenAddress) ? ETHER_ADDRESS : tokenAddress;
+  unwrapETH(token: Token): Token {
+    return this.isWETH(token.address)
+      ? { address: ETHER_ADDRESS, decimals: 18 }
+      : token;
   }
 
   isWETH(tokenAddress: Address): boolean {
