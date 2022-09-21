@@ -30,6 +30,10 @@ export interface PoolStatesAsString {
   pools: PoolStateAsString[];
 }
 
+export interface PoolStatesAsStringMap {
+  [address: string]: PoolStateAsString;
+}
+
 export type BalancerSwap = {
   pool: Address;
   tokenInParam: string;

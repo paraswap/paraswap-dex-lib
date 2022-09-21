@@ -7,14 +7,21 @@ import { Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import axios from 'axios';
-import { PoolState, PoolStateMap, PoolStates } from './types';
+import {
+  MinimalPoolState,
+  PoolStateAsString,
+  PoolStatesAsString,
+  PoolStatesAsStringMap,
+} from './types';
 
 jest.setTimeout(50 * 1000);
 const dexKey = 'BalancerV1';
 const network = Network.MAINNET;
 const config = BalancerV1Config[dexKey][network];
 
-type SubgraphState = Omit<PoolState, 'tokensList' | 'publicSwap'>;
+const testPoolAddress = '0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5';
+
+type SubgraphState = Omit<PoolStateAsString, 'tokensList' | 'publicSwap'>;
 
 async function getSubgraphPool(
   address: string,
@@ -53,9 +60,9 @@ async function fetchPoolState(
   balancerV1Pools: BalancerV1EventPool,
   blockNumber: number,
   poolAddress: string,
-): Promise<PoolStateMap> {
+): Promise<MinimalPoolState> {
   const fetchedState = await getSubgraphPool(poolAddress, blockNumber);
-  const pools: PoolStates = {
+  const pools: PoolStatesAsString = {
     pools: [
       {
         ...fetchedState,
@@ -69,12 +76,11 @@ async function fetchPoolState(
     blockNumber,
   );
 
-  let poolStateMap: PoolStateMap = {};
-  poolsStates.pools.forEach(
-    pool => (poolStateMap[pool.id.toLowerCase()] = pool),
-  );
+  const state = poolsStates.pools[0];
 
-  return poolStateMap;
+  return {
+    tokens: state.tokens,
+  };
 }
 
 export async function executeFullEventTest(
@@ -82,14 +88,18 @@ export async function executeFullEventTest(
   poolAddress: string,
 ) {
   const dexHelper = new DummyDexHelper(network);
-  await dexHelper.init();
   const logger = dexHelper.getLogger(dexKey);
 
   const balancerV1Pools = new BalancerV1EventPool(dexHelper, dexKey, logger);
-  await balancerV1Pools.generateState(blockNumber - 1);
+  await balancerV1Pools.setupEventPools('BalancerV1', blockNumber - 1);
+
+  const pool = balancerV1Pools.allpools.filter(
+    pool => pool.pool.id === testPoolAddress,
+  )[0];
+
   await testEventSubscriber(
-    balancerV1Pools,
-    balancerV1Pools.addressesSubscribed,
+    pool,
+    pool.addressesSubscribed,
     (_blockNumber: number) =>
       fetchPoolState(balancerV1Pools, _blockNumber, poolAddress),
     blockNumber,
@@ -99,8 +109,6 @@ export async function executeFullEventTest(
 }
 
 describe('BalancerV1 EventPool MAINNET', function () {
-  const testPoolAddress = '0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5';
-
   describe('LOG_JOIN', function () {
     const event = 'LOG_JOIN';
 
