@@ -603,14 +603,14 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: true,
           baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
         },
-        AETH: {
+        ANKRETH: {
           underlying: [],
           coins: [
             '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
             '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb',
           ],
           address: '0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2',
-          name: 'AETH',
+          name: 'ANKRETH',
           type: 2,
           version: 3,
           isLending: false,
@@ -819,20 +819,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0xC581b735A1688071A1746c968e0798D642EDE491',
         },
-        CRVCVX: {
-          underlying: [],
-          coins: [
-            '0xD533a949740bb3306d119CC777fa900bA034cd52',
-            '0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7',
-          ],
-          address: '0x9D0464996170c6B9e75eED71c68B99dDEDf279e8',
-          name: 'cvxcrv-f',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: false,
-          baseToken: '0xD533a949740bb3306d119CC777fa900bA034cd52',
-        },
         CRVFEI: {
           underlying: [
             '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
@@ -860,20 +846,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           ],
           address: '0xF9440930043eb3997fc70e1339dBb11F341de7A8',
           name: 'reth',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: false,
-          baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-        },
-        ANKRETH: {
-          underlying: [],
-          coins: [
-            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-            '0xE95A203B1a91a908F9B9CE46459d101078c2c3cb',
-          ],
-          address: '0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2',
-          name: 'anketh',
           type: 2,
           version: 3,
           isLending: false,
