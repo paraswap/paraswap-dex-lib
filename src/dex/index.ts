@@ -1,5 +1,4 @@
 import { Address, UnoptimizedRate } from '../types';
-import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
