@@ -14,21 +14,6 @@ import {
 import { Tokens } from '../../../tests/constants-e2e';
 import { CurveV1Data } from './types';
 import _ from 'lodash';
-/*
-  README
-  ======
-
-  This test script adds tests for CurveV1 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover CurveV1 specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-
-  (This comment should be removed from the final implementation)
-*/
 
 const network = Network.MAINNET;
 const TokenASymbol = 'USDT';
@@ -92,7 +77,6 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
 
-  // console.log(prices);
   const expectedPrices = [0n].concat(
     decodeReaderResult(data, readerResult, readerIface),
   );

@@ -171,7 +171,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   async fetchFactoryPools() {
     if (!this.factoryAddress) {
       this.logger.warn(
-        `[OK] try to featch factory pools without factoryAddress ${this.dexKey}`,
+        `[OK] try to fetch factory pools without factoryAddress ${this.dexKey}`,
       );
       return;
     }
@@ -995,9 +995,9 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       // Hack: We choose to check the balance of the token for the pool instead of calling
       // the balances array in the pool as it was a mess to have each curve abi
       // Some have balances[uint128] some have balances[uint256]
-      // One of the consequnce for such a hack is below for ETH Pools
+      // One of the consequence for such a hack is below for ETH Pools
       // TODO: below can be highly optimised
-      // * we don't need to query token decimals every itteration
+      // * we don't need to query token decimals every iteration
       // * we can use the decimals from the tokens list using the api
 
       const calls = Object.values(this.pools).reduce<MultiCallParams<number>[]>(
