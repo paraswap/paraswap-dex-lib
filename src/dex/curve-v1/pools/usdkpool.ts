@@ -3,14 +3,14 @@ import { ThreePool } from './3pool';
 import StableSwapUSDK from '../../../abi/curve/StableSwapUSDK.json';
 import { CurveMetapool } from './curve-metapool';
 import { IDexHelper } from '../../../dex-helper';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 
 const pool = 'usdk';
 export const address: Address =
   '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb'.toLowerCase();
 const tokenAddress: Address = '0x97E2768e8E73511cA874545DC5Ff8067eB19B787';
 const N_COINS: number = 2;
-const PRECISION_MUL = ['1', '1'].map(bignumberify);
+const PRECISION_MUL = ['1', '1'].map(bigNumberify);
 const USE_LENDING = [false, false];
 const COINS = [
   '0x1c48f86ae57291f7686349f12601910bd8d470bb',

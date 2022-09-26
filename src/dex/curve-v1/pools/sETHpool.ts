@@ -4,14 +4,14 @@ import StableSwapSETH from '../../../abi/curve/StableSwapSETH.json';
 import { PoolState } from './curve-pool';
 import { DeepReadonly } from 'ts-essentials';
 import { IDexHelper } from '../../../dex-helper';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 
 const pool = 'sETH';
 export const address: Address =
   '0xc5424B857f758E906013F3555Dad202e4bdB4567'.toLowerCase();
 const tokenAddress: Address = '0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c';
 const N_COINS: number = 2;
-const PRECISION_MUL = ['1', '1'].map(bignumberify);
+const PRECISION_MUL = ['1', '1'].map(bigNumberify);
 const USE_LENDING = [false, false];
 const COINS = [
   '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',

@@ -13,7 +13,7 @@ import { BlockHeader } from 'web3-eth';
 import { BN_0, BN_600, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 import { stringify } from 'querystring';
 import { getManyPoolStates } from './getstate-multicall';
 
@@ -163,19 +163,19 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
           ? this.basepool.processLog(state.basepool, log) || state.basepool
           : state.basepool;
       let _state: MetapoolState = {
-        A: bignumberify(state.A),
-        fee: bignumberify(state.fee),
-        admin_fee: bignumberify(state.admin_fee),
-        supply: bignumberify(state.supply),
-        balances: state.balances.map(bignumberify),
-        base_virtual_price: bignumberify(state.base_virtual_price),
-        base_cache_updated: bignumberify(state.base_cache_updated),
+        A: bigNumberify(state.A),
+        fee: bigNumberify(state.fee),
+        admin_fee: bigNumberify(state.admin_fee),
+        supply: bigNumberify(state.supply),
+        balances: state.balances.map(bigNumberify),
+        base_virtual_price: bigNumberify(state.base_virtual_price),
+        base_cache_updated: bigNumberify(state.base_cache_updated),
         basepool: {
-          A: bignumberify(_basepool.A),
-          fee: bignumberify(_basepool.fee),
-          admin_fee: bignumberify(_basepool.admin_fee),
-          supply: bignumberify(_basepool.supply),
-          balances: _basepool.balances.map(bignumberify),
+          A: bigNumberify(_basepool.A),
+          fee: bigNumberify(_basepool.fee),
+          admin_fee: bigNumberify(_basepool.admin_fee),
+          supply: bigNumberify(_basepool.supply),
+          balances: _basepool.balances.map(bigNumberify),
         },
       };
 
@@ -308,9 +308,9 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     state: MetapoolState,
     log: Log,
   ): MetapoolState {
-    const A = bignumberify(stringify(event.args.A));
-    const fee = bignumberify(stringify(event.args.fee));
-    const admin_fee = bignumberify(stringify(event.args.admin_fee));
+    const A = bigNumberify(stringify(event.args.A));
+    const fee = bigNumberify(stringify(event.args.fee));
+    const admin_fee = bigNumberify(stringify(event.args.admin_fee));
 
     state.A = A;
     state.fee = fee;
@@ -325,8 +325,8 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   ): MetapoolState {
     const token_amounts = event.args.token_amounts
       .map(stringify)
-      .map(bignumberify);
-    const token_supply = bignumberify(stringify(event.args.token_supply));
+      .map(bigNumberify);
+    const token_supply = bigNumberify(stringify(event.args.token_supply));
 
     for (let i = 0; i < this.N_COINS; i++) {
       state.balances[i] = state.balances[i].minus(token_amounts[i]);
@@ -341,8 +341,8 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     log: Log,
     blockHeader: BlockHeader,
   ): MetapoolState {
-    const amounts = event.args.token_amounts.map(stringify).map(bignumberify);
-    const blockTimestamp = bignumberify(blockHeader.timestamp);
+    const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
+    const blockTimestamp = bigNumberify(blockHeader.timestamp);
     const rates = this.getRates();
 
     const [vp_rate, base_cache_updated] = this._vp_rate(
@@ -405,8 +405,8 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   ): MetapoolState {
     const i = event.args.sold_id.toNumber();
     const j = event.args.bought_id.toNumber();
-    const dx = bignumberify(stringify(event.args.tokens_sold));
-    const blockTimestamp = bignumberify(blockHeader.timestamp);
+    const dx = bigNumberify(stringify(event.args.tokens_sold));
+    const blockTimestamp = bigNumberify(blockHeader.timestamp);
 
     const [vp_rate, base_cache_updated] = this._vp_rate(
       state.basepool,
@@ -460,8 +460,8 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   ): MetapoolState {
     const i = event.args.sold_id.toNumber();
     const j = event.args.bought_id.toNumber();
-    const blockTimestamp = bignumberify(blockHeader.timestamp);
-    const dx = bignumberify(stringify(event.args.tokens_sold));
+    const blockTimestamp = bigNumberify(blockHeader.timestamp);
+    const dx = bigNumberify(stringify(event.args.tokens_sold));
     const rates = this.getRates();
 
     const [vp_rate, base_cache_updated] = this._vp_rate(
@@ -505,7 +505,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
       } else {
         // i is from BasePool
         // At first, get the amount of pool tokens
-        let base_inputs = [0, 0, 0].map(bignumberify);
+        let base_inputs = [0, 0, 0].map(bigNumberify);
         base_inputs[base_i] = dx_w_fee;
         const coin_i = this.COINS[this.MAX_COIN];
         // Deposit and measure delta
@@ -564,9 +564,9 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     log: Log,
     blockHeader: BlockHeader,
   ): MetapoolState {
-    const amounts = event.args.token_amounts.map(stringify).map(bignumberify);
-    const supply = bignumberify(stringify(event.args.token_supply));
-    const blockTimestamp = bignumberify(blockHeader.timestamp);
+    const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
+    const supply = bigNumberify(stringify(event.args.token_supply));
+    const blockTimestamp = bigNumberify(blockHeader.timestamp);
     const rates = this.getRates();
 
     const [vp_rate, base_cache_updated] = this._vp_rate(
@@ -748,24 +748,24 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   ): BigNumber {
     const rates = this.getRates();
     let _basepool = {
-      A: bignumberify(state.basepool.A),
-      fee: bignumberify(state.basepool.fee),
-      admin_fee: bignumberify(state.basepool.admin_fee),
-      supply: bignumberify(state.basepool.supply),
-      balances: state.basepool.balances.map(bignumberify),
+      A: bigNumberify(state.basepool.A),
+      fee: bigNumberify(state.basepool.fee),
+      admin_fee: bigNumberify(state.basepool.admin_fee),
+      supply: bigNumberify(state.basepool.supply),
+      balances: state.basepool.balances.map(bigNumberify),
     };
     // TODO: fix to add an extra latency as users will not do the transactions immediately
-    const blockTimestamp = bignumberify(Date.now());
+    const blockTimestamp = bigNumberify(Date.now());
     return this._get_dy_underlying(
       i,
       j,
       dx,
-      bignumberify(state.A),
-      bignumberify(state.fee),
-      state.balances.map(bignumberify),
+      bigNumberify(state.A),
+      bigNumberify(state.fee),
+      state.balances.map(bigNumberify),
       rates,
-      bignumberify(state.base_virtual_price),
-      bignumberify(state.base_cache_updated),
+      bigNumberify(state.base_virtual_price),
+      bigNumberify(state.base_cache_updated),
       blockTimestamp,
       _basepool,
     );
@@ -809,24 +809,24 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   ): BigNumber {
     const rates = this.getRates();
     // TODO: fix to add an extra latency as users will not do the transactions immediately
-    const blockTimestamp = bignumberify(Date.now());
+    const blockTimestamp = bigNumberify(Date.now());
     let _basepool = {
-      A: bignumberify(state.basepool.A),
-      fee: bignumberify(state.basepool.fee),
-      admin_fee: bignumberify(state.basepool.admin_fee),
-      supply: bignumberify(state.basepool.supply),
-      balances: state.basepool.balances.map(bignumberify),
+      A: bigNumberify(state.basepool.A),
+      fee: bigNumberify(state.basepool.fee),
+      admin_fee: bigNumberify(state.basepool.admin_fee),
+      supply: bigNumberify(state.basepool.supply),
+      balances: state.basepool.balances.map(bigNumberify),
     };
     return this._get_dy(
       i,
       j,
       dx,
-      bignumberify(state.A),
-      bignumberify(state.fee),
-      state.balances.map(bignumberify),
+      bigNumberify(state.A),
+      bigNumberify(state.fee),
+      state.balances.map(bigNumberify),
       rates,
-      bignumberify(state.base_virtual_price),
-      bignumberify(state.base_cache_updated),
+      bigNumberify(state.base_virtual_price),
+      bigNumberify(state.base_cache_updated),
       blockTimestamp,
       _basepool,
     );
@@ -838,21 +838,21 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     if (S.eq(0)) return BN_0;
 
     let Dprev = BN_0;
-    let D = bignumberify(S);
+    let D = bigNumberify(S);
     const Ann = amp.times(this.N_COINS);
     for (let _i = 0; _i < 255; _i++) {
-      let D_P = bignumberify(D);
+      let D_P = bigNumberify(D);
       for (const _x of xp) {
         D_P = D_P.times(D).idiv(_x.times(this.N_COINS));
       }
-      Dprev = bignumberify(D);
+      Dprev = bigNumberify(D);
       D = Ann.times(S)
         .plus(D_P.times(this.N_COINS))
         .times(D)
         .idiv(
           Ann.minus(1)
             .times(D)
-            .plus(bignumberify(this.N_COINS + 1).times(D_P)),
+            .plus(bigNumberify(this.N_COINS + 1).times(D_P)),
         );
       if (D.gt(Dprev)) {
         if (D.minus(Dprev).lte(1)) break;
@@ -873,7 +873,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     // if(! ((i != j) && (i >= 0) && (j >= 0) && (i < this.N_COINS) && (j < this.N_COINS))) throw new Error('get y assert failed')
     const D = this.get_D(xp, A);
 
-    let c = bignumberify(D);
+    let c = bigNumberify(D);
     let S_ = BN_0;
     const Ann = A.times(this.N_COINS);
 
@@ -888,13 +888,13 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     c = c.times(D).idiv(Ann.times(this.N_COINS));
     const b = S_.plus(D.idiv(Ann));
     let yPrev = BN_0;
-    let y = bignumberify(D);
+    let y = bigNumberify(D);
     for (let o = 0; o < 255; o++) {
-      yPrev = bignumberify(y);
+      yPrev = bigNumberify(y);
       const y1 = y.times(y);
       const y2 = y1.plus(c);
 
-      const y3 = bignumberify(2).times(y);
+      const y3 = bigNumberify(2).times(y);
       const y4 = y3.plus(b).minus(D);
 
       y = y2.idiv(y4);
@@ -952,8 +952,8 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   }
 
   handleNewFee(event: any, state: MetapoolState, log: Log): MetapoolState {
-    const fee = bignumberify(stringify(event.args.fee));
-    const admin_fee = bignumberify(stringify(event.args.admin_fee));
+    const fee = bigNumberify(stringify(event.args.fee));
+    const admin_fee = bigNumberify(stringify(event.args.admin_fee));
 
     state.fee = fee;
     state.admin_fee = admin_fee;
@@ -966,8 +966,8 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     log: Log,
     blockHeader: BlockHeader,
   ): MetapoolState {
-    const _token_amount = bignumberify(stringify(event.args.token_amount));
-    const blockTimestamp = bignumberify(blockHeader.timestamp);
+    const _token_amount = bigNumberify(stringify(event.args.token_amount));
+    const blockTimestamp = bigNumberify(blockHeader.timestamp);
     // TODO: fix the correct blockTimestamp in the below call
     const [vp_rate, base_cache_updated] = this._vp_rate(
       state.basepool,

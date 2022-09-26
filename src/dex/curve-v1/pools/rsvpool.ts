@@ -3,14 +3,14 @@ import { ThreePool } from './3pool';
 import StableSwapRSV from '../../../abi/curve/StableSwapRSV.json';
 import { CurveMetapool } from './curve-metapool';
 import { IDexHelper } from '../../../dex-helper';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 
 const pool = 'rsv';
 export const address: Address =
   '0xC18cC39da8b11dA8c3541C598eE022258F9744da'.toLowerCase();
 const tokenAddress: Address = '0xC2Ee6b0334C261ED60C72f6054450b61B8f18E35';
 const N_COINS: number = 2;
-const PRECISION_MUL = ['1', '1'].map(bignumberify);
+const PRECISION_MUL = ['1', '1'].map(bigNumberify);
 const USE_LENDING = [false, false];
 const COINS = [
   '0x196f4727526eA7FB1e17b2071B3d8eAA38486988',

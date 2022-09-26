@@ -2,14 +2,14 @@ import { Address } from '../../../types';
 import { ThreePool } from './3pool';
 import StableSwapSLINK from '../../../abi/curve/StableSwapSLINK.json';
 import { IDexHelper } from '../../../dex-helper';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 
 const pool = 'SLINK';
 export const address: Address =
   '0xf178c0b5bb7e7abf4e12a4838c7b7c5ba2c623c0'.toLowerCase();
 const tokenAddress: Address = '0xcee60cfa923170e4f8204ae08b4fa6a3f5656f3a';
 const N_COINS: number = 2;
-const PRECISION_MUL = ['1', '1'].map(bignumberify);
+const PRECISION_MUL = ['1', '1'].map(bigNumberify);
 const USE_LENDING = [false, false];
 const COINS = [
   '0x514910771af9ca656af840dff83e8264ecf986ca',

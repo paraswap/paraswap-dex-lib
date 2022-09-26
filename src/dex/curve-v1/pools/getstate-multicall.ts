@@ -2,9 +2,9 @@ import { CurveMetapool, MetapoolState } from './curve-metapool';
 import { CurvePool, PoolState } from './curve-pool';
 import _ from 'lodash';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bignumberify, stringify } from '../../../utils';
+import { bigNumberify, stringify } from '../../../utils';
 
-const strbnify = (val: any) => bignumberify(stringify(val));
+const strbnify = (val: any) => bigNumberify(stringify(val));
 
 async function _getManyPoolStates(
   pools: (CurvePool | CurveMetapool)[],

@@ -1,4 +1,4 @@
-import { bignumberify, getDexKeysWithNetwork } from '../../../../utils';
+import { bigNumberify, getDexKeysWithNetwork } from '../../../../utils';
 import { CurveV1 } from '../../curve-v1';
 import { ThreePool } from '../../pools/3pool';
 import { CurvePool } from '../../pools/curve-pool';
@@ -65,7 +65,7 @@ export class CurveFork extends CurveV1 {
       config.trackCoins,
       StableSwap3Pool,
       config.coins.length,
-      config.precisionMul!.map(bignumberify),
+      config.precisionMul!.map(bigNumberify),
       config.useLending,
       config.coins,
     );

@@ -2,14 +2,14 @@ import { Address } from '../../../types';
 import { ThreePool } from './3pool';
 import StableSwapEURS from '../../../abi/curve/StableSwapEURS.json';
 import { IDexHelper } from '../../../dex-helper';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 
 const pool = 'EURS';
 export const address: Address =
   '0x0Ce6a5fF5217e38315f87032CF90686C96627CAA'.toLowerCase();
 const tokenAddress: Address = '0x194eBd173F6cDacE046C53eACcE9B953F28411d1';
 const N_COINS: number = 2;
-const PRECISION_MUL = ['10000000000000000', '1'].map(bignumberify);
+const PRECISION_MUL = ['10000000000000000', '1'].map(bigNumberify);
 const USE_LENDING = [false, false];
 const COINS = [
   '0xdB25f211AB05b1c97D595516F45794528a807ad8',

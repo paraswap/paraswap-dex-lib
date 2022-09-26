@@ -9,7 +9,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { BN_0, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bignumberify, catchParseLogError } from '../../../utils';
+import { bigNumberify, catchParseLogError } from '../../../utils';
 import { stringify } from 'querystring';
 import { getManyPoolStates } from './getstate-multicall';
 
@@ -86,11 +86,11 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     let _state: PoolState = {
-      A: bignumberify(state.A),
-      fee: bignumberify(state.fee),
-      admin_fee: bignumberify(state.admin_fee),
-      supply: bignumberify(state.supply),
-      balances: state.balances.map(bignumberify),
+      A: bigNumberify(state.A),
+      fee: bigNumberify(state.fee),
+      admin_fee: bigNumberify(state.admin_fee),
+      supply: bigNumberify(state.supply),
+      balances: state.balances.map(bigNumberify),
     };
     try {
       const event = this.decoder(log);
@@ -124,9 +124,9 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleNewParameters(event: any, state: PoolState, log: Log): PoolState {
-    const A = bignumberify(stringify(event.args.A));
-    const fee = bignumberify(stringify(event.args.fee));
-    const admin_fee = bignumberify(stringify(event.args.admin_fee));
+    const A = bigNumberify(stringify(event.args.A));
+    const fee = bigNumberify(stringify(event.args.fee));
+    const admin_fee = bigNumberify(stringify(event.args.admin_fee));
 
     state.A = A;
     state.fee = fee;
@@ -137,8 +137,8 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   handleRemoveLiquidity(event: any, state: PoolState, log: Log): PoolState {
     const token_amounts = event.args.token_amounts
       .map(stringify)
-      .map(bignumberify);
-    const token_supply = bignumberify(stringify(event.args.token_supply));
+      .map(bigNumberify);
+    const token_supply = bigNumberify(stringify(event.args.token_supply));
 
     for (let i = 0; i < this.N_COINS; i++) {
       state.balances[i] = state.balances[i].minus(token_amounts[i]);
@@ -152,7 +152,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     state: PoolState,
     log: Log,
   ): PoolState {
-    const amounts = event.args.token_amounts.map(stringify).map(bignumberify);
+    const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
     const rates = this.getRates();
 
     const token_supply: BigNumber = state.supply;
@@ -236,7 +236,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   handleTokenExchange(event: any, state: PoolState, log: Log): PoolState {
     const i = event.args.sold_id.toNumber();
     const j = event.args.bought_id.toNumber();
-    const dx = bignumberify(stringify(event.args.tokens_sold));
+    const dx = bigNumberify(stringify(event.args.tokens_sold));
     this.exchange(i, j, dx, state);
     return state;
   }
@@ -308,7 +308,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleAddLiquidity(event: any, state: PoolState, log: Log): PoolState {
-    const amounts = event.args.token_amounts.map(stringify).map(bignumberify);
+    const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
     this.add_liquidity(amounts, state);
     return state;
   }
@@ -343,9 +343,9 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
       i,
       j,
       dx,
-      bignumberify(state.A),
-      bignumberify(state.fee),
-      state.balances.map(bignumberify),
+      bigNumberify(state.A),
+      bigNumberify(state.fee),
+      state.balances.map(bigNumberify),
       rates,
     );
   }
@@ -390,9 +390,9 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
       i,
       j,
       dx,
-      bignumberify(state.A),
-      bignumberify(state.fee),
-      state.balances.map(bignumberify),
+      bigNumberify(state.A),
+      bigNumberify(state.fee),
+      state.balances.map(bigNumberify),
       rates,
     );
   }
@@ -403,21 +403,21 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     if (S.eq(0)) return BN_0;
 
     let Dprev = BN_0;
-    let D = bignumberify(S);
+    let D = bigNumberify(S);
     const Ann = amp.times(this.N_COINS);
     for (let _i = 0; _i < 255; _i++) {
-      let D_P = bignumberify(D);
+      let D_P = bigNumberify(D);
       for (const _x of xp) {
         D_P = D_P.times(D).idiv(_x.times(this.N_COINS));
       }
-      Dprev = bignumberify(D);
+      Dprev = bigNumberify(D);
       D = Ann.times(S)
         .plus(D_P.times(this.N_COINS))
         .times(D)
         .idiv(
           Ann.minus(1)
             .times(D)
-            .plus(bignumberify(this.N_COINS + 1).times(D_P)),
+            .plus(bigNumberify(this.N_COINS + 1).times(D_P)),
         );
       if (D.gt(Dprev)) {
         if (D.minus(Dprev).lte(1)) break;
@@ -439,7 +439,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
 
     const D = this.get_D(xp, A);
 
-    let c = bignumberify(D);
+    let c = bigNumberify(D);
     let S_ = BN_0;
     const Ann = A.times(this.N_COINS);
 
@@ -454,13 +454,13 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     c = c.times(D).idiv(Ann.times(this.N_COINS));
     const b = S_.plus(D.idiv(Ann));
     let yPrev = BN_0;
-    let y = bignumberify(D);
+    let y = bigNumberify(D);
     for (let o = 0; o < 255; o++) {
-      yPrev = bignumberify(y);
+      yPrev = bigNumberify(y);
       const y1 = y.times(y);
       const y2 = y1.plus(c);
 
-      const y3 = bignumberify(2).times(y);
+      const y3 = bigNumberify(2).times(y);
       const y4 = y3.plus(b).minus(D);
 
       y = y2.idiv(y4);

@@ -170,7 +170,7 @@ export class Utils {
 
 export const bigIntify = (val: any) => BigInt(val);
 
-export const bignumberify = (val: any) => new BigNumber(val);
+export const bigNumberify = (val: any) => new BigNumber(val);
 
 export const stringify = (val: any) => val.toString();
 

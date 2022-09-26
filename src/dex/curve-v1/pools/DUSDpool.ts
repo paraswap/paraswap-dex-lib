@@ -3,14 +3,14 @@ import { ThreePool } from './3pool';
 import StableSwapDUSD from '../../../abi/curve/StableSwapDUSD.json';
 import { CurveMetapool } from './curve-metapool';
 import { IDexHelper } from '../../../dex-helper';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 
 const pool = 'dusd';
 export const address: Address =
   '0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'.toLowerCase();
 const tokenAddress: Address = '0x3a664Ab939FD8482048609f652f9a0B0677337B9';
 const N_COINS: number = 2;
-const PRECISION_MUL = ['1', '1'].map(bignumberify);
+const PRECISION_MUL = ['1', '1'].map(bigNumberify);
 const USE_LENDING = [false, false];
 const COINS = [
   '0x5bc25f649fc4e26069ddf4cf4010f9f706c23831',

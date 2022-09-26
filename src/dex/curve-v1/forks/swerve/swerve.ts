@@ -1,4 +1,4 @@
-import { bignumberify, getDexKeysWithNetwork } from '../../../../utils';
+import { bigNumberify, getDexKeysWithNetwork } from '../../../../utils';
 import { CurveV1 } from '../../curve-v1';
 import { CurvePool } from '../../pools/curve-pool';
 import StableSwapSUSD from '../../../../abi/curve/StableSwapSUSD.json';
@@ -14,7 +14,7 @@ const swervePoolAddress =
 const tokenAddress = '0x77C6E4a580c0dCE4E5c7a17d0bc077188a83A059';
 const N_COINS: number = 4;
 const PRECISION_MUL = ['1', '1000000000000', '1000000000000', '1'].map(
-  bignumberify,
+  bigNumberify,
 );
 const USE_LENDING = [false, false, false, false];
 const COINS = [

@@ -5,7 +5,7 @@ import StableSwap3Pool from '../../../abi/curve/StableSwap3Pool.json';
 import { CurvePool, PoolState } from './curve-pool';
 import { IDexHelper } from '../../../dex-helper';
 import { BN_0 } from '../../../bignumber-constants';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 import { stringify } from 'querystring';
 import BigNumber from 'bignumber.js';
 
@@ -16,7 +16,7 @@ export const address: Address =
 const tokenAddress: Address = '0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490';
 
 const N_COINS: number = 3;
-const PRECISION_MUL = ['1', '1000000000000', '1000000000000'].map(bignumberify);
+const PRECISION_MUL = ['1', '1000000000000', '1000000000000'].map(bigNumberify);
 const USE_LENDING = [false, false, false];
 const COINS = [
   '0x6b175474e89094c44da98b954eedeac495271d0f',
@@ -76,8 +76,8 @@ export class ThreePool extends CurvePool {
   }
 
   handleNewFee(event: any, state: PoolState, log: Log): PoolState {
-    const fee = bignumberify(stringify(event.args.fee));
-    const admin_fee = bignumberify(stringify(event.args.admin_fee));
+    const fee = bigNumberify(stringify(event.args.fee));
+    const admin_fee = bigNumberify(stringify(event.args.admin_fee));
 
     state.fee = fee;
     state.admin_fee = admin_fee;
@@ -114,7 +114,7 @@ export class ThreePool extends CurvePool {
   }
 
   handleRemoveLiquidityOne(event: any, state: PoolState, log: Log): PoolState {
-    const _token_amount = bignumberify(stringify(event.args.token_amount));
+    const _token_amount = bigNumberify(stringify(event.args.token_amount));
     const rates = this.getRates();
     const i = _.findIndex(
       this.COINS,
@@ -240,16 +240,16 @@ export class ThreePool extends CurvePool {
     // slippage).
     // Needed to prevent front-running, not for precise calculations!
     // """
-    const _balances: BigNumber[] = state.balances.map(bignumberify);
+    const _balances: BigNumber[] = state.balances.map(bigNumberify);
     const rates = this.getRates();
-    const amp = bignumberify(state.A);
+    const amp = bigNumberify(state.A);
     const D0 = this.get_D_mem(rates, _balances, amp);
     for (let i = 0; i < this.N_COINS; i++) {
       if (deposit) _balances[i] = _balances[i].plus(amounts[i]);
       else _balances[i] = _balances[i].minus(amounts[i]);
     }
     const D1 = this.get_D_mem(rates, _balances, amp);
-    const token_amount = bignumberify(state.supply);
+    const token_amount = bigNumberify(state.supply);
     let diff: BigNumber;
     if (deposit) diff = D1.minus(D0);
     else diff = D0.minus(D1);

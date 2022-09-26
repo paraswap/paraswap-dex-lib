@@ -3,7 +3,7 @@ import { Address, Log } from '../../../types';
 import StableSwapSUSD from '../../../abi/curve/StableSwapSUSD.json';
 import { CurvePool, PoolState } from './curve-pool';
 import { IDexHelper } from '../../../dex-helper';
-import { bignumberify } from '../../../utils';
+import { bigNumberify } from '../../../utils';
 import { stringify } from 'querystring';
 
 const pool = 'sUSD';
@@ -12,7 +12,7 @@ export const address: Address =
 const tokenAddress: Address = '0xC25a3A3b969415c80451098fa907EC722572917F';
 const N_COINS: number = 4;
 const PRECISION_MUL = ['1', '1000000000000', '1000000000000', '1'].map(
-  bignumberify,
+  bigNumberify,
 );
 const USE_LENDING = [false, false, false, false];
 const COINS = [
@@ -74,7 +74,7 @@ export class SUSDPool extends CurvePool {
   handleTokenExchange(event: any, state: PoolState, log: Log): PoolState {
     const i = event.args.sold_id.toNumber();
     const j = event.args.bought_id.toNumber();
-    const dx = bignumberify(stringify(event.args.tokens_sold));
+    const dx = bigNumberify(stringify(event.args.tokens_sold));
     const rates = this.getRates();
 
     const dy: BigNumber = this._exchange(i, j, dx, rates, state);
@@ -89,7 +89,7 @@ export class SUSDPool extends CurvePool {
   ): PoolState {
     const i = event.args.sold_id.toNumber();
     const j = event.args.bought_id.toNumber();
-    const dx = bignumberify(stringify(event.args.tokens_sold));
+    const dx = bigNumberify(stringify(event.args.tokens_sold));
     const rates = this.getRates();
 
     const precisions: BigNumber[] = PRECISION_MUL;
