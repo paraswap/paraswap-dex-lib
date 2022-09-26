@@ -118,7 +118,7 @@ export function interpolate(
 
     while (i < oldVolume.length && v > oldVolume[i]) i++;
 
-    // if we dont have any more prices for a bigger volume return last price for sell and infinity for buy
+    // if we don't have any more prices for a bigger volume return last price for sell and infinity for buy
     if (i >= oldVolume.length) {
       return !isValid[oldPrices.length - 1]
         ? 0n
