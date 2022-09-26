@@ -67,7 +67,7 @@ export class ThreePool extends CurvePool {
   }
 
   handleCoinTransfer(event: any, state: PoolState, log: Log): PoolState {
-    const from = event.args.from;
+    const from = event.args.src;
     const coin = log.address;
 
     if (from.toLowerCase() == this.address.toLowerCase())
@@ -119,7 +119,7 @@ export class ThreePool extends CurvePool {
     const i = _.findIndex(
       this.COINS,
       c => c.toLowerCase() === this.lastTransferredCoin?.toLowerCase(),
-    )
+    );
     if (i == -1) {
       this.logger.error(
         `Error: expected coin to have a transfer event before RemoveLiquidityOne event`,
