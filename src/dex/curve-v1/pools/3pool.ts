@@ -26,11 +26,11 @@ const COINS = [
 const trackCoins = true;
 
 export class ThreePool extends CurvePool {
-  // The lastTransferedCoin is not stored in the state as
+  // The lastTransferredCoin is not stored in the state as
   // the value itself doesn't effect the pricing but it only
   // affects the function call RemoveLiquidityOne for that
-  // paticular block.
-  lastTransferedCoin?: Address;
+  // particular block.
+  lastTransferredCoin?: Address;
   constructor(
     parentName: string,
     dexHelper: IDexHelper,
@@ -67,11 +67,11 @@ export class ThreePool extends CurvePool {
   }
 
   handleCoinTransfer(event: any, state: PoolState, log: Log): PoolState {
-    const from = event.args.src;
+    const from = event.args.from;
     const coin = log.address;
 
     if (from.toLowerCase() == this.address.toLowerCase())
-      this.lastTransferedCoin = coin.toLowerCase();
+      this.lastTransferredCoin = coin.toLowerCase();
     return state;
   }
 
@@ -118,8 +118,8 @@ export class ThreePool extends CurvePool {
     const rates = this.getRates();
     const i = _.findIndex(
       this.COINS,
-      c => c.toLowerCase() === this.lastTransferedCoin!.toLowerCase(),
-    );
+      c => c.toLowerCase() === this.lastTransferredCoin?.toLowerCase(),
+    )
     if (i == -1) {
       this.logger.error(
         `Error: expected coin to have a transfer event before RemoveLiquidityOne event`,
