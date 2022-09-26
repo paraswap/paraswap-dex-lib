@@ -59,6 +59,19 @@ describe('CurveV1 E2E', () => {
         });
       }),
     );
+    it('simpleSwap DAI -> USDT', async () => {
+      await testE2E(
+        tokens['DAI'],
+        tokens['USDT'],
+        holders['DAI'],
+        '100000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
   });
 });
 

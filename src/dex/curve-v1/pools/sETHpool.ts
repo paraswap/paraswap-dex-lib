@@ -20,7 +20,7 @@ const COINS = [
 const trackCoins = true;
 
 export class SETHPool extends ThreePool {
-  lastTransferedCoinBlock: number;
+  lastTransferredCoinBlock: number;
   constructor(
     parentName: string,
     dexHelper: IDexHelper,
@@ -49,7 +49,7 @@ export class SETHPool extends ThreePool {
       _COINS,
       _loggerPrefix,
     );
-    this.lastTransferedCoinBlock = 0;
+    this.lastTransferredCoinBlock = 0;
   }
 
   public processLog(
@@ -58,11 +58,11 @@ export class SETHPool extends ThreePool {
   ): DeepReadonly<PoolState> | null {
     // This is hack as this pool uses standard ETH which doesn't
     // Release any events and as there are only 2 pools if there
-    // was no event from sETH then the lastTransferedCoin should
+    // was no event from sETH then the lastTransferredCoin should
     // be ETH. This will fail if the log our not processes sequentially
-    if (log.blockNumber != this.lastTransferedCoinBlock) {
-      this.lastTransferedCoinBlock = log.blockNumber;
-      this.lastTransferedCoin = COINS[0].toLowerCase();
+    if (log.blockNumber != this.lastTransferredCoinBlock) {
+      this.lastTransferredCoinBlock = log.blockNumber;
+      this.lastTransferredCoin = COINS[0].toLowerCase();
     }
     return super.processLog(state, log);
   }
