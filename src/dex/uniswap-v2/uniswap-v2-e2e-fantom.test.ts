@@ -1345,4 +1345,140 @@ describe('UniswapV2 E2E Fantom', () => {
       });
     });
   });
+
+  describe('Tombswap', () => {
+    const dexKey = 'Tombswap';
+
+    describe('simpleSwap', () => {
+      it('WFTM -> USDC', async () => {
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WFTM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WFTM,
+          holders.USDC,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('TOMB -> WFTM', async () => {
+        await testE2E(
+          tokens.TOMB,
+          tokens.WFTM,
+          holders.TOMB,
+          '15000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('multiSwap', () => {
+      it('WFTM -> USDC', async () => {
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WFTM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WFTM,
+          holders.USDC,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('TOMB -> WFTM', async () => {
+        await testE2E(
+          tokens.TOMB,
+          tokens.WFTM,
+          holders.TOMB,
+          '15000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('megaSwap', () => {
+      it('WFTM -> USDC', async () => {
+        await testE2E(
+          tokens.WFTM,
+          tokens.USDC,
+          holders.WFTM,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WFTM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WFTM,
+          holders.USDC,
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('TOMB -> WFTM', async () => {
+        await testE2E(
+          tokens.TOMB,
+          tokens.WFTM,
+          holders.TOMB,
+          '15000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });
