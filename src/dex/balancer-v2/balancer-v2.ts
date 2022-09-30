@@ -57,6 +57,17 @@ const fetchAllPools = `query ($count: Int) {
   }
 }`;
 
+const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestampFuture: Int) {
+  gradualWeightUpdates(
+    first: $count,
+    where: {startTimestamp_lt: $timestampFuture, endTimestamp_gt: $timestampPast }
+  ) {
+    poolId {
+      address
+    }
+  }
+}`;
+
 // These should match the Balancer Pool types available on Subgraph
 enum BalancerPoolTypes {
   Weighted = 'Weighted',
@@ -71,7 +82,9 @@ enum BalancerPoolTypes {
 
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
-const POOL_CACHE_TTL = 60 * 60; // 1hr
+const POOL_CACHE_TTL = 60 * 60; // 1 hr
+const POOL_EVENT_DISABLED_TTL = 5 * 60; // 5 min
+const POOL_EVENT_REENABLE_DELAY = 7 * 24 * 60 * 60; // 1 week
 
 function typecastReadOnlyPoolState(pool: DeepReadonly<PoolState>): PoolState {
   return _.cloneDeep(pool) as PoolState;
@@ -100,11 +113,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'Investment',
   ];
 
-  eventRemovedPools = [
-    // Gradual weight changes are not currently handled in event system
-    // This pool keeps changing weights and is causing pricing issue
-    '0x34809aEDF93066b49F638562c42A9751eDb36DF5',
-  ].map(s => s.toLowerCase());
+  eventRemovedPools = (
+    [
+      // Gradual weight changes are not currently handled in event system
+      // This pool keeps changing weights and is causing pricing issue
+      // But should now be handled by eventDisabledPools so don't need here!
+      //'0x34809aEDF93066b49F638562c42A9751eDb36DF5',
+    ] as Address[]
+  ).map(s => s.toLowerCase());
 
   constructor(
     protected parentName: string,
@@ -364,6 +380,9 @@ export class BalancerV2
   // In memory pool state for non-event pools
   nonEventPoolStateCache: PoolStateCache;
 
+  eventDisabledPoolsTimer?: NodeJS.Timer;
+  eventDisabledPools: Address[] = [];
+
   constructor(
     protected network: Network,
     protected dexKey: string,
@@ -397,8 +416,81 @@ export class BalancerV2
     );
   }
 
+  async fetchEventDisabledPools() {
+    const cacheKey = 'eventDisabledPools';
+    const poolAddressListFromCache = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      cacheKey,
+    );
+    if (poolAddressListFromCache) {
+      this.eventDisabledPools = JSON.parse(poolAddressListFromCache);
+      return;
+    }
+    this.logger.info(
+      `Fetching ${this.dexKey}_${this.network} Weight Updates from subgraph`,
+    );
+    const timeNow = Math.floor(Date.now() / 1000);
+    const variables = {
+      count: MAX_POOL_CNT,
+      timestampPast: timeNow - POOL_EVENT_REENABLE_DELAY,
+      timestampFuture: timeNow + POOL_EVENT_DISABLED_TTL,
+    };
+    const { data } = await this.dexHelper.httpRequest.post(
+      this.subgraphURL,
+      { query: fetchWeightUpdating, variables },
+      SUBGRAPH_TIMEOUT,
+    );
+
+    if (!(data && data.gradualWeightUpdates)) {
+      throw new Error(
+        `${this.dexKey}_${this.network} failed to fetch weight updates from subgraph`,
+      );
+    }
+
+    this.eventDisabledPools = _.uniq(
+      data.gradualWeightUpdates.map(
+        (wu: { poolId: { address: Address } }) => wu.poolId.address,
+      ),
+    );
+    const poolAddressList = JSON.stringify(this.eventDisabledPools);
+    this.logger.info(
+      `Pools blocked from event based on ${this.dexKey}_${this.network}: ${poolAddressList}`,
+    );
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      cacheKey,
+      POOL_EVENT_DISABLED_TTL,
+      poolAddressList,
+    );
+  }
+
   async initializePricing(blockNumber: number) {
+    if (!this.eventDisabledPoolsTimer) {
+      await this.fetchEventDisabledPools();
+      this.eventDisabledPoolsTimer = setInterval(async () => {
+        try {
+          await this.fetchEventDisabledPools();
+        } catch (e) {
+          this.logger.error(
+            `${this.dexKey}: Failed to update event disabled pools:`,
+            e,
+          );
+        }
+      }, POOL_EVENT_DISABLED_TTL * 1000);
+    }
     await this.setupEventPools(blockNumber);
+  }
+
+  releaseResources(): void {
+    if (this.eventDisabledPoolsTimer) {
+      clearInterval(this.eventDisabledPoolsTimer);
+      this.eventDisabledPoolsTimer = undefined;
+      this.logger.info(
+        `${this.dexKey}: cleared eventDisabledPoolsTimer before shutting down`,
+      );
+    }
   }
 
   getPools(from: Token, to: Token): SubgraphPoolBase[] {
@@ -492,11 +584,12 @@ export class BalancerV2
         (side === SwapSide.SELL ? _from : _to).decimals,
       );
 
-      const eventPoolStates = await this.eventPools.getState(blockNumber);
-      if (!eventPoolStates) {
+      const eventPoolStatesRO = await this.eventPools.getState(blockNumber);
+      if (!eventPoolStatesRO) {
         this.logger.error(`getState returned null`);
-        return null;
       }
+      const eventPoolStates = { ...(eventPoolStatesRO || {}) };
+      for (const addr of this.eventDisabledPools) delete eventPoolStates[addr];
 
       // Fetch previously cached non-event pool states
       let nonEventPoolStates = this.getNonEventPoolStateCache(blockNumber);

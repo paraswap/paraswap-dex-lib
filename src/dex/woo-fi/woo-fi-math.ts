@@ -38,7 +38,7 @@ export class WooFiMath {
         } catch (e) {
           if (
             e instanceof Error &&
-            e.message.startsWith('WooGuardian: inputAmount')
+            e.message.includes('WooGuardian: inputAmount')
           ) {
             return 0n;
           }
