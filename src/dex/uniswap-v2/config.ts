@@ -441,6 +441,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  Swapsicle: {
+    [Network.AVALANCHE]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/billy93/exchange',
+      factoryAddress: '0x9C60C867cE07a3c403E2598388673C10259EC768',
+      initCode:
+        '0x9e43ee37212e3296c7f6087d3e0a37b48a4e4e413538dac0fd18cfe2f80666c1',
+      feeCode: 30,
+    }
+  },
   QuickSwap: {
     [Network.POLYGON]: {
       subgraphURL: 'https://api.fura.org/subgraphs/name/quickswap',
