@@ -1,6 +1,7 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
+import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { __DexName__Data, PoolState } from './types';
@@ -8,7 +9,9 @@ import { __DexName__Config } from './config';
 
 export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
-    [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
+    [event: string]:
+      (event: any, state: DeepReadonly<PoolState>, log: Readonly<Log>)
+        => DeepReadonly<PoolState> | null;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -54,14 +57,11 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
       if (event.name in this.handlers) {
         return this.handlers[event.name](event, state, log);
       }
-      return state;
     } catch (e) {
-      this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
-        e,
-      );
-      return null;
+      catchParseLogError(e, this.logger);
     }
+
+    return null;
   }
 
   /**
@@ -73,13 +73,17 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     // TODO: complete me!
     return {};
   }
 
   // Its just a dummy example
-  handleMyEvent(event: any, pool: PoolState, log: Log) {
-    return pool;
+  handleMyEvent(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
   }
 }

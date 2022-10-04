@@ -1,92 +1,96 @@
-import BigNumber from 'bignumber.js';
-import { Address } from '../../types';
+import { Address, NumberAsString } from '../../types';
 
-export interface Token {
-  address: string;
-  balance: BigNumber;
+export type FractionAsString = string;
+
+export type TokenInfo = {
+  address: Address;
+  balance: FractionAsString;
   decimals: number;
-  denormWeight: BigNumber;
-}
-
-export interface TokenAsString {
-  address: string;
-  balance: string;
-  decimals: number;
-  denormWeight: string;
-}
-
-export type PoolStateAsString = {
-  id: string;
-  swapFee: string;
-  totalWeight: string;
-  tokens: TokenAsString[];
-  tokensList: string[];
-  publicSwap?: string;
+  denormWeight: FractionAsString;
 };
 
-export type MinimalPoolState = Pick<PoolStateAsString, 'tokens'>;
+export type PoolInfo = {
+  id: Address;
+  swapFee: FractionAsString;
+  totalWeight: FractionAsString;
+  tokens: TokenInfo[];
+  tokensList: Address[];
+};
 
-export interface PoolStatesAsString {
-  pools: PoolStateAsString[];
-}
+// This is format that comes from pools list URL (could also come from subgraph)
+export type PoolsInfo = {
+  pools: PoolInfo[];
+};
 
-export interface PoolStatesAsStringMap {
-  [address: string]: PoolStateAsString;
-}
+export type PoolState = {
+  // TODO: poolState is the state of event
+  // subscriber. This should be the minimum
+  // set of parameters required to compute
+  // pool prices. Complete me!
+  tokenBalances: { [tokenAddress: string]: bigint };
+};
 
 export type BalancerSwap = {
   pool: Address;
-  tokenInParam: string;
-  tokenOutParam: string;
-  maxPrice: string;
+  tokenInParam: NumberAsString;
+  tokenOutParam: NumberAsString;
+  maxPrice: NumberAsString;
 };
 
 export type BalancerV1Data = {
-  exchangeProxy: Address;
+  // TODO: BalancerV1Data is the dex data that is
+  // returned by the API that can be used for
+  // tx building. The data structure should be minimal.
+  // Complete me!
   poolId: Address;
 };
 
 export type OptimizedBalancerV1Data = {
-  exchangeProxy: Address;
   swaps: BalancerSwap[];
 };
 
 export type DexParams = {
+  // TODO: DexParams is set of parameters the can
+  // be used to initiate a DEX fork.
+  // Complete me!
+  poolsURL: string;
   subgraphURL: string;
+  exchangeProxy: Address;
+  multicallAddress: Address;
 };
 
 type BalancerBatchEthInSwapExactInParam = [
   swaps: BalancerSwap[],
-  destToken: string,
-  destAmount: string,
+  destToken: Address,
+  destAmount: NumberAsString,
 ];
 type BalancerBatchEthOutSwapExactInParam = [
   swaps: BalancerSwap[],
-  srcToken: string,
-  srcAmount: string,
-  destAmount: string,
+  srcToken: Address,
+  srcAmount: NumberAsString,
+  destAmount: NumberAsString,
 ];
 type BalancerBatchSwapExactInParam = [
   swaps: BalancerSwap[],
-  srcToken: string,
-  destToken: string,
-  srcAmount: string,
-  destAmount: string,
+  srcToken: Address,
+  destToken: Address,
+  srcAmount: NumberAsString,
+  destAmount: NumberAsString,
 ];
 type BalancerBatchEthInSwapExactOutParam = [
   swaps: BalancerSwap[],
-  destToken: string,
+  destToken: Address,
 ];
 type BalancerBatchEthOutSwapExactOutParam = [
   swaps: BalancerSwap[],
-  srcToken: string,
-  maxTotalAmountIn: string,
+  srcToken: Address,
+  maxTotalAmountIn: NumberAsString,
 ];
 type BalancerBatchSwapExactOutParam = [
   swaps: BalancerSwap[],
-  srcToken: string,
-  destToken: string,
-  maxTotalAmountIn: string,
+  srcToken: Address,
+  destToken: Address,
+  maxTotalAmountIn: NumberAsString,
 ];
 
 export type BalancerParam =

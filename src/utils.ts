@@ -72,17 +72,18 @@ export function _require(
   values?: Record<string, unknown>,
   condition?: string,
 ): void {
-  let receivedValues = '';
-  if (values && condition) {
-    const keyValueStr = Object.entries(values)
-      .map(([k, v]) => `${k}=${stringifyWithBigInt(v)}`)
-      .join(', ');
-    receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated. `;
-  }
-  if (!b)
+  if (!b) {
+    let receivedValues = '';
+    if (values && condition) {
+      const keyValueStr = Object.entries(values)
+        .map(([k, v]) => `${k}=${stringifyWithBigInt(v)}`)
+        .join(', ');
+      receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated. `;
+    }
     throw new Error(
       `${receivedValues}Error message: ${message ? message : 'undefined'}`,
     );
+  }
 }
 
 interface SliceCallsInput<T, U> {

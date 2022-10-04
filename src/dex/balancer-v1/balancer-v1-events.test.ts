@@ -1,177 +1,119 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { BalancerV1, BalancerV1EventPool } from './balancer-v1';
-import { BalancerV1Config } from './config';
-import { Network, SUBGRAPH_TIMEOUT } from '../../constants';
+import { BalancerV1EventPool } from './balancer-v1-pool';
+import { Network } from '../../constants';
+import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import axios from 'axios';
-import {
-  MinimalPoolState,
-  PoolStateAsString,
-  PoolStatesAsString,
-  PoolStatesAsStringMap,
-} from './types';
+import { PoolState, PoolsInfo } from './types';
+import { BalancerV1Config } from './config';
+import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
+
+const balancerPools = require('./balancer-pools.json') as PoolsInfo;
+
+/*
+  README
+  ======
+
+  This test script adds unit tests for BalancerV1 event based
+  system. This is done by fetching the state on-chain before the
+  event block, manually pushing the block logs to the event-subscriber,
+  comparing the local state with on-chain state.
+
+  Most of the logic for testing is abstracted by `testEventSubscriber`.
+  You need to do two things to make the tests work:
+
+  1. Fetch the block numbers where certain events were released. You
+  can modify the `./scripts/fetch-event-blocknumber.ts` to get the
+  block numbers for different events. Make sure to get sufficient
+  number of blockNumbers to cover all possible cases for the event
+  mutations.
+
+  2. Complete the implementation for fetchPoolState function. The
+  function should fetch the on-chain state of the event subscriber
+  using just the blocknumber.
+
+  The template tests only include the test for a single event
+  subscriber. There can be cases where multiple event subscribers
+  exist for a single DEX. In such cases additional tests should be
+  added.
+
+  You can run this individual test script by running:
+  `npx jest src/dex/<dex-name>/<dex-name>-events.test.ts`
+
+  (This comment should be removed from the final implementation)
+*/
 
 jest.setTimeout(50 * 1000);
-const dexKey = 'BalancerV1';
-const network = Network.MAINNET;
-const config = BalancerV1Config[dexKey][network];
-
-const testPoolAddress = '0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5';
-
-type SubgraphState = Omit<PoolStateAsString, 'tokensList' | 'publicSwap'>;
-
-async function getSubgraphPool(
-  address: string,
-  blockNumber: number,
-): Promise<SubgraphState> {
-  address = address.toLowerCase();
-
-  const query = `query ($blockNumber: Int, $address: ID!) {
-    pools: pools(block: { number: $blockNumber }, where: {id: $address}) {
-      id
-      swapFee
-      totalWeight
-      tokens {
-        address
-        balance
-        decimals
-        denormWeight
-      }
-    }
-  }`;
-
-  const variables = {
-    blockNumber,
-    address,
-  };
-
-  const data = await axios.post(
-    config.subgraphURL,
-    { query, variables },
-    { timeout: SUBGRAPH_TIMEOUT },
-  );
-  return data.data.data.pools[0];
-}
 
 async function fetchPoolState(
-  balancerV1Pools: BalancerV1EventPool,
+  balancerV1Pool: BalancerV1EventPool,
   blockNumber: number,
   poolAddress: string,
-): Promise<MinimalPoolState> {
-  const fetchedState = await getSubgraphPool(poolAddress, blockNumber);
-  const pools: PoolStatesAsString = {
-    pools: [
-      {
-        ...fetchedState,
-        tokensList: fetchedState.tokens.map(token => token.address),
-      },
-    ],
-  };
-
-  const poolsStates = await balancerV1Pools.getAllPoolDataOnChain(
-    pools,
-    blockNumber,
-  );
-
-  const state = poolsStates.pools[0];
-
-  return {
-    tokens: state.tokens,
-  };
+): Promise<PoolState> {
+  // TODO: complete me!
+  return await balancerV1Pool.generateState(blockNumber);
 }
 
-export async function executeFullEventTest(
-  blockNumber: number,
-  poolAddress: string,
-) {
+// eventName -> blockNumbers
+type EventMappings = Record<string, number[]>;
+
+describe('BalancerV1 EventPool Mainnet', function () {
+  const dexKey = 'BalancerV1';
+  const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-
-  const balancerV1Pools = new BalancerV1EventPool(dexHelper, dexKey, logger);
-  await balancerV1Pools.setupEventPools('BalancerV1', blockNumber - 1);
-
-  const pool = balancerV1Pools.allpools.filter(
-    pool => pool.pool.id === testPoolAddress,
-  )[0];
-
-  await testEventSubscriber(
-    pool,
-    pool.addressesSubscribed,
-    (_blockNumber: number) =>
-      fetchPoolState(balancerV1Pools, _blockNumber, poolAddress),
-    blockNumber,
-    BalancerV1.getIdentifier(dexKey, poolAddress),
-    dexHelper.provider,
+  const balancerMulticall = new dexHelper.web3Provider.eth.Contract(
+    BalancerCustomMulticallABI as any,
+    BalancerV1Config[dexKey][network].multicallAddress,
   );
-}
 
-describe('BalancerV1 EventPool MAINNET', function () {
-  describe('LOG_JOIN', function () {
-    const event = 'LOG_JOIN';
+  // poolAddress -> EventMappings
+  // poolAddress must be lowercased to match what's in the json file
+  const eventsToTest: Record<Address, EventMappings> = {
+    '0x49ff149d649769033d43783e7456f626862cd160': {
+      LOG_JOIN: [15408118],
+      LOG_EXIT: [15408123, 15408138, 15408247, 15408291, 15408327, 15408349],
+      LOG_SWAP: [
+        15407544, 15407571, 15407822, 15407828, 15407852, 15407999, 15408136,
+        15408715, 15408896, 15408959, 15409162, 15409179, 15409261,
+      ],
+    },
+  };
 
-    it(`Return correct state after 11379497`, async function () {
-      await executeFullEventTest(11379497, testPoolAddress);
-    });
-    it(`Return correct state after 11379555`, async function () {
-      await executeFullEventTest(11379555, testPoolAddress);
-    });
-    it(`Return correct state after 11380893`, async function () {
-      await executeFullEventTest(11380893, testPoolAddress);
-    });
-    it(`Return correct state after 11380933`, async function () {
-      await executeFullEventTest(11380933, testPoolAddress);
-    });
-    it(`Return correct state after 11381493`, async function () {
-      await executeFullEventTest(11381493, testPoolAddress);
-    });
-    it(`Return correct state after 11382001`, async function () {
-      await executeFullEventTest(11382001, testPoolAddress);
-    });
-  });
-
-  describe('LOG_EXIT', function () {
-    const event = 'LOG_EXIT';
-
-    it(`Return correct state after 11376152`, async function () {
-      await executeFullEventTest(11376152, testPoolAddress);
-    });
-    it(`Return correct state after 11376280`, async function () {
-      await executeFullEventTest(11376280, testPoolAddress);
-    });
-    it(`Return correct state after 11377349`, async function () {
-      await executeFullEventTest(11377349, testPoolAddress);
-    });
-    it(`Return correct state after 11377998`, async function () {
-      await executeFullEventTest(11377998, testPoolAddress);
-    });
-  });
-
-  describe('LOG_SWAP', function () {
-    const event = 'LOG_SWAP';
-
-    it(`Return correct state after 11376453`, async function () {
-      await executeFullEventTest(11376453, testPoolAddress);
-    });
-    it(`Return correct state after 11376550`, async function () {
-      await executeFullEventTest(11376550, testPoolAddress);
-    });
-    it(`Return correct state after 11378762`, async function () {
-      await executeFullEventTest(11378762, testPoolAddress);
-    });
-    it(`Return correct state after 11378773`, async function () {
-      await executeFullEventTest(11378773, testPoolAddress);
-    });
-    it(`Return correct state after 11378776`, async function () {
-      await executeFullEventTest(11378776, testPoolAddress);
-    });
-    it(`Return correct state after 11378856`, async function () {
-      await executeFullEventTest(11378856, testPoolAddress);
-    });
-    it(`Return correct state after 11378870`, async function () {
-      await executeFullEventTest(11378870, testPoolAddress);
-    });
-  });
+  Object.entries(eventsToTest).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async function () {
+                  const balancerV1Pool = new BalancerV1EventPool(
+                    dexKey,
+                    network,
+                    dexHelper,
+                    logger,
+                    balancerMulticall,
+                    balancerPools.pools.find(p => p.id === poolAddress)!,
+                    /* TODO: Put here additional constructor arguments if needed */
+                  );
+                  await testEventSubscriber(
+                    balancerV1Pool,
+                    balancerV1Pool.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchPoolState(balancerV1Pool, _blockNumber, poolAddress),
+                    blockNumber,
+                    `${dexKey}_${poolAddress}`,
+                    dexHelper.provider,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
 });
