@@ -125,6 +125,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         version: poolConf.version,
         isLending: poolConf.isLending,
         isMetapool: poolConf.isMetapool,
+        isWrapped: poolConf.isWrapped,
         baseToken: poolConf.baseToken
           ? poolConf.baseToken.toLowerCase()
           : poolConf.baseToken,
@@ -1088,11 +1089,15 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     // compatible for exchange among themselves.
     const selectedPool = Object.values(this.pools).reduce<PoolLiquidity[]>(
       (acc, pool) => {
-        const inCoins = pool.coins.some(
-          _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
+        const inCoins = pool.coins.some(_token =>
+          pool.isWrapped && pool.isWrapped === true
+            ? _token.toLowerCase() === tokenAddress.toLowerCase()
+            : _token.toLowerCase() === _tokenAddress.toLowerCase(),
         );
-        const inUnderlying = pool.underlying.some(
-          _token => _token.toLowerCase() === _tokenAddress.toLowerCase(),
+        const inUnderlying = pool.underlying.some(_token =>
+          pool.isWrapped && pool.isWrapped === true
+            ? _token.toLowerCase() === tokenAddress.toLowerCase()
+            : _token.toLowerCase() === _tokenAddress.toLowerCase(),
         );
         let connectorTokens = inCoins ? pool.coins : [];
         connectorTokens = inUnderlying
@@ -1104,10 +1109,11 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             exchange: this.dexKey,
             address: pool.address,
             liquidityUSD: pool.liquidityUSD!,
-            connectorTokens: _.uniq(connectorTokens)
-              .filter(
-                (_token: string) =>
-                  _token.toLowerCase() !== _tokenAddress.toLowerCase(),
+            connectorTokens: _.uniqBy(connectorTokens, 'address')
+              .filter((_token: string) =>
+                pool.isWrapped && pool.isWrapped === true
+                  ? _token.toLowerCase() === tokenAddress.toLowerCase()
+                  : _token.toLowerCase() === _tokenAddress.toLowerCase(),
               )
               .map(tokenAddress => {
                 const address = tokenAddress.toLowerCase();

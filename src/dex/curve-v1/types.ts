@@ -17,6 +17,7 @@ export type PoolConfig = {
   version: number;
   isLending: boolean;
   isMetapool: boolean;
+  isWrapped?: boolean;
   baseToken?: string;
   liquidityUSD?: number;
   precisionMul?: string[];
