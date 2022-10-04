@@ -1109,7 +1109,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             exchange: this.dexKey,
             address: pool.address,
             liquidityUSD: pool.liquidityUSD!,
-            connectorTokens: _.uniqBy(connectorTokens, 'address')
+            connectorTokens: _.uniq(connectorTokens)
               .filter((_token: string) =>
                 pool.isWrapped && pool.isWrapped === true
                   ? _token.toLowerCase() === tokenAddress.toLowerCase()
