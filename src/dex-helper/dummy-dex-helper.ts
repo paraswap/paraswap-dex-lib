@@ -100,9 +100,9 @@ class DummyBlockManager implements IBlockManager {
     contractAddress: Address | Address[],
     afterBlockNumber: number,
   ): void {
-    // console.log(
-    //   `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
-    // );
+    console.log(
+      `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
+    );
     subscriber.isTracking = () => true;
   }
 }
