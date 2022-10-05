@@ -104,13 +104,13 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     dexConfig = CurveV1Config[dexKey][network],
 
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.pools = Object.keys(dexConfig.pools).reduce<
       Record<string, PoolConfig>
     >((acc, key) => {

@@ -4,6 +4,7 @@ import { IDexTxBuilder } from './idex';
 import Web3 from 'web3';
 import { UniswapV3, UniswapV3Param } from './uniswap-v3';
 import { pack } from '@ethersproject/solidity';
+import { IDexHelper } from '../dex-helper';
 
 const QUICKSWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
   [Network.POLYGON]: '0xf5b509bb0909a69b1c207e495f687a596c168e12',
@@ -24,16 +25,11 @@ export class QuickSwapV3
 {
   static dexKeys = ['quickswapv3'];
 
-  constructor(
-    augustusAddress: Address,
-    protected network: number,
-    provider: Web3,
-  ) {
+  constructor(dexHelper: IDexHelper) {
     super(
-      augustusAddress,
-      network,
-      provider,
-      QUICKSWAP_V3_ROUTER_ADDRESSES[network],
+      dexHelper,
+      'quickswapv3',
+      QUICKSWAP_V3_ROUTER_ADDRESSES[dexHelper.config.data.network],
     );
   }
 

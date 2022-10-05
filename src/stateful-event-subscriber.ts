@@ -3,7 +3,8 @@ import { Log, Logger } from './types';
 import { BlockHeader } from 'web3-eth';
 import { EventSubscriber } from './dex-helper/iblock-manager';
 
-import { MAX_BLOCKS_HISTORY } from './constants';
+import { CACHE_PREFIX, MAX_BLOCKS_HISTORY } from './constants';
+import { IDexHelper } from './dex-helper';
 
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
@@ -20,11 +21,46 @@ export abstract class StatefulEventSubscriber<State>
   protected invalid: boolean = false;
 
   isTracking: () => boolean = () => false;
+  public addressesSubscribed: string[] = [];
 
-  constructor(public readonly name: string, protected logger: Logger) {}
+  private mapKey: string;
+
+  constructor(
+    public readonly parentName: string,
+    public readonly name: string,
+    protected dexHelper: IDexHelper,
+    protected logger: Logger,
+    private masterPoolNeeded: boolean = false,
+  ) {
+    this.mapKey = `${CACHE_PREFIX}_${this.dexHelper.config.data.network}`;
+  }
 
   getStateBlockNumber(): Readonly<number> {
     return this.stateBlockNumber;
+  }
+
+  async initialize(blockNumber: number) {
+    if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
+      let stateAsString = await this.dexHelper.cache.hget(
+        this.mapKey,
+        this.name,
+      );
+
+      if (stateAsString) {
+        const state: DeepReadonly<State> = JSON.parse(stateAsString);
+        this.setState(state, blockNumber);
+      } else {
+        this.logger.debug('did not found state on cache generating new one');
+        this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
+        const state = await this.generateState(blockNumber);
+        this.setState(state, blockNumber);
+      }
+    }
+    this.dexHelper.blockManager.subscribeToLogs(
+      this,
+      this.addressesSubscribed,
+      blockNumber,
+    );
   }
 
   //Function which transforms the given state for the given log event.

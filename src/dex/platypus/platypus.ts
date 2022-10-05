@@ -58,11 +58,11 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.config = PlatypusConfig[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }
@@ -298,11 +298,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
         const state = await p.generateState(blockNumber);
         p.setState(state, blockNumber);
       })(pool);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        pool.addressesSubscribed,
-        blockNumber,
-      );
+      pool.initialize(blockNumber);
       eventPools[poolAddress] = pool;
     }
     this.eventPools = eventPools;

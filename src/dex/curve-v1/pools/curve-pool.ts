@@ -33,8 +33,6 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
 
   decoder: (log: Log) => any;
 
-  addressesSubscribed: Address[] = [];
-
   constructor(
     public parentName: string,
     protected dexHelper: IDexHelper,
@@ -50,7 +48,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     public USE_LENDING: boolean[],
     public COINS: Address[],
   ) {
-    super(`${parentName}_${pool}_${address}`, logger);
+    super(parentName, `${pool}_${address}`, dexHelper, logger);
 
     this.addressesSubscribed = [this.address];
     if (trackCoins) {

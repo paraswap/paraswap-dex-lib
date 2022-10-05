@@ -54,6 +54,25 @@ class DummyCache implements ICache {
   ): Promise<void> {
     return;
   }
+
+  async hset(mapKey: string, key: string, value: string): Promise<void> {
+    return;
+  }
+
+  async hget(mapKey: string, key: string): Promise<string | null> {
+    return null;
+  }
+
+  async publish(channel: string, msg: string): Promise<void> {
+    return;
+  }
+
+  subscribe(
+    channel: string,
+    cb: (channel: string, msg: string) => void,
+  ): () => void {
+    return () => {};
+  }
 }
 
 class DummyRequestWrapper implements IRequestWrapper {
@@ -120,7 +139,7 @@ export class DummyDexHelper implements IDexHelper {
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
   constructor(network: number) {
-    this.config = new ConfigHelper(generateConfig(network));
+    this.config = new ConfigHelper(false, generateConfig(network));
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.provider = new StaticJsonRpcProvider(

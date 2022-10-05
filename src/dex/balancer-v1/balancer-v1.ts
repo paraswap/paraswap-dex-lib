@@ -67,7 +67,7 @@ export class BalancerV1
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.config = BalancerV1Config[dexKey][network];
     this.logger = dexHelper.getLogger(dexKey);
     this.balancerMulticall = new dexHelper.web3Provider.eth.Contract(

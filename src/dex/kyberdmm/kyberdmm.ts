@@ -59,12 +59,12 @@ export class KyberDmm
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected config = KyberDmmConfig[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
 
     this.logger = dexHelper.getLogger(dexKey);
 
@@ -249,11 +249,7 @@ export class KyberDmm
       );
       pair.pools[poolAddress] = pool;
       if (blockNumber) pool.setState(poolData, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        poolAddress,
-        blockNumber,
-      );
+      pool.initialize(blockNumber);
     }
   }
 

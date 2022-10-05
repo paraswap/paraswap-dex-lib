@@ -43,12 +43,12 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
     protected params: DexParams = GMXConfig[dexKey][network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -71,11 +71,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       this.logger,
       config,
     );
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.pool,
-      this.pool.addressesSubscribed,
-      blockNumber,
-    );
+    this.pool.initialize(blockNumber);
   }
 
   // Returns the list of contract adapters (name and index)

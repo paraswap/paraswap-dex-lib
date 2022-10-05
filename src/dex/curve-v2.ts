@@ -12,6 +12,7 @@ import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
 import type { CurveV1Data } from './curve-v1/types';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 type CurveV2Data = Omit<CurveV1Data, 'deadline' | 'v3'>;
 
@@ -37,12 +38,8 @@ export class CurveV2
   minConversionRate = '1';
   needWrapNative = true;
 
-  constructor(
-    augustusAddress: Address,
-    public network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'curvev2');
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
   }
 

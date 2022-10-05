@@ -4,7 +4,7 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BProtocolABI from '../abi/BProtocol.json';
-import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export type BProtocolData = {
   exchange: string;
@@ -21,12 +21,8 @@ export class BProtocol
   static dexKeys = ['bprotocol'];
   exchangeRouterInterface: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'bprotocol');
     this.exchangeRouterInterface = new Interface(
       BProtocolABI as JsonFragment[],
     );

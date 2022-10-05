@@ -88,7 +88,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   decoder = (log: Log) => this.iface.parseLog(log);
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
     private token0: Token,
@@ -103,12 +103,13 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private iface: Interface = uniswapV2Iface,
   ) {
     super(
-      parentName +
-        ' ' +
+      parentName,
+      ' ' +
         (token0.symbol || token0.address) +
         '-' +
         (token1.symbol || token1.address) +
         ' pool',
+      dexHelper,
       logger,
     );
   }
@@ -208,7 +209,7 @@ export class UniswapV2
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected isDynamicFees = false,
     protected factoryAddress: Address = UniswapV2Config[dexKey][network]
@@ -229,7 +230,7 @@ export class UniswapV2
       UniswapV2Config[dexKey][network].router) ??
       dexHelper.config.data.uniswapV2ExchangeRouterAddress,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
@@ -274,13 +275,10 @@ export class UniswapV2
       this.decoderIface,
     );
 
-    if (blockNumber)
+    if (blockNumber) {
       pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      pair.pool,
-      pair.exchange!,
-      blockNumber,
-    );
+      pair.pool.initialize(blockNumber);
+    }
   }
 
   async getBuyPrice(

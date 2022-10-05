@@ -130,6 +130,10 @@ export interface IDexPricing<ExchangeData> {
   // If you have any timers or other resources that are need to be released,
   // you must put it here
   releaseResources?(): AsyncOrSync<void>;
+
+  // Build an event based pool with all the info to create inside
+  // a redis key name poolKey
+  addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<void>;
 }
 
 export interface IDexPooltracker {

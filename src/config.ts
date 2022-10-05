@@ -216,7 +216,7 @@ export function generateConfig(network: number): Config {
 }
 
 export class ConfigHelper {
-  constructor(public data: Config) {}
+  constructor(public isSlave: boolean, public data: Config) {}
 
   wrapETH(token: Token): Token {
     return isETHAddress(token.address)
