@@ -64,9 +64,9 @@ export class SUSDPool extends CurvePool {
   ): PoolState {
     state = super.handleRemoveLiquidityImbalances(event, state, log);
     // This is a hack for sUSD and similar pools as for the handleRemoveLiquidityImbalances
-    // the pool donot permorm `token_amount = token_amount.plus(1);` to where as other
+    // the pool do not perform `token_amount = token_amount.plus(1);` to where as other
     // pools to do that to avoid rounding errors
-    state.supply = state.supply.plus(1); // Reverse the rouding error correction
+    state.supply = state.supply.plus(1); // Reverse the rounding error correction
     return state;
   }
 
