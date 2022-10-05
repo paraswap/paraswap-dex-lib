@@ -287,7 +287,7 @@ describe('BalancerV1', function () {
       // pool-tracker is not calling that function
       const newBalancerV1 = new BalancerV1(network, dexKey, dexHelper);
       if ((newBalancerV1 as IDex<any>).updatePoolState) {
-        await (newBalancerV1 as IDex<any>).updatePoolState();
+        await (newBalancerV1 as IDex<any>).updatePoolState!();
       }
       const poolLiquidity = await newBalancerV1.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
