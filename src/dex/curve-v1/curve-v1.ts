@@ -1036,7 +1036,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
       let index = 0;
       Object.values(this.pools).forEach(pool => {
-        const balances = results.slice(index, pool.coins.length);
+        const balances = results.slice(index, index + pool.coins.length);
         index += pool.coins.length;
 
         const sumLiquidity = balances.reduce((acc, balance, i) => {
@@ -1122,6 +1122,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       },
       [],
     );
-    return selectedPool;
+    return selectedPool
+      .sort((a, b) =>
+        b.liquidityUSD - a.liquidityUSD
+      )
+      .slice(0, limit);
   }
 }
