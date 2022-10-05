@@ -5,6 +5,12 @@ import { EventSubscriber } from './dex-helper/iblock-manager';
 
 import { CACHE_PREFIX, MAX_BLOCKS_HISTORY } from './constants';
 import { IDexHelper } from './dex-helper';
+import { Utils } from './utils';
+
+type StateCache<State> = {
+  bn: number;
+  state: DeepReadonly<State>;
+};
 
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
@@ -24,22 +30,31 @@ export abstract class StatefulEventSubscriber<State>
   public addressesSubscribed: string[] = [];
 
   private mapKey: string;
+  private cacheName: string;
+
+  public name: string;
 
   constructor(
     public readonly parentName: string,
-    public readonly name: string,
+    _name: string,
     protected dexHelper: IDexHelper,
     protected logger: Logger,
     private masterPoolNeeded: boolean = false,
   ) {
-    this.mapKey = `${CACHE_PREFIX}_${this.dexHelper.config.data.network}`;
+    this.name = _name.toLowerCase();
+    this.mapKey =
+      `${CACHE_PREFIX}_${this.dexHelper.config.data.network}_${this.parentName}`.toLowerCase();
+    this.cacheName = `${this.mapKey}_${this.name}`.toLowerCase();
   }
 
   getStateBlockNumber(): Readonly<number> {
     return this.stateBlockNumber;
   }
 
-  async initialize(blockNumber: number) {
+  async initialize(
+    blockNumber: number,
+    cb?: (state: DeepReadonly<State>) => void,
+  ) {
     if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
       let stateAsString = await this.dexHelper.cache.hget(
         this.mapKey,
@@ -47,14 +62,28 @@ export abstract class StatefulEventSubscriber<State>
       );
 
       if (stateAsString) {
-        const state: DeepReadonly<State> = JSON.parse(stateAsString);
-        this.setState(state, blockNumber);
+        const state: StateCache<State> = Utils.Parse(stateAsString);
+        if (cb) {
+          cb(state.state);
+        }
+        this.logger.debug(
+          `${this.parentName}: ${this.name}: found state from cache`,
+        );
+        this.setState(state.state, state.bn);
       } else {
-        this.logger.debug('did not found state on cache generating new one');
-        this.dexHelper.cache.publish(`${CACHE_PREFIX}_new_pools`, this.name);
+        this.logger.debug(
+          `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
+        );
+        this.dexHelper.cache.publish('new_pools', this.cacheName);
         const state = await this.generateState(blockNumber);
         this.setState(state, blockNumber);
       }
+    } else {
+      this.logger.debug(
+        `${this.parentName}: ${this.name}: cache generating state`,
+      );
+      const state = await this.generateState(blockNumber);
+      this.setState(state, blockNumber);
     }
     this.dexHelper.blockManager.subscribeToLogs(
       this,
@@ -109,7 +138,7 @@ export abstract class StatefulEventSubscriber<State>
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
-      this.state = null;
+      this._setState(null, blockNumber);
     }
   }
 
@@ -181,12 +210,11 @@ export abstract class StatefulEventSubscriber<State>
         if (+bn > blockNumber) {
           delete this.stateHistory[bn];
         } else {
-          this.state = this.stateHistory[bn];
-          this.stateBlockNumber = +bn;
+          this.setState(this.stateHistory[bn], +bn);
         }
       }
       if (this.state && this.stateBlockNumber > blockNumber) {
-        this.state = null;
+        this._setState(null, blockNumber);
       }
     } else {
       //Keep the current state in this.state and in the history
@@ -221,6 +249,25 @@ export abstract class StatefulEventSubscriber<State>
     return this.state;
   }
 
+  _setState(state: DeepReadonly<State> | null, blockNumber: number) {
+    this.state = state;
+    this.stateBlockNumber = blockNumber;
+
+    if (this.dexHelper.config.isSlave || !this.masterPoolNeeded) {
+      return;
+    }
+
+    this.logger.debug(`${this.parentName}: ${this.name} saving state in cache`);
+    this.dexHelper.cache.hset(
+      this.mapKey,
+      this.name,
+      Utils.Serialize({
+        bn: blockNumber,
+        state,
+      }),
+    );
+  }
+
   //Saves the state into the stateHistory, and cleans up any old state that is
   //no longer needed.  If the blockNumber is greater than or equal to the
   //current state, then the current state will be updated and the invalid flag
@@ -232,7 +279,7 @@ export abstract class StatefulEventSubscriber<State>
     }
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
-      this.state = state;
+      this._setState(state, blockNumber);
       this.stateBlockNumber = blockNumber;
       this.invalid = false;
     }

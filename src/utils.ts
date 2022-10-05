@@ -3,6 +3,7 @@ import { SwapSide } from 'paraswap-core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger } from './types';
+import _ from 'lodash';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -182,21 +183,6 @@ export function interpolate(
   });
 }
 
-export class Utils {
-  static timeoutPromise<T>(
-    promise: Promise<T>,
-    timeout: number,
-    message: string,
-  ): Promise<T> {
-    return Promise.race([
-      promise,
-      new Promise<T>((resolve, reject) => {
-        setTimeout(() => reject(message), timeout);
-      }),
-    ]);
-  }
-}
-
 export const bigIntify = (val: any) => BigInt(val);
 
 export const bigNumberify = (val: any) => new BigNumber(val);
@@ -210,3 +196,120 @@ export const catchParseLogError = (e: any, logger: Logger) => {
     }
   }
 };
+
+const PREFIX_BIG_INT = 'bi@';
+const PREFIX_BIG_NUMBER = 'bn@';
+
+const stringCheckerBuilder = (prefix: string) => {
+  return (obj: any) => {
+    if (!_.isString(obj)) {
+      return false;
+    }
+    for (let i = 0; i < prefix.length; ++i) {
+      if (prefix[i] !== obj[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+};
+
+const checkerStringWithBigIntPrefix = stringCheckerBuilder(PREFIX_BIG_INT);
+const checkerStringWithBigNumberPrefix =
+  stringCheckerBuilder(PREFIX_BIG_NUMBER);
+
+const casterToStringbuilder = (prefix: string, obj: any) =>
+  prefix.concat(obj.toString());
+
+const casterBigIntToString = (obj: BigInt) =>
+  casterToStringbuilder(PREFIX_BIG_INT, obj);
+const casterBigNumberToString = (obj: BigNumber) =>
+  casterToStringbuilder(PREFIX_BIG_NUMBER, obj);
+
+const checkerBigInt = (obj: any) => typeof obj === 'bigint';
+const checkerBigNumber = (obj: any) => obj instanceof BigNumber;
+
+const stringCasterBuilder = (
+  prefix: string,
+  constructor: (str: string) => any,
+) => {
+  return (obj: string) => {
+    return constructor(obj.slice(prefix.length));
+  };
+};
+
+const casterStringToBigInt = stringCasterBuilder(
+  PREFIX_BIG_INT,
+  (str: string) => BigInt(str),
+);
+
+const casterStringToBigNumber = stringCasterBuilder(
+  PREFIX_BIG_NUMBER,
+  (str: string) => new BigNumber(str),
+);
+
+type TypeSerializer = {
+  checker: (obj: any) => boolean;
+  caster: (obj: any) => any;
+};
+
+export function deepTypecast(obj: any, types: TypeSerializer[]): any {
+  return _.forEach(obj, (val: any, key: any, obj: any) => {
+    for (const type of types) {
+      if (type.checker(val)) {
+        const cast = type.caster(val);
+        obj[key] = cast;
+        return;
+      }
+    }
+    const isObject = _.isObject(val);
+    if (isObject) {
+      deepTypecast(val, types);
+    } else {
+      obj[key] = val;
+    }
+  });
+}
+
+export class Utils {
+  static Serialize(data: any): string {
+    return JSON.stringify(
+      deepTypecast(_.cloneDeep(data), [
+        {
+          checker: checkerBigInt,
+          caster: casterBigIntToString,
+        },
+        {
+          checker: checkerBigNumber,
+          caster: casterBigNumberToString,
+        },
+      ]),
+    );
+  }
+
+  static Parse(data: any): any {
+    return deepTypecast(_.cloneDeep(JSON.parse(data)), [
+      {
+        checker: checkerStringWithBigIntPrefix,
+        caster: casterStringToBigInt,
+      },
+      {
+        checker: checkerStringWithBigNumberPrefix,
+        caster: casterStringToBigNumber,
+      },
+    ]);
+  }
+
+  static timeoutPromise<T>(
+    promise: Promise<T>,
+    timeout: number,
+    message: string,
+  ): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((resolve, reject) => {
+        setTimeout(() => reject(message), timeout);
+      }),
+    ]);
+  }
+}

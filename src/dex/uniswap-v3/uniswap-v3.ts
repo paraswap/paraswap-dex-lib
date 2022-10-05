@@ -116,6 +116,15 @@ export class UniswapV3
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
       const key = `${token0}_${token1}_${fee}`.toLowerCase();
+      await this.dexHelper.cache.hset(
+        this.dexmapKey,
+        key,
+        JSON.stringify({
+          token0,
+          token1,
+          fee: fee.toString(),
+        }),
+      );
 
       this.logger.info(`starting to listen to new pool: ${key}`);
       pool = new UniswapV3EventPool(
@@ -130,7 +139,10 @@ export class UniswapV3
       );
 
       try {
-        pool.initialize(blockNumber);
+        await pool.initialize(blockNumber, (state: DeepReadonly<PoolState>) => {
+          pool!.addressesSubscribed.push(state.pool);
+          pool!.poolAddress = state.pool;
+        });
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
           // Pool does not exist for this feeCode, so we can set it to null
