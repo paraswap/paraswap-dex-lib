@@ -61,16 +61,21 @@ export abstract class StatefulEventSubscriber<State>
         this.name,
       );
 
+      // if there is a state in cache
       if (stateAsString) {
         const state: StateCache<State> = Utils.Parse(stateAsString);
+        // apply a callback on the state (usefull for initialization for slaves instance)
         if (cb) {
           cb(state.state);
         }
         this.logger.debug(
           `${this.parentName}: ${this.name}: found state from cache`,
         );
+        // set state and the according blockNumber. state.bn can be smaller, greater or equal
+        // to blockNumber
         this.setState(state.state, state.bn);
       } else {
+        // if no state found in cache generate new state using rpc
         this.logger.debug(
           `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
         );
@@ -79,12 +84,14 @@ export abstract class StatefulEventSubscriber<State>
         this.setState(state, blockNumber);
       }
     } else {
+      // if you are not a slave instance always generate new state
       this.logger.debug(
         `${this.parentName}: ${this.name}: cache generating state`,
       );
       const state = await this.generateState(blockNumber);
       this.setState(state, blockNumber);
     }
+    // always subscribeToLogs
     this.dexHelper.blockManager.subscribeToLogs(
       this,
       this.addressesSubscribed,
