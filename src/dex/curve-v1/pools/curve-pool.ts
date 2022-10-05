@@ -9,8 +9,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { BN_0, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bigNumberify, catchParseLogError } from '../../../utils';
-import { stringify } from 'querystring';
+import { bigNumberify, catchParseLogError, stringify } from '../../../utils';
 import { getManyPoolStates } from './getstate-multicall';
 
 export interface PoolState {

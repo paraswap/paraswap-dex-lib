@@ -13,8 +13,7 @@ import { BlockHeader } from 'web3-eth';
 import { BN_0, BN_600, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bigNumberify } from '../../../utils';
-import { stringify } from 'querystring';
+import { bigNumberify, stringify } from '../../../utils';
 import { getManyPoolStates } from './getstate-multicall';
 
 export interface MetapoolState {
@@ -980,7 +979,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
 
     const i = _.findIndex(
       this.COINS,
-      c => c.toLowerCase() === this.lastTransferredCoin!.toLowerCase(),
+      c => c.toLowerCase() === this.lastTransferredCoin?.toLowerCase(),
     );
     if (i === -1) {
       this.logger.error(
