@@ -21,8 +21,6 @@ export const BalancerV1Config: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter01', index: 5 }],
     [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 4 }],

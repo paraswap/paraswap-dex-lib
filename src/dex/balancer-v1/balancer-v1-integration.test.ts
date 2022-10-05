@@ -13,28 +13,13 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for BalancerV1 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover BalancerV1 specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import { IDex } from '../idex';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
   srcTokenBalance: bigint,
   destTokenBalance: bigint,
   srcTokenWeight: bigint,
@@ -44,7 +29,6 @@ function getReaderCalldata(
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
       srcTokenBalance,
       srcTokenWeight,
       destTokenBalance,
@@ -60,7 +44,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]);
@@ -77,9 +60,6 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from balancerV1.Iface or from eventPool.
-  // It depends on your implementation
   const readerIface = BalancerV1EventPool.iface;
 
   const paramsCalldata = [
@@ -284,7 +264,7 @@ describe('BalancerV1', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'calcOutGivenIn', // TODO: Put here proper function name to check pricing
+        'calcOutGivenIn',
       );
     });
 
@@ -298,7 +278,7 @@ describe('BalancerV1', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        'calcInGivenOut', // TODO: Put here proper function name to check pricing
+        'calcInGivenOut',
       );
     });
 
@@ -306,8 +286,8 @@ describe('BalancerV1', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newBalancerV1 = new BalancerV1(network, dexKey, dexHelper);
-      if (newBalancerV1.updatePoolState) {
-        await newBalancerV1.updatePoolState();
+      if ((newBalancerV1 as IDex<any>).updatePoolState) {
+        await (newBalancerV1 as IDex<any>).updatePoolState();
       }
       const poolLiquidity = await newBalancerV1.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,

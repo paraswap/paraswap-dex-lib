@@ -4,8 +4,7 @@ import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { __DexName__Data, PoolState } from './types';
-import { __DexName__Config } from './config';
+import { PoolState } from './types';
 
 export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {

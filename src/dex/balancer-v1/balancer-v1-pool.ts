@@ -7,8 +7,7 @@ import { SwapSide } from '../../constants';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BalancerV1Data, PoolState, PoolInfo, FractionAsString } from './types';
-import { BalancerV1Config } from './config';
+import { PoolState, PoolInfo, FractionAsString } from './types';
 import { BN_POWS } from '../../bignumber-constants';
 import { calcOutGivenIn, calcInGivenOut } from './balancer-v1-math';
 import { generatePoolStates } from './utils';
@@ -47,7 +46,6 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
 
     this.addressesSubscribed = [poolInfo.id];
 
-    // Add handlers
     this.handlers['LOG_JOIN'] = this.handleJoinPool.bind(this);
     this.handlers['LOG_EXIT'] = this.handleExitPool.bind(this);
     this.handlers['LOG_SWAP'] = this.handleSwap.bind(this);
@@ -187,7 +185,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
   handleJoinPool(
     event: any,
     state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
+    _log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     const tokenIn = event.args.tokenIn.toLowerCase();
     const tokenAmountIn = BigInt(event.args.tokenAmountIn.toString());
@@ -202,7 +200,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
   handleExitPool(
     event: any,
     state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
+    _log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     const tokenOut = event.args.tokenOut.toLowerCase();
     const tokenAmountOut = BigInt(event.args.tokenAmountOut.toString());
@@ -217,7 +215,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
   handleSwap(
     event: any,
     state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
+    _log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     const tokenIn = event.args.tokenIn.toLowerCase();
     const tokenAmountIn = BigInt(event.args.tokenAmountIn.toString());

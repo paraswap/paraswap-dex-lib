@@ -1,4 +1,3 @@
-import { AsyncOrSync } from 'ts-essentials';
 import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
@@ -53,7 +52,6 @@ export class BalancerV1
   protected eventPools: { [poolAddress: string]: BalancerV1EventPool } = {};
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -67,7 +65,7 @@ export class BalancerV1
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.config = BalancerV1Config[dexKey][network];
@@ -82,8 +80,7 @@ export class BalancerV1
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+  async initializePricing(_blockNumber: number) {
     this.poolsInfo = await this.dexHelper.httpRequest.get<PoolsInfo>(
       this.config.poolsURL,
       POOLS_FETCH_TIMEOUT,
@@ -119,10 +116,9 @@ export class BalancerV1
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
-    side: SwapSide,
-    blockNumber: number,
+    _side: SwapSide,
+    _blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
     if (!this.poolsInfo) return [];
 
     const from = this.dexHelper.config.wrapETH(srcToken);
@@ -147,7 +143,6 @@ export class BalancerV1
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV1Data>> {
-    // TODO: complete me!
     if (!this.poolsInfo) return null;
 
     const from = this.dexHelper.config.wrapETH(srcToken);
@@ -238,7 +233,7 @@ export class BalancerV1
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(
-    poolPrices: PoolPrices<BalancerV1Data>,
+    _poolPrices: PoolPrices<BalancerV1Data>,
   ): number | number[] {
     return (
       CALLDATA_GAS_COST.DEX_OVERHEAD +
@@ -261,12 +256,12 @@ export class BalancerV1
   // Used for multiSwap, buy & megaSwap
   // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
+    _srcToken: string,
+    _destToken: string,
+    _srcAmount: string,
+    _destAmount: string,
     data: OptimizedBalancerV1Data,
-    side: SwapSide,
+    _side: SwapSide,
   ): AdapterExchangeParam {
     const { swaps } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -329,7 +324,6 @@ export class BalancerV1
             BalancerFunctions.batchEthInSwapExactIn,
             [swaps, destToken, destAmount],
           ];
-
         if (isETHAddress(destToken))
           return [
             BalancerFunctions.batchEthOutSwapExactIn,
@@ -347,7 +341,6 @@ export class BalancerV1
             BalancerFunctions.batchEthOutSwapExactOut,
             [swaps, srcToken, srcAmount],
           ];
-
         return [
           BalancerFunctions.batchSwapExactOut,
           [swaps, srcToken, destToken, srcAmount],
@@ -368,15 +361,6 @@ export class BalancerV1
       swapData,
       this.config.exchangeProxy,
     );
-  }
-
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -441,11 +425,5 @@ export class BalancerV1
       ),
       liquidityUSD: parseFloat(pool.liquidity),
     }));
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
   }
 }
