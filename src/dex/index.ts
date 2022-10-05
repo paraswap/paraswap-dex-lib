@@ -1,5 +1,4 @@
 import { Address, UnoptimizedRate } from '../types';
-import { Curve } from './curve';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
@@ -51,9 +50,11 @@ import { Cone } from './solidly/forks-override/cone';
 import { QuickSwapV3 } from './quickswap-v3';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
+import { CurveV1 } from './curve-v1/curve-v1';
+import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
+import { Swerve } from './curve-v1/forks/swerve/swerve';
 
 const LegacyDexes = [
-  Curve,
   CurveV2,
   StablePool,
   Smoothy,
@@ -75,6 +76,9 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  CurveV1,
+  CurveFork,
+  Swerve,
   BalancerV1,
   BalancerV2,
   UniswapV2,
@@ -225,7 +229,7 @@ export class DexAdapterService {
   getDexByKey(key: string): IDex<any, any, any> {
     const _key = key.toLowerCase();
     if (!(_key in this.isLegacy) || this.isLegacy[_key])
-      throw new Error('Invalid Dex Key');
+      throw new Error(`Invalid Dex Key ${key}`);
 
     return this.dexInstances[_key] as IDex<any, any, any>;
   }

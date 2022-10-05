@@ -10,10 +10,10 @@ import {
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
-import type { CurveData } from './curve';
+import type { CurveV1Data } from './curve-v1/types';
 import Web3 from 'web3';
 
-type CurveV2Data = Omit<CurveData, 'deadline' | 'v3'>;
+type CurveV2Data = Omit<CurveV1Data, 'deadline' | 'v3'>;
 
 type CurveV2Param = [
   i: NumberAsString,
@@ -86,7 +86,12 @@ export class CurveV2
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
-    const args: CurveV2Param = [i, j, srcAmount, this.minConversionRate];
+    const args: CurveV2Param = [
+      i.toString(),
+      j.toString(),
+      srcAmount,
+      this.minConversionRate,
+    ];
     const swapMethod = underlyingSwap
       ? CurveSwapFunctions.exchange_underlying
       : CurveSwapFunctions.exchange;
