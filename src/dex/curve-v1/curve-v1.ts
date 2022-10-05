@@ -1123,9 +1123,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       [],
     );
     return selectedPool
-      .sort((a, b) =>
-        b.liquidityUSD - a.liquidityUSD
-      )
+      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
       .slice(0, limit);
   }
 }

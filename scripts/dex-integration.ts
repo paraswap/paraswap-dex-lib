@@ -125,7 +125,7 @@ function testIntegration(argv: IOptions) {
 yargs
   .scriptName('dex-integration.ts')
   .usage('$0 <cmd> [args]')
-  .command(
+  .command<IOptions>(
     'init [name]',
     'Integrate new dex by the "name" from templates',
     yargsLocal => {
@@ -135,13 +135,13 @@ yargs
           'Name of the new dex. Must be in param cases using only "a-z", "0-9", and "-" without spaces',
       });
     },
-    function (argv: { name: string }) {
+    function (argv) {
       initIntegration(argv).catch(error => {
         console.error(`${error}`);
       });
     },
   )
-  .command(
+  .command<IOptions>(
     'test [name]',
     'Execute all tests for particular dex accessing by it\'s "name"',
     yargsLocal => {

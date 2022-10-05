@@ -62,7 +62,7 @@ export function stringifyWithBigInt(obj: unknown): string {
   return typeof obj === 'object'
     ? JSON.stringify(
         obj,
-        (key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+        (_key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
       )
     : '';
 }
@@ -73,17 +73,46 @@ export function _require(
   values?: Record<string, unknown>,
   condition?: string,
 ): void {
-  let receivedValues = '';
-  if (values && condition) {
-    const keyValueStr = Object.entries(values)
-      .map(([k, v]) => `${k}=${stringifyWithBigInt(v)}`)
-      .join(', ');
-    receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated. `;
-  }
-  if (!b)
+  if (!b) {
+    let receivedValues = '';
+    if (values && condition) {
+      const keyValueStr = Object.entries(values)
+        .map(([k, v]) => `${k}=${stringifyWithBigInt(v)}`)
+        .join(', ');
+      receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated. `;
+    }
     throw new Error(
       `${receivedValues}Error message: ${message ? message : 'undefined'}`,
     );
+  }
+}
+
+interface SliceCallsInput<T, U> {
+  inputArray: T[];
+  execute: (inputSlice: T[], sliceIndex: number) => U;
+  sliceLength: number;
+}
+
+// author: @velenir. source: https://github.com/paraswap/paraswap-volume-tracker/blob/ceaf5e267c9720b190b19c17465b438f57f41851/src/lib/utils/helpers.ts#L20
+export function sliceCalls<T, U>({
+  inputArray,
+  execute,
+  sliceLength,
+}: SliceCallsInput<T, U>): [U, ...U[]] {
+  if (sliceLength >= inputArray.length) return [execute(inputArray, 0)];
+  const results: U[] = [];
+
+  for (
+    let i = 0, sliceIndex = 0;
+    i < inputArray.length;
+    i += sliceLength, ++sliceIndex
+  ) {
+    const inputSlice = inputArray.slice(i, i + sliceLength);
+    const resultOfSlice = execute(inputSlice, sliceIndex);
+    results.push(resultOfSlice);
+  }
+
+  return results as [U, ...U[]];
 }
 
 // We assume that the rate always gets worse when be go bigger in volume.
