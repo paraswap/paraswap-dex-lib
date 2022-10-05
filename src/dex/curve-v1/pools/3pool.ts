@@ -5,8 +5,7 @@ import StableSwap3Pool from '../../../abi/curve/StableSwap3Pool.json';
 import { CurvePool, PoolState } from './curve-pool';
 import { IDexHelper } from '../../../dex-helper';
 import { BN_0 } from '../../../bignumber-constants';
-import { bigNumberify } from '../../../utils';
-import { stringify } from 'querystring';
+import { bigNumberify, stringify } from '../../../utils';
 import BigNumber from 'bignumber.js';
 
 const pool = '3pool';

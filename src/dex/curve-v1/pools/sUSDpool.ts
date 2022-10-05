@@ -3,8 +3,7 @@ import { Address, Log } from '../../../types';
 import StableSwapSUSD from '../../../abi/curve/StableSwapSUSD.json';
 import { CurvePool, PoolState } from './curve-pool';
 import { IDexHelper } from '../../../dex-helper';
-import { bigNumberify } from '../../../utils';
-import { stringify } from 'querystring';
+import { bigNumberify, stringify } from '../../../utils';
 
 const pool = 'sUSD';
 export const address: Address =
