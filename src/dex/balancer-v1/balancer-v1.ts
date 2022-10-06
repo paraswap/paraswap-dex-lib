@@ -53,6 +53,7 @@ export class BalancerV1
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerV1Config);

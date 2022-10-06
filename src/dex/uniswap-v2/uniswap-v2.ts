@@ -202,6 +202,7 @@ export class UniswapV2
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV2Config);

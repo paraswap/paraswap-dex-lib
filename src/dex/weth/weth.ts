@@ -30,6 +30,7 @@ export class Weth
   implements IDex<WethData, DexParams>, IWethDepositorWithdrawer
 {
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WethConfig);

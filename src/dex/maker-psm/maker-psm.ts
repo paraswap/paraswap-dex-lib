@@ -192,6 +192,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
 
   // warning: There is limit on swap
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MakerPsmConfig);

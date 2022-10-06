@@ -54,6 +54,7 @@ export class AaveV2
   implements IDex<AaveV2Data, AaveV2Param>
 {
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AaveV2Config);

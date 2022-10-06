@@ -88,6 +88,9 @@ export interface IDexPricing<ExchangeData> {
   // constant price.
   readonly hasConstantPriceLargeAmounts: boolean;
 
+  // Specify if current Dex integration can handle fee on transfer tokens
+  readonly isFeeOnTransferSupported: boolean;
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use

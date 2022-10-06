@@ -91,6 +91,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   private logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   private decimalsCoinsAndUnderlying: Record<string, number> = {};
 
