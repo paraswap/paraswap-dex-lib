@@ -26,6 +26,10 @@ class DummyCache implements ICache {
     return null;
   }
 
+  async rawget(key: string): Promise<string | null> {
+    return null;
+  }
+
   async setex(
     dexKey: string,
     network: number,
