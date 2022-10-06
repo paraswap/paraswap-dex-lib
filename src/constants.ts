@@ -29,8 +29,6 @@ export enum Network {
   FANTOM = 250,
   ARBITRUM = 42161,
   OPTIMISM = 10,
-  ZK_SYNC_MAINNET = 271,
-  ZK_SYNC_ROPSTEN = 273,
 }
 
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
