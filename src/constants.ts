@@ -38,3 +38,11 @@ export const SUBGRAPH_TIMEOUT = 20 * 1000;
 export enum LIMIT_ORDER_PROVIDERS {
   PARASWAP = 'ParaSwapLimitOrderProvider',
 }
+
+// 1 transfer User -> Augustus
+export const SRC_TOKEN_PARASWAP_TRANSFERS = 1;
+
+// 2 transfer Augustus -> User
+export const DEST_TOKEN_PARASWAP_TRANSFERS = 1;
+
+export const BPS_MAX_VALUE = 10000n;

@@ -151,6 +151,10 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     limitPoolsMap: { [key: string]: string[] | null } | null,
+    srcTokenTransferFee: number = 0,
+    destTokenTransferFee: number = 0,
+    srcTokenDexTransferFee: number = 0,
+    destTokenDexTransferFee: number = 0,
     rollupL1ToL2GasRatio?: number,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
