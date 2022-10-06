@@ -130,6 +130,10 @@ export interface IDexPricing<ExchangeData> {
   // If you have any timers or other resources that are need to be released,
   // you must put it here
   releaseResources?(): AsyncOrSync<void>;
+
+  // return true if the userAddress is is blacklisted from the exchange
+  // usefull for RFQ system
+  isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
 }
 
 export interface IDexPooltracker {

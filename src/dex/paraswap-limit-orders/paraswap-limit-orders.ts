@@ -22,7 +22,6 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ParaSwapLimitOrdersData,
   ParaSwapOrderResponse,
-  ParaSwapLimitOrderPriceSummary,
   ParaSwapOrderBookResponse,
   OrderInfo,
   ParaSwapOrderBook,
@@ -37,6 +36,8 @@ import {
   ONE_ORDER_GASCOST,
 } from './constant';
 import BigNumber from 'bignumber.js';
+
+const BLACKLIST_CACHE_PREFIX = `lo_blacklist`;
 
 export class ParaSwapLimitOrders
   extends LimitOrderExchange<ParaSwapOrderResponse, ParaSwapOrderBookResponse>
@@ -75,6 +76,17 @@ export class ParaSwapLimitOrders
   getIdentifier(srcToken: Address, destToken: Address) {
     // Expected lowered Addresses
     return `${this.dexKey.toLowerCase()}_${srcToken}_${destToken}`;
+  }
+
+  async isBlacklisted(userAddress: string): Promise<boolean> {
+    const value = await this.dexHelper.cache.rawget(
+      `${BLACKLIST_CACHE_PREFIX}_${userAddress}`.toLowerCase(),
+    );
+    if (value) {
+      return true;
+    }
+
+    return false;
   }
 
   async getPoolIdentifiers(

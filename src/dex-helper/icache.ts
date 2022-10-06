@@ -5,6 +5,8 @@ export interface ICache {
     cacheKey: string,
   ): Promise<string | null>;
 
+  rawget(key: string): Promise<string | null>;
+
   setex(
     dexKey: string,
     network: number,
