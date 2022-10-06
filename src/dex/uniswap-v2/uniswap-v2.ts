@@ -516,6 +516,10 @@ export class UniswapV2
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
+    srcTokenTransferFee: number = 0,
+    destTokenTransferFee: number = 0,
+    srcTokenDexTransferFee: number = 0,
+    destTokenDexTransferFee: number = 0,
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
       const from = this.dexHelper.config.wrapETH(_from);

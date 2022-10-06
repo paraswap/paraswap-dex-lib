@@ -210,3 +210,17 @@ export const catchParseLogError = (e: any, logger: Logger) => {
     }
   }
 };
+
+export const isTokenTransferFeeToBeExchanged = (
+  srcTokenTransferFee: number,
+  destTokenTransferFee: number,
+  srcTokenDexTransferFee: number,
+  destTokenDexTransferFee: number,
+) => {
+  return !!(
+    srcTokenTransferFee ||
+    destTokenTransferFee ||
+    srcTokenDexTransferFee ||
+    destTokenDexTransferFee
+  );
+};

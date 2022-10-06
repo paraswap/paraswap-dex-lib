@@ -114,6 +114,12 @@ export interface IDexPricing<ExchangeData> {
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
+    // I don't like putting this as new params, but in order to not change interface
+    // across all integrations, done it like this
+    srcTokenTransferFee?: number,
+    destTokenTransferFee?: number,
+    srcTokenDexTransferFee?: number,
+    destTokenDexTransferFee?: number,
   ): Promise<ExchangePrices<ExchangeData> | null>;
 
   // Returns estimated gas cost for calldata for DEX when used in multiSwap.

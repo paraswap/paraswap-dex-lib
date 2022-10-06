@@ -143,6 +143,26 @@ export class PricingHelper {
     );
   }
 
+  getPoolsSupportingFeeOnTransfer(): string[] {
+    const allDexKeys = this.dexAdapterService.getAllDexKeys();
+    return allDexKeys
+      .map(dexKey => {
+        try {
+          const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+          if (dexInstance.isFeeOnTransferSupported) {
+            return dexKey;
+          }
+        } catch (e) {
+          if (
+            !(e instanceof Error && e.message.startsWith(`Invalid Dex Key`))
+          ) {
+            throw e;
+          }
+        }
+      })
+      .filter((d: string | undefined): d is string => !!d);
+  }
+
   public async getPoolPrices(
     from: Token,
     to: Token,
@@ -181,6 +201,10 @@ export class PricingHelper {
                   side,
                   blockNumber,
                   limitPools ? limitPools : undefined,
+                  srcTokenTransferFee,
+                  destTokenTransferFee,
+                  srcTokenDexTransferFee,
+                  destTokenDexTransferFee,
                 )
                 .then(poolPrices => {
                   try {
