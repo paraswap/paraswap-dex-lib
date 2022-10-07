@@ -38,4 +38,10 @@ export interface ICache {
     channel: string,
     cb: (channel: string, msg: string) => void,
   ): () => void;
+
+  addBatchHGet(
+    mapKey: string,
+    key: string,
+    cb: (result: string | null) => boolean,
+  ): void;
 }

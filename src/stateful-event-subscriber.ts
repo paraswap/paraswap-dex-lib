@@ -64,6 +64,13 @@ export abstract class StatefulEventSubscriber<State>
       // if there is a state in cache
       if (stateAsString) {
         const state: StateCache<State> = Utils.Parse(stateAsString);
+
+        if (state.state === null) {
+          this.logger.warn(
+            `${this.parentName}: ${this.name}: found null state in cache generate new one`,
+          );
+          state.state = await this.generateState(blockNumber);
+        }
         // apply a callback on the state (usefull for initialization for slaves instance)
         if (cb) {
           cb(state.state);
@@ -159,6 +166,7 @@ export abstract class StatefulEventSubscriber<State>
   async update(
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [blockNumber: number]: Readonly<BlockHeader> }>,
+    blockNumberForMissingStateRegen?: number,
   ): Promise<void> {
     let index = 0;
     let lastBlockNumber: number | undefined;
@@ -206,6 +214,18 @@ export abstract class StatefulEventSubscriber<State>
       index = indexBlockEnd;
     }
     this.invalid = false;
+
+    if (
+      !this.dexHelper.config.isSlave &&
+      this.masterPoolNeeded &&
+      this.state === null &&
+      blockNumberForMissingStateRegen
+    ) {
+      async () => {
+        const state = await this.generateState(blockNumberForMissingStateRegen);
+        this._setState(state, blockNumberForMissingStateRegen);
+      };
+    }
   }
 
   //Removes all states that are beyond the given block number and sets the
@@ -257,6 +277,37 @@ export abstract class StatefulEventSubscriber<State>
   }
 
   _setState(state: DeepReadonly<State> | null, blockNumber: number) {
+    if (
+      this.dexHelper.config.isSlave &&
+      this.masterPoolNeeded &&
+      state === null
+    ) {
+      this.logger.debug(
+        `${this.parentName}: ${this.name}: schedule a job to get state from cache`,
+      );
+
+      this.dexHelper.cache.addBatchHGet(
+        this.mapKey,
+        this.name,
+        (result: string | null) => {
+          if (!result) {
+            this.logger.warn('received null result');
+            return false;
+          }
+          const state: StateCache<State> = Utils.Parse(result);
+          if (!state.state) {
+            return false;
+          }
+
+          this.logger.debug(
+            `${this.parentName}: ${this.name}: received state from a scheduled job`,
+          );
+          this.setState(state.state, state.bn);
+          return true;
+        },
+      );
+    }
+
     this.state = state;
     this.stateBlockNumber = blockNumber;
 

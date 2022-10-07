@@ -73,6 +73,12 @@ class DummyCache implements ICache {
   ): () => void {
     return () => {};
   }
+
+  addBatchHGet(
+    mapKey: string,
+    key: string,
+    cb: (result: string | null) => boolean,
+  ): void {}
 }
 
 class DummyRequestWrapper implements IRequestWrapper {

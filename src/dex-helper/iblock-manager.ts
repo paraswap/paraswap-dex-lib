@@ -27,6 +27,7 @@ export interface EventSubscriber {
   update(
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [blockNumber: number]: Readonly<BlockHeader> }>,
+    blockNumberForMissingStateRegen?: number,
   ): AsyncOrSync<void>;
 
   //Will be called on a chain reorganisation prior to updating with new logs.

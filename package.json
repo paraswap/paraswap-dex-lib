@@ -43,6 +43,7 @@
     "@ethersproject/providers": "5.4.1",
     "bignumber.js": "9.1.0",
     "cross-fetch": "^3.1.5",
+    "es6-promise": "^4.2.8",
     "ethers": "^5.6.7",
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
