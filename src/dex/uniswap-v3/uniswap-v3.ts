@@ -328,7 +328,8 @@ export class UniswapV3
         );
 
         if (!unitResult || !pricesResult) {
-          throw new Error('Prices or unit is not calculated');
+          this.logger.debug('Prices or unit is not calculated');
+          return null;
         }
 
         const prices = [0n, ...pricesResult.outputs];
@@ -367,7 +368,9 @@ export class UniswapV3
           poolAddresses: [pool.poolAddress],
         };
       });
-      return result;
+      return result.filter(
+        res => res !== null,
+      ) as ExchangePrices<UniswapV3Data>;
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -600,7 +603,7 @@ export class UniswapV3
     try {
       return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
     } catch (e) {
-      this.logger.error(
+      this.logger.debug(
         `${this.dexKey}: received error in _getSellOutputs while calculating outputs`,
         e,
       );
