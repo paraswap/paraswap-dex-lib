@@ -28,7 +28,7 @@ export const applyTransferFee = (
          * But that equation should be modified to account our constrain (multiply first and divide later),
          * which forced by the fact that calculations can not include fractions:
          * a - ((a * tF) / BPS)) = r
-         * where tF = transferredFee and BPS = BPS_MAX_VALUE
+         * where tF = transferFee and BPS = BPS_MAX_VALUE
          * (a * BPS - a * tF) / BPS = r
          * (a * (BPS - tF)) = r * BPS
          * a = (r * BPS) / (BPS - tF)

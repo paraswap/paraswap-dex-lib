@@ -26,9 +26,11 @@ import {
 } from './types';
 import { IDex } from '../idex';
 import {
+  DEST_TOKEN_PARASWAP_TRANSFERS,
   ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
   SUBGRAPH_TIMEOUT,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -48,6 +50,7 @@ import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -202,14 +205,16 @@ export class UniswapV2
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
-  readonly isFeeOnTransferSupported = false;
+  readonly isFeeOnTransferSupported = true;
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV2Config);
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    public dexKey: string,
     protected dexHelper: IDexHelper,
     protected isDynamicFees = false,
     protected factoryAddress: Address = UniswapV2Config[dexKey][network]
@@ -448,6 +453,7 @@ export class UniswapV2
     from: Token,
     to: Token,
     blockNumber: number,
+    tokenDexTransferFee: number,
   ): Promise<UniswapV2PoolOrderedParams | null> {
     const pair = await this.findPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) return null;
@@ -460,9 +466,7 @@ export class UniswapV2
       );
       return null;
     }
-    const fee = (
-      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
-    ).toString();
+    const fee = (pairState.feeCode + tokenDexTransferFee).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
     if (pairReversed) {
@@ -542,32 +546,57 @@ export class UniswapV2
         return null;
 
       await this.batchCatchUpPairs([[from, to]], blockNumber);
-
-      const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
+      const isSell = side === SwapSide.SELL;
+      const pairParam = await this.getPairOrderedParams(
+        from,
+        to,
+        blockNumber,
+        isSell ? srcTokenDexTransferFee : 0,
+      );
 
       if (!pairParam) return null;
 
-      const unitAmount = getBigIntPow(
-        side == SwapSide.BUY ? to.decimals : from.decimals,
+      const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
+
+      const [unitWithFee, ...amountsWithFee] = applyTransferFee(
+        [unitAmount, ...amounts],
+        side,
+        // We don't support fee on transfer on destToken, so use 0
+        isSell ? srcTokenTransferFee : 0,
+        isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : 0,
       );
-      const unit =
-        side == SwapSide.BUY
-          ? await this.getBuyPricePath(unitAmount, [pairParam])
-          : await this.getSellPricePath(unitAmount, [pairParam]);
 
-      const prices =
-        side == SwapSide.BUY
-          ? await Promise.all(
-              amounts.map(amount => this.getBuyPricePath(amount, [pairParam])),
-            )
-          : await Promise.all(
-              amounts.map(amount => this.getSellPricePath(amount, [pairParam])),
-            );
+      const unit = isSell
+        ? await this.getSellPricePath(unitWithFee, [pairParam])
+        : await this.getBuyPricePath(unitWithFee, [pairParam]);
 
+      const prices = isSell
+        ? await Promise.all(
+            amountsWithFee.map(amount =>
+              this.getSellPricePath(amount, [pairParam]),
+            ),
+          )
+        : await Promise.all(
+            amountsWithFee.map(amount =>
+              this.getBuyPricePath(amount, [pairParam]),
+            ),
+          );
+
+      const outputsWithFee = applyTransferFee(
+        applyTransferFee(
+          prices,
+          side,
+          isSell ? destTokenTransferFee : srcTokenTransferFee,
+          isSell ? DEST_TOKEN_PARASWAP_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
+        ),
+        side,
+        isSell ? destTokenDexTransferFee : srcTokenDexTransferFee,
+        isSell ? this.DEST_TOKEN_DEX_TRANSFERS : this.SRC_TOKEN_DEX_TRANSFERS,
+      );
       // As uniswapv2 just has one pool per token pair
       return [
         {
-          prices: prices,
+          prices: outputsWithFee,
           unit: unit,
           data: {
             router: this.router,
