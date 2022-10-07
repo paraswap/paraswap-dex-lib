@@ -14,6 +14,7 @@ import {
   SimpleExchangeParam,
   Token,
   TxInfo,
+  TransferFeeParams,
 } from '../../types';
 import {
   UniswapData,
@@ -511,10 +512,12 @@ export class UniswapV2
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
-    srcTokenTransferFee: number = 0,
-    destTokenTransferFee: number = 0,
-    srcTokenDexTransferFee: number = 0,
-    destTokenDexTransferFee: number = 0,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
       const from = this.dexHelper.config.wrapETH(_from);
@@ -542,7 +545,7 @@ export class UniswapV2
         from,
         to,
         blockNumber,
-        isSell ? srcTokenDexTransferFee : 0,
+        isSell ? transferFees.srcDexFee : 0,
       );
 
       if (!pairParam) return null;
@@ -553,7 +556,7 @@ export class UniswapV2
         [unitAmount, ...amounts],
         side,
         // We don't support fee on transfer on destToken, so use 0
-        isSell ? srcTokenTransferFee : 0,
+        isSell ? transferFees.srcFee : 0,
         isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : 0,
       );
 
@@ -577,11 +580,11 @@ export class UniswapV2
         applyTransferFee(
           prices,
           side,
-          isSell ? destTokenTransferFee : srcTokenTransferFee,
+          isSell ? transferFees.destFee : transferFees.srcFee,
           isSell ? DEST_TOKEN_PARASWAP_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
         ),
         side,
-        isSell ? destTokenDexTransferFee : srcTokenDexTransferFee,
+        isSell ? transferFees.destDexFee : transferFees.srcDexFee,
         isSell ? this.DEST_TOKEN_DEX_TRANSFERS : this.SRC_TOKEN_DEX_TRANSFERS,
       );
       // As uniswapv2 just has one pool per token pair

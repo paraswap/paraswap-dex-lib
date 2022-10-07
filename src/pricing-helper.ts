@@ -6,6 +6,7 @@ import {
   PoolPrices,
   ExchangePrices,
   UnoptimizedRate,
+  TransferFeeParams,
 } from './types';
 import {
   SwapSide,
@@ -171,10 +172,12 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     limitPoolsMap: { [key: string]: string[] | null } | null,
-    srcTokenTransferFee: number = 0,
-    destTokenTransferFee: number = 0,
-    srcTokenDexTransferFee: number = 0,
-    destTokenDexTransferFee: number = 0,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
     rollupL1ToL2GasRatio?: number,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
@@ -201,10 +204,7 @@ export class PricingHelper {
                   side,
                   blockNumber,
                   limitPools ? limitPools : undefined,
-                  srcTokenTransferFee,
-                  destTokenTransferFee,
-                  srcTokenDexTransferFee,
-                  destTokenDexTransferFee,
+                  transferFees,
                 )
                 .then(poolPrices => {
                   try {
