@@ -168,15 +168,6 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   }
 }
 
-// Apply extra fee for certain tokens when used as input to swap (basis points)
-// These could be tokens with fee on transfer or rounding error on balances
-// Token addresses must be in lower case!
-export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
-  // stETH - uses balances based on shares which causes rounding errors
-  '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 1,
-  '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f': 200,
-};
-
 function encodePools(
   pools: UniswapPool[],
   feeFactor: number,
