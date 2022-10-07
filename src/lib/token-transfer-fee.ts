@@ -40,12 +40,3 @@ export const applyTransferFee = (
     return resultAmount;
   });
 };
-
-/* Temporary location:
-    const inAmountsWithFee = applyTransferFee(
-      amounts,
-      side,
-      isSell ? srcTokenTransferFee : destTokenTransferFee,
-      isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
-    );
-*/
