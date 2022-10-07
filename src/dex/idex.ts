@@ -139,7 +139,7 @@ export interface IDexPricing<ExchangeData> {
   releaseResources?(): AsyncOrSync<void>;
 
   // return true if the userAddress is is blacklisted from the exchange
-  // usefull for RFQ system
+  // useful for RFQ system
   isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
 }
 
