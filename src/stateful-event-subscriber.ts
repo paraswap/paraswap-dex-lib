@@ -240,14 +240,21 @@ export abstract class StatefulEventSubscriber<State>
   //flag is not set, in which case the most recent state can be kept.
   rollback(blockNumber: number): void {
     if (this.invalid) {
+      let lastBn = undefined;
+      //loop in the ascending order of the blockNumber. V8 property when object keys are number.
       for (const bn in this.stateHistory) {
-        if (+bn > blockNumber) {
+        const bnAsNumber = +bn;
+        if (bnAsNumber > blockNumber) {
           delete this.stateHistory[bn];
         } else {
-          this._setState(this.stateHistory[bn], +bn);
+          lastBn = bnAsNumber;
+          break;
         }
       }
-      if (this.state && this.stateBlockNumber > blockNumber) {
+
+      if (lastBn) {
+        this._setState(this.stateHistory[lastBn], lastBn);
+      } else {
         this._setState(null, blockNumber);
       }
     } else {
