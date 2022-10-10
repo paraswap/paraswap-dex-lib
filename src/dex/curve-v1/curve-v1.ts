@@ -263,13 +263,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     });
   }
 
-  async startListening() {
-    try {
-      await this.fetchFactoryPools();
-    } catch (e) {
-      this.logger.error('Error_startListening:', e);
-      setTimeout(() => this.startListening(), SETUP_RETRY_TIMEOUT);
-    }
+  async initializePricing(blockNumber: number): Promise<void> {
+    await this.fetchFactoryPools();
   }
 
   protected getPoolByAddress(address: Address) {
@@ -539,7 +534,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
               this.dexHelper.multiContract.methods
                 .tryAggregate(false, poolCalldata)
                 .call({}, 'latest'),
-              1500,
+              2000,
               `Timed out multicall for curve pool ${poolCalldata[0].target}`,
             );
             return result;
