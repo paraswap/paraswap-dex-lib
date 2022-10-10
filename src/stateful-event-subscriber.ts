@@ -70,14 +70,17 @@ export abstract class StatefulEventSubscriber<State>
             `${this.parentName}: ${this.name}: found null state in cache generate new one`,
           );
           state.state = await this.generateState(blockNumber);
+          state.bn = blockNumber;
+        } else {
+          this.logger.debug(
+            `${this.parentName}: ${this.name}: found state from cache`,
+          );
         }
         // apply a callback on the state (usefull for initialization for slaves instance)
         if (cb) {
           cb(state.state);
         }
-        this.logger.debug(
-          `${this.parentName}: ${this.name}: found state from cache`,
-        );
+
         // set state and the according blockNumber. state.bn can be smaller, greater or equal
         // to blockNumber
         this.setState(state.state, state.bn);
@@ -226,7 +229,7 @@ export abstract class StatefulEventSubscriber<State>
           `${this.parentName}: ${this.name}: master generate new state because state is null`,
         );
         const state = await this.generateState(blockNumberForMissingStateRegen);
-        this._setState(state, blockNumberForMissingStateRegen);
+        this.setState(state, blockNumberForMissingStateRegen);
       };
       createNewState();
     }
@@ -241,7 +244,7 @@ export abstract class StatefulEventSubscriber<State>
         if (+bn > blockNumber) {
           delete this.stateHistory[bn];
         } else {
-          this.setState(this.stateHistory[bn], +bn);
+          this._setState(this.stateHistory[bn], +bn);
         }
       }
       if (this.state && this.stateBlockNumber > blockNumber) {
@@ -342,7 +345,6 @@ export abstract class StatefulEventSubscriber<State>
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
       this._setState(state, blockNumber);
-      this.stateBlockNumber = blockNumber;
       this.invalid = false;
     }
     const minBlockNumberToKeep = this.stateBlockNumber - MAX_BLOCKS_HISTORY;
