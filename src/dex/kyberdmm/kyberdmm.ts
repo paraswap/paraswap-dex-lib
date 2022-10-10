@@ -248,8 +248,9 @@ export class KyberDmm
         this.logger,
       );
       pair.pools[poolAddress] = pool;
-      if (blockNumber) pool.setState(poolData, blockNumber);
-      pool.initialize(blockNumber);
+      pool.initialize(blockNumber, {
+        state: poolData,
+      });
     }
   }
 

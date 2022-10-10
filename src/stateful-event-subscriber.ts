@@ -12,6 +12,11 @@ type StateCache<State> = {
   state: DeepReadonly<State>;
 };
 
+type InitializeStateOptions<State> = {
+  state?: DeepReadonly<State>;
+  cb?: (state: DeepReadonly<State>) => void;
+};
+
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
 {
@@ -53,54 +58,59 @@ export abstract class StatefulEventSubscriber<State>
 
   async initialize(
     blockNumber: number,
-    cb?: (state: DeepReadonly<State>) => void,
+    options?: InitializeStateOptions<State>,
   ) {
-    if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
-      let stateAsString = await this.dexHelper.cache.hget(
-        this.mapKey,
-        this.name,
-      );
-
-      // if there is a state in cache
-      if (stateAsString) {
-        const state: StateCache<State> = Utils.Parse(stateAsString);
-
-        if (state.state === null) {
-          this.logger.warn(
-            `${this.parentName}: ${this.name}: found null state in cache generate new one`,
-          );
-          state.state = await this.generateState(blockNumber);
-        } else {
-          blockNumber = state.bn;
-          this.logger.debug(
-            `${this.parentName}: ${this.name}: found state from cache`,
-          );
-        }
-        // apply a callback on the state (usefull for initialization for slaves instance)
-        if (cb) {
-          cb(state.state);
-        }
-
-        // set state and the according blockNumber. state.bn can be smaller, greater or equal
-        // to blockNumber
-        this.setState(state.state, blockNumber);
-      } else {
-        // if no state found in cache generate new state using rpc
-        this.logger.debug(
-          `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
+    if (options && options.state) {
+      this.setState(options.state, blockNumber);
+    } else {
+      if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
+        let stateAsString = await this.dexHelper.cache.hget(
+          this.mapKey,
+          this.name,
         );
-        this.dexHelper.cache.publish('new_pools', this.cacheName);
+
+        // if there is a state in cache
+        if (stateAsString) {
+          const state: StateCache<State> = Utils.Parse(stateAsString);
+
+          if (state.state === null) {
+            this.logger.warn(
+              `${this.parentName}: ${this.name}: found null state in cache generate new one`,
+            );
+            state.state = await this.generateState(blockNumber);
+          } else {
+            blockNumber = state.bn;
+            this.logger.debug(
+              `${this.parentName}: ${this.name}: found state from cache`,
+            );
+          }
+          // apply a callback on the state (usefull for initialization for slaves instance)
+          if (options && options.cb) {
+            options.cb(state.state);
+          }
+
+          // set state and the according blockNumber. state.bn can be smaller, greater or equal
+          // to blockNumber
+          this.setState(state.state, blockNumber);
+        } else {
+          // if no state found in cache generate new state using rpc
+          this.logger.debug(
+            `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
+          );
+          this.dexHelper.cache.publish('new_pools', this.cacheName);
+          const state = await this.generateState(blockNumber);
+          this.setState(state, blockNumber);
+        }
+      } else {
+        // if you are not a slave instance always generate new state
+        this.logger.debug(
+          `${this.parentName}: ${this.name}: cache generating state`,
+        );
         const state = await this.generateState(blockNumber);
         this.setState(state, blockNumber);
       }
-    } else {
-      // if you are not a slave instance always generate new state
-      this.logger.debug(
-        `${this.parentName}: ${this.name}: cache generating state`,
-      );
-      const state = await this.generateState(blockNumber);
-      this.setState(state, blockNumber);
     }
+
     // always subscribeToLogs
     this.dexHelper.blockManager.subscribeToLogs(
       this,

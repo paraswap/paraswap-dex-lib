@@ -151,9 +151,12 @@ export class UniswapV3
       );
 
       try {
-        await pool.initialize(blockNumber, (state: DeepReadonly<PoolState>) => {
-          pool!.addressesSubscribed.push(state.pool);
-          pool!.poolAddress = state.pool;
+        await pool.initialize(blockNumber, {
+          cb: (state: DeepReadonly<PoolState>) => {
+            //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
+            pool!.addressesSubscribed.push(state.pool);
+            pool!.poolAddress = state.pool;
+          },
         });
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {

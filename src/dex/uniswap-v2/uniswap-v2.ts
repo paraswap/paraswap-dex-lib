@@ -275,10 +275,9 @@ export class UniswapV2
       this.decoderIface,
     );
 
-    if (blockNumber) {
-      pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
-      pair.pool.initialize(blockNumber);
-    }
+    pair.pool.initialize(blockNumber, {
+      state: { reserves0, reserves1, feeCode },
+    });
   }
 
   async getBuyPrice(

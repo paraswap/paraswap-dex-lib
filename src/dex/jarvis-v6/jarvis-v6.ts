@@ -105,8 +105,9 @@ export class JarvisV6
 
     this.poolConfigs.forEach((pool, index) => {
       const eventPool = this.eventPools[pool.address.toLowerCase()];
-      eventPool.setState(poolStates[index], blockNumber);
-      eventPool.initialize(blockNumber);
+      eventPool.initialize(blockNumber, {
+        state: poolStates[index],
+      });
     });
   }
 
