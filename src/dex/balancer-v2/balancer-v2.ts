@@ -44,7 +44,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "ComposableStable"]}) {
     id
     address
     poolType
@@ -78,6 +78,7 @@ enum BalancerPoolTypes {
   AaveLinear = 'AaveLinear',
   StablePhantom = 'StablePhantom',
   ERC4626Linear = 'ERC4626Linear',
+  ComposableStable = 'ComposableStable',
 }
 
 const BALANCER_V2_CHUNKS = 10;
@@ -141,6 +142,17 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.vaultAddress,
       this.vaultInterface,
     );
+    /*
+    ComposableStable has same maths as StablePhantom.
+    The main difference is that ComposableStables have join/exit functions when StablePhantom did not.
+    The difference of note for swaps is ComposableStable must use 'actualSupply' instead of VirtualSupply.
+    VirtualSupply could be calculated easily whereas actualSupply cannot hence the use of onchain call.
+    */
+    const composableStable = new PhantomStablePool(
+      this.vaultAddress,
+      this.vaultInterface,
+      true,
+    );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
@@ -153,6 +165,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // ERC4626Linear has the same maths and ABI as AaveLinear (has different factory)
     this.pools[BalancerPoolTypes.ERC4626Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
+    this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 

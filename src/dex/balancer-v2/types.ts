@@ -18,6 +18,7 @@ export type PoolState = {
   bptIndex?: number;
   lowerTarget?: bigint;
   upperTarget?: bigint;
+  actualSupply?: bigint;
 };
 
 export type SubgraphToken = {
