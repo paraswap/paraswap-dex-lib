@@ -70,8 +70,8 @@ export abstract class StatefulEventSubscriber<State>
             `${this.parentName}: ${this.name}: found null state in cache generate new one`,
           );
           state.state = await this.generateState(blockNumber);
-          state.bn = blockNumber;
         } else {
+          blockNumber = state.bn;
           this.logger.debug(
             `${this.parentName}: ${this.name}: found state from cache`,
           );
@@ -83,7 +83,7 @@ export abstract class StatefulEventSubscriber<State>
 
         // set state and the according blockNumber. state.bn can be smaller, greater or equal
         // to blockNumber
-        this.setState(state.state, state.bn);
+        this.setState(state.state, blockNumber);
       } else {
         // if no state found in cache generate new state using rpc
         this.logger.debug(
