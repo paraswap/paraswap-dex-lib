@@ -14,7 +14,7 @@ type StateCache<State> = {
 
 type InitializeStateOptions<State> = {
   state?: DeepReadonly<State>;
-  cb?: (state: DeepReadonly<State>) => void;
+  initCallback?: (state: DeepReadonly<State>) => void;
 };
 
 export abstract class StatefulEventSubscriber<State>
@@ -79,14 +79,10 @@ export abstract class StatefulEventSubscriber<State>
             );
             state.state = await this.generateState(blockNumber);
           } else {
-            blockNumber = state.bn;
             this.logger.debug(
               `${this.parentName}: ${this.name}: found state from cache`,
             );
-          }
-          // apply a callback on the state (usefull for initialization for slaves instance)
-          if (options && options.cb) {
-            options.cb(state.state);
+            blockNumber = state.bn;
           }
 
           // set state and the according blockNumber. state.bn can be smaller, greater or equal
@@ -108,6 +104,13 @@ export abstract class StatefulEventSubscriber<State>
         );
         const state = await this.generateState(blockNumber);
         this.setState(state, blockNumber);
+      }
+    }
+
+    // apply a callback on the state
+    if (options && options.initCallback) {
+      if (this.state) {
+        options.initCallback(this.state);
       }
     }
 

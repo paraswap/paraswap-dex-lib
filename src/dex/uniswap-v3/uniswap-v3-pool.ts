@@ -160,11 +160,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this._reduceTickBitmap(tickBitmap, _state.tickBitmap);
     this._reduceTicks(ticks, _state.ticks);
 
-    // Not really a good place to do it, but in order to save RPC requests,
-    // put it here
-    this.poolAddress = _state.pool.toLowerCase();
-    this.addressesSubscribed[0] = this.poolAddress;
-
     const observations = {
       [_state.slot0.observationIndex]: {
         blockTimestamp: bigIntify(_state.observation.blockTimestamp),
