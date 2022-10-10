@@ -248,7 +248,6 @@ export abstract class StatefulEventSubscriber<State>
           delete this.stateHistory[bn];
         } else {
           lastBn = bnAsNumber;
-          break;
         }
       }
 
