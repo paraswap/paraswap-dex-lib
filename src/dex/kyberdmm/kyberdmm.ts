@@ -228,7 +228,7 @@ export class KyberDmm
     );
   }
 
-  private addPool(
+  private async addPool(
     pair: KyberDmmPair,
     poolAddress: string,
     poolData: KyberDmmPoolState,
@@ -248,7 +248,7 @@ export class KyberDmm
         this.logger,
       );
       pair.pools[poolAddress] = pool;
-      pool.initialize(blockNumber, {
+      await pool.initialize(blockNumber, {
         state: poolData,
       });
     }
@@ -491,11 +491,13 @@ export class KyberDmm
       pair.exchanges = pair.exchanges.filter(pool => poolsState[pool]);
     }
 
-    Object.entries(poolsState).forEach(([poolAddress, state]) => {
-      if (!pair.pools[poolAddress]) {
-        this.addPool(pair, poolAddress, state, blockNumber);
-      } else pair.pools[poolAddress].setState(state, blockNumber);
-    });
+    await Promise.all(
+      Object.entries(poolsState).map(async ([poolAddress, state]) => {
+        if (!pair.pools[poolAddress]) {
+          await this.addPool(pair, poolAddress, state, blockNumber);
+        } else pair.pools[poolAddress].setState(state, blockNumber);
+      }),
+    );
   }
 
   private async getPairOrderedParams(

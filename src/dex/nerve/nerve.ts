@@ -84,7 +84,7 @@ export class Nerve
 
       // Generate first state for the blockNumber and subscribe to logs
       const newPoolState = await newPool.generateState(blockNumber);
-      newPool.initialize(blockNumber, {
+      await newPool.initialize(blockNumber, {
         state: newPoolState,
       });
     } else {

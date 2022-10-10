@@ -406,7 +406,7 @@ export class BalancerV2
 
   async setupEventPools(blockNumber: number) {
     const poolState = await this.eventPools.generateState(blockNumber);
-    this.eventPools.initialize(blockNumber, {
+    await this.eventPools.initialize(blockNumber, {
       state: poolState,
     });
   }

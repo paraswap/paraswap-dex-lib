@@ -103,12 +103,14 @@ export class JarvisV6
       },
     );
 
-    this.poolConfigs.forEach((pool, index) => {
-      const eventPool = this.eventPools[pool.address.toLowerCase()];
-      eventPool.initialize(blockNumber, {
-        state: poolStates[index],
-      });
-    });
+    await Promise.all(
+      this.poolConfigs.map(async (pool, index) => {
+        const eventPool = this.eventPools[pool.address.toLowerCase()];
+        await eventPool.initialize(blockNumber, {
+          state: poolStates[index],
+        });
+      }),
+    );
   }
 
   // Returns the list of contract adapters (name and index)

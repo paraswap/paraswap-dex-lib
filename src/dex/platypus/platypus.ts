@@ -296,7 +296,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       }
       await (async <P>(p: P extends PlatypusPoolBase<infer S> ? P : never) => {
         const state = await p.generateState(blockNumber);
-        p.initialize(blockNumber, {
+        await p.initialize(blockNumber, {
           state,
         });
       })(pool);

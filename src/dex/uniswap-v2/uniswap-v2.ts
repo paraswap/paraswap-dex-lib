@@ -275,7 +275,7 @@ export class UniswapV2
       this.decoderIface,
     );
 
-    pair.pool.initialize(blockNumber, {
+    await pair.pool.initialize(blockNumber, {
       state: { reserves0, reserves1, feeCode },
     });
   }
