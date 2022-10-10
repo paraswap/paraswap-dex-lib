@@ -221,10 +221,14 @@ export abstract class StatefulEventSubscriber<State>
       this.state === null &&
       blockNumberForMissingStateRegen
     ) {
-      async () => {
+      const createNewState = async () => {
+        this.logger.debug(
+          `${this.parentName}: ${this.name}: master generate new state because state is null`,
+        );
         const state = await this.generateState(blockNumberForMissingStateRegen);
         this._setState(state, blockNumberForMissingStateRegen);
       };
+      createNewState();
     }
   }
 
