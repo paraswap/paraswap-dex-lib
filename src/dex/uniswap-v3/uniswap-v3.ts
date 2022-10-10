@@ -1,4 +1,4 @@
-import { Interface } from '@ethersproject/abi';
+import { defaultAbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { pack } from '@ethersproject/solidity';
 import {
@@ -14,7 +14,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -29,6 +29,8 @@ import { SimpleExchange } from '../simple-exchange';
 import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
+import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
+import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_FUNCTION_CALL_GAS_COST,
@@ -37,12 +39,16 @@ import {
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
   fee: string;
 };
+
+const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
   extends SimpleExchange
@@ -58,18 +64,24 @@ export class UniswapV3
 
   logger: Logger;
 
+  private uniswapMulti: Contract;
+
   constructor(
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI),
+    readonly quoterIface = new Interface(UniswapV3QuoterABI),
     protected config = UniswapV3Config[dexKey][network],
     protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-
+    this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
+      UniswapV3MultiABI as AbiItem[],
+      this.config.uniswapMulticall,
+    );
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
@@ -218,6 +230,110 @@ export class UniswapV3
     );
   }
 
+  async getStateFromRpc(
+    from: Token,
+    to: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    pools: UniswapV3EventPool[],
+  ): Promise<ExchangePrices<UniswapV3Data> | null> {
+    if (pools.length === 0) {
+      return null;
+    }
+    pools.forEach(pool => {
+      this.logger.warn(
+        `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
+      );
+    });
+
+    const unitVolume = getBigIntPow(
+      (side === SwapSide.SELL ? from : to).decimals,
+    );
+
+    const chunks = amounts.length - 1;
+
+    const _width = Math.floor(chunks / this.config.chuncksCount);
+
+    const _amounts = [unitVolume].concat(
+      Array.from(Array(this.config.chuncksCount).keys()).map(
+        i => amounts[(i + 1) * _width],
+      ),
+    );
+
+    const calldata = pools.map(pool =>
+      _amounts.map(_amount => ({
+        target: this.config.quoter,
+        gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
+        callData:
+          side === SwapSide.SELL
+            ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
+                from.address,
+                to.address,
+                pool.feeCodeAsString,
+                _amount.toString(),
+                0, //sqrtPriceLimitX96
+              ])
+            : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
+                from.address,
+                to.address,
+                pool.feeCodeAsString,
+                _amount.toString(),
+                0, //sqrtPriceLimitX96
+              ]),
+      })),
+    );
+
+    const data = await this.uniswapMulti.methods
+      .multicall(calldata.flat())
+      .call();
+
+    const decode = (j: number): bigint => {
+      if (!data.returnData[j].success) return 0n;
+      const decoded = defaultAbiCoder.decode(
+        ['uint256'],
+        data.returnData[j].returnData,
+      );
+      return BigInt(decoded[0].toString());
+    };
+
+    let i = 0;
+    const result = pools.map(pool => {
+      const _rates = _amounts.map(() => decode(i++));
+      const unit: bigint = _rates[0];
+
+      const prices = interpolate(
+        _amounts.slice(1),
+        _rates.slice(1),
+        amounts,
+        side,
+      );
+
+      return {
+        prices,
+        unit,
+        data: {
+          path: [
+            {
+              tokenIn: from.address,
+              tokenOut: to.address,
+              fee: pool.feeCodeAsString,
+            },
+          ],
+        },
+        poolIdentifier: this.getPoolIdentifier(
+          pool.token0,
+          pool.token1,
+          pool.feeCode,
+        ),
+        exchange: this.dexKey,
+        gasCost: UNISWAPV3_QUOTE_GASLIMIT,
+        poolAddresses: [pool.poolAddress],
+      };
+    });
+
+    return result;
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -287,19 +403,36 @@ export class UniswapV3
 
       if (selectedPools.length === 0) return null;
 
-      const statesPromises = selectedPools.map(async pool => {
-        let state = pool.getState(blockNumber);
-        if (state === null) {
-          this.logger.trace(
-            `${this.dexKey}: State === null. Generating new one`,
-          );
-          state = await pool.generateState(blockNumber);
-          pool.setState(state, blockNumber);
-        }
-        return state!;
-      });
+      const poolsToUse = selectedPools.reduce(
+        (acc, pool) => {
+          let state = pool.getState(blockNumber);
+          if (state === null) {
+            this.logger.trace(
+              `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
+            );
+            acc.poolWithoutState.push(pool);
+          } else {
+            acc.poolWithState.push(pool);
+          }
+          return acc;
+        },
+        {
+          poolWithState: [] as UniswapV3EventPool[],
+          poolWithoutState: [] as UniswapV3EventPool[],
+        },
+      );
 
-      const states = (await Promise.all(statesPromises)).filter(state => state);
+      const rpcResultsPromise = this.getStateFromRpc(
+        _srcToken,
+        _destToken,
+        amounts,
+        side,
+        poolsToUse.poolWithoutState,
+      );
+
+      const states = poolsToUse.poolWithState.map(
+        p => p.getState(blockNumber)!,
+      );
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
@@ -311,7 +444,7 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result = selectedPools.map((pool, i) => {
+      const result = poolsToUse.poolWithState.map((pool, i) => {
         const state = states[i];
 
         const unitResult = this._getOutputs(
@@ -368,9 +501,21 @@ export class UniswapV3
           poolAddresses: [pool.poolAddress],
         };
       });
-      return result.filter(
+      const rpcResults = await rpcResultsPromise;
+
+      const notNullResult = result.filter(
         res => res !== null,
       ) as ExchangePrices<UniswapV3Data>;
+
+      if (rpcResults) {
+        rpcResults.forEach(r => {
+          if (r) {
+            notNullResult.push(r);
+          }
+        });
+      }
+
+      return notNullResult;
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -587,9 +732,12 @@ export class UniswapV3
     // If new config property will be added, the TS will throw compile error
     const newConfig: DexParams = {
       router: this.config.router.toLowerCase(),
+      quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
       supportedFees: this.config.supportedFees,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
+      chuncksCount: this.config.chuncksCount,
+      uniswapMulticall: this.config.uniswapMulticall,
     };
     return newConfig;
   }
