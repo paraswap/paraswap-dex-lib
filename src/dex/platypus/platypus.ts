@@ -294,12 +294,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       } else {
         throw new Error(`${this.dexKey} cfgInfo invalid pool type`);
       }
-      await (async <P>(p: P extends PlatypusPoolBase<infer S> ? P : never) => {
-        const state = await p.generateState(blockNumber);
-        await p.initialize(blockNumber, {
-          state,
-        });
-      })(pool);
+      await pool.initialize(blockNumber);
       eventPools[poolAddress] = pool;
     }
     this.eventPools = eventPools;

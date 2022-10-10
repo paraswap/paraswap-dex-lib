@@ -83,10 +83,7 @@ export class Nerve
       this.eventPools[poolIdentifier] = newPool;
 
       // Generate first state for the blockNumber and subscribe to logs
-      const newPoolState = await newPool.generateState(blockNumber);
-      await newPool.initialize(blockNumber, {
-        state: newPoolState,
-      });
+      await newPool.initialize(blockNumber);
     } else {
       this.logger.warn(
         `We don't support metapools for Nerve. Check config: ${poolConfig.name}`,

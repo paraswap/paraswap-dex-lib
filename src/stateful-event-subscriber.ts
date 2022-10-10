@@ -56,6 +56,22 @@ export abstract class StatefulEventSubscriber<State>
     return this.stateBlockNumber;
   }
 
+  //Function which set the initiale state and bounded it to blockNumber
+  //There is multiple possible case:
+  // 1. You provide a state in options object the function will initialize with the provided state
+  //  with blockNumber and subscribe to logs.
+  // 2. if you are a master instance of dex-lib and no state is provided in options object
+  //  then the function generate a new state with blockNumber as height and set the state with
+  //  the result.
+  // 3. if you are a slave instance of dex-lib
+  //  either:
+  //    - If a state is found in the cache and the state is not null we set our state with the
+  //      cache state and cache blockNumber. Subscribe to logs with the cache blockNumber
+  //  or:
+  //    - If no valid state found in cache, we generate a new state with blockNumber
+  //      and se state with blockNumber. Subscribe to logs with blockNumber. The function
+  //      will also publish a message to cache to tell one master version of dex-lib that this slave
+  //      instance subscribed to a pool from dex this.parentName and name this.name.
   async initialize(
     blockNumber: number,
     options?: InitializeStateOptions<State>,
