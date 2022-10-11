@@ -703,7 +703,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       // then for the good pools we set the boolean to be true for used pools
       // and for each pool we take the address.
       const goodPoolConfigs = this.getPoolConfigs(_from, _to).filter(p => {
-        let keepPool = true;
         if (!limitPools) {
           return true;
         }
