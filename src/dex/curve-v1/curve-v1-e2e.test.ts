@@ -72,6 +72,46 @@ describe('CurveV1 E2E', () => {
         provider,
       );
     });
+    describe('FeeOnTransfer', () => {
+      describe('sell', () => {
+        const contractMethod = ContractMethod.megaSwap;
+        describe('megaSwap', () => {
+          it('stETH -> ETH', async () => {
+            await testE2E(
+              tokens['STETH'],
+              tokens['ETH'],
+              holders['STETH'],
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 1, destFee: 0, srcDexFee: 1, destDexFee: 0 },
+            );
+          });
+
+          it('ETH -> stETH', async () => {
+            await testE2E(
+              tokens['ETH'],
+              tokens['STETH'],
+              holders['ETH'],
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 1, srcDexFee: 0, destDexFee: 1 },
+            );
+          });
+        });
+      });
+    });
   });
 });
 
