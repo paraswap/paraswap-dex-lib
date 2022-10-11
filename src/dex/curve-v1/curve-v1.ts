@@ -698,13 +698,11 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       if (side === SwapSide.BUY) {
         return null;
       }
-      const from = this.dexHelper.config.wrapETH(_from);
-      const to = this.dexHelper.config.wrapETH(_to);
 
       // We first filter out pools which were explicitly excluded and pools which are already used
       // then for the good pools we set the boolean to be true for used pools
       // and for each pool we take the address.
-      const goodPoolConfigs = this.getPoolConfigs(from, to).filter(p => {
+      const goodPoolConfigs = this.getPoolConfigs(_from, _to).filter(p => {
         if (!limitPools) {
           return true;
         }
@@ -715,7 +713,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       const goodPoolAddress = goodPoolConfigs.map(p => p.address);
       const indexesByAddress = goodPoolConfigs.reduce(
         (acc: { [address: string]: [number, number, number] }, pc) => {
-          acc[pc.address] = this.getSwapIndexes(from, to, pc);
+          acc[pc.address] = this.getSwapIndexes(_from, _to, pc);
           return acc;
         },
         {},
@@ -733,10 +731,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       const eventPoolIndexes = eventPools.map(ep => indexesByAddress[ep]);
       if (eventPools) {
         const pricesEvents = await this.getRatesEventPools(
-          from,
-          to,
+          _from,
+          _to,
           amounts.map(a => new BigNumber(a.toString())),
-          from.decimals,
+          _from.decimals,
           eventPools,
           eventPoolIndexes,
           blockNumber,
@@ -757,8 +755,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       // onChainPools are only supported for pools with linear price chunks
       if (onChainPools.length) {
         const pricesOnChain = await this.getRatesOnChain(
-          from,
-          to,
+          _from,
+          _to,
           amounts,
           onChainPools,
           onChainPoolIndexes,
@@ -779,7 +777,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
           const poolConfig =
             poolConfigsByAddress[_price.exchange.toLowerCase()];
-          const indexes = this.getSwapIndexes(from, to, poolConfig);
+          const indexes = this.getSwapIndexes(_from, _to, poolConfig);
           const [i, j, swapType] = indexes;
           acc.push({
             prices: [0n, ..._price.rates.slice(1)],
