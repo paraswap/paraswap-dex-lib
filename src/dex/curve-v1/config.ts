@@ -275,6 +275,23 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
           isFeeOnTransferSupported: true,
         },
+        stETH_WETH: {
+          underlying: [],
+          coins: [
+            // WETH
+            '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+            // stETH
+            '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+          ],
+          address: '0x828b154032950C8ff7CF8085D841723Db2696056',
+          name: 'stETH_WETH',
+          type: 2,
+          version: 3,
+          isLending: false,
+          isMetapool: false,
+          baseToken: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+          isFeeOnTransferSupported: true,
+        },
         EURS: {
           underlying: [],
           coins: [

@@ -148,6 +148,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         tokenAddress: poolConf.tokenAddress
           ? poolConf.tokenAddress.toLowerCase()
           : undefined,
+        isFeeOnTransferSupported: poolConf.isFeeOnTransferSupported,
       };
 
       return acc;
@@ -747,7 +748,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         getBigIntPow(_from.decimals),
         ...amounts.slice(1),
       ];
-      const amountsWithFee = _isTokenTransferFeeToBeExchanged
+      const amountsWithUnitAndFee = _isTokenTransferFeeToBeExchanged
         ? applyTransferFee(
             applyTransferFee(
               amountsWithUnit,
@@ -771,7 +772,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         const pricesEvents = await this.getRatesEventPools(
           _from,
           _to,
-          amounts.map(a => new BigNumber(a.toString())),
+          amountsWithUnitAndFee.map(a => new BigNumber(a.toString())),
           _from.decimals,
           eventPools,
           eventPoolIndexes,
@@ -795,7 +796,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         const pricesOnChain = await this.getRatesOnChain(
           _from,
           _to,
-          amounts,
+          amountsWithUnitAndFee,
           onChainPools,
           onChainPoolIndexes,
           blockNumber,
