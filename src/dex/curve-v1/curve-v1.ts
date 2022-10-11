@@ -11,8 +11,15 @@ import {
   PoolPrices,
   SimpleExchangeParam,
   Token,
+  TransferFeeParams,
 } from '../../types';
-import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
+import {
+  DEST_TOKEN_PARASWAP_TRANSFERS,
+  Network,
+  NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import StableSwapBBTC from '../../abi/curve/StableSwapBBTC.json';
 import FactoryRegistryABI from '../../abi/curve/FactoryRegistry.json';
@@ -48,6 +55,7 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   interpolate,
+  isTokenTransferFeeToBeExchanged,
   Utils,
 } from '../../utils';
 import { BN_0, getBigNumberPow } from '../../bignumber-constants';
@@ -70,6 +78,7 @@ import {
 } from './types';
 import { ETHER_ADDRESS } from 'paraswap';
 import { erc20Iface } from '../../lib/utils-interfaces';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -91,7 +100,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   private logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
-  readonly isFeeOnTransferSupported = false;
+  readonly isFeeOnTransferSupported = true;
 
   private decimalsCoinsAndUnderlying: Record<string, number> = {};
 
@@ -99,6 +108,9 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   protected eventSupportedPools: string[];
   protected factoryAddress: string | null;
   protected baseTokens: Record<string, TokenWithReasonableVolume>;
+
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1Config);
@@ -504,8 +516,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
     const _width = Math.floor(chunks / onChainChunks);
 
-    // Curve only supports sells
-    const unitVolume = getBigIntPow(fromToken.decimals);
+    const unitVolume = amounts[0];
+    amounts[0] = 0n;
 
     const _amounts = [unitVolume].concat(
       Array.from(Array(onChainChunks).keys()).map(
@@ -613,7 +625,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       rates[0] = pool.get_dy_underlying(
         fromIndex,
         toIndex,
-        getBigNumberPow(fromBigNumbers),
+        amounts[0],
         state as any,
       );
 
@@ -682,35 +694,42 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
-    // from: Token,
-    // to: Token,
-    // amounts: bigint[],
-    // side: SwapSide,
-    // routeID: number,
-    // usedPools: { [poolIdentifier: string]: number } | null,
-    // version: string,
-    // isAmountsLinear: boolean,
-    // excludedPools: string[],
-    // // Last two are useful for testing purposes
-    // useCache: boolean,
-    // useEvent: boolean,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<CurveV1Data> | null> {
     try {
-      if (side === SwapSide.BUY) {
+      const isSell = side === SwapSide.SELL;
+      if (!isSell) {
         return null;
       }
       const from = this.dexHelper.config.wrapETH(_from);
       const to = this.dexHelper.config.wrapETH(_to);
 
+      const _isTokenTransferFeeToBeExchanged =
+        isTokenTransferFeeToBeExchanged(transferFees);
+
       // We first filter out pools which were explicitly excluded and pools which are already used
       // then for the good pools we set the boolean to be true for used pools
       // and for each pool we take the address.
       const goodPoolConfigs = this.getPoolConfigs(from, to).filter(p => {
+        let keepPool = true;
         if (!limitPools) {
-          return true;
+          keepPool = true;
+        } else {
+          const id = this.getPoolIdentifier(p.name);
+          keepPool = limitPools!.includes(id);
         }
-        const id = this.getPoolIdentifier(p.name);
-        return limitPools!.includes(id);
+
+        if (_isTokenTransferFeeToBeExchanged) {
+          // Fee on transfers supported only when flag is specified
+          return keepPool && !!p.isFeeOnTransferSupported;
+        } else {
+          return keepPool;
+        }
       });
 
       const goodPoolAddress = goodPoolConfigs.map(p => p.address);
@@ -725,6 +744,24 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       if (goodPoolAddress.length === 0) {
         return null;
       }
+
+      const amountsWithUnit = [
+        getBigIntPow(from.decimals),
+        ...amounts.slice(1),
+      ];
+      const amountsWithFee = _isTokenTransferFeeToBeExchanged
+        ? applyTransferFee(
+            applyTransferFee(
+              amountsWithUnit,
+              side,
+              transferFees.srcFee,
+              SRC_TOKEN_PARASWAP_TRANSFERS,
+            ),
+            side,
+            transferFees.srcDexFee,
+            this.SRC_TOKEN_DEX_TRANSFERS,
+          )
+        : amountsWithUnit;
 
       let _prices = new Array();
 
@@ -782,6 +819,23 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             poolConfigsByAddress[_price.exchange.toLowerCase()];
           const indexes = this.getSwapIndexes(from, to, poolConfig);
           const [i, j, swapType] = indexes;
+
+          _price.rates = applyTransferFee(
+            applyTransferFee(
+              _price.rates,
+              side,
+              isSell ? transferFees.destFee : transferFees.srcFee,
+              isSell
+                ? DEST_TOKEN_PARASWAP_TRANSFERS
+                : SRC_TOKEN_PARASWAP_TRANSFERS,
+            ),
+            side,
+            isSell ? transferFees.destDexFee : transferFees.srcDexFee,
+            isSell
+              ? this.DEST_TOKEN_DEX_TRANSFERS
+              : this.SRC_TOKEN_DEX_TRANSFERS,
+          );
+
           acc.push({
             prices: [0n, ..._price.rates.slice(1)],
             unit: _price.rates[0],

@@ -273,6 +273,7 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isLending: false,
           isMetapool: false,
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+          isFeeOnTransferSupported: true,
         },
         EURS: {
           underlying: [],
