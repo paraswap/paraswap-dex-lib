@@ -146,86 +146,112 @@ describe('UniswapV2 E2E Polygon', () => {
     });
 
     describe('FeeOnTransfer', () => {
-      describe('Sell', () => {
-        it('megaSwap: WMATIC -> HANZO', async () => {
-          await testE2E(
-            tokens.WMATIC,
-            tokens.HANZO,
-            holders.WMATIC,
-            '1000000000000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.megaSwap,
-            network,
-            provider,
-          );
+      describe('sell', () => {
+        describe('megaSwap', () => {
+          it('WMATIC -> HANZO', async () => {
+            await testE2E(
+              tokens.WMATIC,
+              tokens.HANZO,
+              holders.WMATIC,
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 0, destDexFee: 500 },
+            );
+          });
+          it('HANZO -> WMATIC', async () => {
+            await testE2E(
+              tokens.HANZO,
+              tokens.WMATIC,
+              holders.HANZO,
+              '41234567000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
         });
-        it('swapOnUniswapV2Fork: WMATIC -> HANZO', async () => {
-          await testE2E(
-            tokens.WMATIC,
-            tokens.HANZO,
-            holders.WMATIC,
-            '1000000000000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.swapOnUniswapV2Fork,
-            network,
-            provider,
-          );
-        });
-        it('megaSwap: HANZO -> WMATIC', async () => {
-          await testE2E(
-            tokens.HANZO,
-            tokens.WMATIC,
-            holders.HANZO,
-            '41234567000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.megaSwap,
-            network,
-            provider,
-          );
-        });
-        it('swapOnUniswapV2Fork: HANZO -> WMATIC', async () => {
-          await testE2E(
-            tokens.HANZO,
-            tokens.WMATIC,
-            holders.HANZO,
-            '41234567000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.swapOnUniswapV2Fork,
-            network,
-            provider,
-          );
+        describe('swapOnUniswapV2Fork', () => {
+          it('WMATIC -> HANZO', async () => {
+            await testE2E(
+              tokens.WMATIC,
+              tokens.HANZO,
+              holders.WMATIC,
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.swapOnUniswapV2Fork,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 0, destDexFee: 500 },
+            );
+          });
+          it('HANZO -> WMATIC', async () => {
+            await testE2E(
+              tokens.HANZO,
+              tokens.WMATIC,
+              holders.HANZO,
+              '41234567000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.swapOnUniswapV2Fork,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
         });
       });
-      describe('Buy', () => {
-        it('buy: HANZO -> WMATIC', async () => {
-          await testE2E(
-            tokens.HANZO,
-            tokens.WMATIC,
-            holders.HANZO,
-            '1000000000000000000',
-            SwapSide.BUY,
-            dexKey,
-            ContractMethod.buy,
-            network,
-            provider,
-          );
+      describe('buy', () => {
+        describe('buy', () => {
+          it('HANZO -> WMATIC', async () => {
+            await testE2E(
+              tokens.HANZO,
+              tokens.WMATIC,
+              holders.HANZO,
+              '1000000000000000000',
+              SwapSide.BUY,
+              dexKey,
+              ContractMethod.buy,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
         });
-        it('buyOnUniswapV2Fork: HANZO -> WMATIC', async () => {
-          await testE2E(
-            tokens.HANZO,
-            tokens.WMATIC,
-            holders.HANZO,
-            '1000000000000000000',
-            SwapSide.BUY,
-            dexKey,
-            ContractMethod.buyOnUniswapV2Fork,
-            network,
-            provider,
-          );
+        describe('buyOnUniswapV2Fork', () => {
+          it('HANZO -> WMATIC', async () => {
+            await testE2E(
+              tokens.HANZO,
+              tokens.WMATIC,
+              holders.HANZO,
+              '1000000000000000000',
+              SwapSide.BUY,
+              dexKey,
+              ContractMethod.buyOnUniswapV2Fork,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
         });
       });
     });

@@ -327,6 +327,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x37eb60f78e06c4bb2a5f836b0fc6bccbbaa995b3',
       decimals: 9,
     },
+    RVLT: {
+      address: '0xf0f9d895aca5c8678f706fb8216fa22957685a13',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -702,6 +706,7 @@ export const Holders: {
     aPolWMATIC: '0x7d96a6f41fd31c7624f7069415be58b5e3576d34',
     RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
+    RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
