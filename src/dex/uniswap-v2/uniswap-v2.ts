@@ -545,7 +545,7 @@ export class UniswapV2
         from,
         to,
         blockNumber,
-        isSell ? transferFees.srcDexFee : 0,
+        transferFees.srcDexFee,
       );
 
       if (!pairParam) return null;
@@ -555,9 +555,8 @@ export class UniswapV2
       const [unitWithFee, ...amountsWithFee] = applyTransferFee(
         [unitAmount, ...amounts],
         side,
-        // We don't support fee on transfer on destToken, so use 0
-        isSell ? transferFees.srcFee : 0,
-        isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : 0,
+        transferFees.srcFee,
+        SRC_TOKEN_PARASWAP_TRANSFERS,
       );
 
       const unit = isSell
