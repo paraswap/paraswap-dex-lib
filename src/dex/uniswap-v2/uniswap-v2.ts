@@ -576,15 +576,10 @@ export class UniswapV2
           );
 
       const outputsWithFee = applyTransferFee(
-        applyTransferFee(
-          prices,
-          side,
-          isSell ? transferFees.destFee : transferFees.srcFee,
-          isSell ? DEST_TOKEN_PARASWAP_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
-        ),
+        prices,
         side,
-        isSell ? transferFees.destDexFee : transferFees.srcDexFee,
-        isSell ? this.DEST_TOKEN_DEX_TRANSFERS : this.SRC_TOKEN_DEX_TRANSFERS,
+        isSell ? transferFees.destDexFee : 0,
+        isSell ? this.DEST_TOKEN_DEX_TRANSFERS : 0,
       );
       // As uniswapv2 just has one pool per token pair
       return [
