@@ -197,7 +197,7 @@ export class UniswapV2
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
-  readonly isFeeOnTransferSupported = true;
+  readonly isFeeOnTransferSupported: boolean = true;
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
