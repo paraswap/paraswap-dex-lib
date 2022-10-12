@@ -37,10 +37,14 @@ export enum LIMIT_ORDER_PROVIDERS {
   PARASWAP = 'ParaSwapLimitOrderProvider',
 }
 
-// 1 transfer User -> Augustus
+// transfer User -> Augustus
 export const SRC_TOKEN_PARASWAP_TRANSFERS = 1;
+// Transfer Augustus -> Dex
+export const SRC_TOKEN_DEX_TRANSFERS = 1;
 
-// 2 transfer Augustus -> User
+// transfer Augustus -> User
 export const DEST_TOKEN_PARASWAP_TRANSFERS = 1;
+// transfer Dex -> Augustus
+export const DEST_TOKEN_DEX_TRANSFERS = 1;
 
 export const BPS_MAX_VALUE = 10000n;

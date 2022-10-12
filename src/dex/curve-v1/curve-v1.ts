@@ -14,7 +14,6 @@ import {
   TransferFeeParams,
 } from '../../types';
 import {
-  DEST_TOKEN_PARASWAP_TRANSFERS,
   Network,
   NULL_ADDRESS,
   SRC_TOKEN_PARASWAP_TRANSFERS,
@@ -86,8 +85,6 @@ const CURVE_LENDING_POOl_GAS = 340 * 1000;
 const CURVE_POOL_GAS = 200 * 1000;
 
 const coder = new AbiCoder();
-
-const SETUP_RETRY_TIMEOUT = 5 * 1000;
 
 export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   exchangeRouterInterface: Interface;
@@ -818,14 +815,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           const [i, j, swapType] = indexes;
 
           _price.rates = applyTransferFee(
-            applyTransferFee(
-              _price.rates,
-              side,
-              isSell ? transferFees.destFee : transferFees.srcFee,
-              isSell
-                ? DEST_TOKEN_PARASWAP_TRANSFERS
-                : SRC_TOKEN_PARASWAP_TRANSFERS,
-            ),
+            _price.rates,
             side,
             isSell ? transferFees.destDexFee : transferFees.srcDexFee,
             isSell
