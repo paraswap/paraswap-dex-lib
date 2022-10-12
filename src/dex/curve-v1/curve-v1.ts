@@ -55,7 +55,7 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   interpolate,
-  isTokenTransferFeeToBeExchanged,
+  isSrcTokenTransferFeeToBeExchanged,
   Utils,
 } from '../../utils';
 import { BN_0, getBigNumberPow } from '../../bignumber-constants';
@@ -708,27 +708,25 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         return null;
       }
 
-      const _isTokenTransferFeeToBeExchanged =
-        isTokenTransferFeeToBeExchanged(transferFees);
+      const _isSrcTokenTransferFeeToBeExchanged =
+        isSrcTokenTransferFeeToBeExchanged(transferFees);
 
       // We first filter out pools which were explicitly excluded and pools which are already used
       // then for the good pools we set the boolean to be true for used pools
       // and for each pool we take the address.
       const goodPoolConfigs = this.getPoolConfigs(_from, _to).filter(p => {
-        let keepPool = true;
-        if (!limitPools) {
-          keepPool = true;
-        } else {
+        if (limitPools !== undefined) {
           const id = this.getPoolIdentifier(p.name);
-          keepPool = limitPools!.includes(id);
+          if (!limitPools.includes(id)) {
+            return false;
+          }
         }
 
-        if (_isTokenTransferFeeToBeExchanged) {
+        if (_isSrcTokenTransferFeeToBeExchanged) {
           // Fee on transfers supported only when flag is specified
-          return keepPool && !!p.isFeeOnTransferSupported;
-        } else {
-          return keepPool;
+          return !!p.isFeeOnTransferSupported;
         }
+        return true;
       });
 
       const goodPoolAddress = goodPoolConfigs.map(p => p.address);
@@ -748,7 +746,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         getBigIntPow(_from.decimals),
         ...amounts.slice(1),
       ];
-      const amountsWithUnitAndFee = _isTokenTransferFeeToBeExchanged
+      const amountsWithUnitAndFee = _isSrcTokenTransferFeeToBeExchanged
         ? applyTransferFee(
             applyTransferFee(
               amountsWithUnit,
