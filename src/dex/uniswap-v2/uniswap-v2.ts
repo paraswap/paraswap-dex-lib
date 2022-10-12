@@ -555,8 +555,8 @@ export class UniswapV2
       const [unitWithFee, ...amountsWithFee] = applyTransferFee(
         [unitAmount, ...amounts],
         side,
-        transferFees.srcFee,
-        SRC_TOKEN_PARASWAP_TRANSFERS,
+        isSell ? transferFees.srcFee : transferFees.destFee,
+        isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
       );
 
       const unit = isSell
