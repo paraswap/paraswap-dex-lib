@@ -695,8 +695,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     },
   ): Promise<ExchangePrices<CurveV1Data> | null> {
     try {
-      const isSell = side === SwapSide.SELL;
-      if (!isSell) {
+      if (side === SwapSide.BUY) {
         return null;
       }
 
@@ -812,10 +811,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           _price.rates = applyTransferFee(
             _price.rates,
             side,
-            isSell ? transferFees.destDexFee : transferFees.srcDexFee,
-            isSell
-              ? this.DEST_TOKEN_DEX_TRANSFERS
-              : this.SRC_TOKEN_DEX_TRANSFERS,
+            transferFees.destDexFee,
+            this.DEST_TOKEN_DEX_TRANSFERS,
           );
 
           acc.push({
