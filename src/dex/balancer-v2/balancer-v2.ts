@@ -44,7 +44,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "ComposableStable"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {totalShares_not_in: ["0", "0.000000000001"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "ComposableStable"]}) {
     id
     address
     poolType
