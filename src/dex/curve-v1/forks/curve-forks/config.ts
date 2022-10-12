@@ -142,6 +142,26 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
           useLending: [false, false, false],
           baseToken: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
         },
+        BUSD_axlUSD: {
+          underlying: [],
+          coins: [
+            // axlUSD
+            '0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3',
+            // BUSD
+            '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+          ],
+          address: '0x6731D8ce7C52FEc9136cf3b7d122C032C46fF58f',
+          name: 'BUSD_axlUSD',
+          type: 1,
+          version: 3,
+          isLending: false,
+          precisionMul: ['1000000000000', '1'],
+          tokenAddress: '0x7076402a3c267270fD0A45861A3ab66883f472c3',
+          trackCoins: true,
+          isMetapool: false,
+          useLending: [false, false],
+          baseToken: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+        },
       },
     },
   },
