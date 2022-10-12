@@ -638,12 +638,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             );
       }
     } else {
-      rates[0] = pool.get_dy(
-        fromIndex,
-        toIndex,
-        getBigNumberPow(fromBigNumbers),
-        state as any,
-      );
+      rates[0] = pool.get_dy(fromIndex, toIndex, amounts[0], state as any);
 
       for (let i = 1; i < amounts.length; i++) {
         rates[i] = this.noMorePrice(rates, i)
