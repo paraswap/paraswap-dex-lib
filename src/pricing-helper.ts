@@ -144,7 +144,7 @@ export class PricingHelper {
     );
   }
 
-  getPoolsSupportingFeeOnTransfer(): string[] {
+  getDexsSupportingFeeOnTransfer(): string[] {
     const allDexKeys = this.dexAdapterService.getAllDexKeys();
     return allDexKeys
       .map(dexKey => {

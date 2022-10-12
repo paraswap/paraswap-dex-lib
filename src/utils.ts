@@ -211,13 +211,11 @@ export const catchParseLogError = (e: any, logger: Logger) => {
   }
 };
 
-export const isTokenTransferFeeToBeExchanged = (
+export const isSrcTokenTransferFeeToBeExchanged = (
   transferFees: TransferFeeParams,
 ) => {
   return !!(
     transferFees.srcFee ||
-    transferFees.destFee ||
-    transferFees.srcDexFee ||
-    transferFees.destDexFee
+    transferFees.srcDexFee
   );
 };
