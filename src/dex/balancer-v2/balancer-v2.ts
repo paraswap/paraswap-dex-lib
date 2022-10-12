@@ -513,15 +513,22 @@ export class BalancerV2
 
   getPoolsWithTokenPair(from: Token, to: Token): SubgraphPoolBase[] {
     return this.eventPools.allPools
-      .filter(
-        p =>
-          p.mainTokens.some(
-            token => token.address.toLowerCase() === from.address.toLowerCase(),
-          ) &&
-          p.mainTokens.some(
-            token => token.address.toLowerCase() === to.address.toLowerCase(),
-          ),
-      )
+      .filter(p => {
+        const fromMain = p.mainTokens.find(
+          token => token.address.toLowerCase() === from.address.toLowerCase(),
+        );
+        const toMain = p.mainTokens.find(
+          token => token.address.toLowerCase() === to.address.toLowerCase(),
+        );
+
+        return (
+          fromMain &&
+          toMain &&
+          // filter instances similar to the following:
+          // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
+          !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
+        );
+      })
       .slice(0, 10);
   }
 
