@@ -413,6 +413,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xA60205802E1B5C6EC1CAFA3cAcd49dFeECe05AC9',
       decimals: 18,
     },
+    axlUSD: {
+      address: '0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3',
+      decimals: 6,
+    },
   },
   [Network.AVALANCHE]: {
     USDCe: {
@@ -732,6 +736,7 @@ export const Holders: {
     bBTC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',
     nUSD: '0x28ec0b36f0819ecb5005cab836f4ed5a2eca4d13',
+    axlUSD: '0xc03fbeda9069b22a120ae6a09349a0b5eea5570a',
   },
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',

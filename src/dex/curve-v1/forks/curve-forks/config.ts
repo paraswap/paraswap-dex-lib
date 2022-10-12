@@ -142,7 +142,7 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
           useLending: [false, false, false],
           baseToken: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
         },
-        BUSD_axlUSD: {
+        axelarUSDC: {
           underlying: [],
           coins: [
             // axlUSD
@@ -151,7 +151,7 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
             '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
           ],
           address: '0x6731D8ce7C52FEc9136cf3b7d122C032C46fF58f',
-          name: 'BUSD_axlUSD',
+          name: 'axelarUSDC',
           type: 1,
           version: 3,
           isLending: false,
