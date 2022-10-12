@@ -578,9 +578,13 @@ export class UniswapV2
       const outputsWithFee = applyTransferFee(
         prices,
         side,
-        isSell ? transferFees.destDexFee : 0,
-        isSell ? this.DEST_TOKEN_DEX_TRANSFERS : 0,
+        // This part is confusing, because we treat differently SELL and BUY fees
+        // If Buy, we should apply transfer fee on srcToken on top of dexFee applied earlier
+        // But for Sell we should apply only one dexFee
+        isSell ? transferFees.destDexFee : transferFees.srcFee,
+        isSell ? this.DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
       );
+
       // As uniswapv2 just has one pool per token pair
       return [
         {
