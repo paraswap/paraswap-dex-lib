@@ -552,7 +552,7 @@ export class UniswapV2
 
       const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
-      const [unitWithFee, ...amountsWithFee] = applyTransferFee(
+      const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
         [unitAmount, ...amounts],
         side,
         isSell ? transferFees.srcFee : transferFees.destFee,
@@ -560,8 +560,8 @@ export class UniswapV2
       );
 
       const unit = isSell
-        ? await this.getSellPricePath(unitWithFee, [pairParam])
-        : await this.getBuyPricePath(unitWithFee, [pairParam]);
+        ? await this.getSellPricePath(unitVolumeWithFee, [pairParam])
+        : await this.getBuyPricePath(unitVolumeWithFee, [pairParam]);
 
       const prices = isSell
         ? await Promise.all(
@@ -575,8 +575,8 @@ export class UniswapV2
             ),
           );
 
-      const outputsWithFee = applyTransferFee(
-        prices,
+      const [unitOutWithFee, ...outputsWithFee] = applyTransferFee(
+        [unit, ...prices],
         side,
         // This part is confusing, because we treat differently SELL and BUY fees
         // If Buy, we should apply transfer fee on srcToken on top of dexFee applied earlier
@@ -589,7 +589,7 @@ export class UniswapV2
       return [
         {
           prices: outputsWithFee,
-          unit: unit,
+          unit: unitOutWithFee,
           data: {
             router: this.router,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
