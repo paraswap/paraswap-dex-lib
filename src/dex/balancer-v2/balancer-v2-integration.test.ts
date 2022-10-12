@@ -104,7 +104,9 @@ describe('BalancerV2', function () {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await balancerV2.getPricesVolume(
+      //daniel: pricing for BPT swaps has been removed for the time being
+      //focus on main tokens swaps
+      /*const poolPrices = await balancerV2.getPricesVolume(
         DAI,
         BBADAI,
         amounts,
@@ -115,7 +117,7 @@ describe('BalancerV2', function () {
       console.log('DAI <> BBADAI Pool Prices: ', poolPrices);
 
       expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);*/
 
       await balancerV2.releaseResources();
     });
@@ -158,6 +160,7 @@ describe('BalancerV2', function () {
             mainIndex: 1,
             wrappedIndex: 0,
             tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
+            mainTokens: [],
           },
         ],
         blocknumber,
@@ -255,6 +258,7 @@ describe('BalancerV2', function () {
               tokens.BBADAI,
               tokens.BBAUSDC,
             ],
+            mainTokens: [],
           },
         ],
         blocknumber,
