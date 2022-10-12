@@ -7,6 +7,7 @@ import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
 import { SwapSide } from '../../constants';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 import ComposableStablePoolABI from '../../abi/balancer-v2/ComposableStable.json';
+import { keyBy } from 'lodash';
 
 enum PairTypes {
   BptToToken,
@@ -312,6 +313,10 @@ export class PhantomStablePool extends BasePool {
       },
       {
         target: pool.address,
+        callData: this.poolInterface.encodeFunctionData('getRate'),
+      },
+      {
+        target: pool.address,
         callData: this.poolInterface.encodeFunctionData(
           'getAmplificationParameter',
         ),
@@ -368,6 +373,12 @@ export class PhantomStablePool extends BasePool {
       data[startIndex++],
       pool.address,
     )[0];
+    const rate = decodeThrowError(
+      this.poolInterface,
+      'getRate',
+      data[startIndex++],
+      pool.address,
+    )[0];
     const amp = decodeThrowError(
       this.poolInterface,
       'getAmplificationParameter',
@@ -375,22 +386,22 @@ export class PhantomStablePool extends BasePool {
       pool.address,
     );
 
+    const bptIndex = pool.tokens.findIndex(
+      t => t.address.toLowerCase() === pool.address.toLowerCase(),
+    );
+
+    const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
+      address: address.toLowerCase(),
+      balance: BigInt(poolTokens.balances[idx].toString()),
+      scalingFactor:
+        idx === bptIndex
+          ? BigInt(rate.toString())
+          : BigInt(scalingFactors[idx].toString()),
+    }));
+
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
-      tokens: poolTokens.tokens.reduce(
-        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
-          const tokenState: TokenState = {
-            balance: BigInt(poolTokens.balances[j].toString()),
-          };
-
-          if (scalingFactors)
-            tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
-
-          ptAcc[pt.toLowerCase()] = tokenState;
-          return ptAcc;
-        },
-        {},
-      ),
+      tokens: keyBy(tokens, 'address'),
     };
 
     if (amp) {
