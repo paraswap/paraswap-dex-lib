@@ -6,6 +6,7 @@ import { BasePool } from './balancer-v2-pool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { SwapSide } from '../../constants';
+import { keyBy } from 'lodash';
 
 export enum PairTypes {
   BptToMainToken,
@@ -345,6 +346,11 @@ export class LinearPool extends BasePool {
       target: pool.address,
       callData: this.poolInterface.encodeFunctionData('getScalingFactors'),
     });
+    //getScalingFactors does not include the rate for the phantom bpt, need to fetch it separately
+    poolCallData.push({
+      target: pool.address,
+      callData: this.poolInterface.encodeFunctionData('getRate'),
+    });
     // returns lowerTarget, upperTarget
     poolCallData.push({
       target: pool.address,
@@ -383,6 +389,12 @@ export class LinearPool extends BasePool {
       data[startIndex++],
       pool.address,
     )[0];
+    const rate = decodeThrowError(
+      this.poolInterface,
+      'getRate',
+      data[startIndex++],
+      pool.address,
+    )[0];
     const [lowerTarget, upperTarget] = decodeThrowError(
       this.poolInterface,
       'getTargets',
@@ -394,6 +406,15 @@ export class LinearPool extends BasePool {
       t => t.address.toLowerCase() === pool.address.toLowerCase(),
     );
 
+    const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
+      address: address.toLowerCase(),
+      balance: BigInt(poolTokens.balances[idx].toString()),
+      scalingFactor:
+        idx === bptIndex
+          ? BigInt(rate.toString())
+          : BigInt(scalingFactors[idx].toString()),
+    }));
+
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
       mainIndex: Number(pool.mainIndex),
@@ -401,20 +422,7 @@ export class LinearPool extends BasePool {
       bptIndex,
       lowerTarget: BigInt(lowerTarget.toString()),
       upperTarget: BigInt(upperTarget.toString()),
-      tokens: poolTokens.tokens.reduce(
-        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
-          const tokenState: TokenState = {
-            balance: BigInt(poolTokens.balances[j].toString()),
-          };
-
-          if (scalingFactors)
-            tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
-
-          ptAcc[pt.toLowerCase()] = tokenState;
-          return ptAcc;
-        },
-        {},
-      ),
+      tokens: keyBy(tokens, 'address'),
     };
 
     pools[pool.address] = poolState;
