@@ -4,7 +4,7 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
-import { NumberAsString } from 'paraswap-core';
+import { NumberAsString } from '@paraswap/core';
 import Web3 from 'web3';
 
 // We use dodo-v2 proxy as the new proxy supports both v1 and v2

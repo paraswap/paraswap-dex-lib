@@ -1,4 +1,5 @@
-export { SwapSide, ContractMethod } from 'paraswap-core';
+import { Address } from './types';
+export { SwapSide, ContractMethod } from '@paraswap/core';
 
 export const PORT_TEST_SERVER = 4444;
 

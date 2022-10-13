@@ -1,4 +1,4 @@
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Address } from '../../types';
 
 export type WethData = null;
