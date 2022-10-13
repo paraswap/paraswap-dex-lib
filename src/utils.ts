@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { SwapSide } from 'paraswap-core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
-import { DexConfigMap, Logger } from './types';
+import { DexConfigMap, Logger, TransferFeeParams } from './types';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -209,4 +209,13 @@ export const catchParseLogError = (e: any, logger: Logger) => {
       logger.error('Failed parse event', e);
     }
   }
+};
+
+export const isSrcTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(
+    transferFees.srcFee ||
+    transferFees.srcDexFee
+  );
 };

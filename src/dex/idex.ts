@@ -12,6 +12,7 @@ import {
   OptimalSwapExchange,
   ExchangeTxInfo,
   PreprocessTransactionOptions,
+  TransferFeeParams,
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
@@ -88,6 +89,9 @@ export interface IDexPricing<ExchangeData> {
   // constant price.
   readonly hasConstantPriceLargeAmounts: boolean;
 
+  // Specify if current Dex integration can handle fee on transfer tokens
+  readonly isFeeOnTransferSupported: boolean;
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
@@ -111,6 +115,9 @@ export interface IDexPricing<ExchangeData> {
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
+    // I don't like putting this as new params, but in order to not change interface
+    // across all integrations, done it like this
+    transferFees?: TransferFeeParams,
   ): Promise<ExchangePrices<ExchangeData> | null>;
 
   // Returns estimated gas cost for calldata for DEX when used in multiSwap.
@@ -132,7 +139,7 @@ export interface IDexPricing<ExchangeData> {
   releaseResources?(): AsyncOrSync<void>;
 
   // return true if the userAddress is is blacklisted from the exchange
-  // usefull for RFQ system
+  // useful for RFQ system
   isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
 }
 

@@ -72,6 +72,46 @@ describe('CurveV1 E2E', () => {
         provider,
       );
     });
+    describe('FeeOnTransfer', () => {
+      describe('sell', () => {
+        const contractMethod = ContractMethod.megaSwap;
+        describe('megaSwap', () => {
+          it('stETH -> ETH', async () => {
+            await testE2E(
+              tokens['STETH'],
+              tokens['ETH'],
+              holders['STETH'],
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 1, destFee: 0, srcDexFee: 1, destDexFee: 0 },
+            );
+          });
+
+          it('ETH -> stETH', async () => {
+            await testE2E(
+              tokens['ETH'],
+              tokens['STETH'],
+              holders['ETH'],
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 1, srcDexFee: 0, destDexFee: 1 },
+            );
+          });
+        });
+      });
+    });
   });
 });
 
@@ -174,57 +214,19 @@ describe('Ellipsis E2E', () => {
         });
       }),
     );
-  });
-});
-
-describe('Ellipsis E2E', () => {
-  const dexKey = 'Ellipsis';
-
-  describe('Ellipsis BSC', () => {
-    const network = Network.BSC;
-    const tokens = Tokens[network];
-    const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
-
-    const tokenASymbol: string = 'BUSD';
-    const tokenBSymbol: string = 'USDC';
-
-    const tokenAAmount: string = (1 * 10 ** 8).toString();
-    const tokenBAmount: string = (1 * 10 ** 8).toString();
-
-    const sideToContractMethods = new Map([
-      [
+    it('SELL BUSD -> axlUSD', async () => {
+      await testE2E(
+        tokens['BUSD'],
+        tokens['axlUSD'],
+        holders['BUSD'],
+        '1000000000000000000',
         SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-        ],
-      ],
-    ]);
-
-    sideToContractMethods.forEach((contractMethods, side) =>
-      contractMethods.forEach((contractMethod: ContractMethod) => {
-        describe(`${contractMethod}`, () => {
-          it('TOKEN -> TOKEN', async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[tokenBSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-        });
-      }),
-    );
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
   });
 });
 
