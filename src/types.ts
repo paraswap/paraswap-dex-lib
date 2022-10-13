@@ -1,5 +1,5 @@
 import { SwapSide } from './constants';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 import { BlockHeader } from 'web3-eth';
 export { BlockHeader } from 'web3-eth';
 export {
@@ -11,10 +11,10 @@ export {
   OptimalSwapExchange,
   OptionalRate,
   OptimalRate,
-} from 'paraswap-core';
+} from '@paraswap/core';
 import { Logger } from 'log4js';
 export { Logger } from 'log4js';
-import { OptimalRate } from 'paraswap-core';
+import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
 
 // Check: Should the logger be replaced with Logger Interface

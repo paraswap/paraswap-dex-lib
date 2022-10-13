@@ -33,7 +33,7 @@ import {
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { SimpleExchange } from '../simple-exchange';
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { IDexHelper } from '../../dex-helper';
 import {
   getDexKeysWithNetwork,

@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 import { ethers } from 'ethers';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 import { Network, NULL_ADDRESS } from '../src/constants';
 import { ParaSwapLimitOrdersConfig } from '../src/dex/paraswap-limit-orders/config';
 import { generateConfig } from '../src/config';

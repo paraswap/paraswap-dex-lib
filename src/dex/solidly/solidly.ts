@@ -15,7 +15,7 @@ import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import solidlyFactoryABI from '../../abi/solidly/SolidlyFactory.json';
 import solidlyPair from '../../abi/solidly/SolidlyPair.json';
 import _ from 'lodash';
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SolidlyStablePool } from './solidly-stable-pool';
 import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';
