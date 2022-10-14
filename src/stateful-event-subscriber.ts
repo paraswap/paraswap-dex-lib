@@ -56,7 +56,7 @@ export abstract class StatefulEventSubscriber<State>
     return this.stateBlockNumber;
   }
 
-  //Function which set the initiale state and bounded it to blockNumber
+  //Function which set the initial state and bounded it to blockNumber
   //There is multiple possible case:
   // 1. You provide a state in options object the function will initialize with the provided state
   //  with blockNumber and subscribe to logs.
@@ -257,8 +257,14 @@ export abstract class StatefulEventSubscriber<State>
         this.logger.debug(
           `${this.parentName}: ${this.name}: master generate new state because state is null`,
         );
-        const state = await this.generateState(blockNumberForMissingStateRegen);
-        this.setState(state, blockNumberForMissingStateRegen);
+        try {
+          const state = await this.generateState(
+            blockNumberForMissingStateRegen,
+          );
+          this.setState(state, blockNumberForMissingStateRegen);
+        } catch (e) {
+          this.logger.error(e);
+        }
       };
       createNewState();
     }

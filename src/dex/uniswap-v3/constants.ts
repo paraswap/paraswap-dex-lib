@@ -1,4 +1,3 @@
-export const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 export const UNISWAPV3_FUNCTION_CALL_GAS_COST = 21_000; // Ceiled
 export const UNISWAPV3_TICK_GAS_COST = 24_000; // Ceiled
 

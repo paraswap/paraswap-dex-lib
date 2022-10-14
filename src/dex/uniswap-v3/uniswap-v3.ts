@@ -233,7 +233,7 @@ export class UniswapV3
     );
   }
 
-  async getStateFromRpc(
+  async getPricingFromRpc(
     from: Token,
     to: Token,
     amounts: bigint[],
@@ -243,6 +243,7 @@ export class UniswapV3
     if (pools.length === 0) {
       return null;
     }
+    this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
     pools.forEach(pool => {
       this.logger.warn(
         `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
@@ -291,7 +292,10 @@ export class UniswapV3
       .call();
 
     const decode = (j: number): bigint => {
-      if (!data.returnData[j].success) return 0n;
+      if (!data.returnData[j].success) {
+        this.logger.warn('one of the call in multicall failed');
+        return 0n;
+      }
       const decoded = defaultAbiCoder.decode(
         ['uint256'],
         data.returnData[j].returnData,
@@ -357,7 +361,7 @@ export class UniswapV3
       if (_srcAddress === _destAddress) return null;
 
       let selectedPools: UniswapV3EventPool[] = [];
-      if (limitPools === undefined) {
+      if (!limitPools) {
         for (const fee of this.supportedFees) {
           let pool =
             this.eventPools[
@@ -425,7 +429,7 @@ export class UniswapV3
         },
       );
 
-      const rpcResultsPromise = this.getStateFromRpc(
+      const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
