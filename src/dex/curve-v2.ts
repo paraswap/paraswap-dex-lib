@@ -10,10 +10,14 @@ import {
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
-import type { CurveV1Data } from './curve-v1/types';
 import Web3 from 'web3';
 
-type CurveV2Data = Omit<CurveV1Data, 'deadline' | 'v3'>;
+type CurveV2Data = {
+  exchange: Address;
+  i: number;
+  j: number;
+  underlyingSwap: boolean;
+};
 
 type CurveV2Param = [
   i: NumberAsString,

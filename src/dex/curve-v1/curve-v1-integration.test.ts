@@ -8,136 +8,243 @@ import { BI_POWS } from '../../bigint-constants';
 import { CurveV1 } from './curve-v1';
 import {
   checkPoolPrices,
-  checkConstantPoolPrices,
   checkPoolsLiquidity,
+  checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { CurveV1Data } from './types';
-import _ from 'lodash';
 
-const network = Network.MAINNET;
-const TokenASymbol = 'USDT';
-const TokenA = Tokens[network][TokenASymbol];
+/*
+  README
+  ======
 
-const TokenBSymbol = 'DAI';
-const TokenB = Tokens[network][TokenBSymbol];
+  This test script adds tests for CurveV1 general integration
+  with the DEX interface. The test cases below are example tests.
+  It is recommended to add tests which cover CurveV1 specific
+  logic.
 
-const bigPowAmounts = _.range(1, 11).map(i => BI_POWS[8] * BigInt(i));
+  You can run this individual test script by running:
+  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
 
-const amounts = [0n, ...bigPowAmounts];
-
-const amountToUse = amounts.slice(1);
-
-const dexHelper = new DummyDexHelper(network);
-const dexKey = 'CurveV1';
+  (This comment should be removed from the final implementation)
+*/
 
 function getReaderCalldata(
+  exchangeAddress: string,
   readerIface: Interface,
-  data: CurveV1Data,
   amounts: bigint[],
+  funcName: string,
+  // TODO: Put here additional arguments you need
 ) {
-  return amountToUse.map(amount => ({
-    target: data.exchange,
-    callData: data.underlyingSwap
-      ? readerIface.encodeFunctionData('get_dy_underlying', [
-          data.i,
-          data.j,
-          amount,
-        ])
-      : readerIface.encodeFunctionData('get_dy', [data.i, data.j, amount]),
+  return amounts.map(amount => ({
+    target: exchangeAddress,
+    callData: readerIface.encodeFunctionData(funcName, [
+      // TODO: Put here additional arguments to encode them
+      amount,
+    ]),
   }));
 }
 
 function decodeReaderResult(
-  data: CurveV1Data,
   results: Result,
   readerIface: Interface,
+  funcName: string,
 ) {
+  // TODO: Adapt this function for your needs
   return results.map(result => {
-    const parsed = data.underlyingSwap
-      ? readerIface.decodeFunctionResult('get_dy_underlying', result)
-      : readerIface.decodeErrorResult('get_dy', result);
+    const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
   });
 }
 
 async function checkOnChainPricing(
   curveV1: CurveV1,
+  funcName: string,
   blockNumber: number,
-  data: CurveV1Data,
   prices: bigint[],
+  amounts: bigint[],
 ) {
-  const readerIface = curveV1.poolInterface;
+  const exchangeAddress = ''; // TODO: Put here the real exchange address
 
-  const readerCallData = getReaderCalldata(readerIface, data, amountToUse);
+  // TODO: Replace dummy interface with the real one
+  // Normally you can get it from curveV1.Iface or from eventPool.
+  // It depends on your implementation
+  const readerIface = new Interface('');
 
+  const readerCallData = getReaderCalldata(
+    exchangeAddress,
+    readerIface,
+    amounts.slice(1),
+    funcName,
+  );
   const readerResult = (
-    await dexHelper.multiContract.methods
+    await curveV1.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(data, readerResult, readerIface),
+    decodeReaderResult(readerResult, readerIface, funcName),
   );
 
   expect(prices).toEqual(expectedPrices);
 }
 
+async function testPricingOnNetwork(
+  curveV1: CurveV1,
+  network: Network,
+  dexKey: string,
+  blockNumber: number,
+  srcTokenSymbol: string,
+  destTokenSymbol: string,
+  side: SwapSide,
+  amounts: bigint[],
+  funcNameToCheck: string,
+) {
+  const networkTokens = Tokens[network];
+
+  const pools = await curveV1.getPoolIdentifiers(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    side,
+    blockNumber,
+  );
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
+    pools,
+  );
+
+  expect(pools.length).toBeGreaterThan(0);
+
+  const poolPrices = await curveV1.getPricesVolume(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    amounts,
+    side,
+    blockNumber,
+    pools,
+  );
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
+    poolPrices,
+  );
+
+  expect(poolPrices).not.toBeNull();
+  if (curveV1.hasConstantPriceLargeAmounts) {
+    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+  } else {
+    checkPoolPrices(poolPrices!, amounts, side, dexKey);
+  }
+
+  // Check if onchain pricing equals to calculated ones
+  await checkOnChainPricing(
+    curveV1,
+    funcNameToCheck,
+    blockNumber,
+    poolPrices![0].prices,
+    amounts,
+  );
+}
+
 describe('CurveV1', function () {
+  const dexKey = 'CurveV1';
   let blockNumber: number;
   let curveV1: CurveV1;
 
-  beforeAll(async () => {
-    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    curveV1 = new CurveV1(Network.MAINNET, dexKey, dexHelper);
-    await curveV1.startListening();
-  });
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
 
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const pools = await curveV1.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.SELL,
-      blockNumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    const tokens = Tokens[network];
 
-    expect(pools.length).toBeGreaterThan(0);
+    // TODO: Put here token Symbol to check against
+    // Don't forget to update relevant tokens in constant-e2e.ts
+    const srcTokenSymbol = 'srcTokenSymbol';
+    const destTokenSymbol = 'destTokenSymbol';
 
-    const poolPrices = await curveV1.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
-      SwapSide.SELL,
-      blockNumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
 
-    expect(poolPrices).not.toBeNull();
-    if (curveV1.hasConstantPriceLargeAmounts) {
-      checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-    } else {
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-    }
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
 
-    // Check if onchain pricing equals to calculated ones
-    await checkOnChainPricing(
-      curveV1,
-      blockNumber,
-      poolPrices![0].data,
-      poolPrices![0].prices,
-    );
-  });
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      curveV1 = new CurveV1(network, dexKey, dexHelper);
+      if (curveV1.initializePricing) {
+        await curveV1.initializePricing(blockNumber);
+      }
+    });
 
-  it('getTopPoolsForToken', async function () {
-    await curveV1.updatePoolState();
-    const poolLiquidity = await curveV1.getTopPoolsForToken(TokenA.address, 10);
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        curveV1,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        '', // TODO: Put here proper function name to check pricing
+      );
+    });
 
-    if (!curveV1.hasConstantPriceLargeAmounts) {
-      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
-    }
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        curveV1,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        '', // TODO: Put here proper function name to check pricing
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newCurveV1 = new CurveV1(network, dexKey, dexHelper);
+      if (newCurveV1.updatePoolState) {
+        await newCurveV1.updatePoolState();
+      }
+      const poolLiquidity = await newCurveV1.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newCurveV1.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
   });
 });

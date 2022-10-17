@@ -1,44 +1,22 @@
-import { Address, Token } from '../../types';
+import { Address } from '../../types';
+
+export type PoolState = {
+  // TODO: poolState is the state of event
+  // subscriber. This should be the minimum
+  // set of parameters required to compute
+  // pool prices. Complete me!
+};
 
 export type CurveV1Data = {
+  // TODO: CurveV1Data is the dex data that is
+  // returned by the API that can be used for
+  // tx building. The data structure should be minimal.
+  // Complete me!
   exchange: Address;
-  i: number;
-  j: number;
-  underlyingSwap: boolean;
-  deadline: number;
-};
-
-export type PoolConfig = {
-  underlying: string[];
-  coins: string[];
-  address: string;
-  name: string;
-  type: number; // 1: stable coin pool, 2: others pools
-  version: number;
-  isLending: boolean;
-  isMetapool: boolean;
-  baseToken?: string;
-  liquidityUSD?: number;
-  precisionMul?: string[];
-  tokenAddress?: string;
-  trackCoins?: boolean;
-  useLending?: boolean[];
-  isFeeOnTransferSupported?: boolean;
-};
-
-export type TokenWithReasonableVolume = Token & {
-  reasonableVolume: bigint;
-  tokenPrice?: number;
 };
 
 export type DexParams = {
-  baseTokens: Record<string, TokenWithReasonableVolume>;
-  factoryAddress: string | null;
-  eventSupportedPools: string[];
-  pools: Record<string, PoolConfig>;
+  // TODO: DexParams is set of parameters the can
+  // be used to initiate a DEX fork.
+  // Complete me!
 };
-
-export enum CurveSwapFunctions {
-  exchange = 'exchange',
-  exchange_underlying = 'exchange_underlying',
-}
