@@ -108,7 +108,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const { i, j, deadline, underlyingSwap } = data;
+    const { i, j, underlyingSwap } = data;
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -118,7 +118,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           underlyingSwap: 'bool',
         },
       },
-      { i, j, deadline, underlyingSwap },
+      { i, j, deadline: 0, underlyingSwap },
     );
 
     return {

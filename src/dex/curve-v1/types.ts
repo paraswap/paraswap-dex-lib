@@ -1,11 +1,33 @@
 import { Interface } from '@ethersproject/abi';
 import { Address } from '../../types';
 
+export enum PriceHandlerTypes {
+  PLAIN = 'plain',
+}
+
+export type PoolConstants = {
+  COINS: Address[];
+  N_COINS: bigint;
+  PRECISION_MUL: bigint[];
+  FEE_DENOMINATOR: bigint;
+  RATES: bigint[];
+  PRECISION: bigint;
+  LENDING_PRECISION: bigint;
+};
+
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  A: bigint;
+  fee: bigint;
+  admin_fee: bigint;
+  supply: bigint;
+  balances: bigint[];
+  future_A_time: bigint;
+  future_A: bigint;
+  blockTimestamp: bigint;
+  initial_A: bigint;
+  initial_A_time: bigint;
+
+  constants: PoolConstants;
 };
 
 export type CurveV1Data = {
