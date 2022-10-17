@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { getAddress } from 'ethers/lib/utils';
 import { SwapSide } from 'paraswap-core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
@@ -214,8 +215,10 @@ export const catchParseLogError = (e: any, logger: Logger) => {
 export const isSrcTokenTransferFeeToBeExchanged = (
   transferFees: TransferFeeParams,
 ) => {
-  return !!(
-    transferFees.srcFee ||
-    transferFees.srcDexFee
-  );
+  return !!(transferFees.srcFee || transferFees.srcDexFee);
+};
+
+// This function is throwing error if address is not correct
+export const normalizeAddress = (address: string) => {
+  return getAddress(address).toLowerCase();
 };

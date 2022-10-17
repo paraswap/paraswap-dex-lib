@@ -9,17 +9,26 @@ export type PoolState = {
 };
 
 export type CurveV1Data = {
+  exchange: Address;
   i: number;
   j: number;
   underlyingSwap: boolean;
-  deadline: number;
-  exchange: Address;
+};
+
+export type PoolConfig = {
+  underlying: string[];
+  coins: string[];
+  address: string;
+  name: string;
+  isLending: boolean;
+  isMetapool: boolean;
+  liquidityUSD?: number;
+  isFeeOnTransferSupported?: boolean;
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  factoryAddress: string | null;
+  pools: Record<string, PoolConfig>;
 };
 
 export enum CurveSwapFunctions {
