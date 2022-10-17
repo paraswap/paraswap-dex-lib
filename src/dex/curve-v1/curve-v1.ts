@@ -14,22 +14,22 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { CurveV1Data } from './types';
+import { CurveSwapFunctions, CurveV1Data, CurveV1Ifaces } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CurveV1Config, Adapters } from './config';
 import { CurveV1EventPool } from './curve-v1-pool';
+import { MIN_AMOUNT_TO_RECEIVE } from './constants';
+import { Interface } from '@ethersproject/abi';
+import CurveABI from '../../abi/Curve.json';
 
-export class CurveV1
-  extends SimpleExchange
-  implements IDex<CurveV1Data>
-{
+export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   protected eventPools: CurveV1EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  readonly needWrapNative = false;
+  readonly isFeeOnTransferSupported = true;
 
-  readonly isFeeOnTransferSupported = false;
+  readonly ifaces: CurveV1Ifaces;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1Config);
@@ -40,7 +40,7 @@ export class CurveV1
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -50,26 +50,21 @@ export class CurveV1
       dexHelper,
       this.logger,
     );
+    this.ifaces = {
+      exchangeRouter: new Interface(CurveABI),
+    };
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
     // TODO: complete me!
+    // Initialize from factory
+    // Initialize from CurveAPI
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -80,10 +75,6 @@ export class CurveV1
     return [];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -96,17 +87,17 @@ export class CurveV1
     return null;
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(
-    poolPrices: PoolPrices<CurveV1Data>,
-  ): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+  getCalldataGasCost(poolPrices: PoolPrices<CurveV1Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.INDEX +
+      CALLDATA_GAS_COST.INDEX +
+      CALLDATA_GAS_COST.TIMESTAMP +
+      CALLDATA_GAS_COST.BOOL
+    );
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -115,23 +106,28 @@ export class CurveV1
     data: CurveV1Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    // Encode here the payload for adapter
-    const payload = '';
+    const { i, j, deadline, underlyingSwap } = data;
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          i: 'int128',
+          j: 'int128',
+          deadline: 'uint256',
+          underlyingSwap: 'bool',
+        },
+      },
+      { i, j, deadline, underlyingSwap },
+    );
 
     return {
-      targetExchange: exchange,
+      targetExchange: data.exchange,
       payload,
       networkFee: '0',
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -140,11 +136,18 @@ export class CurveV1
     data: CurveV1Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    // Encode here the transaction arguments
-    const swapData = '';
+    const { exchange, i, j, underlyingSwap } = data;
+    const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
+    const swapMethod = underlyingSwap
+      ? CurveSwapFunctions.exchange_underlying
+      : CurveSwapFunctions.exchange;
+
+    const swapData = this.ifaces.exchangeRouter.encodeFunctionData(
+      swapMethod,
+      defaultArgs,
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -156,17 +159,10 @@ export class CurveV1
     );
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {
     // TODO: complete me!
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
@@ -175,8 +171,6 @@ export class CurveV1
     return [];
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
   }

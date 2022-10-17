@@ -1,3 +1,4 @@
+import { Interface } from '@ethersproject/abi';
 import { Address } from '../../types';
 
 export type PoolState = {
@@ -8,10 +9,10 @@ export type PoolState = {
 };
 
 export type CurveV1Data = {
-  // TODO: CurveV1Data is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
+  i: number;
+  j: number;
+  underlyingSwap: boolean;
+  deadline: number;
   exchange: Address;
 };
 
@@ -19,4 +20,13 @@ export type DexParams = {
   // TODO: DexParams is set of parameters the can
   // be used to initiate a DEX fork.
   // Complete me!
+};
+
+export enum CurveSwapFunctions {
+  exchange = 'exchange',
+  exchange_underlying = 'exchange_underlying',
+}
+
+export type CurveV1Ifaces = {
+  exchangeRouter: Interface;
 };
