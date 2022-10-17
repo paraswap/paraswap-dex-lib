@@ -222,3 +222,9 @@ export const isSrcTokenTransferFeeToBeExchanged = (
 export const normalizeAddress = (address: string) => {
   return getAddress(address).toLowerCase();
 };
+
+// This is helper function to extract function name for logging purposes
+// I think it is not correct when we hardcode function name in log message
+export function funcName() {
+  return funcName.caller.name;
+}

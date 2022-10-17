@@ -30,6 +30,12 @@ export type PoolState = {
   constants: PoolConstants;
 };
 
+export type PoolStateWithUpdateInfo<T> = {
+  blockNumber: number;
+  lastUpdatedAt: number;
+  poolState: T;
+};
+
 export type CurveV1Data = {
   exchange: Address;
   i: number;
