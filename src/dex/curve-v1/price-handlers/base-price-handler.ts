@@ -101,22 +101,10 @@ export abstract class BasePriceHandler {
   }
 
   _A(state: PoolState): bigint {
-    const t1 = state.future_A_time;
-    const A1 = state.future_A;
-
-    if (state.blockTimestamp < t1) {
-      const A0 = state.initial_A;
-      const t0 = state.initial_A_time;
-      // Expressions in uint256 cannot have negative numbers, thus "if"
-      if (A1 > A0) {
-        return A0 + ((A1 - A0) * (state.blockTimestamp - t0)) / (t1 - t0);
-      } else {
-        return A0 - ((A0 - A1) * (state.blockTimestamp - t0)) / (t1 - t0);
-      }
-    } else {
-      // when t1 == 0 or block.timestamp >= t1
-      return A1;
-    }
+    // We update this A on every state fetching. I believe we will not need to
+    // calculate it manually. But in case if it is needed, it can be overridden
+    // by any class that inherits the base one
+    return state.A;
   }
 
   get_D(state: PoolState, xp: bigint[], amp: bigint): bigint {

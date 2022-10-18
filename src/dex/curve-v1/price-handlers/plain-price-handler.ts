@@ -6,10 +6,6 @@ class PlainPriceHandler
   extends BasePriceHandler
   implements IPriceHandler<PoolState>
 {
-  constructor() {
-    super();
-  }
-
   getOutputs(
     state: PoolState,
     amounts: bigint[],

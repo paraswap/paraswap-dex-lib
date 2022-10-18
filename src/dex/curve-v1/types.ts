@@ -16,16 +16,9 @@ export type PoolConstants = {
 };
 
 export type PoolState = {
-  A: bigint;
-  fee: bigint;
-  admin_fee: bigint;
-  supply: bigint;
-  balances: bigint[];
-  future_A_time: bigint;
-  future_A: bigint;
-  blockTimestamp: bigint;
-  initial_A: bigint;
-  initial_A_time: bigint;
+  A: bigint; // factory get_A()-balances
+  balances: bigint[]; // factory get_balances()
+  fee: bigint; // factory get_fees()
 
   constants: PoolConstants;
 };

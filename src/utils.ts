@@ -228,3 +228,9 @@ export const normalizeAddress = (address: string) => {
 export function funcName() {
   return funcName.caller.name;
 }
+
+// In some case we need block timestamp, but instead of real one, we can use
+// just current time in BigInt
+export function currentBigIntTimestampInS() {
+  return BigInt(Math.floor(Date.now() / 1000));
+}
