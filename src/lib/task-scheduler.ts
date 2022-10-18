@@ -13,6 +13,8 @@ export class TaskScheduler {
     private task: () => AsyncOrSync<void>,
     private updateFrequency: number,
     private updateRetryFrequency: number,
+    // If startImmediately is false, you should call manually setTimer() when
+    // want scheduler to start
     startImmediately: boolean = false,
   ) {
     if (startImmediately) {

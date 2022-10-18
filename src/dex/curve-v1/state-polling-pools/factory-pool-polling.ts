@@ -4,9 +4,17 @@ import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
 import { PoolConstants, PoolState } from '../types';
 import { BasePoolPolling } from './base-pool-polling';
 import FactoryCurveV1ABI from '../../../abi/curve-v1/FactoryCurveV1.json';
-import { uint256ToBigInt } from '../../../lib/decoders';
+import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
+import { BytesLike } from 'ethers/lib/utils';
 
-export class FactoryStateHandler extends BasePoolPolling<PoolState> {
+export type MulticallReturnedTypes = bigint | bigint[];
+
+export class FactoryStateHandler extends BasePoolPolling<
+  PoolState,
+  MulticallReturnedTypes
+> {
+  private isMetaPool: boolean;
+
   constructor(
     name: string,
     readonly address: string,
@@ -19,9 +27,10 @@ export class FactoryStateHandler extends BasePoolPolling<PoolState> {
     ),
   ) {
     super(name, logger, poolConstants);
+    this.isMetaPool = this.poolConstants.BAS_COINS.length > 0;
   }
-  getStateMultiCalldata(): MultiCallParams<unknown>[] {
-    return [
+  getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {
+    const calls = [
       {
         target: this.factoryAddress,
         callData: this.iface.encodeFunctionData('get_A', [this.address]),
@@ -29,13 +38,40 @@ export class FactoryStateHandler extends BasePoolPolling<PoolState> {
       },
       {
         target: this.factoryAddress,
-        callData: this.iface.encodeFunctionData('get_A', [this.address]),
+        callData: this.iface.encodeFunctionData('get_fees', [this.address]),
         decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.factoryAddress,
+        callData: this.iface.encodeFunctionData('get_balances', [this.address]),
+        decodeFunction: (result: MultiResult<BytesLike>) =>
+          generalDecoder(result, ['uint256[4]'], [0n, 0n, 0n, 0n], parsed =>
+            parsed.map(p => BigInt(p.toString())),
+          ),
       },
     ];
+    if (this.isMetaPool) {
+      calls.push({
+        target: this.factoryAddress,
+        callData: this.iface.encodeFunctionData('get_underlying_balances', [
+          this.address,
+        ]),
+        decodeFunction: (result: MultiResult<BytesLike>) =>
+          generalDecoder(
+            result,
+            ['uint256[8]'],
+            [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n],
+            parsed => parsed.map(p => BigInt(p.toString())),
+          ),
+      });
+    }
+    return calls;
   }
 
-  setState(multiOutputs: MultiResult<unknown>[], updatedAt: number): void {
+  setState(
+    multiOutputs: MultiResult<MulticallReturnedTypes>[],
+    updatedAt: number,
+  ): void {
     this._setState();
   }
 }

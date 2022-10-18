@@ -13,6 +13,7 @@ export type PoolConstants = {
   RATES: bigint[];
   PRECISION: bigint;
   LENDING_PRECISION: bigint;
+  BAS_COINS: Address[];
 };
 
 export type PoolState = {
