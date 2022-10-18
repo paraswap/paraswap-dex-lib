@@ -1,6 +1,5 @@
 import { Interface } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
-import { ParaSwap, NetworkID } from 'paraswap';
 import {
   IParaSwapSDK,
   LocalParaswapSDK,
@@ -18,6 +17,8 @@ import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
 import { DummyLimitOrderProvider } from '../src/dex-helper';
+import { constructSimpleSDK, SimpleFetchSDK, SimpleSDK } from '@paraswap/sdk';
+import axios from 'axios';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -45,14 +46,13 @@ const MULTISIG: { [nid: number]: string } = {
 };
 
 class APIParaswapSDK implements IParaSwapSDK {
-  paraSwap: ParaSwap;
+  paraSwap: SimpleFetchSDK;
 
   constructor(protected network: number, protected dexKey: string) {
-    this.paraSwap = new ParaSwap(
-      network as NetworkID,
-      testingEndpoint,
-      generateConfig(network).privateHttpProvider,
-    );
+    this.paraSwap = constructSimpleSDK({
+      chainId: network,
+      axios,
+    });
   }
 
   async getPrices(
@@ -65,22 +65,24 @@ class APIParaswapSDK implements IParaSwapSDK {
   ): Promise<OptimalRate> {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
-    const priceRoute = (await this.paraSwap.getRate(
-      from.address,
-      to.address,
-      amount.toString(),
-      undefined,
-      side,
-      { includeDEXS: this.dexKey, includeContractMethods: [contractMethod] },
-      from.decimals,
-      to.decimals,
-    )) as any;
-    if (priceRoute.message) {
-      throw new Error(
-        `Failed Paraswap.getRate: ${JSON.stringify(priceRoute, null, 2)}`,
-      );
+
+    try {
+      const priceRoute = await this.paraSwap.swap.getRate({
+        srcToken: from.address,
+        destToken: to.address,
+        side,
+        amount: amount.toString(),
+        options: {
+          includeDEXS: [this.dexKey],
+          includeContractMethods: [contractMethod],
+        },
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+      });
+      return priceRoute as OptimalRate;
+    } catch (e) {
+      throw e;
     }
-    return priceRoute as OptimalRate;
   }
 
   async buildTransaction(
@@ -89,22 +91,27 @@ class APIParaswapSDK implements IParaSwapSDK {
     userAddress: Address,
   ): Promise<TxObject> {
     const minMaxAmount = _minMaxAmount.toString();
-    const swapParams = await this.paraSwap.buildTx(
-      priceRoute.srcToken,
-      priceRoute.destToken,
-      priceRoute.side === SwapSide.SELL ? priceRoute.srcAmount : minMaxAmount,
-      priceRoute.side === SwapSide.SELL ? minMaxAmount : priceRoute.destAmount,
-      priceRoute,
-      userAddress,
-      'paraswap.io',
-      undefined,
-      undefined,
-      undefined,
+    const swapParams = await this.paraSwap.swap.buildTx(
       {
-        ignoreChecks: true, // need to ignore as allowance is only there in simulation!
+        srcToken: priceRoute.srcToken,
+        srcDecimals: priceRoute.srcDecimals,
+        destDecimals: priceRoute.destDecimals,
+        destToken: priceRoute.destToken,
+        srcAmount:
+          priceRoute.side === SwapSide.SELL
+            ? priceRoute.srcAmount
+            : minMaxAmount,
+        destAmount:
+          priceRoute.side === SwapSide.SELL
+            ? minMaxAmount
+            : priceRoute.destAmount,
+        priceRoute,
+        userAddress,
+        partner: 'paraswap.io',
       },
-      priceRoute.srcDecimals,
-      priceRoute.destDecimals,
+      {
+        ignoreChecks: true,
+      },
     );
     return swapParams as TxObject;
   }

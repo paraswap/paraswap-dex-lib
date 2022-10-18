@@ -12,7 +12,12 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
+import {
+  ETHER_ADDRESS,
+  Network,
+  NULL_ADDRESS,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import StableSwapBBTC from '../../abi/curve/StableSwapBBTC.json';
 import FactoryRegistryABI from '../../abi/curve/FactoryRegistry.json';
@@ -68,7 +73,6 @@ import {
   TokenWithReasonableVolume,
   CurveSwapFunctions,
 } from './types';
-import { ETHER_ADDRESS } from 'paraswap';
 import { erc20Iface } from '../../lib/utils-interfaces';
 
 const CURVE_DEFAULT_CHUNKS = 10;

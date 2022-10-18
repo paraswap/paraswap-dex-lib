@@ -1,7 +1,6 @@
 import { Config, Address, Token } from './types';
-import { Network } from './constants';
+import { ETHER_ADDRESS, Network } from './constants';
 import { isETHAddress } from './utils';
-import { ETHER_ADDRESS } from 'paraswap';
 
 // Hardcoded and environment values from which actual config is derived
 type BaseConfig = {

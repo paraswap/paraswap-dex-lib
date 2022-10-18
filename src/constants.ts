@@ -1,7 +1,8 @@
 import { Address } from './types';
 export { SwapSide, ContractMethod } from '@paraswap/core';
 
-export const ETHER_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+export const ETHER_ADDRESS =
+  '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'.toLowerCase();
 export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export const MAX_UINT =
