@@ -26,7 +26,7 @@ import {
   OrderInfo,
   ParaSwapOrderBook,
 } from './types';
-import { ParaSwapLimitOrdersConfig, Adapters } from './config';
+import { Adapters, ParaSwapLimitOrdersConfig } from './config';
 import { LimitOrderExchange } from '../limit-order-exchange';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
@@ -52,17 +52,18 @@ export class ParaSwapLimitOrders
 
   logger: Logger;
 
+  protected augustusRFQAddress: Address;
+
   constructor(
     protected network: Network,
     protected dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] ? Adapters[network] : {},
-    protected augustusRFQAddress = ParaSwapLimitOrdersConfig[dexKey][
-      network
-    ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    this.augustusRFQAddress =
+      dexHelper.config.data.augustusRFQAddress.toLowerCase();
     this.logger = dexHelper.getLogger(dexKey);
   }
 

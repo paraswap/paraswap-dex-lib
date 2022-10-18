@@ -13,6 +13,7 @@ import {
   ExchangeTxInfo,
   PreprocessTransactionOptions,
   TransferFeeParams,
+  Config,
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
@@ -185,7 +186,9 @@ export interface DexContructor<
   // and networks they are supported. This is useful for using
   // same DEX implementation for multiple forks supported
   // in different set of networks.
-  dexKeysWithNetwork: { key: string; networks: Network[] }[];
+  dexKeysWithNetwork?: { key: string; networks: Network[] }[];
+
+  builderDexKeysWithNetwork?(dexHelper: Config): void;
 }
 
 export type IRouteOptimizer<T> = (formaterRate: T) => T;

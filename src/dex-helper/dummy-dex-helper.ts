@@ -15,6 +15,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
+import { Response, RequestConfig } from './irequest-wrapper';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
@@ -95,6 +96,10 @@ class DummyRequestWrapper implements IRequestWrapper {
       },
     });
     return axiosResult.data;
+  }
+
+  request<T = any, R = Response<T>>(config: RequestConfig<any>): Promise<R> {
+    return axios.request(config);
   }
 }
 

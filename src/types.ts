@@ -16,6 +16,7 @@ import { Logger } from 'log4js';
 export { Logger } from 'log4js';
 import { OptimalRate } from 'paraswap-core';
 import BigNumber from 'bignumber.js';
+import { RFQConfig } from './dex/generic-rfq/types';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -175,6 +176,7 @@ export type Token = {
   address: string;
   decimals: number;
   symbol?: string;
+  type?: string;
 };
 
 export type aToken = {
@@ -259,11 +261,13 @@ export type Config = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
+  augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
   privateHttpProvider: string;
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
+  rfqConfigs: Record<string, RFQConfig>;
 };
 
 export type BigIntAsString = string;

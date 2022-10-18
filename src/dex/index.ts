@@ -53,6 +53,7 @@ import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
+import { GenericRFQ } from './generic-rfq/generic-rfq';
 
 const LegacyDexes = [
   CurveV2,
@@ -180,6 +181,16 @@ export class DexAdapterService {
             }));
         }
       });
+    });
+
+    const rfqConfigs = dexHelper.config.data.rfqConfigs;
+    Object.keys(dexHelper.config.data.rfqConfigs).forEach(rfqName => {
+      const dex = new GenericRFQ(
+        network,
+        rfqName,
+        dexHelper,
+        rfqConfigs[rfqName],
+      );
     });
 
     this.directFunctionsNames = [...LegacyDexes, ...Dexes]
