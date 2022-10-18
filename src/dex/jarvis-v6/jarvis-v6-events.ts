@@ -8,8 +8,8 @@ import { getOnChainState } from './utils';
 import { Interface } from '@ethersproject/abi';
 import { ChainLinkPriceFeed } from './chainLinkpriceFeed-event';
 import { SynthereumPoolEvent } from './syntheteumPool-event';
-import { Address } from 'paraswap';
 import { Contract } from 'web3-eth-contract';
+import { Address } from '@paraswap/core';
 export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
   constructor(
     protected parentName: string,

@@ -17,6 +17,7 @@ import {
   Network,
   NULL_ADDRESS,
   SRC_TOKEN_PARASWAP_TRANSFERS,
+  ETHER_ADDRESS,
   SwapSide,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -75,7 +76,6 @@ import {
   TokenWithReasonableVolume,
   CurveSwapFunctions,
 } from './types';
-import { ETHER_ADDRESS } from 'paraswap';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 

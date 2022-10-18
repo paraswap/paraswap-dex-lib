@@ -1,7 +1,7 @@
 import { Config, Address, Token } from './types';
-import { Network, PORT_TEST_SERVER } from './constants';
+
+import { Network, PORT_TEST_SERVER, ETHER_ADDRESS } from './constants';
 import { isETHAddress } from './utils';
-import { ETHER_ADDRESS } from 'paraswap';
 import { RFQConfig } from './dex/generic-rfq/types';
 
 // Hardcoded and environment values from which actual config is derived

@@ -49,7 +49,6 @@
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
     "log4js": "6.6.1",
-    "paraswap": "5.1.0",
     "ts-essentials": "9.1.2",
     "web3": "1.6.0",
     "web3-core": "1.6.0",
