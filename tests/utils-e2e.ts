@@ -66,23 +66,19 @@ class APIParaswapSDK implements IParaSwapSDK {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
 
-    try {
-      const priceRoute = await this.paraSwap.swap.getRate({
-        srcToken: from.address,
-        destToken: to.address,
-        side,
-        amount: amount.toString(),
-        options: {
-          includeDEXS: [this.dexKey],
-          includeContractMethods: [contractMethod],
-        },
-        srcDecimals: from.decimals,
-        destDecimals: to.decimals,
-      });
-      return priceRoute as OptimalRate;
-    } catch (e) {
-      throw e;
-    }
+    const priceRoute = await this.paraSwap.swap.getRate({
+      srcToken: from.address,
+      destToken: to.address,
+      side,
+      amount: amount.toString(),
+      options: {
+        includeDEXS: [this.dexKey],
+        includeContractMethods: [contractMethod],
+      },
+      srcDecimals: from.decimals,
+      destDecimals: to.decimals,
+    });
+    return priceRoute as OptimalRate;
   }
 
   async buildTransaction(
