@@ -17,18 +17,16 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { CurveSwapFunctions, CurveV1Data, CurveV1Ifaces } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CurveV1Config, Adapters } from './config';
-import { CurveV1EventPool } from './curve-v1-pool';
 import { MIN_AMOUNT_TO_RECEIVE } from './constants';
 import { Interface } from '@ethersproject/abi';
 import CurveABI from '../../abi/Curve.json';
+import { CurveV1PoolManager } from './curve-v1-pool-manager';
 
 export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
-  protected eventPools: CurveV1EventPool;
-
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = true;
-
+  readonly poolManager: CurveV1PoolManager;
   readonly ifaces: CurveV1Ifaces;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -44,15 +42,14 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new CurveV1EventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
     this.ifaces = {
       exchangeRouter: new Interface(CurveABI),
     };
+    this.poolManager = new CurveV1PoolManager(
+      this.dexKey,
+      dexHelper.getLogger(`${this.dexKey}-state-manager`),
+      dexHelper,
+    );
   }
 
   async initializePricing(blockNumber: number) {
@@ -63,6 +60,14 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
+  }
+
+  getPoolIdentifier(
+    poolAddress: string,
+    isMeta: boolean,
+    isLending: boolean,
+  ): string {
+    return `${this.dexKey}_${poolAddress}_${isMeta}_${isLending}`;
   }
 
   async getPoolIdentifiers(
@@ -172,6 +177,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   }
 
   releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    this.poolManager.releaseResources();
   }
 }

@@ -19,7 +19,7 @@ export function generalDecoder<T>(
   return parser ? parser(decoded) : decoded[0];
 }
 
-export const uintDecode = (result: MultiResult<string>): bigint => {
+export const uint256ToBigInt = (result: MultiResult<string>): bigint => {
   if (!result.success) {
     return 0n;
   }

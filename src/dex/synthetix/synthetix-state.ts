@@ -26,7 +26,7 @@ import {
   uint24ToBigInt,
   uint256ArrayDecode,
   uint8ToNumber,
-  uintDecode,
+  uint256ToBigInt,
 } from '../../lib/decoders';
 import {
   decodeLatestRoundData,
@@ -793,7 +793,7 @@ export class SynthetixState {
                 [encodeStringToBytes32(SETTING_ATOMIC_EXCHANGE_FEE_RATE), key],
               ),
             ]),
-            decodeFunction: uintDecode,
+            decodeFunction: uint256ToBigInt,
           },
           {
             target: this.config.flexibleStorage,
@@ -804,7 +804,7 @@ export class SynthetixState {
                 [encodeStringToBytes32(SETTING_EXCHANGE_FEE_RATE), key],
               ),
             ]),
-            decodeFunction: uintDecode,
+            decodeFunction: uint256ToBigInt,
           },
           {
             target: this.config.flexibleStorage,
@@ -953,12 +953,12 @@ export class SynthetixState {
           encodeStringToBytes32(SETTING_CONTRACT_NAME),
           encodeStringToBytes32(SETTING_ATOMIC_TWAP_WINDOW),
         ]),
-        decodeFunction: uintDecode,
+        decodeFunction: uint256ToBigInt,
       },
       {
         target: this.config.sUSDAddress,
         callData: this.combinedIface.encodeFunctionData('totalSupply', []),
-        decodeFunction: uintDecode,
+        decodeFunction: uint256ToBigInt,
       },
       ...this.config.synths.map(synth => ({
         target: synth.address,
