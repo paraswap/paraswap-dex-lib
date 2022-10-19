@@ -104,11 +104,11 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   protected processLog(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<PoolState> | null,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<PoolState> | null {
-    if (!state || !state.blockTimestamp) {
+    if (!state) {
       this.logger.warn('get null state during process');
       return state;
     }
