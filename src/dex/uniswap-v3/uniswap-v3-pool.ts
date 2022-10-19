@@ -207,9 +207,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       slot0: {
         sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
         tick: currentTick,
-        observationIndex: _state.slot0.observationIndex,
-        observationCardinality: _state.slot0.observationCardinality,
-        observationCardinalityNext: _state.slot0.observationCardinalityNext,
+        observationIndex: +_state.slot0.observationIndex,
+        observationCardinality: +_state.slot0.observationCardinality,
+        observationCardinalityNext: +_state.slot0.observationCardinalityNext,
         feeProtocol: bigIntify(_state.slot0.feeProtocol),
       },
       liquidity: bigIntify(_state.liquidity),

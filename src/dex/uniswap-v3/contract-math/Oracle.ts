@@ -42,7 +42,6 @@ export class Oracle {
     cardinality: number,
     cardinalityNext: number,
   ): [number, number] {
-    replaceUndefinedObservationWithZero(state, index);
     const last = state.observations[index];
 
     if (last.blockTimestamp == state.blockTimestamp)
