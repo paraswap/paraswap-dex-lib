@@ -1,6 +1,6 @@
 export { SwapSide, ContractMethod } from '@paraswap/core';
 
-export const PORT_TEST_SERVER = 4444;
+export const PORT_TEST_SERVER = process.env.TEST_PORT;
 
 export const ETHER_ADDRESS =
   '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'.toLowerCase();

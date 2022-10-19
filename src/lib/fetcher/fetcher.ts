@@ -99,7 +99,11 @@ export default class Fetcher<T> {
         const parsedData = info.caster(response.data);
 
         if (!parsedData) {
-          this.logger.debug(`(${options.url}) received incorrect data`);
+          this.logger.debug(
+            `(${options.url}) received incorrect data ${JSON.stringify(
+              response.data,
+            )}`,
+          );
           return;
         }
 

@@ -60,7 +60,9 @@ export class GenericRFQ extends ParaSwapLimitOrders {
   ): Promise<string[]> {
     const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
-    return [`${this.dexKey}_${_srcToken.address}_${_destToken}`.toLowerCase()];
+    return [
+      `${this.dexKey}_${_srcToken.address}_${_destToken.address}`.toLowerCase(),
+    ];
   }
 
   calcOutsFromAmounts(

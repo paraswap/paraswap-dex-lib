@@ -3,18 +3,22 @@ import express from 'express';
 const app = express();
 
 const markets = {
-  id: 'WETH-DAI',
-  base: {
-    address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-    decimals: 18,
-    type: 'erc20',
-  },
-  quote: {
-    address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-    decimals: 18,
-    type: 'erc20',
-  },
-  status: 'available',
+  markets: [
+    {
+      id: 'WETH-DAI',
+      base: {
+        address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        decimals: 18,
+        type: 'erc20',
+      },
+      quote: {
+        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        decimals: 18,
+        type: 'erc20',
+      },
+      status: 'available',
+    },
+  ],
 };
 
 const prices = {
@@ -61,3 +65,10 @@ app.get('/markets', (req, res) => {
 app.get('/prices', (req, res) => {
   return res.status(200).json(prices);
 });
+
+export const startTestServer = () => {
+  const server = app.listen(parseInt(process.env.TEST_PORT!, 10));
+  return () => {
+    server.close();
+  };
+};

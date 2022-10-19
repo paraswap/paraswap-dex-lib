@@ -49,7 +49,7 @@ export class RateFetcher {
             requestOptions: config.marketConfig.reqParams,
             caster: this.castMarketResponse.bind(this),
           },
-          handler: this.handleMarketResponse,
+          handler: this.handleMarketResponse.bind(this),
         },
         config.marketConfig.intervalMs,
         this.logger,
@@ -62,7 +62,7 @@ export class RateFetcher {
           requestOptions: config.rateConfig.reqParams,
           caster: this.castRateResponse.bind(this),
         },
-        handler: this.handleRatesResponse,
+        handler: this.handleRatesResponse.bind(this),
       },
       config.rateConfig.intervalMs,
       logger,
@@ -70,11 +70,15 @@ export class RateFetcher {
   }
 
   private castMarketResponse(data: unknown): MarketResponse | null {
-    if (!data || !(data as MarketResponse).markets) {
+    if (!data || typeof data !== 'object') {
       return null;
     }
 
-    return data as MarketResponse;
+    const parsed = data as MarketResponse;
+    if (!parsed.markets) {
+      return null;
+    }
+    return parsed;
   }
 
   private castRateResponse(data: unknown): RatesResponse | null {
@@ -87,7 +91,6 @@ export class RateFetcher {
 
   start() {
     this.marketFetcher.startPolling();
-    this.rateFetcher.startPolling();
   }
 
   stop() {
@@ -111,15 +114,16 @@ export class RateFetcher {
       }
       pairs[pair.id] = {
         ...pair,
-        fullName: `${pair.base.address}_${pair.quote.address}`,
       };
       tokensAddress.push(pair.base.address);
       tokensAddress.push(pair.quote.address);
 
+      const fullName = `${pair.quote.address}_${pair.base.address}`;
+      const reversedFullName = `${pair.base.address}_${pair.quote.address}`;
       const reversedId = pair.id.split('-').reverse().join('-');
       const reversedPair = {
         id: reversedId,
-        fullName: `${pair.quote.address}_${pair.base.address}`,
+        fullName: fullName,
         base: pair.quote,
         quote: pair.base,
         status: pair.status,
@@ -127,8 +131,8 @@ export class RateFetcher {
 
       pairs[reversedId] = reversedPair;
 
-      pairsFullName.push(pair.fullName);
-      pairsFullName.push(reversedPair.fullName);
+      pairsFullName.push(fullName);
+      pairsFullName.push(reversedFullName);
     }
 
     this.dexHelper.cache.setex(
@@ -172,7 +176,7 @@ export class RateFetcher {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${pair.base}_${pair.quote}_${SwapSide.SELL}`,
+          `${pair.base.address}_${pair.quote.address}_${SwapSide.SELL}`,
           this.config.marketConfig.dataTTLS,
           JSON.stringify(buyPrices),
         );
@@ -182,7 +186,7 @@ export class RateFetcher {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${pair.fullName}_${SwapSide.BUY}`,
+          `${pair.base.address}_${pair.quote.address}_${SwapSide.BUY}`,
           this.config.marketConfig.dataTTLS,
           JSON.stringify(sellPrices),
         );

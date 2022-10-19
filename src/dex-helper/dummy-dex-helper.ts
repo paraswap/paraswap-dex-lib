@@ -19,12 +19,14 @@ import { Response, RequestConfig } from './irequest-wrapper';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
+  private storage: Record<string, string> = {};
+
   async get(
     dexKey: string,
     network: number,
     cacheKey: string,
   ): Promise<string | null> {
-    return null;
+    return this.storage[`${network}_${dexKey}_${cacheKey}`.toLowerCase()];
   }
 
   async rawget(key: string): Promise<string | null> {
@@ -38,6 +40,7 @@ class DummyCache implements ICache {
     ttlSeconds: number,
     value: string,
   ): Promise<void> {
+    this.storage[`${network}_${dexKey}_${cacheKey}`.toLowerCase()] = value;
     return;
   }
 

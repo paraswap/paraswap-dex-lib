@@ -6,7 +6,6 @@ import { OrderInfo } from '../paraswap-limit-orders/types';
 
 type Pair = {
   id: string;
-  fullName: string;
   base: Token;
   quote: Token;
   status: string;
