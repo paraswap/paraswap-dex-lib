@@ -110,10 +110,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ): DeepReadonly<PoolState> | null {
     if (!state) {
       this.logger.warn('get null state during processLog');
-      return state;
+      return null;
     }
 
-    const _state = _.cloneDeep(state);
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
@@ -121,6 +120,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
         // And there is no good workaround, so turn off the type checker for this line
         try {
+          const _state = _.cloneDeep(state);
           return this.handlers[event.name](event, _state, log, blockHeader);
         } catch (e) {
           if (
@@ -137,14 +137,12 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
               e,
             );
           }
-          return null;
         }
       }
-      return state;
     } catch (e) {
       catchParseLogError(e, this.logger);
-      return state; // ignore unrecognized event
     }
+    return null; // ignore unrecognized event
   }
 
   private _getStateRequestCallData() {
