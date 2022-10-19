@@ -46,7 +46,7 @@ export const uin256DecodeToBigNumber = (
   );
 };
 
-export const uin256DecodeToNumber = (result: MultiResult<string>): number => {
+export const uint256DecodeToNumber = (result: MultiResult<string>): number => {
   if (!result.success) {
     return 0;
   }

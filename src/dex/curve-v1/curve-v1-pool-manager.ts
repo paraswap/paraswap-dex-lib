@@ -43,7 +43,9 @@ export class CurveV1PoolManager {
     );
   }
 
-  getState(poolIdentifiers: string[]): PoolState[] {}
+  getState(poolIdentifiers: string[]): PoolState[] {
+    return [];
+  }
 
   releaseResources() {
     this.taskScheduler.releaseResources();

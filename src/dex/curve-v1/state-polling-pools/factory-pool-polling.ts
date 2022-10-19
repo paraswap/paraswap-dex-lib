@@ -6,6 +6,7 @@ import { BasePoolPolling } from './base-pool-polling';
 import FactoryCurveV1ABI from '../../../abi/curve-v1/FactoryCurveV1.json';
 import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
+import { funcName } from '../../../utils';
 
 export type MulticallReturnedTypes = bigint | bigint[];
 
@@ -27,7 +28,7 @@ export class FactoryStateHandler extends BasePoolPolling<
     ),
   ) {
     super(name, logger, poolConstants);
-    this.isMetaPool = this.poolConstants.BAS_COINS.length > 0;
+    this.isMetaPool = this.poolConstants.BASE_COINS.length > 0;
   }
   getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {
     const calls = [
@@ -72,21 +73,27 @@ export class FactoryStateHandler extends BasePoolPolling<
     multiOutputs: MultiResult<MulticallReturnedTypes>[],
     updatedAt: number,
   ): void {
-    if (!(multiOutputs.every(o => o.success))) {
-      this.logger.error
+    if (!multiOutputs.every(o => o.success)) {
+      this.logger.error(
+        `${this.name} ${funcName()}: Some of the calls to ${
+          this.address
+        } generate state failed: `,
+      );
+      // No need to update with corrupted state
+      return;
     }
 
-    const [A, fees, balances, underlyingBalances] = multiOutputs as [
-      bigint,
-      bigint[],
-      bigint[],
-      bigint[] | undefined,
-    ];
+    const [A, fees, balances, underlyingBalances] = multiOutputs.map(
+      o => o.returnData,
+    ) as [bigint, bigint[], bigint[], bigint[] | undefined];
+
     const newState: PoolState = {
       A,
-      fee: fees[0], // Array has [fee, adminFee]
+      fee: fees[0], // Array has [fee, adminFee], but we want only fee
+      balances: balances,
       constants: this.poolConstants,
     };
-    this._setState();
+
+    this._setState(newState, updatedAt);
   }
 }

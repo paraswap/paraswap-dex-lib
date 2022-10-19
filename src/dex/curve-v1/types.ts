@@ -5,22 +5,31 @@ export enum PriceHandlerTypes {
   PLAIN = 'plain',
 }
 
-export type PoolConstants = {
-  COINS: Address[];
-  N_COINS: bigint;
-  PRECISION_MUL: bigint[];
+export enum StateHandlerTypes {
+  FACTORY_PLAIN = 'factory_plain'
+}
+
+export type ImplementationConstants = {
+  // Take from implementations constants
   FEE_DENOMINATOR: bigint;
-  RATES: bigint[];
   PRECISION: bigint;
   LENDING_PRECISION: bigint;
-  BAS_COINS: Address[];
 };
 
+export type PoolConstants = {
+  // Request from contract or calculate on initialization
+  COINS: Address[];
+  BASE_COINS: Address[];
+  N_COINS: bigint;
+  coins_decimals: number[];
+  base_coins_decimals: number[];
+  rate_multipliers: bigint[];
+} & ImplementationConstants;
+
 export type PoolState = {
-  A: bigint; // factory get_A()-balances
+  A: bigint; // factory get_A()
   balances: bigint[]; // factory get_balances()
   fee: bigint; // factory get_fees()
-
   constants: PoolConstants;
 };
 
@@ -48,9 +57,17 @@ export type PoolConfig = {
   isFeeOnTransferSupported?: boolean;
 };
 
+export type FactoryImplementation = {
+  address: Address;
+  constants: ImplementationConstants;
+  stateEntity: StateHandlerTypes;
+  priceHandler: PriceHandlerTypes;
+};
+
 export type DexParams = {
   factoryAddress: string | null;
   pools: Record<string, PoolConfig>;
+  factoryImplementations: Record<string, FactoryImplementation>;
 };
 
 export enum CurveSwapFunctions {
@@ -60,4 +77,5 @@ export enum CurveSwapFunctions {
 
 export type CurveV1Ifaces = {
   exchangeRouter: Interface;
+  factory: Interface;
 };
