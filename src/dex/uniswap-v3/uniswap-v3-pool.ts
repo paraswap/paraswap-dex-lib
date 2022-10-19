@@ -134,8 +134,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
             e instanceof Error &&
             e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
           ) {
-            this.logger.trace(
-              `${this.parentName}: Pool ${this.poolAddress} on network is out of TickBitmap requested range. Re-query the state`,
+            this.logger.warn(
+              `${this.parentName}: Pool ${this.poolAddress} on ${this.dexHelper.config.data.network} is out of TickBitmap requested range. Re-query the state`,
               e,
             );
           } else {
