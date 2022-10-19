@@ -103,6 +103,18 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this._poolAddress = address;
   }
 
+  protected async processBlockLogs(
+    state: DeepReadonly<PoolState>,
+    logs: Readonly<Log>[],
+    blockHeader: Readonly<BlockHeader>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const newState = await super.processBlockLogs(state, logs, blockHeader);
+    if (newState && !newState.isValid) {
+      return await this.generateState(blockHeader.number);
+    }
+    return newState;
+  }
+
   protected processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
@@ -114,8 +126,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         // Because we have observations in array which is mutable by nature, there is a
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
         // And there is no good workaround, so turn off the type checker for this line
+        const _state = _.cloneDeep(state) as PoolState;
         try {
-          const _state = _.cloneDeep(state);
           return this.handlers[event.name](event, _state, log, blockHeader);
         } catch (e) {
           if (
@@ -132,6 +144,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
               e,
             );
           }
+          _state.isValid = false;
+          return _state;
         }
       }
     } catch (e) {
