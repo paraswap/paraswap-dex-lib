@@ -45,12 +45,6 @@ export class Oracle {
     replaceUndefinedObservationWithZero(state, index);
     const last = state.observations[index];
 
-    if (!last) {
-      throw new Error(
-        `last is undefined ${JSON.stringify(state.observations)}, ${index}`,
-      );
-    }
-
     if (last.blockTimestamp == state.blockTimestamp)
       return [index, cardinality];
 
