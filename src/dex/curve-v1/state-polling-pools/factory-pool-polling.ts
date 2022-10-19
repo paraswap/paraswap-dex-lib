@@ -72,6 +72,21 @@ export class FactoryStateHandler extends BasePoolPolling<
     multiOutputs: MultiResult<MulticallReturnedTypes>[],
     updatedAt: number,
   ): void {
+    if (!(multiOutputs.every(o => o.success))) {
+      this.logger.error
+    }
+
+    const [A, fees, balances, underlyingBalances] = multiOutputs as [
+      bigint,
+      bigint[],
+      bigint[],
+      bigint[] | undefined,
+    ];
+    const newState: PoolState = {
+      A,
+      fee: fees[0], // Array has [fee, adminFee]
+      constants: this.poolConstants,
+    };
     this._setState();
   }
 }
