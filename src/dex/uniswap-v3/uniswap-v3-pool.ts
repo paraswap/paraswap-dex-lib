@@ -118,7 +118,25 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         // Because we have observations in array which is mutable by nature, there is a
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
         // And there is no good workaround, so turn off the type checker for this line
-        return this.handlers[event.name](event, state, log, blockHeader);
+        try {
+          return this.handlers[event.name](event, state, log, blockHeader);
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
+          ) {
+            this.logger.trace(
+              `${this.parentName}: Pool ${this.poolAddress} on network is out of TickBitmap requested range. Re-query the state`,
+              e,
+            );
+          } else {
+            this.logger.error(
+              'Unexpected error while handling event for UniswapV3',
+              e,
+            );
+          }
+          return null;
+        }
       }
       return state;
     } catch (e) {
@@ -218,18 +236,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     } else {
       const zeroForOne = amount0 > 0n;
 
-      return this._callAndHandleError(
-        // I had strange TS compiler issue, so have to write it this way
-        () =>
-          uniswapV3Math.swapFromEvent(
-            pool,
-            newSqrtPriceX96,
-            newTick,
-            newLiquidity,
-            zeroForOne,
-          ),
+      uniswapV3Math.swapFromEvent(
         pool,
+        newSqrtPriceX96,
+        newTick,
+        newLiquidity,
+        zeroForOne,
       );
+
+      return pool;
     }
   }
 
@@ -244,14 +259,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    return this._callAndHandleError(
-      uniswapV3Math._modifyPosition.bind(uniswapV3Math, pool, {
-        tickLower,
-        tickUpper,
-        liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
-      }),
-      pool,
-    );
+    uniswapV3Math._modifyPosition(pool, {
+      tickLower,
+      tickUpper,
+      liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
+    });
+
+    return pool;
   }
 
   handleMintEvent(
@@ -265,14 +279,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    return this._callAndHandleError(
-      uniswapV3Math._modifyPosition.bind(uniswapV3Math, pool, {
-        tickLower,
-        tickUpper,
-        liquidityDelta: amount,
-      }),
-      pool,
-    );
+    uniswapV3Math._modifyPosition(pool, {
+      tickLower,
+      tickUpper,
+      liquidityDelta: amount,
+    });
+
+    return pool;
   }
 
   handleSetFeeProtocolEvent(
@@ -335,28 +348,5 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       };
       return acc;
     }, ticks);
-  }
-
-  private _callAndHandleError(func: Function, pool: PoolState) {
-    try {
-      func();
-    } catch (e) {
-      if (
-        e instanceof Error &&
-        e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
-      ) {
-        this.logger.trace(
-          `${this.parentName}: Pool ${this.poolAddress} on network is out of TickBitmap requested range. Re-query the state`,
-          e,
-        );
-      } else {
-        this.logger.error(
-          'Unexpected error while handling event for UniswapV3',
-          e,
-        );
-      }
-      pool.isValid = false;
-    }
-    return pool;
   }
 }
