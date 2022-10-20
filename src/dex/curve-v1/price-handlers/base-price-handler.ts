@@ -3,32 +3,32 @@ import { _require } from '../../../utils';
 import { PoolState } from '../types';
 
 export abstract class BasePriceHandler {
-  protected get_dy(state: PoolState, i: number, j: number, dx: bigint) {
-    const { rate_multipliers, PRECISION, FEE_DENOMINATOR } = state.constants;
-    const xp = this._xp(state);
-
-    const x = xp[i] + (dx * rate_multipliers[i]) / PRECISION;
-    const y = this.get_y(state, i, j, x, xp);
-    const dy = ((xp[j] - y - 1n) * PRECISION) / rate_multipliers[j];
-    const _fee = (state.fee * dy) / FEE_DENOMINATOR;
-    return dy - _fee;
+  getOutputs(
+    state: PoolState,
+    amounts: bigint[],
+    i: number,
+    j: number,
+    isUnderlying: boolean,
+  ): bigint[] {
+    return amounts.map(amount => {
+      if (amount === 0n) {
+        return 0n;
+      } else {
+        return isUnderlying
+          ? this.get_dy_underlying(state, i, j, amount)
+          : this.get_dy(state, i, j, amount);
+      }
+    });
   }
 
-  protected get_dy_underlying(
+  abstract get_dy(state: PoolState, i: number, j: number, dx: bigint): bigint;
+
+  abstract get_dy_underlying?(
     state: PoolState,
     i: number,
     j: number,
     dx: bigint,
-  ) {
-    const { PRECISION: PRECISION_MUL, FEE_DENOMINATOR } = state.constants;
-    const xp = this._xp(state);
-
-    const x = xp[i] + dx * PRECISION_MUL[i];
-    const y = this.get_y(state, i, j, x, xp);
-    const dy = (xp[j] - y - 1n) / PRECISION_MUL[j];
-    const _fee = (state.fee * dy) / FEE_DENOMINATOR;
-    return dy - _fee;
-  }
+  ): bigint;
 
   protected _xp(state: PoolState): bigint[] {
     const { N_COINS, rate_multipliers, LENDING_PRECISION } = state.constants;

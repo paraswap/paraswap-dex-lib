@@ -1,7 +1,8 @@
+import { PoolState } from '../types';
 import { BasePriceHandler } from './base-price-handler';
 
 export class FactoryPlain extends BasePriceHandler {
-  protected get_dy(state: PoolState, i: number, j: number, dx: bigint) {
+  get_dy(state: PoolState, i: number, j: number, dx: bigint) {
     const { rate_multipliers, PRECISION, FEE_DENOMINATOR } = state.constants;
     const xp = this._xp(state);
 
@@ -11,13 +12,10 @@ export class FactoryPlain extends BasePriceHandler {
     const _fee = (state.fee * dy) / FEE_DENOMINATOR;
     return dy - _fee;
   }
+}
 
-  protected get_dy_underlying(
-    state: PoolState,
-    i: number,
-    j: number,
-    dx: bigint,
-  ) {
+export class FactoryMeta extends FactoryPlain {
+  get_dy_underlying(state: PoolState, i: number, j: number, dx: bigint) {
     const { PRECISION: PRECISION_MUL, FEE_DENOMINATOR } = state.constants;
     const xp = this._xp(state);
 
