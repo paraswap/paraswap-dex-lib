@@ -86,7 +86,9 @@ function _priceComputationCycles(
     state.sqrtPriceX96 !== sqrtPriceLimitX96;
     ++i
   ) {
-    if (i > MAX_PRICING_COMPUTATION_STEPS_ALLOWED) {
+    if (
+      latestFullCycleCache.tickCount > MAX_PRICING_COMPUTATION_STEPS_ALLOWED
+    ) {
       state.amountSpecifiedRemaining = 0n;
       state.amountCalculated = 0n;
       break;
