@@ -29,6 +29,8 @@ export class __DexName__
   // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
+  readonly isFeeOnTransferSupported = false;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(__DexName__Config);
 

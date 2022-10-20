@@ -23,6 +23,7 @@ export type PoolConfig = {
   tokenAddress?: string;
   trackCoins?: boolean;
   useLending?: boolean[];
+  isFeeOnTransferSupported?: boolean;
 };
 
 export type TokenWithReasonableVolume = Token & {

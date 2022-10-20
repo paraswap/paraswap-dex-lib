@@ -47,6 +47,7 @@ export class JarvisV6
 
   // opt out of pool allocation as dex allows for constant price swaps
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(JarvisV6Config);

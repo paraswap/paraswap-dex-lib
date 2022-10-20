@@ -39,6 +39,7 @@ export class Nerve
   protected eventPools: EventPoolMappings = {};
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   readonly minConversionRate = '1';
 

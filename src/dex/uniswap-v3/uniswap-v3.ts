@@ -54,6 +54,7 @@ export class UniswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
+  readonly isFeeOnTransferSupported: boolean = false;
   readonly eventPools: Record<string, UniswapV3EventPool | null> = {};
 
   readonly hasConstantPriceLargeAmounts = false;

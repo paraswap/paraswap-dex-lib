@@ -33,6 +33,7 @@ import CombinedSynthetixABI from '../../abi/synthetix/CombinedSynthetix.abi.json
 export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   readonly combinedIface: Interface;
 

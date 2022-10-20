@@ -67,6 +67,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   readonly quoteTokenAddress: Address;
 

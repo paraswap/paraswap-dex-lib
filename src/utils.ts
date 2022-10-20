@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { SwapSide } from 'paraswap-core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
-import { DexConfigMap, Logger } from './types';
+import { DexConfigMap, Logger, TransferFeeParams } from './types';
 import _ from 'lodash';
 
 export const isETHAddress = (address: string) =>
@@ -313,3 +313,9 @@ export class Utils {
     ]);
   }
 }
+
+export const isSrcTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(transferFees.srcFee || transferFees.srcDexFee);
+};

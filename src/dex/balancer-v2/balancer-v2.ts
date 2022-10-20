@@ -369,6 +369,7 @@ export class BalancerV2
   protected eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
