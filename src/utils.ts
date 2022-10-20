@@ -60,12 +60,10 @@ export function getBigIntPow(decimals: number): bigint {
 }
 
 export function stringifyWithBigInt(obj: unknown): string {
-  return typeof obj === 'object'
-    ? JSON.stringify(
-        obj,
-        (_key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
-      )
-    : '';
+  return JSON.stringify(
+    obj,
+    (_key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+  );
 }
 
 export function _require(
