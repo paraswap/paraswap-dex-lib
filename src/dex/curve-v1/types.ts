@@ -73,6 +73,7 @@ export type FactoryImplementation = {
   name: ImplementationNames;
   address: Address;
   constants: ImplementationConstants;
+  isWrapNative: boolean;
 };
 
 export type DexParams = {
