@@ -12,8 +12,8 @@ import {
 function isWordPosOut(
   wordPos: bigint,
   startTickBitmap: bigint,
-  // For pricing we use wider range to check price impact. If the function called from event
-  // it must always be within BUFFER
+  // For pricing we use narrower range to check price impact. If the function called from event
+  // it must always be within BUFFER which is wider (usually two times) than TICK_BITMAP_TO_USE
   isPriceQuery: boolean,
 ) {
   let lowerTickBitmapLimit;
