@@ -12,16 +12,18 @@ import {
 function isWordPosOut(
   wordPos: bigint,
   startTickBitmap: bigint,
-  // For pricing we use narrower range to check price impact. If the function called from event
-  // it must always be within BUFFER which is wider (usually two times) than TICK_BITMAP_TO_USE
+  // For pricing we use wider range to check price impact. If the function called from event
+  // it must always be within buffer
   isPriceQuery: boolean,
 ) {
   let lowerTickBitmapLimit;
   let upperTickBitmapLimit;
 
   if (isPriceQuery) {
-    lowerTickBitmapLimit = startTickBitmap - TICK_BITMAP_TO_USE;
-    upperTickBitmapLimit = startTickBitmap + TICK_BITMAP_TO_USE;
+    lowerTickBitmapLimit =
+      startTickBitmap - (TICK_BITMAP_BUFFER + TICK_BITMAP_TO_USE);
+    upperTickBitmapLimit =
+      startTickBitmap + (TICK_BITMAP_BUFFER + TICK_BITMAP_TO_USE);
   } else {
     lowerTickBitmapLimit = startTickBitmap - TICK_BITMAP_BUFFER;
     upperTickBitmapLimit = startTickBitmap + TICK_BITMAP_BUFFER;

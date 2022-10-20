@@ -11,7 +11,10 @@ import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import { NumberAsString, SwapSide } from 'paraswap-core';
 import { BI_MAX_INT } from '../../../bigint-constants';
-import { OUT_OF_RANGE_ERROR_POSTFIX } from '../constants';
+import {
+  MAX_PRICING_COMPUTATION_STEPS_ALLOWED,
+  OUT_OF_RANGE_ERROR_POSTFIX,
+} from '../constants';
 
 type ModifyPositionParams = {
   tickLower: bigint;
@@ -83,6 +86,12 @@ function _priceComputationCycles(
     state.sqrtPriceX96 !== sqrtPriceLimitX96;
     ++i
   ) {
+    if (i > MAX_PRICING_COMPUTATION_STEPS_ALLOWED) {
+      state.amountSpecifiedRemaining = 0n;
+      state.amountCalculated = 0n;
+      break;
+    }
+
     const step = {
       sqrtPriceStartX96: 0n,
       tickNext: 0n,

@@ -7,6 +7,8 @@ export const TICK_BITMAP_TO_USE = 4n;
 // This is used to check if the state is still valid.
 export const TICK_BITMAP_BUFFER = 8n;
 
+export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 128;
+
 export const UNISWAPV3_SUBGRAPH_URL =
   'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
 
