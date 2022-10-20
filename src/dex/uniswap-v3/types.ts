@@ -61,7 +61,7 @@ export type DexParams = {
   stateMulticall: Address;
   uniswapMulticall: Address;
   supportedFees: bigint[];
-  chuncksCount: number;
+  chunksCount: number;
 };
 
 export type UniswapV3SellParam = {

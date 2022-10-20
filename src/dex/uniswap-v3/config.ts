@@ -33,7 +33,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x9c764D2e92dA68E4CDfD784B902283A095ff8b63',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
-      chuncksCount: 10,
+      chunksCount: 10,
     },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -42,7 +42,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x6Dc993Fe1e945A640576B4Dca81281d8e998DF71',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
-      chuncksCount: 10,
+      chunksCount: 10,
     },
     [Network.ARBITRUM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -51,7 +51,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
-      chuncksCount: 10,
+      chunksCount: 10,
     },
     [Network.OPTIMISM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -60,7 +60,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x4FF0dEC5f9a763Aa1E5C2a962aa6f4eDFeE4f9eA',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
-      chuncksCount: 10,
+      chunksCount: 10,
     },
   },
 };

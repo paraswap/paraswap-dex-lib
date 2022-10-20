@@ -256,10 +256,10 @@ export class UniswapV3
 
     const chunks = amounts.length - 1;
 
-    const _width = Math.floor(chunks / this.config.chuncksCount);
+    const _width = Math.floor(chunks / this.config.chunksCount);
 
     const _amounts = [unitVolume].concat(
-      Array.from(Array(this.config.chuncksCount).keys()).map(
+      Array.from(Array(this.config.chunksCount).keys()).map(
         i => amounts[(i + 1) * _width],
       ),
     );
@@ -743,7 +743,7 @@ export class UniswapV3
       factory: this.config.factory.toLowerCase(),
       supportedFees: this.config.supportedFees,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
-      chuncksCount: this.config.chuncksCount,
+      chunksCount: this.config.chunksCount,
       uniswapMulticall: this.config.uniswapMulticall,
     };
     return newConfig;
