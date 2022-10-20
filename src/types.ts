@@ -237,6 +237,10 @@ export type TxObject = {
   maxPriorityFeePerGas?: string;
 };
 
+export type StateOverrideObject = {
+  storage: Record<string, Record<string, string>>;
+};
+
 export type UnoptimizedRate = Omit<
   OptimalRate,
   'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'

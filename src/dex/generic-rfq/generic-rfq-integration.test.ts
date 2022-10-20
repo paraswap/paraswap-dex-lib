@@ -4,10 +4,11 @@ dotenv.config();
 import { DummyDexHelper } from '../../dex-helper';
 import { Network, SwapSide } from '../../constants';
 import { GenericRFQ } from './generic-rfq';
-import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
+import { checkPoolPrices, sleep } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 import { parseInt } from 'lodash';
 import { startTestServer } from './example-api.test';
+import { ethers } from 'ethers';
 
 const PORT_TEST_SERVER = parseInt(process.env.TEST_PORT!, 10);
 
@@ -25,12 +26,14 @@ const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = 'GenericRFQ';
 
-const stopServer = startTestServer();
+const PK_KEY = process.env.TEST_PK_KEY;
 
-const sleep = (time: number) =>
-  new Promise(resolve => {
-    setTimeout(resolve, time);
-  });
+if (!PK_KEY) {
+  throw new Error('Mising TEST_PK_KEY');
+}
+
+const account = new ethers.Wallet(PK_KEY!);
+const stopServer = startTestServer(account);
 
 describe('GenericRFQ', function () {
   it('getPoolIdentifiers and getPricesVolume', async function () {

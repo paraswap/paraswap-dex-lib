@@ -1,6 +1,14 @@
+import {
+  constructAxiosFetcher,
+  constructBuildLimitOrder,
+  constructEthersContractCaller,
+  constructPartialSDK,
+  constructSignLimitOrder,
+  LimitOrderToSend,
+} from '@paraswap/sdk';
+import axios from 'axios';
+import { ethers } from 'ethers';
 import express from 'express';
-
-const app = express();
 
 const markets = {
   markets: [
@@ -58,15 +66,80 @@ const prices = {
   },
 };
 
-app.get('/markets', (req, res) => {
-  return res.status(200).json(markets);
-});
+type RFQPayload = {
+  makerAsset: string;
+  takerAsset: string;
+  model: 'firm';
+  side: 'sell' | 'buy';
+  makerAmount?: string;
+  takerAmount?: string;
+  taker: string;
+  txOrigin: string;
+};
 
-app.get('/prices', (req, res) => {
-  return res.status(200).json(prices);
-});
+export const startTestServer = (account: ethers.Wallet) => {
+  const app = express();
 
-export const startTestServer = () => {
+  /**
+   * Use JSON Body parser...
+   */
+  app.use(express.json({ strict: false }));
+
+  app.get('/markets', (req, res) => {
+    return res.status(200).json(markets);
+  });
+
+  app.get('/prices', (req, res) => {
+    return res.status(200).json(prices);
+  });
+
+  const fetcher = constructAxiosFetcher(axios);
+
+  const contractCaller = constructEthersContractCaller(
+    {
+      ethersProviderOrSigner: account,
+      EthersContract: ethers.Contract,
+    },
+    account.address,
+  );
+
+  const paraSwapLimitOrderSDK = constructPartialSDK(
+    {
+      chainId: 1,
+      fetcher,
+      contractCaller,
+    },
+    constructBuildLimitOrder,
+    constructSignLimitOrder,
+  );
+
+  app.post('/firm', async (req, res) => {
+    const payload: RFQPayload = req.body;
+
+    const signableOrderData = await paraSwapLimitOrderSDK.buildLimitOrder({
+      maker: account.address,
+      taker: payload.txOrigin,
+      expiry: 0,
+      makerAsset: payload.makerAsset,
+      takerAsset: payload.takerAsset,
+      makerAmount: payload.makerAmount ? payload.makerAmount : '1',
+      takerAmount: payload.takerAmount ? payload.takerAmount : '1',
+    });
+
+    const signature = await paraSwapLimitOrderSDK.signLimitOrder(
+      signableOrderData,
+    );
+    const orderToPostToApi: LimitOrderToSend = {
+      ...signableOrderData.data,
+      signature,
+    };
+
+    return res.status(200).json({
+      status: 'accepted',
+      order: orderToPostToApi,
+    });
+  });
+
   const server = app.listen(parseInt(process.env.TEST_PORT!, 10));
   return () => {
     server.close();

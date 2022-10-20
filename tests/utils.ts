@@ -66,3 +66,8 @@ export function checkPoolsLiquidity(
     });
   });
 }
+
+export const sleep = (time: number) =>
+  new Promise(resolve => {
+    setTimeout(resolve, time);
+  });

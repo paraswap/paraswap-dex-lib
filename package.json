@@ -40,12 +40,8 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
-    "@ethersproject/abi": "5.4.0",
-    "@ethersproject/bytes": "^5.6.1",
-    "@ethersproject/contracts": "5.4.1",
-    "@ethersproject/providers": "5.4.1",
     "bignumber.js": "9.1.0",
-    "ethers": "^5.6.7",
+    "ethers": "^5.6.5",
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
     "log4js": "6.6.1",

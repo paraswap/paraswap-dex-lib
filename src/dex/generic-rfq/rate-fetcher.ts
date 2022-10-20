@@ -305,8 +305,8 @@ export class RateFetcher {
     }
 
     const payload: RFQPayload = {
-      makerAsset: orderPrices.from.address,
-      takerAsset: orderPrices.to.address,
+      makerAsset: orderPrices.to.address,
+      takerAsset: orderPrices.from.address,
       model: 'firm',
       side,
       ...obj,
@@ -372,7 +372,22 @@ export class RateFetcher {
         throw new Error('getFirmRate rejected');
       }
 
-      return data.order;
+      return {
+        order: {
+          maker: data.order.maker,
+          taker: data.order.taker,
+          expiry: data.order.expiry,
+          nonceAndMeta: data.order.nonceAndMeta,
+          makerAsset: data.order.makerAsset,
+          takerAsset: data.order.takerAsset,
+          makerAmount: data.order.makerAmount,
+          takerAmount: data.order.takerAmount,
+        },
+        signature: data.order.signature,
+        takerTokenFillAmount: data.order.takerAmount,
+        permitMakerAsset: '0x',
+        permitTakerAsset: '0x',
+      };
     } catch (e) {
       this.logger.error(e);
       throw e;

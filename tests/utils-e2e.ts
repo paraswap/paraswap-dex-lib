@@ -18,13 +18,16 @@ import {
   Address,
   Token,
   TransferFeeParams,
+  Config,
 } from '../src/types';
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
 import { DummyLimitOrderProvider } from '../src/dex-helper';
 import { constructSimpleSDK, SimpleFetchSDK, SimpleSDK } from '@paraswap/sdk';
+import { sleep } from '../tests/utils';
 import axios from 'axios';
+import { SmartToken, StateOverrides } from './smart-tokens';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -220,6 +223,7 @@ export async function testE2E(
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
+  await sleep(5000);
   try {
     const priceRoute = await paraswap.getPrices(
       srcToken,
@@ -244,6 +248,143 @@ export async function testE2E(
     );
 
     const swapTx = await ts.simulate(swapParams);
+    console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+    // Only log gas estimate if testing against API
+    if (useAPI)
+      console.log(
+        `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
+          swapTx!.gasUsed
+        }, Difference: ${
+          parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
+        }`,
+      );
+    console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+    expect(swapTx!.success).toEqual(true);
+  } finally {
+    if (paraswap.releaseResources) {
+      await paraswap.releaseResources();
+    }
+  }
+}
+
+export type TestParamE2E = {
+  config: Config;
+  srcToken: SmartToken;
+  destToken: SmartToken;
+  senderAddress: Address;
+  _amount: string;
+  swapSide: SwapSide.SELL;
+  dexKey: string;
+  contractMethod: ContractMethod;
+  network: Network;
+  poolIdentifiers?: string[];
+  limitOrderProvider?: DummyLimitOrderProvider;
+  transferFees?: TransferFeeParams;
+  srcTokenBalanceOverrides?: Record<Address, string>;
+  srcTokenAllowanceOverrides?: Record<Address, string>;
+  destTokenBalanceOverrides?: Record<Address, string>;
+  destTokenAllowanceOverrides?: Record<Address, string>;
+};
+
+export async function newTestE2E({
+  config,
+  srcToken,
+  destToken,
+  senderAddress,
+  _amount,
+  swapSide,
+  dexKey,
+  contractMethod,
+  network,
+  poolIdentifiers,
+  limitOrderProvider,
+  transferFees,
+}: TestParamE2E) {
+  const amount = BigInt(_amount);
+  const ts = new TenderlySimulation(network);
+  await ts.setup();
+
+  if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
+    const allowanceTx = await ts.simulate(
+      allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
+    );
+    if (!allowanceTx.success) console.log(allowanceTx.tenderlyUrl);
+    expect(allowanceTx!.success).toEqual(true);
+  }
+
+  if (adapterBytecode) {
+    const deployTx = await ts.simulate(
+      deployAdapterParams(adapterBytecode, network),
+    );
+
+    expect(deployTx.success).toEqual(true);
+    const adapterAddress =
+      deployTx.transaction.transaction_info.contract_address;
+    console.log(
+      'Deployed adapter to address',
+      adapterAddress,
+      'used',
+      deployTx.gasUsed,
+      'gas',
+    );
+
+    const whitelistTx = await ts.simulate(
+      whiteListAdapterParams(adapterAddress, network),
+    );
+    expect(whitelistTx.success).toEqual(true);
+  }
+
+  const useAPI = testingEndpoint && !poolIdentifiers;
+  // The API currently doesn't allow for specifying poolIdentifiers
+  const paraswap: IParaSwapSDK = useAPI
+    ? new APIParaswapSDK(network, dexKey)
+    : new LocalParaswapSDK(network, dexKey, limitOrderProvider);
+
+  if (paraswap.initializePricing) await paraswap.initializePricing();
+
+  await sleep(5000);
+  try {
+    const priceRoute = await paraswap.getPrices(
+      srcToken.token,
+      destToken.token,
+      amount,
+      swapSide,
+      contractMethod,
+      poolIdentifiers,
+      transferFees,
+    );
+
+    console.log(JSON.stringify(priceRoute));
+    expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
+
+    // Slippage to be 7%
+    const minMaxAmount =
+      (swapSide === SwapSide.SELL
+        ? BigInt(priceRoute.destAmount) * 93n
+        : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+    const swapParams = await paraswap.buildTransaction(
+      priceRoute,
+      minMaxAmount,
+      senderAddress,
+    );
+
+    const stateOverrides: StateOverrides = {
+      networkID: `${network}`,
+      stateOverrides: {},
+    };
+
+    srcToken
+      .addBalance(senderAddress, amount.toString())
+      .addAllowance(
+        senderAddress,
+        config.tokenTransferProxyAddress,
+        amount.toString(),
+      )
+      .applyOverrides(stateOverrides);
+
+    destToken.applyOverrides(stateOverrides);
+
+    const swapTx = await ts.simulate(swapParams, stateOverrides);
     console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
     // Only log gas estimate if testing against API
     if (useAPI)

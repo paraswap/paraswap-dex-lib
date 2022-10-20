@@ -1,7 +1,18 @@
-import { Address, Token } from '../src/types';
+import {
+  SmartTokenParams,
+  balanceOfFn,
+  allowanceFn,
+  SmartToken,
+} from '../tests/smart-tokens';
+import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
 
-export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
+export const GENERIC_ADDR1 = '0xbe9317f6711e2da074fe1f168fd9c402bc0a9d1b';
+export const GENERIC_ADDR2 = '0x230a1ac45690b9ae1176389434610b9526d2f21b';
+
+export const Tokens: {
+  [network: number]: { [symbol: string]: SmartTokenParams };
+} = {
   [Network.MAINNET]: {
     ETH: {
       address: ETHER_ADDRESS,
@@ -34,6 +45,8 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
+      addBalance: balanceOfFn,
+      addAllowance: allowanceFn,
     },
     SETH: {
       address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
@@ -46,6 +59,8 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     DAI: {
       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
       decimals: 18,
+      addBalance: balanceOfFn,
+      addAllowance: allowanceFn,
     },
     MLN: {
       address: '0xec67005c4e498ec7f55e092bd1d35cbc47c91892',
@@ -793,6 +808,20 @@ export const Holders: {
     sUSD: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
   },
 };
+
+export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
+  const network = parseInt(_network, 10);
+  acc[+network] = Object.keys(Tokens[network]).reduce((_acc, tokenName) => {
+    const token: SmartTokenParams = Tokens[network][tokenName]!;
+
+    if (token.addAllowance && token.addBalance) {
+      _acc[tokenName] = new SmartToken(token);
+    }
+
+    return _acc;
+  }, {} as Record<string, SmartToken>);
+  return acc;
+}, {} as Record<number, Record<string, SmartToken>>);
 
 export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.MAINNET]: 'ETH',

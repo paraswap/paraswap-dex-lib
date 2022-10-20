@@ -2,7 +2,11 @@ import BigNumber from 'bignumber.js';
 import { SwapSide } from 'paraswap-core';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import { Address, Token } from '../../types';
-import { OrderInfo } from '../paraswap-limit-orders/types';
+import {
+  AugustusOrder,
+  AugustusOrderWithString,
+  OrderInfo,
+} from '../paraswap-limit-orders/types';
 
 type Pair = {
   id: string;
@@ -69,5 +73,7 @@ export type RFQPayload = {
 
 export type RFQFirmRateResponse = {
   status: 'accepted' | 'rejected';
-  order: OrderInfo;
+  order: AugustusOrderWithString & {
+    signature: string;
+  };
 };

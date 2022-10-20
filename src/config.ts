@@ -255,7 +255,7 @@ export function generateConfig(network: number): Config {
     privateHttpProvider: baseConfig.privateHttpProvider,
     adapterAddresses: { ...baseConfig.adapterAddresses },
     uniswapV2ExchangeRouterAddress: baseConfig.uniswapV2ExchangeRouterAddress,
-    rfqConfigs: {},
+    rfqConfigs: baseConfig.rfqConfigs,
   };
 }
 
