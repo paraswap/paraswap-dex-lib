@@ -1,14 +1,6 @@
 import { Interface } from '@ethersproject/abi';
 import { Address } from '../../types';
 
-export enum PriceHandlerTypes {
-  PLAIN = 'plain',
-}
-
-export enum StateHandlerTypes {
-  FACTORY_PLAIN = 'factory_plain'
-}
-
 export type ImplementationConstants = {
   // Take from implementations constants
   FEE_DENOMINATOR: bigint;
@@ -57,11 +49,30 @@ export type PoolConfig = {
   isFeeOnTransferSupported?: boolean;
 };
 
+export enum ImplementationNames {
+  META_3POOL_2_8 = 'meta_3pool_2_8',
+  META_3POOL_2_15 = 'meta_3pool_2_15',
+  META_3POOL_3_1 = 'meta_3pool_3_1',
+  META_3POOL_ERC20_FEE_TRANSFER = 'meta_3pool_erc20_fee_transfer',
+  META_SBTC_ERC20 = 'meta_sbtc_erc20',
+
+  PLAIN_2COIN_NATIVE = 'plain_2coin_native',
+  PLAIN_2COIN_ERC20 = 'plain_2coin_erc20',
+  PLAIN_2COIN_ERC20_18DEC = 'plain_2coin_erc20_18dec', // 18DEC = 18 decimals
+  PLAIN_2COIN_ERC20_FEE_TRANSFER = 'plain_2coin_erc20_fee_transfer',
+
+  PLAIN_3COIN_ERC20 = 'plain_3coin_erc20',
+  PLAIN_3COIN_ERC20_FEE_TRANSFER = 'plain_3coin_erc20_fee_transfer',
+  PLAIN_3COIN_ERC20_18DEC = 'plain_3coin_erc20_18dec',
+
+  PLAIN_4COIN_ERC20 = 'plain_4coin_erc20',
+  PLAIN_4COIN_ERC20_18DEC = 'plain_4coin_erc20_18dec',
+}
+
 export type FactoryImplementation = {
+  name: ImplementationNames;
   address: Address;
   constants: ImplementationConstants;
-  stateEntity: StateHandlerTypes;
-  priceHandler: PriceHandlerTypes;
 };
 
 export type DexParams = {
