@@ -268,7 +268,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    if (this._isLiquidityChangeOutOfKnownRange(pool, tickLower, tickUpper)) {
+    if (this._isLiquidityChangedOutOfKnownRange(pool, tickLower, tickUpper)) {
       return pool;
     }
 
@@ -292,7 +292,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    if (this._isLiquidityChangeOutOfKnownRange(pool, tickLower, tickUpper)) {
+    if (this._isLiquidityChangedOutOfKnownRange(pool, tickLower, tickUpper)) {
       return pool;
     }
 
@@ -333,7 +333,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return pool;
   }
 
-  private _isLiquidityChangeOutOfKnownRange(
+  private _isLiquidityChangedOutOfKnownRange(
     state: PoolState,
     tickLower: bigint,
     tickUpper: bigint,
