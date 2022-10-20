@@ -87,7 +87,8 @@ function _priceComputationCycles(
     ++i
   ) {
     if (
-      latestFullCycleCache.tickCount > MAX_PRICING_COMPUTATION_STEPS_ALLOWED
+      latestFullCycleCache.tickCount + i >
+      MAX_PRICING_COMPUTATION_STEPS_ALLOWED
     ) {
       state.amountSpecifiedRemaining = 0n;
       state.amountCalculated = 0n;
