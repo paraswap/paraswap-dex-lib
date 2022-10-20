@@ -14,7 +14,7 @@ import {
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
-import { bigIntify, catchParseLogError } from '../../utils';
+import { bigIntify, catchParseLogError, funcName } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { NumberAsString } from 'paraswap-core';
 import {
@@ -268,6 +268,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
+    if (this._isLiquidityChangeOutOfKnownRange(pool, tickLower, tickUpper)) {
+      return pool;
+    }
+
     uniswapV3Math._modifyPosition(pool, {
       tickLower,
       tickUpper,
@@ -287,6 +291,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    if (this._isLiquidityChangeOutOfKnownRange(pool, tickLower, tickUpper)) {
+      return pool;
+    }
 
     uniswapV3Math._modifyPosition(pool, {
       tickLower,
@@ -323,6 +331,38 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     );
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
     return pool;
+  }
+
+  private _isLiquidityChangeOutOfKnownRange(
+    state: PoolState,
+    tickLower: bigint,
+    tickUpper: bigint,
+  ): boolean {
+    if (tickLower > tickUpper) {
+      // Assertion for safety reasons
+      this.logger.error(`${this.name} ${funcName()}: tickLower > tickUpper`);
+      // Proceed as normal and fail somewhere else
+      return false;
+    }
+
+    // knownTickMin and knownTickMax shouldn't be recalculated here every time
+    // If this implementation correct, I can put it inside state
+    const leftmostAvailableBitmap =
+      state.startTickBitmap - (TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER);
+    const rightmostAvailableBitmap =
+      state.startTickBitmap + (TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER);
+
+    const knownTickMin =
+      (BigInt.asIntN(24, leftmostAvailableBitmap) << 8n) * state.tickSpacing;
+    const knownTickMax =
+      ((BigInt.asIntN(24, rightmostAvailableBitmap) << 8n) +
+        BigInt.asIntN(24, 255n)) *
+      state.tickSpacing;
+
+    if (tickUpper < BigInt(knownTickMin) || tickLower > BigInt(knownTickMax)) {
+      return true;
+    }
+    return false;
   }
 
   private _reduceTickBitmap(
