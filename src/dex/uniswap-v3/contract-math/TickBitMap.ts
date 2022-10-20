@@ -12,7 +12,7 @@ import {
 function isWordPosOut(
   wordPos: bigint,
   startTickBitmap: bigint,
-  // For pricing we use wider range to check price impact. If the function called from event
+  // For pricing we use wider range to check price impact. If function called from event
   // it must always be within buffer
   isPriceQuery: boolean,
 ) {
