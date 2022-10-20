@@ -10,7 +10,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
       pools: {},
       factoryImplementations: {
         '0x5f890841f657d90e081babdb532a05996af79fe6': {
-          name: ImplementationNames.META_3POOL_2_8,
+          name: ImplementationNames.FACTORY_META_3POOL_2_8,
           address: '0x5f890841f657d90e081babdb532a05996af79fe6',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -19,7 +19,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x213be373fdff327658139c7df330817dad2d5bbe': {
-          name: ImplementationNames.META_3POOL_2_15,
+          name: ImplementationNames.FACTORY_META_3POOL_2_15,
           address: '0x213be373fdff327658139c7df330817dad2d5bbe',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -28,7 +28,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x33bb0e62d5e8c688e645dd46dfb48cd613250067': {
-          name: ImplementationNames.META_3POOL_3_1,
+          name: ImplementationNames.FACTORY_META_3POOL_3_1,
           address: '0x33bb0e62d5e8c688e645dd46dfb48cd613250067',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -37,7 +37,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x55aa9bf126bcabf0bdc17fa9e39ec9239e1ce7a9': {
-          name: ImplementationNames.META_3POOL_ERC20_FEE_TRANSFER,
+          name: ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER,
           address: '0x55aa9bf126bcabf0bdc17fa9e39ec9239e1ce7a9',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -46,7 +46,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0xc6a8466d128fbfd34ada64a9fffce325d57c9a52': {
-          name: ImplementationNames.META_SBTC_ERC20,
+          name: ImplementationNames.FACTORY_META_SBTC_ERC20,
           address: '0xc6a8466d128fbfd34ada64a9fffce325d57c9a52',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -55,7 +55,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e': {
-          name: ImplementationNames.PLAIN_2COIN_NATIVE,
+          name: ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE,
           address: '0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -64,7 +64,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x6523ac15ec152cb70a334230f6c5d62c5bd963f1': {
-          name: ImplementationNames.PLAIN_2COIN_ERC20,
+          name: ImplementationNames.FACTORY_PLAIN_2COIN_ERC20,
           address: '0x6523ac15ec152cb70a334230f6c5d62c5bd963f1',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -73,7 +73,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x4a4d7868390ef5cac51cda262888f34bd3025c3f': {
-          name: ImplementationNames.PLAIN_2COIN_ERC20_18DEC,
+          name: ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC,
           address: '0x4a4d7868390ef5cac51cda262888f34bd3025c3f',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -82,7 +82,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x24d937143d3f5cf04c72ba112735151a8cae2262': {
-          name: ImplementationNames.PLAIN_2COIN_ERC20_FEE_TRANSFER,
+          name: ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER,
           address: '0x24d937143d3f5cf04c72ba112735151a8cae2262',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -91,7 +91,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x9b52f13df69d79ec5aab6d1ace3157d29b409cc3': {
-          name: ImplementationNames.PLAIN_3COIN_ERC20,
+          name: ImplementationNames.FACTORY_PLAIN_3COIN_ERC20,
           address: '0x9b52f13df69d79ec5aab6d1ace3157d29b409cc3',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -100,7 +100,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x50b085f2e5958c4a87baf93a8ab79f6bec068494': {
-          name: ImplementationNames.PLAIN_3COIN_ERC20_FEE_TRANSFER,
+          name: ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER,
           address: '0x50b085f2e5958c4a87baf93a8ab79f6bec068494',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -109,7 +109,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0xe5f4b89e0a16578b3e0e7581327bdb4c712e44de': {
-          name: ImplementationNames.PLAIN_3COIN_ERC20_18DEC,
+          name: ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC,
           address: '0xe5f4b89e0a16578b3e0e7581327bdb4c712e44de',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -118,7 +118,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x5bd47ea4494e0f8de6e3ca10f1c05f55b72466b8': {
-          name: ImplementationNames.PLAIN_4COIN_ERC20,
+          name: ImplementationNames.FACTORY_PLAIN_4COIN_ERC20,
           address: '0x5bd47ea4494e0f8de6e3ca10f1c05f55b72466b8',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -127,7 +127,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0xad4753d045d3aed5c1a6606dfb6a7d7ad67c1ad7': {
-          name: ImplementationNames.PLAIN_4COIN_ERC20_18DEC,
+          name: ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC,
           address: '0xad4753d045d3aed5c1a6606dfb6a7d7ad67c1ad7',
           constants: {
             FEE_DENOMINATOR: 0n,

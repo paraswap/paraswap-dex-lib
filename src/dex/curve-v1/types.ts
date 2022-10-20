@@ -50,23 +50,23 @@ export type PoolConfig = {
 };
 
 export enum ImplementationNames {
-  META_3POOL_2_8 = 'meta_3pool_2_8',
-  META_3POOL_2_15 = 'meta_3pool_2_15',
-  META_3POOL_3_1 = 'meta_3pool_3_1',
-  META_3POOL_ERC20_FEE_TRANSFER = 'meta_3pool_erc20_fee_transfer',
-  META_SBTC_ERC20 = 'meta_sbtc_erc20',
+  FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
+  FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',
+  FACTORY_META_3POOL_3_1 = 'factory_meta_3pool_3_1',
+  FACTORY_META_3POOL_ERC20_FEE_TRANSFER = 'factory_meta_3pool_erc20_fee_transfer',
+  FACTORY_META_SBTC_ERC20 = 'factory_meta_sbtc_erc20',
 
-  PLAIN_2COIN_NATIVE = 'plain_2coin_native',
-  PLAIN_2COIN_ERC20 = 'plain_2coin_erc20',
-  PLAIN_2COIN_ERC20_18DEC = 'plain_2coin_erc20_18dec', // 18DEC = 18 decimals
-  PLAIN_2COIN_ERC20_FEE_TRANSFER = 'plain_2coin_erc20_fee_transfer',
+  FACTORY_PLAIN_2COIN_NATIVE = 'factory_plain_2coin_native',
+  FACTORY_PLAIN_2COIN_ERC20 = 'factory_plain_2coin_erc20',
+  FACTORY_PLAIN_2COIN_ERC20_18DEC = 'factory_plain_2coin_erc20_18dec', // 18DEC = 18 decimals
+  FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER = 'factory_plain_2coin_erc20_fee_transfer',
 
-  PLAIN_3COIN_ERC20 = 'plain_3coin_erc20',
-  PLAIN_3COIN_ERC20_FEE_TRANSFER = 'plain_3coin_erc20_fee_transfer',
-  PLAIN_3COIN_ERC20_18DEC = 'plain_3coin_erc20_18dec',
+  FACTORY_PLAIN_3COIN_ERC20 = 'factory_plain_3coin_erc20',
+  FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER = 'factory_plain_3coin_erc20_fee_transfer',
+  FACTORY_PLAIN_3COIN_ERC20_18DEC = 'factory_plain_3coin_erc20_18dec',
 
-  PLAIN_4COIN_ERC20 = 'plain_4coin_erc20',
-  PLAIN_4COIN_ERC20_18DEC = 'plain_4coin_erc20_18dec',
+  FACTORY_PLAIN_4COIN_ERC20 = 'factory_plain_4coin_erc20',
+  FACTORY_PLAIN_4COIN_ERC20_18DEC = 'factory_plain_4coin_erc20_18dec',
 }
 
 export type FactoryImplementation = {
