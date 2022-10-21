@@ -300,7 +300,6 @@ export class UniswapV3
 
     const decode = (j: number): bigint => {
       if (!data.returnData[j].success) {
-        this.logger.warn('one of the call in multicall failed');
         return 0n;
       }
       const decoded = defaultAbiCoder.decode(
