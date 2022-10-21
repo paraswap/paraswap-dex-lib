@@ -181,8 +181,6 @@ export const startTestServer = (account: ethers.Wallet) => {
       }
     }
 
-    console.log(value.toFixed());
-
     const signableOrderData = await paraSwapLimitOrderSDK.buildLimitOrder({
       maker: account.address,
       taker: payload.txOrigin,
@@ -193,15 +191,15 @@ export const startTestServer = (account: ethers.Wallet) => {
       takerAmount: payload.takerAmount,
     });
 
-    console.log({
-      maker: account.address,
-      taker: payload.txOrigin,
-      expiry: 0,
-      makerAsset: payload.makerAsset,
-      takerAsset: payload.takerAsset,
-      makerAmount: value.toFixed(0),
-      takerAmount: payload.takerAmount,
-    });
+    // console.log({
+    //   maker: account.address,
+    //   taker: payload.txOrigin,
+    //   expiry: 0,
+    //   makerAsset: payload.makerAsset,
+    //   takerAsset: payload.takerAsset,
+    //   makerAmount: value.toFixed(0),
+    //   takerAmount: payload.takerAmount,
+    // });
 
     const signature = await paraSwapLimitOrderSDK.signLimitOrder(
       signableOrderData,

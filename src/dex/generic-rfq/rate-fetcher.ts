@@ -203,23 +203,24 @@ export class RateFetcher {
     destToken: Token,
     side: SwapSide,
   ): Promise<OrderPriceInfo | null> {
-    let from = side === SwapSide.SELL ? srcToken : destToken;
-    let to = side === SwapSide.SELL ? destToken : srcToken;
+    // let from = side === SwapSide.SELL ? srcToken : destToken;
+    // let to = side === SwapSide.SELL ? destToken : srcToken;
 
     let pricesAsString: string | null = await this.dexHelper.cache.get(
       this.dexKey,
       this.dexHelper.config.data.network,
-      `${from.address}_${to.address}_${side}`,
+      `${srcToken.address}_${destToken.address}_${side}`,
     );
     let reversed = false;
     if (!pricesAsString) {
       side = side === SwapSide.SELL ? SwapSide.BUY : SwapSide.SELL;
-      [from, to] = [to, from];
+      [srcToken, destToken] = [destToken, srcToken];
       pricesAsString = await this.dexHelper.cache.get(
         this.dexKey,
         this.dexHelper.config.data.network,
-        `${from.address}_${to.address}_${side}`,
+        `${srcToken.address}_${destToken.address}_${side}`,
       );
+
       reversed = true;
     }
 
@@ -245,8 +246,8 @@ export class RateFetcher {
 
     return {
       reversed,
-      from,
-      to,
+      from: srcToken,
+      to: destToken,
       side,
       rates: orderPrices,
     };

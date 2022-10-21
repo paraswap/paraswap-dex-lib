@@ -53,11 +53,11 @@ describe('GenericRFQ E2E Mainnet', () => {
         });
       });
 
-      it.only('SELL DAI -> WETH', async () => {
+      it('SELL DAI -> WETH', async () => {
         await newTestE2E({
           config,
-          srcToken,
           destToken,
+          srcToken,
           senderAddress: GENERIC_ADDR1,
           _amount: '1000000000000000000',
           swapSide: SwapSide.SELL,
@@ -72,6 +72,20 @@ describe('GenericRFQ E2E Mainnet', () => {
           config,
           srcToken,
           destToken,
+          senderAddress: GENERIC_ADDR1,
+          _amount: '1000000000000000000',
+          swapSide: SwapSide.BUY,
+          dexKey: dexKey,
+          contractMethod: ContractMethod.simpleSwap,
+          network: network,
+        });
+      });
+
+      it('BUY DAI -> WETH', async () => {
+        await newTestE2E({
+          config,
+          destToken,
+          srcToken,
           senderAddress: GENERIC_ADDR1,
           _amount: '1000000000000000000',
           swapSide: SwapSide.BUY,
