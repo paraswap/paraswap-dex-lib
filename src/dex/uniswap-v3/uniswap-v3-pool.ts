@@ -135,12 +135,20 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
             e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
           ) {
             this.logger.warn(
-              `${this.parentName}: Pool ${this.poolAddress} on ${this.dexHelper.config.data.network} is out of TickBitmap requested range. Re-query the state`,
+              `${this.parentName}: Pool ${this.poolAddress} on ${
+                this.dexHelper.config.data.network
+              } is out of TickBitmap requested range. Re-query the state. ${JSON.stringify(
+                event,
+              )}`,
               e,
             );
           } else {
             this.logger.error(
-              'Unexpected error while handling event for UniswapV3',
+              `${this.parentName}: Pool ${
+                this.poolAddress
+              } Unexpected error while handling event for UniswapV3, ${JSON.stringify(
+                event,
+              )}`,
               e,
             );
           }
