@@ -339,7 +339,7 @@ export class UniswapV3
           pool.feeCode,
         ),
         exchange: this.dexKey,
-        gasCost: UNISWAPV3_QUOTE_GASLIMIT,
+        gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
         poolAddresses: [pool.poolAddress],
       };
     });
