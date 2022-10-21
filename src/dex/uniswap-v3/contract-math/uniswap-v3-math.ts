@@ -607,7 +607,7 @@ class UniswapV3Math {
           state.slot0.observationCardinality,
         );
 
-      if (this._isTickToProcess(state, tickLower) {
+      if (this._isTickToProcess(state, tickLower)) {
         flippedLower = Tick.update(
           state,
           tickLower,
@@ -620,7 +620,7 @@ class UniswapV3Math {
           state.maxLiquidityPerTick,
         );
       }
-      if (this._isTickToProcess(state, tickUpper) {
+      if (this._isTickToProcess(state, tickUpper)) {
         flippedUpper = Tick.update(
           state,
           tickUpper,
