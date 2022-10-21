@@ -195,7 +195,7 @@ export class UniswapV3
 
     const poolInfo: PoolPairsInfo = JSON.parse(_pairs);
 
-    this.getPool(
+    await this.getPool(
       poolInfo.token0,
       poolInfo.token1,
       BigInt(poolInfo.fee),
