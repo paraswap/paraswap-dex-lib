@@ -13,7 +13,7 @@ import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { ParaSwapLimitOrdersData } from '../paraswap-limit-orders/types';
 import { ONE_ORDER_GASCOST } from '../paraswap-limit-orders/constant';
 import { RateFetcher } from './rate-fetcher';
-import { RFQConfig } from './types';
+import { PriceAndAmountBigNumber, RFQConfig } from './types';
 import { OptimalSwapExchange } from 'paraswap-core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
@@ -68,7 +68,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
   calcOutsFromAmounts(
     amounts: BigNumber[],
     outMultiplier: BigNumber,
-    amountsWithRates: [BigNumber, BigNumber][],
+    amountsWithRates: PriceAndAmountBigNumber[],
   ): OutputsResults {
     let lastOrderIndex = 0;
     let lastTotalSrcAmount = BN_0;
@@ -81,19 +81,19 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         let srcAmountLeft = amount.minus(lastTotalSrcAmount);
         let destAmountFilled = lastTotalDestAmount;
         while (lastOrderIndex < amountsWithRates.length) {
-          const [srcAmount, rate] = amountsWithRates[lastOrderIndex];
-          if (srcAmountLeft.gt(srcAmount)) {
-            const destAmount = srcAmount.multipliedBy(rate);
+          const { amount, price } = amountsWithRates[lastOrderIndex];
+          if (srcAmountLeft.gt(amount)) {
+            const destAmount = amount.multipliedBy(price);
 
-            srcAmountLeft = srcAmountLeft.minus(srcAmount);
+            srcAmountLeft = srcAmountLeft.minus(amount);
             destAmountFilled = destAmountFilled.plus(destAmount);
 
-            lastTotalSrcAmount = lastTotalSrcAmount.plus(srcAmount);
+            lastTotalSrcAmount = lastTotalSrcAmount.plus(amount);
             lastTotalDestAmount = lastTotalDestAmount.plus(destAmount);
             lastOrderIndex++;
           } else {
             destAmountFilled = destAmountFilled.plus(
-              srcAmountLeft.multipliedBy(rate),
+              srcAmountLeft.multipliedBy(price),
             );
             srcAmountLeft = BN_0;
             break;

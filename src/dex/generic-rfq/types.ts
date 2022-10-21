@@ -2,11 +2,7 @@ import BigNumber from 'bignumber.js';
 import { SwapSide } from 'paraswap-core';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import { Address, Token } from '../../types';
-import {
-  AugustusOrder,
-  AugustusOrderWithString,
-  OrderInfo,
-} from '../paraswap-limit-orders/types';
+import { AugustusOrderWithString } from '../paraswap-limit-orders/types';
 
 type Pair = {
   id: string;
@@ -23,11 +19,19 @@ export type MarketResponse = {
   markets: Pair[];
 };
 
+export type PriceAndAmount = {
+  amount: string;
+  price: string;
+};
+
+export type PriceAndAmountBigNumber = {
+  amount: BigNumber;
+  price: BigNumber;
+};
+
 export type PairPriceResponse = {
-  buyAmounts: string[];
-  buyPrices: string[];
-  sellAmounts: string[];
-  sellPrices: string[];
+  bids: PriceAndAmount[];
+  asks: PriceAndAmount[];
 };
 
 export type RatesResponse = {
@@ -49,7 +53,7 @@ export type OrderPriceInfo = {
   from: Token;
   to: Token;
   side: SwapSide;
-  rates: BigNumberRates;
+  rates: PriceAndAmountBigNumber[];
 };
 
 export type RFQModel = 'firm' | 'indicative';

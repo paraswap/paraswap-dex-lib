@@ -11,6 +11,8 @@ import {
   MarketResponse,
   OrderPriceInfo,
   PairMap,
+  PriceAndAmount,
+  PriceAndAmountBigNumber,
   Rates,
   RatesResponse,
   RFQConfig,
@@ -23,8 +25,12 @@ export const FIRM_RATE_TIMEOUT_MS = 500;
 function onlyUnique(value: string, index: number, self: string[]) {
   return self.indexOf(value) === index;
 }
-const reversePrice = ([amount, p]: BigNumberRate) =>
-  [amount.times(p), BN_1.dividedBy(p)] as BigNumberRate;
+
+const reversePrice = (price: PriceAndAmountBigNumber) =>
+  ({
+    amount: price.amount.times(price.price),
+    price: BN_1.dividedBy(price.price),
+  } as PriceAndAmountBigNumber);
 
 export class RateFetcher {
   private augustusAddress: Address;
@@ -162,33 +168,25 @@ export class RateFetcher {
       if (!pair) {
         continue;
       }
+      const prices = resp[pairName];
 
-      const buyPrices = price.buyAmounts.map((amount, i) => [
-        amount,
-        price.buyPrices[i],
-      ]);
-      const sellPrices = price.sellAmounts.map((amount, i) => [
-        amount,
-        price.sellPrices[i],
-      ]);
-
-      if (buyPrices.length) {
+      if (prices.bids.length) {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
           `${pair.base.address}_${pair.quote.address}_${SwapSide.SELL}`,
           this.config.marketConfig.dataTTLS,
-          JSON.stringify(buyPrices),
+          JSON.stringify(prices.bids),
         );
       }
 
-      if (sellPrices.length) {
+      if (prices.asks.length) {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
           `${pair.base.address}_${pair.quote.address}_${SwapSide.BUY}`,
           this.config.marketConfig.dataTTLS,
-          JSON.stringify(sellPrices),
+          JSON.stringify(prices.asks),
         );
       }
     }
@@ -229,14 +227,17 @@ export class RateFetcher {
       return null;
     }
 
-    const orderPricesAsString: Rates = JSON.parse(pricesAsString);
+    const orderPricesAsString: PriceAndAmount[] = JSON.parse(pricesAsString);
     if (!orderPricesAsString) {
       return null;
     }
 
-    let orderPrices: BigNumberRates = orderPricesAsString.map(
-      ([amount, price]) => [new BigNumber(amount), new BigNumber(price)],
-    );
+    let orderPrices = orderPricesAsString.map(price => {
+      return {
+        amount: new BigNumber(price.amount),
+        price: new BigNumber(price.price),
+      } as PriceAndAmountBigNumber;
+    });
 
     if (reversed) {
       orderPrices = orderPrices.map(reversePrice);
