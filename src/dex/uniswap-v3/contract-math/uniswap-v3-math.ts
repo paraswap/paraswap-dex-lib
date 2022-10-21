@@ -521,8 +521,6 @@ class UniswapV3Math {
     state: PoolState,
     params: ModifyPositionParams,
   ): [bigint, bigint] {
-    this.checkTicks(params.tickLower, params.tickUpper);
-
     const _slot0 = state.slot0;
 
     this._updatePosition(
@@ -582,6 +580,10 @@ class UniswapV3Math {
     return [amount0, amount1];
   }
 
+  private _isTickToProcess(state: PoolState, tick: bigint): boolean {
+    return tick >= state.lowestKnownTick && tick <= state.highestKnownTick;
+  }
+
   private _updatePosition(
     state: PoolState,
     tickLower: bigint,
@@ -589,6 +591,11 @@ class UniswapV3Math {
     liquidityDelta: bigint,
     tick: bigint,
   ): void {
+    const [processTickLower, processTickUpper] = [
+      this._isTickToProcess(state, tickLower),
+      this._isTickToProcess(state, tickLower),
+    ];
+
     // if we need to update the ticks, do it
     let flippedLower = false;
     let flippedUpper = false;
@@ -605,28 +612,32 @@ class UniswapV3Math {
           state.slot0.observationCardinality,
         );
 
-      flippedLower = Tick.update(
-        state,
-        tickLower,
-        tick,
-        liquidityDelta,
-        secondsPerLiquidityCumulativeX128,
-        tickCumulative,
-        time,
-        false,
-        state.maxLiquidityPerTick,
-      );
-      flippedUpper = Tick.update(
-        state,
-        tickUpper,
-        tick,
-        liquidityDelta,
-        secondsPerLiquidityCumulativeX128,
-        tickCumulative,
-        time,
-        true,
-        state.maxLiquidityPerTick,
-      );
+      if (processTickLower) {
+        flippedLower = Tick.update(
+          state,
+          tickLower,
+          tick,
+          liquidityDelta,
+          secondsPerLiquidityCumulativeX128,
+          tickCumulative,
+          time,
+          false,
+          state.maxLiquidityPerTick,
+        );
+      }
+      if (processTickUpper) {
+        flippedUpper = Tick.update(
+          state,
+          tickUpper,
+          tick,
+          liquidityDelta,
+          secondsPerLiquidityCumulativeX128,
+          tickCumulative,
+          time,
+          true,
+          state.maxLiquidityPerTick,
+        );
+      }
 
       if (flippedLower) {
         TickBitMap.flipTick(state, tickLower, state.tickSpacing);
@@ -645,27 +656,6 @@ class UniswapV3Math {
         Tick.clear(state, tickUpper);
       }
     }
-  }
-
-  private checkTicks(tickLower: bigint, tickUpper: bigint) {
-    _require(
-      tickLower < tickUpper,
-      'TLU',
-      { tickLower, tickUpper },
-      'tickLower < tickUpper',
-    );
-    _require(
-      tickLower >= TickMath.MIN_TICK,
-      'TLM',
-      { tickLower },
-      'tickLower >= TickMath.MIN_TICK',
-    );
-    _require(
-      tickUpper <= TickMath.MAX_TICK,
-      'TUM',
-      { tickUpper },
-      'tickUpper <= TickMath.MAX_TICK',
-    );
   }
 
   private _blockTimestamp(state: DeepReadonly<PoolState>) {

@@ -9,12 +9,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { OracleObservation, PoolState, Slot0, TickInfo } from './types';
 import { bigIntify } from '../../utils';
-import { MultiCallV2Output } from '../../types';
-import {
-  TICK_BITMAP_BUFFER,
-  TICK_BITMAP_TO_USE,
-  ZERO_ORACLE_OBSERVATION,
-} from './constants';
+import { MultiResult } from '../../lib/multi-wrapper';
 import { TickBitMap } from './contract-math/TickBitMap';
 
 jest.setTimeout(300 * 1000);
@@ -70,7 +65,7 @@ describe('UniswapV3 Event', function () {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`${event}:${blockNumber} - should return correct state`, async function () {
           const dexHelper = new DummyDexHelper(network);
-          await dexHelper.init();
+          // await dexHelper.init();
 
           const logger = dexHelper.getLogger(dexKey);
 
@@ -140,10 +135,10 @@ function _getSecondStepStateCallData(
 ) {
   const target = uniswapV3Pool.poolAddress;
   const start = Number(
-    currentTickBitmap - TICK_BITMAP_BUFFER - TICK_BITMAP_TO_USE,
+    currentTickBitmap - uniswapV3Pool.getBitmapRangeToRequest(),
   );
   const end = Number(
-    currentTickBitmap + TICK_BITMAP_BUFFER + TICK_BITMAP_TO_USE,
+    currentTickBitmap + uniswapV3Pool.getBitmapRangeToRequest(),
   );
 
   return _.range(start, end).map(ind => ({
@@ -224,9 +219,9 @@ async function getStateFromMulticall(
 
   _checkMulticallResultForError(secondData, blockNumber);
 
-  let ind = Number(currentTickBitmap - TICK_BITMAP_BUFFER - TICK_BITMAP_TO_USE);
+  let ind = Number(currentTickBitmap - uniswapV3Pool.getBitmapRangeToRequest());
   const tickBitmap = (
-    secondData.map((d: MultiCallV2Output) =>
+    secondData.map((d: MultiResult<string>) =>
       bigIntify(
         uniswapV3Pool.poolIface.decodeFunctionResult(
           'tickBitmap',
@@ -281,7 +276,10 @@ async function getStateFromMulticall(
     ).timestamp,
   );
 
+  const requestedRange = uniswapV3Pool.getBitmapRangeToRequest();
+
   return {
+    pool: uniswapV3Pool.poolAddress,
     blockTimestamp,
     slot0,
     liquidity,
@@ -293,6 +291,13 @@ async function getStateFromMulticall(
     observations,
     isValid: true,
     startTickBitmap: currentTickBitmap,
+    lowestKnownTick:
+      (BigInt.asIntN(24, currentTickBitmap - requestedRange) << 8n) *
+      tickSpacing,
+    highestKnownTick:
+      ((BigInt.asIntN(24, currentTickBitmap + requestedRange) << 8n) +
+        BigInt.asIntN(24, 255n)) *
+      tickSpacing,
   };
 }
 
@@ -365,10 +370,10 @@ function _calcPopulatedTickIndexes(
 }
 
 function _checkMulticallResultForError(
-  data: MultiCallV2Output[],
+  data: MultiResult<string>[],
   blockNumber: number,
 ) {
-  data.forEach((d: MultiCallV2Output, i: number) => {
+  data.forEach((d: MultiResult<string>, i: number) => {
     if (!d.success) {
       throw new Error(
         `UniswapV3: Can not fetch state for ${blockNumber} and index=${i}`,

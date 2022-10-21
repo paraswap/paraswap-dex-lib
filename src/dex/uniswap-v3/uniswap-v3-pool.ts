@@ -171,13 +171,17 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
           this.token0,
           this.token1,
           this.feeCode,
-          TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER,
-          TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER,
+          this.getBitmapRangeToRequest(),
+          this.getBitmapRangeToRequest(),
         ],
       };
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;
+  }
+
+  getBitmapRangeToRequest() {
+    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
@@ -209,6 +213,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const currentTick = bigIntify(_state.slot0.tick);
     const tickSpacing = bigIntify(_state.tickSpacing);
 
+    const startTickBitmap = TickBitMap.position(currentTick / tickSpacing)[0];
+    const requestedRange = this.getBitmapRangeToRequest();
+
     return {
       pool: _state.pool,
       blockTimestamp: bigIntify(_state.blockTimestamp),
@@ -228,7 +235,14 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       ticks,
       observations,
       isValid: true,
-      startTickBitmap: TickBitMap.position(currentTick / tickSpacing)[0],
+      startTickBitmap,
+      lowestKnownTick:
+        (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
+        tickSpacing,
+      highestKnownTick:
+        ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
+          BigInt.asIntN(24, 255n)) *
+        tickSpacing,
     };
   }
 

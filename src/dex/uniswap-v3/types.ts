@@ -44,6 +44,8 @@ export type PoolState = {
   observations: Record<number, OracleObservation>;
   isValid: boolean;
   startTickBitmap: bigint;
+  lowestKnownTick: bigint;
+  highestKnownTick: bigint;
 };
 
 export type UniswapV3Data = {
