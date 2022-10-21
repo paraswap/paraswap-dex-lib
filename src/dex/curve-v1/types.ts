@@ -6,6 +6,11 @@ export type ImplementationConstants = {
   FEE_DENOMINATOR: bigint;
   PRECISION: bigint;
   LENDING_PRECISION: bigint;
+
+  BASE_POOL: Address;
+  MAX_COIN: bigint;
+  BASE_N_COINS: bigint;
+  A_PRECISION: bigint;
 };
 
 export type PoolConstants = {
@@ -16,6 +21,7 @@ export type PoolConstants = {
   coins_decimals: number[];
   base_coins_decimals: number[];
   rate_multipliers: bigint[];
+  rate_multiplier: bigint;
 } & ImplementationConstants;
 
 export type PoolState = {
@@ -23,6 +29,7 @@ export type PoolState = {
   balances: bigint[]; // factory get_balances()
   fee: bigint; // factory get_fees()
   constants: PoolConstants;
+  totalSupply: bigint;
 };
 
 export type PoolStateWithUpdateInfo<T> = {

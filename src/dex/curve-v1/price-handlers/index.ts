@@ -1,10 +1,9 @@
-import { PriceHandlerTypes } from '../types';
-import { IPriceHandler } from './iprice-handler';
-import { plainPriceHandler } from './plain-price-handler';
+import { ImplementationNames } from '../types';
+import { PriceHandler } from './price-handler';
 
-export const outputClassMappings: Record<
-  PriceHandlerTypes,
-  IPriceHandler<unknown>
+export const implementationToPricing: Record<
+  ImplementationNames,
+  PriceHandler
 > = {
-  [PriceHandlerTypes.PLAIN]: plainPriceHandler,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: FactoryPlain,
 };
