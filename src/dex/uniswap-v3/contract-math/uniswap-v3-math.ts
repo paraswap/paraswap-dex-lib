@@ -591,11 +591,6 @@ class UniswapV3Math {
     liquidityDelta: bigint,
     tick: bigint,
   ): void {
-    const [processTickLower, processTickUpper] = [
-      this._isTickToProcess(state, tickLower),
-      this._isTickToProcess(state, tickLower),
-    ];
-
     // if we need to update the ticks, do it
     let flippedLower = false;
     let flippedUpper = false;
@@ -612,7 +607,7 @@ class UniswapV3Math {
           state.slot0.observationCardinality,
         );
 
-      if (processTickLower) {
+      if (this._isTickToProcess(state, tickLower) {
         flippedLower = Tick.update(
           state,
           tickLower,
@@ -625,7 +620,7 @@ class UniswapV3Math {
           state.maxLiquidityPerTick,
         );
       }
-      if (processTickUpper) {
+      if (this._isTickToProcess(state, tickUpper) {
         flippedUpper = Tick.update(
           state,
           tickUpper,
