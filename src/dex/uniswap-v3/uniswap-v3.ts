@@ -139,7 +139,7 @@ export class UniswapV3
         }),
       );
 
-      this.logger.info(`starting to listen to new pool: ${key}`);
+      this.logger.trace(`starting to listen to new pool: ${key}`);
       pool = new UniswapV3EventPool(
         this.dexHelper,
         this.dexKey,
