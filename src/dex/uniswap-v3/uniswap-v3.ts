@@ -174,7 +174,7 @@ export class UniswapV3
             `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool`,
             e,
           );
-          return null;
+          throw new Error('Cannot generate pool state');
         }
       }
 
@@ -184,23 +184,29 @@ export class UniswapV3
     return pool;
   }
 
-  async addMasterPool(poolKey: string, blockNumber: number) {
+  async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
     const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
     if (!_pairs) {
       this.logger.warn(
         `did not find poolconfig in for key ${this.dexmapKey} ${poolKey}`,
       );
-      return;
+      return false;
     }
 
     const poolInfo: PoolPairsInfo = JSON.parse(_pairs);
 
-    await this.getPool(
+    const pool = await this.getPool(
       poolInfo.token0,
       poolInfo.token1,
       BigInt(poolInfo.fee),
       blockNumber,
     );
+
+    if (!pool) {
+      return false;
+    }
+
+    return true;
   }
 
   async getPoolIdentifiers(
