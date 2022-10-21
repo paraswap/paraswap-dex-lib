@@ -7,21 +7,25 @@ import {
   LimitOrderToSend,
 } from '@paraswap/sdk';
 import axios from 'axios';
+import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import express from 'express';
-import { RFQPayload } from './types';
+import { RFQPayload, PairPriceResponse } from './types';
+import { reversePrice } from './rate-fetcher';
+import { SwapSide } from '@paraswap/core';
 
 const markets = {
   markets: [
     {
-      id: 'WETH-DAI',
+      name: 'WETH-DAI',
+      id: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2_0x6b175474e89094c44da98b954eedeac495271d0f',
       base: {
-        address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
         decimals: 18,
         type: 'erc20',
       },
       quote: {
-        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        address: '0x6b175474e89094c44da98b954eedeac495271d0f',
         decimals: 18,
         type: 'erc20',
       },
@@ -30,61 +34,62 @@ const markets = {
   ],
 };
 
-const prices = {
-  'WETH-DAI': {
-    bids: [
-      {
-        price: '1333.425240000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1333.024812000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1332.624384000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1332.223956000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1331.823528000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1331.423100000000000000',
-        amount: '1.169000000000000000',
-      },
-    ],
-    asks: [
-      {
-        price: '1336.745410000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1337.146033000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1337.546656000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1337.947279000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1338.347902000000000000',
-        amount: '1.166200000000000000',
-      },
-      {
-        price: '1338.748525000000000000',
-        amount: '1.169000000000000000',
-      },
-    ],
-  },
+const prices: Record<string, PairPriceResponse> = {
+  '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2_0x6b175474e89094c44da98b954eedeac495271d0f':
+    {
+      bids: [
+        {
+          price: '1333.425240000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1333.024812000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1332.624384000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1332.223956000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1331.823528000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1331.423100000000000000',
+          amount: '1.169000000000000000',
+        },
+      ],
+      asks: [
+        {
+          price: '1336.745410000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1337.146033000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1337.546656000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1337.947279000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1338.347902000000000000',
+          amount: '1.166200000000000000',
+        },
+        {
+          price: '1338.748525000000000000',
+          amount: '1.169000000000000000',
+        },
+      ],
+    },
 };
 
 export const startTestServer = (account: ethers.Wallet) => {
@@ -126,14 +131,76 @@ export const startTestServer = (account: ethers.Wallet) => {
   app.post('/firm', async (req, res) => {
     const payload: RFQPayload = req.body;
 
+    let reversed = false;
+    let _prices: PairPriceResponse =
+      prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+    if (!_prices) {
+      _prices =
+        prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+      reversed = true;
+    }
+
+    if (!_prices) {
+      return res.status(404).send();
+    }
+
+    let value = new BigNumber('0');
+    if (!reversed) {
+      if (payload.side === SwapSide.SELL) {
+        value = new BigNumber(payload.takerAmount).times(
+          new BigNumber(_prices.bids[0].price),
+        );
+      } else if (payload.takerAmount) {
+        const reversedPrices = _prices.asks.map(price =>
+          reversePrice({
+            amount: new BigNumber(price.amount),
+            price: new BigNumber(price.price),
+          }),
+        );
+
+        value = new BigNumber(payload.takerAmount).times(
+          reversedPrices[0].price,
+        );
+      }
+    } else {
+      if (payload.side === SwapSide.SELL) {
+        const reversedPrices = _prices.bids.map(price =>
+          reversePrice({
+            amount: new BigNumber(price.amount),
+            price: new BigNumber(price.price),
+          }),
+        );
+
+        value = new BigNumber(payload.takerAmount).times(
+          reversedPrices[0].price,
+        );
+      } else if (payload.takerAmount) {
+        value = new BigNumber(payload.takerAmount).times(
+          new BigNumber(_prices.asks[0].price),
+        );
+      }
+    }
+
+    console.log(value.toFixed());
+
     const signableOrderData = await paraSwapLimitOrderSDK.buildLimitOrder({
       maker: account.address,
       taker: payload.txOrigin,
       expiry: 0,
       makerAsset: payload.makerAsset,
       takerAsset: payload.takerAsset,
-      makerAmount: payload.makerAmount ? payload.makerAmount : '1',
-      takerAmount: payload.takerAmount ? payload.takerAmount : '1',
+      makerAmount: value.toFixed(0),
+      takerAmount: payload.takerAmount,
+    });
+
+    console.log({
+      maker: account.address,
+      taker: payload.txOrigin,
+      expiry: 0,
+      makerAsset: payload.makerAsset,
+      takerAsset: payload.takerAsset,
+      makerAmount: value.toFixed(0),
+      takerAmount: payload.takerAmount,
     });
 
     const signature = await paraSwapLimitOrderSDK.signLimitOrder(

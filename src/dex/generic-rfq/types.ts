@@ -69,8 +69,7 @@ export type RFQPayload = {
   takerAsset: Address;
   model: RFQModel;
   side: SwapSide;
-  makerAmount?: string;
-  takerAmount?: string;
+  takerAmount: string;
   taker: Address;
   txOrigin: Address;
 };

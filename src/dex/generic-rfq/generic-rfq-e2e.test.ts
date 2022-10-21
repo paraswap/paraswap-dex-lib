@@ -28,6 +28,9 @@ describe('GenericRFQ E2E Mainnet', () => {
   describe('GenericRFQ', () => {
     const dexKey = 'DummyParaSwapPool';
 
+    srcToken.addBalance(account.address, MAX_UINT);
+    srcToken.addAllowance(account.address, config.augustusRFQAddress, MAX_UINT);
+
     destToken.addBalance(account.address, MAX_UINT);
     destToken.addAllowance(
       account.address,
@@ -36,7 +39,7 @@ describe('GenericRFQ E2E Mainnet', () => {
     );
 
     describe('Simpleswap', () => {
-      it('WETH -> DAI', async () => {
+      it('SELL WETH -> DAI', async () => {
         await newTestE2E({
           config,
           srcToken,
@@ -44,6 +47,34 @@ describe('GenericRFQ E2E Mainnet', () => {
           senderAddress: GENERIC_ADDR1,
           _amount: '1000000000000000000',
           swapSide: SwapSide.SELL,
+          dexKey: dexKey,
+          contractMethod: ContractMethod.simpleSwap,
+          network: network,
+        });
+      });
+
+      it.only('SELL DAI -> WETH', async () => {
+        await newTestE2E({
+          config,
+          srcToken,
+          destToken,
+          senderAddress: GENERIC_ADDR1,
+          _amount: '1000000000000000000',
+          swapSide: SwapSide.SELL,
+          dexKey: dexKey,
+          contractMethod: ContractMethod.simpleSwap,
+          network: network,
+        });
+      });
+
+      it('BUY WETH -> DAI', async () => {
+        await newTestE2E({
+          config,
+          srcToken,
+          destToken,
+          senderAddress: GENERIC_ADDR1,
+          _amount: '1000000000000000000',
+          swapSide: SwapSide.BUY,
           dexKey: dexKey,
           contractMethod: ContractMethod.simpleSwap,
           network: network,

@@ -26,7 +26,7 @@ function onlyUnique(value: string, index: number, self: string[]) {
   return self.indexOf(value) === index;
 }
 
-const reversePrice = (price: PriceAndAmountBigNumber) =>
+export const reversePrice = (price: PriceAndAmountBigNumber) =>
   ({
     amount: price.amount.times(price.price),
     price: BN_1.dividedBy(price.price),
@@ -275,9 +275,9 @@ export class RateFetcher {
       return null;
     }
 
-    let _side = orderPrices.reversed ? 'sell' : 'buy';
+    let _side = orderPrices.reversed ? SwapSide.SELL : SwapSide.BUY;
     if (side === SwapSide.BUY) {
-      _side = orderPrices.reversed ? 'buy' : 'sell';
+      _side = orderPrices.reversed ? SwapSide.BUY : SwapSide.SELL;
     }
 
     const amount = new BigNumber(srcAmount).div(
@@ -286,31 +286,20 @@ export class RateFetcher {
       ),
     );
 
-    let obj: {
-      makerAmount?: string;
-      takerAmount?: string;
-    } = {};
+    let makerAsset = srcToken.address;
+    let takerAsset = destToken.address;
 
-    if (orderPrices.reversed) {
-      if (_side === SwapSide.SELL) {
-        obj = { takerAmount: amount.toFixed() };
-      } else {
-        obj = { makerAmount: amount.toFixed() };
-      }
-    } else {
-      if (_side === SwapSide.SELL) {
-        obj = { makerAmount: amount.toFixed() };
-      } else {
-        obj = { takerAmount: amount.toFixed() };
-      }
+    if (orderPrices.reversed || SwapSide.BUY) {
+      makerAsset = destToken.address;
+      takerAsset = srcToken.address;
     }
 
     const payload: RFQPayload = {
-      makerAsset: orderPrices.to.address,
-      takerAsset: orderPrices.from.address,
+      makerAsset,
+      takerAsset,
       model: 'firm',
       side,
-      ...obj,
+      takerAmount: amount.toFixed(),
       taker: this.augustusAddress,
       txOrigin,
     };

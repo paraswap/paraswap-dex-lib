@@ -17,6 +17,8 @@ import { PriceAndAmountBigNumber, RFQConfig } from './types';
 import { OptimalSwapExchange } from 'paraswap-core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
+jest.setTimeout(1000 * 60 * 3);
+
 type OutputsResults = {
   outputs: bigint[];
   ordersCount: number;

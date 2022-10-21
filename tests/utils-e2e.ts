@@ -273,7 +273,7 @@ export type TestParamE2E = {
   destToken: SmartToken;
   senderAddress: Address;
   _amount: string;
-  swapSide: SwapSide.SELL;
+  swapSide: SwapSide;
   dexKey: string;
   contractMethod: ContractMethod;
   network: Network;
@@ -375,11 +375,7 @@ export async function newTestE2E({
 
     srcToken
       .addBalance(senderAddress, amount.toString())
-      .addAllowance(
-        senderAddress,
-        config.tokenTransferProxyAddress,
-        amount.toString(),
-      )
+      .addAllowance(senderAddress, config.augustusAddress, amount.toString())
       .applyOverrides(stateOverrides);
 
     destToken.applyOverrides(stateOverrides);
