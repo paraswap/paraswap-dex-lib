@@ -74,6 +74,7 @@ export abstract class StatefulEventSubscriber<State>
     blockNumber: number,
     options?: InitializeStateOptions<State>,
   ) {
+    let masterBn: undefined | number = undefined;
     if (options && options.state) {
       this.setState(options.state, blockNumber);
     } else {
@@ -96,24 +97,22 @@ export abstract class StatefulEventSubscriber<State>
             this.logger.debug(
               `${this.parentName}: ${this.name}: found state from cache`,
             );
+            blockNumber = state.bn;
 
-            const masterBn = await this.dexHelper.cache.rawget(
+            const _masterBn = await this.dexHelper.cache.rawget(
               this.dexHelper.config.masterBlockNumberCacheKey,
             );
-
-            if (masterBn) {
-              blockNumber = parseInt(masterBn, 10);
+            if (_masterBn) {
+              masterBn = parseInt(_masterBn, 10);
               this.logger.debug(
                 `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
               );
             } else {
-              blockNumber = state.bn;
               this.logger.error(
                 `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
               );
             }
           }
-
           // set state and the according blockNumber. state.bn can be smaller, greater or equal
           // to blockNumber
           this.setState(state.state, blockNumber);
@@ -147,7 +146,7 @@ export abstract class StatefulEventSubscriber<State>
     this.dexHelper.blockManager.subscribeToLogs(
       this,
       this.addressesSubscribed,
-      blockNumber,
+      masterBn || blockNumber,
     );
   }
 
