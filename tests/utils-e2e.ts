@@ -25,7 +25,6 @@ import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
 import { DummyLimitOrderProvider } from '../src/dex-helper';
 import { constructSimpleSDK, SimpleFetchSDK, SimpleSDK } from '@paraswap/sdk';
-import { sleep } from '../tests/utils';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 
