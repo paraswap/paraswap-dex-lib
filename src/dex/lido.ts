@@ -1,4 +1,3 @@
-import { Provider } from '@ethersproject/providers';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
