@@ -10,6 +10,10 @@ import { parseInt } from 'lodash';
 import { startTestServer } from './example-api.test';
 import { ethers } from 'ethers';
 
+if (!process.env.TEST_PORT) {
+  throw new Error(`Missing TEST_PORT variable`);
+}
+
 const PORT_TEST_SERVER = parseInt(process.env.TEST_PORT!, 10);
 
 const WETH = {

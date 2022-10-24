@@ -6,14 +6,11 @@ import Fetcher from '../../lib/fetcher/fetcher';
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
 import {
-  BigNumberRate,
-  BigNumberRates,
   MarketResponse,
   OrderPriceInfo,
   PairMap,
   PriceAndAmount,
   PriceAndAmountBigNumber,
-  Rates,
   RatesResponse,
   RFQConfig,
   RFQFirmRateResponse,
@@ -203,9 +200,6 @@ export class RateFetcher {
     destToken: Token,
     side: SwapSide,
   ): Promise<OrderPriceInfo | null> {
-    // let from = side === SwapSide.SELL ? srcToken : destToken;
-    // let to = side === SwapSide.SELL ? destToken : srcToken;
-
     let pricesAsString: string | null = await this.dexHelper.cache.get(
       this.dexKey,
       this.dexHelper.config.data.network,
