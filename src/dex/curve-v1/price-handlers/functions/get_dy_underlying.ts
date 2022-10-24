@@ -1,19 +1,17 @@
 import { BI_POWS } from '../../../../bigint-constants';
-import { PoolState } from '../../types';
+import { ImplementationNames, PoolState } from '../../types';
 import { calc_token_amount } from './calc_token_amount';
 import { get_D } from './get_D';
 import { get_dy } from './get_dy';
 import { get_D_mem } from './get_D_mem';
-import { get_virtual_price } from './get_virtual_price';
 import { get_y } from './get_y';
 import { get_y_D } from './get_y_D';
 import { _A } from './_A';
-import { _xp } from './_xp';
 import { _xp_mem } from './_xp_mem';
 import { calc_withdraw_one_coin } from './calc_withdraw_one_coin';
 import { _calc_withdraw_one_coin } from './_calc_withdraw_one_coin';
 
-export interface DependantFuncs {
+interface DependantFuncs {
   _xp_mem: _xp_mem;
   get_y: get_y;
   _A: _A;
@@ -21,14 +19,12 @@ export interface DependantFuncs {
 }
 
 export interface BaseDependantFuncs {
-  get_virtual_price: get_virtual_price;
   _A: _A;
   get_D: get_D;
   _xp_mem: _xp_mem;
   calc_token_amount: calc_token_amount;
   get_D_mem: get_D_mem;
   get_dy: get_dy;
-  _xp: _xp;
   get_y: get_y;
   calc_withdraw_one_coin: calc_withdraw_one_coin;
   _calc_withdraw_one_coin: _calc_withdraw_one_coin;
@@ -45,7 +41,7 @@ export type get_dy_underlying = (
   dx: bigint,
 ) => bigint;
 
-const _default = (
+const factoryMeta3Pool2_15 = (
   state: PoolState,
   basePoolState: PoolState,
   funcs: DependantFuncs,
@@ -61,10 +57,7 @@ const _default = (
     PRECISION,
     FEE_DENOMINATOR,
   } = state.constants;
-  const rates = [
-    rate_multiplier,
-    basePoolFuncs.get_virtual_price(basePoolState, basePoolFuncs),
-  ];
+  const rates = [rate_multiplier, basePoolState.virtualPrice];
   const xp = funcs._xp_mem(state, rates, state.balances);
 
   let x = 0n;
@@ -138,10 +131,8 @@ const _default = (
   return dy;
 };
 
-export enum variations {
-  DEFAULT = 'default',
-}
-
-export const mappings: Record<variations, get_dy_underlying> = {
-  [variations.DEFAULT]: _default,
+const implementations: Record<ImplementationNames, get_dy_underlying> = {
+  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_15,
 };
+
+export default implementations;

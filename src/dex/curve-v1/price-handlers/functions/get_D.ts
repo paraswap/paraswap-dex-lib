@@ -1,9 +1,9 @@
 import _ from 'lodash';
-import { PoolState } from '../../types';
+import { ImplementationNames, PoolState } from '../../types';
 
 export type get_D = (state: PoolState, xp: bigint[], amp: bigint) => bigint;
 
-const _default = (state: PoolState, xp: bigint[], amp: bigint): bigint => {
+const NEED_TO_VERIFY = (state: PoolState, xp: bigint[], amp: bigint): bigint => {
   const { N_COINS } = state.constants;
 
   let S = 0n;
@@ -40,10 +40,8 @@ const _default = (state: PoolState, xp: bigint[], amp: bigint): bigint => {
   return D;
 };
 
-export enum variations {
-  DEFAULT = 'default',
-}
-
-export const mappings: Record<variations, get_D> = {
-  [variations.DEFAULT]: _default,
+const implementations: Record<ImplementationNames, get_D> = {
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: NEED_TO_VERIFY,
 };
+
+export default implementations;

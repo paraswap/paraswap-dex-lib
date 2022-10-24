@@ -64,10 +64,8 @@ const _default: get_y_D = (
   throw new Error(`${funcName()}: didn't converge. Throwing`);
 };
 
-export enum variations {
-  DEFAULT = 'default',
-}
-
-export const mappings: Record<variations, get_y_D> = {
-  [variations.DEFAULT]: _default,
+const implementations: Record<ImplementationNames, get_y_D> = {
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: _default,
 };
+
+export default implementations;

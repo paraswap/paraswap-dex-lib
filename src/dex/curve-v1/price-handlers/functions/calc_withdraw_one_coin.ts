@@ -1,4 +1,4 @@
-import { PoolState } from '../../types';
+import { ImplementationNames, PoolState } from '../../types';
 import { get_D } from './get_D';
 import { get_y_D } from './get_y_D';
 import { _A } from './_A';
@@ -20,7 +20,7 @@ export type calc_withdraw_one_coin = (
   i: number,
 ) => bigint;
 
-const _default: calc_withdraw_one_coin = (
+const factoryPlain2CoinErc20: calc_withdraw_one_coin = (
   state: PoolState,
   funcs: DependantFuncs,
   _burn_amount: bigint,
@@ -29,10 +29,11 @@ const _default: calc_withdraw_one_coin = (
   return funcs._calc_withdraw_one_coin(state, funcs, _burn_amount, i)[0];
 };
 
-export enum variations {
-  DEFAULT = 'default',
-}
-
-export const mappings: Record<variations, calc_withdraw_one_coin> = {
-  [variations.DEFAULT]: _default,
+export const implementations: Record<
+  ImplementationNames,
+  calc_withdraw_one_coin
+> = {
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
 };
+
+export default implementations;

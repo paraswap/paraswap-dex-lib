@@ -57,6 +57,10 @@ export type PoolConfig = {
 };
 
 export enum ImplementationNames {
+  THREE_POOL = 'three_pool',
+  TWO_COIN_POOL = 'two_coin_pool',
+  BTC_POOL = 'btc_pool',
+
   FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
   FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',
   FACTORY_META_3POOL_3_1 = 'factory_meta_3pool_3_1',

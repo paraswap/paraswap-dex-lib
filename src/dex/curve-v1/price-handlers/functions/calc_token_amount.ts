@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { PoolState } from '../../types';
+import { ImplementationNames, PoolState } from '../../types';
 import { get_D } from './get_D';
 import { get_D_mem } from './get_D_mem';
 import { _A } from './_A';
@@ -19,7 +19,7 @@ export type calc_token_amount = (
   _is_deposit: boolean,
 ) => bigint;
 
-const _default = (
+const factoryPlain2CoinErc20 = (
   state: PoolState,
   funcs: DependantFuncs,
   _amounts: bigint[],
@@ -49,10 +49,8 @@ const _default = (
   return (diff * state.totalSupply) / D0;
 };
 
-export enum variations {
-  DEFAULT = 'default',
-}
-
-export const mappings: Record<variations, calc_token_amount> = {
-  [variations.DEFAULT]: _default,
+const implementations: Record<ImplementationNames, calc_token_amount> = {
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
 };
+
+export default implementations;

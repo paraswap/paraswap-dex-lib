@@ -7,7 +7,6 @@ import { get_dy } from './functions/get_dy';
 import { get_dy_underlying } from './functions/get_dy_underlying';
 import { get_y } from './functions/get_y';
 import { _A } from './functions/_A';
-import { _xp } from './functions/_xp';
 
 export type GeneralDependantFuncs = {
   get_dy: get_dy;
@@ -15,7 +14,6 @@ export type GeneralDependantFuncs = {
 
   _A: _A;
   get_y: get_y;
-  _xp: _xp;
   get_D: get_D;
 };
 

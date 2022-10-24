@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { PoolState } from '../../types';
+import { ImplementationNames, PoolState } from '../../types';
 import { get_D } from './get_D';
 import { _xp_mem } from './_xp_mem';
 
@@ -16,7 +16,7 @@ export type get_D_mem = (
   _amp: bigint,
 ) => bigint;
 
-const _default = (
+const factoryPlain2CoinErc20 = (
   state: PoolState,
   funcs: DependantFuncs,
   _rates: bigint[],
@@ -31,6 +31,8 @@ export enum variations {
   DEFAULT = 'default',
 }
 
-export const mappings: Record<variations, get_D_mem> = {
-  [variations.DEFAULT]: _default,
+export const implementations: Record<ImplementationNames, get_D_mem> = {
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
 };
+
+export default implementations;

@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { _xp } from './_xp';
 import { PoolState } from '../../types';
 import { _require } from '../../../../utils';
 import { _A } from './_A';
@@ -79,10 +78,8 @@ const _default = (
   return y;
 };
 
-export enum variations {
-  DEFAULT = 'default',
-}
-
-export const mappings: Record<variations, get_y> = {
-  [variations.DEFAULT]: _default,
+const implementations: Record<ImplementationNames, get_y> = {
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: _default,
 };
+
+export default implementations;
