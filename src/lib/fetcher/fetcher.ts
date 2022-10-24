@@ -81,7 +81,7 @@ export default class Fetcher<T> {
 
     failures.forEach(i => {
       this.logger.warn(
-        `failled polling ${this.requests[i].info.requestOptions.url} ${results[i]}`,
+        `failed polling ${this.requests[i].info.requestOptions.url} ${results[i]}`,
       );
     });
 
