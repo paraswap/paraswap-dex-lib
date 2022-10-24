@@ -17,6 +17,8 @@ type InitializeStateOptions<State> = {
   initCallback?: (state: DeepReadonly<State>) => void;
 };
 
+const CREATE_NEW_STATE_RETRY_INTERVAL_MS = 1000;
+
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
 {
@@ -276,6 +278,7 @@ export abstract class StatefulEventSubscriber<State>
           this.setState(state, blockNumberForMissingStateRegen);
         } catch (e) {
           this.logger.error(e);
+          setTimeout(createNewState, CREATE_NEW_STATE_RETRY_INTERVAL_MS);
         }
       };
       createNewState();
