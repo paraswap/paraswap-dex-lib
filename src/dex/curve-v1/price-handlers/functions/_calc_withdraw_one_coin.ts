@@ -1,11 +1,11 @@
 import _ from 'lodash';
-import { PoolState } from '../../types';
+import { ImplementationNames, PoolState } from '../../types';
 import { get_D } from './get_D';
 import { get_y_D } from './get_y_D';
 import { _A } from './_A';
 import { _xp_mem } from './_xp_mem';
 
-export interface DependantFuncs {
+interface DependantFuncs {
   _A: _A;
   _xp_mem: _xp_mem;
   get_D: get_D;
@@ -19,7 +19,7 @@ export type _calc_withdraw_one_coin = (
   i: number,
 ) => [bigint, bigint];
 
-const _default: _calc_withdraw_one_coin = (
+const factoryPlain2CoinErc20: _calc_withdraw_one_coin = (
   state: PoolState,
   funcs: DependantFuncs,
   _burn_amount: bigint,
@@ -56,10 +56,8 @@ const _default: _calc_withdraw_one_coin = (
   return [dy, dy_0 - dy];
 };
 
-export enum variations {
-  DEFAULT = 'default',
-}
-
-export const mappings: Record<variations, _calc_withdraw_one_coin> = {
-  [variations.DEFAULT]: _default,
+const implementations: Record<ImplementationNames, _calc_withdraw_one_coin> = {
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
 };
+
+export default implementations;

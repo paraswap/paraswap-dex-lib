@@ -5,7 +5,7 @@ import { get_D_mem } from './get_D_mem';
 import { _A } from './_A';
 import { _xp_mem } from './_xp_mem';
 
-export interface DependantFuncs {
+interface DependantFuncs {
   _A: _A;
   get_D_mem: get_D_mem;
   _xp_mem: _xp_mem;

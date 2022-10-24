@@ -9,6 +9,8 @@ const factoryPlain2CoinErc20: _A = (state: PoolState) => {
   return state.A;
 };
 
-export const mappings: Record<ImplementationNames, _A> = {
+const implementations: Record<ImplementationNames, _A> = {
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
 };
+
+export default implementations;
