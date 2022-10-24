@@ -304,14 +304,6 @@ export async function newTestE2E({
   const ts = new TenderlySimulation(network);
   await ts.setup();
 
-  if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
-    const allowanceTx = await ts.simulate(
-      allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
-    );
-    if (!allowanceTx.success) console.log(allowanceTx.tenderlyUrl);
-    expect(allowanceTx!.success).toEqual(true);
-  }
-
   if (adapterBytecode) {
     const deployTx = await ts.simulate(
       deployAdapterParams(adapterBytecode, network),
@@ -342,7 +334,7 @@ export async function newTestE2E({
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
-  await sleep(5000);
+  // await sleep(5000);
   try {
     const priceRoute = await paraswap.getPrices(
       srcToken.token,
@@ -375,7 +367,11 @@ export async function newTestE2E({
 
     srcToken
       .addBalance(senderAddress, amount.toString())
-      .addAllowance(senderAddress, config.augustusAddress, amount.toString())
+      .addAllowance(
+        senderAddress,
+        config.tokenTransferProxyAddress,
+        amount.toString(),
+      )
       .applyOverrides(stateOverrides);
 
     destToken.applyOverrides(stateOverrides);

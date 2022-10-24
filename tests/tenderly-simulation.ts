@@ -79,7 +79,6 @@ export class TenderlySimulation {
         );
       }
 
-      console.log(_params);
       const { data } = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,
