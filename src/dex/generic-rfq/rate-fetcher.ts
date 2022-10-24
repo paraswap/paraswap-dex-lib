@@ -194,7 +194,7 @@ export class RateFetcher {
 
   checkHealth(): boolean {
     return [this.marketFetcher, this.rateFetcher].some(
-      f => f.lastFetchSucceded,
+      f => f.lastFetchSucceeded,
     );
   }
 

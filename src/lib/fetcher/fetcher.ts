@@ -23,13 +23,14 @@ export type RequestInfoWithHandler<T> = {
 export default class Fetcher<T> {
   private intervalId?: Timeout;
   private requests: RequestInfoWithHandler<T>[];
-  public lastFetchSucceded: boolean = false;
+  public lastFetchSucceeded: boolean = false;
   private failedCount = 0;
+  private stop: boolean = true;
 
   constructor(
     private requestWrapper: IRequestWrapper,
     requestsInfo: RequestInfoWithHandler<T> | RequestInfoWithHandler<T>[],
-    private pollInterval: number,
+    private pollIntervalMs: number,
     private logger: Logger,
   ) {
     if (Array.isArray(requestsInfo)) {
@@ -40,6 +41,10 @@ export default class Fetcher<T> {
   }
 
   async fetch() {
+    if (this.stop === true) {
+      return;
+    }
+
     if (this.failedCount >= FETCH_FAIL_MAX_ATTEMPT) {
       this.stopPolling();
 
@@ -81,10 +86,10 @@ export default class Fetcher<T> {
     });
 
     if (failures.length === results.length) {
-      this.lastFetchSucceded = false;
+      this.lastFetchSucceeded = false;
       this.failedCount += 1;
     } else {
-      this.lastFetchSucceded = true;
+      this.lastFetchSucceeded = true;
     }
 
     results
@@ -110,6 +115,7 @@ export default class Fetcher<T> {
         reqInfo.handler(parsedData);
         this.logger.debug(`(${options.url}) received new data`);
       });
+    setTimeout(this.fetch, this.pollIntervalMs);
   }
 
   private getUrls(): string[] {
@@ -117,23 +123,14 @@ export default class Fetcher<T> {
   }
 
   startPolling(): void {
-    if (this.intervalId) return;
-
-    this.intervalId = setInterval(() => {
-      this.fetch();
-    }, this.pollInterval);
-    // TODO add some mechanism for removing polling if it's failing
-
+    this.stop = false;
     this.logger.info(`Polling started for ${this.getUrls()}`);
     this.fetch();
   }
 
   stopPolling() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = undefined;
-      this.logger.info(`Polling stopped for ${this.getUrls()}`);
-    }
+    this.stop = true;
+    this.logger.info(`Polling stopped for ${this.getUrls()}`);
   }
 
   isPolling(): boolean {

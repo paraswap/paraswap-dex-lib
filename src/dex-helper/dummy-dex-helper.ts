@@ -26,7 +26,11 @@ class DummyCache implements ICache {
     network: number,
     cacheKey: string,
   ): Promise<string | null> {
-    return this.storage[`${network}_${dexKey}_${cacheKey}`.toLowerCase()];
+    const key = `${network}_${dexKey}_${cacheKey}`.toLowerCase();
+    if (this.storage[key]) {
+      return this.storage[key];
+    }
+    return null;
   }
 
   async rawget(key: string): Promise<string | null> {
