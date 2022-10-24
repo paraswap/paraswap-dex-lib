@@ -24,7 +24,7 @@ import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
 import { DummyLimitOrderProvider } from '../src/dex-helper';
-import { constructSimpleSDK, SimpleFetchSDK, SimpleSDK } from '@paraswap/sdk';
+import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 
