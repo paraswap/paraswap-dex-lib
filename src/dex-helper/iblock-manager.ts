@@ -3,6 +3,8 @@ import { AsyncOrSync } from 'ts-essentials';
 
 export interface EventSubscriber {
   //Contains a descriptive name for this subscriber, to be shown in logs etc.
+  readonly parentName: string;
+
   readonly name: string;
 
   //This field is set by BlockManager when you call subscribeToLogs() on it.

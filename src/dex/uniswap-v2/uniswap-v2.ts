@@ -271,6 +271,7 @@ export class UniswapV2
       callDecoder,
       this.decoderIface,
     );
+    pair.pool.addressesSubscribed.push(pair.exchange!);
 
     await pair.pool.initialize(blockNumber, {
       state: { reserves0, reserves1, feeCode },
