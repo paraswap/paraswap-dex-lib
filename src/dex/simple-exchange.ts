@@ -21,6 +21,8 @@ export class SimpleExchange {
   protected network: number;
   protected dexmapKey: string;
 
+  readonly cacheStateKey: string;
+
   constructor(dexHelper: IDexHelper, public dexKey: string) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
@@ -32,6 +34,9 @@ export class SimpleExchange {
 
     this.dexmapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
+
+    this.cacheStateKey =
+      `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
   }
 
   private async hasAugustusAllowance(

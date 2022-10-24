@@ -30,6 +30,10 @@ class DummyCache implements ICache {
     return null;
   }
 
+  async rawdel(key: string): Promise<void> {
+    return;
+  }
+
   async setex(
     dexKey: string,
     network: number,
@@ -149,7 +153,7 @@ export class DummyDexHelper implements IDexHelper {
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
   constructor(network: number) {
-    this.config = new ConfigHelper(false, generateConfig(network));
+    this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.provider = new StaticJsonRpcProvider(

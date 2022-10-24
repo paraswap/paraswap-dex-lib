@@ -3,7 +3,7 @@ import { Log, Logger } from './types';
 import { BlockHeader } from 'web3-eth';
 import { EventSubscriber } from './dex-helper/iblock-manager';
 
-import { CACHE_PREFIX, MAX_BLOCKS_HISTORY } from './constants';
+import { MAX_BLOCKS_HISTORY } from './constants';
 import { IDexHelper } from './dex-helper';
 import { Utils } from './utils';
 
@@ -34,7 +34,6 @@ export abstract class StatefulEventSubscriber<State>
   isTracking: () => boolean = () => false;
   public addressesSubscribed: string[] = [];
 
-  private mapKey: string;
   private cacheName: string;
 
   public name: string;
@@ -45,10 +44,9 @@ export abstract class StatefulEventSubscriber<State>
     protected dexHelper: IDexHelper,
     protected logger: Logger,
     private masterPoolNeeded: boolean = false,
+    private mapKey: string = '',
   ) {
     this.name = _name.toLowerCase();
-    this.mapKey =
-      `${CACHE_PREFIX}_${this.dexHelper.config.data.network}_${this.parentName}`.toLowerCase();
     this.cacheName = `${this.mapKey}_${this.name}`.toLowerCase();
   }
 
@@ -98,7 +96,22 @@ export abstract class StatefulEventSubscriber<State>
             this.logger.debug(
               `${this.parentName}: ${this.name}: found state from cache`,
             );
-            blockNumber = state.bn;
+
+            const masterBn = await this.dexHelper.cache.rawget(
+              this.dexHelper.config.masterBlockNumberCacheKey,
+            );
+
+            if (masterBn) {
+              blockNumber = parseInt(masterBn, 10);
+              this.logger.debug(
+                `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
+              );
+            } else {
+              blockNumber = state.bn;
+              this.logger.error(
+                `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
+              );
+            }
           }
 
           // set state and the according blockNumber. state.bn can be smaller, greater or equal

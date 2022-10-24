@@ -149,6 +149,7 @@ export class UniswapV3
         token0,
         token1,
         this.logger,
+        this.cacheStateKey,
       );
 
       try {

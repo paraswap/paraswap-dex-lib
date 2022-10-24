@@ -92,6 +92,8 @@ export interface IDexPricing<ExchangeData> {
   // Specify if current Dex integration can handle fee on transfer tokens
   readonly isFeeOnTransferSupported: boolean;
 
+  readonly cacheStateKey: string;
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use

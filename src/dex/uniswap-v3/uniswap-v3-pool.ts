@@ -62,6 +62,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     token0: Address,
     token1: Address,
     logger: Logger,
+    mapKey: string = '',
   ) {
     super(
       parentName,
@@ -69,6 +70,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       dexHelper,
       logger,
       true,
+      mapKey,
     );
     this.feeCodeAsString = feeCode.toString();
     this.token0 = token0.toLowerCase();

@@ -1,4 +1,4 @@
-import { Network, Provider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { LoggerConstructor } from '../types';
 import { ICache } from './icache';
 import { IRequestWrapper } from './irequest-wrapper';
