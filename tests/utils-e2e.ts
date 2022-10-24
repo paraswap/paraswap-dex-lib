@@ -223,7 +223,6 @@ export async function testE2E(
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
-  await sleep(5000);
   try {
     const priceRoute = await paraswap.getPrices(
       srcToken,

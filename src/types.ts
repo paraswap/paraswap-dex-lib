@@ -1,6 +1,4 @@
-import { SwapSide } from './constants';
 import { Address } from '@paraswap/core';
-import { BlockHeader } from 'web3-eth';
 export { BlockHeader } from 'web3-eth';
 export {
   Address,
