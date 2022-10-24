@@ -1,4 +1,7 @@
-import { BI_MAX_INT, BI_MAX_UINT } from '../../../bigint-constants';
+import {
+  BI_MAX_INT,
+  BI_MAX_UINT256 as BI_MAX_UINT,
+} from '../../../bigint-constants';
 import { Const } from './Const';
 
 const _require = (b: boolean, message: string) => {

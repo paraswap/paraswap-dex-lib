@@ -3,6 +3,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -10,6 +11,7 @@ import {
   MultiCallInput,
 } from '../../types';
 import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -68,6 +70,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   public allPools: Map<string, SubgraphPoolBase> = new Map();
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported: boolean = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SwaapV1Config);
@@ -122,6 +125,12 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       blockNumber,
     );
     this.eventPools[poolConfig.id] = pool;
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<SwaapV1Data>): number | number[] {
+    // TODO: update if there is any payload in getAdapterParam
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
   // Returns the list of contract adapters (name and index)
