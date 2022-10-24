@@ -14,6 +14,7 @@ import {
   SimpleExchangeParam,
   Token,
   TxInfo,
+  TransferFeeParams,
 } from '../../types';
 import {
   UniswapData,
@@ -26,9 +27,11 @@ import {
 } from './types';
 import { IDex } from '../idex';
 import {
+  DEST_TOKEN_PARASWAP_TRANSFERS,
   ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
   SUBGRAPH_TIMEOUT,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -48,6 +51,7 @@ import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -165,15 +169,6 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   }
 }
 
-// Apply extra fee for certain tokens when used as input to swap (basis points)
-// These could be tokens with fee on transfer or rounding error on balances
-// Token addresses must be in lower case!
-export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
-  // stETH - uses balances based on shares which causes rounding errors
-  '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 1,
-  '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f': 200,
-};
-
 function encodePools(
   pools: UniswapPool[],
   feeFactor: number,
@@ -202,13 +197,16 @@ export class UniswapV2
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported: boolean = true;
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV2Config);
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    public dexKey: string,
     protected dexHelper: IDexHelper,
     protected isDynamicFees = false,
     protected factoryAddress: Address = UniswapV2Config[dexKey][network]
@@ -447,6 +445,7 @@ export class UniswapV2
     from: Token,
     to: Token,
     blockNumber: number,
+    tokenDexTransferFee: number,
   ): Promise<UniswapV2PoolOrderedParams | null> {
     const pair = await this.findPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) return null;
@@ -459,9 +458,7 @@ export class UniswapV2
       );
       return null;
     }
-    const fee = (
-      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
-    ).toString();
+    const fee = (pairState.feeCode + tokenDexTransferFee).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
     if (pairReversed) {
@@ -515,6 +512,12 @@ export class UniswapV2
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
       const from = this.dexHelper.config.wrapETH(_from);
@@ -537,33 +540,56 @@ export class UniswapV2
         return null;
 
       await this.batchCatchUpPairs([[from, to]], blockNumber);
-
-      const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
+      const isSell = side === SwapSide.SELL;
+      const pairParam = await this.getPairOrderedParams(
+        from,
+        to,
+        blockNumber,
+        transferFees.srcDexFee,
+      );
 
       if (!pairParam) return null;
 
-      const unitAmount = getBigIntPow(
-        side == SwapSide.BUY ? to.decimals : from.decimals,
-      );
-      const unit =
-        side == SwapSide.BUY
-          ? await this.getBuyPricePath(unitAmount, [pairParam])
-          : await this.getSellPricePath(unitAmount, [pairParam]);
+      const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
-      const prices =
-        side == SwapSide.BUY
-          ? await Promise.all(
-              amounts.map(amount => this.getBuyPricePath(amount, [pairParam])),
-            )
-          : await Promise.all(
-              amounts.map(amount => this.getSellPricePath(amount, [pairParam])),
-            );
+      const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
+        [unitAmount, ...amounts],
+        side,
+        isSell ? transferFees.srcFee : transferFees.destFee,
+        isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
+      );
+
+      const unit = isSell
+        ? await this.getSellPricePath(unitVolumeWithFee, [pairParam])
+        : await this.getBuyPricePath(unitVolumeWithFee, [pairParam]);
+
+      const prices = isSell
+        ? await Promise.all(
+            amountsWithFee.map(amount =>
+              this.getSellPricePath(amount, [pairParam]),
+            ),
+          )
+        : await Promise.all(
+            amountsWithFee.map(amount =>
+              this.getBuyPricePath(amount, [pairParam]),
+            ),
+          );
+
+      const [unitOutWithFee, ...outputsWithFee] = applyTransferFee(
+        [unit, ...prices],
+        side,
+        // This part is confusing, because we treat differently SELL and BUY fees
+        // If Buy, we should apply transfer fee on srcToken on top of dexFee applied earlier
+        // But for Sell we should apply only one dexFee
+        isSell ? transferFees.destDexFee : transferFees.srcFee,
+        isSell ? this.DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
+      );
 
       // As uniswapv2 just has one pool per token pair
       return [
         {
-          prices: prices,
-          unit: unit,
+          prices: outputsWithFee,
+          unit: unitOutWithFee,
           data: {
             router: this.router,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],

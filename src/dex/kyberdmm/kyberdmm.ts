@@ -53,6 +53,7 @@ export class KyberDmm
   exchangeRouterInterface: Interface;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(KyberDmmConfig);

@@ -31,6 +31,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(GMXConfig);

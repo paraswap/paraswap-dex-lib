@@ -27,7 +27,7 @@ export class SpiritSwapV2 extends Solidly {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    public dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
     super(

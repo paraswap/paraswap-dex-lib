@@ -6,6 +6,7 @@ import {
   PoolPrices,
   ExchangePrices,
   UnoptimizedRate,
+  TransferFeeParams,
 } from './types';
 import {
   SwapSide,
@@ -143,6 +144,26 @@ export class PricingHelper {
     );
   }
 
+  getDexsSupportingFeeOnTransfer(): string[] {
+    const allDexKeys = this.dexAdapterService.getAllDexKeys();
+    return allDexKeys
+      .map(dexKey => {
+        try {
+          const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+          if (dexInstance.isFeeOnTransferSupported) {
+            return dexKey;
+          }
+        } catch (e) {
+          if (
+            !(e instanceof Error && e.message.startsWith(`Invalid Dex Key`))
+          ) {
+            throw e;
+          }
+        }
+      })
+      .filter((d: string | undefined): d is string => !!d);
+  }
+
   public async getPoolPrices(
     from: Token,
     to: Token,
@@ -151,6 +172,12 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     limitPoolsMap: { [key: string]: string[] | null } | null,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
     rollupL1ToL2GasRatio?: number,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
@@ -177,6 +204,7 @@ export class PricingHelper {
                   side,
                   blockNumber,
                   limitPools ? limitPools : undefined,
+                  transferFees,
                 )
                 .then(poolPrices => {
                   try {

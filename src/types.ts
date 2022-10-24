@@ -278,3 +278,10 @@ export type PreprocessTransactionOptions = {
   hmac?: string;
   mockRfqAndLO?: boolean;
 };
+
+export type TransferFeeParams = {
+  srcFee: number;
+  destFee: number;
+  srcDexFee: number;
+  destDexFee: number;
+};

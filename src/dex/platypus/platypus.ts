@@ -50,6 +50,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   };
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(PlatypusConfig);
