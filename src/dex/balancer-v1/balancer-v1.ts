@@ -168,35 +168,35 @@ export class BalancerV1
         poolsMissingState.push(poolInfo);
       }
     }
+
     if (poolsMissingState.length) {
       const poolStates = await generatePoolStates(
         poolsMissingState,
         this.balancerMulticall,
         blockNumber,
       );
-      for (let i = 0; i < poolsMissingState.length; ++i) {
-        const poolInfo = poolsMissingState[i];
-        const poolState = poolStates[i];
-        if (this.eventPools[poolInfo.id]) {
-          this.eventPools[poolInfo.id].setState(poolState, blockNumber);
-        } else {
-          const newPool = new BalancerV1EventPool(
-            this.dexKey,
-            this.network,
-            this.dexHelper,
-            this.logger,
-            this.balancerMulticall,
-            poolInfo,
-          );
-          newPool.setState(poolState, blockNumber);
-          this.dexHelper.blockManager.subscribeToLogs(
-            newPool,
-            newPool.addressesSubscribed,
-            blockNumber,
-          );
-          this.eventPools[poolInfo.id] = newPool;
-        }
-      }
+
+      await Promise.all(
+        poolsMissingState.map(async (poolInfo, i) => {
+          const poolState = poolStates[i];
+          if (this.eventPools[poolInfo.id]) {
+            this.eventPools[poolInfo.id].setState(poolState, blockNumber);
+          } else {
+            const newPool = new BalancerV1EventPool(
+              this.dexKey,
+              this.network,
+              this.dexHelper,
+              this.logger,
+              this.balancerMulticall,
+              poolInfo,
+            );
+            newPool.setState(poolState, blockNumber);
+
+            await newPool.initialize(blockNumber);
+            this.eventPools[poolInfo.id] = newPool;
+          }
+        }),
+      );
     }
 
     const pools = poolInfos
