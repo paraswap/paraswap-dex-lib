@@ -2,8 +2,6 @@ import { IRequestWrapper } from '../../dex-helper';
 import { Logger } from 'log4js';
 import { RequestConfig, Response } from '../../dex-helper/irequest-wrapper';
 
-import Timeout = NodeJS.Timeout;
-
 const FETCH_TIMEOUT_MS = 10 * 1000;
 const FETCH_FAIL_MAX_ATTEMPT = 5;
 const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
@@ -21,7 +19,6 @@ export type RequestInfoWithHandler<T> = {
 };
 
 export default class Fetcher<T> {
-  private intervalId?: Timeout;
   private requests: RequestInfoWithHandler<T>[];
   public lastFetchSucceeded: boolean = false;
   private failedCount = 0;
@@ -134,6 +131,6 @@ export default class Fetcher<T> {
   }
 
   isPolling(): boolean {
-    return this.intervalId !== undefined ? true : false;
+    return !this.stop;
   }
 }
