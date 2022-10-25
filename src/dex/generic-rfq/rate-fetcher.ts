@@ -43,20 +43,20 @@ export class RateFetcher {
     private dexKey: string,
     private logger: Logger,
   ) {
-    (this.augustusAddress =
-      dexHelper.config.data.augustusAddress.toLowerCase()),
-      (this.marketFetcher = new Fetcher<MarketResponse>(
-        dexHelper.httpRequest,
-        {
-          info: {
-            requestOptions: config.marketConfig.reqParams,
-            caster: this.castMarketResponse.bind(this),
-          },
-          handler: this.handleMarketResponse.bind(this),
+    this.augustusAddress = dexHelper.config.data.augustusAddress.toLowerCase();
+
+    this.marketFetcher = new Fetcher<MarketResponse>(
+      dexHelper.httpRequest,
+      {
+        info: {
+          requestOptions: config.marketConfig.reqParams,
+          caster: this.castMarketResponse.bind(this),
         },
-        config.marketConfig.intervalMs,
-        this.logger,
-      ));
+        handler: this.handleMarketResponse.bind(this),
+      },
+      config.marketConfig.intervalMs,
+      this.logger,
+    );
 
     this.rateFetcher = new Fetcher<RatesResponse>(
       dexHelper.httpRequest,
