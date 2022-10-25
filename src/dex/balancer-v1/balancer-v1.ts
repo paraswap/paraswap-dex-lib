@@ -190,9 +190,10 @@ export class BalancerV1
               this.balancerMulticall,
               poolInfo,
             );
-            newPool.setState(poolState, blockNumber);
 
-            await newPool.initialize(blockNumber);
+            await newPool.initialize(blockNumber, {
+              state: poolState,
+            });
             this.eventPools[poolInfo.id] = newPool;
           }
         }),
