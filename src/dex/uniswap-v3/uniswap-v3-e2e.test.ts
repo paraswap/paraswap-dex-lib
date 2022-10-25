@@ -7,22 +7,45 @@ import {
   Holders,
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 describe('UniswapV3 E2E', () => {
   const dexKey = 'UniswapV3';
+
+  describe('UniswapV3 MAINNET', () => {
+    const network = Network.MAINNET;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    it('BUY DAI -> USDC', async () => {
+      await testE2E(
+        tokens['DAI'],
+        tokens['USDC'],
+        holders['DAI'],
+        '100000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.simpleBuy,
+        network,
+        provider,
+      );
+    });
+  });
 
   describe('UniswapV3 POLYGON', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'WETH';
