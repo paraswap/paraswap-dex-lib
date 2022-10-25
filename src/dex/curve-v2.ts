@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
+import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
 import CurveV2ABI from '../abi/CurveV2.json';
 import Web3 from 'web3';
 
@@ -49,6 +50,7 @@ export class CurveV2
 {
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
+  genericFactoryZapIface: Interface;
   minConversionRate = '1';
   needWrapNative = true;
 
@@ -59,6 +61,7 @@ export class CurveV2
   ) {
     super(augustusAddress, provider);
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
+    this.genericFactoryZapIface = new Interface(GenericFactoryZapABI);
   }
 
   getAdapterParam(
@@ -135,10 +138,10 @@ export class CurveV2
         ? CurveV2SwapFunctions.exchange_in_generic_factory_zap
         : CurveV2SwapFunctions.exchange_underlying
       : CurveV2SwapFunctions.exchange;
-    const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      swapMethod,
-      args,
-    );
+    const swapData =
+      swapMethod === CurveV2SwapFunctions.exchange_in_generic_factory_zap
+        ? this.genericFactoryZapIface.encodeFunctionData(swapMethod, args)
+        : this.exchangeRouterInterface.encodeFunctionData(swapMethod, args);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
