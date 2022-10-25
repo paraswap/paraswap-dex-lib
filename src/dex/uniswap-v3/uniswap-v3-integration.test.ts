@@ -28,7 +28,6 @@ const amounts = [
 const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 
 const dexHelper = new DummyDexHelper(network);
-dexHelper.init();
 const dexKey = 'UniswapV3';
 
 const quoterIface = new Interface(UniswapV3QuoterABI);
@@ -136,10 +135,11 @@ describe('UniswapV3', function () {
 
   beforeEach(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    uniswapV3 = new UniswapV3(dexHelper, dexKey);
+    uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
     uniswapV3Mainnet = new UniswapV3(
-      new DummyDexHelper(Network.MAINNET),
+      Network.MAINNET,
       dexKey,
+      new DummyDexHelper(Network.MAINNET),
     );
   });
 
@@ -344,7 +344,7 @@ describe('UniswapV3', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
-    const TokenASymbol = 'USDT';
+    const TokenASymbol = 'DAI';
     const TokenA = Tokens[network][TokenASymbol];
 
     const TokenBSymbol = 'USDC';

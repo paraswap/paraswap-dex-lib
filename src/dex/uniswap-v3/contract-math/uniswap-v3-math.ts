@@ -225,6 +225,11 @@ function _priceComputationCycles(
     latestFullCycleCache.tickCount += i - 1;
   }
 
+  if (state.amountSpecifiedRemaining !== 0n) {
+    state.amountSpecifiedRemaining = 0n;
+    state.amountCalculated = 0n;
+  }
+
   return [state, { latestFullCycleState, latestFullCycleCache }];
 }
 

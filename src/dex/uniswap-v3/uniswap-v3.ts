@@ -766,7 +766,7 @@ export class UniswapV3
       return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
     } catch (e) {
       this.logger.debug(
-        `${this.dexKey}: received error in _getSellOutputs while calculating outputs`,
+        `${this.dexKey}: received error in _getOutputs while calculating outputs`,
         e,
       );
       return null;
