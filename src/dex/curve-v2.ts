@@ -1,5 +1,4 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
@@ -10,10 +9,16 @@ import {
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import CurveV2ABI from '../abi/CurveV2.json';
-import type { CurveV1Data } from './curve-v1/types';
 import Web3 from 'web3';
 
-type CurveV2Data = Omit<CurveV1Data, 'deadline' | 'v3'>;
+type CurveV2Data = {
+  i: number;
+  j: number;
+  exchange: string;
+  underlyingSwap: boolean;
+  isFactoryGenericZap: boolean;
+  originalPoolAddress: Address;
+};
 
 type CurveV2Param = [
   i: NumberAsString,
@@ -23,9 +28,19 @@ type CurveV2Param = [
   ethDeposit?: boolean,
 ];
 
-enum CurveSwapFunctions {
+type CurveV2ParamsForGenericFactoryZap = [
+  _pool: Address,
+  i: NumberAsString,
+  j: NumberAsString,
+  dx: NumberAsString,
+  min_dy: NumberAsString,
+  use_eth: boolean,
+];
+
+enum CurveV2SwapFunctions {
   exchange = 'exchange(uint256 i, uint256 j, uint256 dx, uint256 minDy)',
   exchange_underlying = 'exchange_underlying(uint256 i, uint256 j, uint256 dx, uint256 minDy)',
+  exchange_in_generic_factory_zap = 'exchange(address _pool, uint256 i, uint256 j, uint256 _dx, uint256 _min_dy, bool _use_eth)',
 }
 
 export class CurveV2
@@ -56,16 +71,27 @@ export class CurveV2
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const { i, j, underlyingSwap } = data;
+    const { i, j, underlyingSwap, isFactoryGenericZap, originalPoolAddress } =
+      data;
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           i: 'uint256',
           j: 'uint256',
           underlyingSwap: 'bool',
+          isFactoryGenericZap: 'bool',
+          originalPoolAddress: 'address',
+          useEth: 'bool',
         },
       },
-      { i, j, underlyingSwap },
+      {
+        i,
+        j,
+        underlyingSwap,
+        isFactoryGenericZap,
+        originalPoolAddress,
+        useEth: false,
+      },
     );
 
     return {
@@ -85,16 +111,30 @@ export class CurveV2
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const { exchange, i, j, underlyingSwap } = data;
-    const args: CurveV2Param = [
-      i.toString(),
-      j.toString(),
-      srcAmount,
-      this.minConversionRate,
-    ];
+    const {
+      exchange,
+      i,
+      j,
+      underlyingSwap,
+      isFactoryGenericZap,
+      originalPoolAddress,
+    } = data;
+    const args: CurveV2Param | CurveV2ParamsForGenericFactoryZap =
+      isFactoryGenericZap
+        ? [
+            originalPoolAddress,
+            i.toString(),
+            j.toString(),
+            srcAmount,
+            this.minConversionRate,
+            false,
+          ]
+        : [i.toString(), j.toString(), srcAmount, this.minConversionRate];
     const swapMethod = underlyingSwap
-      ? CurveSwapFunctions.exchange_underlying
-      : CurveSwapFunctions.exchange;
+      ? isFactoryGenericZap
+        ? CurveV2SwapFunctions.exchange_in_generic_factory_zap
+        : CurveV2SwapFunctions.exchange_underlying
+      : CurveV2SwapFunctions.exchange;
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapMethod,
       args,
