@@ -96,7 +96,7 @@ export abstract class StatefulEventSubscriber<State>
             );
             state.state = await this.generateState(blockNumber);
           } else {
-            this.logger.debug(
+            this.logger.info(
               `${this.parentName}: ${this.name}: found state from cache`,
             );
             blockNumber = state.bn;
@@ -106,7 +106,7 @@ export abstract class StatefulEventSubscriber<State>
             );
             if (_masterBn) {
               masterBn = parseInt(_masterBn, 10);
-              this.logger.debug(
+              this.logger.info(
                 `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
               );
             } else {
@@ -120,7 +120,7 @@ export abstract class StatefulEventSubscriber<State>
           this.setState(state.state, blockNumber);
         } else {
           // if no state found in cache generate new state using rpc
-          this.logger.debug(
+          this.logger.info(
             `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
           );
           this.dexHelper.cache.publish('new_pools', this.cacheName);
@@ -129,7 +129,7 @@ export abstract class StatefulEventSubscriber<State>
         }
       } else {
         // if you are not a slave instance always generate new state
-        this.logger.debug(
+        this.logger.info(
           `${this.parentName}: ${this.name}: cache generating state`,
         );
         const state = await this.generateState(blockNumber);
@@ -268,7 +268,7 @@ export abstract class StatefulEventSubscriber<State>
       blockNumberForMissingStateRegen
     ) {
       const createNewState = async () => {
-        this.logger.debug(
+        this.logger.warn(
           `${this.parentName}: ${this.name}: master generate new state because state is null`,
         );
         try {
@@ -345,7 +345,7 @@ export abstract class StatefulEventSubscriber<State>
       this.masterPoolNeeded &&
       state === null
     ) {
-      this.logger.debug(
+      this.logger.info(
         `${this.parentName}: ${this.name}: schedule a job to get state from cache`,
       );
 
@@ -378,7 +378,7 @@ export abstract class StatefulEventSubscriber<State>
       return;
     }
 
-    this.logger.debug(`${this.parentName}: ${this.name} saving state in cache`);
+    this.logger.info(`${this.parentName}: ${this.name} saving state in cache`);
     this.dexHelper.cache.hset(
       this.mapKey,
       this.name,
