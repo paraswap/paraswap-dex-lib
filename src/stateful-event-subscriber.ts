@@ -362,7 +362,7 @@ export abstract class StatefulEventSubscriber<State>
             return false;
           }
 
-          this.logger.debug(
+          this.logger.info(
             `${this.parentName}: ${this.name}: received state from a scheduled job`,
           );
           this.setState(state.state, state.bn);
