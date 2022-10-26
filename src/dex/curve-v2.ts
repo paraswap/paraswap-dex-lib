@@ -45,7 +45,7 @@ type CurveV2ParamsForGenericFactoryZap = [
 enum CurveV2SwapFunctions {
   exchange = 'exchange(uint256 i, uint256 j, uint256 dx, uint256 minDy)',
   exchange_underlying = 'exchange_underlying(uint256 i, uint256 j, uint256 dx, uint256 minDy)',
-  exchange_in_generic_factory_zap = 'exchange(address _pool, uint256 i, uint256 j, uint256 _dx, uint256 _min_dy, bool _use_eth)',
+  exchange_in_generic_factory_zap = 'exchange(address _pool, uint256 i, uint256 j, uint256 _dx, uint256 _min_dy)',
 }
 
 export class CurveV2
