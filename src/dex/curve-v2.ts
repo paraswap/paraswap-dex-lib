@@ -12,7 +12,7 @@ import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
 import CurveV2ABI from '../abi/CurveV2.json';
 import Web3 from 'web3';
 
-export enum CurveV2SwapTypes {
+export enum CurveV2SwapType {
   EXCHANGE,
   EXCHANGE_UNDERLYING,
   EXCHANGE_GENERIC_FACTORY_ZAP,
@@ -23,7 +23,7 @@ type CurveV2Data = {
   j: number;
   exchange: string;
   originalPoolAddress: Address;
-  swapType: CurveV2SwapTypes;
+  swapType: CurveV2SwapType;
 };
 
 type CurveV2Param = [
@@ -116,7 +116,7 @@ export class CurveV2
     const { exchange, i, j, originalPoolAddress, swapType } = data;
 
     const args: CurveV2Param | CurveV2ParamsForGenericFactoryZap =
-      swapType === CurveV2SwapTypes.EXCHANGE_GENERIC_FACTORY_ZAP
+      swapType === CurveV2SwapType.EXCHANGE_GENERIC_FACTORY_ZAP
         ? [
             originalPoolAddress,
             i.toString(),
@@ -128,13 +128,13 @@ export class CurveV2
 
     let swapMethod: string;
     switch (swapType) {
-      case CurveV2SwapTypes.EXCHANGE:
+      case CurveV2SwapType.EXCHANGE:
         swapMethod = CurveV2SwapFunctions.exchange;
         break;
-      case CurveV2SwapTypes.EXCHANGE_UNDERLYING:
+      case CurveV2SwapType.EXCHANGE_UNDERLYING:
         swapMethod = CurveV2SwapFunctions.exchange_underlying;
         break;
-      case CurveV2SwapTypes.EXCHANGE_GENERIC_FACTORY_ZAP:
+      case CurveV2SwapType.EXCHANGE_GENERIC_FACTORY_ZAP:
         swapMethod = CurveV2SwapFunctions.exchange_in_generic_factory_zap;
         break;
       default:
