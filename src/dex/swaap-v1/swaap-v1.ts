@@ -91,7 +91,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   }
 
   async init(blockNumber: number) {
-    this.allPools = await this.getAllPools(blockNumber);
+    this.allPools = await this.fetchAllSubgraphPools(blockNumber);
   }
 
   // Initialize pricing is called once in the start of
@@ -438,12 +438,6 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       },
       new Map<string, SubgraphPoolBase>(),
     );
-  }
-
-  async getAllPools(
-    blockNumber: number,
-  ): Promise<Map<string, SubgraphPoolBase>> {
-    return await this.fetchAllSubgraphPools(blockNumber);
   }
 
   getPricesPool(
