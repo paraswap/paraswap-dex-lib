@@ -577,51 +577,47 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     const currentTimestamp =
       _currentTimeStamp || BigInt(Math.floor(Date.now() / 1000)); // the on-chain pricing logic is not too much sensitive to that value
     return await Promise.all(
-      allowedPools.map(p =>
-        (async () => {
-          const poolAddress = p.id;
-          let state = this.eventPools[poolAddress].getState(blockNumber);
-          if (!state) {
-            state = await this.eventPools[poolAddress].generateState(
-              blockNumber,
-            );
-          }
-          let [unit, prices] = this.getPricesPool(
-            from.address,
-            to.address,
-            unitVolume,
-            amounts,
-            side,
-            state,
-            currentTimestamp,
-          );
+      allowedPools.map(async p => {
+        const poolAddress = p.id;
+        let state = this.eventPools[poolAddress].getState(blockNumber);
+        if (!state) {
+          state = await this.eventPools[poolAddress].generateState(blockNumber);
+        }
+        let [unit, prices] = this.getPricesPool(
+          from.address,
+          to.address,
+          unitVolume,
+          amounts,
+          side,
+          state,
+          currentTimestamp,
+        );
 
-          if (unit === 0n) {
-            // If we didn't fulfill unit amount, scale up the latest amount with a positive price till unit
-            let i = prices.length - 1;
-            let largestAmountPositivePrice = prices.slice(i)[0];
-            while (largestAmountPositivePrice == 0n && i > 0) {
-              --i;
-              largestAmountPositivePrice = prices.slice(i)[0];
-            }
-            if (largestAmountPositivePrice > 0n) {
-              unit =
-                (unitVolume * largestAmountPositivePrice) / amounts.slice(i)[0];
-            }
+        if (unit === 0n) {
+          // If we didn't fulfill unit amount, scale up the latest amount with a positive price till unit
+          let i = prices.length - 1;
+          let largestAmountPositivePrice = prices.slice(i)[0];
+          while (largestAmountPositivePrice == 0n && i > 0) {
+            --i;
+            largestAmountPositivePrice = prices.slice(i)[0];
           }
-          return {
-            prices,
-            unit,
-            data: {
-              pool: poolAddress,
-            },
-            poolAddresses: [poolAddress],
-            exchange: this.dexKey,
-            gasCost: 610 * 1000,
-            poolIdentifier: this.getPoolIdentifier(poolAddress),
-          };
-        })(),
-      ),
+          if (largestAmountPositivePrice > 0n) {
+            unit =
+              (unitVolume * largestAmountPositivePrice) / amounts.slice(i)[0];
+          }
+        }
+        return {
+          prices,
+          unit,
+          data: {
+            pool: poolAddress,
+          },
+          poolAddresses: [poolAddress],
+          exchange: this.dexKey,
+          gasCost: 610 * 1000,
+          poolIdentifier: this.getPoolIdentifier(poolAddress),
+        };
+      }),
     );
   }
 }
