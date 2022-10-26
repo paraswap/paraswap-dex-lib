@@ -123,9 +123,11 @@ export abstract class StatefulEventSubscriber<State>
           this.logger.info(
             `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
           );
-          this.dexHelper.cache.publish('new_pools', this.cacheName);
           const state = await this.generateState(blockNumber);
           this.setState(state, blockNumber);
+
+          // we should publish only if generateState succeeded
+          this.dexHelper.cache.publish('new_pools', this.cacheName);
         }
       } else {
         // if you are not a slave instance always generate new state
