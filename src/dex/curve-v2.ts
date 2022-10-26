@@ -85,7 +85,7 @@ export class CurveV2
           i: 'uint256',
           j: 'uint256',
           originalPoolAddress: 'address',
-          swapType: 'uint256',
+          swapType: 'uint8',
         },
       },
       {
