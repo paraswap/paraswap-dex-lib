@@ -18,7 +18,6 @@ export type get_dy = (
   i: number,
   j: number,
   dx: bigint,
-  _balances: bigint[],
   basePoolVirtualPrice?: bigint,
 ) => bigint;
 
@@ -71,11 +70,7 @@ const factoryMeta3Pool2_8 = (
 
   const { rate_multiplier, PRECISION, FEE_DENOMINATOR } = state.constants;
   const rates = [rate_multiplier, basePoolVirtualPrice];
-  const xp = { ...state.balances };
-
-  if (state.balances[0] === 0n) {
-    xp =
-  }
+  const xp = funcs._xp_mem(state, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
   const y = funcs.get_y(state, funcs, i, j, x, xp);
@@ -100,6 +95,17 @@ const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]:
     factoryPlain2CoinErc20_18D,
+
+  [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_3POOL_3_1]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]:
+    factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_SBTC_ERC20]: factoryMeta3Pool2_8,
+
+  [ImplementationNames.BASE_BTC_POOL]: '',
+  [ImplementationNames.BASE_THREE_POOL]: '',
+  [ImplementationNames.BASE_TWO_COIN_POOL]: '',
 };
 
 export default implementations;

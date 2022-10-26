@@ -30,6 +30,8 @@ export type PoolState = {
   fee: bigint; // factory get_fees()
   constants: PoolConstants;
   totalSupply: bigint;
+  virtualPrice: bigint;
+  basePoolState?: PoolState;
 };
 
 export type PoolStateWithUpdateInfo<T> = {
@@ -57,9 +59,9 @@ export type PoolConfig = {
 };
 
 export enum ImplementationNames {
-  THREE_POOL = 'three_pool',
-  TWO_COIN_POOL = 'two_coin_pool',
-  BTC_POOL = 'btc_pool',
+  BASE_THREE_POOL = 'base_three_pool',
+  BASE_TWO_COIN_POOL = 'base_two_coin_pool',
+  BASE_BTC_POOL = 'base_btc_pool',
 
   FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
   FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',
