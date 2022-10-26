@@ -12,13 +12,18 @@ import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
 import CurveV2ABI from '../abi/CurveV2.json';
 import Web3 from 'web3';
 
+export enum CurveV2SwapTypes {
+  EXCHANGE,
+  EXCHANGE_UNDERLYING,
+  EXCHANGE_GENERIC_FACTORY_ZAP,
+}
+
 type CurveV2Data = {
   i: number;
   j: number;
   exchange: string;
-  underlyingSwap: boolean;
-  isFactoryGenericZap: boolean;
   originalPoolAddress: Address;
+  swapType: CurveV2SwapTypes;
 };
 
 type CurveV2Param = [
@@ -35,7 +40,6 @@ type CurveV2ParamsForGenericFactoryZap = [
   j: NumberAsString,
   dx: NumberAsString,
   min_dy: NumberAsString,
-  use_eth: boolean,
 ];
 
 enum CurveV2SwapFunctions {
@@ -74,26 +78,21 @@ export class CurveV2
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const { i, j, underlyingSwap, isFactoryGenericZap, originalPoolAddress } =
-      data;
+    const { i, j, originalPoolAddress, swapType } = data;
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           i: 'uint256',
           j: 'uint256',
-          underlyingSwap: 'bool',
-          isFactoryGenericZap: 'bool',
           originalPoolAddress: 'address',
-          useEth: 'bool',
+          swapType: 'uint256',
         },
       },
       {
         i,
         j,
-        underlyingSwap,
-        isFactoryGenericZap,
         originalPoolAddress,
-        useEth: false,
+        swapType,
       },
     );
 
@@ -114,30 +113,36 @@ export class CurveV2
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const {
-      exchange,
-      i,
-      j,
-      underlyingSwap,
-      isFactoryGenericZap,
-      originalPoolAddress,
-    } = data;
+    const { exchange, i, j, originalPoolAddress, swapType } = data;
+
     const args: CurveV2Param | CurveV2ParamsForGenericFactoryZap =
-      isFactoryGenericZap
+      swapType === CurveV2SwapTypes.EXCHANGE_GENERIC_FACTORY_ZAP
         ? [
             originalPoolAddress,
             i.toString(),
             j.toString(),
             srcAmount,
             this.minConversionRate,
-            false,
           ]
         : [i.toString(), j.toString(), srcAmount, this.minConversionRate];
-    const swapMethod = underlyingSwap
-      ? isFactoryGenericZap
-        ? CurveV2SwapFunctions.exchange_in_generic_factory_zap
-        : CurveV2SwapFunctions.exchange_underlying
-      : CurveV2SwapFunctions.exchange;
+
+    let swapMethod: string;
+    switch (swapType) {
+      case CurveV2SwapTypes.EXCHANGE:
+        swapMethod = CurveV2SwapFunctions.exchange;
+        break;
+      case CurveV2SwapTypes.EXCHANGE_UNDERLYING:
+        swapMethod = CurveV2SwapFunctions.exchange_underlying;
+        break;
+      case CurveV2SwapTypes.EXCHANGE_GENERIC_FACTORY_ZAP:
+        swapMethod = CurveV2SwapFunctions.exchange_in_generic_factory_zap;
+        break;
+      default:
+        throw new Error(
+          `getSimpleParam: not all cases covered for CurveV2SwapTypes`,
+        );
+    }
+
     const swapData =
       swapMethod === CurveV2SwapFunctions.exchange_in_generic_factory_zap
         ? this.genericFactoryZapIface.encodeFunctionData(swapMethod, args)
