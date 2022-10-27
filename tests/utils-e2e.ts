@@ -246,7 +246,6 @@ export async function testE2E(
     );
 
     const swapTx = await ts.simulate(swapParams);
-    console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
     // Only log gas estimate if testing against API
     if (useAPI)
       console.log(
@@ -344,7 +343,6 @@ export async function newTestE2E({
       transferFees,
     );
 
-    console.log(JSON.stringify(priceRoute));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Slippage to be 7%
@@ -352,6 +350,7 @@ export async function newTestE2E({
       (swapSide === SwapSide.SELL
         ? BigInt(priceRoute.destAmount) * 93n
         : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+
     const swapParams = await paraswap.buildTransaction(
       priceRoute,
       minMaxAmount,
@@ -363,14 +362,21 @@ export async function newTestE2E({
       stateOverrides: {},
     };
 
-    srcToken
-      .addBalance(senderAddress, amount.toString())
-      .addAllowance(
-        senderAddress,
-        config.tokenTransferProxyAddress,
-        amount.toString(),
-      )
-      .applyOverrides(stateOverrides);
+    if (swapSide === SwapSide.SELL) {
+      srcToken
+        .addBalance(senderAddress, amount.toString())
+        .addAllowance(
+          senderAddress,
+          config.tokenTransferProxyAddress,
+          amount.toString(),
+        )
+        .applyOverrides(stateOverrides);
+    } else {
+      srcToken
+        .addBalance(senderAddress, MAX_UINT)
+        .addAllowance(senderAddress, config.tokenTransferProxyAddress, MAX_UINT)
+        .applyOverrides(stateOverrides);
+    }
 
     destToken.applyOverrides(stateOverrides);
 

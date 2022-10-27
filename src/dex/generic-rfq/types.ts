@@ -64,12 +64,16 @@ export type RFQConfig = {
   firmRateConfig: RequestConfig;
 };
 
+export type TokenWithAmount = Token & {
+  amount: string;
+};
+
 export type RFQPayload = {
   makerAsset: Address;
   takerAsset: Address;
   model: RFQModel;
-  side: SwapSide;
-  takerAmount: string;
+  makerAmount?: string;
+  takerAmount?: string;
   taker: Address;
   txOrigin: Address;
 };

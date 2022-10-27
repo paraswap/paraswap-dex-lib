@@ -79,7 +79,7 @@ describe('GenericRFQ E2E Mainnet', () => {
           _amount: '1000000000000000000',
           swapSide: SwapSide.BUY,
           dexKey: dexKey,
-          contractMethod: ContractMethod.simpleSwap,
+          contractMethod: ContractMethod.simpleBuy,
           network: network,
         });
       });
@@ -93,7 +93,7 @@ describe('GenericRFQ E2E Mainnet', () => {
           _amount: '1000000000000000000',
           swapSide: SwapSide.BUY,
           dexKey: dexKey,
-          contractMethod: ContractMethod.simpleSwap,
+          contractMethod: ContractMethod.simpleBuy,
           network: network,
         });
       });

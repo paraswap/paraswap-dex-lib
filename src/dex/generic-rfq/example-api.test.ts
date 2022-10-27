@@ -133,10 +133,10 @@ export const startTestServer = (account: ethers.Wallet) => {
 
     let reversed = false;
     let _prices: PairPriceResponse =
-      prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+      prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
     if (!_prices) {
       _prices =
-        prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+        prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
       reversed = true;
     }
 
@@ -145,38 +145,37 @@ export const startTestServer = (account: ethers.Wallet) => {
     }
 
     let value = new BigNumber('0');
-    if (!reversed) {
-      if (payload.side === SwapSide.SELL) {
-        value = new BigNumber(payload.takerAmount).times(
-          new BigNumber(_prices.bids[0].price),
+
+    if (payload.makerAmount) {
+      if (!reversed) {
+        value = new BigNumber(payload.makerAmount).times(
+          new BigNumber(_prices.asks[0].price),
         );
-      } else if (payload.takerAmount) {
+      } else {
         const reversedPrices = _prices.asks.map(price =>
           reversePrice({
             amount: new BigNumber(price.amount),
             price: new BigNumber(price.price),
           }),
         );
-
-        value = new BigNumber(payload.takerAmount).times(
-          reversedPrices[0].price,
+        value = new BigNumber(payload.makerAmount).times(
+          new BigNumber(reversedPrices[0].price),
         );
       }
-    } else {
-      if (payload.side === SwapSide.SELL) {
-        const reversedPrices = _prices.bids.map(price =>
+    } else if (payload.takerAmount) {
+      if (!reversed) {
+        value = new BigNumber(payload.takerAmount).times(
+          new BigNumber(_prices.bids[0].price),
+        );
+      } else {
+        const reversedPrices = _prices.asks.map(price =>
           reversePrice({
             amount: new BigNumber(price.amount),
             price: new BigNumber(price.price),
           }),
         );
-
         value = new BigNumber(payload.takerAmount).times(
-          reversedPrices[0].price,
-        );
-      } else if (payload.takerAmount) {
-        value = new BigNumber(payload.takerAmount).times(
-          new BigNumber(_prices.asks[0].price),
+          new BigNumber(reversedPrices[0].price),
         );
       }
     }
@@ -187,19 +186,19 @@ export const startTestServer = (account: ethers.Wallet) => {
       expiry: 0,
       makerAsset: payload.makerAsset,
       takerAsset: payload.takerAsset,
-      makerAmount: value.toFixed(0),
-      takerAmount: payload.takerAmount,
+      makerAmount: payload.makerAmount ? payload.makerAmount : value.toFixed(0),
+      takerAmount: payload.takerAmount ? payload.takerAmount : value.toFixed(0),
     });
 
-    // console.log({
-    //   maker: account.address,
-    //   taker: payload.txOrigin,
-    //   expiry: 0,
-    //   makerAsset: payload.makerAsset,
-    //   takerAsset: payload.takerAsset,
-    //   makerAmount: value.toFixed(0),
-    //   takerAmount: payload.takerAmount,
-    // });
+    console.log({
+      maker: account.address,
+      taker: payload.txOrigin,
+      expiry: 0,
+      makerAsset: payload.makerAsset,
+      takerAsset: payload.takerAsset,
+      makerAmount: payload.makerAmount ? payload.makerAmount : value.toFixed(0),
+      takerAmount: payload.takerAmount ? payload.takerAmount : value.toFixed(0),
+    });
 
     const signature = await paraSwapLimitOrderSDK.signLimitOrder(
       signableOrderData,
