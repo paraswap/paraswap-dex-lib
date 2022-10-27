@@ -279,7 +279,10 @@ export abstract class StatefulEventSubscriber<State>
           );
           this.setState(state, blockNumberForMissingStateRegen);
         } catch (e) {
-          this.logger.error(e);
+          this.logger.error(
+            `${this.dexHelper.config.data.network}: ${this.parentName} ${this.name}: ${blockNumberForMissingStateRegen} failed fetch state:`,
+            e,
+          );
           setTimeout(createNewState, CREATE_NEW_STATE_RETRY_INTERVAL_MS);
         }
       };
