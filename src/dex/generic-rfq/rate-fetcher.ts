@@ -1,13 +1,12 @@
 import BigNumber from 'bignumber.js';
 import { SwapSide } from 'paraswap-core';
-import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
+import { BN_0, BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
 import Fetcher from '../../lib/fetcher/fetcher';
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
 import {
   MarketResponse,
-  OrderPriceInfo,
   PairMap,
   PriceAndAmount,
   PriceAndAmountBigNumber,
@@ -18,10 +17,6 @@ import {
 } from './types';
 
 export const FIRM_RATE_TIMEOUT_MS = 500;
-
-function onlyUnique(value: string, index: number, self: string[]) {
-  return self.indexOf(value) === index;
-}
 
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
   ({
@@ -108,33 +103,13 @@ export class RateFetcher {
       this.rateFetcher.stopPolling();
     }
 
-    const tokensAddress: string[] = [];
-    const pairsFullName: string[] = [];
     const pairs: PairMap = {};
     for (const pair of resp.markets) {
       if (pair.status !== 'available') {
         continue;
       }
       pairs[pair.id] = pair;
-      tokensAddress.push(pair.base.address);
-      tokensAddress.push(pair.quote.address);
     }
-
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.dexHelper.config.data.network,
-      'tokens',
-      this.config.marketConfig.dataTTLS,
-      JSON.stringify(tokensAddress.filter(onlyUnique)),
-    );
-
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.dexHelper.config.data.network,
-      'pairs',
-      this.config.marketConfig.dataTTLS,
-      JSON.stringify(pairsFullName.filter(onlyUnique)),
-    );
 
     this.pairs = pairs;
     this.rateFetcher.startPolling();
@@ -181,8 +156,8 @@ export class RateFetcher {
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
-  ): Promise<OrderPriceInfo | null> {
-    const askOrBids = side === SwapSide.SELL ? 'bids' : 'asks';
+  ): Promise<PriceAndAmountBigNumber[] | null> {
+    let askOrBids = side === SwapSide.SELL ? 'bids' : 'asks';
 
     let pricesAsString: string | null = await this.dexHelper.cache.get(
       this.dexKey,
@@ -192,11 +167,13 @@ export class RateFetcher {
     let reversed = false;
     if (!pricesAsString) {
       side = side === SwapSide.SELL ? SwapSide.BUY : SwapSide.SELL;
-      [srcToken, destToken] = [destToken, srcToken];
+      const [_srcToken, _destToken] = [destToken, srcToken];
+      askOrBids = askOrBids === 'bids' ? 'asks' : 'bids';
+
       pricesAsString = await this.dexHelper.cache.get(
         this.dexKey,
         this.dexHelper.config.data.network,
-        `${srcToken.address}_${destToken.address}_${askOrBids}`,
+        `${_srcToken.address}_${_destToken.address}_${askOrBids}`,
       );
 
       reversed = true;
@@ -222,13 +199,7 @@ export class RateFetcher {
       orderPrices = orderPrices.map(reversePrice);
     }
 
-    return {
-      reversed,
-      from: srcToken,
-      to: destToken,
-      side,
-      rates: orderPrices,
-    };
+    return orderPrices;
   }
 
   private async getPayload(
@@ -238,7 +209,7 @@ export class RateFetcher {
     side: SwapSide,
     txOrigin: Address,
   ) {
-    let orderPrices: OrderPriceInfo | null = null;
+    let orderPrices: PriceAndAmountBigNumber[] | null = null;
     try {
       orderPrices = await this.getOrderPrice(srcToken, destToken, side);
       if (!orderPrices) {
@@ -254,17 +225,12 @@ export class RateFetcher {
       return null;
     }
 
-    let _side = side;
-    if (orderPrices.reversed) {
-      _side = side === SwapSide.SELL ? SwapSide.BUY : SwapSide.SELL;
-    }
-
     const payload: RFQPayload = {
       makerAsset: destToken.address,
       takerAsset: srcToken.address,
       model: 'firm',
-      makerAmount: _side === SwapSide.BUY ? amount : undefined,
-      takerAmount: _side === SwapSide.SELL ? amount : undefined,
+      makerAmount: side === SwapSide.BUY ? amount : undefined,
+      takerAmount: side === SwapSide.SELL ? amount : undefined,
       taker: this.augustusAddress,
       txOrigin,
     };

@@ -48,14 +48,6 @@ export type Rates = Array<[string, string]>;
 export type BigNumberRate = [BigNumber, BigNumber];
 export type BigNumberRates = Array<BigNumberRate>;
 
-export type OrderPriceInfo = {
-  reversed: boolean;
-  from: Token;
-  to: Token;
-  side: SwapSide;
-  rates: PriceAndAmountBigNumber[];
-};
-
 export type RFQModel = 'firm' | 'indicative';
 
 export type RFQConfig = {

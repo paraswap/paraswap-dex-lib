@@ -123,12 +123,12 @@ export class GenericRFQ extends ParaSwapLimitOrders {
 
     const expectedIdentifier = this.getIdentifier(_srcAddress, _destAddress);
 
-    const orderPricesInfo = await this.rateFetcher.getOrderPrice(
+    const rates = await this.rateFetcher.getOrderPrice(
       _srcToken,
       _destToken,
       side,
     );
-    if (!orderPricesInfo) {
+    if (!rates) {
       return null;
     }
 
@@ -146,14 +146,14 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     const unitResults = this.calcOutsFromAmounts(
       [unitVolume],
       getBigNumberPow(outDecimals),
-      orderPricesInfo.rates,
+      rates,
     );
 
     const unit = unitResults[0];
     const outputs = this.calcOutsFromAmounts(
       _amountsInBN,
       getBigNumberPow(outDecimals),
-      orderPricesInfo.rates,
+      rates,
     );
     return [
       {
