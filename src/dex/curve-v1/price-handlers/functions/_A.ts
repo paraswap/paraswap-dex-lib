@@ -1,6 +1,5 @@
 import { ImplementationNames, PoolState } from '../../types';
-
-export type _A = (state: PoolState) => bigint;
+import { _A } from '../types';
 
 const fromState: _A = (state: PoolState) => {
   // We update this A on every state fetching. I believe we will not need to

@@ -4,24 +4,11 @@ import { _A } from './_A';
 import { get_D } from './get_D';
 import { _xp_mem } from './_xp_mem';
 import { funcName } from '../../../../utils';
+import { _xp } from './_xp';
+import { _get_y } from './_get_y';
 
-interface DependantFuncs {
-  _xp_mem: _xp_mem;
-  get_y: get_y;
-  _A: _A;
-  get_D: get_D;
-}
 
-export type get_dy = (
-  state: PoolState,
-  funcs: DependantFuncs,
-  i: number,
-  j: number,
-  dx: bigint,
-  basePoolVirtualPrice?: bigint,
-) => bigint;
-
-const factoryPlain2CoinErc20 = (
+const factoryPlain2CoinErc20: get_dy = (
   state: PoolState,
   funcs: DependantFuncs,
   i: number,
@@ -29,7 +16,7 @@ const factoryPlain2CoinErc20 = (
   dx: bigint,
 ): bigint => {
   const { rate_multipliers, PRECISION, FEE_DENOMINATOR } = state.constants;
-  const rates = rate_multipliers;
+  const rates = [...rate_multipliers];
   const xp = funcs._xp_mem(state, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
@@ -39,7 +26,7 @@ const factoryPlain2CoinErc20 = (
   return ((dy - _fee) * PRECISION) / rates[j];
 };
 
-const factoryPlain2CoinErc20_18D = (
+const factoryPlain2CoinErc20_18D: get_dy = (
   state: PoolState,
   funcs: DependantFuncs,
   i: number,
@@ -47,7 +34,7 @@ const factoryPlain2CoinErc20_18D = (
   dx: bigint,
 ): bigint => {
   const { FEE_DENOMINATOR } = state.constants;
-  const xp = state.balances;
+  const xp = [...state.balances];
 
   const x = xp[i] + dx;
   const y = funcs.get_y(state, funcs, i, j, x, xp);
@@ -56,7 +43,7 @@ const factoryPlain2CoinErc20_18D = (
   return dy - fee;
 };
 
-const factoryMeta3Pool2_8 = (
+const factoryMeta3Pool2_8: get_dy = (
   state: PoolState,
   funcs: DependantFuncs,
   i: number,
@@ -77,6 +64,42 @@ const factoryMeta3Pool2_8 = (
   const dy = xp[j] - y - 1n;
   const _fee = (state.fee * dy) / FEE_DENOMINATOR;
   return ((dy - _fee) * PRECISION) / rates[j];
+};
+
+const baseThreePool: get_dy = (
+  state: PoolState,
+  funcs: DependantFuncs,
+  i: number,
+  j: number,
+  dx: bigint,
+): bigint => {
+  const { FEE_DENOMINATOR, RATES, PRECISION } = state.constants;
+  const rates = [...RATES];
+  const xp = funcs._xp(state);
+
+  const x = xp[i] + (dx * rates[i]) / PRECISION;
+  const y = funcs.get_y(state, funcs, i, j, x, xp);
+  const dy = ((xp[j] - y - 1n) * PRECISION) / rates[j];
+  const _fee = (state.fee * dy) / FEE_DENOMINATOR;
+  return dy - _fee;
+};
+
+const baseFraxPool: get_dy = (
+  state: PoolState,
+  funcs: DependantFuncs,
+  i: number,
+  j: number,
+  _dx: bigint,
+): bigint => {
+  const { FEE_DENOMINATOR, RATES, PRECISION } = state.constants;
+  const rates = [...RATES];
+  const xp = funcs._xp(state);
+
+  const x = xp[i] + (_dx * rates[i]) / PRECISION;
+  const y = funcs._get_y(state, funcs, i, j, x, xp);
+  const dy = xp[j] - y - 1n;
+  const fee = (state.fee * dy) / FEE_DENOMINATOR;
+  return ((dy - fee) * PRECISION) / rates[j];
 };
 
 const implementations: Record<ImplementationNames, get_dy> = {
@@ -103,9 +126,9 @@ const implementations: Record<ImplementationNames, get_dy> = {
     factoryMeta3Pool2_8,
   [ImplementationNames.FACTORY_META_SBTC_ERC20]: factoryMeta3Pool2_8,
 
-  [ImplementationNames.BASE_BTC_POOL]: '',
-  [ImplementationNames.BASE_THREE_POOL]: '',
-  [ImplementationNames.BASE_TWO_COIN_POOL]: '',
+  [ImplementationNames.BASE_THREE_POOL]: baseThreePool,
+  [ImplementationNames.BASE_FRAX_POOL]: baseFraxPool,
+  [ImplementationNames.BASE_BTC_POOL]: ,
 };
 
 export default implementations;

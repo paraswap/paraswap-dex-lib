@@ -11,36 +11,6 @@ import { _xp_mem } from './_xp_mem';
 import { calc_withdraw_one_coin } from './calc_withdraw_one_coin';
 import { _calc_withdraw_one_coin } from './_calc_withdraw_one_coin';
 
-interface DependantFuncs {
-  _xp_mem: _xp_mem;
-  get_y: get_y;
-  _A: _A;
-  get_D: get_D;
-}
-
-export interface BaseDependantFuncs {
-  _A: _A;
-  get_D: get_D;
-  _xp_mem: _xp_mem;
-  calc_token_amount: calc_token_amount;
-  get_D_mem: get_D_mem;
-  get_dy: get_dy;
-  get_y: get_y;
-  calc_withdraw_one_coin: calc_withdraw_one_coin;
-  _calc_withdraw_one_coin: _calc_withdraw_one_coin;
-  get_y_D: get_y_D;
-}
-
-export type get_dy_underlying = (
-  state: PoolState,
-  basePoolState: PoolState,
-  funcs: DependantFuncs,
-  basePoolFuncs: BaseDependantFuncs,
-  i: number,
-  j: number,
-  dx: bigint,
-) => bigint;
-
 const factoryMeta3Pool2_15 = (
   state: PoolState,
   basePoolState: PoolState,

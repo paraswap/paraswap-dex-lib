@@ -1,9 +1,11 @@
 import _ from 'lodash';
 import { ImplementationNames, PoolState } from '../../types';
 
-export type get_D = (state: PoolState, xp: bigint[], amp: bigint) => bigint;
-
-const NEED_TO_VERIFY = (state: PoolState, xp: bigint[], amp: bigint): bigint => {
+const NEED_TO_VERIFY = (
+  state: PoolState,
+  xp: bigint[],
+  amp: bigint,
+): bigint => {
   const { N_COINS } = state.constants;
 
   let S = 0n;

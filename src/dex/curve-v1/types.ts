@@ -1,28 +1,19 @@
 import { Interface } from '@ethersproject/abi';
 import { Address } from '../../types';
 
-export type ImplementationConstants = {
-  // Take from implementations constants
-  FEE_DENOMINATOR: bigint;
-  PRECISION: bigint;
-  LENDING_PRECISION: bigint;
+export interface ICurveV1PriceHandler {
+  get_dy(state: PoolState, i: number, j: number, dx: bigint): bigint;
 
-  BASE_POOL: Address;
-  MAX_COIN: bigint;
-  BASE_N_COINS: bigint;
-  A_PRECISION: bigint;
-};
+  get_dy_underlying(state: PoolState, i: number, j: number, dx: bigint): bigint;
+}
 
 export type PoolConstants = {
-  // Request from contract or calculate on initialization
   COINS: Address[];
-  BASE_COINS: Address[];
-  N_COINS: bigint;
   coins_decimals: number[];
   base_coins_decimals: number[];
   rate_multipliers: bigint[];
   rate_multiplier: bigint;
-} & ImplementationConstants;
+};
 
 export type PoolState = {
   A: bigint; // factory get_A()
@@ -32,6 +23,7 @@ export type PoolState = {
   totalSupply: bigint;
   virtualPrice: bigint;
   basePoolState?: PoolState;
+  exchangeRateCurrent: bigint[];
 };
 
 export type PoolStateWithUpdateInfo<T> = {
@@ -60,7 +52,7 @@ export type PoolConfig = {
 
 export enum ImplementationNames {
   BASE_THREE_POOL = 'base_three_pool',
-  BASE_TWO_COIN_POOL = 'base_two_coin_pool',
+  BASE_FRAX_POOL = 'base_frax_pool',
   BASE_BTC_POOL = 'base_btc_pool',
 
   FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
@@ -85,7 +77,6 @@ export enum ImplementationNames {
 export type FactoryImplementation = {
   name: ImplementationNames;
   address: Address;
-  constants: ImplementationConstants;
   isWrapNative: boolean;
 };
 

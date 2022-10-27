@@ -5,20 +5,6 @@ import { get_D_mem } from './get_D_mem';
 import { _A } from './_A';
 import { _xp_mem } from './_xp_mem';
 
-interface DependantFuncs {
-  _A: _A;
-  get_D_mem: get_D_mem;
-  _xp_mem: _xp_mem;
-  get_D: get_D;
-}
-
-export type calc_token_amount = (
-  state: PoolState,
-  funcs: DependantFuncs,
-  _amounts: bigint[],
-  _is_deposit: boolean,
-) => bigint;
-
 const factoryPlain2CoinErc20 = (
   state: PoolState,
   funcs: DependantFuncs,

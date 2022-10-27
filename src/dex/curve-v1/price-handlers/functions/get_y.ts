@@ -4,20 +4,6 @@ import { _require } from '../../../../utils';
 import { _A } from './_A';
 import { get_D } from './get_D';
 
-export interface DependantFuncs {
-  _A: _A;
-  get_D: get_D;
-}
-
-export type get_y = (
-  state: PoolState,
-  funcs: DependantFuncs,
-  i: number,
-  j: number,
-  x: bigint,
-  xp_: bigint[],
-) => bigint;
-
 const _default = (
   state: PoolState,
   funcs: DependantFuncs,

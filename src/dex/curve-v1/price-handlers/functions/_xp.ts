@@ -15,7 +15,7 @@ const factoryPlain2CoinErc20 = (
   return result;
 };
 
-const implementations: Record<ImplementationNames, _xp_mem> = {
+const implementations: Record<ImplementationNames, _xp> = {
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
 };
 

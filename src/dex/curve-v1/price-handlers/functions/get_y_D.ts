@@ -2,14 +2,6 @@ import _ from 'lodash';
 import { funcName, _require } from '../../../../utils';
 import { PoolState } from '../../types';
 
-export type get_y_D = (
-  state: PoolState,
-  A: bigint,
-  i: number,
-  xp: bigint[],
-  D: bigint,
-) => bigint;
-
 const _default: get_y_D = (
   state: PoolState,
   A: bigint,

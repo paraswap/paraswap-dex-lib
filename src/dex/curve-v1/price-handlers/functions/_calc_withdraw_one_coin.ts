@@ -5,20 +5,6 @@ import { get_y_D } from './get_y_D';
 import { _A } from './_A';
 import { _xp_mem } from './_xp_mem';
 
-interface DependantFuncs {
-  _A: _A;
-  _xp_mem: _xp_mem;
-  get_D: get_D;
-  get_y_D: get_y_D;
-}
-
-export type _calc_withdraw_one_coin = (
-  state: PoolState,
-  funcs: DependantFuncs,
-  _burn_amount: bigint,
-  i: number,
-) => [bigint, bigint];
-
 const factoryPlain2CoinErc20: _calc_withdraw_one_coin = (
   state: PoolState,
   funcs: DependantFuncs,
