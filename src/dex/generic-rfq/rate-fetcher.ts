@@ -173,8 +173,8 @@ export class RateFetcher {
           this.dexHelper.config.data.network,
           `${destToken.address}_${srcToken.address}_asks`,
         );
+        reversed = true;
       }
-      reversed = true;
     } else {
       pricesAsString = await this.dexHelper.cache.get(
         this.dexKey,
@@ -188,8 +188,8 @@ export class RateFetcher {
           this.dexHelper.config.data.network,
           `${srcToken.address}_${destToken.address}_bids`,
         );
+        reversed = true;
       }
-      reversed = true;
     }
 
     if (!pricesAsString) {

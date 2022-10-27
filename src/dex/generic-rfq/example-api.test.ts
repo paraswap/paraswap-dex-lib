@@ -137,9 +137,6 @@ export const startTestServer = (account: ethers.Wallet) => {
 
     let value = new BigNumber('0');
 
-    let makerAsset = payload.makerAsset;
-    let takerAsset = payload.takerAsset;
-
     if (payload.makerAmount) {
       // buy
       let _prices: PairPriceResponse =
@@ -163,8 +160,6 @@ export const startTestServer = (account: ethers.Wallet) => {
         value = new BigNumber(payload.makerAmount).times(
           new BigNumber(reversedPrices[0].price),
         );
-        makerAsset = payload.takerAsset;
-        takerAsset = payload.makerAsset;
       }
     } else if (payload.takerAmount) {
       // sell
@@ -180,8 +175,6 @@ export const startTestServer = (account: ethers.Wallet) => {
         value = new BigNumber(payload.takerAmount).times(
           new BigNumber(_prices.bids[0].price),
         );
-        makerAsset = payload.takerAsset;
-        takerAsset = payload.makerAsset;
       } else {
         const reversedPrices = _prices.asks.map(price =>
           reversePrice({
@@ -199,8 +192,8 @@ export const startTestServer = (account: ethers.Wallet) => {
       maker: account.address,
       taker: payload.txOrigin,
       expiry: 0,
-      makerAsset: makerAsset,
-      takerAsset: takerAsset,
+      makerAsset: payload.takerAsset,
+      takerAsset: payload.makerAsset,
       makerAmount: payload.makerAmount ? payload.makerAmount : value.toFixed(0),
       takerAmount: payload.takerAmount ? payload.takerAmount : value.toFixed(0),
     };
