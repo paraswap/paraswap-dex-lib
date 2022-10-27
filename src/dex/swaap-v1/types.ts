@@ -67,15 +67,6 @@ export type TokenState = {
   weight?: bigint;
 };
 
-// Indexes represent the index of the asset assets array param
-export type BalancerSwap = {
-  poolId: string;
-  assetInIndex: number;
-  assetOutIndex: number;
-  amount: string;
-  userData: string;
-};
-
 export enum SwapTypes {
   SwapExactIn,
   SwapExactOut,
