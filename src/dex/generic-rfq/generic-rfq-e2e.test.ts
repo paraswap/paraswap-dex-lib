@@ -7,11 +7,14 @@ import { newTestE2E } from '../../../tests/utils-e2e';
 import { SmartTokens, GENERIC_ADDR1 } from '../../../tests/constants-e2e';
 import { startTestServer } from './example-api.test';
 import { ethers } from 'ethers';
+
 const PK_KEY = process.env.TEST_PK_KEY;
 
 if (!PK_KEY) {
   throw new Error('Mising TEST_PK_KEY');
 }
+
+jest.setTimeout(1000 * 60 * 3);
 
 const account = new ethers.Wallet(PK_KEY!);
 const stopServer = startTestServer(account);

@@ -17,13 +17,6 @@ import { PriceAndAmountBigNumber, RFQConfig } from './types';
 import { OptimalSwapExchange } from 'paraswap-core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
-jest.setTimeout(1000 * 60 * 3);
-
-type OutputsResults = {
-  outputs: bigint[];
-  ordersCount: number;
-};
-
 export class GenericRFQ extends ParaSwapLimitOrders {
   private rateFetcher: RateFetcher;
 
@@ -71,7 +64,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     amounts: BigNumber[],
     outMultiplier: BigNumber,
     amountsWithRates: PriceAndAmountBigNumber[],
-  ): OutputsResults {
+  ): bigint[] {
     let lastOrderIndex = 0;
     let lastTotalSrcAmount = BN_0;
     let lastTotalDestAmount = BN_0;
@@ -110,12 +103,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       }
     }
 
-    return {
-      outputs: outputs.map(o =>
-        BigInt(o.multipliedBy(outMultiplier).toFixed(0)),
-      ),
-      ordersCount: lastOrderIndex,
-    };
+    return outputs.map(o => BigInt(o.multipliedBy(outMultiplier).toFixed(0)));
   }
 
   async getPricesVolume(
@@ -161,8 +149,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       orderPricesInfo.rates,
     );
 
-    const unit = unitResults.outputs[0];
-
+    const unit = unitResults[0];
     const outputs = this.calcOutsFromAmounts(
       _amountsInBN,
       getBigNumberPow(outDecimals),
@@ -170,10 +157,10 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     );
     return [
       {
-        gasCost: Number(BigInt(outputs.ordersCount) * ONE_ORDER_GASCOST),
+        gasCost: Number(ONE_ORDER_GASCOST),
         exchange: this.dexKey,
         poolIdentifier: expectedIdentifier,
-        prices: outputs.outputs,
+        prices: outputs,
         unit,
         data: {
           orderInfos: null,
