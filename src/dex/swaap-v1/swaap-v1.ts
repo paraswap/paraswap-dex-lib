@@ -315,6 +315,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     return data.pools.map((pool: SubgraphPoolBase) => {
       const castedPool = SwaapV1.castSubgraphPoolBase(pool);
       if (blockNumber && !this.allPools.has(castedPool.id)) {
+        this.allPools.set(castedPool.id, castedPool);
         this.addPool(castedPool, blockNumber!);
       }
       return castedPool;
@@ -536,14 +537,17 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     const from = this.dexHelper.config.wrapETH(_from);
     const to = this.dexHelper.config.wrapETH(_to);
 
-    const topPools = await this.getTopPoolsForTokens(
-      [from.address, to.address],
-      10,
-      blockNumber,
+    const srcTokenAddress = from.address.toLowerCase();
+    const destTokenAddress = to.address.toLowerCase();
+
+    const topPools: Address[] = this.findPools(
+      srcTokenAddress,
+      destTokenAddress,
     );
+
     const allowedPools = limitPools
-      ? topPools.filter((p: SubgraphPoolBase) =>
-          limitPools.includes(`${this.dexKey}_${p.id.toLowerCase()}`),
+      ? topPools.filter((p: Address) =>
+          limitPools.includes(`${this.dexKey}_${p.toLowerCase()}`),
         )
       : topPools;
 
@@ -553,15 +557,11 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       (side === SwapSide.SELL ? from : to).decimals,
     );
 
-    const srcTokenAddress = from.address.toLowerCase();
-    const destTokenAddress = to.address.toLowerCase();
-
     if (srcTokenAddress === destTokenAddress) return null;
     const currentTimestamp =
       _currentTimeStamp || BigInt(Math.floor(Date.now() / 1000)); // the on-chain pricing logic is not too much sensitive to that value
     return await Promise.all(
-      allowedPools.map(async p => {
-        const poolAddress = p.id;
+      allowedPools.map(async poolAddress => {
         let state = this.eventPools[poolAddress].getState(blockNumber);
         if (!state) {
           state = await this.eventPools[poolAddress].generateState(blockNumber);
