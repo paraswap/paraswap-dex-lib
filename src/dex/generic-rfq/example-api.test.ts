@@ -140,10 +140,10 @@ export const startTestServer = (account: ethers.Wallet) => {
     if (payload.makerAmount) {
       // buy
       let _prices: PairPriceResponse =
-        prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+        prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
       if (!_prices) {
         _prices =
-          prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+          prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
         reversed = true;
       }
       if (!reversed) {
@@ -164,11 +164,11 @@ export const startTestServer = (account: ethers.Wallet) => {
     } else if (payload.takerAmount) {
       // sell
       let _prices: PairPriceResponse =
-        prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+        prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
 
       if (!_prices) {
         _prices =
-          prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+          prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
         reversed = true;
       }
       if (!reversed) {
@@ -192,8 +192,8 @@ export const startTestServer = (account: ethers.Wallet) => {
       maker: account.address,
       taker: payload.txOrigin,
       expiry: 0,
-      makerAsset: payload.takerAsset,
-      takerAsset: payload.makerAsset,
+      makerAsset: payload.makerAsset,
+      takerAsset: payload.takerAsset,
       makerAmount: payload.makerAmount ? payload.makerAmount : value.toFixed(0),
       takerAmount: payload.takerAmount ? payload.takerAmount : value.toFixed(0),
     };

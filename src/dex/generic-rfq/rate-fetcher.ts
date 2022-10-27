@@ -239,8 +239,8 @@ export class RateFetcher {
     }
 
     const payload: RFQPayload = {
-      makerAsset: srcToken.address,
-      takerAsset: destToken.address,
+      makerAsset: destToken.address,
+      takerAsset: srcToken.address,
       model: 'firm',
       makerAmount: side === SwapSide.BUY ? amount : undefined,
       takerAmount: side === SwapSide.SELL ? amount : undefined,
