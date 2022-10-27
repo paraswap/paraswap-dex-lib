@@ -51,4 +51,7 @@ export interface IBlockManager {
     contractAddress: Address | Address[],
     afterBlockNumber: number,
   ): void;
+
+  //This return the latest blockNumber that the blockManager has processed
+  getLatestBlockNumber(): number;
 }

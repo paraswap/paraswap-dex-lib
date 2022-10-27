@@ -214,7 +214,6 @@ export abstract class StatefulEventSubscriber<State>
   async update(
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [blockNumber: number]: Readonly<BlockHeader> }>,
-    blockNumberForMissingStateRegen?: number,
   ): Promise<void> {
     let index = 0;
     let lastBlockNumber: number | undefined;
@@ -266,21 +265,21 @@ export abstract class StatefulEventSubscriber<State>
     if (
       !this.dexHelper.config.isSlave &&
       this.masterPoolNeeded &&
-      this.state === null &&
-      blockNumberForMissingStateRegen
+      this.state === null
     ) {
+      const network = this.dexHelper.config.data.network;
       const createNewState = async () => {
+        const latestBlockNumber =
+          this.dexHelper.blockManager.getLatestBlockNumber();
         this.logger.warn(
-          `${this.parentName}: ${this.name}: master generate new state because state is null`,
+          `${network}: ${this.parentName}: ${this.name}: master generate (latest: ${latestBlockNumber}) new state because state is null`,
         );
         try {
-          const state = await this.generateState(
-            blockNumberForMissingStateRegen,
-          );
-          this.setState(state, blockNumberForMissingStateRegen);
+          const state = await this.generateState(latestBlockNumber);
+          this.setState(state, latestBlockNumber);
         } catch (e) {
           this.logger.error(
-            `${this.dexHelper.config.data.network}: ${this.parentName} ${this.name}: ${blockNumberForMissingStateRegen} failed fetch state:`,
+            `${network}: ${this.parentName} ${this.name}: (${latestBlockNumber}) failed fetch state:`,
             e,
           );
           setTimeout(createNewState, CREATE_NEW_STATE_RETRY_INTERVAL_MS);

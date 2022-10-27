@@ -138,6 +138,10 @@ class DummyBlockManager implements IBlockManager {
     );
     subscriber.isTracking = () => true;
   }
+
+  getLatestBlockNumber(): number {
+    return 42;
+  }
 }
 
 export class DummyDexHelper implements IDexHelper {
