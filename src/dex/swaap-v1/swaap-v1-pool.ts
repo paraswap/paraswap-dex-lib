@@ -40,8 +40,10 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
 
   static readonly ANSWER_UPDATED_TOPIC =
     SwaapV1Pool.proxyInterface.getEventTopic('AnswerUpdated');
+  public id: Address;
   public addressSubscribers: Address[];
   public oracleTokenMap: { [oracleAddress: Address]: Address };
+  public tokens: Address[];
 
   constructor(
     dexKey: string,
@@ -53,6 +55,9 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
       `${dexKey}-${pool.id}`,
       dexHelper.getLogger(`${dexKey}-${network}-${pool.id}`),
     );
+
+    this.id = pool.id;
+    this.tokens = pool.tokens.map(t => t.address);
 
     this.addressSubscribers = [pool.id];
     this.oracleTokenMap = pool.tokens.reduce((acc, t) => {

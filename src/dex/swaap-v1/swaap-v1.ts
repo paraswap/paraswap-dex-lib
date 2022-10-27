@@ -48,8 +48,6 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
 
   protected eventPools: { [poolAddress: string]: SwaapV1Pool } = {};
 
-  public allPools: Map<string, SubgraphPoolBase> = new Map();
-
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported: boolean = false;
 
@@ -71,21 +69,17 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     this.exchangeProxy = this.config.exchangeProxy;
   }
 
-  async init(blockNumber: number) {
-    this.allPools = await this.fetchAllSubgraphPools(blockNumber);
-  }
-
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    await this.init(blockNumber);
-    if (!this.allPools)
+    const allPools = await this.fetchAllSubgraphPools(blockNumber);
+    if (!allPools)
       throw new Error(
         'initializePricing: SwaapV1 cfgInfo still null after init',
       );
-    for (const poolConfig of this.allPools.values()) {
+    for (const poolConfig of allPools.values()) {
       await this.addPool(poolConfig, blockNumber);
     }
   }
@@ -124,13 +118,12 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     srcTokenAddress: Address,
     destTokenAddress: Address,
   ): Address[] {
-    if (!this.allPools) return [];
-    return Array.from(this.allPools.values())
+    if (!this.eventPools) return [];
+    return Object.values(this.eventPools)
       .filter(poolConfig => {
-        const tokenAddresses = poolConfig.tokens.map(t => t.address);
         return (
-          tokenAddresses.includes(srcTokenAddress) &&
-          tokenAddresses.includes(destTokenAddress)
+          poolConfig.tokens.includes(srcTokenAddress) &&
+          poolConfig.tokens.includes(destTokenAddress)
         );
       })
       .map(p => p.id);
@@ -314,8 +307,12 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
 
     return data.pools.map((pool: SubgraphPoolBase) => {
       const castedPool = SwaapV1.castSubgraphPoolBase(pool);
-      if (blockNumber && !this.allPools.has(castedPool.id)) {
-        this.allPools.set(castedPool.id, castedPool);
+      if (
+        blockNumber &&
+        !Object.values(this.eventPools)
+          .map(e => e.id)
+          .includes(castedPool.id)
+      ) {
         this.addPool(castedPool, blockNumber!);
       }
       return castedPool;
