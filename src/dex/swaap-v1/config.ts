@@ -2,7 +2,7 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
-export const MAX_GAS_COST_ESTIMATION = 475 * 1000;
+export const MAX_GAS_COST_ESTIMATION = 375 * 1000;
 export const SUBGRAPH_TIMEOUT = 1000 * 10;
 export const MAX_POOL_CNT = 1000;
 export const POOL_CACHE_TTL = 60 * 60; // 1hr
