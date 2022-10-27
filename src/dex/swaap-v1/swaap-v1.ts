@@ -26,37 +26,18 @@ import {
   SwaapV1Swap,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { SwaapV1Config, Adapters } from './config';
+import {
+  SwaapV1Config,
+  Adapters,
+  SUBGRAPH_FETCH_ALL_POOOLS_RQ,
+  SUBGRAPH_TIMEOUT,
+  MAX_POOL_CNT,
+  POOL_CACHE_TTL,
+  MAX_GAS_COST_ESTIMATION,
+} from './config';
 import { SwaapV1Pool } from './swaap-v1-pool';
 import PoolABI from '../../abi/swaap-v1/pool.json';
 import { PoolQuotations } from './libraries/PoolQuotations';
-
-const subgraphTimeout = 1000 * 10;
-const MAX_POOL_CNT = 1000;
-const POOL_CACHE_TTL = 60 * 60; // 1hr
-
-const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: liquidity, orderDirection: desc, where: {finalized: true}) {
-    id
-    tokens {
-      address
-      decimals
-      oracleInitialState {
-        proxy
-        price: fixedPointPrice
-        decimals
-      }
-    }
-    liquidityUSD: liquidity
-    swapFee
-    dynamicCoverageFeesZ
-    dynamicCoverageFeesHorizon
-    priceStatisticsLookbackInSec
-    priceStatisticsLookbackInRound
-    priceStatisticsLookbackStepInRound
-    maxPriceUnpegRatio
-  }
-}`;
 
 export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   static readonly poolInterface = new Interface(PoolABI);
@@ -323,7 +304,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
         query,
         variables,
       },
-      subgraphTimeout,
+      SUBGRAPH_TIMEOUT,
     );
 
     if (!(data && data.pools))
@@ -377,8 +358,8 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     };
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
-      { query: fetchAllPools, variables },
-      subgraphTimeout,
+      { query: SUBGRAPH_FETCH_ALL_POOOLS_RQ, variables },
+      SUBGRAPH_TIMEOUT,
     );
     if (!(data && data.pools))
       throw new Error('Unable to fetch pools from the subgraph');
@@ -616,7 +597,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
           },
           poolAddresses: [poolAddress],
           exchange: this.dexKey,
-          gasCost: 610 * 1000,
+          gasCost: MAX_GAS_COST_ESTIMATION,
           poolIdentifier: this.getPoolIdentifier(poolAddress),
         };
       }),
