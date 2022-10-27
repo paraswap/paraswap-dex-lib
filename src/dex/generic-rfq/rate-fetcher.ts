@@ -118,23 +118,6 @@ export class RateFetcher {
       pairs[pair.id] = pair;
       tokensAddress.push(pair.base.address);
       tokensAddress.push(pair.quote.address);
-
-      // const fullName = `${pair.quote.address}_${pair.base.address}`;
-      // const reversedFullName = `${pair.base.address}_${pair.quote.address}`;
-      // const reversedId = pair.id.split('-').reverse().join('-');
-      // const reversedPair = {
-      //   id: reversedId,
-      //   fullName: fullName,
-      //   base: pair.quote,
-      //   quote: pair.base,
-      //   status: pair.status,
-      // };
-
-      // pairs[]
-      // pairs[reversedId] = reversedPair;
-
-      // pairsFullName.push(fullName);
-      // pairsFullName.push(reversedFullName);
     }
 
     this.dexHelper.cache.setex(
@@ -171,7 +154,6 @@ export class RateFetcher {
           this.dexKey,
           this.dexHelper.config.data.network,
           `${pair.base.address}_${pair.quote.address}_bids`,
-          // `${pair.base.address}_${pair.quote.address}_${SwapSide.SELL}`,
           this.config.marketConfig.dataTTLS,
           JSON.stringify(prices.bids),
         );
@@ -181,7 +163,6 @@ export class RateFetcher {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          // `${pair.base.address}_${pair.quote.address}_${SwapSide.BUY}`,
           `${pair.base.address}_${pair.quote.address}_asks`,
           this.config.marketConfig.dataTTLS,
           JSON.stringify(prices.asks),
@@ -273,10 +254,6 @@ export class RateFetcher {
       return null;
     }
 
-    // let _side = orderPrices.reversed ? SwapSide.SELL : SwapSide.BUY;
-    // if (side === SwapSide.BUY) {
-    //   _side = orderPrices.reversed ? SwapSide.BUY : SwapSide.SELL;
-    // }
     let _side = side;
     if (orderPrices.reversed) {
       _side = side === SwapSide.SELL ? SwapSide.BUY : SwapSide.SELL;
