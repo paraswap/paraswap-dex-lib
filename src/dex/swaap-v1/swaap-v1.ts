@@ -145,11 +145,13 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   ): Address[] {
     if (!this.allPools) return [];
     return Array.from(this.allPools.values())
-      .filter(
-        poolConfig =>
-          poolConfig.tokens.map(t => t.address).includes(srcTokenAddress) &&
-          poolConfig.tokens.map(t => t.address).includes(destTokenAddress),
-      )
+      .filter(poolConfig => {
+        const tokenAddresses = poolConfig.tokens.map(t => t.address);
+        return (
+          tokenAddresses.includes(srcTokenAddress) &&
+          tokenAddresses.includes(destTokenAddress)
+        );
+      })
       .map(p => p.id);
   }
 
