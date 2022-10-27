@@ -343,6 +343,8 @@ export async function newTestE2E({
       transferFees,
     );
 
+    console.log(JSON.stringify(priceRoute));
+
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Slippage to be 7%
@@ -369,15 +371,18 @@ export async function newTestE2E({
           senderAddress,
           config.tokenTransferProxyAddress,
           amount.toString(),
-        )
-        .applyOverrides(stateOverrides);
+        );
     } else {
       srcToken
         .addBalance(senderAddress, MAX_UINT)
-        .addAllowance(senderAddress, config.tokenTransferProxyAddress, MAX_UINT)
-        .applyOverrides(stateOverrides);
+        .addAllowance(
+          senderAddress,
+          config.tokenTransferProxyAddress,
+          MAX_UINT,
+        );
     }
 
+    srcToken.applyOverrides(stateOverrides);
     destToken.applyOverrides(stateOverrides);
 
     const swapTx = await ts.simulate(swapParams, stateOverrides);

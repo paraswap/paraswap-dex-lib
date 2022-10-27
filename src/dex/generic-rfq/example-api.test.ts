@@ -131,28 +131,30 @@ export const startTestServer = (account: ethers.Wallet) => {
   app.post('/firm', async (req, res) => {
     const payload: RFQPayload = req.body;
 
-    let reversed = false;
-    let _prices: PairPriceResponse =
-      prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
-    if (!_prices) {
-      _prices =
-        prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
-      reversed = true;
-    }
+    console.log(payload);
 
-    if (!_prices) {
-      return res.status(404).send();
-    }
+    let reversed = false;
 
     let value = new BigNumber('0');
 
+    let makerAsset = payload.makerAsset;
+    let takerAsset = payload.takerAsset;
+
     if (payload.makerAmount) {
+      // buy
+      let _prices: PairPriceResponse =
+        prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+      if (!_prices) {
+        _prices =
+          prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+        reversed = true;
+      }
       if (!reversed) {
         value = new BigNumber(payload.makerAmount).times(
           new BigNumber(_prices.asks[0].price),
         );
       } else {
-        const reversedPrices = _prices.asks.map(price =>
+        const reversedPrices = _prices.bids.map(price =>
           reversePrice({
             amount: new BigNumber(price.amount),
             price: new BigNumber(price.price),
@@ -161,12 +163,25 @@ export const startTestServer = (account: ethers.Wallet) => {
         value = new BigNumber(payload.makerAmount).times(
           new BigNumber(reversedPrices[0].price),
         );
+        makerAsset = payload.takerAsset;
+        takerAsset = payload.makerAsset;
       }
     } else if (payload.takerAmount) {
+      // sell
+      let _prices: PairPriceResponse =
+        prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+
+      if (!_prices) {
+        _prices =
+          prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+        reversed = true;
+      }
       if (!reversed) {
         value = new BigNumber(payload.takerAmount).times(
           new BigNumber(_prices.bids[0].price),
         );
+        makerAsset = payload.takerAsset;
+        takerAsset = payload.makerAsset;
       } else {
         const reversedPrices = _prices.asks.map(price =>
           reversePrice({
@@ -180,25 +195,20 @@ export const startTestServer = (account: ethers.Wallet) => {
       }
     }
 
-    const signableOrderData = await paraSwapLimitOrderSDK.buildLimitOrder({
+    const order = {
       maker: account.address,
       taker: payload.txOrigin,
       expiry: 0,
-      makerAsset: payload.makerAsset,
-      takerAsset: payload.takerAsset,
+      makerAsset: makerAsset,
+      takerAsset: takerAsset,
       makerAmount: payload.makerAmount ? payload.makerAmount : value.toFixed(0),
       takerAmount: payload.takerAmount ? payload.takerAmount : value.toFixed(0),
-    });
+    };
 
-    console.log({
-      maker: account.address,
-      taker: payload.txOrigin,
-      expiry: 0,
-      makerAsset: payload.makerAsset,
-      takerAsset: payload.takerAsset,
-      makerAmount: payload.makerAmount ? payload.makerAmount : value.toFixed(0),
-      takerAmount: payload.takerAmount ? payload.takerAmount : value.toFixed(0),
-    });
+    console.log(order, 'reversed:', reversed);
+    const signableOrderData = await paraSwapLimitOrderSDK.buildLimitOrder(
+      order,
+    );
 
     const signature = await paraSwapLimitOrderSDK.signLimitOrder(
       signableOrderData,

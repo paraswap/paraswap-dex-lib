@@ -157,25 +157,38 @@ export class RateFetcher {
     destToken: Token,
     side: SwapSide,
   ): Promise<PriceAndAmountBigNumber[] | null> {
-    let askOrBids = side === SwapSide.SELL ? 'bids' : 'asks';
-
-    let pricesAsString: string | null = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.dexHelper.config.data.network,
-      `${srcToken.address}_${destToken.address}_${askOrBids}`,
-    );
     let reversed = false;
-    if (!pricesAsString) {
-      side = side === SwapSide.SELL ? SwapSide.BUY : SwapSide.SELL;
-      const [_srcToken, _destToken] = [destToken, srcToken];
-      askOrBids = askOrBids === 'bids' ? 'asks' : 'bids';
 
+    let pricesAsString: string | null = null;
+    if (side === SwapSide.SELL) {
       pricesAsString = await this.dexHelper.cache.get(
         this.dexKey,
         this.dexHelper.config.data.network,
-        `${_srcToken.address}_${_destToken.address}_${askOrBids}`,
+        `${srcToken.address}_${destToken.address}_bids`,
       );
 
+      if (!pricesAsString) {
+        pricesAsString = await this.dexHelper.cache.get(
+          this.dexKey,
+          this.dexHelper.config.data.network,
+          `${destToken.address}_${srcToken.address}_asks`,
+        );
+      }
+      reversed = true;
+    } else {
+      pricesAsString = await this.dexHelper.cache.get(
+        this.dexKey,
+        this.dexHelper.config.data.network,
+        `${destToken.address}_${srcToken.address}_asks`,
+      );
+
+      if (!pricesAsString) {
+        pricesAsString = await this.dexHelper.cache.get(
+          this.dexKey,
+          this.dexHelper.config.data.network,
+          `${srcToken.address}_${destToken.address}_bids`,
+        );
+      }
       reversed = true;
     }
 
@@ -226,8 +239,8 @@ export class RateFetcher {
     }
 
     const payload: RFQPayload = {
-      makerAsset: destToken.address,
-      takerAsset: srcToken.address,
+      makerAsset: srcToken.address,
+      takerAsset: destToken.address,
       model: 'firm',
       makerAmount: side === SwapSide.BUY ? amount : undefined,
       takerAmount: side === SwapSide.SELL ? amount : undefined,
