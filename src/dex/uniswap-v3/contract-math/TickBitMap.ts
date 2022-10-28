@@ -56,11 +56,12 @@ export class TickBitMap {
     // Therefore it is never used in price query
     isWordPosOut(wordPos, state.startTickBitmap, false);
 
-    if (state.tickBitmap[wordPos.toString()] === undefined) {
-      state.tickBitmap[wordPos.toString()] = 0n;
+    const stringWordPos = wordPos.toString();
+    if (state.tickBitmap[stringWordPos] === undefined) {
+      state.tickBitmap[stringWordPos] = 0n;
     }
 
-    state.tickBitmap[wordPos.toString()] ^= mask;
+    state.tickBitmap[stringWordPos] ^= mask;
   }
 
   static nextInitializedTickWithinOneWord(
