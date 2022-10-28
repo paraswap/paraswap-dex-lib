@@ -17,24 +17,19 @@ const dexKey = 'UniswapV3';
 const network = Network.MAINNET;
 const config = UniswapV3Config[dexKey][network];
 
-const TICK_BIT_MAP_START = -500;
-const TICK_BIT_MAP_END = 500;
-const TICK_BIT_MAP_REQUEST_AMOUNT = -TICK_BIT_MAP_START + TICK_BIT_MAP_END + 1;
-const CHUNK_SIZE = 1;
-
-async function fetchPoolState(
+async function fetchPoolStateFromContract(
   uniswapV3Pool: UniswapV3EventPool,
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolState> {
   const message = `UniswapV3: ${poolAddress} blockNumber ${blockNumber}`;
   console.log(`Fetching state ${message}`);
-  // Because in pool implementation to receive state we use special StateMulticall,
-  // but for the old blocks it was not existed, I could not use it to query state.
-  // So in the end of this file I wrote the long redundant things to query the state
-  // Please don't consider it as a practice which may be replicated.
-  // Here should be either subgraph call or use internal generateState function
-  const state = await getStateFromMulticall(uniswapV3Pool, blockNumber);
+  // Be careful to not request state prior to contract deployment
+  // Otherwise need to use manual state sourcing from multicall
+  // We had that mechanism, but removed it with this commit
+  // You can restore it, but better just to find block after state multicall
+  // deployment
+  const state = uniswapV3Pool.generateState(blockNumber);
   console.log(`Done ${message}`);
   return state;
 }
@@ -48,16 +43,34 @@ describe('UniswapV3 Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     // topic0 - 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
     ['Swap']: [
-      14973668, 14973666, 14973665, 14973664, 14973663, 14973662, 14973661,
+      15846349, 15846351, 15846352, 15846353, 15846355, 15846357, 15846358,
+      15846360, 15846360, 15846361, 15846362, 15846364, 15846365, 15846366,
+      15846367, 15846368, 15846369, 15846370, 15846372, 15846373, 15846374,
+      15846375, 15846376, 15846381, 15846382, 15846383, 15846386, 15846387,
+      15846388, 15846390, 15846391, 15846392, 15846393, 15846398, 15846400,
+      15846403, 15846405, 15846407, 15846408, 15846411, 15846412, 15846413,
+      15846415,
     ],
     // topic0 - 0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c
-    ['Burn']: [14973650, 14973586, 14973558, 14973552, 14973547],
+    ['Burn']: [
+      15845483, 15845493, 15845539, 15845573, 15845650, 15845679, 15845680,
+      15845758, 15845850, 15845865, 15845874, 15845980, 15846159, 15846217,
+      15846263, 15846279, 15846297, 15846309, 15846351, 15846394, 15846398,
+    ],
     // topic0 - 0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde
-    ['Mint']: [14973657, 14973641, 14973619, 14973589, 14973552],
+    ['Mint']: [
+      15845479, 15845540, 15845624, 15845650, 15845655, 15845679, 15845680,
+      15845758, 15845814, 15845867, 15845939, 15845946, 15845964, 15845980,
+      15846000, 15846020, 15846044, 15846138, 15846159, 15846181, 15846217,
+      15846229, 15846263, 15846279, 15846336, 15846351, 15846405,
+    ],
     // topic0 - 0x973d8d92bb299f4af6ce49b52a8adb85ae46b9f214c4c4fc06ac77401237b133
     ['SetFeeProtocol']: [],
     // topic0 - 0xac49e518f90a358f652e4400164f05a5d8f7e35e7747279bc3a93dbf584e125a
-    ['IncreaseObservationCardinalityNext']: [13125816, 12733621, 12591465],
+    // There are some events on blockNumbers: 13125816, 12733621, 12591465
+    // But stateMulticall is not deployed at that time. So I just remove that check
+    // I think it is not important actually
+    ['IncreaseObservationCardinalityNext']: [],
   };
 
   describe('UniswapV3EventPool', function () {
@@ -88,7 +101,11 @@ describe('UniswapV3 Event', function () {
             uniswapV3Pool,
             uniswapV3Pool.addressesSubscribed,
             (_blockNumber: number) =>
-              fetchPoolState(uniswapV3Pool, _blockNumber, poolAddress),
+              fetchPoolStateFromContract(
+                uniswapV3Pool,
+                _blockNumber,
+                poolAddress,
+              ),
             blockNumber,
             `${dexKey}_${poolAddress}`,
             dexHelper.provider,
@@ -97,287 +114,46 @@ describe('UniswapV3 Event', function () {
       });
     });
   });
-});
 
-function _getFirstStepStateCallData(uniswapV3Pool: UniswapV3EventPool) {
-  const target = uniswapV3Pool.poolAddress;
+  // We had issue with this event. Test to tackle that special case
+  it('Special event case for Mint', async () => {
+    const _poolAddress =
+      '0x64750f4098A7F98352f7CD5797f421cEb8D94f64'.toLowerCase();
+    const _feeCode = 100n;
+    const _token0 = '0x4200000000000000000000000000000000000006';
+    const _token1 = '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58';
+    const blockNumber = 32203881;
 
-  return [
-    {
-      target,
-      callData: uniswapV3Pool.poolIface.encodeFunctionData('slot0', []),
-    },
-    {
-      target,
-      callData: uniswapV3Pool.poolIface.encodeFunctionData('liquidity', []),
-    },
-    {
-      target,
-      callData: uniswapV3Pool.poolIface.encodeFunctionData('fee', []),
-    },
-    {
-      target,
-      callData: uniswapV3Pool.poolIface.encodeFunctionData('tickSpacing', []),
-    },
-    {
-      target,
-      callData: uniswapV3Pool.poolIface.encodeFunctionData(
-        'maxLiquidityPerTick',
-        [],
-      ),
-    },
-  ];
-}
+    const dexHelper = new DummyDexHelper(Network.OPTIMISM);
+    // await dexHelper.init();
 
-function _getSecondStepStateCallData(
-  uniswapV3Pool: UniswapV3EventPool,
-  currentTickBitmap: bigint,
-) {
-  const target = uniswapV3Pool.poolAddress;
-  const start = Number(
-    currentTickBitmap - uniswapV3Pool.getBitmapRangeToRequest(),
-  );
-  const end = Number(
-    currentTickBitmap + uniswapV3Pool.getBitmapRangeToRequest(),
-  );
+    const logger = dexHelper.getLogger(dexKey);
 
-  return _.range(start, end).map(ind => ({
-    target,
-    callData: uniswapV3Pool.poolIface.encodeFunctionData('tickBitmap', [ind]),
-  }));
-}
+    const _config = UniswapV3Config[dexKey][Network.OPTIMISM];
 
-function _getThirdStepStateCallData(
-  uniswapV3Pool: UniswapV3EventPool,
-  observationIndex: number,
-  ticks: bigint[],
-) {
-  const target = uniswapV3Pool.poolAddress;
-  return [
-    {
-      target,
-      callData: uniswapV3Pool.poolIface.encodeFunctionData('observations', [
-        observationIndex,
-      ]),
-    },
-  ].concat(
-    ticks.map(tick => ({
-      target,
-      callData: uniswapV3Pool.poolIface.encodeFunctionData('ticks', [tick]),
-    })),
-  );
-}
+    const uniswapV3Pool = new UniswapV3EventPool(
+      dexHelper,
+      dexKey,
+      _config.stateMulticall,
+      _config.factory,
+      _feeCode,
+      _token0,
+      _token1,
+      logger,
+    );
 
-async function getStateFromMulticall(
-  uniswapV3Pool: UniswapV3EventPool,
-  blockNumber: number,
-): Promise<PoolState> {
-  const firstCallData = _getFirstStepStateCallData(uniswapV3Pool);
+    // It is done in generateState. But here have to make it manually
+    uniswapV3Pool.poolAddress = _poolAddress.toLowerCase();
+    uniswapV3Pool.addressesSubscribed[0] = _poolAddress;
 
-  const firstData = await uniswapV3Pool.dexHelper.multiContract.methods
-    .tryAggregate(false, firstCallData)
-    .call({}, blockNumber || 'latest');
-
-  _checkMulticallResultForError(firstData, blockNumber);
-
-  const slot0 = _decodeSlot0Result(uniswapV3Pool, firstData[0].returnData);
-  const liquidity = bigIntify(
-    uniswapV3Pool.poolIface.decodeFunctionResult(
-      'liquidity',
-      firstData[1].returnData,
-    )[0],
-  );
-  const fee = bigIntify(
-    uniswapV3Pool.poolIface.decodeFunctionResult(
-      'fee',
-      firstData[2].returnData,
-    )[0],
-  );
-  const tickSpacing = bigIntify(
-    uniswapV3Pool.poolIface.decodeFunctionResult(
-      'tickSpacing',
-      firstData[3].returnData,
-    )[0],
-  );
-  const maxLiquidityPerTick = bigIntify(
-    uniswapV3Pool.poolIface.decodeFunctionResult(
-      'maxLiquidityPerTick',
-      firstData[4].returnData,
-    )[0],
-  );
-
-  const [currentTickBitmap] = TickBitMap.position(slot0.tick / tickSpacing);
-
-  const secondCallData = _getSecondStepStateCallData(
-    uniswapV3Pool,
-    currentTickBitmap,
-  );
-
-  const secondData = await uniswapV3Pool.dexHelper.multiContract.methods
-    .tryAggregate(false, secondCallData)
-    .call({}, blockNumber || 'latest');
-
-  _checkMulticallResultForError(secondData, blockNumber);
-
-  let ind = Number(currentTickBitmap - uniswapV3Pool.getBitmapRangeToRequest());
-  const tickBitmap = (
-    secondData.map((d: MultiResult<string>) =>
-      bigIntify(
-        uniswapV3Pool.poolIface.decodeFunctionResult(
-          'tickBitmap',
-          d.returnData,
-        )[0],
-      ),
-    ) as bigint[]
-  ).reduce<Record<string, bigint>>((acc, curr) => {
-    acc[ind++] = curr;
-    return acc;
-  }, {});
-
-  const populatedTickIndexes = _calcPopulatedTickIndexes(
-    Object.values(tickBitmap),
-    tickSpacing,
-  );
-
-  const thirdCallData = _getThirdStepStateCallData(
-    uniswapV3Pool,
-    slot0.observationIndex,
-    populatedTickIndexes,
-  );
-
-  const thirdData = await uniswapV3Pool.dexHelper.multiContract.methods
-    .tryAggregate(false, thirdCallData)
-    .call({}, blockNumber || 'latest');
-
-  _checkMulticallResultForError(thirdData, blockNumber);
-
-  const observations: Record<number, OracleObservation> = {};
-
-  observations[slot0.observationIndex] = _decodeObservationResult(
-    uniswapV3Pool,
-    thirdData[0].returnData,
-  );
-
-  const ticks = populatedTickIndexes.reduce<Record<string, TickInfo>>(
-    (acc, curr, i) => {
-      acc[curr.toString()] = _decodeTickInfoResult(
-        uniswapV3Pool,
-        thirdData[i + 1].returnData,
-      );
-      return acc;
-    },
-    {},
-  );
-  const blockTimestamp = BigInt(
-    (
-      await uniswapV3Pool.dexHelper.web3Provider.eth.getBlock(
-        blockNumber || 'latest',
-      )
-    ).timestamp,
-  );
-
-  const requestedRange = uniswapV3Pool.getBitmapRangeToRequest();
-
-  return {
-    pool: uniswapV3Pool.poolAddress,
-    blockTimestamp,
-    slot0,
-    liquidity,
-    fee,
-    tickSpacing,
-    maxLiquidityPerTick,
-    tickBitmap,
-    ticks,
-    observations,
-    isValid: true,
-    startTickBitmap: currentTickBitmap,
-    lowestKnownTick:
-      (BigInt.asIntN(24, currentTickBitmap - requestedRange) << 8n) *
-      tickSpacing,
-    highestKnownTick:
-      ((BigInt.asIntN(24, currentTickBitmap + requestedRange) << 8n) +
-        BigInt.asIntN(24, 255n)) *
-      tickSpacing,
-  };
-}
-
-function _decodeSlot0Result(
-  uniswapV3Pool: UniswapV3EventPool,
-  data: string,
-): Slot0 {
-  const _slot0 = uniswapV3Pool.poolIface.decodeFunctionResult('slot0', data);
-  return {
-    sqrtPriceX96: bigIntify(_slot0.sqrtPriceX96),
-    tick: bigIntify(_slot0.tick),
-    observationIndex: _slot0.observationIndex,
-    observationCardinality: _slot0.observationCardinality,
-    observationCardinalityNext: _slot0.observationCardinalityNext,
-    feeProtocol: bigIntify(_slot0.feeProtocol),
-  };
-}
-
-function _decodeObservationResult(
-  uniswapV3Pool: UniswapV3EventPool,
-  data: string,
-): OracleObservation {
-  const observation = uniswapV3Pool.poolIface.decodeFunctionResult(
-    'observations',
-    data,
-  );
-  return {
-    blockTimestamp: bigIntify(observation.blockTimestamp),
-    tickCumulative: bigIntify(observation.tickCumulative),
-    secondsPerLiquidityCumulativeX128: bigIntify(
-      observation.secondsPerLiquidityCumulativeX128,
-    ),
-    initialized: observation.initialized,
-  };
-}
-
-function _decodeTickInfoResult(
-  uniswapV3Pool: UniswapV3EventPool,
-  data: string,
-): TickInfo {
-  const tickInfo = uniswapV3Pool.poolIface.decodeFunctionResult('ticks', data);
-  return {
-    liquidityGross: bigIntify(tickInfo.liquidityGross),
-    liquidityNet: bigIntify(tickInfo.liquidityNet),
-    tickCumulativeOutside: bigIntify(tickInfo.tickCumulativeOutside),
-    secondsPerLiquidityOutsideX128: bigIntify(
-      tickInfo.secondsPerLiquidityOutsideX128,
-    ),
-    secondsOutside: bigIntify(tickInfo.secondsOutside),
-    initialized: tickInfo.initialized,
-  };
-}
-
-function _calcPopulatedTickIndexes(
-  tickBitmaps: bigint[],
-  tickSpacing: bigint,
-): bigint[] {
-  return tickBitmaps.reduce<bigint[]>((acc, curr, tickBitmapIndex) => {
-    if (curr !== 0n) {
-      for (let i = 0n; i < 256n; i++) {
-        if ((curr & (1n << i)) > 0n) {
-          const populatedTick =
-            ((BigInt(tickBitmapIndex) << 8n) + i) * tickSpacing;
-          acc.push(populatedTick);
-        }
-      }
-    }
-    return acc;
-  }, []);
-}
-
-function _checkMulticallResultForError(
-  data: MultiResult<string>[],
-  blockNumber: number,
-) {
-  data.forEach((d: MultiResult<string>, i: number) => {
-    if (!d.success) {
-      throw new Error(
-        `UniswapV3: Can not fetch state for ${blockNumber} and index=${i}`,
-      );
-    }
+    await testEventSubscriber(
+      uniswapV3Pool,
+      uniswapV3Pool.addressesSubscribed,
+      (_blockNumber: number) =>
+        fetchPoolStateFromContract(uniswapV3Pool, _blockNumber, _poolAddress),
+      blockNumber,
+      `${dexKey}_${_poolAddress}`,
+      dexHelper.provider,
+    );
   });
-}
+});
