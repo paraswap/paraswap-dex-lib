@@ -256,13 +256,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const newSqrtPriceX96 = bigIntify(event.args.sqrtPriceX96);
     const amount0 = bigIntify(event.args.amount0);
+    const amount1 = bigIntify(event.args.amount1);
     const newTick = bigIntify(event.args.tick);
     const newLiquidity = bigIntify(event.args.liquidity);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    if (amount0 === 0n) {
+    if (amount0 <= 0n && amount1 <= 0n) {
       this.logger.error(
-        `${this.parentName}: amount0 === 0n for ${this.poolAddress} and ${blockHeader.number}. Check why it happened`,
+        `${this.parentName}: amount0 <= 0n && amount1 <= 0n for ` +
+          `${this.poolAddress} and ${blockHeader.number}. Check why it happened`,
       );
       pool.isValid = false;
       return pool;
