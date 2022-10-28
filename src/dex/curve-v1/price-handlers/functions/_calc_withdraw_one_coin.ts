@@ -1,22 +1,18 @@
 import _ from 'lodash';
 import { ImplementationNames, PoolState } from '../../types';
-import { get_D } from './get_D';
-import { get_y_D } from './get_y_D';
-import { _A } from './_A';
-import { _xp_mem } from './_xp_mem';
+import { IPoolContext, _calc_withdraw_one_coin } from '../types';
 
 const factoryPlain2CoinErc20: _calc_withdraw_one_coin = (
+  self: IPoolContext,
   state: PoolState,
-  funcs: DependantFuncs,
   _burn_amount: bigint,
   i: number,
 ): [bigint, bigint] => {
-  const { rate_multipliers, PRECISION, N_COINS, FEE_DENOMINATOR } =
-    state.constants;
-  const amp = funcs._A(state);
-  const rates = rate_multipliers;
-  const xp = funcs._xp_mem(state, rates, state.balances);
-  const D0 = funcs.get_D(state, xp, amp);
+  const { PRECISION, N_COINS, FEE_DENOMINATOR } = self;
+  const amp = state.A;
+  const rates = [...state.constants.rate_multipliers];
+  const xp = self._xp_mem(self, state, rates, state.balances);
+  const D0 = self.get_D(self, state, xp, amp);
 
   const total_supply = state.totalSupply;
   const D1 = D0 - (_burn_amount * D0) / total_supply;

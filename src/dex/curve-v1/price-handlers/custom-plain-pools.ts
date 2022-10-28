@@ -1,24 +1,4 @@
-import _ from 'lodash';
-import { BI_POWS } from '../../../bigint-constants';
-import { funcName, _require } from '../../../utils';
-import { ICurveV1PriceHandler, PoolState } from '../types';
-import { BasePool } from './base-pool';
-
 export class ThreePool extends BasePool implements ICurveV1PriceHandler {
-  private readonly N_COINS = 3;
-  private readonly BI_N_COINS = BigInt(this.N_COINS);
-
-  private readonly FEE_DENOMINATOR = BI_POWS[10];
-  private readonly LENDING_PRECISION = BI_POWS[18];
-  private readonly PRECISION = BI_POWS[18];
-  private readonly PRECISION_MUL = [1n, 1000000000000n, 1000000000000n];
-  // Just copied from original implementation
-  private readonly RATES = [
-    1000000000000000000n,
-    1000000000000000000000000000000n,
-    1000000000000000000000000000000n,
-  ];
-
   get_dy(state: PoolState, i: number, j: number, dx: bigint): bigint {
     const rates = [...this.RATES];
     const xp = this._xp(state);
@@ -260,18 +240,6 @@ export class ThreePool extends BasePool implements ICurveV1PriceHandler {
 }
 
 export class FraxPool extends BasePool implements ICurveV1PriceHandler {
-  private readonly N_COINS = 2;
-  private readonly BI_N_COINS = BigInt(this.N_COINS);
-  private readonly PRECISION_MUL = [1n, 1000000000000n];
-  private readonly RATES = [
-    1000000000000000000n,
-    1000000000000000000000000000000n,
-  ];
-
-  private readonly FEE_DENOMINATOR = BI_POWS[10];
-  private readonly PRECISION = BI_POWS[18];
-  private readonly A_PRECISION = 100n;
-
   get_dy(state: PoolState, i: number, j: number, _dx: bigint): bigint {
     const xp = this._xp(state);
     const rates = [...this.RATES];
@@ -517,16 +485,6 @@ export class FraxPool extends BasePool implements ICurveV1PriceHandler {
 }
 
 export class BTCPool extends BasePool implements ICurveV1PriceHandler {
-  private readonly N_COINS = 3;
-  private readonly BI_N_COINS = BigInt(this.N_COINS);
-
-  private readonly USE_LENDING = [true, false, false];
-
-  private readonly FEE_DENOMINATOR = BI_POWS[10];
-  private readonly LENDING_PRECISION = BI_POWS[18];
-  private readonly PRECISION = BI_POWS[18];
-  private readonly PRECISION_MUL = [10000000000n, 10000000000n, 1n];
-
   get_dy(state: PoolState, i: number, j: number, dx: bigint): bigint {
     const rates = this._rates(state);
     const xp = this._xp(state, rates);
@@ -608,21 +566,4 @@ export class BTCPool extends BasePool implements ICurveV1PriceHandler {
     }
     return result;
   }
-
-  _rates(state: PoolState) {
-    const result = [...this.PRECISION_MUL];
-    const use_lending = [...this.USE_LENDING];
-    for (const i of _.range(this.N_COINS)) {
-      let rate = this.LENDING_PRECISION; // Used with no lending
-      if (use_lending[i]) rate = state.exchangeRateCurrent[i];
-      result[i] *= rate;
-    }
-    return result;
-  }
 }
-
-export const CustomPlainPools = {
-  FraxPool: new FraxPool(),
-  ThreePool: new ThreePool(),
-  BTCPool: new BTCPool(),
-};

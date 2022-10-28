@@ -1,6 +1,4 @@
-import { PoolState } from '../types';
-
-export type _A = (state: PoolState) => bigint;
+import { ImplementationNames, PoolContextConstants, PoolState } from '../types';
 
 export type _calc_withdraw_one_coin = (
   self: IPoolContext,
@@ -9,25 +7,31 @@ export type _calc_withdraw_one_coin = (
   i: number,
 ) => [bigint, bigint];
 
+export type _rates = (self: IPoolContext, state: PoolState) => bigint[];
+
 export type _xp_mem = (
+  self: IPoolContext,
   state: PoolState,
   _rates: bigint[],
   _balances: bigint[],
 ) => bigint[];
 
 export type _xp = (
+  self: IPoolContext,
   state: PoolState,
   _rates: bigint[],
   _balances: bigint[],
 ) => bigint[];
 
 export type calc_token_amount = (
+  self: IPoolContext,
   state: PoolState,
   _amounts: bigint[],
   _is_deposit: boolean,
 ) => bigint;
 
 export type calc_withdraw_one_coin = (
+  self: IPoolContext,
   state: PoolState,
   _burn_amount: bigint,
   i: number,
@@ -40,27 +44,31 @@ export type get_D_mem = (
   _amp: bigint,
 ) => bigint;
 
-export type get_D = (state: PoolState, xp: bigint[], amp: bigint) => bigint;
+export type get_D = (
+  self: IPoolContext,
+  state: PoolState,
+  xp: bigint[],
+  amp: bigint,
+) => bigint;
 
 export type get_dy_underlying = (
   self: IPoolContext,
-  _basePool: IPoolContext,
   state: PoolState,
-  basePoolState: PoolState,
   i: number,
   j: number,
   dx: bigint,
 ) => bigint;
 
 export type get_dy = (
+  self: IPoolContext,
   state: PoolState,
   i: number,
   j: number,
   dx: bigint,
-  basePoolVirtualPrice?: bigint,
 ) => bigint;
 
 export type get_y_D = (
+  self: IPoolContext,
   state: PoolState,
   A: bigint,
   i: number,
@@ -69,6 +77,7 @@ export type get_y_D = (
 ) => bigint;
 
 export type get_y = (
+  self: IPoolContext,
   state: PoolState,
   i: number,
   j: number,
@@ -77,19 +86,14 @@ export type get_y = (
 ) => bigint;
 
 export interface IPoolContext {
-  readonly IMPLEMENTATION_NAME: string;
-  readonly N_COINS: number;
-  readonly BI_N_COINS: bigint;
+  readonly _basePool?: IPoolContext;
 
-  readonly FEE_DENOMINATOR: bigint;
-  readonly LENDING_PRECISION: bigint;
-  readonly PRECISION: bigint;
-  readonly PRECISION_MUL: bigint[];
-  readonly RATES: bigint[];
-  readonly A_PRECISION: bigint;
+  readonly IMPLEMENTATION_NAME: ImplementationNames;
 
-  _A: _A;
+  readonly constants: PoolContextConstants;
+
   _calc_withdraw_one_coin: _calc_withdraw_one_coin;
+  _rates: _rates;
   _xp_mem: _xp_mem;
   _xp: _xp;
   calc_token_amount: calc_token_amount;

@@ -1,11 +1,26 @@
 import { Interface } from '@ethersproject/abi';
 import { Address } from '../../types';
 
-export interface ICurveV1PriceHandler {
-  get_dy(state: PoolState, i: number, j: number, dx: bigint): bigint;
+export type PoolContextConstants = {
+  BASE_IMPLEMENTATION_NAME?: ImplementationNames;
 
-  get_dy_underlying(state: PoolState, i: number, j: number, dx: bigint): bigint;
-}
+  N_COINS: number;
+  BI_N_COINS: bigint;
+
+  FEE_DENOMINATOR: bigint;
+  PRECISION: bigint;
+  PRECISION_MUL: bigint[];
+
+  // Optional: not all pools have it or need it. I would like to solve this making
+  // infer the type from ImplementationName, but couldn't solve the task in reasonable time
+  // So, I had to make runtime type checks for undefined in places where we need that values
+  // At least, errors are not going to slip through unnoticed if we forgot to specify some constants,
+  // but ideally I would prefer to have TS to check that kind of issues
+  LENDING_PRECISION?: bigint;
+  A_PRECISION?: bigint;
+  USE_LENDING?: boolean[];
+  RATES?: bigint[];
+};
 
 export type PoolConstants = {
   COINS: Address[];
@@ -51,9 +66,9 @@ export type PoolConfig = {
 };
 
 export enum ImplementationNames {
-  BASE_THREE_POOL = 'base_three_pool',
-  BASE_FRAX_POOL = 'base_frax_pool',
-  BASE_BTC_POOL = 'base_btc_pool',
+  CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
+  CUSTOM_PLAIN_2COIN_FRAX = 'custom_plain_2coin_frax',
+  CUSTOM_PLAIN_3COIN_BTC = 'custom_plain_3coin_btc',
 
   FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
   FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',

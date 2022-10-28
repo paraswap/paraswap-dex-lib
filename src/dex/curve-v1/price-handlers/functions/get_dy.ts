@@ -1,105 +1,134 @@
-import { get_y } from './get_y';
 import { ImplementationNames, PoolState } from '../../types';
-import { _A } from './_A';
-import { get_D } from './get_D';
-import { _xp_mem } from './_xp_mem';
 import { funcName } from '../../../../utils';
-import { _xp } from './_xp';
-import { _get_y } from './_get_y';
-
+import { get_dy, IPoolContext } from '../types';
+import { requireConstant } from './utils';
 
 const factoryPlain2CoinErc20: get_dy = (
+  self: IPoolContext,
   state: PoolState,
-  funcs: DependantFuncs,
   i: number,
   j: number,
   dx: bigint,
 ): bigint => {
-  const { rate_multipliers, PRECISION, FEE_DENOMINATOR } = state.constants;
+  const { PRECISION, FEE_DENOMINATOR } = self.constants;
+  const { rate_multipliers } = state.constants;
   const rates = [...rate_multipliers];
-  const xp = funcs._xp_mem(state, rates, state.balances);
+  const xp = self._xp_mem(self, state, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
-  const y = funcs.get_y(state, funcs, i, j, x, xp);
+  const y = self.get_y(self, state, i, j, x, xp);
   const dy = xp[j] - y - 1n;
   const _fee = (state.fee * dy) / FEE_DENOMINATOR;
   return ((dy - _fee) * PRECISION) / rates[j];
 };
 
 const factoryPlain2CoinErc20_18D: get_dy = (
+  self: IPoolContext,
   state: PoolState,
-  funcs: DependantFuncs,
   i: number,
   j: number,
   dx: bigint,
 ): bigint => {
-  const { FEE_DENOMINATOR } = state.constants;
+  const { FEE_DENOMINATOR } = self.constants;
   const xp = [...state.balances];
 
   const x = xp[i] + dx;
-  const y = funcs.get_y(state, funcs, i, j, x, xp);
+  const y = self.get_y(self, state, i, j, x, xp);
   const dy = xp[j] - y - 1n;
   const fee = (state.fee * dy) / FEE_DENOMINATOR;
   return dy - fee;
 };
 
 const factoryMeta3Pool2_8: get_dy = (
+  self: IPoolContext,
   state: PoolState,
-  funcs: DependantFuncs,
   i: number,
   j: number,
   dx: bigint,
-  basePoolVirtualPrice?: bigint,
 ): bigint => {
-  if (basePoolVirtualPrice === undefined) {
-    throw new Error(`${funcName}: basePoolVirtualPrice is undefined`);
+  if (state.basePoolState?.virtualPrice === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} ${funcName}: basePoolState virtualPrice is undefined`,
+    );
   }
 
-  const { rate_multiplier, PRECISION, FEE_DENOMINATOR } = state.constants;
-  const rates = [rate_multiplier, basePoolVirtualPrice];
-  const xp = funcs._xp_mem(state, rates, state.balances);
+  const { PRECISION, FEE_DENOMINATOR } = self.constants;
+  const { rate_multiplier } = state.constants;
+  const rates = [rate_multiplier, state.basePoolState?.virtualPrice];
+  const xp = self._xp_mem(self, state, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
-  const y = funcs.get_y(state, funcs, i, j, x, xp);
+  const y = self.get_y(self, state, i, j, x, xp);
   const dy = xp[j] - y - 1n;
   const _fee = (state.fee * dy) / FEE_DENOMINATOR;
   return ((dy - _fee) * PRECISION) / rates[j];
 };
 
-const baseThreePool: get_dy = (
+const customThreePool: get_dy = (
+  self: IPoolContext,
   state: PoolState,
-  funcs: DependantFuncs,
   i: number,
   j: number,
   dx: bigint,
 ): bigint => {
-  const { FEE_DENOMINATOR, RATES, PRECISION } = state.constants;
+  const { FEE_DENOMINATOR, PRECISION } = self.constants;
+  const RATES = requireConstant(
+    self.constants.RATES,
+    'RATES',
+    funcName(),
+    self.IMPLEMENTATION_NAME,
+  );
   const rates = [...RATES];
-  const xp = funcs._xp(state);
+  const xp = self._xp(self, state, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
-  const y = funcs.get_y(state, funcs, i, j, x, xp);
+  const y = self.get_y(self, state, i, j, x, xp);
   const dy = ((xp[j] - y - 1n) * PRECISION) / rates[j];
   const _fee = (state.fee * dy) / FEE_DENOMINATOR;
   return dy - _fee;
 };
 
-const baseFraxPool: get_dy = (
+const customFraxPool: get_dy = (
+  self: IPoolContext,
   state: PoolState,
-  funcs: DependantFuncs,
   i: number,
   j: number,
-  _dx: bigint,
+  dx: bigint,
 ): bigint => {
-  const { FEE_DENOMINATOR, RATES, PRECISION } = state.constants;
-  const rates = [...RATES];
-  const xp = funcs._xp(state);
+  const { FEE_DENOMINATOR, PRECISION } = self.constants;
+  const RATES = requireConstant(
+    self.constants.RATES,
+    'RATES',
+    funcName(),
+    self.IMPLEMENTATION_NAME,
+  );
 
-  const x = xp[i] + (_dx * rates[i]) / PRECISION;
-  const y = funcs._get_y(state, funcs, i, j, x, xp);
+  const rates = [...RATES];
+  const xp = self._xp(self, state, rates, state.balances);
+
+  const x = xp[i] + (dx * rates[i]) / PRECISION;
+  const y = self.get_y(self, state, i, j, x, xp);
   const dy = xp[j] - y - 1n;
   const fee = (state.fee * dy) / FEE_DENOMINATOR;
   return ((dy - fee) * PRECISION) / rates[j];
+};
+
+const customBTCPool: get_dy = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+) => {
+  const { PRECISION, FEE_DENOMINATOR } = self.constants;
+  const rates = self._rates(self, state);
+  const xp = self._xp(self, state, rates, state.balances);
+
+  const x = xp[i] + (dx * rates[i]) / PRECISION;
+  const y = self.get_y(self, state, i, j, x, xp);
+  const dy = ((xp[j] - y - 1n) * PRECISION) / rates[j];
+  const _fee = (state.fee * dy) / FEE_DENOMINATOR;
+  return dy - _fee;
 };
 
 const implementations: Record<ImplementationNames, get_dy> = {
@@ -126,9 +155,9 @@ const implementations: Record<ImplementationNames, get_dy> = {
     factoryMeta3Pool2_8,
   [ImplementationNames.FACTORY_META_SBTC_ERC20]: factoryMeta3Pool2_8,
 
-  [ImplementationNames.BASE_THREE_POOL]: baseThreePool,
-  [ImplementationNames.BASE_FRAX_POOL]: baseFraxPool,
-  [ImplementationNames.BASE_BTC_POOL]: ,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customThreePool,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customFraxPool,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customBTCPool,
 };
 
 export default implementations;
