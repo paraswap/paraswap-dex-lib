@@ -146,11 +146,12 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
             );
           } else {
             this.logger.error(
-              `${this.parentName}: Pool ${
-                this.poolAddress
-              } Unexpected error while handling event for UniswapV3, ${JSON.stringify(
-                event,
-              )}`,
+              `${this.parentName}: Pool ${this.poolAddress}, ` +
+                `network=${this.dexHelper.config.data.network}: Unexpected ` +
+                `error while handling event on blockNumber=${blockHeader.number}, ` +
+                `blockHash=${blockHeader.hash} and parentHash=${
+                  blockHeader.parentHash
+                } for UniswapV3, ${JSON.stringify(event)}`,
               e,
             );
           }
