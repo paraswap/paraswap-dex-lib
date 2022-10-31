@@ -54,4 +54,7 @@ export interface IBlockManager {
 
   //This return the latest blockNumber that the blockManager has processed
   getLatestBlockNumber(): number;
+
+  //This return the latest active BlockHeader
+  getActiveChainHead(): Readonly<BlockHeader> | undefined;
 }

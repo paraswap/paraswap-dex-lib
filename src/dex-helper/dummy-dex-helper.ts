@@ -15,6 +15,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
+import { BlockHeader } from 'web3-eth';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
@@ -141,6 +142,13 @@ class DummyBlockManager implements IBlockManager {
 
   getLatestBlockNumber(): number {
     return 42;
+  }
+
+  getActiveChainHead(): Readonly<BlockHeader> {
+    return {
+      number: 42,
+      hash: '0x42',
+    } as BlockHeader;
   }
 }
 
