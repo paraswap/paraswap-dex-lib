@@ -13,7 +13,7 @@ const factoryPlain2CoinErc20: get_dy = (
   const { PRECISION, FEE_DENOMINATOR } = self.constants;
   const { rate_multipliers } = state.constants;
   const rates = [...rate_multipliers];
-  const xp = self._xp_mem(self, state, rates, state.balances);
+  const xp = self._xp_mem(self, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
   const y = self.get_y(self, state, i, j, x, xp);
@@ -55,7 +55,7 @@ const factoryMeta3Pool2_8: get_dy = (
   const { PRECISION, FEE_DENOMINATOR } = self.constants;
   const { rate_multiplier } = state.constants;
   const rates = [rate_multiplier, state.basePoolState?.virtualPrice];
-  const xp = self._xp_mem(self, state, rates, state.balances);
+  const xp = self._xp_mem(self, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
   const y = self.get_y(self, state, i, j, x, xp);
@@ -72,14 +72,9 @@ const customThreePool: get_dy = (
   dx: bigint,
 ): bigint => {
   const { FEE_DENOMINATOR, PRECISION } = self.constants;
-  const RATES = requireConstant(
-    self.constants.RATES,
-    'RATES',
-    funcName(),
-    self.IMPLEMENTATION_NAME,
-  );
+  const RATES = requireConstant(self, 'RATES', funcName());
   const rates = [...RATES];
-  const xp = self._xp(self, state, rates, state.balances);
+  const xp = self._xp(self, state);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
   const y = self.get_y(self, state, i, j, x, xp);
@@ -96,15 +91,9 @@ const customFraxPool: get_dy = (
   dx: bigint,
 ): bigint => {
   const { FEE_DENOMINATOR, PRECISION } = self.constants;
-  const RATES = requireConstant(
-    self.constants.RATES,
-    'RATES',
-    funcName(),
-    self.IMPLEMENTATION_NAME,
-  );
-
+  const RATES = requireConstant(self, 'RATES', funcName());
   const rates = [...RATES];
-  const xp = self._xp(self, state, rates, state.balances);
+  const xp = self._xp(self, state);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
   const y = self.get_y(self, state, i, j, x, xp);
@@ -122,7 +111,7 @@ const customBTCPool: get_dy = (
 ) => {
   const { PRECISION, FEE_DENOMINATOR } = self.constants;
   const rates = self._rates(self, state);
-  const xp = self._xp(self, state, rates, state.balances);
+  const xp = self._xp(self, state);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
   const y = self.get_y(self, state, i, j, x, xp);

@@ -1,34 +1,139 @@
 import { BI_POWS } from '../../../../bigint-constants';
+import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
-import { calc_token_amount } from './calc_token_amount';
-import { get_D } from './get_D';
-import { get_dy } from './get_dy';
-import { get_D_mem } from './get_D_mem';
-import { get_y } from './get_y';
-import { get_y_D } from './get_y_D';
-import { _A } from './_A';
-import { _xp_mem } from './_xp_mem';
-import { calc_withdraw_one_coin } from './calc_withdraw_one_coin';
-import { _calc_withdraw_one_coin } from './_calc_withdraw_one_coin';
+import { get_dy_underlying, IPoolContext } from '../types';
+import { throwNotExist, requireConstant } from './utils';
 
-const factoryMeta3Pool2_15 = (
+const factoryMeta3Pool2_8: get_dy_underlying = (
+  self: IPoolContext,
   state: PoolState,
-  basePoolState: PoolState,
-  funcs: DependantFuncs,
-  basePoolFuncs: BaseDependantFuncs,
   i: number,
   j: number,
   dx: bigint,
 ): bigint => {
-  const {
-    rate_multiplier,
-    MAX_COIN,
-    BASE_N_COINS,
-    PRECISION,
-    FEE_DENOMINATOR,
-  } = state.constants;
-  const rates = [rate_multiplier, basePoolState.virtualPrice];
-  const xp = funcs._xp_mem(state, rates, state.balances);
+  if (state.basePoolState === undefined) {
+    throw new Error(
+      `${
+        self.IMPLEMENTATION_NAME
+      } ${funcName()}: received state with undefined basePoolState`,
+    );
+  }
+  if (self._basePool === undefined) {
+    throw new Error(
+      `${
+        self.IMPLEMENTATION_NAME
+      } ${funcName()}: received self with undefined _basePool`,
+    );
+  }
+
+  const { PRECISION, FEE_DENOMINATOR } = self.constants;
+  const MAX_COIN = requireConstant(self, 'MAX_COIN', funcName());
+  const BASE_N_COINS = requireConstant(self, 'BASE_N_COINS', funcName());
+
+  const { basePoolState, constants } = state;
+  const rates = [constants.rate_multiplier, basePoolState.virtualPrice];
+  const xp = self._xp_mem(self, rates, state.balances);
+
+  let x = 0n;
+  let base_i = 0;
+  let base_j = 0;
+  let meta_i = 0;
+  let meta_j = 0;
+
+  if (i !== 0) {
+    base_i = i - MAX_COIN;
+    meta_i = 1;
+  }
+  if (j !== 0) {
+    base_j = j - MAX_COIN;
+    meta_j = 1;
+  }
+
+  if (i === 0) {
+    x = xp[i] + dx * (rates[0] / BI_POWS[18]);
+  } else {
+    if (j == 0) {
+      // i is from BasePool
+      // At first, get the amount of pool tokens
+      const base_inputs = new Array(BASE_N_COINS).fill(0n);
+      base_inputs[base_i] = dx;
+      // Token amount transformed to underlying "dollars"
+      x =
+        (self._basePool.calc_token_amount(
+          self._basePool,
+          basePoolState,
+          base_inputs,
+          true,
+        ) *
+          rates[1]) /
+        PRECISION;
+      // Accounting for deposit/withdraw fees approximately
+      x -= (x * basePoolState.fee) / (2n * FEE_DENOMINATOR);
+      // Adding number of pool tokens
+      x += xp[MAX_COIN];
+    } else {
+      // If both are from the base pool
+      return self._basePool.get_dy(
+        self._basePool,
+        basePoolState,
+        base_i,
+        base_j,
+        dx,
+      );
+    }
+  }
+
+  // This pool is involved only when in-pool assets are used
+  const y = self.get_y(self, state, meta_i, meta_j, x, xp);
+  let dy = xp[meta_j] - y - 1n;
+  dy = dy - (state.fee * dy) / FEE_DENOMINATOR;
+
+  // If output is going via the metapool
+  if (j == 0) {
+    dy /= rates[0] / BI_POWS[18];
+  } else {
+    // j is from BasePool
+    // The fee is already accounted for
+    dy = self._basePool.calc_withdraw_one_coin(
+      self._basePool,
+      basePoolState,
+      (dy * PRECISION) / rates[1],
+      base_j,
+    );
+  }
+
+  return dy;
+};
+
+const factoryMeta3Pool2_15: get_dy_underlying = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+): bigint => {
+  if (state.basePoolState === undefined) {
+    throw new Error(
+      `${
+        self.IMPLEMENTATION_NAME
+      } ${funcName()}: received state with undefined basePoolState`,
+    );
+  }
+  if (self._basePool === undefined) {
+    throw new Error(
+      `${
+        self.IMPLEMENTATION_NAME
+      } ${funcName()}: received self with undefined _basePool`,
+    );
+  }
+
+  const { PRECISION, FEE_DENOMINATOR } = self.constants;
+  const MAX_COIN = requireConstant(self, 'MAX_COIN', funcName());
+  const BASE_N_COINS = requireConstant(self, 'BASE_N_COINS', funcName());
+
+  const { rate_multiplier } = state.constants;
+  const rates = [rate_multiplier, state.basePoolState.virtualPrice];
+  const xp = self._xp_mem(self, rates, state.balances);
 
   let x = 0n;
   let base_i = 0;
@@ -55,23 +160,23 @@ const factoryMeta3Pool2_15 = (
       base_inputs[base_i] = dx;
       // Token amount transformed to underlying "dollars"
       x =
-        (basePoolFuncs.calc_token_amount(
-          basePoolState,
-          basePoolFuncs,
+        (self._basePool.calc_token_amount(
+          self._basePool,
+          state.basePoolState,
           base_inputs,
           true,
         ) *
           rates[1]) /
         PRECISION;
       // Accounting for deposit/withdraw fees approximately
-      x -= (x * basePoolState.fee) / (2n * FEE_DENOMINATOR);
+      x -= (x * state.basePoolState.fee) / (2n * FEE_DENOMINATOR);
       // Adding number of pool tokens
       x += xp[Number(MAX_COIN)];
     } else {
       // If both are from the base pool
-      return basePoolFuncs.get_dy(
-        basePoolState,
-        basePoolFuncs,
+      return self._basePool.get_dy(
+        self._basePool,
+        state.basePoolState,
         base_i,
         base_j,
         dx,
@@ -80,7 +185,7 @@ const factoryMeta3Pool2_15 = (
   }
 
   // This pool is involved only when in-pool assets are used
-  const y = funcs.get_y(state, funcs, meta_i, meta_j, x, xp);
+  const y = self.get_y(self, state, meta_i, meta_j, x, xp);
   let dy = xp[meta_j] - y - 1n;
   dy = dy - (state.fee * dy) / FEE_DENOMINATOR;
 
@@ -90,9 +195,9 @@ const factoryMeta3Pool2_15 = (
   } else {
     // j is from BasePool
     // The fee is already accounted for
-    dy = basePoolFuncs.calc_withdraw_one_coin(
-      basePoolState,
-      basePoolFuncs,
+    dy = self._basePool.calc_withdraw_one_coin(
+      self._basePool,
+      state.basePoolState,
       (dy * PRECISION) / rates[1],
       base_j,
     );
@@ -101,8 +206,40 @@ const factoryMeta3Pool2_15 = (
   return dy;
 };
 
+const notExist: get_dy_underlying = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+) => {
+  return throwNotExist('get_dy_underlying', self.IMPLEMENTATION_NAME);
+};
+
 const implementations: Record<ImplementationNames, get_dy_underlying> = {
+  [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_15,
+
+  [ImplementationNames.FACTORY_META_3POOL_3_1]: factoryMeta3Pool2_15,
+  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]:
+    factoryMeta3Pool2_15,
+  [ImplementationNames.FACTORY_META_SBTC_ERC20]: factoryMeta3Pool2_15,
+
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
+
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: notExist,
+
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notExist,
+
+  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notExist,
 };
 
 export default implementations;

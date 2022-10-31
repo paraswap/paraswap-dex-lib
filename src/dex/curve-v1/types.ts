@@ -9,17 +9,19 @@ export type PoolContextConstants = {
 
   FEE_DENOMINATOR: bigint;
   PRECISION: bigint;
-  PRECISION_MUL: bigint[];
 
   // Optional: not all pools have it or need it. I would like to solve this making
   // infer the type from ImplementationName, but couldn't solve the task in reasonable time
   // So, I had to make runtime type checks for undefined in places where we need that values
   // At least, errors are not going to slip through unnoticed if we forgot to specify some constants,
   // but ideally I would prefer to have TS to check that kind of issues
+  PRECISION_MUL?: bigint[];
   LENDING_PRECISION?: bigint;
   A_PRECISION?: bigint;
   USE_LENDING?: boolean[];
   RATES?: bigint[];
+  MAX_COIN?: number;
+  BASE_N_COINS?: number;
 };
 
 export type PoolConstants = {

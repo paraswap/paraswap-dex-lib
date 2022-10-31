@@ -1,41 +1,88 @@
 import _ from 'lodash';
 import { funcName, _require } from '../../../../utils';
-import { PoolState } from '../../types';
+import { ImplementationNames, PoolState } from '../../types';
+import { get_y_D, IPoolContext } from '../types';
+import { requireConstant, throwNotImplemented } from './utils';
 
-const _default: get_y_D = (
-  state: PoolState,
+const customPlain3CoinThree: get_y_D = (
+  self: IPoolContext,
   A: bigint,
   i: number,
   xp: bigint[],
   D: bigint,
 ): bigint => {
-  const { N_COINS, A_PRECISION } = state.constants;
+  const { N_COINS, BI_N_COINS } = self.constants;
+  _require(i >= 0, 'i below zero', { A, i, xp, D }, 'i >== 0');
+  _require(i < N_COINS, 'i above N_COINS', { A, i, xp, D }, 'i < N_COINS');
 
-  _require(i >= 0, 'i below zero', { state, A, i, xp, D }, 'i >== 0');
-  _require(
-    i < N_COINS,
-    'i above N_COINS',
-    { state, A, i, xp, D },
-    'i < N_COINS',
-  );
-
-  let S_ = 0n;
-  let _x = 0n;
-  let y_prev = 0n;
   let c = D;
-  const Ann = A * N_COINS;
+  let S_ = 0n;
+  const Ann = A * BI_N_COINS;
 
-  for (const _i of _.range(Number(N_COINS))) {
+  let _x = 0n;
+
+  for (const _i of _.range(N_COINS)) {
     if (_i !== i) {
       _x = xp[_i];
     } else {
       continue;
     }
     S_ += _x;
-    c = (c * D) / (_x * N_COINS);
+    c = (c * D) / (_x * BI_N_COINS);
   }
-  c = (c * D * A_PRECISION) / (Ann * N_COINS);
-  const b = S_ + (D * A_PRECISION) / Ann;
+  c = (c * D) / (Ann * BI_N_COINS);
+  const b = S_ + D / Ann;
+
+  let y_prev = 0n;
+  let y = D;
+
+  for (const _i of _.range(255)) {
+    y_prev = y;
+    y = (y * y + c) / (2n * y + b - D);
+    // Equality with the precision of 1
+    if (y > y_prev) {
+      if (y - y_prev <= 1) {
+        break;
+      }
+    } else {
+      if (y_prev - y <= 1n) {
+        break;
+      }
+    }
+  }
+  return y;
+};
+
+const customPlain2CoinFrax: get_y_D = (
+  self: IPoolContext,
+  A: bigint,
+  i: number,
+  xp: bigint[],
+  D: bigint,
+): bigint => {
+  const { N_COINS, BI_N_COINS } = self.constants;
+  const A_PRECISION = requireConstant(self, 'A_PRECISION', funcName());
+
+  _require(i >= 0, 'i below zero', { A_: A, i, xp, D }, 'i >== 0');
+  _require(i < N_COINS, 'i above N_COINS', { A_: A, i, xp, D }, 'i < N_COINS');
+
+  const Ann = A * BI_N_COINS;
+  let c = D;
+  let S = 0n;
+  let _x = 0n;
+  let y_prev = 0n;
+
+  for (const _i of _.range(N_COINS)) {
+    if (_i !== i) {
+      _x = xp[_i];
+    } else {
+      continue;
+    }
+    S += _x;
+    c = (c * D) / (_x * BI_N_COINS);
+  }
+  c = (c * D * A_PRECISION) / (Ann * BI_N_COINS);
+  const b = S + (D * A_PRECISION) / Ann;
   let y = D;
 
   for (const _i of _.range(255)) {
@@ -52,12 +99,44 @@ const _default: get_y_D = (
       }
     }
   }
+  throw new Error(
+    `${self.IMPLEMENTATION_NAME}: function ${funcName()} didn't converge`,
+  );
+};
 
-  throw new Error(`${funcName()}: didn't converge. Throwing`);
+const notImplemented: get_y_D = (
+  self: IPoolContext,
+  A: bigint,
+  i: number,
+  xp: bigint[],
+  D: bigint,
+) => {
+  return throwNotImplemented('get_y_D', self.IMPLEMENTATION_NAME);
 };
 
 const implementations: Record<ImplementationNames, get_y_D> = {
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: _default,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
+
+  [ImplementationNames.FACTORY_META_3POOL_2_8]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_2_15]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_3POOL_3_1]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_META_SBTC_ERC20]: notImplemented,
+
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: notImplemented,
+
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notImplemented,
+
+  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notImplemented,
 };
 
 export default implementations;

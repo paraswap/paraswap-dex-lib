@@ -1,24 +1,54 @@
 import { ImplementationNames, PoolState } from '../../types';
-import { get_D } from './get_D';
-import { get_y_D } from './get_y_D';
-import { _A } from './_A';
-import { _calc_withdraw_one_coin } from './_calc_withdraw_one_coin';
-import { _xp_mem } from './_xp_mem';
+import { calc_withdraw_one_coin, IPoolContext } from '../types';
+import { throwNotImplemented } from './utils';
 
-const factoryPlain2CoinErc20: calc_withdraw_one_coin = (
+const customPlain3CoinThree: calc_withdraw_one_coin = (
+  self: IPoolContext,
   state: PoolState,
-  funcs: DependantFuncs,
-  _burn_amount: bigint,
+  _token_amount: bigint,
   i: number,
 ): bigint => {
-  return funcs._calc_withdraw_one_coin(state, funcs, _burn_amount, i)[0];
+  return self._calc_withdraw_one_coin(self, state, _token_amount, i)[0];
+};
+
+const notImplemented: calc_withdraw_one_coin = (
+  self: IPoolContext,
+  state: PoolState,
+  _token_amount: bigint,
+  i: number,
+) => {
+  return throwNotImplemented(
+    'calc_withdraw_once_coin',
+    self.IMPLEMENTATION_NAME,
+  );
 };
 
 export const implementations: Record<
   ImplementationNames,
   calc_withdraw_one_coin
 > = {
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
+
+  [ImplementationNames.FACTORY_META_3POOL_2_8]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_2_15]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_3POOL_3_1]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_META_SBTC_ERC20]: notImplemented,
+
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: notImplemented,
+
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notImplemented,
+
+  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notImplemented,
 };
 
 export default implementations;

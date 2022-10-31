@@ -1,22 +1,31 @@
-import { ImplementationNames } from '../../types';
+import { ImplementationNames, PoolContextConstants } from '../../types';
+import { IPoolContext } from '../types';
 
-export const funcNotExist = (
+export const throwNotExist = (
   funcName: string,
   implementationName: ImplementationNames,
 ): never => {
   throw new Error(`${funcName} doesn't exist on ${implementationName}`);
 };
 
-export const requireConstant = <T>(
-  value: T | undefined,
-  constantName: string,
+export const throwNotImplemented = (
   funcName: string,
   implementationName: ImplementationNames,
-): T => {
+): never => {
+  throw new Error(`${funcName} is not implemented on ${implementationName}`);
+};
+
+// Get rid of undefined for constants
+export const requireConstant = <T extends keyof PoolContextConstants>(
+  self: IPoolContext,
+  constantName: T,
+  funcName: string,
+): NonNullable<PoolContextConstants[T]> => {
+  const value = self.constants[constantName];
   if (value === undefined) {
     throw new Error(
       `Required constant ${constantName} was not specified for function ` +
-        `${funcName} in ${implementationName} implementation`,
+        `${funcName} in ${self.IMPLEMENTATION_NAME} implementation`,
     );
   }
   return value;

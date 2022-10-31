@@ -3,53 +3,42 @@ import { ImplementationNames, PoolContextConstants, PoolState } from '../types';
 export type _calc_withdraw_one_coin = (
   self: IPoolContext,
   state: PoolState,
-  _burn_amount: bigint,
+  _token_amount: bigint,
   i: number,
-) => [bigint, bigint];
+) => [bigint, bigint, bigint | undefined];
 
 export type _rates = (self: IPoolContext, state: PoolState) => bigint[];
 
 export type _xp_mem = (
   self: IPoolContext,
-  state: PoolState,
   _rates: bigint[],
   _balances: bigint[],
 ) => bigint[];
 
-export type _xp = (
-  self: IPoolContext,
-  state: PoolState,
-  _rates: bigint[],
-  _balances: bigint[],
-) => bigint[];
+export type _xp = (self: IPoolContext, state: PoolState) => bigint[];
 
 export type calc_token_amount = (
   self: IPoolContext,
   state: PoolState,
-  _amounts: bigint[],
-  _is_deposit: boolean,
+  amounts: bigint[],
+  is_deposit: boolean,
 ) => bigint;
 
 export type calc_withdraw_one_coin = (
   self: IPoolContext,
   state: PoolState,
-  _burn_amount: bigint,
+  _token_amount: bigint,
   i: number,
 ) => bigint;
 
 export type get_D_mem = (
-  state: PoolState,
-  _rates: bigint[],
-  _balances: bigint[],
-  _amp: bigint,
-) => bigint;
-
-export type get_D = (
   self: IPoolContext,
   state: PoolState,
-  xp: bigint[],
+  _balances: bigint[],
   amp: bigint,
 ) => bigint;
+
+export type get_D = (self: IPoolContext, xp: bigint[], amp: bigint) => bigint;
 
 export type get_dy_underlying = (
   self: IPoolContext,
@@ -69,7 +58,6 @@ export type get_dy = (
 
 export type get_y_D = (
   self: IPoolContext,
-  state: PoolState,
   A: bigint,
   i: number,
   xp: bigint[],
