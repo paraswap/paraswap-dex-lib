@@ -64,7 +64,7 @@ const factoryMeta3Pool2_8: get_dy = (
   return ((dy - _fee) * PRECISION) / rates[j];
 };
 
-const customThreePool: get_dy = (
+const customPlain3CoinThree: get_dy = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -83,7 +83,7 @@ const customThreePool: get_dy = (
   return dy - _fee;
 };
 
-const customFraxPool: get_dy = (
+const customPlain2CoinFrax: get_dy = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -102,7 +102,7 @@ const customFraxPool: get_dy = (
   return ((dy - fee) * PRECISION) / rates[j];
 };
 
-const customBTCPool: get_dy = (
+const customPlain3CoinBtc: get_dy = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -124,7 +124,6 @@ const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]:
     factoryPlain2CoinErc20_18D,
-  // Difference only in internal balances name
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]:
     factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: factoryPlain2CoinErc20,
@@ -139,14 +138,13 @@ const implementations: Record<ImplementationNames, get_dy> = {
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]:
-    factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_FRAX]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_BTC]: factoryMeta3Pool2_8,
 
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customThreePool,
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customFraxPool,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customBTCPool,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBtc,
 };
 
 export default implementations;

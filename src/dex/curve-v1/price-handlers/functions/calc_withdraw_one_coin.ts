@@ -34,9 +34,9 @@ export const implementations: Record<
   [ImplementationNames.FACTORY_META_3POOL_2_8]: notImplemented,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: notImplemented,
 
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: notImplemented,
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]: notImplemented,
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_META_FRAX]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_META_BTC]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notImplemented,

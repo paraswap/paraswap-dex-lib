@@ -146,10 +146,9 @@ const implementations: Record<ImplementationNames, get_D> = {
   [ImplementationNames.FACTORY_META_3POOL_2_8]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: customPlain2CoinFrax,
 
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]:
-    customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_FRAX]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC]: customPlain2CoinFrax,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: factoryPlain2CoinErc20,

@@ -68,7 +68,7 @@ const implementationConstants: Record<
     MAX_COIN: 2 - 1,
     BASE_N_COINS: 3,
   },
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: {
+  [ImplementationNames.FACTORY_META_FRAX]: {
     BASE_IMPLEMENTATION_NAME: ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX,
 
     N_COINS: 2,
@@ -81,7 +81,7 @@ const implementationConstants: Record<
     MAX_COIN: 2 - 1,
     BASE_N_COINS: 2,
   },
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]: {
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: {
     BASE_IMPLEMENTATION_NAME: ImplementationNames.CUSTOM_PLAIN_3COIN_THREE,
 
     N_COINS: 2,
@@ -94,7 +94,7 @@ const implementationConstants: Record<
     MAX_COIN: 2 - 1,
     BASE_N_COINS: 3,
   },
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: {
+  [ImplementationNames.FACTORY_META_BTC]: {
     BASE_IMPLEMENTATION_NAME: ImplementationNames.CUSTOM_PLAIN_3COIN_BTC,
 
     N_COINS: 2,

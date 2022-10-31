@@ -22,7 +22,7 @@ const customPlain3CoinThree: _xp = (
   return result;
 };
 
-const customPlain3CoinFrax: _xp = (
+const customPlain2CoinFrax: _xp = (
   self: IPoolContext,
   state: PoolState,
 ): bigint[] => {
@@ -35,7 +35,7 @@ const customPlain3CoinFrax: _xp = (
   return result;
 };
 
-const customPlain3CoinBTC: _xp = (
+const customPlain3CoinBtc: _xp = (
   self: IPoolContext,
   state: PoolState,
 ): bigint[] => {
@@ -52,16 +52,16 @@ const notExist: _xp = (self: IPoolContext, state: PoolState) => {
 };
 
 const implementations: Record<ImplementationNames, _xp> = {
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinFrax,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBTC,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: notExist,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: notExist,
 
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: notExist,
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]: notExist,
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: notExist,
+  [ImplementationNames.FACTORY_META_FRAX]: notExist,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notExist,
+  [ImplementationNames.FACTORY_META_BTC]: notExist,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notExist,

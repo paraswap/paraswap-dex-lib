@@ -28,7 +28,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x33bb0e62d5e8c688e645dd46dfb48cd613250067': {
-          name: ImplementationNames.FACTORY_META_3POOL_3_1,
+          name: ImplementationNames.FACTORY_META_FRAX,
           address: '0x33bb0e62d5e8c688e645dd46dfb48cd613250067',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -37,7 +37,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0x55aa9bf126bcabf0bdc17fa9e39ec9239e1ce7a9': {
-          name: ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER,
+          name: ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER,
           address: '0x55aa9bf126bcabf0bdc17fa9e39ec9239e1ce7a9',
           constants: {
             FEE_DENOMINATOR: 0n,
@@ -46,7 +46,7 @@ const CurveV1Config: DexConfigMap<DexParams> = {
           },
         },
         '0xc6a8466d128fbfd34ada64a9fffce325d57c9a52': {
-          name: ImplementationNames.FACTORY_META_SBTC_ERC20,
+          name: ImplementationNames.FACTORY_META_BTC,
           address: '0xc6a8466d128fbfd34ada64a9fffce325d57c9a52',
           constants: {
             FEE_DENOMINATOR: 0n,

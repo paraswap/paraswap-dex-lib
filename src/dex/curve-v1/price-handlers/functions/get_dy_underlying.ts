@@ -105,7 +105,7 @@ const factoryMeta3Pool2_8: get_dy_underlying = (
   return dy;
 };
 
-const factoryMeta3Pool2_15: get_dy_underlying = (
+const factoryMetaFrax: get_dy_underlying = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -218,12 +218,11 @@ const notExist: get_dy_underlying = (
 
 const implementations: Record<ImplementationNames, get_dy_underlying> = {
   [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_15,
+  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMetaFrax,
 
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: factoryMeta3Pool2_15,
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]:
-    factoryMeta3Pool2_15,
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: factoryMeta3Pool2_15,
+  [ImplementationNames.FACTORY_META_FRAX]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_BTC]: factoryMetaFrax,
 
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: notExist,

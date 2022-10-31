@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { funcName } from '../../../../utils';
-import { ImplementationNames, PoolState } from '../../types';
+import { ImplementationNames } from '../../types';
 import { IPoolContext, _xp_mem } from '../types';
 import { requireConstant } from './utils';
 
@@ -18,7 +18,7 @@ const customPlain3CoinThree: _xp_mem = (
   return result;
 };
 
-const customPlain3CoinBTC: _xp_mem = (
+const customPlain3CoinBtc: _xp_mem = (
   self: IPoolContext,
   _rates: bigint[],
   _balances: bigint[],
@@ -30,6 +30,7 @@ const customPlain3CoinBTC: _xp_mem = (
   }
   return result;
 };
+
 const factoryPlain2CoinErc20: _xp_mem = (
   self: IPoolContext,
   _rates: bigint[],
@@ -46,16 +47,15 @@ const factoryPlain2CoinErc20: _xp_mem = (
 
 const implementations: Record<ImplementationNames, _xp_mem> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBTC,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryPlain2CoinErc20,
 
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]:
-    factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_FRAX]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_BTC]: factoryPlain2CoinErc20,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: factoryPlain2CoinErc20,

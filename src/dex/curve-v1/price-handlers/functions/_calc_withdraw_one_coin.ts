@@ -4,7 +4,7 @@ import { ImplementationNames, PoolState } from '../../types';
 import { IPoolContext, _calc_withdraw_one_coin } from '../types';
 import { requireConstant, throwNotImplemented } from './utils';
 
-const customPlain2CoinThree: _calc_withdraw_one_coin = (
+const customPlain3CoinThree: _calc_withdraw_one_coin = (
   self: IPoolContext,
   state: PoolState,
   _token_amount: bigint,
@@ -56,16 +56,16 @@ const notImplemented: _calc_withdraw_one_coin = (
 };
 
 const implementations: Record<ImplementationNames, _calc_withdraw_one_coin> = {
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain2CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain2CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: notImplemented,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: notImplemented,
 
-  [ImplementationNames.FACTORY_META_3POOL_3_1]: notImplemented,
-  [ImplementationNames.FACTORY_META_3POOL_ERC20_FEE_TRANSFER]: notImplemented,
-  [ImplementationNames.FACTORY_META_SBTC_ERC20]: notImplemented,
+  [ImplementationNames.FACTORY_META_FRAX]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_META_BTC]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notImplemented,
