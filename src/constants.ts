@@ -24,6 +24,7 @@ export enum Network {
   ROPSTEN = 3,
   RINKEBY = 4,
   BSC = 56,
+  BSC_TEST = 97,
   POLYGON = 137,
   AVALANCHE = 43114,
   FANTOM = 250,

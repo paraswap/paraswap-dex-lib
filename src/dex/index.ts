@@ -53,6 +53,7 @@ import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
+import { BabydogeSwap } from './babydoge/babydoge';
 
 const LegacyDexes = [
   CurveV2,
@@ -103,6 +104,7 @@ const Dexes = [
   Velodrome,
   Cone,
   Synthetix,
+  BabydogeSwap,
 ];
 
 export type LegacyDexConstructor = new (

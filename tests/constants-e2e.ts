@@ -417,6 +417,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3',
       decimals: 6,
     },
+    BABYDOGE: {
+      address: '0xc748673057861a797275cd8a068abb95a902e8de',
+      decimals: 9,
+    },
   },
   [Network.AVALANCHE]: {
     USDCe: {
