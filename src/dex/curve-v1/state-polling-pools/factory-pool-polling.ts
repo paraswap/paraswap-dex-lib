@@ -1,71 +1,62 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
-import { PoolConstants, PoolState } from '../types';
-import { BasePoolPolling } from './base-pool-polling';
-import FactoryCurveV1ABI from '../../../abi/curve-v1/FactoryCurveV1.json';
+import { FactoryImplementationNames, PoolConstants, PoolState } from '../types';
+import { BasePoolPolling, MulticallReturnedTypes } from './base-pool-polling';
+import FactoryCurveV1ABI from '../../../abi/curve-v1-factory/FactoryCurveV1.json';
 import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
 import { funcName } from '../../../utils';
+import { Address } from 'paraswap-core';
 
-export type MulticallReturnedTypes = bigint | bigint[];
-
-export class FactoryStateHandler extends BasePoolPolling<
-  PoolState,
-  MulticallReturnedTypes
-> {
-  private isMetaPool: boolean;
-
+export class FactoryStateHandler extends BasePoolPolling {
   constructor(
-    name: string,
-    readonly address: string,
-    readonly factoryAddress: string,
+    readonly logger: Logger,
+    readonly name: string,
+    readonly implementationName: FactoryImplementationNames,
+    readonly address: Address,
+    readonly factoryAddress: Address,
     readonly poolIdentifier: string,
-    logger: Logger,
-    poolConstants: PoolConstants,
-    private iface: Interface = new Interface(
+    readonly poolConstants: PoolConstants,
+    private isMetaPool: boolean,
+    private basePoolStateFetcher?: BasePoolPolling,
+    private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
   ) {
-    super(name, logger, poolConstants);
-    this.isMetaPool = this.poolConstants.BASE_COINS.length > 0;
+    super(name, logger);
+    if (isMetaPool && this.basePoolStateFetcher === undefined) {
+      throw new Error(
+        `${this.CLASS_NAME} ${this.implementationName}: is instantiated with error. basePoolStateFetcher is not provided`,
+      );
+    }
   }
+
   getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {
     const calls = [
       {
         target: this.factoryAddress,
-        callData: this.iface.encodeFunctionData('get_A', [this.address]),
+        callData: this.factoryIface.encodeFunctionData('get_A', [this.address]),
         decodeFunction: uint256ToBigInt,
       },
       {
         target: this.factoryAddress,
-        callData: this.iface.encodeFunctionData('get_fees', [this.address]),
+        callData: this.factoryIface.encodeFunctionData('get_fees', [
+          this.address,
+        ]),
         decodeFunction: uint256ToBigInt,
       },
       {
         target: this.factoryAddress,
-        callData: this.iface.encodeFunctionData('get_balances', [this.address]),
+        callData: this.factoryIface.encodeFunctionData('get_balances', [
+          this.address,
+        ]),
         decodeFunction: (result: MultiResult<BytesLike>) =>
           generalDecoder(result, ['uint256[4]'], [0n, 0n, 0n, 0n], parsed =>
             parsed.map(p => BigInt(p.toString())),
           ),
       },
     ];
-    if (this.isMetaPool) {
-      calls.push({
-        target: this.factoryAddress,
-        callData: this.iface.encodeFunctionData('get_underlying_balances', [
-          this.address,
-        ]),
-        decodeFunction: (result: MultiResult<BytesLike>) =>
-          generalDecoder(
-            result,
-            ['uint256[8]'],
-            [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n],
-            parsed => parsed.map(p => BigInt(p.toString())),
-          ),
-      });
-    }
     return calls;
   }
 
@@ -83,15 +74,32 @@ export class FactoryStateHandler extends BasePoolPolling<
       return;
     }
 
-    const [A, fees, balances, underlyingBalances] = multiOutputs.map(
-      o => o.returnData,
-    ) as [bigint, bigint[], bigint[], bigint[] | undefined];
+    const [A, fees, balances] = multiOutputs.map(o => o.returnData) as [
+      bigint,
+      bigint[],
+      bigint[],
+    ];
+
+    let basePoolState: PoolState | undefined;
+    if (this.isMetaPool) {
+      // Check for undefined done in constructor
+      const retrievedBasePoolState = this.basePoolStateFetcher!.getState();
+
+      if (retrievedBasePoolState === null) {
+        this.logger.error(
+          `${this.CLASS_NAME} ${this.name} ${this.address}: Can not retrieve base pool state`,
+        );
+        return;
+      }
+      basePoolState = retrievedBasePoolState;
+    }
 
     const newState: PoolState = {
       A,
       fee: fees[0], // Array has [fee, adminFee], but we want only fee
       balances: balances,
       constants: this.poolConstants,
+      basePoolState,
     };
 
     this._setState(newState, updatedAt);

@@ -25,11 +25,10 @@ export type PoolContextConstants = {
 };
 
 export type PoolConstants = {
-  COINS: Address[];
-  coins_decimals: number[];
-  base_coins_decimals: number[];
-  rate_multipliers: bigint[];
-  rate_multiplier: bigint;
+  COINS: Address[]; // factory get_coins()
+  coins_decimals: number[]; // factory get_decimals()
+  rate_multipliers: bigint[]; // calculated from decimals
+  lpTokenAddress?: Address; // from config
 };
 
 export type PoolState = {
@@ -37,10 +36,10 @@ export type PoolState = {
   balances: bigint[]; // factory get_balances()
   fee: bigint; // factory get_fees()
   constants: PoolConstants;
-  totalSupply: bigint;
-  virtualPrice: bigint;
+  virtualPrice?: bigint; // from custom plain pool: get_virtual_price()
+  totalSupply?: bigint; // from lpToken -> totalSupply()
+  exchangeRateCurrent?: (bigint | undefined)[]; // from cToken -> exchangeRateCurrent()
   basePoolState?: PoolState;
-  exchangeRateCurrent: bigint[];
 };
 
 export type PoolStateWithUpdateInfo<T> = {
@@ -67,11 +66,7 @@ export type PoolConfig = {
   isFeeOnTransferSupported?: boolean;
 };
 
-export enum ImplementationNames {
-  CUSTOM_PLAIN_3COIN_BTC = 'custom_plain_3coin_btc',
-  CUSTOM_PLAIN_2COIN_FRAX = 'custom_plain_2coin_frax',
-  CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
-
+export enum FactoryImplementationNames {
   FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
   FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',
   FACTORY_META_3POOL_FEE_TRANSFER = 'factory_meta_3pool_fee_transfer',
@@ -91,16 +86,44 @@ export enum ImplementationNames {
   FACTORY_PLAIN_4COIN_ERC20_18DEC = 'factory_plain_4coin_erc20_18dec',
 }
 
-export type FactoryImplementation = {
-  name: ImplementationNames;
+export enum CustomImplementationNames {
+  CUSTOM_PLAIN_3COIN_BTC = 'custom_plain_3coin_btc',
+  CUSTOM_PLAIN_2COIN_FRAX = 'custom_plain_2coin_frax',
+  CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
+}
+
+export const ImplementationNames = {
+  ...CustomImplementationNames,
+  ...FactoryImplementationNames,
+};
+export type ImplementationNames =
+  | CustomImplementationNames
+  | FactoryImplementationNames;
+
+export type FactoryPoolImplementations = {
+  name: FactoryImplementationNames;
+  address: Address;
+  // For now I put everywhere false, but eventually we should have more granular handling
+  // for all pools
+  isWrapNative: boolean;
+  basePoolAddress?: Address;
+};
+
+export type CustomPoolConfig = {
+  name: CustomImplementationNames;
   address: Address;
   isWrapNative: boolean;
+  lpTokenAddress: Address;
+  // Very special variable only for one BTC pool. Not sure where to put it
+  UseLending?: boolean[];
 };
 
 export type DexParams = {
   factoryAddress: string | null;
   pools: Record<string, PoolConfig>;
-  factoryImplementations: Record<string, FactoryImplementation>;
+  stateUpdateFrequencyMs: number;
+  factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
+  customPools: Record<CustomImplementationNames, CustomPoolConfig>;
 };
 
 export enum CurveSwapFunctions {

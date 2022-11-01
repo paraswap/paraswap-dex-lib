@@ -13,17 +13,33 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { CurveSwapFunctions, CurveV1Data, CurveV1Ifaces } from './types';
+import {
+  CurveSwapFunctions,
+  CurveV1Data,
+  CurveV1Ifaces,
+  FactoryImplementationNames,
+  ImplementationNames,
+  PoolConstants,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CurveV1Config, Adapters } from './config';
 import { MIN_AMOUNT_TO_RECEIVE } from './constants';
 import { CurveV1PoolManager } from './curve-v1-pool-manager';
 import CurveABI from '../../abi/Curve.json';
-import FactoryCurveV1ABI from '../../abi/curve-v1/FactoryCurveV1.json';
-import { addressDecode, uint256DecodeToNumber } from '../../lib/decoders';
+import FactoryCurveV1ABI from '../../abi/curve-v1-factory/FactoryCurveV1.json';
+import {
+  addressDecode,
+  booleanDecode,
+  generalDecoder,
+  uint256DecodeToNumber,
+} from '../../lib/decoders';
+import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
+import { BytesLike } from 'ethers';
+import { FactoryStateHandler } from './state-polling-pools/factory-pool-polling';
+import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 
 const coder = new AbiCoder();
 
@@ -56,15 +72,17 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       this.dexKey,
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
       dexHelper,
+      this.config.stateUpdateFrequencyMs,
     );
   }
 
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
-    // Initialize from factory
-    // Initialize from CurveAPI
+    // Must be called before fetchFactoryPools()
+    await this.initializeCustomPollingPools();
     await this.fetchFactoryPools();
   }
+
+  async initializeCustomPollingPools() {}
 
   async fetchFactoryPools() {
     const { factoryAddress } = this.config;
@@ -101,86 +119,121 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       )
     ).map(e => e.returnData);
 
-    const callDataAllImplementations = poolAddresses.map(p => ({
-      target: factoryAddress,
-      callData: this.ifaces.factory.encodeFunctionData(
-        'get_implementation_address',
-        [p],
-      ),
-      decodeFunction: addressDecode,
-    }));
+    const callDataFromFactoryPools: MultiCallParams<
+      string[] | number[] | string
+    >[] = poolAddresses
+      .map(p => [
+        {
+          target: factoryAddress,
+          callData: this.ifaces.factory.encodeFunctionData(
+            'get_implementation_address',
+            [p],
+          ),
+          decodeFunction: addressDecode,
+        },
+        {
+          target: factoryAddress,
+          callData: this.ifaces.factory.encodeFunctionData('get_coins', [p]),
+          decodeFunction: (result: MultiResult<BytesLike>): string[] =>
+            generalDecoder<string[]>(
+              result,
+              ['address[4]'],
+              [
+                '0x0000000000000000000000000000000000000000',
+                '0x0000000000000000000000000000000000000000',
+                '0x0000000000000000000000000000000000000000',
+                '0x0000000000000000000000000000000000000000',
+              ],
+              parsed => parsed.map(p => p.toLowerCase()),
+            ),
+        },
+        {
+          target: factoryAddress,
+          callData: this.ifaces.factory.encodeFunctionData('get_decimals', [p]),
+          decodeFunction: (result: MultiResult<BytesLike>): number[] =>
+            generalDecoder<number[]>(
+              result,
+              ['uint256[4]'],
+              [0, 0, 0, 0],
+              parsed => parsed.map(p => Number(p.toString())),
+            ),
+        },
+      ])
+      .flat();
 
-    const allImplementations = (
-      await this.dexHelper.multiWrapper.tryAggregate(
-        true,
-        callDataAllImplementations,
-      )
+    const resultsFromFactory = (
+      await this.dexHelper.multiWrapper.tryAggregate<
+        string[] | number[] | string
+      >(true, callDataFromFactoryPools)
     ).map(r => r.returnData);
 
-    console.log(0);
+    const filterablePoolAddresses: (string | undefined)[] = poolAddresses;
+    _.chunk(resultsFromFactory, 3).forEach((result, i) => {
+      const [implementationAddress, coins, coins_decimals] = result as [
+        string,
+        string[],
+        number[],
+      ];
 
-    // const existingPoolMap = Object.values(this.pools).reduce(
-    //   (acc: { [key: string]: boolean }, p) => {
-    //     acc[p.address.toLowerCase()] = true;
-    //     return acc;
-    //   },
-    //   {},
-    // );
-    // const newPoolAddresses = poolAddresses.filter(
-    //   (p: string) => !existingPoolMap[p],
-    // );
+      const factoryImplementationFromConfig =
+        this.config.factoryPoolImplementations[
+          implementationAddress.toLowerCase()
+        ];
 
-    // const calldataGetCoins = newPoolAddresses
-    //   .map((poolAddress: string) => [
-    //     {
-    //       target: this.factoryAddress,
-    //       callData: this.factoryInterface.encodeFunctionData('get_coins', [
-    //         poolAddress,
-    //       ]),
-    //     },
-    //     {
-    //       target: this.factoryAddress,
-    //       callData: this.factoryInterface.encodeFunctionData(
-    //         'get_underlying_coins',
-    //         [poolAddress],
-    //       ),
-    //     },
-    //   ])
-    //   .flat();
+      if (factoryImplementationFromConfig === undefined) {
+        this.logger.error(
+          `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
+            `found unspecified implementation: ${implementationAddress} for pool ${poolAddresses[i]}`,
+        );
+        filterablePoolAddresses[i] = undefined;
+        return;
+      }
 
-    // const resultGetCoins = await this.dexHelper.multiContract.methods
-    //   .tryAggregate(false, calldataGetCoins)
-    //   .call();
+      let isMeta: boolean = false;
+      let basePoolStateFetcher: BasePoolPolling | undefined;
+      if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
+        isMeta = true;
+        const basePoolIdentifier = this.getPoolIdentifier(
+          factoryImplementationFromConfig.basePoolAddress,
+          false,
+          false,
+        );
+        const basePool = this.poolManager.getPool(basePoolIdentifier);
+        if (basePool === null) {
+          this.logger.error(
+            `${this.dexKey}: custom base pool was not initialized properly. ` +
+              `You must call initializeCustomPollingPools before fetching factory`,
+          );
+          return;
+        }
+      }
 
-    // newPoolAddresses.forEach((address: string, i: number) => {
-    //   if (!resultGetCoins[2 * i].success) {
-    //     this.logger.error('get_coins should not fail');
-    //     return;
-    //   }
-    //   const coins = coder
-    //     .decode(['address[4]'], resultGetCoins[2 * i].returnData)[0]
-    //     .map((a: string) => a.toLowerCase())
-    //     .filter((a: string) => a !== NULL_ADDRESS);
-    //   const isMetapool = resultGetCoins[2 * i + 1].success;
-    //   const underlying = isMetapool
-    //     ? coder
-    //         .decode(['address[8]'], resultGetCoins[2 * i + 1].returnData)[0]
-    //         .map((a: string) => a.toLowerCase())
-    //         .filter((a: string) => a !== NULL_ADDRESS)
-    //     : [];
-    //   const name = `factory_${address}`;
-    //   const poolConfig: PoolConfig = {
-    //     underlying,
-    //     coins,
-    //     address,
-    //     name,
-    //     type: 2,
-    //     version: 3,
-    //     isLending: false,
-    //     isMetapool,
-    //   };
-    //   this.pools[name] = poolConfig;
-    // });
+      const poolConstants: PoolConstants = {
+        COINS: coins.map(c => c.toLowerCase()),
+        coins_decimals,
+        rate_multipliers: coins_decimals.map(coinDecimal =>
+          getBigIntPow(36 - coinDecimal),
+        ),
+      };
+
+      const poolIdentifier = this.getPoolIdentifier(
+        poolAddresses[i],
+        isMeta,
+        false,
+      );
+      const newPool = new FactoryStateHandler(
+        this.logger,
+        `${factoryImplementationFromConfig.name}_${poolAddresses[i]}`,
+        factoryImplementationFromConfig.name,
+        poolAddresses[i],
+        factoryAddress,
+        poolIdentifier,
+        poolConstants,
+        isMeta,
+        basePoolStateFetcher,
+      );
+      this.poolManager.initializeNewPool(poolIdentifier, newPool);
+    });
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
