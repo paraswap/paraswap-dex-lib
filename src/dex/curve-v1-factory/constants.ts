@@ -20,3 +20,8 @@ export const NETWORK_ID_TO_NAME: Record<number, string> = {
   [Network.AVALANCHE]: 'avalanche',
   [Network.ARBITRUM]: 'arbitrum',
 };
+
+// They are hardcoded in factory contract. If factory is changing, must be
+// revisited
+export const FACTORY_MAX_PLAIN_COINS = 4;
+export const FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN = 10;

@@ -33,7 +33,12 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CurveV1FactoryConfig, Adapters } from './config';
-import { MIN_AMOUNT_TO_RECEIVE, POOL_EXCHANGE_GAS_COST } from './constants';
+import {
+  FACTORY_MAX_PLAIN_COINS,
+  FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN,
+  MIN_AMOUNT_TO_RECEIVE,
+  POOL_EXCHANGE_GAS_COST,
+} from './constants';
 import { CurveV1FactoryPoolManager } from './curve-v1-pool-manager';
 import CurveABI from '../../abi/Curve.json';
 import FactoryCurveV1ABI from '../../abi/curve-v1-factory/FactoryCurveV1.json';
@@ -176,7 +181,7 @@ export class CurveV1Factory
 
     const { factoryAddress } = this.config;
     if (!factoryAddress) {
-      this.logger.trace(
+      this.logger.warn(
         `${this.dexKey}: No factory address specified for ${this.network}`,
       );
       return;
@@ -190,10 +195,16 @@ export class CurveV1Factory
           callData: this.ifaces.factory.encodeFunctionData('pool_count'),
           decodeFunction: uint256DecodeToNumber,
         },
+        {
+          target: factoryAddress,
+          callData: this.ifaces.factory.encodeFunctionData('base_pool_count'),
+          decodeFunction: uint256DecodeToNumber,
+        },
       ],
     );
 
     const poolCount = poolCountResult[0].returnData;
+    const basePoolCount = poolCountResult[1].returnData;
 
     const calldataGetPoolAddresses = _.range(0, poolCount).map(i => ({
       target: factoryAddress,
@@ -201,14 +212,23 @@ export class CurveV1Factory
       decodeFunction: addressDecode,
     }));
 
-    const poolAddresses = (
+    const calldataGetBasePoolAddresses = _.range(0, basePoolCount).map(i => ({
+      target: factoryAddress,
+      callData: this.ifaces.factory.encodeFunctionData('base_pool_list', [i]),
+      decodeFunction: addressDecode,
+    }));
+
+    const allPoolAddresses = (
       await this.dexHelper.multiWrapper.tryAggregate(
         true,
-        calldataGetPoolAddresses,
+        calldataGetPoolAddresses.concat(calldataGetBasePoolAddresses),
       )
     ).map(e => e.returnData);
 
-    const callDataFromFactoryPools: MultiCallParams<
+    const poolAddresses = allPoolAddresses.slice(0, poolCount);
+    const basePoolAddresses = allPoolAddresses.slice(poolCount);
+
+    let callDataFromFactoryPools: MultiCallParams<
       string[] | number[] | string
     >[] = poolAddresses
       .map(p => [
@@ -250,11 +270,59 @@ export class CurveV1Factory
       ])
       .flat();
 
-    const resultsFromFactory = (
+    // This is divider between pools related results and implementations
+    const factoryResultsDivider = callDataFromFactoryPools.length;
+
+    callDataFromFactoryPools = callDataFromFactoryPools.concat(
+      ...basePoolAddresses.map(basePoolAddress => ({
+        target: factoryAddress,
+        callData: this.ifaces.factory.encodeFunctionData(
+          'metapool_implementations',
+          [basePoolAddress],
+        ),
+        decodeFunction: (result: MultiResult<BytesLike>): string[] =>
+          generalDecoder<string[]>(
+            result,
+            ['address[10]'],
+            new Array(10).fill('0x0000000000000000000000000000000000000000'),
+            parsed => parsed.map(p => p.toLowerCase()),
+          ),
+      })),
+      ..._.flattenDeep(
+        _.range(2, FACTORY_MAX_PLAIN_COINS).map(coinNumber =>
+          _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(implInd => ({
+            target: factoryAddress,
+            callData: this.ifaces.factory.encodeFunctionData(
+              'plain_implementations',
+              [coinNumber, implInd],
+            ),
+            decodeFunction: addressDecode,
+          })),
+        ),
+      ),
+    );
+
+    const allResultsFromFactory = (
       await this.dexHelper.multiWrapper.tryAggregate<
         string[] | number[] | string
       >(true, callDataFromFactoryPools)
     ).map(r => r.returnData);
+
+    const resultsFromFactory = allResultsFromFactory.slice(
+      0,
+      factoryResultsDivider,
+    );
+    const allAvailableImplementations = allPoolAddresses.slice(
+      factoryResultsDivider,
+    );
+
+    allAvailableImplementations.forEach(implementation => {
+      const currentImplementation =
+        this.config.factoryPoolImplementations[implementation];
+      if (currentImplementation === undefined) {
+        this._reportForUnspecifiedImplementation(implementation);
+      }
+    });
 
     _.chunk(resultsFromFactory, 3).forEach((result, i) => {
       const [implementationAddress, coins, coins_decimals] = result as [
@@ -269,9 +337,9 @@ export class CurveV1Factory
         ];
 
       if (factoryImplementationFromConfig === undefined) {
-        this.logger.error(
-          `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
-            `found unspecified implementation: ${implementationAddress} for pool ${poolAddresses[i]}`,
+        this._reportForUnspecifiedImplementation(
+          implementationAddress,
+          poolAddresses[i],
         );
         return;
       }
@@ -638,5 +706,14 @@ export class CurveV1Factory
 
   private _calcRateMultipliers(coins_decimals: number[]): bigint[] {
     return coins_decimals.map(coinDecimal => getBigIntPow(36 - coinDecimal));
+  }
+  private _reportForUnspecifiedImplementation(
+    implementation: Address,
+    pool?: Address,
+  ) {
+    this.logger.error(
+      `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
+        `found unspecified implementation: ${implementation} for ${pool} pool`,
+    );
   }
 }
