@@ -5,7 +5,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { CurveV1 } from './curve-v1';
+import { CurveV1Factory } from './curve-v1-factory';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -42,7 +42,7 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  curveV1: CurveV1,
+  curveV1Factory: CurveV1Factory,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
@@ -51,7 +51,7 @@ async function checkOnChainPricing(
   const exchangeAddress = ''; // TODO: Put here the real exchange address
 
   // TODO: Replace dummy interface with the real one
-  // Normally you can get it from curveV1.Iface or from eventPool.
+  // Normally you can get it from curveV1Factory.Iface or from eventPool.
   // It depends on your implementation
   const readerIface = new Interface('');
 
@@ -62,7 +62,7 @@ async function checkOnChainPricing(
     funcName,
   );
   const readerResult = (
-    await curveV1.dexHelper.multiContract.methods
+    await curveV1Factory.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -75,7 +75,7 @@ async function checkOnChainPricing(
 }
 
 async function testPricingOnNetwork(
-  curveV1: CurveV1,
+  curveV1Factory: CurveV1Factory,
   network: Network,
   dexKey: string,
   blockNumber: number,
@@ -87,7 +87,7 @@ async function testPricingOnNetwork(
 ) {
   const networkTokens = Tokens[network];
 
-  const pools = await curveV1.getPoolIdentifiers(
+  const pools = await curveV1Factory.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     side,
@@ -100,7 +100,7 @@ async function testPricingOnNetwork(
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await curveV1.getPricesVolume(
+  const poolPrices = await curveV1Factory.getPricesVolume(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     amounts,
@@ -114,7 +114,7 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  if (curveV1.hasConstantPriceLargeAmounts) {
+  if (curveV1Factory.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
@@ -122,7 +122,7 @@ async function testPricingOnNetwork(
 
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
-    curveV1,
+    curveV1Factory,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
@@ -130,10 +130,10 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('CurveV1', function () {
-  const dexKey = 'CurveV1';
+describe('CurveV1Factory', function () {
+  const dexKey = 'CurveV1Factory';
   let blockNumber: number;
-  let curveV1: CurveV1;
+  let curveV1Factory: CurveV1Factory;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -174,15 +174,15 @@ describe('CurveV1', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      curveV1 = new CurveV1(network, dexKey, dexHelper);
-      if (curveV1.initializePricing) {
-        await curveV1.initializePricing(blockNumber);
+      curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (curveV1Factory.initializePricing) {
+        await curveV1Factory.initializePricing(blockNumber);
       }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
-        curveV1,
+        curveV1Factory,
         network,
         dexKey,
         blockNumber,
@@ -197,17 +197,17 @@ describe('CurveV1', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newCurveV1 = new CurveV1(network, dexKey, dexHelper);
-      if (newCurveV1.updatePoolState) {
-        await newCurveV1.updatePoolState();
+      const newCurveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (newCurveV1Factory.updatePoolState) {
+        await newCurveV1Factory.updatePoolState();
       }
-      const poolLiquidity = await newCurveV1.getTopPoolsForToken(
+      const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newCurveV1.hasConstantPriceLargeAmounts) {
+      if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,

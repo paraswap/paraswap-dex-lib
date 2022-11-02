@@ -50,7 +50,7 @@ import { Cone } from './solidly/forks-override/cone';
 import { QuickSwapV3 } from './quickswap-v3';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
-import { CurveV1 } from './curve-v1/curve-v1';
+import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 
 const LegacyDexes = [
   CurveV2,
@@ -74,7 +74,6 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
-  CurveV1,
   BalancerV1,
   BalancerV2,
   UniswapV2,
@@ -99,6 +98,7 @@ const Dexes = [
   Velodrome,
   Cone,
   Synthetix,
+  CurveV1Factory,
 ];
 
 export type LegacyDexConstructor = new (

@@ -14,18 +14,18 @@ import {
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CurveSwapFunctions,
-  CurveV1Data,
-  CurveV1Ifaces,
+  CurveV1FactoryData,
+  CurveV1FactoryIfaces,
   PoolConstants,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { CurveV1Config, Adapters } from './config';
+import { CurveV1FactoryConfig, Adapters } from './config';
 import { MIN_AMOUNT_TO_RECEIVE } from './constants';
-import { CurveV1PoolManager } from './curve-v1-pool-manager';
+import { CurveV1FactoryPoolManager } from './curve-v1-pool-manager';
 import CurveABI from '../../abi/Curve.json';
 import FactoryCurveV1ABI from '../../abi/curve-v1-factory/FactoryCurveV1.json';
 import ThreePoolABI from '../../abi/curve-v1-factory/ThreePool.json';
@@ -33,7 +33,6 @@ import ERC20ABI from '../../abi/erc20.json';
 import {
   addressDecode,
   generalDecoder,
-  uint24ToNumber,
   uint256DecodeToNumber,
   uint8ToNumber,
 } from '../../lib/decoders';
@@ -44,15 +43,18 @@ import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-polling';
 import ImplementationConstants from './price-handlers/functions/constants';
 
-export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
+export class CurveV1Factory
+  extends SimpleExchange
+  implements IDex<CurveV1FactoryData>
+{
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = true;
-  readonly poolManager: CurveV1PoolManager;
-  readonly ifaces: CurveV1Ifaces;
+  readonly poolManager: CurveV1FactoryPoolManager;
+  readonly ifaces: CurveV1FactoryIfaces;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(CurveV1Config);
+    getDexKeysWithNetwork(CurveV1FactoryConfig);
 
   logger: Logger;
 
@@ -61,7 +63,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    protected config = CurveV1Config[dexKey][network],
+    protected config = CurveV1FactoryConfig[dexKey][network],
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -71,7 +73,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       erc20: new Interface(ERC20ABI as JsonFragment[]),
       threePool: new Interface(ThreePoolABI as JsonFragment[]),
     };
-    this.poolManager = new CurveV1PoolManager(
+    this.poolManager = new CurveV1FactoryPoolManager(
       this.dexKey,
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
       dexHelper,
@@ -321,12 +323,14 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<CurveV1Data>> {
+  ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     // TODO: complete me!
     return null;
   }
 
-  getCalldataGasCost(poolPrices: PoolPrices<CurveV1Data>): number | number[] {
+  getCalldataGasCost(
+    poolPrices: PoolPrices<CurveV1FactoryData>,
+  ): number | number[] {
     return (
       CALLDATA_GAS_COST.DEX_OVERHEAD +
       CALLDATA_GAS_COST.LENGTH_SMALL +
@@ -342,7 +346,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: CurveV1Data,
+    data: CurveV1FactoryData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
@@ -372,7 +376,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: CurveV1Data,
+    data: CurveV1FactoryData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);

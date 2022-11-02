@@ -10,12 +10,12 @@ import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
 import { PoolState } from './types';
 
-export class CurveV1PoolManager {
+export class CurveV1FactoryPoolManager {
   // This is needed because we initialize all factory pools + 3 custom pools
   // That 3 custom pools are not fully supported. I need them only in meta pools
   // to get poolState, but not for pricing requests.
   // It appears from CurveV1 and CurveV1Factory duality
-  private poolsForState: Record<string, BasePoolPolling> = {};
+  private poolsForOnlyState: Record<string, BasePoolPolling> = {};
 
   private statePollingPoolsFromId: Record<string, BasePoolPolling> = {};
 
@@ -47,7 +47,7 @@ export class CurveV1PoolManager {
     this.statePollingManager.updatePoolsInBatch(
       this.dexHelper.multiWrapper,
       Object.values(this.statePollingPoolsFromId).concat(
-        Object.values(this.poolsForState),
+        Object.values(this.poolsForOnlyState),
       ),
     );
   }
@@ -65,7 +65,7 @@ export class CurveV1PoolManager {
   }
 
   initializeNewPoolForState(identifier: string, pool: BasePoolPolling) {
-    this.poolsForState[identifier.toLowerCase()] = pool;
+    this.poolsForOnlyState[identifier.toLowerCase()] = pool;
   }
 
   getPool(identifier: string): BasePoolPolling | null {
@@ -73,7 +73,7 @@ export class CurveV1PoolManager {
     if (fromPools !== undefined) {
       return fromPools;
     }
-    const fromStateOnlyPools = this.poolsForState[identifier.toLowerCase()];
+    const fromStateOnlyPools = this.poolsForOnlyState[identifier.toLowerCase()];
     if (fromStateOnlyPools !== undefined) {
       return fromStateOnlyPools;
     }

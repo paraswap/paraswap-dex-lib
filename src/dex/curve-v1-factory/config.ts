@@ -8,8 +8,8 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { normalizeAddress } from '../../utils';
 
-const CurveV1Config: DexConfigMap<DexParams> = {
-  CurveV1: {
+const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
+  CurveV1Factory: {
     [Network.MAINNET]: {
       factoryAddress: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
       stateUpdateFrequencyMs: 5 * 1000,
@@ -267,6 +267,6 @@ const configAddressesNormalizer = (
   return config;
 };
 
-configAddressesNormalizer(CurveV1Config);
+configAddressesNormalizer(CurveV1FactoryConfig);
 
-export { CurveV1Config };
+export { CurveV1FactoryConfig };

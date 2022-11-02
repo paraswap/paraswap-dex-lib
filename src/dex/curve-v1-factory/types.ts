@@ -48,7 +48,7 @@ export type PoolStateWithUpdateInfo<T> = {
   poolState: T;
 };
 
-export type CurveV1Data = {
+export type CurveV1FactoryData = {
   exchange: Address;
   i: number;
   j: number;
@@ -118,7 +118,7 @@ export enum CurveSwapFunctions {
   exchange_underlying = 'exchange_underlying',
 }
 
-export type CurveV1Ifaces = {
+export type CurveV1FactoryIfaces = {
   exchangeRouter: Interface;
   factory: Interface;
   erc20: Interface;
