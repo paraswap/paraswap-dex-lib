@@ -63,6 +63,9 @@ export class CurveV1Factory
   readonly poolManager: CurveV1FactoryPoolManager;
   readonly ifaces: CurveV1FactoryIfaces;
 
+  private areFactoryPoolsFetched: boolean = false;
+  private areCustomPoolsFetched: boolean = false;
+
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
@@ -95,12 +98,14 @@ export class CurveV1Factory
   }
 
   async initializePricing(blockNumber: number) {
-    // Custom pools must be initialized before factory pools!
-    await this.initializeCustomPollingPools();
     await this.fetchFactoryPools();
   }
 
   async initializeCustomPollingPools() {
+    if (this.areCustomPoolsFetched) {
+      return;
+    }
+
     await Promise.all(
       Object.values(this.config.customPools).map(async customPool => {
         const poolIdentifier = this.getPoolIdentifier(
@@ -148,7 +153,7 @@ export class CurveV1Factory
           customPool.address,
           poolIdentifier,
           poolConstants,
-          COINS,
+          customPool.liquidityApiSlug,
           customPool.lpTokenAddress,
           useLending,
         );
@@ -156,9 +161,19 @@ export class CurveV1Factory
         this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
       }),
     );
+    this.areCustomPoolsFetched = true;
   }
 
   async fetchFactoryPools() {
+    if (this.areFactoryPoolsFetched) {
+      return;
+    }
+
+    // There is no scenario when we need to call initialize custom pools without factory pools
+    // So I put it here to not forget call, because custom pools must be initialised before factory pools
+    // This function may be called multiple times, but will executed only once
+    this.initializeCustomPollingPools();
+
     const { factoryAddress } = this.config;
     if (!factoryAddress) {
       this.logger.trace(
@@ -300,13 +315,14 @@ export class CurveV1Factory
         factoryAddress,
         poolIdentifier,
         poolConstants,
-        isMeta,
         factoryImplementationFromConfig.isFeeOnTransferSupported,
         basePoolStateFetcher,
       );
 
       this.poolManager.initializeNewPool(poolIdentifier, newPool);
     });
+
+    this.areFactoryPoolsFetched = true;
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -544,15 +560,76 @@ export class CurveV1Factory
   }
 
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    if (!this.areFactoryPoolsFetched) {
+      await this.fetchFactoryPools();
+    }
+
+    await this.poolManager.fetchLiquiditiesFromApi();
   }
 
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    if (!this.areFactoryPoolsFetched) {
+      this.logger.error(
+        `${this.dexKey}: received getTopPools while factory pools are not fetched`,
+      );
+      return [];
+    }
+    const _tokenAddress = tokenAddress.toLowerCase();
+    const poolsWithToken = this.poolManager.getPoolsWithToken(_tokenAddress);
+
+    if (poolsWithToken.length === 0) {
+      return [];
+    }
+
+    return poolsWithToken
+      .reduce<PoolLiquidity[]>((acc, pool) => {
+        let inCoins = false;
+        let inUnderlying = false;
+        const inCoinConnectors: Token[] = [];
+        for (const [i, coin] of pool.poolConstants.COINS.entries()) {
+          if (coin === _tokenAddress) {
+            inCoins = true;
+          } else {
+            inCoinConnectors.push({
+              address: coin,
+              decimals: pool.poolConstants.coins_decimals[i],
+            });
+          }
+        }
+
+        const underlyingConnectors: Token[] = [];
+        for (const [i, underlying] of pool.underlyingCoins.entries()) {
+          if (underlying === _tokenAddress) {
+            inUnderlying = true;
+          } else {
+            underlyingConnectors.push({
+              address: underlying,
+              decimals: pool.underlyingDecimals[i],
+            });
+          }
+        }
+        let connectorTokens: Token[] = [];
+        if (inCoins) {
+          connectorTokens = connectorTokens.concat(inCoinConnectors);
+        }
+        if (inUnderlying) {
+          connectorTokens = connectorTokens.concat(underlyingConnectors);
+        }
+        if (connectorTokens.length) {
+          acc.push({
+            exchange: this.dexKey,
+            address: pool.address,
+            liquidityUSD: pool.liquidityUSD,
+            connectorTokens: _.uniqBy(connectorTokens, 'address'),
+          });
+        }
+        return acc;
+      }, [])
+      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+      .slice(0, limit);
   }
 
   releaseResources(): AsyncOrSync<void> {

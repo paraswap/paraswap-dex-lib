@@ -79,7 +79,7 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
     readonly address: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
-    readonly coins: Address[],
+    readonly curveLiquidityApiSlug: string,
     readonly lpTokenAddress: Address,
     readonly useLending?: boolean[],
     readonly contractABIs = ContractABIs,
@@ -92,8 +92,8 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
       poolIdentifier,
       poolConstants,
       address,
-      false,
-      [],
+      curveLiquidityApiSlug,
+      undefined,
       false,
     );
   }

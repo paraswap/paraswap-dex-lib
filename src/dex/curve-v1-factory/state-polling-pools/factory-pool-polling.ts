@@ -18,7 +18,6 @@ export class FactoryStateHandler extends BasePoolPolling {
     readonly factoryAddress: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
-    readonly isMetaPool: boolean,
     readonly isSrcFeeOnTransferSupported: boolean,
     private basePoolStateFetcher?: BasePoolPolling,
     private factoryIface: Interface = new Interface(
@@ -32,12 +31,12 @@ export class FactoryStateHandler extends BasePoolPolling {
       poolIdentifier,
       poolConstants,
       address,
-      isMetaPool,
-      basePoolStateFetcher ? basePoolStateFetcher.poolConstants.COINS : [],
+      '/factory',
+      basePoolStateFetcher,
       isSrcFeeOnTransferSupported,
     );
 
-    if (isMetaPool && this.basePoolStateFetcher === undefined) {
+    if (this.isMetaPool && this.basePoolStateFetcher === undefined) {
       throw new Error(
         `${this.fullName}: is instantiated with error. basePoolStateFetcher is not provided`,
       );

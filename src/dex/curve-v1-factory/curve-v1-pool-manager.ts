@@ -1,8 +1,11 @@
 import _ from 'lodash';
 import { Logger } from 'log4js';
+import { Address } from 'paraswap';
 import { IDexHelper } from '../../dex-helper';
 import { TaskScheduler } from '../../lib/task-scheduler';
 import {
+  CURVE_API_URL,
+  NETWORK_ID_TO_NAME,
   STATE_UPDATE_FREQUENCY_MS,
   STATE_UPDATE_RETRY_FREQUENCY_MS,
 } from './constants';
@@ -25,6 +28,8 @@ export class CurveV1FactoryPoolManager {
   private coinAddressesToPoolIdentifiers: Record<string, string[]> = {};
 
   private allPriceHandlers: Record<string, PriceHandler>;
+
+  private allCurveLiquidityApiSlugs: Set<string> = new Set(['/factory']);
 
   private statePollingManager = StatePollingManager;
   private taskScheduler: TaskScheduler;
@@ -100,6 +105,8 @@ export class CurveV1FactoryPoolManager {
         );
       }
     });
+
+    this.allCurveLiquidityApiSlugs.add(pool.curveLiquidityApiSlug);
   }
 
   initializeNewPoolForState(identifier: string, pool: BasePoolPolling) {
@@ -192,5 +199,74 @@ export class CurveV1FactoryPoolManager {
     }
 
     return null;
+  }
+
+  async fetchLiquiditiesFromApi() {
+    try {
+      let someFailed = false;
+      const responses = await Promise.all(
+        Array.from(Array.from(this.allCurveLiquidityApiSlugs)).map(async slug =>
+          this.dexHelper.httpRequest.get<{
+            success: boolean;
+            data: {
+              poolData: {
+                usdTotal: number;
+                address: string;
+                usdTotalExcludingBasePool: number;
+              }[];
+            };
+          }>(
+            `${CURVE_API_URL}/${
+              NETWORK_ID_TO_NAME[this.dexHelper.config.data.network]
+            }${slug}`,
+          ),
+        ),
+      );
+      const addressToLiquidity: Record<string, number> = {};
+      for (const data of responses) {
+        if (!data.success) {
+          someFailed = true;
+          break;
+        }
+        for (const poolData of data.data.poolData) {
+          addressToLiquidity[poolData.address.toLowerCase()] =
+            poolData.usdTotal || poolData.usdTotalExcludingBasePool;
+        }
+      }
+      if (someFailed) {
+        // This is needed to reduce complexity and don't track when each API was updated. We either update
+        // everything or don't update anything and invalidate liquidity amounts
+        this.logger.error(
+          `${this.name}: some of the Curve API requests fail. Won't update anything.`,
+        );
+        return;
+      }
+
+      Object.values(this.statePollingPoolsFromId).map(pool => {
+        const poolLiquidity = addressToLiquidity[pool.address];
+        if (poolLiquidity === undefined) {
+          this.logger.error(
+            `${this.name}: while updating liquidity in USD for pool, ` +
+              `found pool ${pool.address} that is not included in Curve API pools`,
+          );
+          return;
+        }
+        pool.liquidityUSD = poolLiquidity;
+      });
+    } catch (e) {
+      this.logger.error(
+        `${this.name}: Error fetching liquidity from CurveV2 API: `,
+        e,
+      );
+    }
+  }
+  getPoolsWithToken(tokenAddress: Address): BasePoolPolling[] {
+    const poolIdentifiers = this.coinAddressesToPoolIdentifiers[tokenAddress];
+    if (poolIdentifiers === undefined) {
+      return [];
+    }
+    return poolIdentifiers
+      .map(poolIdentifier => this.getPool(poolIdentifier, false))
+      .filter((p): p is BasePoolPolling => p !== null);
   }
 }

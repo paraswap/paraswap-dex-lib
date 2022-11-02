@@ -104,6 +104,8 @@ export type CustomPoolConfig = {
   address: Address;
   isWrapNative: boolean;
   lpTokenAddress: Address;
+  // Liquidity is fetched from curve API: https://api.curve.fi/api/getPools/ethereum/SLUG
+  liquidityApiSlug: string;
 };
 
 export type DexParams = {

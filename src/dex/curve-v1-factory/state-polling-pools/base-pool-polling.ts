@@ -19,6 +19,12 @@ export abstract class BasePoolPolling {
 
   protected abiCoder = Web3EthAbi as unknown as AbiCoder;
 
+  liquidityUSD = 0;
+
+  readonly isMetaPool: boolean;
+  readonly underlyingCoins: string[];
+  readonly underlyingDecimals: number[];
+
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
@@ -26,11 +32,21 @@ export abstract class BasePoolPolling {
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
     readonly address: Address,
-    readonly isMetaPool: boolean,
-    readonly underlyingCoins: Address[],
+    readonly curveLiquidityApiSlug: string,
+    readonly baseStatePoolPolling: BasePoolPolling | undefined,
     readonly isSrcFeeOnTransferSupported: boolean,
   ) {
     this.fullName = `${dexKey}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
+    this.isMetaPool = baseStatePoolPolling !== undefined;
+    this.underlyingCoins = baseStatePoolPolling
+      ? [poolConstants.COINS[0], ...baseStatePoolPolling.poolConstants.COINS]
+      : [];
+    this.underlyingDecimals = baseStatePoolPolling
+      ? [
+          poolConstants.coins_decimals[0],
+          ...baseStatePoolPolling.poolConstants.coins_decimals,
+        ]
+      : [];
   }
 
   protected _setState(state: PoolState, updateAt: number) {
