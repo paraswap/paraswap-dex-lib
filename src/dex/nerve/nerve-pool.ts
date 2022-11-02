@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
-import { Address, Log, Logger } from '../../types';
+import { Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { EventHandler, NervePoolConfig, PoolState } from './types';
@@ -20,8 +20,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: Address[];
-
   poolIface: Interface;
 
   lpTokenIface: Interface;
@@ -29,7 +27,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   private _tokenAddresses?: string[];
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -44,7 +42,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       );
     }
 
-    super(`${parentName}_${poolConfig.name}`, logger);
+    super(parentName, `${poolConfig.name}`, dexHelper, logger);
     this.math = new NervePoolMath(this.name, this.logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);

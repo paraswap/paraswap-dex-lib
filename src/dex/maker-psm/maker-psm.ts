@@ -88,7 +88,6 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
   to18ConversionFactor: bigint;
   bytes32Tout =
     '0x746f757400000000000000000000000000000000000000000000000000000000'; // bytes32('tout')
@@ -96,14 +95,14 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
     '0x74696e0000000000000000000000000000000000000000000000000000000000'; // bytes32('tin')
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
     protected vatAddress: Address,
   ) {
-    super(parentName, logger);
+    super(parentName, poolConfig.identifier, dexHelper, logger);
 
     this.logDecoder = (log: Log) => psmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.psmAddress];
@@ -201,14 +200,14 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
     protected dai: Token = MakerPsmConfig[dexKey][network].dai,
     protected vatAddress: Address = MakerPsmConfig[dexKey][network].vatAddress,
     protected poolConfigs: PoolConfig[] = MakerPsmConfig[dexKey][network].pools,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
     poolConfigs.forEach(
@@ -231,15 +230,14 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       this.vatAddress,
       blockNumber,
     );
-    this.poolConfigs.forEach((p, i) => {
-      const eventPool = this.eventPools[p.gem.address.toLowerCase()];
-      eventPool.setState(poolStates[i], blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        eventPool,
-        eventPool.addressesSubscribed,
-        blockNumber,
-      );
-    });
+    await Promise.all(
+      this.poolConfigs.map(async (p, i) => {
+        const eventPool = this.eventPools[p.gem.address.toLowerCase()];
+        await eventPool.initialize(blockNumber, {
+          state: poolStates[i],
+        });
+      }),
+    );
   }
 
   // Returns the list of contract adapters (name and index)

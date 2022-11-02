@@ -6,6 +6,7 @@ import { SimpleExchange } from './simple-exchange';
 import OneInchLpABI from '../abi/OneInchLp.json';
 import { isETHAddress } from '../utils';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export type OneInchLpData = {
   exchange: string; // _DOUBLE_CHECK_
@@ -28,12 +29,8 @@ export class OneInchLp
   static dexKeys = ['oneinchlp'];
   exchangeRouterInterface: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'oneinchlp');
     this.exchangeRouterInterface = new Interface(
       OneInchLpABI as JsonFragment[],
     );

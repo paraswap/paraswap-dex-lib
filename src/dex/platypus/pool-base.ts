@@ -129,7 +129,7 @@ export abstract class PlatypusPoolBase<
   State extends PlatypusPoolStateCommon,
 > extends ComposedEventSubscriber<State> {
   constructor(
-    protected readonly dexKey: string,
+    readonly dexKey: string,
     protected readonly network: number,
     name: string,
     dexHelper: IDexHelper,
@@ -137,7 +137,8 @@ export abstract class PlatypusPoolBase<
     blankState: DeepReadonly<State>,
   ) {
     super(
-      `${dexKey} ${name}`,
+      dexKey,
+      name,
       dexHelper.getLogger(`${dexKey}-${network} ${name}`),
       dexHelper,
       parts,

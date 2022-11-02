@@ -35,14 +35,14 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
   protected tokenWeights: { [tokenAddress: string]: bigint };
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
-    protected dexHelper: IDexHelper,
+    dexHelper: IDexHelper,
     logger: Logger,
     protected balancerMulticall: Contract,
     public readonly poolInfo: PoolInfo,
   ) {
-    super(`${parentName} pool id ${poolInfo.id}`, logger);
+    super(parentName, poolInfo.id, dexHelper, logger);
 
     this.addressesSubscribed = [poolInfo.id];
 

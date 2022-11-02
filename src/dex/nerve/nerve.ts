@@ -56,13 +56,13 @@ export class Nerve
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     protected poolConfigs = NerveConfig[dexKey][network].poolConfigs,
     protected nervePoolIface = new Interface(nervePoolABIDefault),
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -84,13 +84,7 @@ export class Nerve
       this.eventPools[poolIdentifier] = newPool;
 
       // Generate first state for the blockNumber and subscribe to logs
-      const newPoolState = await newPool.generateState(blockNumber);
-      newPool.setState(newPoolState, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        newPool,
-        newPool.addressesSubscribed,
-        blockNumber,
-      );
+      await newPool.initialize(blockNumber);
     } else {
       this.logger.warn(
         `We don't support metapools for Nerve. Check config: ${poolConfig.name}`,

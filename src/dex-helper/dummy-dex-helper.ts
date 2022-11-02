@@ -15,6 +15,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
+import { BlockHeader } from 'web3-eth';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
@@ -28,6 +29,10 @@ class DummyCache implements ICache {
 
   async rawget(key: string): Promise<string | null> {
     return null;
+  }
+
+  async rawdel(key: string): Promise<void> {
+    return;
   }
 
   async setex(
@@ -58,6 +63,31 @@ class DummyCache implements ICache {
   ): Promise<void> {
     return;
   }
+
+  async hset(mapKey: string, key: string, value: string): Promise<void> {
+    return;
+  }
+
+  async hget(mapKey: string, key: string): Promise<string | null> {
+    return null;
+  }
+
+  async publish(channel: string, msg: string): Promise<void> {
+    return;
+  }
+
+  subscribe(
+    channel: string,
+    cb: (channel: string, msg: string) => void,
+  ): () => void {
+    return () => {};
+  }
+
+  addBatchHGet(
+    mapKey: string,
+    key: string,
+    cb: (result: string | null) => boolean,
+  ): void {}
 }
 
 class DummyRequestWrapper implements IRequestWrapper {
@@ -109,6 +139,17 @@ class DummyBlockManager implements IBlockManager {
     );
     subscriber.isTracking = () => true;
   }
+
+  getLatestBlockNumber(): number {
+    return 42;
+  }
+
+  getActiveChainHead(): Readonly<BlockHeader> {
+    return {
+      number: 42,
+      hash: '0x42',
+    } as BlockHeader;
+  }
 }
 
 export class DummyDexHelper implements IDexHelper {
@@ -124,7 +165,7 @@ export class DummyDexHelper implements IDexHelper {
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
   constructor(network: number) {
-    this.config = new ConfigHelper(generateConfig(network));
+    this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.provider = new StaticJsonRpcProvider(

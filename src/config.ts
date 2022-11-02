@@ -216,7 +216,16 @@ export function generateConfig(network: number): Config {
 }
 
 export class ConfigHelper {
-  constructor(public data: Config) {}
+  public masterBlockNumberCacheKey: string;
+
+  constructor(
+    public isSlave: boolean,
+    public data: Config,
+    private masterCachePrefix: string,
+  ) {
+    this.masterBlockNumberCacheKey =
+      `${masterCachePrefix}_${data.network}_bn`.toLowerCase();
+  }
 
   wrapETH(token: Token): Token {
     return isETHAddress(token.address)

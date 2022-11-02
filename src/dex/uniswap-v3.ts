@@ -7,6 +7,7 @@ import { SimpleExchange } from './simple-exchange';
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
 import { NumberAsString } from 'paraswap-core';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
   [Network.MAINNET]: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
@@ -57,17 +58,13 @@ export class UniswapV3
   needWrapNative = true;
   protected routerAddress: string;
 
-  constructor(
-    augustusAddress: Address,
-    protected network: number,
-    provider: Web3,
-    routerAddress?: Address,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper, dexKey: string, routerAddress?: Address) {
+    super(dexHelper, dexKey);
     this.exchangeRouterInterface = new Interface(
       UniswapV3RouterABI as JsonFragment[],
     );
-    this.routerAddress = routerAddress || UNISWAP_V3_ROUTER_ADDRESSES[network];
+    this.routerAddress =
+      routerAddress || UNISWAP_V3_ROUTER_ADDRESSES[this.network];
   }
 
   protected encodePath(

@@ -11,6 +11,7 @@ import { SimpleExchange } from './simple-exchange';
 import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
 import CurveV2ABI from '../abi/CurveV2.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export enum CurveV2SwapType {
   EXCHANGE,
@@ -58,12 +59,8 @@ export class CurveV2
   minConversionRate = '1';
   needWrapNative = true;
 
-  constructor(
-    augustusAddress: Address,
-    public network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'curvev2');
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
     this.genericFactoryZapIface = new Interface(GenericFactoryZapABI);
   }

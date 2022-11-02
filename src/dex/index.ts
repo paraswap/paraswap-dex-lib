@@ -6,7 +6,7 @@ import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
-import { UniswapV3 } from './uniswap-v3';
+import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
@@ -41,7 +41,6 @@ import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
-import Web3 from 'web3';
 import { Solidly } from './solidly/solidly';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
@@ -68,7 +67,6 @@ const LegacyDexes = [
   OneInchLp,
   DodoV1,
   DodoV2,
-  UniswapV3,
   QuickSwapV3,
   Jarvis,
   Lido,
@@ -82,6 +80,7 @@ const Dexes = [
   BalancerV1,
   BalancerV2,
   UniswapV2,
+  UniswapV3,
   BiSwap,
   MDEX,
   Dfyn,
@@ -105,11 +104,10 @@ const Dexes = [
   Synthetix,
 ];
 
-export type LegacyDexConstructor = new (
-  augustusAddress: Address,
-  network: number,
-  provider: Web3,
-) => IDexTxBuilder<any, any>;
+export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
+  any,
+  any
+>;
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];
@@ -209,9 +207,7 @@ export class DexAdapterService {
         );
 
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
-        this.dexHelper.config.data.augustusAddress,
-        this.network,
-        this.dexHelper.web3Provider,
+        this.dexHelper,
       );
     }
 

@@ -65,8 +65,6 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   // as the base curve pool doesn't support the RemoveLiquidityOnes
   basepool: ThreePool;
 
-  addressesSubscribed: Address[] = [];
-
   constructor(
     public parentName: string,
     protected dexHelper: IDexHelper,
@@ -83,7 +81,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
     public COINS: Address[],
     Basepool: new (name: string, dexHelper: IDexHelper) => ThreePool,
   ) {
-    super(`${parentName}_${pool}_${address}`, logger);
+    super(parentName, `${pool}_${address}`, dexHelper, logger);
     this.MAX_COIN = N_COINS - 1;
 
     this.basepool = new Basepool(this.name, dexHelper);

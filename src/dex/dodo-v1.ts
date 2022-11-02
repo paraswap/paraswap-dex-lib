@@ -6,6 +6,7 @@ import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from 'paraswap-core';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 // We use dodo-v2 proxy as the new proxy supports both v1 and v2
 const DODOV2ProxyAddress: { [network: number]: Address } = {
@@ -50,12 +51,8 @@ export class DodoV1
   static dexKeys = ['dodov1'];
   dodoV2Proxy: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'dodov1');
     this.dodoV2Proxy = new Interface(DodoV2ProxyABI as JsonFragment[]);
   }
 
