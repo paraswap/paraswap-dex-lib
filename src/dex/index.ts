@@ -49,6 +49,9 @@ import { Cone } from './solidly/forks-override/cone';
 import { QuickSwapV3 } from './quickswap-v3';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
+import { CurveV1 } from './curve-v1/curve-v1';
+import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
+import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 
 const LegacyDexes = [
@@ -72,6 +75,9 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  CurveV1,
+  CurveFork,
+  Swerve,
   BalancerV1,
   BalancerV2,
   UniswapV2,
