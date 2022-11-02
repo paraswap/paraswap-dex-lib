@@ -42,8 +42,9 @@ export class GenericRFQ extends ParaSwapLimitOrders {
   }
 
   initializePricing(blockNumber: number): void {
-    //TODO: only master version
-    this.rateFetcher.start();
+    if (!this.dexHelper.config.isSlave) {
+      this.rateFetcher.start();
+    }
     return;
   }
 
@@ -76,7 +77,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         let srcAmountLeft = amount.minus(lastTotalSrcAmount);
         let destAmountFilled = lastTotalDestAmount;
         while (lastOrderIndex < amountsWithRates.length) {
-          const { amount, price } = amountsWithRates[lastOrderIndex];
+          const [price, amount] = amountsWithRates[lastOrderIndex];
           if (srcAmountLeft.gt(amount)) {
             const destAmount = amount.multipliedBy(price);
 

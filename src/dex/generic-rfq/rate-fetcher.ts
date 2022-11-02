@@ -16,13 +16,11 @@ import {
   RFQPayload,
 } from './types';
 
-export const FIRM_RATE_TIMEOUT_MS = 500;
-
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
-  ({
-    amount: price.amount.times(price.price),
-    price: BN_1.dividedBy(price.price),
-  } as PriceAndAmountBigNumber);
+  [
+    BN_1.dividedBy(price[0]),
+    price[1].times(price[0]),
+  ] as PriceAndAmountBigNumber;
 
 export class RateFetcher {
   private augustusAddress: Address;
@@ -201,18 +199,18 @@ export class RateFetcher {
       return null;
     }
 
-    let orderPrices = orderPricesAsString.map(price => {
-      return {
-        amount: new BigNumber(price.amount),
-        price: new BigNumber(price.price),
-      } as PriceAndAmountBigNumber;
-    });
+    let orderPrices = orderPricesAsString.map(price => [
+      new BigNumber(price[0]),
+      new BigNumber(price[1]),
+    ]);
 
     if (reversed) {
-      orderPrices = orderPrices.map(reversePrice);
+      orderPrices = orderPrices.map(price =>
+        reversePrice(price as PriceAndAmountBigNumber),
+      );
     }
 
-    return orderPrices;
+    return orderPrices as PriceAndAmountBigNumber[];
   }
 
   private async getPayload(

@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { SwapSide } from 'paraswap-core';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import { Address, Token } from '../../types';
 import { AugustusOrderWithString } from '../paraswap-limit-orders/types';
@@ -19,15 +18,9 @@ export type MarketResponse = {
   markets: Pair[];
 };
 
-export type PriceAndAmount = {
-  amount: string;
-  price: string;
-};
+export type PriceAndAmount = [string, string];
 
-export type PriceAndAmountBigNumber = {
-  amount: BigNumber;
-  price: BigNumber;
-};
+export type PriceAndAmountBigNumber = [BigNumber, BigNumber];
 
 export type PairPriceResponse = {
   bids: PriceAndAmount[];
