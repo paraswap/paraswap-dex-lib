@@ -56,12 +56,12 @@ export class ParaSwapLimitOrders
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] ? Adapters[network] : {},
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.augustusRFQAddress =
       dexHelper.config.data.augustusRFQAddress.toLowerCase();
     this.logger = dexHelper.getLogger(dexKey);

@@ -33,7 +33,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     config: RFQConfig,
   ) {

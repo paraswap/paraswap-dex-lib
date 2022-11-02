@@ -6,6 +6,7 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import OnebitABI from '../abi/Onebit.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export type OnebitData = {
   router: Address;
@@ -29,12 +30,8 @@ export class Onebit
   exchangeRouterInterface: Interface;
   needWrapNative = true;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'omm1');
     this.exchangeRouterInterface = new Interface(OnebitABI as JsonFragment[]);
   }
 

@@ -1,7 +1,6 @@
 import { IRouter } from './irouter';
 import {
   Address,
-  Adapters,
   OptimalRate,
   ConstractSimpleData,
   TxInfo,

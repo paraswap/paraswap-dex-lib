@@ -40,7 +40,7 @@ export class Solidly extends UniswapV2 {
 
   constructor(
     protected network: Network,
-    public dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     isDynamicFees = false,
     factoryAddress?: Address,
