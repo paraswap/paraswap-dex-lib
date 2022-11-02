@@ -17,6 +17,12 @@ import { PriceAndAmountBigNumber, RFQConfig } from './types';
 import { OptimalSwapExchange } from 'paraswap-core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
+export const OVERORDER_BPS = 100;
+export const BPS_MAX_VALUE = 10000n;
+
+export const overOrder = (amount: string, bps: number) =>
+  ((BigInt(amount) * (BPS_MAX_VALUE + BigInt(bps))) / BPS_MAX_VALUE).toString();
+
 export class GenericRFQ extends ParaSwapLimitOrders {
   private rateFetcher: RateFetcher;
 
@@ -179,10 +185,13 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
     const isSell = side === SwapSide.SELL;
+
     const order = await this.rateFetcher.getFirmRate(
       srcToken,
       destToken,
-      isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
+      isSell
+        ? overOrder(optimalSwapExchange.srcAmount, OVERORDER_BPS)
+        : overOrder(optimalSwapExchange.destAmount, 1),
       side,
       options.txOrigin,
     );
