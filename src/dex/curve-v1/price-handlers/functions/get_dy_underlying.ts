@@ -31,7 +31,16 @@ const factoryMeta3Pool2_8: get_dy_underlying = (
   const BASE_N_COINS = requireConstant(self, 'BASE_N_COINS', funcName());
 
   const { basePoolState, constants } = state;
-  const rates = [constants.rate_multiplier, basePoolState.virtualPrice];
+
+  if (basePoolState.virtualPrice === undefined) {
+    throw new Error(
+      `${
+        self.IMPLEMENTATION_NAME
+      } ${funcName()}: basePoolState.virtualPrice is not defined`,
+    );
+  }
+
+  const rates = [constants.rate_multipliers[0], basePoolState.virtualPrice];
   const xp = self._xp_mem(self, rates, state.balances);
 
   let x = 0n;
@@ -131,8 +140,16 @@ const factoryMetaFrax: get_dy_underlying = (
   const MAX_COIN = requireConstant(self, 'MAX_COIN', funcName());
   const BASE_N_COINS = requireConstant(self, 'BASE_N_COINS', funcName());
 
-  const { rate_multiplier } = state.constants;
-  const rates = [rate_multiplier, state.basePoolState.virtualPrice];
+  if (state.basePoolState.virtualPrice === undefined) {
+    throw new Error(
+      `${
+        self.IMPLEMENTATION_NAME
+      } ${funcName()}: state.basePoolState.virtualPrice is not defined`,
+    );
+  }
+
+  const { rate_multipliers } = state.constants;
+  const rates = [rate_multipliers[0], state.basePoolState.virtualPrice];
   const xp = self._xp_mem(self, rates, state.balances);
 
   let x = 0n;

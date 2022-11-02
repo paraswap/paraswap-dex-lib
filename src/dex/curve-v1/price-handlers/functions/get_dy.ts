@@ -53,8 +53,8 @@ const factoryMeta3Pool2_8: get_dy = (
   }
 
   const { PRECISION, FEE_DENOMINATOR } = self.constants;
-  const { rate_multiplier } = state.constants;
-  const rates = [rate_multiplier, state.basePoolState?.virtualPrice];
+  const { rate_multipliers } = state.constants;
+  const rates = [rate_multipliers[0], state.basePoolState?.virtualPrice];
   const xp = self._xp_mem(self, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;

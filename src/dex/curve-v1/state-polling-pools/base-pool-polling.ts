@@ -4,11 +4,14 @@ import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
 import { funcName } from '../../../utils';
 import { MAX_ALLOWED_STATE_DELAY_MS } from '../constants';
 import { PoolState } from '../types';
+import { Address } from 'paraswap-core';
 
 export type MulticallReturnedTypes = bigint | bigint[];
 
 export abstract class BasePoolPolling {
   readonly CLASS_NAME = this.constructor.name;
+
+  readonly fullName: string;
 
   protected _poolState: PoolState | null = null;
 
@@ -16,7 +19,14 @@ export abstract class BasePoolPolling {
 
   protected abiCoder = Web3EthAbi as unknown as AbiCoder;
 
-  constructor(protected name: string, protected logger: Logger) {}
+  constructor(
+    readonly logger: Logger,
+    readonly dexKey: string,
+    readonly implementationName: string,
+    readonly address: Address,
+  ) {
+    this.fullName = `${dexKey}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
+  }
 
   protected _setState(state: PoolState, updateAt: number) {
     this._poolState = state;
@@ -38,11 +48,11 @@ export abstract class BasePoolPolling {
       return this._poolState;
     } else if (this._poolState) {
       this.logger.error(
-        `${this.name} ${funcName()}: state is older than max allowed time`,
+        `${this.fullName} ${funcName()}: state is older than max allowed time`,
       );
     } else {
       this.logger.error(
-        `${this.name} ${funcName()}: state was not initialized properly`,
+        `${this.fullName} ${funcName()}: state was not initialized properly`,
       );
     }
 

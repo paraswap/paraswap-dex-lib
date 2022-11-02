@@ -17,11 +17,27 @@ const customPlain3CoinBtc: _rates = (
   );
   const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
 
+  if (state.exchangeRateCurrent === undefined) {
+    throw new Error(
+      `${
+        self.IMPLEMENTATION_NAME
+      } ${funcName()}: exchangeRateCurrent is not provided`,
+    );
+  }
+
   const result = [...PRECISION_MUL];
   const use_lending = [...USE_LENDING];
   for (const i of _.range(N_COINS)) {
     let rate = LENDING_PRECISION; // Used with no lending
-    if (use_lending[i]) rate = state.exchangeRateCurrent[i];
+    if (use_lending[i]) {
+      const currentRate = state.exchangeRateCurrent[i];
+      if (currentRate === undefined) {
+        throw new Error(
+          `${self.IMPLEMENTATION_NAME}: exchangeRateCurrent contains undefined value that supposed to be used: ${state.exchangeRateCurrent}`,
+        );
+      }
+      rate = currentRate;
+    }
     result[i] *= rate;
   }
   return result;

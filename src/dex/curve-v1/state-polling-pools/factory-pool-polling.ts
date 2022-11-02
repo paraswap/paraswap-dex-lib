@@ -12,7 +12,7 @@ import { Address } from 'paraswap-core';
 export class FactoryStateHandler extends BasePoolPolling {
   constructor(
     readonly logger: Logger,
-    readonly name: string,
+    readonly dexKey: string,
     readonly implementationName: FactoryImplementationNames,
     readonly address: Address,
     readonly factoryAddress: Address,
@@ -24,10 +24,11 @@ export class FactoryStateHandler extends BasePoolPolling {
       FactoryCurveV1ABI as JsonFragment[],
     ),
   ) {
-    super(name, logger);
+    super(logger, dexKey, implementationName, address);
+
     if (isMetaPool && this.basePoolStateFetcher === undefined) {
       throw new Error(
-        `${this.CLASS_NAME} ${this.implementationName}: is instantiated with error. basePoolStateFetcher is not provided`,
+        `${this.fullName}: is instantiated with error. basePoolStateFetcher is not provided`,
       );
     }
   }
@@ -66,7 +67,7 @@ export class FactoryStateHandler extends BasePoolPolling {
   ): void {
     if (!multiOutputs.every(o => o.success)) {
       this.logger.error(
-        `${this.name} ${funcName()}: Some of the calls to ${
+        `${this.dexKey} ${funcName()}: Some of the calls to ${
           this.address
         } generate state failed: `,
       );
@@ -87,7 +88,7 @@ export class FactoryStateHandler extends BasePoolPolling {
 
       if (retrievedBasePoolState === null) {
         this.logger.error(
-          `${this.CLASS_NAME} ${this.name} ${this.address}: Can not retrieve base pool state`,
+          `${this.CLASS_NAME} ${this.dexKey} ${this.address}: Can not retrieve base pool state`,
         );
         return;
       }

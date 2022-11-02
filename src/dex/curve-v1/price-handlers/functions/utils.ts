@@ -22,11 +22,13 @@ export const requireConstant = <T extends keyof PoolContextConstants>(
   funcName: string,
 ): NonNullable<PoolContextConstants[T]> => {
   const value = self.constants[constantName];
-  if (value === undefined) {
+  if (!value) {
     throw new Error(
       `Required constant ${constantName} was not specified for function ` +
         `${funcName} in ${self.IMPLEMENTATION_NAME} implementation`,
     );
   }
-  return value;
+
+  // Proper typing is not working. I do not know why :(
+  return value as NonNullable<PoolContextConstants[T]>;
 };

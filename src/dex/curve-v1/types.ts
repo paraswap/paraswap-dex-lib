@@ -55,17 +55,6 @@ export type CurveV1Data = {
   underlyingSwap: boolean;
 };
 
-export type PoolConfig = {
-  underlying: string[];
-  coins: string[];
-  address: string;
-  name: string;
-  isLending: boolean;
-  isMetapool: boolean;
-  liquidityUSD?: number;
-  isFeeOnTransferSupported?: boolean;
-};
-
 export enum FactoryImplementationNames {
   FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
   FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',
@@ -103,6 +92,7 @@ export type ImplementationNames =
 export type FactoryPoolImplementations = {
   name: FactoryImplementationNames;
   address: Address;
+  isFeeOnTransferSupported: boolean;
   // For now I put everywhere false, but eventually we should have more granular handling
   // for all pools
   isWrapNative: boolean;
@@ -114,16 +104,13 @@ export type CustomPoolConfig = {
   address: Address;
   isWrapNative: boolean;
   lpTokenAddress: Address;
-  // Very special variable only for one BTC pool. Not sure where to put it
-  UseLending?: boolean[];
 };
 
 export type DexParams = {
   factoryAddress: string | null;
-  pools: Record<string, PoolConfig>;
   stateUpdateFrequencyMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
-  customPools: Record<CustomImplementationNames, CustomPoolConfig>;
+  customPools: Record<string, CustomPoolConfig>;
 };
 
 export enum CurveSwapFunctions {
@@ -134,4 +121,6 @@ export enum CurveSwapFunctions {
 export type CurveV1Ifaces = {
   exchangeRouter: Interface;
   factory: Interface;
+  erc20: Interface;
+  threePool: Interface;
 };

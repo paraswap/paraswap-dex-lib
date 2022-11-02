@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
 import { calc_token_amount, IPoolContext } from '../types';
 import { throwNotImplemented } from './utils';
@@ -18,6 +19,13 @@ const customPlain3CoinThree: calc_token_amount = (
     else balances[i] -= amounts[i];
   }
   const D1 = self.get_D_mem(self, state, balances, amp);
+
+  if (state.totalSupply === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`,
+    );
+  }
+
   const token_amount = state.totalSupply;
   let diff = 0n;
   if (is_deposit) {

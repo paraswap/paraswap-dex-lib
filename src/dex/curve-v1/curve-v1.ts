@@ -20,8 +20,6 @@ import {
   CurveSwapFunctions,
   CurveV1Data,
   CurveV1Ifaces,
-  FactoryImplementationNames,
-  ImplementationNames,
   PoolConstants,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -30,18 +28,21 @@ import { MIN_AMOUNT_TO_RECEIVE } from './constants';
 import { CurveV1PoolManager } from './curve-v1-pool-manager';
 import CurveABI from '../../abi/Curve.json';
 import FactoryCurveV1ABI from '../../abi/curve-v1-factory/FactoryCurveV1.json';
+import ThreePoolABI from '../../abi/curve-v1-factory/ThreePool.json';
+import ERC20ABI from '../../abi/erc20.json';
 import {
   addressDecode,
-  booleanDecode,
   generalDecoder,
+  uint24ToNumber,
   uint256DecodeToNumber,
+  uint8ToNumber,
 } from '../../lib/decoders';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import { BytesLike } from 'ethers';
 import { FactoryStateHandler } from './state-polling-pools/factory-pool-polling';
 import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
-
-const coder = new AbiCoder();
+import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-polling';
+import ImplementationConstants from './price-handlers/functions/constants';
 
 export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -67,6 +68,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     this.ifaces = {
       exchangeRouter: new Interface(CurveABI),
       factory: new Interface(FactoryCurveV1ABI as JsonFragment[]),
+      erc20: new Interface(ERC20ABI as JsonFragment[]),
+      threePool: new Interface(ThreePoolABI as JsonFragment[]),
     };
     this.poolManager = new CurveV1PoolManager(
       this.dexKey,
@@ -77,12 +80,67 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   }
 
   async initializePricing(blockNumber: number) {
-    // Must be called before fetchFactoryPools()
+    // Custom pools must be initialized before factory pools!
     await this.initializeCustomPollingPools();
     await this.fetchFactoryPools();
   }
 
-  async initializeCustomPollingPools() {}
+  async initializeCustomPollingPools() {
+    await Promise.all(
+      Object.values(this.config.customPools).map(async customPool => {
+        const poolIdentifier = this.getPoolIdentifier(
+          customPool.address,
+          false,
+          false,
+        );
+
+        const nCoins = ImplementationConstants[customPool.name].N_COINS;
+        const useLending = ImplementationConstants[customPool.name].USE_LENDING;
+
+        const COINS = (
+          await this.dexHelper.multiWrapper.tryAggregate(
+            true,
+            _.range(nCoins).map(i => ({
+              target: customPool.address,
+              callData: this.ifaces.threePool.encodeFunctionData('coins', [i]),
+              decodeFunction: addressDecode,
+            })),
+          )
+        ).map(r => r.returnData);
+
+        const coins_decimals = (
+          await this.dexHelper.multiWrapper.tryAggregate(
+            true,
+            COINS.map(c => ({
+              target: c,
+              callData: this.ifaces.erc20.encodeFunctionData('decimals', []),
+              decodeFunction: uint8ToNumber,
+            })),
+          )
+        ).map(r => r.returnData);
+
+        const poolConstants: PoolConstants = {
+          COINS,
+          coins_decimals,
+          rate_multipliers: this._calcRateMultipliers(coins_decimals),
+          lpTokenAddress: customPool.lpTokenAddress,
+        };
+
+        const newPool = new CustomBasePoolForFactory(
+          this.logger,
+          this.dexKey,
+          customPool.name,
+          customPool.address,
+          poolIdentifier,
+          poolConstants,
+          customPool.lpTokenAddress,
+          useLending,
+        );
+
+        this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
+      }),
+    );
+  }
 
   async fetchFactoryPools() {
     const { factoryAddress } = this.config;
@@ -167,7 +225,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       >(true, callDataFromFactoryPools)
     ).map(r => r.returnData);
 
-    const filterablePoolAddresses: (string | undefined)[] = poolAddresses;
     _.chunk(resultsFromFactory, 3).forEach((result, i) => {
       const [implementationAddress, coins, coins_decimals] = result as [
         string,
@@ -185,7 +242,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
             `found unspecified implementation: ${implementationAddress} for pool ${poolAddresses[i]}`,
         );
-        filterablePoolAddresses[i] = undefined;
         return;
       }
 
@@ -211,9 +267,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       const poolConstants: PoolConstants = {
         COINS: coins.map(c => c.toLowerCase()),
         coins_decimals,
-        rate_multipliers: coins_decimals.map(coinDecimal =>
-          getBigIntPow(36 - coinDecimal),
-        ),
+        rate_multipliers: this._calcRateMultipliers(coins_decimals),
       };
 
       const poolIdentifier = this.getPoolIdentifier(
@@ -221,9 +275,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         isMeta,
         false,
       );
+
       const newPool = new FactoryStateHandler(
         this.logger,
-        `${factoryImplementationFromConfig.name}_${poolAddresses[i]}`,
+        this.dexKey,
         factoryImplementationFromConfig.name,
         poolAddresses[i],
         factoryAddress,
@@ -232,6 +287,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         isMeta,
         basePoolStateFetcher,
       );
+
       this.poolManager.initializeNewPool(poolIdentifier, newPool);
     });
   }
@@ -356,5 +412,9 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
   releaseResources(): AsyncOrSync<void> {
     this.poolManager.releaseResources();
+  }
+
+  private _calcRateMultipliers(coins_decimals: number[]): bigint[] {
+    return coins_decimals.map(coinDecimal => getBigIntPow(36 - coinDecimal));
   }
 }

@@ -72,10 +72,9 @@ const ContractABIs: Record<FunctionToCall, AbiItem> = {
 // for other pools. I just wanted to make support for custom pools that are used under
 // factory meta pools
 export class CustomBasePoolForFactory extends BasePoolPolling {
-
   constructor(
     readonly logger: Logger,
-    readonly name: string,
+    readonly dexKey: string,
     readonly implementationName: CustomImplementationNames,
     readonly address: Address,
     readonly poolIdentifier: string,
@@ -84,7 +83,7 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
     readonly useLending?: boolean[],
     readonly contractABIs = ContractABIs,
   ) {
-    super(name, logger);
+    super(logger, dexKey, implementationName, address);
   }
 
   getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {
@@ -154,7 +153,7 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
     if (!multiOutputs.every(o => o.success)) {
       this.logger.error(
         `${this.CLASS_NAME} ${this.implementationName} ${
-          this.name
+          this.dexKey
         } ${funcName()}: Some of the calls for pool ${
           this.address
         } generate state failed: `,

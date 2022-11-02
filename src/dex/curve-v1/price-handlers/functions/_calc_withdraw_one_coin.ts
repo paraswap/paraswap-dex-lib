@@ -13,6 +13,10 @@ const customPlain3CoinThree: _calc_withdraw_one_coin = (
   const { N_COINS, BI_N_COINS, FEE_DENOMINATOR } = self.constants;
   const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
 
+  if (state.totalSupply === undefined) {
+    throw new Error(`${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`);
+}
+
   const amp = state.A;
   const _fee = (state.fee * BI_N_COINS) / (4n * (BI_N_COINS - 1n));
   const precisions = [...PRECISION_MUL];
