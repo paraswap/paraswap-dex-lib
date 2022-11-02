@@ -65,7 +65,7 @@ export class CurveV1Factory
     protected adapters = Adapters[network] || {},
     protected config = CurveV1FactoryConfig[dexKey][network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.ifaces = {
       exchangeRouter: new Interface(CurveABI),

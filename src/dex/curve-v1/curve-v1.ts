@@ -191,7 +191,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       {
         target: this.factoryAddress,
         callData: this.factoryInterface.encodeFunctionData('pool_count'),
-        decodeFunction: uin256DecodeToNumber,
+        decodeFunction: uint256DecodeToNumber,
       },
     ]);
 
