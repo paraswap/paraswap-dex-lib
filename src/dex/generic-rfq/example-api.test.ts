@@ -10,49 +10,74 @@ import axios from 'axios';
 import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import express from 'express';
-import { RFQPayload, PairPriceResponse } from './types';
+import {
+  RFQPayload,
+  PairPriceResponse,
+  TokenWithInfo,
+  TokensResponse,
+  PairsResponse,
+} from './types';
 import { reversePrice } from './rate-fetcher';
 
-const markets = {
-  markets: [
-    {
-      name: 'WETH-DAI',
-      id: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2_0x6b175474e89094c44da98b954eedeac495271d0f',
-      base: {
-        address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-        decimals: 18,
-        type: 'erc20',
-      },
-      quote: {
-        address: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        decimals: 18,
-        type: 'erc20',
-      },
-      status: 'available',
+const tokens: TokensResponse = {
+  tokens: {
+    WETH: {
+      symbol: 'WETH',
+      name: 'Wrapped Ether',
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      description: 'Canonical wrapped Ether on Ethereum mainnet',
+      decimals: 18,
+      type: 'ERC20',
     },
-  ],
+    DAI: {
+      symbol: 'DAI',
+      name: 'Wrapped Ether',
+      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+      description: 'Canonical wrapped Ether on Ethereum mainnet',
+      decimals: 18,
+      type: 'ERC20',
+    },
+  },
 };
 
-const prices: Record<string, PairPriceResponse> = {
-  '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2_0x6b175474e89094c44da98b954eedeac495271d0f':
-    {
-      bids: [
-        ['1333.425240000000000000', '1.166200000000000000'],
-        ['1333.024812000000000000', '1.166200000000000000'],
-        ['1332.624384000000000000', '1.166200000000000000'],
-        ['1332.223956000000000000', '1.166200000000000000'],
-        ['1331.823528000000000000', '1.166200000000000000'],
-        ['1331.423100000000000000', '1.169000000000000000'],
-      ],
-      asks: [
-        ['1336.745410000000000000', '1.166200000000000000'],
-        ['1337.146033000000000000', '1.166200000000000000'],
-        ['1337.546656000000000000', '1.166200000000000000'],
-        ['1337.947279000000000000', '1.166200000000000000'],
-        ['1338.347902000000000000', '1.166200000000000000'],
-        ['1338.748525000000000000', '1.169000000000000000'],
-      ],
+const pairs: PairsResponse = {
+  pairs: {
+    'WETH/DAI': {
+      base: 'WETH',
+      quote: 'DAI',
+      liquidityUSD: 468000,
     },
+  },
+};
+
+const addressToTokenMap = Object.keys(tokens.tokens).reduce((acc, key) => {
+  const obj = tokens.tokens[key];
+  if (!obj) {
+    return acc;
+  }
+  acc[obj.address.toLowerCase()] = obj;
+  return acc;
+}, {} as Record<string, TokenWithInfo>);
+
+const prices: Record<string, PairPriceResponse> = {
+  'WETH/DAI': {
+    bids: [
+      ['1333.425240000000000000', '1.166200000000000000'],
+      ['1333.024812000000000000', '1.166200000000000000'],
+      ['1332.624384000000000000', '1.166200000000000000'],
+      ['1332.223956000000000000', '1.166200000000000000'],
+      ['1331.823528000000000000', '1.166200000000000000'],
+      ['1331.423100000000000000', '1.169000000000000000'],
+    ],
+    asks: [
+      ['1336.745410000000000000', '1.166200000000000000'],
+      ['1337.146033000000000000', '1.166200000000000000'],
+      ['1337.546656000000000000', '1.166200000000000000'],
+      ['1337.947279000000000000', '1.166200000000000000'],
+      ['1338.347902000000000000', '1.166200000000000000'],
+      ['1338.748525000000000000', '1.169000000000000000'],
+    ],
+  },
 };
 
 export const startTestServer = (account: ethers.Wallet) => {
@@ -63,8 +88,12 @@ export const startTestServer = (account: ethers.Wallet) => {
    */
   app.use(express.json({ strict: false }));
 
-  app.get('/markets', (req, res) => {
-    return res.status(200).json(markets);
+  app.get('/tokens', (req, res) => {
+    return res.status(200).json(tokens);
+  });
+
+  app.get('/pairs', (req, res) => {
+    return res.status(200).json(pairs);
   });
 
   app.get('/prices', (req, res) => {
@@ -94,7 +123,11 @@ export const startTestServer = (account: ethers.Wallet) => {
   app.post('/firm', async (req, res) => {
     const payload: RFQPayload = req.body;
 
-    console.log(payload);
+    payload.makerAsset = payload.makerAsset.toLowerCase();
+    payload.takerAsset = payload.takerAsset.toLowerCase();
+
+    const makerAssetSymbol = addressToTokenMap[payload.makerAsset].symbol;
+    const takerAssetSymbol = addressToTokenMap[payload.takerAsset].symbol;
 
     let reversed = false;
 
@@ -103,10 +136,9 @@ export const startTestServer = (account: ethers.Wallet) => {
     if (payload.makerAmount) {
       // buy
       let _prices: PairPriceResponse =
-        prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+        prices[`${makerAssetSymbol}/${takerAssetSymbol}`];
       if (!_prices) {
-        _prices =
-          prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+        _prices = prices[`${takerAssetSymbol}/${makerAssetSymbol}`];
         reversed = true;
       }
       if (!reversed) {
@@ -124,11 +156,10 @@ export const startTestServer = (account: ethers.Wallet) => {
     } else if (payload.takerAmount) {
       // sell
       let _prices: PairPriceResponse =
-        prices[`${payload.takerAsset}_${payload.makerAsset}`.toLowerCase()];
+        prices[`${takerAssetSymbol}/${makerAssetSymbol}`];
 
       if (!_prices) {
-        _prices =
-          prices[`${payload.makerAsset}_${payload.takerAsset}`.toLowerCase()];
+        _prices = prices[`${makerAssetSymbol}/${takerAssetSymbol}`];
         reversed = true;
       }
       if (!reversed) {

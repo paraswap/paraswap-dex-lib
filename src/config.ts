@@ -50,13 +50,21 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
     rfqConfigs: {
       DummyParaSwapPool: {
-        marketConfig: {
+        tokensConfig: {
           reqParams: {
-            url: `http://localhost:${PORT_TEST_SERVER}/markets`,
+            url: `http://localhost:${PORT_TEST_SERVER}/tokens`,
             method: 'GET',
           },
           intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-          dataTTLS: 1000 * 60 * 60 * 11, // tll 11 minutes
+          dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+        },
+        pairsConfig: {
+          reqParams: {
+            url: `http://localhost:${PORT_TEST_SERVER}/pairs`,
+            method: 'GET',
+          },
+          intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+          dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
         },
         rateConfig: {
           reqParams: {
@@ -64,7 +72,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
             method: 'GET',
           },
           intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-          dataTTLS: 1000 * 60 * 60 * 1, // tll 1 minute
+          dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
         },
         firmRateConfig: {
           url: `http://localhost:${PORT_TEST_SERVER}/firm`,

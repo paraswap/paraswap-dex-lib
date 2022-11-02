@@ -4,18 +4,26 @@ import { Address, Token } from '../../types';
 import { AugustusOrderWithString } from '../paraswap-limit-orders/types';
 
 type Pair = {
-  id: string;
-  base: Token;
-  quote: Token;
-  status: string;
+  base: string;
+  quote: string;
+  liquidityUSD: number;
 };
 
 export type PairMap = {
   [pairName: string]: Pair;
 };
 
-export type MarketResponse = {
-  markets: Pair[];
+export type PairsResponse = {
+  pairs: PairMap;
+};
+
+export type TokenWithInfo = Token & {
+  name: string;
+  description: string;
+};
+
+export type TokensResponse = {
+  tokens: Record<string, TokenWithInfo>;
 };
 
 export type PriceAndAmount = [string, string];
@@ -44,7 +52,8 @@ export type BigNumberRates = Array<BigNumberRate>;
 export type RFQModel = 'firm' | 'indicative';
 
 export type RFQConfig = {
-  marketConfig: FetcherParams;
+  tokensConfig: FetcherParams;
+  pairsConfig: FetcherParams;
   rateConfig: FetcherParams;
   firmRateConfig: RequestConfig;
 };

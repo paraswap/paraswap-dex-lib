@@ -6,14 +6,16 @@ import Fetcher from '../../lib/fetcher/fetcher';
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
 import {
-  MarketResponse,
   PairMap,
+  PairsResponse,
   PriceAndAmount,
   PriceAndAmountBigNumber,
   RatesResponse,
   RFQConfig,
   RFQFirmRateResponse,
   RFQPayload,
+  TokensResponse,
+  TokenWithInfo,
 } from './types';
 
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
@@ -25,9 +27,11 @@ export const reversePrice = (price: PriceAndAmountBigNumber) =>
 export class RateFetcher {
   private augustusAddress: Address;
 
-  private marketFetcher: Fetcher<MarketResponse>;
+  private tokensFetcher: Fetcher<TokensResponse>;
+  private pairsFetcher: Fetcher<PairsResponse>;
   private rateFetcher: Fetcher<RatesResponse>;
 
+  private tokens: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
 
   constructor(
@@ -38,16 +42,29 @@ export class RateFetcher {
   ) {
     this.augustusAddress = dexHelper.config.data.augustusAddress.toLowerCase();
 
-    this.marketFetcher = new Fetcher<MarketResponse>(
+    this.tokensFetcher = new Fetcher<TokensResponse>(
       dexHelper.httpRequest,
       {
         info: {
-          requestOptions: config.marketConfig.reqParams,
-          caster: this.castMarketResponse.bind(this),
+          requestOptions: config.tokensConfig.reqParams,
+          caster: this.castTokensResponse.bind(this),
         },
-        handler: this.handleMarketResponse.bind(this),
+        handler: this.handleTokensResponse.bind(this),
       },
-      config.marketConfig.intervalMs,
+      config.tokensConfig.intervalMs,
+      this.logger,
+    );
+
+    this.pairsFetcher = new Fetcher<PairsResponse>(
+      dexHelper.httpRequest,
+      {
+        info: {
+          requestOptions: config.pairsConfig.reqParams,
+          caster: this.castPairs.bind(this),
+        },
+        handler: this.handlePairsResponse.bind(this),
+      },
+      config.pairsConfig.intervalMs,
       this.logger,
     );
 
@@ -65,13 +82,45 @@ export class RateFetcher {
     );
   }
 
-  private castMarketResponse(data: unknown): MarketResponse | null {
+  start() {
+    this.tokensFetcher.startPolling();
+    this.pairsFetcher.startPolling();
+  }
+
+  stop() {
+    this.tokensFetcher.stopPolling();
+    this.pairsFetcher.stopPolling();
+    this.rateFetcher.stopPolling();
+  }
+
+  private castTokensResponse(data: unknown): TokensResponse | null {
     if (!data || typeof data !== 'object') {
       return null;
     }
 
-    const parsed = data as MarketResponse;
-    if (!parsed.markets) {
+    const parsed = data as TokensResponse;
+    if (!parsed.tokens) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  private handleTokensResponse(data: TokensResponse) {
+    for (const tokenName of Object.keys(data.tokens)) {
+      const token = data.tokens[tokenName];
+      token.address = token.address.toLowerCase();
+      this.tokens[tokenName] = token;
+    }
+  }
+
+  private castPairs(data: unknown): PairsResponse | null {
+    if (!data || typeof data !== 'object') {
+      return null;
+    }
+
+    const parsed = data as PairsResponse;
+    if (!parsed.pairs) {
       return null;
     }
     return parsed;
@@ -85,16 +134,7 @@ export class RateFetcher {
     return data as RatesResponse;
   }
 
-  start() {
-    this.marketFetcher.startPolling();
-  }
-
-  stop() {
-    this.marketFetcher.stopPolling();
-    this.rateFetcher.stopPolling();
-  }
-
-  private handleMarketResponse(resp: MarketResponse) {
+  private handlePairsResponse(resp: PairsResponse) {
     this.pairs = {};
 
     if (this.rateFetcher.isPolling()) {
@@ -102,11 +142,8 @@ export class RateFetcher {
     }
 
     const pairs: PairMap = {};
-    for (const pair of resp.markets) {
-      if (pair.status !== 'available') {
-        continue;
-      }
-      pairs[pair.id] = pair;
+    for (const pairName of Object.keys(resp.pairs)) {
+      pairs[pairName] = resp.pairs[pairName];
     }
 
     this.pairs = pairs;
@@ -115,19 +152,27 @@ export class RateFetcher {
 
   private handleRatesResponse(resp: RatesResponse) {
     const pairs = this.pairs;
-    for (const [pairName, price] of Object.entries(resp)) {
+    for (const pairName of Object.keys(resp)) {
       const pair = pairs[pairName];
       if (!pair) {
         continue;
       }
       const prices = resp[pairName];
 
+      const baseToken = this.tokens[pair.base];
+      const quoteToken = this.tokens[pair.quote];
+
+      if (!baseToken || !quoteToken) {
+        this.logger.warn(`missing base or quote token`);
+        continue;
+      }
+
       if (prices.bids.length) {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${pair.base.address}_${pair.quote.address}_bids`,
-          this.config.marketConfig.dataTTLS,
+          `${baseToken.address}_${quoteToken.address}_bids`,
+          this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.bids),
         );
       }
@@ -136,8 +181,8 @@ export class RateFetcher {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${pair.base.address}_${pair.quote.address}_asks`,
-          this.config.marketConfig.dataTTLS,
+          `${baseToken.address}_${quoteToken.address}_asks`,
+          this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.asks),
         );
       }
@@ -145,7 +190,7 @@ export class RateFetcher {
   }
 
   checkHealth(): boolean {
-    return [this.marketFetcher, this.rateFetcher].some(
+    return [this.tokensFetcher, this.rateFetcher].some(
       f => f.lastFetchSucceeded,
     );
   }
