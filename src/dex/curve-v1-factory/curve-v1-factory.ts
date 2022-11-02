@@ -16,6 +16,7 @@ import {
   SwapSide,
   Network,
   SRC_TOKEN_PARASWAP_TRANSFERS,
+  NULL_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
@@ -247,12 +248,7 @@ export class CurveV1Factory
             generalDecoder<string[]>(
               result,
               ['address[4]'],
-              [
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
-              ],
+              new Array(4).fill(NULL_ADDRESS),
               parsed => parsed.map(p => p.toLowerCase()),
             ),
         },
@@ -284,7 +280,7 @@ export class CurveV1Factory
           generalDecoder<string[]>(
             result,
             ['address[10]'],
-            new Array(10).fill('0x0000000000000000000000000000000000000000'),
+            new Array(10).fill(NULL_ADDRESS),
             parsed => parsed.map(p => p.toLowerCase()),
           ),
       })),
@@ -316,13 +312,15 @@ export class CurveV1Factory
       factoryResultsDivider,
     );
 
-    allAvailableImplementations.forEach(implementation => {
-      const currentImplementation =
-        this.config.factoryPoolImplementations[implementation];
-      if (currentImplementation === undefined) {
-        this._reportForUnspecifiedImplementation(implementation);
-      }
-    });
+    allAvailableImplementations
+      .filter(implementation => implementation !== NULL_ADDRESS)
+      .forEach(implementation => {
+        const currentImplementation =
+          this.config.factoryPoolImplementations[implementation];
+        if (currentImplementation === undefined) {
+          this._reportForUnspecifiedImplementation(implementation);
+        }
+      });
 
     _.chunk(resultsFromFactory, 3).forEach((result, i) => {
       const [implementationAddress, coins, coins_decimals] = result as [
@@ -707,6 +705,7 @@ export class CurveV1Factory
   private _calcRateMultipliers(coins_decimals: number[]): bigint[] {
     return coins_decimals.map(coinDecimal => getBigIntPow(36 - coinDecimal));
   }
+
   private _reportForUnspecifiedImplementation(
     implementation: Address,
     pool?: Address,
