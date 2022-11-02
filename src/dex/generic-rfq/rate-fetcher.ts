@@ -1,11 +1,21 @@
 import BigNumber from 'bignumber.js';
+import { ethers } from 'ethers';
 import { SwapSide } from 'paraswap-core';
 import { BN_0, BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
 import Fetcher from '../../lib/fetcher/fetcher';
-import { Logger, Address, Token } from '../../types';
-import { OrderInfo } from '../paraswap-limit-orders/types';
+import { getBalances } from '../../lib/tokens/balancer-fetcher';
 import {
+  AssetType,
+  DEFAULT_ID_ERC20,
+  DEFAULT_ID_ERC20_AS_STRING,
+} from '../../lib/tokens/types';
+import { Logger, Address, Token } from '../../types';
+import { Utils } from '../../utils';
+import { OrderInfo } from '../paraswap-limit-orders/types';
+import { calculateOrderHash } from '../paraswap-limit-orders/utils';
+import {
+  AugustusOrderWithStringAndSignature,
   PairMap,
   PairsResponse,
   PriceAndAmount,
@@ -296,6 +306,61 @@ export class RateFetcher {
     };
   }
 
+  private buildOrderHash(order: AugustusOrderWithStringAndSignature): string {
+    return calculateOrderHash(
+      this.dexHelper.config.data.network,
+      order,
+      this.dexHelper.config.data.augustusRFQAddress,
+    );
+  }
+
+  private async checkOrder(order: AugustusOrderWithStringAndSignature) {
+    const balances = await getBalances(this.dexHelper.multiWrapper, [
+      {
+        owner: order.maker,
+        asset: order.makerAsset,
+        assetType: AssetType.ERC20,
+        ids: [
+          {
+            id: DEFAULT_ID_ERC20,
+            spenders: [this.dexHelper.config.data.augustusRFQAddress],
+          },
+        ],
+      },
+    ]);
+
+    const balance = balances[0];
+
+    const makerAmountBigInt = BigInt(order.makerAmount);
+    const makerBalance = BigInt(balance.amounts[DEFAULT_ID_ERC20_AS_STRING]);
+    if (makerBalance <= makerAmountBigInt) {
+      throw new Error(
+        `maker does not have enough balance (request ${makerAmountBigInt} value ${makerBalance}`,
+      );
+    }
+
+    const takerBalance = BigInt(
+      balance.allowances[DEFAULT_ID_ERC20_AS_STRING][
+        this.dexHelper.config.data.augustusRFQAddress
+      ],
+    );
+    if (takerBalance <= makerAmountBigInt) {
+      throw new Error(
+        `maker does not have enough allowance (request ${makerAmountBigInt} value ${takerBalance}`,
+      );
+    }
+
+    const hash = this.buildOrderHash(order);
+
+    const recovered = ethers.utils
+      .recoverAddress(hash, order.signature)
+      .toLowerCase();
+
+    if (recovered !== order.maker.toLowerCase()) {
+      throw new Error(`signature is invalid`);
+    }
+  }
+
   async getFirmRate(
     _srcToken: Token,
     _destToken: Token,
@@ -348,6 +413,8 @@ export class RateFetcher {
         );
         throw new Error('getFirmRate rejected');
       }
+
+      await this.checkOrder(data.order);
 
       return {
         order: {

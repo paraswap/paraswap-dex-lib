@@ -27,6 +27,7 @@ import { DummyLimitOrderProvider } from '../src/dex-helper';
 import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
+import { GIFTER_ADDRESS } from './constants-e2e';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -218,7 +219,12 @@ export async function testE2E(
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = useAPI
     ? new APIParaswapSDK(network, dexKey)
-    : new LocalParaswapSDK(network, dexKey, limitOrderProvider);
+    : new LocalParaswapSDK(
+        network,
+        dexKey,
+        `https://rpc.tenderly.co/fork/${ts.forkId}`,
+        limitOrderProvider,
+      );
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
@@ -269,6 +275,7 @@ export type TestParamE2E = {
   srcToken: SmartToken;
   destToken: SmartToken;
   senderAddress: Address;
+  thirdPartyAddress?: Address;
   _amount: string;
   swapSide: SwapSide;
   dexKey: string;
@@ -283,11 +290,28 @@ export type TestParamE2E = {
   destTokenAllowanceOverrides?: Record<Address, string>;
 };
 
+const makeFakeTransferToSenderAddress = (
+  senderAddress: string,
+  token: Token,
+  amount: string,
+) => {
+  return {
+    from: GIFTER_ADDRESS,
+    to: token.address,
+    data: erc20Interface.encodeFunctionData('transfer', [
+      senderAddress,
+      amount,
+    ]),
+    value: '0',
+  };
+};
+
 export async function newTestE2E({
   config,
   srcToken,
   destToken,
   senderAddress,
+  thirdPartyAddress,
   _amount,
   swapSide,
   dexKey,
@@ -298,6 +322,7 @@ export async function newTestE2E({
   transferFees,
 }: TestParamE2E) {
   const amount = BigInt(_amount);
+  const twiceAmount = BigInt(_amount) * 2n;
   const ts = new TenderlySimulation(network);
   await ts.setup();
 
@@ -323,11 +348,62 @@ export async function newTestE2E({
     expect(whitelistTx.success).toEqual(true);
   }
 
+  if (thirdPartyAddress) {
+    const stateOverrides: StateOverrides = {
+      networkID: `${network}`,
+      stateOverrides: {},
+    };
+
+    destToken.addBalance(GIFTER_ADDRESS, MAX_UINT);
+    destToken.applyOverrides(stateOverrides);
+
+    const giftTx = makeFakeTransferToSenderAddress(
+      thirdPartyAddress,
+      destToken.token,
+      swapSide === SwapSide.SELL
+        ? twiceAmount.toString()
+        : (BigInt(MAX_UINT) / 4n).toString(),
+    );
+
+    await ts.simulate(giftTx, stateOverrides);
+  }
+
+  const stateOverrides: StateOverrides = {
+    networkID: `${network}`,
+    stateOverrides: {},
+  };
+  srcToken.applyOverrides(stateOverrides);
+  destToken.applyOverrides(stateOverrides);
+
+  if (swapSide === SwapSide.SELL) {
+    srcToken
+      .addBalance(senderAddress, twiceAmount.toString())
+      .addAllowance(
+        senderAddress,
+        config.tokenTransferProxyAddress,
+        amount.toString(),
+      );
+  } else {
+    srcToken
+      .addBalance(senderAddress, MAX_UINT)
+      .addAllowance(
+        senderAddress,
+        config.tokenTransferProxyAddress,
+        (BigInt(MAX_UINT) / 8n).toString(),
+      );
+  }
+
+  srcToken.applyOverrides(stateOverrides);
+  destToken.applyOverrides(stateOverrides);
+
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
-  const paraswap: IParaSwapSDK = useAPI
-    ? new APIParaswapSDK(network, dexKey)
-    : new LocalParaswapSDK(network, dexKey, limitOrderProvider);
+  const paraswap: IParaSwapSDK = new LocalParaswapSDK(
+    network,
+    dexKey,
+    `https://rpc.tenderly.co/fork/${ts.forkId}`,
+    limitOrderProvider,
+  );
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
@@ -358,32 +434,6 @@ export async function newTestE2E({
       minMaxAmount,
       senderAddress,
     );
-
-    const stateOverrides: StateOverrides = {
-      networkID: `${network}`,
-      stateOverrides: {},
-    };
-
-    if (swapSide === SwapSide.SELL) {
-      srcToken
-        .addBalance(senderAddress, amount.toString())
-        .addAllowance(
-          senderAddress,
-          config.tokenTransferProxyAddress,
-          amount.toString(),
-        );
-    } else {
-      srcToken
-        .addBalance(senderAddress, MAX_UINT)
-        .addAllowance(
-          senderAddress,
-          config.tokenTransferProxyAddress,
-          MAX_UINT,
-        );
-    }
-
-    srcToken.applyOverrides(stateOverrides);
-    destToken.applyOverrides(stateOverrides);
 
     const swapTx = await ts.simulate(swapParams, stateOverrides);
     console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);

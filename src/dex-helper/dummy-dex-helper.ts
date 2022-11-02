@@ -176,15 +176,17 @@ export class DummyDexHelper implements IDexHelper {
   web3Provider: Web3;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
-  constructor(network: number) {
+  constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.provider = new StaticJsonRpcProvider(
-      this.config.data.privateHttpProvider,
+      rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
       network,
     );
-    this.web3Provider = new Web3(this.config.data.privateHttpProvider);
+    this.web3Provider = new Web3(
+      rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
+    );
     this.multiContract = new this.web3Provider.eth.Contract(
       multiABIV2 as any,
       this.config.data.multicallV2Address,

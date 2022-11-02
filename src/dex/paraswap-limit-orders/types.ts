@@ -75,3 +75,9 @@ export type OrderInfo = {
 };
 
 export type ParaSwapOrderResponse = OrderInfo;
+
+export type BuildOrderConstants = {
+  NAME: string;
+  VERSION: string;
+  ORDER_INTERFACE: { name: string; type: string }[];
+};

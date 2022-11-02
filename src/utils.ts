@@ -13,6 +13,11 @@ export const prependWithOx = (str: string) =>
 
 export const uuidToBytes16 = (uuid: string) => '0x' + uuid.replace(/-/g, '');
 
+export function toUnixTimestamp(date: Date | number): number {
+  const timestamp = date instanceof Date ? date.getTime() : date;
+  return Math.floor(timestamp / 1000);
+}
+
 // This function guarantees that the distribution adds up to exactly 100% by
 // applying rounding in the other direction for numbers with the most error.
 export function convertToBasisPoints(dist: number[]): number[] {

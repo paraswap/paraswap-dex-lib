@@ -72,9 +72,11 @@ export type RFQPayload = {
   txOrigin: Address;
 };
 
+export type AugustusOrderWithStringAndSignature = AugustusOrderWithString & {
+  signature: string;
+};
+
 export type RFQFirmRateResponse = {
   status: 'accepted' | 'rejected';
-  order: AugustusOrderWithString & {
-    signature: string;
-  };
+  order: AugustusOrderWithStringAndSignature;
 };
