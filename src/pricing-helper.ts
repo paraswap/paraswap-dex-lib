@@ -41,6 +41,16 @@ export class PricingHelper {
 
       if (!dexInstance.initializePricing) return;
 
+      if (
+        !this.dexAdapterService.dexHelper.config.isSlave &&
+        dexInstance.cacheStateKey
+      ) {
+        this.logger.info(`remove cached state ${dexInstance.cacheStateKey}`);
+        this.dexAdapterService.dexHelper.cache.rawdel(
+          dexInstance.cacheStateKey,
+        );
+      }
+
       return await dexInstance.initializePricing(blockNumber);
     } catch (e) {
       this.logger.error(`Error_startListening_${dexKey}:`, e);

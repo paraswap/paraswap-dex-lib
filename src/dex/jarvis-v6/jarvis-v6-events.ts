@@ -12,7 +12,7 @@ import { Address } from 'paraswap';
 import { Contract } from 'web3-eth-contract';
 export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -33,7 +33,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
       lens<DeepReadonly<PoolState>>().pool,
       logger,
     );
-    super(parentName, logger, dexHelper, [chainLinkEvent, poolEvent], {
+    super(parentName, 'pool', logger, dexHelper, [chainLinkEvent, poolEvent], {
       priceFeed: {
         usdcPrice: 0n,
       },
