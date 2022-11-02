@@ -3,7 +3,7 @@ import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
 import { funcName } from '../../../utils';
 import { MAX_ALLOWED_STATE_DELAY_MS } from '../constants';
-import { PoolState } from '../types';
+import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
 import { Address } from 'paraswap-core';
 
 export type MulticallReturnedTypes = bigint | bigint[];
@@ -23,7 +23,12 @@ export abstract class BasePoolPolling {
     readonly logger: Logger,
     readonly dexKey: string,
     readonly implementationName: string,
+    readonly poolIdentifier: string,
+    readonly poolConstants: PoolConstants,
     readonly address: Address,
+    readonly isMetaPool: boolean,
+    readonly underlyingCoins: Address[],
+    readonly isSrcFeeOnTransferSupported: boolean,
   ) {
     this.fullName = `${dexKey}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
   }
@@ -57,5 +62,36 @@ export abstract class BasePoolPolling {
     }
 
     return null;
+  }
+
+  getPoolData(srcAddress: Address, destAddress: Address): CurveV1FactoryData {
+    const iC = this.poolConstants.COINS.indexOf(srcAddress);
+    const jC = this.poolConstants.COINS.indexOf(destAddress);
+
+    if (iC !== -1 && jC !== -1) {
+      return {
+        exchange: this.address,
+        i: iC,
+        j: jC,
+        underlyingSwap: false,
+      };
+    }
+
+    if (this.isMetaPool) {
+      const iU = this.underlyingCoins.indexOf(srcAddress);
+      const jU = this.underlyingCoins.indexOf(destAddress);
+      if (iU !== -1 && jU !== -1) {
+        return {
+          exchange: this.address,
+          i: iU,
+          j: jU,
+          underlyingSwap: true,
+        };
+      }
+    }
+
+    throw new Error(
+      `${this.fullName}: one or both tokens can not be exchanged in this pool: ${srcAddress} -> ${destAddress}`,
+    );
   }
 }

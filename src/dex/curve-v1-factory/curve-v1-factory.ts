@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { AsyncOrSync } from 'ts-essentials';
-import { Interface, JsonFragment, AbiCoder } from '@ethersproject/abi';
+import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -10,10 +10,19 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  TransferFeeParams,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  isSrcTokenTransferFeeToBeExchanged,
+} from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -24,7 +33,7 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CurveV1FactoryConfig, Adapters } from './config';
-import { MIN_AMOUNT_TO_RECEIVE } from './constants';
+import { MIN_AMOUNT_TO_RECEIVE, POOL_EXCHANGE_GAS_COST } from './constants';
 import { CurveV1FactoryPoolManager } from './curve-v1-pool-manager';
 import CurveABI from '../../abi/Curve.json';
 import FactoryCurveV1ABI from '../../abi/curve-v1-factory/FactoryCurveV1.json';
@@ -42,6 +51,7 @@ import { FactoryStateHandler } from './state-polling-pools/factory-pool-polling'
 import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-polling';
 import ImplementationConstants from './price-handlers/functions/constants';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 export class CurveV1Factory
   extends SimpleExchange
@@ -52,6 +62,9 @@ export class CurveV1Factory
   readonly isFeeOnTransferSupported = true;
   readonly poolManager: CurveV1FactoryPoolManager;
   readonly ifaces: CurveV1FactoryIfaces;
+
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
@@ -135,6 +148,7 @@ export class CurveV1Factory
           customPool.address,
           poolIdentifier,
           poolConstants,
+          COINS,
           customPool.lpTokenAddress,
           useLending,
         );
@@ -256,7 +270,7 @@ export class CurveV1Factory
           false,
           false,
         );
-        const basePool = this.poolManager.getPool(basePoolIdentifier);
+        const basePool = this.poolManager.getPool(basePoolIdentifier, false);
         if (basePool === null) {
           this.logger.error(
             `${this.dexKey}: custom base pool was not initialized properly. ` +
@@ -287,6 +301,7 @@ export class CurveV1Factory
         poolIdentifier,
         poolConstants,
         isMeta,
+        factoryImplementationFromConfig.isFeeOnTransferSupported,
         basePoolStateFetcher,
       );
 
@@ -312,7 +327,26 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
+    if (side === SwapSide.BUY) {
+      return [];
+    }
+
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+
+    if (srcTokenAddress === destTokenAddress) {
+      return [];
+    }
+
+    const pools = this.poolManager.getPoolsForPair(
+      srcTokenAddress,
+      destTokenAddress,
+    );
+
+    return pools.map(pool =>
+      this.getPoolIdentifier(pool.address, pool.isMetaPool, false),
+    );
+
     return [];
   }
 
@@ -323,9 +357,116 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
-    // TODO: complete me!
-    return null;
+    try {
+      if (side === SwapSide.BUY) {
+        return null;
+      }
+
+      const _isSrcTokenTransferFeeToBeExchanged =
+        isSrcTokenTransferFeeToBeExchanged(transferFees);
+
+      const srcTokenAddress = srcToken.address.toLowerCase();
+      const destTokenAddress = destToken.address.toLowerCase();
+
+      let pools: BasePoolPolling[] = [];
+      if (limitPools !== undefined) {
+        pools = limitPools
+          .map(poolIdentifier =>
+            this.poolManager.getPool(
+              poolIdentifier,
+              _isSrcTokenTransferFeeToBeExchanged,
+            ),
+          )
+          .filter((pool): pool is BasePoolPolling => pool !== null);
+      } else {
+        pools = this.poolManager.getPoolsForPair(
+          srcTokenAddress,
+          destTokenAddress,
+          _isSrcTokenTransferFeeToBeExchanged,
+        );
+      }
+
+      if (pools.length <= 0) {
+        return null;
+      }
+
+      const amountsWithUnit = [
+        getBigIntPow(srcToken.decimals),
+        ...amounts.slice(1),
+      ];
+      const amountsWithUnitAndFee = _isSrcTokenTransferFeeToBeExchanged
+        ? applyTransferFee(
+            applyTransferFee(
+              amountsWithUnit,
+              side,
+              transferFees.srcFee,
+              SRC_TOKEN_PARASWAP_TRANSFERS,
+            ),
+            side,
+            transferFees.srcDexFee,
+            this.SRC_TOKEN_DEX_TRANSFERS,
+          )
+        : amountsWithUnit;
+
+      const results = pools.map(
+        (pool): PoolPrices<CurveV1FactoryData> | null => {
+          const state = pool.getState();
+
+          if (!state) {
+            return null;
+          }
+
+          const poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
+
+          let outputs: bigint[] = this.poolManager
+            .getPriceHandler(pool.implementationName)
+            .getOutputs(
+              state,
+              amountsWithUnitAndFee,
+              poolData.i,
+              poolData.j,
+              poolData.underlyingSwap,
+            );
+
+          outputs = applyTransferFee(
+            outputs,
+            side,
+            transferFees.destDexFee,
+            this.DEST_TOKEN_DEX_TRANSFERS,
+          );
+
+          return {
+            prices: [0n, ...outputs.slice(1)],
+            unit: outputs[0],
+            data: poolData,
+            exchange: this.dexKey,
+            poolIdentifier: pool.poolIdentifier,
+            gasCost: POOL_EXCHANGE_GAS_COST,
+            poolAddresses: [pool.address],
+          };
+        },
+      );
+
+      return results.filter(
+        (
+          r: PoolPrices<CurveV1FactoryData> | null,
+        ): r is PoolPrices<CurveV1FactoryData> => r !== null,
+      );
+    } catch (e) {
+      if (blockNumber === 0)
+        this.logger.error(
+          `Error_${this.dexKey}_getPrices: Aurelius block manager not yet instantiated`,
+        );
+      this.logger.error(`Error_${this.dexKey}_getPrices`, e);
+      return null;
+    }
   }
 
   getCalldataGasCost(

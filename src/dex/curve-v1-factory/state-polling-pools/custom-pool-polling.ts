@@ -79,11 +79,23 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
     readonly address: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
+    readonly coins: Address[],
     readonly lpTokenAddress: Address,
     readonly useLending?: boolean[],
     readonly contractABIs = ContractABIs,
   ) {
-    super(logger, dexKey, implementationName, address);
+    // Current custom pools are always plain
+    super(
+      logger,
+      dexKey,
+      implementationName,
+      poolIdentifier,
+      poolConstants,
+      address,
+      false,
+      [],
+      false,
+    );
   }
 
   getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {

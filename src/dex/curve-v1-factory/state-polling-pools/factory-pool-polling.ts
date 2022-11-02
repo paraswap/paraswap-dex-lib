@@ -18,13 +18,24 @@ export class FactoryStateHandler extends BasePoolPolling {
     readonly factoryAddress: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
-    private isMetaPool: boolean,
+    readonly isMetaPool: boolean,
+    readonly isSrcFeeOnTransferSupported: boolean,
     private basePoolStateFetcher?: BasePoolPolling,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
   ) {
-    super(logger, dexKey, implementationName, address);
+    super(
+      logger,
+      dexKey,
+      implementationName,
+      poolIdentifier,
+      poolConstants,
+      address,
+      isMetaPool,
+      basePoolStateFetcher ? basePoolStateFetcher.poolConstants.COINS : [],
+      isSrcFeeOnTransferSupported,
+    );
 
     if (isMetaPool && this.basePoolStateFetcher === undefined) {
       throw new Error(
