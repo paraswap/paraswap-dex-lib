@@ -17,7 +17,6 @@ import { calculateOrderHash } from '../paraswap-limit-orders/utils';
 import { authHttp } from './security';
 import {
   AugustusOrderWithStringAndSignature,
-  Pair,
   PairMap,
   PairsResponse,
   PriceAndAmount,
@@ -238,7 +237,7 @@ export class RateFetcher {
         const baseToken = this.tokens[p.base];
         const quoteToken = this.tokens[p.quote];
         let connectorToken: Token | undefined;
-        if (baseToken.address === tokenAddress) {
+        if (baseToken.address !== tokenAddress) {
           connectorToken = {
             address: baseToken.address,
             decimals: baseToken.decimals,

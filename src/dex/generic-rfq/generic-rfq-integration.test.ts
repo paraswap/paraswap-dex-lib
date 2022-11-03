@@ -167,11 +167,7 @@ describe('GenericRFQ', function () {
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
 
-  afterAll(() => {
-    stopServer();
-  });
-
-  it('getTopPoolsForToken', async function () {
+  it.only('getTopPoolsForToken', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
     const genericRfq = new GenericRFQ(
       Network.MAINNET,
@@ -180,6 +176,10 @@ describe('GenericRFQ', function () {
       config,
     );
 
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    genericRfq.initializePricing(blocknumber);
+    await sleep(5000);
+
     const poolLiquidity = await genericRfq.getTopPoolsForToken(
       WETH.address,
       10,
@@ -187,5 +187,9 @@ describe('GenericRFQ', function () {
     console.log('WETH Top Pools:', poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
+  });
+
+  afterAll(() => {
+    stopServer();
   });
 });
