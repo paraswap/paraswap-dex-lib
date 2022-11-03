@@ -26,6 +26,10 @@ export type TokensResponse = {
   tokens: Record<string, TokenWithInfo>;
 };
 
+export type BlackListResponse = {
+  blacklist: string[];
+};
+
 export type PriceAndAmount = [string, string];
 
 export type PriceAndAmountBigNumber = [BigNumber, BigNumber];
@@ -67,6 +71,7 @@ export type RFQConfig = {
   pairsConfig: FetcherParams;
   rateConfig: FetcherParams;
   firmRateConfig: RequestConfigWithAuth;
+  blacklistConfig?: FetcherParams;
   maker: Address;
 };
 

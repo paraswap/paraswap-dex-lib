@@ -15,7 +15,6 @@ function authByParams(
   const timestamp = Date.now().toString();
 
   const _url = new URL(url);
-
   const payload = `${timestamp}${method.toUpperCase()}${_url.pathname}${
     _url.search
   }${method === 'POST' ? JSON.stringify(body) : ''}`;
@@ -40,7 +39,7 @@ export const authHttp =
       throw new Error('missing url');
     }
 
-    const headers = authByParams(url, body, method, secret);
+    const headers = authByParams(url, method, body, secret);
     for (const [header, value] of Object.entries(headers)) {
       options.headers[header] = value;
     }

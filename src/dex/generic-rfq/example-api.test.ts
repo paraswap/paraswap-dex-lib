@@ -80,6 +80,10 @@ const prices: Record<string, PairPriceResponse> = {
   },
 };
 
+const blacklist = {
+  blacklist: ['0x6dac5CAc7bbCCe4DB3c1Cc5c8FE39DcDdE52A36F'],
+};
+
 export const startTestServer = (account: ethers.Wallet) => {
   const app = express();
 
@@ -98,6 +102,10 @@ export const startTestServer = (account: ethers.Wallet) => {
 
   app.get('/prices', (req, res) => {
     return res.status(200).json(prices);
+  });
+
+  app.get('/blacklist', (req, res) => {
+    return res.status(200).json(blacklist);
   });
 
   const fetcher = constructAxiosFetcher(axios);

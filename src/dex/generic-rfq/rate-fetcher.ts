@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { info } from 'console';
 import { ethers } from 'ethers';
 import { SwapSide } from 'paraswap-core';
 import { BN_0, BN_1 } from '../../bignumber-constants';
@@ -17,6 +18,7 @@ import { calculateOrderHash } from '../paraswap-limit-orders/utils';
 import { authHttp } from './security';
 import {
   AugustusOrderWithStringAndSignature,
+  BlackListResponse,
   PairMap,
   PairsResponse,
   PriceAndAmount,
@@ -41,12 +43,15 @@ export class RateFetcher {
   private tokensFetcher: Fetcher<TokensResponse>;
   private pairsFetcher: Fetcher<PairsResponse>;
   private rateFetcher: Fetcher<RatesResponse>;
+  private blackListFetcher?: Fetcher<BlackListResponse>;
 
   private tokens: Record<string, TokenWithInfo> = {};
   private addressToTokenMap: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
 
   private firmRateAuth?: (options: RequestConfig) => void;
+
+  private blackListCacheKey: string;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -98,6 +103,22 @@ export class RateFetcher {
       logger,
     );
 
+    if (config.blacklistConfig) {
+      this.blackListFetcher = new Fetcher<BlackListResponse>(
+        dexHelper.httpRequest,
+        {
+          info: {
+            requestOptions: config.blacklistConfig.reqParams,
+            caster: this.casteBlacklistResponse.bind(this),
+          },
+          handler: this.handleBlackListResponse.bind(this),
+        },
+        config.blacklistConfig.intervalMs,
+        logger,
+      );
+    }
+
+    this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (this.config.firmRateConfig.secret) {
       this.firmRateAuth = authHttp(this.config.firmRateConfig.secret);
     }
@@ -106,12 +127,19 @@ export class RateFetcher {
   start() {
     this.tokensFetcher.startPolling();
     this.pairsFetcher.startPolling();
+    if (this.blackListFetcher) {
+      this.blackListFetcher.startPolling();
+    }
   }
 
   stop() {
     this.tokensFetcher.stopPolling();
     this.pairsFetcher.stopPolling();
     this.rateFetcher.stopPolling();
+
+    if (this.blackListFetcher) {
+      this.blackListFetcher.stopPolling();
+    }
   }
 
   private castTokensResponse(data: unknown): TokensResponse | null {
@@ -178,6 +206,32 @@ export class RateFetcher {
 
     this.pairs = pairs;
     this.rateFetcher.startPolling();
+  }
+
+  private casteBlacklistResponse(data: unknown): BlackListResponse | null {
+    if (!data) {
+      return null;
+    }
+
+    const parsed = data as BlackListResponse;
+    if (!parsed.blacklist) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  private handleBlackListResponse(resp: BlackListResponse) {
+    for (const address of resp.blacklist) {
+      this.dexHelper.cache.sadd(this.blackListCacheKey, address.toLowerCase());
+    }
+  }
+
+  public isBlackListed(userAddress: string) {
+    return this.dexHelper.cache.sismember(
+      this.blackListCacheKey,
+      userAddress.toLowerCase(),
+    );
   }
 
   private handleRatesResponse(resp: RatesResponse) {

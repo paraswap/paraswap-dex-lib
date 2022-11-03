@@ -22,6 +22,8 @@ import { BlockHeader } from 'web3-eth';
 class DummyCache implements ICache {
   private storage: Record<string, string> = {};
 
+  private setMap: Record<string, Set<string>> = {};
+
   async get(
     dexKey: string,
     network: number,
@@ -70,6 +72,25 @@ class DummyCache implements ICache {
     value: string,
   ): Promise<void> {
     return;
+  }
+
+  async sadd(setKey: string, key: string): Promise<void> {
+    let set = this.setMap[setKey];
+    if (!set) {
+      this.setMap[setKey] = new Set();
+      set = this.setMap[setKey];
+    }
+
+    set.add(key);
+  }
+
+  async sismember(setKey: string, key: string): Promise<boolean> {
+    let set = this.setMap[setKey];
+    if (!set) {
+      return false;
+    }
+
+    return set.has(key);
   }
 
   async hset(mapKey: string, key: string, value: string): Promise<void> {

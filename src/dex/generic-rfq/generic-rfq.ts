@@ -226,4 +226,8 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       liquidityUSD: pair.liquidityUSD,
     }));
   }
+
+  async isBlacklisted(userAddress: string): Promise<boolean> {
+    return this.rateFetcher.isBlackListed(userAddress);
+  }
 }
