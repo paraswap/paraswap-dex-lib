@@ -79,7 +79,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           reasonableVolume: 1000000000000000000000n,
         },
       },
-      factoryAddress: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
       eventSupportedPools: [
         ThreePoolAddress,
         SUSDPoolAddress,
@@ -273,23 +272,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isLending: false,
           isMetapool: false,
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-          isFeeOnTransferSupported: true,
-        },
-        stETH_WETH: {
-          underlying: [],
-          coins: [
-            // WETH
-            '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-            // stETH
-            '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
-          ],
-          address: '0x828b154032950C8ff7CF8085D841723Db2696056',
-          name: 'stETH_WETH',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: false,
-          baseToken: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
           isFeeOnTransferSupported: true,
         },
         EURS: {
@@ -690,25 +672,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: true,
           baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
         },
-        FRAX: {
-          underlying: [
-            '0x853d955acef822db058eb8505911ed77f175b99e',
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            '0xdac17f958d2ee523a2206206994597c13d831ec7',
-          ],
-          coins: [
-            '0x853d955acef822db058eb8505911ed77f175b99e',
-            '0x6c3f90f043a72fa612cbac8115ee7e52bde6e490',
-          ],
-          address: '0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B',
-          name: 'FRAX',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: true,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
         USDP: {
           underlying: [
             '0x1456688345527be1f37e9e627da0837d6f08c925',
@@ -766,25 +729,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: true,
           baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
         },
-        alUSD: {
-          underlying: [
-            '0xbc6da0fe9ad5f3b0d58160288917aa56653660e9',
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            '0xdac17f958d2ee523a2206206994597c13d831ec7',
-          ],
-          coins: [
-            '0xbc6da0fe9ad5f3b0d58160288917aa56653660e9',
-            '0x6c3f90f043a72fa612cbac8115ee7e52bde6e490',
-          ],
-          address: '0x43b4FdFD4Ff969587185cDB6f0BD875c5Fc83f8c',
-          name: 'alUSD',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: true,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
         tUSD: {
           underlying: [
             '0x0000000000085d4780b73119b644ae5ecd22b376',
@@ -804,58 +748,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: true,
           baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
         },
-        lUSD: {
-          underlying: [
-            '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            '0xdac17f958d2ee523a2206206994597c13d831ec7',
-          ],
-          coins: [
-            '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
-            '0x6c3f90f043a72fa612cbac8115ee7e52bde6e490',
-          ],
-          address: '0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA',
-          name: 'lUSD',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: true,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
-        EURt: {
-          underlying: [],
-          coins: [
-            '0xC581b735A1688071A1746c968e0798D642EDE491',
-            '0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-          ],
-          address: '0xFD5dB7463a3aB53fD211b4af195c5BCCC1A03890',
-          name: 'EURt',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: false,
-          baseToken: '0xC581b735A1688071A1746c968e0798D642EDE491',
-        },
-        CRVFEI: {
-          underlying: [
-            '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            '0xdac17f958d2ee523a2206206994597c13d831ec7',
-          ],
-          coins: [
-            '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
-            '0x6c3f90f043a72fa612cbac8115ee7e52bde6e490',
-          ],
-          address: '0x06cb22615BA53E60D67Bf6C341a0fD5E718E1655',
-          name: 'crvfei',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: true,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
         RETH: {
           underlying: [],
           coins: [
@@ -869,39 +761,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isLending: false,
           isMetapool: false,
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-        },
-        mim: {
-          underlying: [
-            '0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3',
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            '0xdac17f958d2ee523a2206206994597c13d831ec7',
-          ],
-          coins: [
-            '0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3',
-            '0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490',
-          ],
-          address: '0x5a6A4D54456819380173272A5E8E9B9904BdF41B',
-          name: 'mim',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: true,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
-        crvcvxCrv: {
-          underlying: [],
-          coins: [
-            '0xD533a949740bb3306d119CC777fa900bA034cd52',
-            '0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7',
-          ],
-          address: '0x9D0464996170c6B9e75eED71c68B99dDEDf279e8',
-          name: 'CRV+cvxCrv',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: false,
-          baseToken: '0xD533a949740bb3306d119CC777fa900bA034cd52',
         },
         cyPool: {
           underlying: [
@@ -962,7 +821,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           reasonableVolume: 10000n,
         },
       },
-      factoryAddress: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
       eventSupportedPools: [],
       pools: {
         Aave: {
@@ -1001,22 +859,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6',
         },
-        '4eur-f': {
-          underlying: [],
-          coins: [
-            '0x4e3decbb3645551b8a19f0ea1678079fcb33fb4c',
-            '0xE2Aa7db6dA1dAE97C5f5C6914d285fBfCC32A128',
-            '0xE111178A87A3BFf0c8d18DECBa5798827539Ae99',
-            '0x7BDF330f423Ea880FF95fC41A280fD5eCFD3D09f',
-          ],
-          address: '0xAd326c253A84e9805559b73A08724e11E49ca651',
-          name: '4eur (4eur-f)',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: false,
-          baseToken: '0xE111178A87A3BFf0c8d18DECBa5798827539Ae99',
-        },
       },
     },
     [Network.FANTOM]: {
@@ -1032,7 +874,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           reasonableVolume: 1000000n,
         },
       },
-      factoryAddress: '0x686d67265703D1f124c45E33d47d794c566889Ba',
       eventSupportedPools: [],
       pools: {
         main_DAI_USDC: {
@@ -1144,7 +985,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           reasonableVolume: 100000n,
         },
       },
-      factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
       eventSupportedPools: [],
       pools: {
         Aave: {
@@ -1183,40 +1023,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0x50b7545627a5162F82A992c33b87aDc75187B218',
         },
-        MIM: {
-          underlying: [
-            '0x130966628846BFd36ff31a822705796e8cb8C18D',
-            '0x47afa96cdc9fab46904a55a6ad4bf6660b53c38a',
-            '0x46a51127c3ce23fb7ab1de06226147f446e4a857',
-            '0x532e6537fea298397212f09a61e03311686f548e',
-          ],
-          coins: [
-            '0x130966628846BFd36ff31a822705796e8cb8C18D',
-            '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
-          ],
-          address: '0x30dF229cefa463e991e29D42DB0bae2e122B2AC7',
-          name: 'mim',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: true,
-          baseToken: '0x130966628846BFd36ff31a822705796e8cb8C18D',
-        },
-        '3PoolV2': {
-          underlying: [],
-          coins: [
-            '0x130966628846BFd36ff31a822705796e8cb8C18D',
-            '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
-            '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664',
-          ],
-          address: '0xAEA2E71b631fA93683BCF256A8689dFa0e094fcD',
-          name: '3PoolV2',
-          type: 2,
-          version: 3,
-          isLending: false,
-          isMetapool: false,
-          baseToken: '0x130966628846BFd36ff31a822705796e8cb8C18D',
-        },
       },
     },
     [Network.ARBITRUM]: {
@@ -1232,7 +1038,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           reasonableVolume: 1000000n,
         },
       },
-      factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
       eventSupportedPools: [],
       pools: {
         '2pool': {
@@ -1273,7 +1078,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           reasonableVolume: 1000000000000000000000n,
         },
       },
-      factoryAddress: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
       eventSupportedPools: [],
       pools: {
         '3pool': {
@@ -1302,7 +1106,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           reasonableVolume: 1000000000000000000n,
         },
       },
-      factoryAddress: null,
       eventSupportedPools: [],
       pools: {
         StableSwapB: {
