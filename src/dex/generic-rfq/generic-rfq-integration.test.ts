@@ -53,7 +53,8 @@ const config: RFQConfig = {
     },
     secret: {
       domain: 'paraswap-test',
-      accessKey: 'secret',
+      accessKey: 'access',
+      secretKey: 'secret',
     },
     intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
     dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
@@ -65,7 +66,8 @@ const config: RFQConfig = {
     },
     secret: {
       domain: 'paraswap-test',
-      accessKey: 'secret',
+      accessKey: 'access',
+      secretKey: 'secret',
     },
     intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
     dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
@@ -77,7 +79,8 @@ const config: RFQConfig = {
     },
     secret: {
       domain: 'paraswap-test',
-      accessKey: 'secret',
+      accessKey: 'access',
+      secretKey: 'secret',
     },
     intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
     dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
@@ -87,7 +90,8 @@ const config: RFQConfig = {
     method: 'POST',
     secret: {
       domain: 'paraswap-test',
-      accessKey: 'secret',
+      accessKey: 'access',
+      secretKey: 'secret',
     },
   },
 };

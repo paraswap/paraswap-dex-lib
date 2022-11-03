@@ -42,6 +42,7 @@ export type RatesResponse = {
 export type RFQSecret = {
   domain: string;
   accessKey: string;
+  secretKey: string;
 };
 
 export type FetcherParams = {

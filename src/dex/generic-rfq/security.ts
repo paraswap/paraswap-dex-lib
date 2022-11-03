@@ -19,11 +19,11 @@ function authByParams(
   const payload = `${timestamp}${method.toUpperCase()}${_url.pathname}${
     _url.search
   }${method === 'POST' ? JSON.stringify(body) : ''}`;
-  const signature = createHmac('sha256', secret.accessKey);
+  const signature = createHmac('sha256', secret.secretKey);
   signature.update(payload);
 
-  headers['X-ACCESS-TIMESTAMP'] = timestamp;
-  headers['X-ACCESS-SIGN'] = signature.digest('hex');
+  headers['X-AUTH-TIMESTAMP'] = timestamp;
+  headers['X-AUTH-SIGN'] = signature.digest('hex');
 
   return headers;
 }
