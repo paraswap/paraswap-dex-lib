@@ -6,19 +6,19 @@ import { createHmac } from 'crypto';
 import { RFQSecret } from './types';
 
 function authByParams(
-  body: any,
+  url: string,
   method: string,
-  path: string,
+  body: any,
   secret: RFQSecret,
 ): RequestHeaders {
   const headers: RequestHeaders = {};
   const timestamp = Date.now().toString();
-  const encodedURL = new URLSearchParams(
-    Object.keys(body || {})
-      .sort()
-      .map(key => [key, body[key]]) as [string, any][],
-  ).toString();
-  const payload = timestamp + method.toUpperCase() + path + encodedURL;
+
+  const _url = new URL(url);
+
+  const payload = `${timestamp}${method.toUpperCase()}${_url.pathname}${
+    _url.search
+  }${method === 'POST' ? JSON.stringify(body) : ''}`;
   const signature = createHmac('sha256', secret.accessKey);
   signature.update(payload);
 
@@ -36,10 +36,11 @@ export const authHttp =
       options.headers = {};
     }
     method = method || 'GET';
-    const pathName = new URL(url as string).pathname;
-    const path = '/' + pathName.split('/').slice(-2).join('/');
+    if (!url) {
+      throw new Error('missing url');
+    }
 
-    const headers = authByParams(body, method, path, secret);
+    const headers = authByParams(url, body, method, secret);
     for (const [header, value] of Object.entries(headers)) {
       options.headers[header] = value;
     }
