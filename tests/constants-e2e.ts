@@ -335,6 +335,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xf0f9d895aca5c8678f706fb8216fa22957685a13',
       decimals: 18,
     },
+    stMATIC: {
+      address: '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -364,6 +368,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     },
     SPIRIT: {
       address: '0x5cc61a78f164885776aa610fb0fe1257df78e59b',
+      decimals: 18,
+    },
+    TOR: {
+      address: '0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e',
       decimals: 18,
     },
   },
@@ -599,6 +607,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A',
       decimals: 18,
     },
+    VST: {
+      address: '0x64343594ab9b56e99087bfa6f2335db24c2d1f17',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -716,6 +728,7 @@ export const Holders: {
     RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
+    stMATIC: '0x3b39669766fe815aa91834b3bd258dea3edbb6d5',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
@@ -728,6 +741,7 @@ export const Holders: {
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
     WETH: '0x2400bb4d7221ba530daee061d5afe219e9223eae',
     SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
+    TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
@@ -771,6 +785,7 @@ export const Holders: {
     newFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     nETH: '0xcf2ef00e75558512ae735679ea5df62ad2056786',
     avWETH: '0x92d78e32b990d10aeca0875dc5585f1a6f958179',
+    YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
   },
   [Network.ARBITRUM]: {
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
@@ -783,6 +798,7 @@ export const Holders: {
     AAVE: '0x7185fbff199928cbae71990ecb3cc4a7be2ff00a',
     EURS: '0x4449dd09067dcaa55c15f40b465a5173778f8100',
     MIM: '0xf46bb6dda9709c49efb918201d97f6474eac5aea',
+    VST: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',

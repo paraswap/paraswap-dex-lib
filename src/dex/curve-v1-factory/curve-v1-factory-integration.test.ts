@@ -34,7 +34,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -158,18 +157,71 @@ describe('CurveV1Factory', function () {
       10n * BI_POWS[tokens[srcTokenSymbol].decimals],
     ];
 
-    const amountsForBuy = [
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (curveV1Factory.initializePricing) {
+        await curveV1Factory.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        curveV1Factory,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'get_underlying_dy',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newCurveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (newCurveV1Factory.updatePoolState) {
+        await newCurveV1Factory.updatePoolState();
+      }
+      const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'MATIC';
+    const destTokenSymbol = 'stMATIC';
+
+    const amountsForSell = [
       0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
     ];
 
     beforeAll(async () => {
@@ -190,7 +242,275 @@ describe('CurveV1Factory', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'get_dy', // TODO: Put here proper function name to check pricing
+        'get_dy',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newCurveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (newCurveV1Factory.updatePoolState) {
+        await newCurveV1Factory.updatePoolState();
+      }
+      const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'YUSD';
+    const destTokenSymbol = 'USDC';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (curveV1Factory.initializePricing) {
+        await curveV1Factory.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        curveV1Factory,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'get_dy',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newCurveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (newCurveV1Factory.updatePoolState) {
+        await newCurveV1Factory.updatePoolState();
+      }
+      const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'TOR';
+    const destTokenSymbol = 'USDC';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (curveV1Factory.initializePricing) {
+        await curveV1Factory.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        curveV1Factory,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'get_dy_underlying',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newCurveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (newCurveV1Factory.updatePoolState) {
+        await newCurveV1Factory.updatePoolState();
+      }
+      const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'VST';
+    const destTokenSymbol = 'FRAX';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (curveV1Factory.initializePricing) {
+        await curveV1Factory.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        curveV1Factory,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'get_dy',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newCurveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (newCurveV1Factory.updatePoolState) {
+        await newCurveV1Factory.updatePoolState();
+      }
+      const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'sETH';
+    const destTokenSymbol = 'ETH';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
+      if (curveV1Factory.initializePricing) {
+        await curveV1Factory.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        curveV1Factory,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'get_dy',
       );
     });
 
