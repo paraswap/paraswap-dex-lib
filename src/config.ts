@@ -55,6 +55,10 @@ const baseConfigs: { [network: number]: BaseConfig } = {
             url: `http://localhost:${PORT_TEST_SERVER}/tokens`,
             method: 'GET',
           },
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'secret',
+          },
           intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
           dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
         },
@@ -62,6 +66,10 @@ const baseConfigs: { [network: number]: BaseConfig } = {
           reqParams: {
             url: `http://localhost:${PORT_TEST_SERVER}/pairs`,
             method: 'GET',
+          },
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'secret',
           },
           intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
           dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
@@ -71,12 +79,20 @@ const baseConfigs: { [network: number]: BaseConfig } = {
             url: `http://localhost:${PORT_TEST_SERVER}/prices`,
             method: 'GET',
           },
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'secret',
+          },
           intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
           dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
         },
         firmRateConfig: {
           url: `http://localhost:${PORT_TEST_SERVER}/firm`,
           method: 'POST',
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'secret',
+          },
         },
       },
     },

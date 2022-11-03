@@ -9,7 +9,7 @@ const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 export type RequestInfo<T> = {
   requestOptions: RequestConfig;
   caster: (data: unknown) => T | null;
-  authenticate?: (options: RequestConfig) => void;
+  authenticate?: (options: RequestConfig) => RequestConfig;
   excludedFieldsCaching?: string[];
 };
 

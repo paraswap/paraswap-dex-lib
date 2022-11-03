@@ -39,8 +39,14 @@ export type RatesResponse = {
   [pair: string]: PairPriceResponse;
 };
 
+export type RFQSecret = {
+  domain: string;
+  accessKey: string;
+};
+
 export type FetcherParams = {
   reqParams: RequestConfig;
+  secret: RFQSecret;
   intervalMs: number;
   dataTTLS: number;
 };
@@ -51,11 +57,15 @@ export type BigNumberRates = Array<BigNumberRate>;
 
 export type RFQModel = 'firm' | 'indicative';
 
+type RequestConfigWithAuth = RequestConfig & {
+  secret?: RFQSecret;
+};
+
 export type RFQConfig = {
   tokensConfig: FetcherParams;
   pairsConfig: FetcherParams;
   rateConfig: FetcherParams;
-  firmRateConfig: RequestConfig;
+  firmRateConfig: RequestConfigWithAuth;
 };
 
 export type TokenWithAmount = Token & {

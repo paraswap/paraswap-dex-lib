@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { SwapSide } from 'paraswap-core';
 import { BN_0, BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
+import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import Fetcher from '../../lib/fetcher/fetcher';
 import { getBalances } from '../../lib/tokens/balancer-fetcher';
 import {
@@ -11,9 +12,9 @@ import {
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
 import { Logger, Address, Token } from '../../types';
-import { Utils } from '../../utils';
 import { OrderInfo } from '../paraswap-limit-orders/types';
 import { calculateOrderHash } from '../paraswap-limit-orders/utils';
+import { authHttp } from './security';
 import {
   AugustusOrderWithStringAndSignature,
   PairMap,
@@ -44,6 +45,8 @@ export class RateFetcher {
   private tokens: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
 
+  private firmRateAuth?: (options: RequestConfig) => void;
+
   constructor(
     private dexHelper: IDexHelper,
     private config: RFQConfig,
@@ -58,6 +61,7 @@ export class RateFetcher {
         info: {
           requestOptions: config.tokensConfig.reqParams,
           caster: this.castTokensResponse.bind(this),
+          authenticate: authHttp(config.tokensConfig.secret),
         },
         handler: this.handleTokensResponse.bind(this),
       },
@@ -71,6 +75,7 @@ export class RateFetcher {
         info: {
           requestOptions: config.pairsConfig.reqParams,
           caster: this.castPairs.bind(this),
+          authenticate: authHttp(config.pairsConfig.secret),
         },
         handler: this.handlePairsResponse.bind(this),
       },
@@ -84,12 +89,17 @@ export class RateFetcher {
         info: {
           requestOptions: config.rateConfig.reqParams,
           caster: this.castRateResponse.bind(this),
+          authenticate: authHttp(config.rateConfig.secret),
         },
         handler: this.handleRatesResponse.bind(this),
       },
       config.rateConfig.intervalMs,
       logger,
     );
+
+    if (this.config.firmRateConfig.secret) {
+      this.firmRateAuth = authHttp(this.config.firmRateConfig.secret);
+    }
   }
 
   start() {
@@ -399,11 +409,18 @@ export class RateFetcher {
     }
 
     try {
+      let payload = {
+        data: result.payload,
+        ...this.config.firmRateConfig,
+      };
+
+      if (this.firmRateAuth) {
+        this.firmRateAuth(payload);
+        delete payload.secret;
+      }
+
       const { data } =
-        await this.dexHelper.httpRequest.request<RFQFirmRateResponse>({
-          data: result.payload,
-          ...this.config.firmRateConfig,
-        });
+        await this.dexHelper.httpRequest.request<RFQFirmRateResponse>(payload);
 
       if (data.status === 'rejected') {
         this.logger.warn(
