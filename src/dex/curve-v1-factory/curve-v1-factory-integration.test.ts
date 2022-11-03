@@ -141,7 +141,7 @@ describe('CurveV1Factory', function () {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'USDC';
+    const srcTokenSymbol = 'USDD';
     const destTokenSymbol = 'USDT';
 
     const amountsForSell = [

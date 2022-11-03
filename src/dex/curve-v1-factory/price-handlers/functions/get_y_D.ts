@@ -116,15 +116,22 @@ const notImplemented: get_y_D = (
 
 const implementations: Record<ImplementationNames, get_y_D> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: notImplemented,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notImplemented,
 
   [ImplementationNames.FACTORY_META_FRAX]: notImplemented,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notImplemented,
-  [ImplementationNames.FACTORY_META_BTC]: notImplemented,
+  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_RENBTC]: notImplemented,
+  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_SBTC]: notImplemented,
+  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notImplemented,
@@ -134,6 +141,7 @@ const implementations: Record<ImplementationNames, get_y_D> = {
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notImplemented,

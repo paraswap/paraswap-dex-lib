@@ -52,7 +52,7 @@ import {
   uint8ToNumber,
 } from '../../lib/decoders';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
-import { BytesLike } from 'ethers';
+import { BigNumber, BytesLike } from 'ethers';
 import { FactoryStateHandler } from './state-polling-pools/factory-pool-polling';
 import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-polling';
@@ -229,6 +229,15 @@ export class CurveV1Factory
     const poolAddresses = allPoolAddresses.slice(0, poolCount);
     const basePoolAddresses = allPoolAddresses.slice(poolCount);
 
+    const customPoolAddresses = Object.values(this.config.customPools).map(
+      customPool => customPool.address,
+    );
+    basePoolAddresses.forEach(basePool => {
+      if (!customPoolAddresses.includes(basePool)) {
+        this._reportForUnspecifiedCustomPool(basePool);
+      }
+    });
+
     let callDataFromFactoryPools: MultiCallParams<
       string[] | number[] | string
     >[] = poolAddresses
@@ -249,7 +258,7 @@ export class CurveV1Factory
               result,
               ['address[4]'],
               new Array(4).fill(NULL_ADDRESS),
-              parsed => parsed.map(p => p.toLowerCase()),
+              parsed => parsed[0].map((p: string) => p.toLowerCase()),
             ),
         },
         {
@@ -260,7 +269,7 @@ export class CurveV1Factory
               result,
               ['uint256[4]'],
               [0, 0, 0, 0],
-              parsed => parsed.map(p => Number(p.toString())),
+              parsed => parsed[0].map((p: BigNumber) => Number(p.toString())),
             ),
         },
       ])
@@ -281,7 +290,7 @@ export class CurveV1Factory
             result,
             ['address[10]'],
             new Array(10).fill(NULL_ADDRESS),
-            parsed => parsed.map(p => p.toLowerCase()),
+            parsed => parsed[0].map((p: string) => p.toLowerCase()),
           ),
       })),
       ..._.flattenDeep(
@@ -308,8 +317,8 @@ export class CurveV1Factory
       0,
       factoryResultsDivider,
     );
-    const allAvailableImplementations = allPoolAddresses.slice(
-      factoryResultsDivider,
+    const allAvailableImplementations = _.flattenDeep(
+      allResultsFromFactory.slice(factoryResultsDivider) as string[],
     );
 
     allAvailableImplementations
@@ -713,6 +722,13 @@ export class CurveV1Factory
     this.logger.error(
       `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
         `found unspecified implementation: ${implementation} for ${pool} pool`,
+    );
+  }
+
+  private _reportForUnspecifiedCustomPool(pool: Address) {
+    this.logger.error(
+      `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
+        `found unspecified custom pool: ${pool}`,
     );
   }
 }

@@ -18,7 +18,7 @@ const customPlain3CoinThree: _xp_mem = (
   return result;
 };
 
-const customPlain3CoinBtc: _xp_mem = (
+const customPlain3CoinSbtc: _xp_mem = (
   self: IPoolContext,
   _rates: bigint[],
   _balances: bigint[],
@@ -47,15 +47,23 @@ const factoryPlain2CoinErc20: _xp_mem = (
 
 const implementations: Record<ImplementationNames, _xp_mem> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryPlain2CoinErc20,
 
   [ImplementationNames.FACTORY_META_FRAX]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_META_BTC]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: factoryPlain2CoinErc20,
+
+  [ImplementationNames.FACTORY_META_RENBTC]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]:
+    factoryPlain2CoinErc20,
+
+  [ImplementationNames.FACTORY_META_SBTC]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: factoryPlain2CoinErc20,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: factoryPlain2CoinErc20,
@@ -67,6 +75,7 @@ const implementations: Record<ImplementationNames, _xp_mem> = {
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]:
     factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: factoryPlain2CoinErc20,
 
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: factoryPlain2CoinErc20,

@@ -59,8 +59,15 @@ export enum FactoryImplementationNames {
   FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
   FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',
   FACTORY_META_3POOL_FEE_TRANSFER = 'factory_meta_3pool_fee_transfer',
-  FACTORY_META_BTC = 'factory_meta_btc',
+
   FACTORY_META_FRAX = 'factory_meta_frax',
+  FACTORY_META_FRAX_FEE_TRANSFER = 'factory_meta_frax_fee_transfer',
+
+  FACTORY_META_RENBTC = 'factory_meta_renbtc',
+  FACTORY_META_RENBTC_FEE_TRANSFER = 'factory_meta_renbtc_fee_transfer',
+
+  FACTORY_META_SBTC = 'factory_meta_sbtc',
+  FACTORY_META_SBTC_FEE_TRANSFER = 'factory_meta_sbtc_fee_transfer',
 
   FACTORY_PLAIN_2COIN_ERC20 = 'factory_plain_2coin_erc20',
   FACTORY_PLAIN_2COIN_ERC20_18DEC = 'factory_plain_2coin_erc20_18dec', // 18DEC = 18 decimals
@@ -70,14 +77,16 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_3COIN_ERC20 = 'factory_plain_3coin_erc20',
   FACTORY_PLAIN_3COIN_ERC20_18DEC = 'factory_plain_3coin_erc20_18dec',
   FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER = 'factory_plain_3coin_erc20_fee_transfer',
+  FACTORY_PLAIN_3COIN_NATIVE = 'factory_plain_3coin_native',
 
   FACTORY_PLAIN_4COIN_ERC20 = 'factory_plain_4coin_erc20',
   FACTORY_PLAIN_4COIN_ERC20_18DEC = 'factory_plain_4coin_erc20_18dec',
 }
 
 export enum CustomImplementationNames {
-  CUSTOM_PLAIN_3COIN_BTC = 'custom_plain_3coin_btc',
+  CUSTOM_PLAIN_2COIN_RENBTC = 'custom_plain_2coin_renbtc',
   CUSTOM_PLAIN_2COIN_FRAX = 'custom_plain_2coin_frax',
+  CUSTOM_PLAIN_3COIN_SBTC = 'custom_plain_3coin_sbtc',
   CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
 }
 

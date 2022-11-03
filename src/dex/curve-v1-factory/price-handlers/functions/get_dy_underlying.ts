@@ -234,16 +234,23 @@ const notExist: get_dy_underlying = (
 };
 
 const implementations: Record<ImplementationNames, get_dy_underlying> = {
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
+
   [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMetaFrax,
 
   [ImplementationNames.FACTORY_META_FRAX]: factoryMetaFrax,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMetaFrax,
-  [ImplementationNames.FACTORY_META_BTC]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: factoryMetaFrax,
 
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: notExist,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
+  [ImplementationNames.FACTORY_META_RENBTC]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: factoryMetaFrax,
+
+  [ImplementationNames.FACTORY_META_SBTC]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: factoryMetaFrax,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notExist,
@@ -253,6 +260,7 @@ const implementations: Record<ImplementationNames, get_dy_underlying> = {
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notExist,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notExist,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: notExist,
 
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notExist,

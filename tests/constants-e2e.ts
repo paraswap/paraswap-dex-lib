@@ -233,6 +233,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
       decimals: 18,
     },
+    USDD: {
+      address: '0x0c10bf8fcb7bf5412187a595ab97a3609160b5c6',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -683,6 +687,7 @@ export const Holders: {
     sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
     sETH: '0x5fe009d78afabc1b04abd2d4361f8e95cd402648',
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
+    USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',

@@ -8,6 +8,7 @@ import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
 import { funcName } from '../../../utils';
 import { Address } from 'paraswap-core';
+import { BigNumber } from 'ethers';
 
 export class FactoryStateHandler extends BasePoolPolling {
   constructor(
@@ -64,7 +65,7 @@ export class FactoryStateHandler extends BasePoolPolling {
         ]),
         decodeFunction: (result: MultiResult<BytesLike>) =>
           generalDecoder(result, ['uint256[4]'], [0n, 0n, 0n, 0n], parsed =>
-            parsed.map(p => BigInt(p.toString())),
+            parsed[0].map((p: BigNumber) => BigInt(p.toString())),
           ),
       },
     ];

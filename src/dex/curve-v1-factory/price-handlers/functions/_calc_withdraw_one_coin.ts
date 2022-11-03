@@ -14,8 +14,10 @@ const customPlain3CoinThree: _calc_withdraw_one_coin = (
   const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
 
   if (state.totalSupply === undefined) {
-    throw new Error(`${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`);
-}
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`,
+    );
+  }
 
   const amp = state.A;
   const _fee = (state.fee * BI_N_COINS) / (4n * (BI_N_COINS - 1n));
@@ -61,15 +63,22 @@ const notImplemented: _calc_withdraw_one_coin = (
 
 const implementations: Record<ImplementationNames, _calc_withdraw_one_coin> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: notImplemented,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: notImplemented,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notImplemented,
 
   [ImplementationNames.FACTORY_META_FRAX]: notImplemented,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notImplemented,
-  [ImplementationNames.FACTORY_META_BTC]: notImplemented,
+  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_RENBTC]: notImplemented,
+  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_SBTC]: notImplemented,
+  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notImplemented,
@@ -79,6 +88,7 @@ const implementations: Record<ImplementationNames, _calc_withdraw_one_coin> = {
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notImplemented,

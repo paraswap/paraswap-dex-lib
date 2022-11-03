@@ -4,7 +4,7 @@ import { ImplementationNames, PoolState } from '../../types';
 import { IPoolContext, _rates } from '../types';
 import { throwNotExist, requireConstant } from './utils';
 
-const customPlain3CoinBtc: _rates = (
+const customPlain3CoinSbtc: _rates = (
   self: IPoolContext,
   state: PoolState,
 ): bigint[] => {
@@ -48,16 +48,23 @@ const notExist: _rates = (self: IPoolContext, state: PoolState) => {
 };
 
 const implementations: Record<ImplementationNames, _rates> = {
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 
   [ImplementationNames.FACTORY_META_3POOL_2_8]: notExist,
   [ImplementationNames.FACTORY_META_3POOL_2_15]: notExist,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notExist,
 
   [ImplementationNames.FACTORY_META_FRAX]: notExist,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notExist,
-  [ImplementationNames.FACTORY_META_BTC]: notExist,
+  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: notExist,
+
+  [ImplementationNames.FACTORY_META_RENBTC]: notExist,
+  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: notExist,
+
+  [ImplementationNames.FACTORY_META_SBTC]: notExist,
+  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: notExist,
 
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notExist,
@@ -67,6 +74,7 @@ const implementations: Record<ImplementationNames, _rates> = {
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notExist,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notExist,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: notExist,
 
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notExist,

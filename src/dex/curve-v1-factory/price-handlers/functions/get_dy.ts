@@ -121,30 +121,41 @@ const customPlain3CoinBtc: get_dy = (
 };
 
 const implementations: Record<ImplementationNames, get_dy> = {
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinBtc,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinBtc,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
+
+  [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMeta3Pool2_8,
+
+  [ImplementationNames.FACTORY_META_FRAX]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: factoryMeta3Pool2_8,
+
+  [ImplementationNames.FACTORY_META_RENBTC]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: factoryMeta3Pool2_8,
+
+  [ImplementationNames.FACTORY_META_SBTC]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: factoryMeta3Pool2_8,
+
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]:
     factoryPlain2CoinErc20_18D,
   [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]:
     factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: factoryPlain2CoinErc20,
+
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]:
     factoryPlain2CoinErc20_18D,
   [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]:
     factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: factoryPlain2CoinErc20,
+
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: factoryPlain2CoinErc20,
   [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]:
     factoryPlain2CoinErc20_18D,
-
-  [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_FRAX]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_BTC]: factoryMeta3Pool2_8,
-
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_BTC]: customPlain3CoinBtc,
 };
 
 export default implementations;
