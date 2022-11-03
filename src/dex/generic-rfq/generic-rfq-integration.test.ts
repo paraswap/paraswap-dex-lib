@@ -4,11 +4,16 @@ dotenv.config();
 import { DummyDexHelper } from '../../dex-helper';
 import { Network, SwapSide } from '../../constants';
 import { GenericRFQ } from './generic-rfq';
-import { checkPoolPrices, sleep } from '../../../tests/utils';
+import {
+  checkPoolPrices,
+  checkPoolsLiquidity,
+  sleep,
+} from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 import { parseInt } from 'lodash';
 import { startTestServer } from './example-api.test';
 import { ethers } from 'ethers';
+import { RFQConfig } from './types';
 
 if (!process.env.TEST_PORT) {
   throw new Error(`Missing TEST_PORT variable`);
@@ -39,32 +44,64 @@ if (!PK_KEY) {
 const account = new ethers.Wallet(PK_KEY!);
 const stopServer = startTestServer(account);
 
+const config: RFQConfig = {
+  maker: process.env.TEST_ADDRESS!,
+  tokensConfig: {
+    reqParams: {
+      url: `http://localhost:${PORT_TEST_SERVER}/tokens`,
+      method: 'GET',
+    },
+    secret: {
+      domain: 'paraswap-test',
+      accessKey: 'secret',
+    },
+    intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+    dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+  },
+  pairsConfig: {
+    reqParams: {
+      url: `http://localhost:${PORT_TEST_SERVER}/pairs`,
+      method: 'GET',
+    },
+    secret: {
+      domain: 'paraswap-test',
+      accessKey: 'secret',
+    },
+    intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+    dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+  },
+  rateConfig: {
+    reqParams: {
+      url: `http://localhost:${PORT_TEST_SERVER}/prices`,
+      method: 'GET',
+    },
+    secret: {
+      domain: 'paraswap-test',
+      accessKey: 'secret',
+    },
+    intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
+    dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
+  },
+  firmRateConfig: {
+    url: `http://localhost:${PORT_TEST_SERVER}/firm`,
+    method: 'POST',
+    secret: {
+      domain: 'paraswap-test',
+      accessKey: 'secret',
+    },
+  },
+};
+
 describe('GenericRFQ', function () {
   it('getPoolIdentifiers and getPricesVolume', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
     const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const genericRfq = new GenericRFQ(Network.MAINNET, dexKey, dexHelper, {
-      marketConfig: {
-        reqParams: {
-          url: `http://localhost:${PORT_TEST_SERVER}/markets`,
-          method: 'GET',
-        },
-        intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-        dataTTLS: 1000 * 60 * 60 * 11, // tll 11 minutes
-      },
-      rateConfig: {
-        reqParams: {
-          url: `http://localhost:${PORT_TEST_SERVER}/prices`,
-          method: 'GET',
-        },
-        intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-        dataTTLS: 1000 * 60 * 60 * 1, // tll 1 minute
-      },
-      firmRateConfig: {
-        url: `http://localhost:${PORT_TEST_SERVER}/firm`,
-        method: 'POST',
-      },
-    });
+    const genericRfq = new GenericRFQ(
+      Network.MAINNET,
+      dexKey,
+      dexHelper,
+      config,
+    );
 
     genericRfq.initializePricing(blocknumber);
     await sleep(5000);
@@ -96,28 +133,12 @@ describe('GenericRFQ', function () {
   it('getPoolIdentifiers and getPricesVolume', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
     const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const genericRfq = new GenericRFQ(Network.MAINNET, dexKey, dexHelper, {
-      marketConfig: {
-        reqParams: {
-          url: `http://localhost:${PORT_TEST_SERVER}/markets`,
-          method: 'GET',
-        },
-        intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-        dataTTLS: 1000 * 60 * 60 * 11, // tll 11 minutes
-      },
-      rateConfig: {
-        reqParams: {
-          url: `http://localhost:${PORT_TEST_SERVER}/prices`,
-          method: 'GET',
-        },
-        intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-        dataTTLS: 1000 * 60 * 60 * 1, // tll 1 minute
-      },
-      firmRateConfig: {
-        url: `http://localhost:${PORT_TEST_SERVER}/firm`,
-        method: 'POST',
-      },
-    });
+    const genericRfq = new GenericRFQ(
+      Network.MAINNET,
+      dexKey,
+      dexHelper,
+      config,
+    );
 
     genericRfq.initializePricing(blocknumber);
     await sleep(5000);
@@ -149,13 +170,22 @@ describe('GenericRFQ', function () {
   afterAll(() => {
     stopServer();
   });
-  // it('getTopPoolsForToken', async function () {
-  //   const dexHelper = new DummyDexHelper(Network.MAINNET);
-  //   const genericRfq = new GenericRFQ(Network.MAINNET, dexKey, dexHelper);
-  //
-  //   const poolLiquidity = await genericRfq.getTopPoolsForToken(WETH.address, 10);
-  //   console.log('WETH Top Pools:', poolLiquidity);
-  //
-  //   checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
-  // });
+
+  it('getTopPoolsForToken', async function () {
+    const dexHelper = new DummyDexHelper(Network.MAINNET);
+    const genericRfq = new GenericRFQ(
+      Network.MAINNET,
+      dexKey,
+      dexHelper,
+      config,
+    );
+
+    const poolLiquidity = await genericRfq.getTopPoolsForToken(
+      WETH.address,
+      10,
+    );
+    console.log('WETH Top Pools:', poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
+  });
 });

@@ -5,6 +5,7 @@ import {
   ExchangeTxInfo,
   PreprocessTransactionOptions,
   Config,
+  PoolLiquidity,
 } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
@@ -41,7 +42,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
-    config: RFQConfig,
+    private config: RFQConfig,
   ) {
     super(network, dexKey, dexHelper);
     this.rateFetcher = new RateFetcher(dexHelper, config, dexKey, this.logger);
@@ -210,5 +211,19 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         deadline: minDeadline,
       },
     ];
+  }
+
+  async getTopPoolsForToken(
+    tokenAddress: string,
+    limit: number,
+  ): Promise<PoolLiquidity[]> {
+    const pairs = this.rateFetcher.getPairsLiqudity(tokenAddress);
+
+    return pairs.map(pair => ({
+      exchange: this.dexKey,
+      address: this.config.maker,
+      connectorTokens: pair.connectorTokens,
+      liquidityUSD: pair.liquidityUSD,
+    }));
   }
 }

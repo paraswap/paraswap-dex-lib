@@ -3,7 +3,7 @@ import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import { Address, Token } from '../../types';
 import { AugustusOrderWithString } from '../paraswap-limit-orders/types';
 
-type Pair = {
+export type Pair = {
   base: string;
   quote: string;
   liquidityUSD: number;
@@ -66,6 +66,7 @@ export type RFQConfig = {
   pairsConfig: FetcherParams;
   rateConfig: FetcherParams;
   firmRateConfig: RequestConfigWithAuth;
+  maker: Address;
 };
 
 export type TokenWithAmount = Token & {

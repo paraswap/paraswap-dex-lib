@@ -17,6 +17,7 @@ import { calculateOrderHash } from '../paraswap-limit-orders/utils';
 import { authHttp } from './security';
 import {
   AugustusOrderWithStringAndSignature,
+  Pair,
   PairMap,
   PairsResponse,
   PriceAndAmount,
@@ -43,6 +44,7 @@ export class RateFetcher {
   private rateFetcher: Fetcher<RatesResponse>;
 
   private tokens: Record<string, TokenWithInfo> = {};
+  private addressToTokenMap: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
 
   private firmRateAuth?: (options: RequestConfig) => void;
@@ -132,6 +134,15 @@ export class RateFetcher {
       token.address = token.address.toLowerCase();
       this.tokens[tokenName] = token;
     }
+
+    this.addressToTokenMap = Object.keys(this.tokens).reduce((acc, key) => {
+      const obj = this.tokens[key];
+      if (!obj) {
+        return acc;
+      }
+      acc[obj.address.toLowerCase()] = obj;
+      return acc;
+    }, {} as Record<string, TokenWithInfo>);
   }
 
   private castPairs(data: unknown): PairsResponse | null {
@@ -213,6 +224,36 @@ export class RateFetcher {
     return [this.tokensFetcher, this.rateFetcher].some(
       f => f.lastFetchSucceeded,
     );
+  }
+
+  public getPairsLiqudity(tokenAddress: string) {
+    const token = this.addressToTokenMap[tokenAddress];
+
+    const pairNames = Object.keys(this.pairs);
+    const pairs = Object.values(this.pairs);
+
+    return pairs
+      .filter((p, index) => pairNames[index].includes(token.symbol!))
+      .map(p => {
+        const baseToken = this.tokens[p.base];
+        const quoteToken = this.tokens[p.quote];
+        let connectorToken: Token | undefined;
+        if (baseToken.address === tokenAddress) {
+          connectorToken = {
+            address: baseToken.address,
+            decimals: baseToken.decimals,
+          };
+        } else {
+          connectorToken = {
+            address: quoteToken.address,
+            decimals: quoteToken.decimals,
+          };
+        }
+        return {
+          connectorTokens: [connectorToken],
+          liquidityUSD: p.liquidityUSD,
+        };
+      });
   }
 
   public async getOrderPrice(

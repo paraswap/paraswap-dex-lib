@@ -50,6 +50,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
     rfqConfigs: {
       DummyParaSwapPool: {
+        maker: process.env.TEST_ADDRESS!,
         tokensConfig: {
           reqParams: {
             url: `http://localhost:${PORT_TEST_SERVER}/tokens`,
