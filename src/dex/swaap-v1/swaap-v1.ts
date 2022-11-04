@@ -34,6 +34,7 @@ import {
   MAX_POOL_CNT,
   POOL_CACHE_TTL,
   MAX_GAS_COST_ESTIMATION,
+  RECCURING_POOL_FETCH_INTERVAL_MS,
 } from './config';
 import { SwaapV1Pool } from './swaap-v1-pool';
 import PoolABI from '../../abi/swaap-v1/pool.json';
@@ -74,13 +75,33 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
+    await this.getPools(blockNumber, true);
+    setInterval(
+      () => this.getPools(null, false),
+      RECCURING_POOL_FETCH_INTERVAL_MS,
+    );
+  }
+
+  async getPools(_blockNumber: number | null, init: boolean) {
+    const blockNumber = _blockNumber
+      ? _blockNumber
+      : await this.dexHelper.provider.getBlockNumber();
     const allPools = await this.fetchAllSubgraphPools(blockNumber);
     if (!allPools)
-      throw new Error(
-        'initializePricing: SwaapV1 cfgInfo still null after init',
-      );
+      if (init) {
+        throw new Error(
+          'initializePricing: SwaapV1 cfgInfo still null after init',
+        );
+      }
     for (const poolConfig of allPools.values()) {
-      await this.addPool(poolConfig, blockNumber);
+      if (
+        init ||
+        !Object.values(this.eventPools)
+          .map(e => e.id)
+          .includes(poolConfig.id)
+      ) {
+        await this.addPool(poolConfig, blockNumber);
+      }
     }
   }
 
