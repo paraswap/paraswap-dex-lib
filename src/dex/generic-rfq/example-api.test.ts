@@ -18,6 +18,9 @@ import {
   PairsResponse,
 } from './types';
 import { reversePrice } from './rate-fetcher';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import { sleep } from '../../../tests/utils';
 
 const tokens: TokensResponse = {
   tokens: {
@@ -84,8 +87,27 @@ const blacklist = {
   blacklist: ['0x6dac5CAc7bbCCe4DB3c1Cc5c8FE39DcDdE52A36F'],
 };
 
+const wsMockMessages = [
+  {
+    message: 'prices',
+    prices: {
+      'WETH/DAI': {
+        bids: [
+          ['1553.425240000000000000', '1.166200000000000000'],
+          ['1553.024812000000000000', '1.166200000000000000'],
+          ['1552.624384000000000000', '1.166200000000000000'],
+          ['1552.223956000000000000', '1.166200000000000000'],
+          ['1551.823528000000000000', '1.166200000000000000'],
+          ['1551.423100000000000000', '1.169000000000000000'],
+        ],
+      },
+    },
+  },
+];
+
 export const startTestServer = (account: ethers.Wallet) => {
   const app = express();
+  const httpServer = new http.Server(app);
 
   /**
    * Use JSON Body parser...
@@ -106,6 +128,19 @@ export const startTestServer = (account: ethers.Wallet) => {
 
   app.get('/blacklist', (req, res) => {
     return res.status(200).json(blacklist);
+  });
+
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+  });
+
+  wsServer.on('connection', async client => {
+    console.log('WebSocket new connection');
+
+    await sleep(2000);
+    for (const msg of wsMockMessages) {
+      client.send(JSON.stringify(msg));
+    }
   });
 
   const fetcher = constructAxiosFetcher(axios);
@@ -151,10 +186,10 @@ export const startTestServer = (account: ethers.Wallet) => {
       }
       if (!reversed) {
         value = new BigNumber(payload.makerAmount).times(
-          new BigNumber(_prices.asks[0][0]),
+          new BigNumber(_prices.asks![0][0]),
         );
       } else {
-        const reversedPrices = _prices.bids.map(price =>
+        const reversedPrices = _prices.bids!.map(price =>
           reversePrice([new BigNumber(price[0]), new BigNumber(price[1])]),
         );
         value = new BigNumber(payload.makerAmount).times(
@@ -172,10 +207,10 @@ export const startTestServer = (account: ethers.Wallet) => {
       }
       if (!reversed) {
         value = new BigNumber(payload.takerAmount).times(
-          new BigNumber(_prices.bids[0][0]),
+          new BigNumber(_prices.bids![0][0]),
         );
       } else {
-        const reversedPrices = _prices.bids.map(price =>
+        const reversedPrices = _prices.asks!.map(price =>
           reversePrice([new BigNumber(price[0]), new BigNumber(price[1])]),
         );
         value = new BigNumber(payload.takerAmount).times(
@@ -213,8 +248,8 @@ export const startTestServer = (account: ethers.Wallet) => {
     });
   });
 
-  const server = app.listen(parseInt(process.env.TEST_PORT!, 10));
+  httpServer.listen(parseInt(process.env.TEST_PORT!, 10));
   return () => {
-    server.close();
+    httpServer.close();
   };
 };

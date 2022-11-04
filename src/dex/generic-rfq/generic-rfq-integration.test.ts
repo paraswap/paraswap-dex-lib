@@ -229,6 +229,49 @@ describe('GenericRFQ', function () {
     expect(isBlacklisted).toBe(false);
   });
 
+  it.only('getPoolIdentifiers and getPricesVolume with websocketConfig', async function () {
+    const dexHelper = new DummyDexHelper(Network.MAINNET);
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+
+    config.websocketConfig = {
+      url: `ws://localhost:${PORT_TEST_SERVER}/`,
+      reconnectDelayMs: 1000 * 5,
+      keepAliveDealyMs: 1000,
+    };
+    const genericRfq = new GenericRFQ(
+      Network.MAINNET,
+      dexKey,
+      dexHelper,
+      config,
+    );
+
+    genericRfq.initializePricing(blocknumber);
+    await sleep(5000);
+
+    const pools = await genericRfq.getPoolIdentifiers(
+      WETH,
+      DAI,
+      SwapSide.SELL,
+      blocknumber,
+    );
+    console.log('WETH <> DAI Pool Identifiers: ', pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await genericRfq.getPricesVolume(
+      WETH,
+      DAI,
+      amounts,
+      SwapSide.BUY,
+      blocknumber,
+      pools,
+    );
+    console.log('WETH <> DAI Pool Prices: ', poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+  });
+
   afterAll(() => {
     stopServer();
   });

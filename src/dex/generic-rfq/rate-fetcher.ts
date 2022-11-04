@@ -12,6 +12,7 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
+import { WebsocketClientWithHttpFallback } from '../../lib/websocket-client/websocket-client';
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
 import { calculateOrderHash } from '../paraswap-limit-orders/utils';
@@ -19,6 +20,7 @@ import { authHttp } from './security';
 import {
   AugustusOrderWithStringAndSignature,
   BlackListResponse,
+  GenericRFQWsMessage,
   PairMap,
   PairsResponse,
   PriceAndAmount,
@@ -44,6 +46,8 @@ export class RateFetcher {
   private pairsFetcher: Fetcher<PairsResponse>;
   private rateFetcher: Fetcher<RatesResponse>;
   private blackListFetcher?: Fetcher<BlackListResponse>;
+
+  private wsClient?: WebsocketClientWithHttpFallback<GenericRFQWsMessage>;
 
   private tokens: Record<string, TokenWithInfo> = {};
   private addressToTokenMap: Record<string, TokenWithInfo> = {};
@@ -122,6 +126,15 @@ export class RateFetcher {
     if (this.config.firmRateConfig.secret) {
       this.firmRateAuth = authHttp(this.config.firmRateConfig.secret);
     }
+
+    if (config.websocketConfig) {
+      this.wsClient = new WebsocketClientWithHttpFallback(
+        'WebscoketClient',
+        this.logger,
+        config.websocketConfig,
+        this.handleWebSocketMessage.bind(this),
+      );
+    }
   }
 
   start() {
@@ -129,6 +142,10 @@ export class RateFetcher {
     this.pairsFetcher.startPolling();
     if (this.blackListFetcher) {
       this.blackListFetcher.startPolling();
+    }
+
+    if (this.wsClient) {
+      this.wsClient.startListening();
     }
   }
 
@@ -139,6 +156,10 @@ export class RateFetcher {
 
     if (this.blackListFetcher) {
       this.blackListFetcher.stopPolling();
+    }
+
+    if (this.wsClient) {
+      this.wsClient.stop();
     }
   }
 
@@ -234,6 +255,17 @@ export class RateFetcher {
     );
   }
 
+  private handleWebSocketMessage(name: string, msg: GenericRFQWsMessage): void {
+    if (this.logger.isDebugEnabled()) {
+      this.logger.debug(`received msg ${JSON.stringify(msg)}`);
+    }
+
+    if (msg.message === 'prices' && msg.prices) {
+      console.log(msg);
+      this.handleRatesResponse(msg.prices);
+    }
+  }
+
   private handleRatesResponse(resp: RatesResponse) {
     const pairs = this.pairs;
     for (const pairName of Object.keys(resp)) {
@@ -251,7 +283,7 @@ export class RateFetcher {
         continue;
       }
 
-      if (prices.bids.length) {
+      if (prices.bids && prices.bids.length) {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
@@ -261,7 +293,7 @@ export class RateFetcher {
         );
       }
 
-      if (prices.asks.length) {
+      if (prices.asks && prices.asks.length) {
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,

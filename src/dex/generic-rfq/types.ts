@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
+import { WebsocketConfig } from '../../lib/websocket-client/types';
 import { Address, Token } from '../../types';
 import { AugustusOrderWithString } from '../paraswap-limit-orders/types';
 
@@ -35,8 +36,8 @@ export type PriceAndAmount = [string, string];
 export type PriceAndAmountBigNumber = [BigNumber, BigNumber];
 
 export type PairPriceResponse = {
-  bids: PriceAndAmount[];
-  asks: PriceAndAmount[];
+  bids?: PriceAndAmount[];
+  asks?: PriceAndAmount[];
 };
 
 export type RatesResponse = {
@@ -66,12 +67,18 @@ type RequestConfigWithAuth = RequestConfig & {
   secret?: RFQSecret;
 };
 
+export type GenericRFQWsMessage = {
+  message: string;
+  prices?: RatesResponse;
+};
+
 export type RFQConfig = {
   tokensConfig: FetcherParams;
   pairsConfig: FetcherParams;
   rateConfig: FetcherParams;
   firmRateConfig: RequestConfigWithAuth;
   blacklistConfig?: FetcherParams;
+  websocketConfig?: WebsocketConfig<GenericRFQWsMessage>;
   maker: Address;
 };
 
