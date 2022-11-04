@@ -51,31 +51,35 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
-  [ImplementationNames.FACTORY_META_3POOL_2_8]: notImplemented,
-  [ImplementationNames.FACTORY_META_3POOL_2_15]: notImplemented,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_V1_META_BTC]: notImplemented,
+  [ImplementationNames.FACTORY_V1_META_USD]: notImplemented,
 
-  [ImplementationNames.FACTORY_META_FRAX]: notImplemented,
-  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_META_BTC]: notImplemented,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES]: notImplemented,
 
-  [ImplementationNames.FACTORY_META_RENBTC]: notImplemented,
-  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_META_BTC_REN]: notImplemented,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_REN]: notImplemented,
 
-  [ImplementationNames.FACTORY_META_SBTC]: notImplemented,
-  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: notImplemented,
+  [ImplementationNames.FACTORY_META_USD]: notImplemented,
+  [ImplementationNames.FACTORY_META_USD_BALANCES]: notImplemented,
 
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: notImplemented,
+  [ImplementationNames.FACTORY_META_USD_FRAX_USDC]: notImplemented,
+  [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]: notImplemented,
 
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: notImplemented,
 
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3_BALANCES]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3_BASIC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3_ETH]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3_OPTIMIZED]: notImplemented,
+
+  [ImplementationNames.FACTORY_PLAIN_4_BALANCES]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
 };
 
 export default implementations;

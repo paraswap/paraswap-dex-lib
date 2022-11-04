@@ -58,6 +58,7 @@ import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-polling';
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import implementationConstants from './price-handlers/functions/constants';
 
 export class CurveV1Factory
   extends SimpleExchange
@@ -350,12 +351,19 @@ export class CurveV1Factory
         return;
       }
 
+      const factoryImplementationConstants =
+        ImplementationConstants[factoryImplementationFromConfig.name];
+
       let isMeta: boolean = false;
       let basePoolStateFetcher: BasePoolPolling | undefined;
-      if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
+      if (
+        factoryImplementationConstants.BASE_IMPLEMENTATION_NAME !== undefined
+      ) {
         isMeta = true;
         const basePoolIdentifier = this.getPoolIdentifier(
-          factoryImplementationFromConfig.basePoolAddress,
+          this.config.customPools[
+            factoryImplementationConstants.BASE_IMPLEMENTATION_NAME
+          ].address,
           false,
           false,
         );
@@ -389,7 +397,7 @@ export class CurveV1Factory
         factoryAddress,
         poolIdentifier,
         poolConstants,
-        factoryImplementationFromConfig.isFeeOnTransferSupported,
+        factoryImplementationConstants.isFeeOnTransferSupported,
         basePoolStateFetcher,
       );
 

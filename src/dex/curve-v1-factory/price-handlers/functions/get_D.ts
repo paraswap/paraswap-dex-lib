@@ -95,7 +95,7 @@ const customPlain2CoinFrax: get_D = (
   );
 };
 
-const factoryPlain2CoinErc20: get_D = (
+const factoryPlain2Basic: get_D = (
   self: IPoolContext,
   xp: bigint[],
   amp: bigint,
@@ -144,33 +144,36 @@ const implementations: Record<ImplementationNames, get_D> = {
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
-  [ImplementationNames.FACTORY_META_3POOL_2_8]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_3POOL_2_15]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_V1_META_BTC]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_V1_META_USD]: customPlain2CoinFrax,
 
-  [ImplementationNames.FACTORY_META_FRAX]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES]: customPlain2CoinFrax,
 
-  [ImplementationNames.FACTORY_META_RENBTC]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC_REN]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_REN]: customPlain2CoinFrax,
 
-  [ImplementationNames.FACTORY_META_SBTC]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_USD]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_USD_BALANCES]: customPlain2CoinFrax,
 
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]:
-    factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: factoryPlain2CoinErc20,
-
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]:
+  [ImplementationNames.FACTORY_META_USD_FRAX_USDC]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]:
     customPlain2CoinFrax,
 
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: factoryPlain2Basic,
+
+  [ImplementationNames.FACTORY_PLAIN_3_BALANCES]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_3_BASIC]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_3_ETH]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_3_OPTIMIZED]: customPlain2CoinFrax,
+
+  [ImplementationNames.FACTORY_PLAIN_4_BALANCES]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_4_BASIC]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_4_ETH]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: customPlain2CoinFrax,
 };
 
 export default implementations;

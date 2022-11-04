@@ -4,7 +4,7 @@ import { ImplementationNames, PoolState } from '../../types';
 import { get_dy_underlying, IPoolContext } from '../types';
 import { throwNotExist, requireConstant } from './utils';
 
-const factoryMeta3Pool2_8: get_dy_underlying = (
+const factoryV1MetaUsd: get_dy_underlying = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -114,7 +114,7 @@ const factoryMeta3Pool2_8: get_dy_underlying = (
   return dy;
 };
 
-const factoryMetaFrax: get_dy_underlying = (
+const factoryMetaUsdFraxUsdc: get_dy_underlying = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -239,31 +239,36 @@ const implementations: Record<ImplementationNames, get_dy_underlying> = {
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 
-  [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMetaFrax,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_V1_META_BTC]: factoryV1MetaUsd,
+  [ImplementationNames.FACTORY_V1_META_USD]: factoryV1MetaUsd,
 
-  [ImplementationNames.FACTORY_META_FRAX]: factoryMetaFrax,
-  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_BTC]: factoryMetaUsdFraxUsdc,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES]: factoryMetaUsdFraxUsdc,
 
-  [ImplementationNames.FACTORY_META_RENBTC]: factoryMetaFrax,
-  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_BTC_REN]: factoryMetaUsdFraxUsdc,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_REN]: factoryMetaUsdFraxUsdc,
 
-  [ImplementationNames.FACTORY_META_SBTC]: factoryMetaFrax,
-  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: factoryMetaFrax,
+  [ImplementationNames.FACTORY_META_USD]: factoryMetaUsdFraxUsdc,
+  [ImplementationNames.FACTORY_META_USD_BALANCES]: factoryMetaUsdFraxUsdc,
 
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: notExist,
+  [ImplementationNames.FACTORY_META_USD_FRAX_USDC]: factoryMetaUsdFraxUsdc,
+  [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]:
+    factoryMetaUsdFraxUsdc,
 
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: notExist,
 
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3_BALANCES]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3_BASIC]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3_ETH]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_3_OPTIMIZED]: notExist,
+
+  [ImplementationNames.FACTORY_PLAIN_4_BALANCES]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_4_ETH]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notExist,
 };
 
 export default implementations;

@@ -2,6 +2,14 @@ import { Interface } from '@ethersproject/abi';
 import { Address } from '../../types';
 
 export type PoolContextConstants = {
+  // These are not actually context relevant fro pricing constants, but helpful in identifying different
+  // aspects of implementation
+  isFeeOnTransferSupported: boolean;
+  // For now I put everywhere false, but eventually we should have more granular handling
+  // for all pools
+  isWrapNative: boolean;
+
+  // Starting from this point, constants are context relevant for pricing
   BASE_IMPLEMENTATION_NAME?: ImplementationNames;
 
   N_COINS: number;
@@ -56,36 +64,44 @@ export type CurveV1FactoryData = {
 };
 
 export enum FactoryImplementationNames {
-  FACTORY_META_3POOL_2_8 = 'factory_meta_3pool_2_8',
-  FACTORY_META_3POOL_2_15 = 'factory_meta_3pool_2_15',
-  FACTORY_META_3POOL_FEE_TRANSFER = 'factory_meta_3pool_fee_transfer',
+  // Mapping names I took from here:
+  // https://github.com/curvefi/curve-api/blob/ae000317722aec94c7cff7c9a09f3bb6e8c9a3f8/constants/configs.js#L20
+  // FACTORY_ - and later their name in upper case separated with underscore
 
-  FACTORY_META_FRAX = 'factory_meta_frax',
-  FACTORY_META_FRAX_FEE_TRANSFER = 'factory_meta_frax_fee_transfer',
+  FACTORY_V1_META_BTC = 'factory_v1_meta_btc',
+  FACTORY_V1_META_USD = 'factory_v1_meta_usd',
 
-  FACTORY_META_RENBTC = 'factory_meta_renbtc',
-  FACTORY_META_RENBTC_FEE_TRANSFER = 'factory_meta_renbtc_fee_transfer',
+  FACTORY_META_BTC = 'factory_meta_btc',
+  FACTORY_META_BTC_BALANCES = 'factory_meta_btc_balances',
 
-  FACTORY_META_SBTC = 'factory_meta_sbtc',
-  FACTORY_META_SBTC_FEE_TRANSFER = 'factory_meta_sbtc_fee_transfer',
+  FACTORY_META_BTC_REN = 'factory_meta_btc_ren',
+  FACTORY_META_BTC_BALANCES_REN = 'factory_meta_btc_balances_ren',
 
-  FACTORY_PLAIN_2COIN_ERC20 = 'factory_plain_2coin_erc20',
-  FACTORY_PLAIN_2COIN_ERC20_18DEC = 'factory_plain_2coin_erc20_18dec', // 18DEC = 18 decimals
-  FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER = 'factory_plain_2coin_erc20_fee_transfer',
-  FACTORY_PLAIN_2COIN_NATIVE = 'factory_plain_2coin_native',
+  FACTORY_META_USD = 'factory_meta_usd',
+  FACTORY_META_USD_BALANCES = 'factory_meta_usd_balances',
 
-  FACTORY_PLAIN_3COIN_ERC20 = 'factory_plain_3coin_erc20',
-  FACTORY_PLAIN_3COIN_ERC20_18DEC = 'factory_plain_3coin_erc20_18dec',
-  FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER = 'factory_plain_3coin_erc20_fee_transfer',
-  FACTORY_PLAIN_3COIN_NATIVE = 'factory_plain_3coin_native',
+  FACTORY_META_USD_FRAX_USDC = 'factory_meta_usd_frax_usdc',
+  FACTORY_META_USD_BALANCES_FRAX_USDC = 'factory_meta_usd_balances_frax_usdc',
 
-  FACTORY_PLAIN_4COIN_ERC20 = 'factory_plain_4coin_erc20',
-  FACTORY_PLAIN_4COIN_ERC20_18DEC = 'factory_plain_4coin_erc20_18dec',
+  FACTORY_PLAIN_2_BALANCES = 'factory_plain_2_balances',
+  FACTORY_PLAIN_2_BASIC = 'factory_plain_2_basic',
+  FACTORY_PLAIN_2_ETH = 'factory_plain_2_eth',
+  FACTORY_PLAIN_2_OPTIMIZED = 'factory_plain_2_optimized',
+
+  FACTORY_PLAIN_3_BALANCES = 'factory_plain_3_balances',
+  FACTORY_PLAIN_3_BASIC = 'factory_plain_3_basic',
+  FACTORY_PLAIN_3_ETH = 'factory_plain_3_eth',
+  FACTORY_PLAIN_3_OPTIMIZED = 'factory_plain_3_optimized',
+
+  FACTORY_PLAIN_4_BALANCES = 'factory_plain_4_balances',
+  FACTORY_PLAIN_4_BASIC = 'factory_plain_4_basic',
+  FACTORY_PLAIN_4_ETH = 'factory_plain_4_eth',
+  FACTORY_PLAIN_4_OPTIMIZED = 'factory_plain_4_optimized',
 }
 
 export enum CustomImplementationNames {
-  CUSTOM_PLAIN_2COIN_RENBTC = 'custom_plain_2coin_renbtc',
   CUSTOM_PLAIN_2COIN_FRAX = 'custom_plain_2coin_frax',
+  CUSTOM_PLAIN_2COIN_RENBTC = 'custom_plain_2coin_renbtc',
   CUSTOM_PLAIN_3COIN_SBTC = 'custom_plain_3coin_sbtc',
   CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
 }
@@ -101,17 +117,11 @@ export type ImplementationNames =
 export type FactoryPoolImplementations = {
   name: FactoryImplementationNames;
   address: Address;
-  isFeeOnTransferSupported: boolean;
-  // For now I put everywhere false, but eventually we should have more granular handling
-  // for all pools
-  isWrapNative: boolean;
-  basePoolAddress?: Address;
 };
 
 export type CustomPoolConfig = {
   name: CustomImplementationNames;
   address: Address;
-  isWrapNative: boolean;
   lpTokenAddress: Address;
   // Liquidity is fetched from curve API: https://api.curve.fi/api/getPools/ethereum/SLUG
   liquidityApiSlug: string;

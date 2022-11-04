@@ -3,7 +3,7 @@ import { funcName } from '../../../../utils';
 import { get_dy, IPoolContext } from '../types';
 import { requireConstant } from './utils';
 
-const factoryPlain2CoinErc20: get_dy = (
+const factoryPlain2Basic: get_dy = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -22,7 +22,7 @@ const factoryPlain2CoinErc20: get_dy = (
   return ((dy - _fee) * PRECISION) / rates[j];
 };
 
-const factoryPlain2CoinErc20_18D: get_dy = (
+const factoryPlain2Optimized: get_dy = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -39,7 +39,7 @@ const factoryPlain2CoinErc20_18D: get_dy = (
   return dy - fee;
 };
 
-const factoryMeta3Pool2_8: get_dy = (
+const factoryV1MetaUsd: get_dy = (
   self: IPoolContext,
   state: PoolState,
   i: number,
@@ -126,36 +126,35 @@ const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
-  [ImplementationNames.FACTORY_META_3POOL_2_8]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_2_15]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_3POOL_FEE_TRANSFER]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_V1_META_BTC]: factoryV1MetaUsd,
+  [ImplementationNames.FACTORY_V1_META_USD]: factoryV1MetaUsd,
 
-  [ImplementationNames.FACTORY_META_FRAX]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_FRAX_FEE_TRANSFER]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_BTC]: factoryV1MetaUsd,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES]: factoryV1MetaUsd,
 
-  [ImplementationNames.FACTORY_META_RENBTC]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_RENBTC_FEE_TRANSFER]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_BTC_REN]: factoryV1MetaUsd,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_REN]: factoryV1MetaUsd,
 
-  [ImplementationNames.FACTORY_META_SBTC]: factoryMeta3Pool2_8,
-  [ImplementationNames.FACTORY_META_SBTC_FEE_TRANSFER]: factoryMeta3Pool2_8,
+  [ImplementationNames.FACTORY_META_USD]: factoryV1MetaUsd,
+  [ImplementationNames.FACTORY_META_USD_BALANCES]: factoryV1MetaUsd,
 
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_18DEC]:
-    factoryPlain2CoinErc20_18D,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_ERC20_FEE_TRANSFER]:
-    factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_2COIN_NATIVE]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_META_USD_FRAX_USDC]: factoryV1MetaUsd,
+  [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]: factoryV1MetaUsd,
 
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_18DEC]:
-    factoryPlain2CoinErc20_18D,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_ERC20_FEE_TRANSFER]:
-    factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_3COIN_NATIVE]: factoryPlain2CoinErc20,
+  [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: factoryPlain2Optimized,
 
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20]: factoryPlain2CoinErc20,
-  [ImplementationNames.FACTORY_PLAIN_4COIN_ERC20_18DEC]:
-    factoryPlain2CoinErc20_18D,
+  [ImplementationNames.FACTORY_PLAIN_3_BALANCES]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_3_BASIC]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_3_ETH]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_3_OPTIMIZED]: factoryPlain2Optimized,
+
+  [ImplementationNames.FACTORY_PLAIN_4_BALANCES]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_4_BASIC]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_4_ETH]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: factoryPlain2Optimized,
 };
 
 export default implementations;
