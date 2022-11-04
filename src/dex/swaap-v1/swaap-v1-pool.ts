@@ -17,6 +17,7 @@ import PoolABI from '../../abi/swaap-v1/pool.json';
 import ProxyABI from '../../abi/chainlink.json';
 import Erc20ABI from '../../abi/erc20.json';
 import { Interface } from '@ethersproject/abi';
+import { isHexString } from '@ethersproject/bytes';
 
 export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
   static readonly poolInterface = new Interface(PoolABI);
@@ -135,375 +136,395 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
       } else if (this.pool.id === log.address.toLowerCase()) {
         // log comes from the Pool
 
-        const topic0 = log.topics[0];
-
-        // anonymous events
-        switch (topic0) {
-          // setSwapFee
-          case SwaapV1Pool.SWAP_FEE_TOPIC: {
-            const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
-            return {
-              ...state,
-              parameters: {
-                ...state.parameters,
-                swapFee: value,
-              },
-            };
-          }
-          // setPriceStatisticsLookbackInRound
-          case SwaapV1Pool.LB_IN_ROUND_TOPIC: {
-            const value = Number(SwaapV1Pool.getValueFromAnonymousEvent(log));
-
-            const oldRoundLookbackWindow =
-              (state.parameters.priceStatisticsLookbackInRound - 1) *
-              state.parameters.priceStatisticsLookbackStepInRound;
-            const newRoundLookbackWindow =
-              (value - 1) * state.parameters.priceStatisticsLookbackStepInRound;
-            const tokens = Object.keys(state.oracles);
-
-            if (value > state.parameters.priceStatisticsLookbackInRound) {
-              const multiCallInputs: MultiCallInput[] = tokens
-                .map((token: Address) => {
-                  return [
-                    {
-                      target: state.oracles[token].oraclesBindState.proxy,
-                      callData:
-                        SwaapV1Pool.proxyInterface.encodeFunctionData(
-                          'latestRound',
-                        ),
-                    },
-                  ];
-                })
-                .flat();
-
-              const multicallOutputs: MultiCallOutput[] = (
-                await this.dexHelper.multiContract.methods
-                  .aggregate(multiCallInputs)
-                  .call({}, blockHeader.number)
-              ).returnData;
-
-              let i = 0;
-              const latestRoundIdsBN: { [key: Address]: bigint } =
-                tokens.reduce((acc, token) => {
-                  return {
-                    ...acc,
-                    [token]: BigInt(
-                      SwaapV1Pool.proxyInterface
-                        .decodeFunctionResult(
-                          'latestRound',
-                          multicallOutputs[i++],
-                        )[0]
-                        .toString(),
-                    ),
-                  };
-                }, {});
-
-              const missingHistoricalData: { [key: Address]: ChainLinkData } =
-                await this.getHistoricalRoundsData(
-                  tokens,
-                  newRoundLookbackWindow,
-                  latestRoundIdsBN,
-                  state.oracles,
-                  blockHeader.number,
-                );
-
-              const updatedOraclesData: SwaapV1PoolOracles = tokens.reduce(
-                (acc, token) => {
-                  return {
-                    ...acc,
-                    [token]: {
-                      oraclesBindState: {
-                        ...state.oracles[token].oraclesBindState,
-                      },
-                      latestRoundId: state.oracles[token].latestRoundId,
-                      historicalOracleState: missingHistoricalData[token],
-                    },
-                  };
-                },
-                {},
-              );
-
-              return {
-                ...state,
-                parameters: {
-                  ...state.parameters,
-                  priceStatisticsLookbackInRound: value,
-                },
-                oracles: { ...updatedOraclesData },
-              };
-            } else if (
-              value < state.parameters.priceStatisticsLookbackInRound
-            ) {
-              const updatedOraclesData = tokens.reduce((acc, token) => {
-                let historicalData = {
-                  ...state.oracles[token].historicalOracleState,
-                };
-                let roundId =
-                  state.oracles[token].latestRoundId - oldRoundLookbackWindow;
-                const endRoundId =
-                  state.oracles[token].latestRoundId - newRoundLookbackWindow;
-
-                while (roundId < endRoundId) {
-                  delete historicalData[roundId++];
-                }
-                return {
-                  ...acc,
-                  [token]: {
-                    oraclesBindState: {
-                      ...state.oracles[token].oraclesBindState,
-                    },
-                    latestRoundId: state.oracles[token].latestRoundId,
-                    historicalOracleState: {
-                      historicalData,
-                    },
-                  },
-                };
-              }, {});
-
-              return {
-                ...state,
-                parameters: {
-                  ...state.parameters,
-                  priceStatisticsLookbackInRound: value,
-                },
-                oracles: updatedOraclesData,
-              };
+        // Check if the event is anonymous or not
+        let isAnonymousEvent: boolean = true;
+        const nameOrSignatureOrTopic: string = log.topics[0];
+        if (isHexString(nameOrSignatureOrTopic)) {
+          const topichash = nameOrSignatureOrTopic.toLowerCase();
+          for (const name in SwaapV1Pool.poolInterface.events) {
+            if (topichash === SwaapV1Pool.poolInterface.getEventTopic(name)) {
+              isAnonymousEvent = false;
+              break;
             }
-
-            return null;
-          }
-          // setPriceStatisticsLookbackStepInRound
-          case SwaapV1Pool.LB_STEP_IN_ROUND_TOPIC: {
-            const data = log.data.toString();
-            const value = Number(SwaapV1Pool.getValueFromAnonymousEvent(log));
-            const oldRoundLookbackWindow =
-              (state.parameters.priceStatisticsLookbackInRound - 1) *
-              state.parameters.priceStatisticsLookbackStepInRound;
-            const newRoundLookbackWindow =
-              (state.parameters.priceStatisticsLookbackInRound - 1) * value;
-            const tokens = Object.keys(state.oracles);
-
-            if (value > state.parameters.priceStatisticsLookbackStepInRound) {
-              const multiCallInputs: MultiCallInput[] = tokens
-                .map((token: Address) => {
-                  return [
-                    {
-                      target: state.oracles[token].oraclesBindState.proxy,
-                      callData:
-                        SwaapV1Pool.proxyInterface.encodeFunctionData(
-                          'latestRound',
-                        ),
-                    },
-                  ];
-                })
-                .flat();
-
-              const multicallOutputs: MultiCallOutput[] = (
-                await this.dexHelper.multiContract.methods
-                  .aggregate(multiCallInputs)
-                  .call({}, blockHeader.number)
-              ).returnData;
-
-              let i = 0;
-              const latestRoundIdsBN: { [key: Address]: bigint } =
-                tokens.reduce((acc, token) => {
-                  return {
-                    ...acc,
-                    [token]: BigInt(
-                      SwaapV1Pool.proxyInterface
-                        .decodeFunctionResult(
-                          'latestRound',
-                          multicallOutputs[i++],
-                        )[0]
-                        .toString(),
-                    ),
-                  };
-                }, {});
-
-              const missingHistoricalData: { [key: Address]: ChainLinkData } =
-                await this.getHistoricalRoundsData(
-                  tokens,
-                  newRoundLookbackWindow,
-                  latestRoundIdsBN,
-                  state.oracles,
-                  blockHeader.number,
-                );
-
-              const updatedOraclesData: SwaapV1PoolOracles = tokens.reduce(
-                (acc, token) => {
-                  return {
-                    ...acc,
-                    [token]: {
-                      oraclesBindState: {
-                        ...state.oracles[token].oraclesBindState,
-                      },
-                      latestRoundId: state.oracles[token].latestRoundId,
-                      historicalOracleState: missingHistoricalData[token],
-                    },
-                  };
-                },
-                {},
-              );
-
-              return {
-                ...state,
-                parameters: {
-                  ...state.parameters,
-                  priceStatisticsLookbackStepInRound: value,
-                },
-                oracles: { ...updatedOraclesData },
-              };
-            } else if (
-              value < state.parameters.priceStatisticsLookbackStepInRound
-            ) {
-              const updatedOraclesData = tokens.reduce((acc, token) => {
-                let historicalData = {
-                  ...state.oracles[token].historicalOracleState,
-                };
-                let roundId =
-                  state.oracles[token].latestRoundId - oldRoundLookbackWindow;
-                const endRoundId =
-                  state.oracles[token].latestRoundId - newRoundLookbackWindow;
-
-                while (roundId < endRoundId) {
-                  delete historicalData[roundId++];
-                }
-                return {
-                  ...acc,
-                  [token]: {
-                    oraclesBindState: {
-                      ...state.oracles[token].oraclesBindState,
-                    },
-                    latestRoundId: state.oracles[token].latestRoundId,
-                    historicalOracleState: {
-                      historicalData,
-                    },
-                  },
-                };
-              }, {});
-
-              return {
-                ...state,
-                parameters: {
-                  ...state.parameters,
-                  priceStatisticsLookbackStepInRound: value,
-                },
-                oracles: updatedOraclesData,
-              };
-            }
-
-            return {
-              ...state,
-              parameters: {
-                ...state.parameters,
-                priceStatisticsLookbackStepInRound: value,
-              },
-            };
-          }
-          // setDynamicCoverageFeesZ
-          case SwaapV1Pool.Z_TOPIC: {
-            const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
-            return {
-              ...state,
-              parameters: {
-                ...state.parameters,
-                dynamicCoverageFeesZ: value,
-              },
-            };
-          }
-          // setDynamicCoverageFeesHorizon
-          case SwaapV1Pool.HORIZON_TOPIC: {
-            const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
-            return {
-              ...state,
-              parameters: {
-                ...state.parameters,
-                dynamicCoverageFeesHorizon: value,
-              },
-            };
-          }
-          // setPriceStatisticsLookbackInSec
-          case SwaapV1Pool.LB_IN_SEC_TOPIC: {
-            const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
-            return {
-              ...state,
-              parameters: {
-                ...state.parameters,
-                priceStatisticsLookbackInSec: value,
-              },
-            };
-          }
-          // setMaxPriceUnpegRatio
-          case SwaapV1Pool.MAX_UNPEG_TOPIC: {
-            const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
-            return {
-              ...state,
-              parameters: {
-                ...state.parameters,
-                maxPriceUnpegRatio: value,
-              },
-            };
           }
         }
 
-        const parsed = SwaapV1Pool.poolInterface.parseLog(log);
+        if (isAnonymousEvent) {
+          // anonymous events
+          const topic0 = log.topics[0];
+          switch (topic0) {
+            // setSwapFee
+            case SwaapV1Pool.SWAP_FEE_TOPIC: {
+              const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
+              return {
+                ...state,
+                parameters: {
+                  ...state.parameters,
+                  swapFee: value,
+                },
+              };
+            }
+            // setPriceStatisticsLookbackInRound
+            case SwaapV1Pool.LB_IN_ROUND_TOPIC: {
+              const value = Number(SwaapV1Pool.getValueFromAnonymousEvent(log));
 
-        // named events
-        switch (parsed.name) {
-          case 'LOG_JOIN': {
-            const tokenIn = parsed.args.tokenIn.toString().toLowerCase();
-            const tokenAmountIn = BigInt(parsed.args.tokenAmountIn.toString());
-            return {
-              ...state,
-              liquidities: {
-                ...state.liquidities,
-                [tokenIn]: {
-                  ...state.liquidities[tokenIn],
-                  balance: state.liquidities[tokenIn].balance + tokenAmountIn,
+              const oldRoundLookbackWindow =
+                (state.parameters.priceStatisticsLookbackInRound - 1) *
+                state.parameters.priceStatisticsLookbackStepInRound;
+              const newRoundLookbackWindow =
+                (value - 1) *
+                state.parameters.priceStatisticsLookbackStepInRound;
+              const tokens = Object.keys(state.oracles);
+
+              if (value > state.parameters.priceStatisticsLookbackInRound) {
+                const multiCallInputs: MultiCallInput[] = tokens
+                  .map((token: Address) => {
+                    return [
+                      {
+                        target: state.oracles[token].oraclesBindState.proxy,
+                        callData:
+                          SwaapV1Pool.proxyInterface.encodeFunctionData(
+                            'latestRound',
+                          ),
+                      },
+                    ];
+                  })
+                  .flat();
+
+                const multicallOutputs: MultiCallOutput[] = (
+                  await this.dexHelper.multiContract.methods
+                    .aggregate(multiCallInputs)
+                    .call({}, blockHeader.number)
+                ).returnData;
+
+                let i = 0;
+                const latestRoundIdsBN: { [key: Address]: bigint } =
+                  tokens.reduce((acc, token) => {
+                    return {
+                      ...acc,
+                      [token]: BigInt(
+                        SwaapV1Pool.proxyInterface
+                          .decodeFunctionResult(
+                            'latestRound',
+                            multicallOutputs[i++],
+                          )[0]
+                          .toString(),
+                      ),
+                    };
+                  }, {});
+
+                const missingHistoricalData: { [key: Address]: ChainLinkData } =
+                  await this.getHistoricalRoundsData(
+                    tokens,
+                    newRoundLookbackWindow,
+                    latestRoundIdsBN,
+                    state.oracles,
+                    blockHeader.number,
+                  );
+
+                const updatedOraclesData: SwaapV1PoolOracles = tokens.reduce(
+                  (acc, token) => {
+                    return {
+                      ...acc,
+                      [token]: {
+                        oraclesBindState: {
+                          ...state.oracles[token].oraclesBindState,
+                        },
+                        latestRoundId: state.oracles[token].latestRoundId,
+                        historicalOracleState: missingHistoricalData[token],
+                      },
+                    };
+                  },
+                  {},
+                );
+
+                return {
+                  ...state,
+                  parameters: {
+                    ...state.parameters,
+                    priceStatisticsLookbackInRound: value,
+                  },
+                  oracles: { ...updatedOraclesData },
+                };
+              } else if (
+                value < state.parameters.priceStatisticsLookbackInRound
+              ) {
+                const updatedOraclesData = tokens.reduce((acc, token) => {
+                  let historicalData = {
+                    ...state.oracles[token].historicalOracleState,
+                  };
+                  let roundId =
+                    state.oracles[token].latestRoundId - oldRoundLookbackWindow;
+                  const endRoundId =
+                    state.oracles[token].latestRoundId - newRoundLookbackWindow;
+
+                  while (roundId < endRoundId) {
+                    delete historicalData[roundId++];
+                  }
+                  return {
+                    ...acc,
+                    [token]: {
+                      oraclesBindState: {
+                        ...state.oracles[token].oraclesBindState,
+                      },
+                      latestRoundId: state.oracles[token].latestRoundId,
+                      historicalOracleState: {
+                        historicalData,
+                      },
+                    },
+                  };
+                }, {});
+
+                return {
+                  ...state,
+                  parameters: {
+                    ...state.parameters,
+                    priceStatisticsLookbackInRound: value,
+                  },
+                  oracles: updatedOraclesData,
+                };
+              }
+
+              return null;
+            }
+            // setPriceStatisticsLookbackStepInRound
+            case SwaapV1Pool.LB_STEP_IN_ROUND_TOPIC: {
+              const data = log.data.toString();
+              const value = Number(SwaapV1Pool.getValueFromAnonymousEvent(log));
+              const oldRoundLookbackWindow =
+                (state.parameters.priceStatisticsLookbackInRound - 1) *
+                state.parameters.priceStatisticsLookbackStepInRound;
+              const newRoundLookbackWindow =
+                (state.parameters.priceStatisticsLookbackInRound - 1) * value;
+              const tokens = Object.keys(state.oracles);
+
+              if (value > state.parameters.priceStatisticsLookbackStepInRound) {
+                const multiCallInputs: MultiCallInput[] = tokens
+                  .map((token: Address) => {
+                    return [
+                      {
+                        target: state.oracles[token].oraclesBindState.proxy,
+                        callData:
+                          SwaapV1Pool.proxyInterface.encodeFunctionData(
+                            'latestRound',
+                          ),
+                      },
+                    ];
+                  })
+                  .flat();
+
+                const multicallOutputs: MultiCallOutput[] = (
+                  await this.dexHelper.multiContract.methods
+                    .aggregate(multiCallInputs)
+                    .call({}, blockHeader.number)
+                ).returnData;
+
+                let i = 0;
+                const latestRoundIdsBN: { [key: Address]: bigint } =
+                  tokens.reduce((acc, token) => {
+                    return {
+                      ...acc,
+                      [token]: BigInt(
+                        SwaapV1Pool.proxyInterface
+                          .decodeFunctionResult(
+                            'latestRound',
+                            multicallOutputs[i++],
+                          )[0]
+                          .toString(),
+                      ),
+                    };
+                  }, {});
+
+                const missingHistoricalData: { [key: Address]: ChainLinkData } =
+                  await this.getHistoricalRoundsData(
+                    tokens,
+                    newRoundLookbackWindow,
+                    latestRoundIdsBN,
+                    state.oracles,
+                    blockHeader.number,
+                  );
+
+                const updatedOraclesData: SwaapV1PoolOracles = tokens.reduce(
+                  (acc, token) => {
+                    return {
+                      ...acc,
+                      [token]: {
+                        oraclesBindState: {
+                          ...state.oracles[token].oraclesBindState,
+                        },
+                        latestRoundId: state.oracles[token].latestRoundId,
+                        historicalOracleState: missingHistoricalData[token],
+                      },
+                    };
+                  },
+                  {},
+                );
+
+                return {
+                  ...state,
+                  parameters: {
+                    ...state.parameters,
+                    priceStatisticsLookbackStepInRound: value,
+                  },
+                  oracles: { ...updatedOraclesData },
+                };
+              } else if (
+                value < state.parameters.priceStatisticsLookbackStepInRound
+              ) {
+                const updatedOraclesData = tokens.reduce((acc, token) => {
+                  let historicalData = {
+                    ...state.oracles[token].historicalOracleState,
+                  };
+                  let roundId =
+                    state.oracles[token].latestRoundId - oldRoundLookbackWindow;
+                  const endRoundId =
+                    state.oracles[token].latestRoundId - newRoundLookbackWindow;
+
+                  while (roundId < endRoundId) {
+                    delete historicalData[roundId++];
+                  }
+                  return {
+                    ...acc,
+                    [token]: {
+                      oraclesBindState: {
+                        ...state.oracles[token].oraclesBindState,
+                      },
+                      latestRoundId: state.oracles[token].latestRoundId,
+                      historicalOracleState: {
+                        historicalData,
+                      },
+                    },
+                  };
+                }, {});
+
+                return {
+                  ...state,
+                  parameters: {
+                    ...state.parameters,
+                    priceStatisticsLookbackStepInRound: value,
+                  },
+                  oracles: updatedOraclesData,
+                };
+              }
+
+              return {
+                ...state,
+                parameters: {
+                  ...state.parameters,
+                  priceStatisticsLookbackStepInRound: value,
                 },
-              },
-            };
+              };
+            }
+            // setDynamicCoverageFeesZ
+            case SwaapV1Pool.Z_TOPIC: {
+              const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
+              return {
+                ...state,
+                parameters: {
+                  ...state.parameters,
+                  dynamicCoverageFeesZ: value,
+                },
+              };
+            }
+            // setDynamicCoverageFeesHorizon
+            case SwaapV1Pool.HORIZON_TOPIC: {
+              const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
+              return {
+                ...state,
+                parameters: {
+                  ...state.parameters,
+                  dynamicCoverageFeesHorizon: value,
+                },
+              };
+            }
+            // setPriceStatisticsLookbackInSec
+            case SwaapV1Pool.LB_IN_SEC_TOPIC: {
+              const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
+              return {
+                ...state,
+                parameters: {
+                  ...state.parameters,
+                  priceStatisticsLookbackInSec: value,
+                },
+              };
+            }
+            // setMaxPriceUnpegRatio
+            case SwaapV1Pool.MAX_UNPEG_TOPIC: {
+              const value = BigInt(SwaapV1Pool.getValueFromAnonymousEvent(log));
+              return {
+                ...state,
+                parameters: {
+                  ...state.parameters,
+                  maxPriceUnpegRatio: value,
+                },
+              };
+            }
           }
-          case 'LOG_EXIT': {
-            const tokenOut = parsed.args.tokenOut.toString().toLowerCase();
-            const tokenAmountOut = BigInt(
-              parsed.args.tokenAmountOut.toString(),
-            );
-            return {
-              ...state,
-              liquidities: {
-                ...state.liquidities,
-                [tokenOut]: {
-                  ...state.liquidities[tokenOut],
-                  balance: state.liquidities[tokenOut].balance - tokenAmountOut,
+        } else {
+          // named events
+          const parsed = SwaapV1Pool.poolInterface.parseLog(log);
+          switch (parsed.name) {
+            case 'LOG_JOIN': {
+              const tokenIn = parsed.args.tokenIn.toString().toLowerCase();
+              const tokenAmountIn = BigInt(
+                parsed.args.tokenAmountIn.toString(),
+              );
+              return {
+                ...state,
+                liquidities: {
+                  ...state.liquidities,
+                  [tokenIn]: {
+                    ...state.liquidities[tokenIn],
+                    balance: state.liquidities[tokenIn].balance + tokenAmountIn,
+                  },
                 },
-              },
-            };
-          }
-          case 'LOG_SWAP': {
-            const tokenIn = parsed.args.tokenIn.toString().toLowerCase();
-            const tokenAmountIn = BigInt(parsed.args.tokenAmountIn.toString());
-            const tokenOut = parsed.args.tokenOut.toString().toLowerCase();
-            const tokenAmountOut = BigInt(
-              parsed.args.tokenAmountOut.toString(),
-            );
-            return {
-              ...state,
-              liquidities: {
-                ...state.liquidities,
-                [tokenIn]: {
-                  ...state.liquidities[tokenIn],
-                  balance: state.liquidities[tokenIn].balance + tokenAmountIn,
+              };
+            }
+            case 'LOG_EXIT': {
+              const tokenOut = parsed.args.tokenOut.toString().toLowerCase();
+              const tokenAmountOut = BigInt(
+                parsed.args.tokenAmountOut.toString(),
+              );
+              return {
+                ...state,
+                liquidities: {
+                  ...state.liquidities,
+                  [tokenOut]: {
+                    ...state.liquidities[tokenOut],
+                    balance:
+                      state.liquidities[tokenOut].balance - tokenAmountOut,
+                  },
                 },
-                [tokenOut]: {
-                  ...state.liquidities[tokenOut],
-                  balance: state.liquidities[tokenOut].balance - tokenAmountOut,
+              };
+            }
+            case 'LOG_SWAP': {
+              const tokenIn = parsed.args.tokenIn.toString().toLowerCase();
+              const tokenAmountIn = BigInt(
+                parsed.args.tokenAmountIn.toString(),
+              );
+              const tokenOut = parsed.args.tokenOut.toString().toLowerCase();
+              const tokenAmountOut = BigInt(
+                parsed.args.tokenAmountOut.toString(),
+              );
+              return {
+                ...state,
+                liquidities: {
+                  ...state.liquidities,
+                  [tokenIn]: {
+                    ...state.liquidities[tokenIn],
+                    balance: state.liquidities[tokenIn].balance + tokenAmountIn,
+                  },
+                  [tokenOut]: {
+                    ...state.liquidities[tokenOut],
+                    balance:
+                      state.liquidities[tokenOut].balance - tokenAmountOut,
+                  },
                 },
-              },
-            };
-          }
-          default: {
-            return null;
+              };
+            }
+            default: {
+              return null;
+            }
           }
         }
       }
