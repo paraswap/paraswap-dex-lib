@@ -72,7 +72,7 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_3_BALANCES]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_3_BASIC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_3_BASIC]: CHANGE,
   [ImplementationNames.FACTORY_PLAIN_3_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_3_OPTIMIZED]: notImplemented,
 

@@ -726,9 +726,9 @@ export class CurveV1Factory
     implementation: Address,
     pool?: Address,
   ) {
-    this.logger.error(
+    this.logger.warn(
       `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
-        `found unspecified implementation: ${implementation} for ${pool} pool`,
+        `found unspecified implementation: ${implementation} for ${pool} pool. Skipping pool`,
     );
   }
 

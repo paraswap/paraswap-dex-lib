@@ -83,6 +83,15 @@ export enum FactoryImplementationNames {
   FACTORY_META_USD_FRAX_USDC = 'factory_meta_usd_frax_usdc',
   FACTORY_META_USD_BALANCES_FRAX_USDC = 'factory_meta_usd_balances_frax_usdc',
 
+  FACTORY_META_USD_GEIST = 'factory_meta_usd_geist',
+  FACTORY_META_USD_BALANCES_GEIST = 'factory_meta_usd_balances_geist',
+
+  FACTORY_META_USD_V2_16 = 'factory_meta_usd_v2_16',
+  FACTORY_META_USD_BALANCES_V2_16 = 'factory_meta_usd_balances_v2_16',
+
+  FACTORY_META_USD_V2_41 = 'factory_meta_usd_v2_41',
+  FACTORY_META_USD_BALANCES_V2_41 = 'factory_meta_usd_balances_v2_41',
+
   FACTORY_PLAIN_2_BALANCES = 'factory_plain_2_balances',
   FACTORY_PLAIN_2_BASIC = 'factory_plain_2_basic',
   FACTORY_PLAIN_2_ETH = 'factory_plain_2_eth',
@@ -104,6 +113,20 @@ export enum CustomImplementationNames {
   CUSTOM_PLAIN_2COIN_RENBTC = 'custom_plain_2coin_renbtc',
   CUSTOM_PLAIN_3COIN_SBTC = 'custom_plain_3coin_sbtc',
   CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
+
+  CUSTOM_POLYGON_2COIN_LENDING = 'custom_polygon_2coin_lending',
+  CUSTOM_POLYGON_3COIN_LENDING = 'custom_polygon_3coin_lending',
+
+  CUSTOM_FANTOM_2COIN_USD = 'custom_fantom_2coin_usd',
+  CUSTOM_FANTOM_2COIN_BTC = 'custom_fantom_2coin_btc',
+  CUSTOM_FANTOM_3COIN_LENDING = 'custom_fantom_3coin_lending',
+
+  CUSTOM_AVALANCHE_3COIN_LENDING = 'custom_avalanche_3coin_lending',
+
+  CUSTOM_ARBITRUM_2COIN_USD = 'custom_arbitrum_2coin_usd',
+  CUSTOM_ARBITRUM_2COIN_BTC = 'custom_arbitrum_2coin_btc',
+
+  CUSTOM_OPTIMISM_3COIN_USD = 'custom_optimism_3coin_usd',
 }
 
 export const ImplementationNames = {
@@ -120,7 +143,7 @@ export type FactoryPoolImplementations = {
 };
 
 export type CustomPoolConfig = {
-  name: CustomImplementationNames;
+  name: CustomImplementationNames | FactoryImplementationNames;
   address: Address;
   lpTokenAddress: Address;
   // Liquidity is fetched from curve API: https://api.curve.fi/api/getPools/ethereum/SLUG

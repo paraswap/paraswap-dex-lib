@@ -58,7 +58,7 @@ export const implementations: Record<ImplementationNames, get_D_mem> = {
   [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: CHANGE,
   [ImplementationNames.FACTORY_PLAIN_2_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: notImplemented,
 
