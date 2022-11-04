@@ -317,19 +317,18 @@ export class CurveV1Factory
       0,
       factoryResultsDivider,
     );
+
     const allAvailableImplementations = _.flattenDeep(
       allResultsFromFactory.slice(factoryResultsDivider) as string[],
-    );
+    ).filter(implementation => implementation !== NULL_ADDRESS);
 
-    allAvailableImplementations
-      .filter(implementation => implementation !== NULL_ADDRESS)
-      .forEach(implementation => {
-        const currentImplementation =
-          this.config.factoryPoolImplementations[implementation];
-        if (currentImplementation === undefined) {
-          this._reportForUnspecifiedImplementation(implementation);
-        }
-      });
+    allAvailableImplementations.forEach(implementation => {
+      const currentImplementation =
+        this.config.factoryPoolImplementations[implementation];
+      if (currentImplementation === undefined) {
+        this._reportForUnspecifiedImplementation(implementation);
+      }
+    });
 
     _.chunk(resultsFromFactory, 3).forEach((result, i) => {
       const [implementationAddress, coins, coins_decimals] = result as [
@@ -363,7 +362,7 @@ export class CurveV1Factory
         const basePool = this.poolManager.getPool(basePoolIdentifier, false);
         if (basePool === null) {
           this.logger.error(
-            `${this.dexKey}: custom base pool was not initialized properly. ` +
+            `${this.dexKey}_${this.dexHelper.config.data.network}: custom base pool was not initialized properly. ` +
               `You must call initializeCustomPollingPools before fetching factory`,
           );
           return;
