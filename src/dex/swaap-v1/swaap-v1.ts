@@ -58,9 +58,9 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
+    readonly network: Network,
+    readonly dexKey: string,
+    readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
@@ -287,6 +287,8 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       _ => [],
     );
   }
+
+  async updatePoolState(): Promise<void> {}
 
   // // Returns list of top pools based on liquidity. Max
   // // limit number pools should be returned.

@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { DummyDexHelper, IDexHelper } from '../../dex-helper/index';
+import { Interface, Result } from '@ethersproject/abi';
+import { DummyDexHelper } from '../../dex-helper/index';
 import { MAX_UINT, Network, SwapSide } from '../../constants';
+import { BI_POWS } from '../../bigint-constants';
 import { SwaapV1 } from './swaap-v1';
 import {
   checkPoolPrices,
@@ -10,139 +12,222 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { Interface } from '@ethersproject/abi';
-import PoolABI from '../../abi/swaap-v1/pool.json';
 
-const network = Network.POLYGON;
-const TokenASymbol = 'USDC';
-const TokenA = Tokens[network][TokenASymbol];
+const specificBlockNumber = 35194402;
+const specificBlockTimestamp = BigInt(1667574117);
 
-const TokenBSymbol = 'WETH';
-const TokenB = Tokens[network][TokenBSymbol];
+function getReaderCalldata(
+  exchangeAddress: string,
+  readerIface: Interface,
+  amounts: bigint[],
+  funcName: string,
+  srcTokenAddress: string,
+  destTokenAddress: string,
+  isSell: boolean,
+) {
+  return amounts.map(amount => ({
+    target: exchangeAddress,
+    callData: readerIface.encodeFunctionData(funcName, [
+      srcTokenAddress,
+      isSell ? amount : MAX_UINT,
+      destTokenAddress,
+      isSell ? 0 : amount,
+      MAX_UINT,
+    ]),
+  }));
+}
 
-const amounts = [0n, 1000n, 2000n];
-
-const dexKey = 'SwaapV1';
-
-const poolInterface = new Interface(PoolABI);
-
-const specificBlockNumber = 29831233;
-const specificBlockTimestamp = BigInt(1655821356);
-
-describe('SwaapV1', function () {
-  for (const side of [SwapSide.BUY, SwapSide.SELL]) {
-    it(`getPoolIdentifiers and getPricesVolume ${side}: block=latest`, async function () {
-      const dexHelper = new DummyDexHelper(network);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
-      await integrationTest(dexHelper, blocknumber, null, side);
-    });
-
-    it(`getPoolIdentifiers and getPricesVolume ${side}: block=${specificBlockNumber}`, async function () {
-      const dexHelper = new DummyDexHelper(network);
-      await integrationTest(
-        dexHelper,
-        specificBlockNumber,
-        specificBlockTimestamp,
-        side,
-      );
-    });
-  }
-
-  it('getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const swaapv1 = new SwaapV1(network, dexKey, dexHelper);
-
-    const poolLiquidity = await swaapv1.getTopPoolsForToken(TokenA.address, 10);
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
-
-    if (!swaapv1.hasConstantPriceLargeAmounts) {
-      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
-    }
+function decodeReaderResult(
+  results: Result,
+  readerIface: Interface,
+  funcName: string,
+) {
+  return results.map(result => {
+    const parsed = readerIface.decodeFunctionResult(funcName, result);
+    return BigInt(parsed[0].amount);
   });
-});
+}
 
-async function integrationTest(
-  dexHelper: IDexHelper,
-  blocknumber: number,
-  blocktimestamp: bigint | null,
+async function checkOnChainPricing(
+  swaapV1: SwaapV1,
+  blockNumber: number,
+  prices: bigint[],
+  amounts: bigint[],
+  srcTokenAddress: string,
+  destTokenAddress: string,
   side: SwapSide,
 ) {
-  const isSell = side == SwapSide.SELL;
+  const exchangeAddress = '0x7f5f7411c2c7eC60e2db946aBbe7DC354254870B';
 
-  const swaapv1 = new SwaapV1(network, dexKey, dexHelper);
+  const readerIface = SwaapV1.poolInterface;
 
-  await swaapv1.initializePricing(blocknumber);
-
-  const pools = await swaapv1.getPoolIdentifiers(
-    isSell ? TokenA : TokenB,
-    isSell ? TokenB : TokenA,
-    side,
-    blocknumber,
+  const isSell = side == SwapSide.SELL ? true : false;
+  const funcName = isSell ? 'getAmountOutGivenInMMM' : 'getAmountInGivenOutMMM';
+  const readerCallData = getReaderCalldata(
+    exchangeAddress,
+    readerIface,
+    amounts.slice(1),
+    funcName,
+    srcTokenAddress,
+    destTokenAddress,
+    isSell,
   );
-  console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+  const readerResult = (
+    await swaapV1.dexHelper.multiContract.methods
+      .aggregate(readerCallData)
+      .call({}, blockNumber)
+  ).returnData;
+
+  const expectedPrices = [0n].concat(
+    decodeReaderResult(readerResult, readerIface, funcName),
+  );
+
+  expect(prices).toEqual(expectedPrices);
+}
+
+async function testPricingOnNetwork(
+  swaapV1: SwaapV1,
+  network: Network,
+  dexKey: string,
+  blockNumber: number,
+  srcTokenSymbol: string,
+  destTokenSymbol: string,
+  side: SwapSide,
+  amounts: bigint[],
+) {
+  const networkTokens = Tokens[network];
+
+  const pools = await swaapV1.getPoolIdentifiers(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    side,
+    blockNumber,
+  );
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
+    pools,
+  );
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await swaapv1.getPricesVolumeLogic(
-    isSell ? TokenA : TokenB,
-    isSell ? TokenB : TokenA,
+  const poolPrices = await swaapV1.getPricesVolumeLogic(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
     amounts,
     side,
-    blocknumber,
-    blocktimestamp,
+    blockNumber,
+    specificBlockTimestamp,
     pools,
   );
-  if (!isSell && poolPrices) {
-    // on buy, price for a 0 amount will be 1 (decimals issue)
-    for (const poolPrice of poolPrices!) {
-      if ((poolPrice.prices[0] = 1n)) {
-        poolPrice.prices[0] = 0n;
-      }
-    }
-  }
-  console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
+    poolPrices,
+  );
 
   expect(poolPrices).not.toBeNull();
-  if (swaapv1.hasConstantPriceLargeAmounts) {
+  if (swaapV1.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
-  if (blocktimestamp != null) {
-    // Reprice each pool using on chain calculation to check it's correct
-    const functionName = isSell
-      ? 'getAmountOutGivenInMMM'
-      : 'getAmountInGivenOutMMM';
-    for (const poolPrice of poolPrices!) {
-      const pricesFromContract = (
-        await dexHelper.multiContract.methods
-          .aggregate(
-            amounts.slice(1).map(amount => ({
-              target: poolPrice.data.pool,
-              callData: poolInterface.encodeFunctionData(functionName, [
-                isSell ? TokenA.address : TokenB.address,
-                isSell ? amount : MAX_UINT,
-                isSell ? TokenB.address : TokenA.address,
-                isSell ? 0 : amount,
-                MAX_UINT,
-              ]),
-            })),
-          )
-          .call({}, blocknumber)
-      ).returnData.map((result: string) =>
-        BigInt(
-          poolInterface
-            .decodeFunctionResult(functionName, result)
-            .swapResult[0].toString(),
-        ),
-      );
-      console.log(
-        `${TokenASymbol} <> ${TokenBSymbol} From Contract ${poolPrice.data.pool} Prices:`,
-        pricesFromContract,
-      );
-      console.log(pricesFromContract, poolPrice.prices);
-      expect(pricesFromContract).toEqual(poolPrice.prices.slice(1));
-    }
-  }
+  // Check if onchain pricing equals to calculated ones
+  await checkOnChainPricing(
+    swaapV1,
+    blockNumber,
+    poolPrices![0].prices,
+    amounts,
+    networkTokens[srcTokenSymbol].address,
+    networkTokens[destTokenSymbol].address,
+    side,
+  );
 }
+
+describe('SwaapV1', function () {
+  const dexKey = 'SwaapV1';
+  let blockNumber: number = specificBlockNumber;
+  let swaapV1: SwaapV1;
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    // TODO: Put here token Symbol to check against
+    // Don't forget to update relevant tokens in constant-e2e.ts
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'WETH';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [0n, 1n * BI_POWS[tokens[destTokenSymbol].decimals]];
+
+    beforeAll(async () => {
+      swaapV1 = new SwaapV1(network, dexKey, dexHelper);
+      if (swaapV1.initializePricing) {
+        await swaapV1.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        swaapV1,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        swaapV1,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newSwaapV1 = new SwaapV1(network, dexKey, dexHelper);
+      if (newSwaapV1.updatePoolState) {
+        await newSwaapV1.updatePoolState();
+      }
+      const poolLiquidity = await newSwaapV1.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newSwaapV1.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+});

@@ -76,6 +76,9 @@ export class PoolQuotations {
     poolParameters: DeepReadonly<SwaapV1PoolParameters>,
     currentTimestamp: DeepReadonly<bigint>,
   ): bigint {
+    if (tokenAmountIn == 0n) {
+      return 0n;
+    }
     _require(
       tokenAmountIn <= Num.mul(tokenDataIn.balance, Const.MAX_IN_RATIO),
       'Err.MAX_IN_RATIO',
@@ -200,6 +203,9 @@ export class PoolQuotations {
     poolParameters: DeepReadonly<SwaapV1PoolParameters>,
     currentTimestamp: DeepReadonly<bigint>,
   ): bigint {
+    if (tokenAmountOut == 0n) {
+      return 0n;
+    }
     _require(
       tokenAmountOut <= Num.mul(tokenDataOut.balance, Const.MAX_OUT_RATIO),
       'Err.MAX_OUT_RATIO',
