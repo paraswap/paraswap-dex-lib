@@ -1,7 +1,0 @@
-# Description
-
-This folder is only for references and making easier to extend if implementation addresses change. I put here every address and implementation I used. If anything changes in future checking the diffs will be as easy as just running any local diff program.
-
-Names I keeping reference to our implementation + address to verify.
-
-Another useful scenario. If new chain is added you don't have addresses. You just copy contract and see if implementation resembles the one that is already implemented. If yes, you just put the same config. No need for further checks.
