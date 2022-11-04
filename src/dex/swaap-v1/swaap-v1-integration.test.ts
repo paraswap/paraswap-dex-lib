@@ -212,9 +212,6 @@ describe('SwaapV1', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newSwaapV1 = new SwaapV1(network, dexKey, dexHelper);
-      if (newSwaapV1.updatePoolState) {
-        await newSwaapV1.updatePoolState();
-      }
       const poolLiquidity = await newSwaapV1.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,

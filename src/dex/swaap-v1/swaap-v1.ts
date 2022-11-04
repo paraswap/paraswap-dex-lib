@@ -288,8 +288,6 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     );
   }
 
-  async updatePoolState(): Promise<void> {}
-
   // // Returns list of top pools based on liquidity. Max
   // // limit number pools should be returned.
   async getTopPoolsForTokens(
