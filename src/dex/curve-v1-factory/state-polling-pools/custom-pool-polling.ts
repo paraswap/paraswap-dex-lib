@@ -1,7 +1,11 @@
 import _ from 'lodash';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
-import { CustomImplementationNames, PoolConstants, PoolState } from '../types';
+import {
+  ImplementationNames,
+  PoolConstants,
+  PoolState,
+} from '../types';
 import { BasePoolPolling, MulticallReturnedTypes } from './base-pool-polling';
 import { uint256ToBigInt } from '../../../lib/decoders';
 import { funcName, _require } from '../../../utils';
@@ -75,13 +79,14 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
-    readonly implementationName: CustomImplementationNames,
+    readonly implementationName: ImplementationNames,
     readonly address: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
     readonly curveLiquidityApiSlug: string,
     readonly lpTokenAddress: Address,
     readonly useLending?: boolean[],
+    readonly isUsedForPricing: boolean = false,
     readonly contractABIs = ContractABIs,
   ) {
     // Current custom pools are always plain

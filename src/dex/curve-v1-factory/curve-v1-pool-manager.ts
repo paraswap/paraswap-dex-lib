@@ -12,7 +12,6 @@ import {
 import { PriceHandler } from './price-handlers/price-handler';
 import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
-import { ImplementationNames } from './types';
 
 export class CurveV1FactoryPoolManager {
   // This is needed because we initialize all factory pools + 3 custom pools
@@ -27,8 +26,6 @@ export class CurveV1FactoryPoolManager {
   // This is fast lookup table when you look for pair and searching for coins in all pools
   private coinAddressesToPoolIdentifiers: Record<string, string[]> = {};
 
-  private allPriceHandlers: Record<string, PriceHandler>;
-
   private allCurveLiquidityApiSlugs: Set<string> = new Set(['/factory']);
 
   private statePollingManager = StatePollingManager;
@@ -38,6 +35,7 @@ export class CurveV1FactoryPoolManager {
     private name: string,
     private logger: Logger,
     private dexHelper: IDexHelper,
+    private allPriceHandlers: Record<string, PriceHandler>,
     stateUpdateFrequency: number = STATE_UPDATE_FREQUENCY_MS,
     stateUpdateRetryFrequency: number = STATE_UPDATE_RETRY_FREQUENCY_MS,
   ) {
@@ -48,13 +46,6 @@ export class CurveV1FactoryPoolManager {
       stateUpdateFrequency,
       stateUpdateRetryFrequency,
     );
-
-    this.allPriceHandlers = Object.values(ImplementationNames).reduce<
-      Record<string, PriceHandler>
-    >((acc, curr) => {
-      acc[curr] = new PriceHandler(this.logger, curr);
-      return acc;
-    }, {});
   }
 
   initializePollingPools() {
@@ -80,12 +71,13 @@ export class CurveV1FactoryPoolManager {
   }
 
   initializeNewPool(identifier: string, pool: BasePoolPolling) {
-    if (
-      this.statePollingPoolsFromId[identifier] ||
-      this.poolsForOnlyState[identifier]
-    ) {
+    if (this.statePollingPoolsFromId[identifier]) {
+      return;
+    }
+
+    if (this.poolsForOnlyState[identifier]) {
       throw new Error(
-        `${this.name}: pool with ${identifier} is already initialized`,
+        `${this.name}: pool with ${identifier} is already initialized as custom pool`,
       );
     }
 
@@ -110,6 +102,12 @@ export class CurveV1FactoryPoolManager {
   }
 
   initializeNewPoolForState(identifier: string, pool: BasePoolPolling) {
+    // Temporary hack before every pool is ported into new architecture
+    if (pool.isUsedForPricing) {
+      this.initializeNewPool(identifier, pool);
+      return;
+    }
+
     if (
       this.statePollingPoolsFromId[identifier] ||
       this.poolsForOnlyState[identifier]
@@ -186,6 +184,7 @@ export class CurveV1FactoryPoolManager {
         return pool;
       }
     }
+
     const fromStateOnlyPools = this.poolsForOnlyState[identifier.toLowerCase()];
     if (fromStateOnlyPools !== undefined) {
       if (
@@ -260,6 +259,7 @@ export class CurveV1FactoryPoolManager {
       );
     }
   }
+
   getPoolsWithToken(tokenAddress: Address): BasePoolPolling[] {
     const poolIdentifiers = this.coinAddressesToPoolIdentifiers[tokenAddress];
     if (poolIdentifiers === undefined) {

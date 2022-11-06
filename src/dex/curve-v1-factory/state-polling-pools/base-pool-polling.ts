@@ -25,6 +25,8 @@ export abstract class BasePoolPolling {
   readonly underlyingCoins: string[];
   readonly underlyingDecimals: number[];
 
+  readonly isUsedForPricing: boolean = true;
+
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,

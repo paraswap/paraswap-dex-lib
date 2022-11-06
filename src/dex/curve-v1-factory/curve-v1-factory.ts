@@ -30,6 +30,8 @@ import {
   CurveSwapFunctions,
   CurveV1FactoryData,
   CurveV1FactoryIfaces,
+  CustomImplementationNames,
+  ImplementationNames,
   PoolConstants,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -58,7 +60,7 @@ import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-polling';
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import implementationConstants from './price-handlers/functions/constants';
+import { PriceHandler } from './price-handlers/price-handler';
 
 export class CurveV1Factory
   extends SimpleExchange
@@ -96,10 +98,28 @@ export class CurveV1Factory
       erc20: new Interface(ERC20ABI as JsonFragment[]),
       threePool: new Interface(ThreePoolABI as JsonFragment[]),
     };
+
+    const allPriceHandlers = Object.values(
+      this.config.factoryPoolImplementations,
+    ).reduce<Record<string, PriceHandler>>((acc, curr) => {
+      let baseImplementationName: ImplementationNames | undefined;
+      if (curr.basePoolAddress) {
+        baseImplementationName =
+          this.config.customPools[curr.basePoolAddress].name;
+      }
+      acc[curr.name] = new PriceHandler(
+        this.logger,
+        curr.name,
+        baseImplementationName,
+      );
+      return acc;
+    }, {});
+
     this.poolManager = new CurveV1FactoryPoolManager(
       this.dexKey,
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
       dexHelper,
+      allPriceHandlers,
       this.config.stateUpdateFrequencyMs,
     );
   }
@@ -153,17 +173,39 @@ export class CurveV1Factory
           lpTokenAddress: customPool.lpTokenAddress,
         };
 
-        const newPool = new CustomBasePoolForFactory(
-          this.logger,
-          this.dexKey,
-          customPool.name,
-          customPool.address,
-          poolIdentifier,
-          poolConstants,
-          customPool.liquidityApiSlug,
-          customPool.lpTokenAddress,
-          useLending,
-        );
+        let newPool: BasePoolPolling;
+        if (
+          Object.values<ImplementationNames>(
+            CustomImplementationNames,
+          ).includes(customPool.name)
+        ) {
+          // We don't want custom pools to be used for pricing
+          newPool = new CustomBasePoolForFactory(
+            this.logger,
+            this.dexKey,
+            customPool.name,
+            customPool.address,
+            poolIdentifier,
+            poolConstants,
+            customPool.liquidityApiSlug,
+            customPool.lpTokenAddress,
+            useLending,
+          );
+        } else {
+          // Use for pricing pools from factory
+          newPool = new CustomBasePoolForFactory(
+            this.logger,
+            this.dexKey,
+            customPool.name,
+            customPool.address,
+            poolIdentifier,
+            poolConstants,
+            customPool.liquidityApiSlug,
+            customPool.lpTokenAddress,
+            useLending,
+            true,
+          );
+        }
 
         this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
       }),
@@ -178,7 +220,7 @@ export class CurveV1Factory
 
     // There is no scenario when we need to call initialize custom pools without factory pools
     // So I put it here to not forget call, because custom pools must be initialised before factory pools
-    // This function may be called multiple times, but will executed only once
+    // This function may be called multiple times, but will execute only once
     this.initializeCustomPollingPools();
 
     const { factoryAddress } = this.config;
@@ -356,14 +398,10 @@ export class CurveV1Factory
 
       let isMeta: boolean = false;
       let basePoolStateFetcher: BasePoolPolling | undefined;
-      if (
-        factoryImplementationConstants.BASE_IMPLEMENTATION_NAME !== undefined
-      ) {
+      if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
         isMeta = true;
         const basePoolIdentifier = this.getPoolIdentifier(
-          this.config.customPools[
-            factoryImplementationConstants.BASE_IMPLEMENTATION_NAME
-          ].address,
+          factoryImplementationFromConfig.basePoolAddress,
           false,
           false,
         );

@@ -18,42 +18,52 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         '0x2f956eee002b0debd468cf2e0490d1aec65e027f': {
           name: ImplementationNames.FACTORY_V1_META_BTC,
           address: '0x2f956eee002b0debd468cf2e0490d1aec65e027f',
+          basePoolAddress: '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714',
         },
         '0x5f890841f657d90e081babdb532a05996af79fe6': {
           name: ImplementationNames.FACTORY_V1_META_USD,
           address: '0x5f890841f657d90e081babdb532a05996af79fe6',
+          basePoolAddress: '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7',
         },
         '0xc6a8466d128fbfd34ada64a9fffce325d57c9a52': {
           name: ImplementationNames.FACTORY_META_BTC,
           address: '0xc6a8466d128fbfd34ada64a9fffce325d57c9a52',
+          basePoolAddress: '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714',
         },
         '0xc4c78b08fa0c3d0a312605634461a88184ecd630': {
           name: ImplementationNames.FACTORY_META_BTC_BALANCES,
           address: '0xc4c78b08fa0c3d0a312605634461a88184ecd630',
+          basePoolAddress: '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714',
         },
         '0xecaaecd9d2193900b424774133b1f51ae0f29d9e': {
           name: ImplementationNames.FACTORY_META_BTC_REN,
           address: '0xecaaecd9d2193900b424774133b1f51ae0f29d9e',
+          basePoolAddress: '0x93054188d876f558f4a66B2EF1d97d16eDf0895B',
         },
         '0x40fd58d44cfe63e8517c9bb3ac98676838ea56a8': {
           name: ImplementationNames.FACTORY_META_BTC_BALANCES_REN,
           address: '0x40fd58d44cfe63e8517c9bb3ac98676838ea56a8',
+          basePoolAddress: '0x93054188d876f558f4a66B2EF1d97d16eDf0895B',
         },
         '0x213be373fdff327658139c7df330817dad2d5bbe': {
           name: ImplementationNames.FACTORY_META_USD,
           address: '0x213be373fdff327658139c7df330817dad2d5bbe',
+          basePoolAddress: '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7',
         },
         '0x55aa9bf126bcabf0bdc17fa9e39ec9239e1ce7a9': {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0x55aa9bf126bcabf0bdc17fa9e39ec9239e1ce7a9',
+          basePoolAddress: '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7',
         },
         '0x33bb0e62d5e8c688e645dd46dfb48cd613250067': {
           name: ImplementationNames.FACTORY_META_USD_FRAX_USDC,
           address: '0x33bb0e62d5e8c688e645dd46dfb48cd613250067',
+          basePoolAddress: '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2',
         },
         '0x2eb24483ef551da247ab87cf18e1cc980073032d': {
           name: ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC,
           address: '0x2eb24483ef551da247ab87cf18e1cc980073032d',
+          basePoolAddress: '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2',
         },
         '0x24d937143d3f5cf04c72ba112735151a8cae2262': {
           name: ImplementationNames.FACTORY_PLAIN_2_BALANCES,
@@ -105,25 +115,25 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         },
       },
       customPools: {
-        [CustomImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: {
+        '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2': {
           name: CustomImplementationNames.CUSTOM_PLAIN_2COIN_FRAX,
           address: '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2',
           lpTokenAddress: '0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC',
           liquidityApiSlug: '/main',
         },
-        [CustomImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: {
+        '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714': {
           name: CustomImplementationNames.CUSTOM_PLAIN_3COIN_SBTC,
           address: '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714',
           lpTokenAddress: '0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3',
           liquidityApiSlug: '/main',
         },
-        [CustomImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: {
+        '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7': {
           name: CustomImplementationNames.CUSTOM_PLAIN_3COIN_THREE,
           address: '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7',
           lpTokenAddress: '0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490',
           liquidityApiSlug: '/main',
         },
-        [CustomImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: {
+        '0x93054188d876f558f4a66B2EF1d97d16eDf0895B': {
           name: CustomImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC,
           address: '0x93054188d876f558f4a66B2EF1d97d16eDf0895B',
           lpTokenAddress: '0x49849C98ae39Fff122806C06791Fa73784FB3675',
@@ -186,28 +196,32 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         '0x4fb93D7d320E8A263F22f62C2059dFC2A8bCbC4c': {
           name: ImplementationNames.FACTORY_META_USD,
           address: '0x4fb93D7d320E8A263F22f62C2059dFC2A8bCbC4c',
+          basePoolAddress: '0x445FE580eF8d70FF569aB36e80c647af338db351',
         },
         '0x39fE1824f98CD828050D7c51dA443E84121c7cf1': {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0x39fE1824f98CD828050D7c51dA443E84121c7cf1',
+          basePoolAddress: '0x445FE580eF8d70FF569aB36e80c647af338db351',
         },
         '0xC05EB760A135d3D0c839f1141423002681157a17': {
           name: ImplementationNames.FACTORY_META_BTC,
           address: '0xC05EB760A135d3D0c839f1141423002681157a17',
+          basePoolAddress: '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67',
         },
         '0xD8336532f6ED7b94282fAF724fe41d6145E07Cfc': {
           name: ImplementationNames.FACTORY_META_BTC_BALANCES,
           address: '0xD8336532f6ED7b94282fAF724fe41d6145E07Cfc',
+          basePoolAddress: '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67',
         },
       },
       customPools: {
-        [CustomImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: {
+        '0x445FE580eF8d70FF569aB36e80c647af338db351': {
           name: CustomImplementationNames.CUSTOM_POLYGON_3COIN_LENDING,
           address: '0x445FE580eF8d70FF569aB36e80c647af338db351',
           lpTokenAddress: '0xe7a24ef0c5e95ffb0f6684b813a78f2a3ad7d171',
           liquidityApiSlug: '/main',
         },
-        [CustomImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: {
+        '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67': {
           name: CustomImplementationNames.CUSTOM_POLYGON_2COIN_LENDING,
           address: '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67',
           lpTokenAddress: '0xf8a57c1d3b9629b77b6726a042ca48990a84fb49',
@@ -270,42 +284,48 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         '0xfCE359115dFe1533a2458650123F86C454BC0213': {
           name: ImplementationNames.FACTORY_META_USD,
           address: '0xfCE359115dFe1533a2458650123F86C454BC0213',
+          basePoolAddress: '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40',
         },
         '0x09C62ad0694e3f1ad8cF8876aaBe56138C586f5F': {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0x09C62ad0694e3f1ad8cF8876aaBe56138C586f5F',
+          basePoolAddress: '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40',
         },
         '0xC9438d8928486bD9621D326002F4672bF684187A': {
           name: ImplementationNames.FACTORY_META_BTC,
           address: '0xC9438d8928486bD9621D326002F4672bF684187A',
+          basePoolAddress: '0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604',
         },
         '0x2b70A5B878665FfDB4A06Ba40a264d6c70f68F4B': {
           name: ImplementationNames.FACTORY_META_BTC_BALANCES,
           address: '0x2b70A5B878665FfDB4A06Ba40a264d6c70f68F4B',
+          basePoolAddress: '0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604',
         },
         '0x210c806f6ae850279f7e298de749ec4b427d00dd': {
-          name: ImplementationNames.FACTORY_META_USD_GEIST,
+          name: ImplementationNames.FACTORY_META_USD,
           address: '0x210c806f6ae850279f7e298de749ec4b427d00dd',
+          basePoolAddress: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
         },
         '0xf82162bb68ad5a168345bb7efb2faa0edcca5177': {
-          name: ImplementationNames.FACTORY_META_USD_BALANCES_GEIST,
+          name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0xf82162bb68ad5a168345bb7efb2faa0edcca5177',
+          basePoolAddress: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
         },
       },
       customPools: {
-        [CustomImplementationNames.CUSTOM_FANTOM_2COIN_USD]: {
+        '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40': {
           name: CustomImplementationNames.CUSTOM_FANTOM_2COIN_USD,
           address: '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40',
           lpTokenAddress: '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40',
           liquidityApiSlug: '/main',
         },
-        [CustomImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: {
+        '0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604': {
           name: CustomImplementationNames.CUSTOM_FANTOM_2COIN_BTC,
           address: '0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604',
           lpTokenAddress: '0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858',
           liquidityApiSlug: '/main',
         },
-        [CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: {
+        '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
           name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
           address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
           lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
@@ -368,10 +388,12 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         '0xa237034249290de2b07988ac64b96f22c0e76fe0': {
           name: ImplementationNames.FACTORY_META_USD,
           address: '0xa237034249290de2b07988ac64b96f22c0e76fe0',
+          basePoolAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
         },
         '0xc50c05ca1f8c2346664bd0d4a1eb6ac1da38414f': {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0xc50c05ca1f8c2346664bd0d4a1eb6ac1da38414f',
+          basePoolAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
         },
         // Commented because these pools basics are not verified and looks very abandoned
         // '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320': {
@@ -384,7 +406,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         // },
       },
       customPools: {
-        [CustomImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: {
+        '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
           name: CustomImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING,
           address: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
           lpTokenAddress: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
@@ -455,42 +477,48 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         '0x09672362833d8f703D5395ef3252D4Bfa51c15ca': {
           name: ImplementationNames.FACTORY_META_USD,
           address: '0x09672362833d8f703D5395ef3252D4Bfa51c15ca',
+          basePoolAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
         },
         '0xBE175115BF33E12348ff77CcfEE4726866A0Fbd5': {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0xBE175115BF33E12348ff77CcfEE4726866A0Fbd5',
+          basePoolAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
         },
         '0x8DEb66a4A40E370355bEe35f12E55Fe9c755d686': {
-          name: ImplementationNames.FACTORY_META_USD_V2_41,
+          name: ImplementationNames.FACTORY_META_USD,
           address: '0x8DEb66a4A40E370355bEe35f12E55Fe9c755d686',
+          basePoolAddress: '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5',
         },
         '0x3edE9b145F82e9e46C03f8A8F67B77aEE847b632': {
-          name: ImplementationNames.FACTORY_META_USD_BALANCES_V2_41,
+          name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0x3edE9b145F82e9e46C03f8A8F67B77aEE847b632',
+          basePoolAddress: '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5',
         },
         '0x094d12e5b541784701FD8d65F11fc0598FBC6332': {
           name: ImplementationNames.FACTORY_META_BTC,
           address: '0x094d12e5b541784701FD8d65F11fc0598FBC6332',
+          basePoolAddress: '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb',
         },
         '0xF1f85a74AD6c64315F85af52d3d46bF715236ADc': {
           name: ImplementationNames.FACTORY_META_BTC_BALANCES,
           address: '0xF1f85a74AD6c64315F85af52d3d46bF715236ADc',
+          basePoolAddress: '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb',
         },
       },
       customPools: {
-        [CustomImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: {
+        '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
           name: CustomImplementationNames.CUSTOM_ARBITRUM_2COIN_USD,
           address: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
           lpTokenAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
           liquidityApiSlug: '/main',
         },
-        [FactoryImplementationNames.FACTORY_PLAIN_2_BASIC]: {
+        '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5': {
           name: FactoryImplementationNames.FACTORY_PLAIN_2_BASIC,
           address: '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5',
           lpTokenAddress: '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5',
-          liquidityApiSlug: '/main',
+          liquidityApiSlug: '/factory',
         },
-        [CustomImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: {
+        '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb': {
           name: CustomImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC,
           address: '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb',
           lpTokenAddress: '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb',
@@ -553,32 +581,36 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         '0x78CF256256C8089d68Cde634Cf7cDEFb39286470': {
           name: ImplementationNames.FACTORY_META_USD,
           address: '0x78CF256256C8089d68Cde634Cf7cDEFb39286470',
+          basePoolAddress: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
         },
         '0xADf698e4d8Df08b3E2c79682891636eF00F6e205': {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0xADf698e4d8Df08b3E2c79682891636eF00F6e205',
+          basePoolAddress: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
         },
         '0xe8269B33E47761f552E1a3070119560d5fa8bBD6': {
-          name: ImplementationNames.FACTORY_META_USD_V2_16,
+          name: ImplementationNames.FACTORY_META_USD,
           address: '0xe8269B33E47761f552E1a3070119560d5fa8bBD6',
+          basePoolAddress: '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7',
         },
         '0x114C4042B11a2b16F58Fe1BFe847589a122F678a': {
-          name: ImplementationNames.FACTORY_META_USD_BALANCES_V2_16,
+          name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0x114C4042B11a2b16F58Fe1BFe847589a122F678a',
+          basePoolAddress: '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7',
         },
       },
       customPools: {
-        [CustomImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: {
+        '0x1337BedC9D22ecbe766dF105c9623922A27963EC': {
           name: CustomImplementationNames.CUSTOM_OPTIMISM_3COIN_USD,
           address: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
           lpTokenAddress: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
           liquidityApiSlug: '/main',
         },
-        [FactoryImplementationNames.FACTORY_PLAIN_2_BASIC]: {
+        '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7': {
           name: FactoryImplementationNames.FACTORY_PLAIN_2_BASIC,
           address: '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7',
           lpTokenAddress: '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7',
-          liquidityApiSlug: '/main',
+          liquidityApiSlug: '/factory',
         },
       },
     },
@@ -667,6 +699,9 @@ const configAddressesNormalizer = (
           const normalizedImplementation: FactoryPoolImplementations = {
             name: implementationConfig.name,
             address: normalizeAddress(implementationConfig.address),
+            basePoolAddress: implementationConfig.basePoolAddress
+              ? normalizeAddress(implementationConfig.basePoolAddress)
+              : undefined,
           };
           acc[implementationAddress.toLowerCase()] = normalizedImplementation;
           return acc;

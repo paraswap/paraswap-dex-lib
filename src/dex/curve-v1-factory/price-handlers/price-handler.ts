@@ -20,12 +20,13 @@ export class PriceHandler {
 
   static getPriceHandlerFromImplementationName(
     implementationName: ImplementationNames,
+    baseImplementationName?: ImplementationNames,
   ): IPoolContext {
     const constants = constants_Implementations[implementationName];
     let _basePool: IPoolContext | undefined;
-    if (constants.BASE_IMPLEMENTATION_NAME !== undefined) {
+    if (baseImplementationName !== undefined) {
       _basePool = PriceHandler.getPriceHandlerFromImplementationName(
-        constants.BASE_IMPLEMENTATION_NAME,
+        baseImplementationName,
       );
     }
 
@@ -55,9 +56,12 @@ export class PriceHandler {
   constructor(
     readonly logger: Logger,
     readonly implementationName: ImplementationNames,
+    readonly baseImplementationName?: ImplementationNames,
   ) {
-    this.priceHandler =
-      PriceHandler.getPriceHandlerFromImplementationName(implementationName);
+    this.priceHandler = PriceHandler.getPriceHandlerFromImplementationName(
+      implementationName,
+      baseImplementationName,
+    );
   }
 
   getOutputs(
