@@ -133,6 +133,20 @@ const implementations: Record<ImplementationNames, get_y> = {
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: CHANGE,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: CHANGE,
+
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: CHANGE,
+
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: CHANGE,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: CHANGE,
+
+  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: CHANGE,
+
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: CHANGE,
+
   [ImplementationNames.FACTORY_V1_META_BTC]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_V1_META_USD]: customPlain2CoinFrax,
 

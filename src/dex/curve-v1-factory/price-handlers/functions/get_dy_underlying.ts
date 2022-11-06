@@ -239,6 +239,20 @@ const implementations: Record<ImplementationNames, get_dy_underlying> = {
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: notExist,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: notExist,
+
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: notExist,
+
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: notExist,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: notExist,
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: notExist,
+
+  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: notExist,
+
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: notExist,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: notExist,
+
   [ImplementationNames.FACTORY_V1_META_BTC]: factoryV1MetaUsd,
   [ImplementationNames.FACTORY_V1_META_USD]: factoryV1MetaUsd,
 

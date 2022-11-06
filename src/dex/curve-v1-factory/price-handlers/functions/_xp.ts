@@ -57,6 +57,20 @@ const implementations: Record<ImplementationNames, _xp> = {
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: CHANGE,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: CHANGE,
+
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: CHANGE,
+
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: CHANGE,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: CHANGE,
+
+  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: CHANGE,
+
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: CHANGE,
+
   [ImplementationNames.FACTORY_V1_META_BTC]: notExist,
   [ImplementationNames.FACTORY_V1_META_USD]: notExist,
 
