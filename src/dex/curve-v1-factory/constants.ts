@@ -23,5 +23,5 @@ export const NETWORK_ID_TO_NAME: Record<number, string> = {
 
 // They are hardcoded in factory contract. If factory is changing, must be
 // revisited
-export const FACTORY_MAX_PLAIN_COINS = 5;
+export const FACTORY_MAX_PLAIN_COINS = 4;
 export const FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN = 10;

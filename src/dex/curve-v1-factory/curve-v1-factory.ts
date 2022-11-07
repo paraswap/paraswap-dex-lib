@@ -351,7 +351,7 @@ export class CurveV1Factory
       // N_COINS is between 2-4. Currently more than 4 coins is not supported
       // as for implementation index, there are only 0-9 indexes
       ..._.flattenDeep(
-        _.range(2, FACTORY_MAX_PLAIN_COINS).map(coinNumber =>
+        _.range(2, FACTORY_MAX_PLAIN_COINS + 1).map(coinNumber =>
           _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(implInd => ({
             target: factoryAddress,
             callData: this.ifaces.factory.encodeFunctionData(
