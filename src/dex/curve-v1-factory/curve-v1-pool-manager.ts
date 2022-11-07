@@ -6,8 +6,8 @@ import { TaskScheduler } from '../../lib/task-scheduler';
 import {
   CURVE_API_URL,
   NETWORK_ID_TO_NAME,
-  STATE_UPDATE_FREQUENCY_MS,
-  STATE_UPDATE_RETRY_FREQUENCY_MS,
+  STATE_UPDATE_PERIOD_MS,
+  STATE_UPDATE_RETRY_PERIOD_MS,
 } from './constants';
 import { PriceHandler } from './price-handlers/price-handler';
 import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
@@ -45,15 +45,15 @@ export class CurveV1FactoryPoolManager {
     private logger: Logger,
     private dexHelper: IDexHelper,
     private allPriceHandlers: Record<string, PriceHandler>,
-    stateUpdateFrequency: number = STATE_UPDATE_FREQUENCY_MS,
-    stateUpdateRetryFrequency: number = STATE_UPDATE_RETRY_FREQUENCY_MS,
+    stateUpdatePeriodMs: number = STATE_UPDATE_PERIOD_MS,
+    stateUpdateRetryPeriodMs: number = STATE_UPDATE_RETRY_PERIOD_MS,
   ) {
     this.taskScheduler = new TaskScheduler(
       this.name,
       this.logger,
       this.updatePollingPoolsInBatch.bind(this),
-      stateUpdateFrequency,
-      stateUpdateRetryFrequency,
+      stateUpdatePeriodMs,
+      stateUpdateRetryPeriodMs,
     );
   }
 

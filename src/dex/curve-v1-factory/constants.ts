@@ -3,9 +3,9 @@ import { Network } from '../../constants';
 export const MIN_AMOUNT_TO_RECEIVE = 1;
 
 // 15 sec.
-export const STATE_UPDATE_FREQUENCY_MS = 15 * 1000;
+export const STATE_UPDATE_PERIOD_MS = 15 * 1000;
 
-export const STATE_UPDATE_RETRY_FREQUENCY_MS = 1000;
+export const STATE_UPDATE_RETRY_PERIOD_MS = 1000;
 
 export const MAX_ALLOWED_STATE_DELAY_MS = 30 * 1000;
 

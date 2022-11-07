@@ -152,7 +152,7 @@ export type CustomPoolConfig = {
 
 export type DexParams = {
   factoryAddress: string | null;
-  stateUpdateFrequencyMs: number;
+  stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;
 };

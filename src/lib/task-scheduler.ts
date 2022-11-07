@@ -11,8 +11,8 @@ export class TaskScheduler {
     private name: string,
     private logger: Logger,
     private task: () => AsyncOrSync<void>,
-    private updateFrequency: number,
-    private updateRetryFrequency: number,
+    private updatePeriodMs: number,
+    private updateRetryPeriodMs: number,
     // If startImmediately is false, you should call manually setTimer() when
     // want scheduler to start
     startImmediately: boolean = false,
@@ -30,10 +30,10 @@ export class TaskScheduler {
 
     try {
       await this.task();
-      this.setTimer(this.updateFrequency);
+      this.setTimer(this.updatePeriodMs);
     } catch (e: unknown) {
       this.logger.error(`${this.name} ${funcName()} can not execute task: `, e);
-      this.setTimer(this.updateRetryFrequency);
+      this.setTimer(this.updateRetryPeriodMs);
     }
   }
 

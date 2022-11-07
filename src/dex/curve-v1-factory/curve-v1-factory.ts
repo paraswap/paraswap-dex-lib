@@ -122,7 +122,7 @@ export class CurveV1Factory
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
       dexHelper,
       allPriceHandlers,
-      this.config.stateUpdateFrequencyMs,
+      this.config.stateUpdatePeriodMs,
     );
   }
 

@@ -13,7 +13,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
   CurveV1Factory: {
     [Network.MAINNET]: {
       factoryAddress: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
-      stateUpdateFrequencyMs: 5 * 1000,
+      stateUpdatePeriodMs: 5 * 1000,
       factoryPoolImplementations: {
         '0x2f956eee002b0debd468cf2e0490d1aec65e027f': {
           name: ImplementationNames.FACTORY_V1_META_BTC,
@@ -143,7 +143,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.POLYGON]: {
       factoryAddress: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
-      stateUpdateFrequencyMs: 2 * 1000,
+      stateUpdatePeriodMs: 2 * 1000,
       factoryPoolImplementations: {
         '0x571FF5b7b346F706aa48d696a9a4a288e9Bb4091': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -231,7 +231,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.FANTOM]: {
       factoryAddress: '0x686d67265703D1f124c45E33d47d794c566889Ba',
-      stateUpdateFrequencyMs: 2 * 1000,
+      stateUpdatePeriodMs: 2 * 1000,
       factoryPoolImplementations: {
         '0x61E10659fe3aa93d036d099405224E4Ac24996d0': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -335,7 +335,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.AVALANCHE]: {
       factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
-      stateUpdateFrequencyMs: 2 * 1000,
+      stateUpdatePeriodMs: 2 * 1000,
       factoryPoolImplementations: {
         '0x697434ca761d4f86b553784b69f4f37f5edf54df': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -424,7 +424,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.ARBITRUM]: {
       factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
-      stateUpdateFrequencyMs: 2 * 1000,
+      stateUpdatePeriodMs: 2 * 1000,
       factoryPoolImplementations: {
         '0x54e8A25d0Ac0E4945b697C80b8372445FEA17A62': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -528,7 +528,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.OPTIMISM]: {
       factoryAddress: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
-      stateUpdateFrequencyMs: 2 * 1000,
+      stateUpdatePeriodMs: 2 * 1000,
       factoryPoolImplementations: {
         '0xC2b1DF84112619D190193E48148000e3990Bf627': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -717,7 +717,7 @@ const configAddressesNormalizer = (
         factoryAddress: _config.factoryAddress
           ? _config.factoryAddress.toLowerCase()
           : _config.factoryAddress,
-        stateUpdateFrequencyMs: _config.stateUpdateFrequencyMs,
+        stateUpdatePeriodMs: _config.stateUpdatePeriodMs,
         factoryPoolImplementations,
         customPools: _config.customPools,
       };
