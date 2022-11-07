@@ -1,5 +1,6 @@
 import {
   CustomImplementationNames,
+  CustomPoolConfig,
   DexParams,
   FactoryImplementationNames,
   FactoryPoolImplementations,
@@ -120,24 +121,32 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2',
           lpTokenAddress: '0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC',
           liquidityApiSlug: '/main',
+          coins_decimals: [18, 6],
+          coinsInputType: 'uint256',
         },
         '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714': {
           name: CustomImplementationNames.CUSTOM_PLAIN_3COIN_SBTC,
           address: '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714',
           lpTokenAddress: '0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3',
           liquidityApiSlug: '/main',
+          coins_decimals: [8, 8, 18],
+          coinsInputType: 'uint128',
         },
         '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7': {
           name: CustomImplementationNames.CUSTOM_PLAIN_3COIN_THREE,
           address: '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7',
           lpTokenAddress: '0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490',
           liquidityApiSlug: '/main',
+          coins_decimals: [18, 6, 6],
+          coinsInputType: 'uint256',
         },
         '0x93054188d876f558f4a66B2EF1d97d16eDf0895B': {
           name: CustomImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC,
           address: '0x93054188d876f558f4a66B2EF1d97d16eDf0895B',
           lpTokenAddress: '0x49849C98ae39Fff122806C06791Fa73784FB3675',
           liquidityApiSlug: '/main',
+          coins_decimals: [8, 8],
+          coinsInputType: 'uint128',
         },
       },
     },
@@ -220,12 +229,16 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x445FE580eF8d70FF569aB36e80c647af338db351',
           lpTokenAddress: '0xe7a24ef0c5e95ffb0f6684b813a78f2a3ad7d171',
           liquidityApiSlug: '/main',
+          coins_decimals: [18, 6, 6],
+          coinsInputType: 'uint256',
         },
         '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67': {
           name: CustomImplementationNames.CUSTOM_POLYGON_2COIN_LENDING,
           address: '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67',
           lpTokenAddress: '0xf8a57c1d3b9629b77b6726a042ca48990a84fb49',
           liquidityApiSlug: '/main',
+          coins_decimals: [8, 8],
+          coinsInputType: 'uint256',
         },
       },
     },
@@ -318,18 +331,24 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40',
           lpTokenAddress: '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40',
           liquidityApiSlug: '/main',
+          coins_decimals: [18, 6],
+          coinsInputType: 'uint256',
         },
         '0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604': {
           name: CustomImplementationNames.CUSTOM_FANTOM_2COIN_BTC,
           address: '0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604',
           lpTokenAddress: '0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858',
           liquidityApiSlug: '/main',
+          coins_decimals: [8, 8],
+          coinsInputType: 'uint256',
         },
         '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
           name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
           address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
           lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
           liquidityApiSlug: '/main',
+          coins_decimals: [18, 6, 6],
+          coinsInputType: 'uint256',
         },
       },
     },
@@ -411,6 +430,8 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
           lpTokenAddress: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
           liquidityApiSlug: '/main',
+          coins_decimals: [18, 6, 6],
+          coinsInputType: 'uint256',
         },
         // This contract is not verified. I think it is just abandoned. I am commenting both related
         // btc meta pools
@@ -511,18 +532,24 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
           lpTokenAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
           liquidityApiSlug: '/main',
+          coins_decimals: [6, 6],
+          coinsInputType: 'uint256',
         },
         '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5': {
           name: FactoryImplementationNames.FACTORY_PLAIN_2_BASIC,
           address: '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5',
           lpTokenAddress: '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5',
           liquidityApiSlug: '/factory',
+          coins_decimals: [18, 6],
+          coinsInputType: 'uint256',
         },
         '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb': {
           name: CustomImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC,
           address: '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb',
           lpTokenAddress: '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb',
           liquidityApiSlug: '/main',
+          coins_decimals: [8, 8],
+          coinsInputType: 'uint256',
         },
       },
     },
@@ -605,12 +632,16 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
           lpTokenAddress: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
           liquidityApiSlug: '/main',
+          coins_decimals: [18, 6, 6],
+          coinsInputType: 'uint256',
         },
         '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7': {
           name: FactoryImplementationNames.FACTORY_PLAIN_2_BASIC,
           address: '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7',
           lpTokenAddress: '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7',
           liquidityApiSlug: '/factory',
+          coins_decimals: [18, 6],
+          coinsInputType: 'uint256',
         },
       },
     },
@@ -694,6 +725,21 @@ const configAddressesNormalizer = (
           _config.customPools[p].lpTokenAddress.toLowerCase();
       });
 
+      const customPools = Object.entries(_config.customPools).reduce<
+        Record<string, CustomPoolConfig>
+      >((acc, [customPoolAddress, customPoolConfig]) => {
+        const normalizedImplementation: CustomPoolConfig = {
+          name: customPoolConfig.name,
+          liquidityApiSlug: customPoolConfig.liquidityApiSlug,
+          coins_decimals: customPoolConfig.coins_decimals,
+          coinsInputType: customPoolConfig.coinsInputType,
+          address: normalizeAddress(customPoolConfig.address),
+          lpTokenAddress: normalizeAddress(customPoolConfig.lpTokenAddress),
+        };
+        acc[normalizeAddress(customPoolAddress)] = normalizedImplementation;
+        return acc;
+      }, {});
+
       // Had to recreate object to change key to lower case
       const factoryPoolImplementations = Object.entries(
         _config.factoryPoolImplementations,
@@ -706,7 +752,8 @@ const configAddressesNormalizer = (
               ? normalizeAddress(implementationConfig.basePoolAddress)
               : undefined,
           };
-          acc[implementationAddress.toLowerCase()] = normalizedImplementation;
+          acc[normalizeAddress(implementationAddress)] =
+            normalizedImplementation;
           return acc;
         },
         {},
@@ -719,7 +766,7 @@ const configAddressesNormalizer = (
           : _config.factoryAddress,
         stateUpdatePeriodMs: _config.stateUpdatePeriodMs,
         factoryPoolImplementations,
-        customPools: _config.customPools,
+        customPools,
       };
       config[dexKey][+network] = normalizedConfig;
     }

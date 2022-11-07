@@ -51,7 +51,6 @@ import {
   addressDecode,
   generalDecoder,
   uint256DecodeToNumber,
-  uint8ToNumber,
 } from '../../lib/decoders';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import { BigNumber, BytesLike } from 'ethers';
@@ -61,6 +60,26 @@ import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-poll
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
+import { AbiItem } from 'web3-utils';
+
+const DefaultCoinsType: AbiItem = {
+  stateMutability: 'view',
+  type: 'function',
+  name: 'coins',
+  inputs: [
+    {
+      name: 'i',
+      type: 'uint256',
+    },
+  ],
+  outputs: [
+    {
+      name: '',
+      type: 'address',
+    },
+  ],
+  gas: 582,
+};
 
 export class CurveV1Factory
   extends SimpleExchange
@@ -89,6 +108,8 @@ export class CurveV1Factory
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     protected config = CurveV1FactoryConfig[dexKey][network],
+    // This type is used to support different encoding for uint128 and uint256 args
+    private coinsTypeTemplate: AbiItem = DefaultCoinsType,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -106,8 +127,12 @@ export class CurveV1Factory
     ).reduce<Record<string, PriceHandler>>((acc, curr) => {
       let baseImplementationName: ImplementationNames | undefined;
       if (curr.basePoolAddress) {
-        baseImplementationName =
-          this.config.customPools[curr.basePoolAddress].name;
+        const customBasePool = this.config.customPools[curr.basePoolAddress];
+        if (customBasePool === undefined) {
+          console.log(0);
+        } else {
+          baseImplementationName = customBasePool.name;
+        }
       }
       acc[curr.name] = new PriceHandler(
         this.logger,
@@ -152,32 +177,27 @@ export class CurveV1Factory
         const COINS = (
           await this.dexHelper.multiWrapper.tryAggregate(
             true,
-            _.range(nCoins).map(i => ({
+            _.range(0, nCoins).map(i => ({
               target: customPool.address,
-              callData: this.ifaces.threePool.encodeFunctionData('coins', [i]),
+              callData: this.abiCoder.encodeFunctionCall(
+                this._getCoinsABI(customPool.coinsInputType),
+                [i.toString()],
+              ),
               decodeFunction: addressDecode,
-            })),
-          )
-        ).map(r => r.returnData);
-
-        const coins_decimals = (
-          await this.dexHelper.multiWrapper.tryAggregate(
-            true,
-            COINS.map(c => ({
-              target: c,
-              callData: this.ifaces.erc20.encodeFunctionData('decimals', []),
-              decodeFunction: uint8ToNumber,
             })),
           )
         ).map(r => r.returnData);
 
         const poolConstants: PoolConstants = {
           COINS,
-          coins_decimals,
-          rate_multipliers: this._calcRateMultipliers(coins_decimals),
+          coins_decimals: customPool.coins_decimals,
+          rate_multipliers: this._calcRateMultipliers(
+            customPool.coins_decimals,
+          ),
           lpTokenAddress: customPool.lpTokenAddress,
         };
 
+        console.log(customPool.address);
         let newPool: PoolPollingBase;
         if (
           Object.values<ImplementationNames>(
@@ -216,7 +236,7 @@ export class CurveV1Factory
 
         this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
       }),
-    );
+    ).catch(e => console.log(e));
     this.areCustomPoolsFetched = true;
   }
 
@@ -789,5 +809,11 @@ export class CurveV1Factory
       `${this.dexKey}: on network ${this.dexHelper.config.data.network} ` +
         `found unspecified custom pool: ${pool}`,
     );
+  }
+
+  private _getCoinsABI(type: string): AbiItem {
+    const newCoinsType = _.cloneDeep(this.coinsTypeTemplate);
+    newCoinsType.inputs![0].type = type;
+    return newCoinsType;
   }
 }

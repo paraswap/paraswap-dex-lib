@@ -148,6 +148,11 @@ export type CustomPoolConfig = {
   lpTokenAddress: Address;
   // Liquidity is fetched from curve API: https://api.curve.fi/api/getPools/ethereum/SLUG
   liquidityApiSlug: string;
+  coins_decimals: number[];
+  // There are some difference in input like uint128 or uint256
+  // If we don't use proper type encoding we receive an error
+  // You must specify what typ must be encoded/decoded for coins request
+  coinsInputType: string
 };
 
 export type DexParams = {
