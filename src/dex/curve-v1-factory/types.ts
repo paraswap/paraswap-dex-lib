@@ -8,6 +8,7 @@ export type PoolContextConstants = {
   // For now I put everywhere false, but eventually we should have more granular handling
   // for all pools
   isWrapNative: boolean;
+  isLending: boolean;
 
   // Starting from this point, constants are context relevant for pricing
 
@@ -46,6 +47,7 @@ export type PoolState = {
   virtualPrice?: bigint; // from custom plain pool: get_virtual_price()
   totalSupply?: bigint; // from lpToken -> totalSupply()
   exchangeRateCurrent?: (bigint | undefined)[]; // from cToken -> exchangeRateCurrent()
+  offpeg_fee_multiplier?: bigint; // from pool
   basePoolState?: PoolState;
 };
 

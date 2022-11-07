@@ -138,25 +138,75 @@ const factoryPlain2Basic: get_D = (
   );
 };
 
+const customAvalanche3CoinLending: get_D = (
+  self: IPoolContext,
+  xp: bigint[],
+  amp: bigint,
+): bigint => {
+  const { BI_N_COINS } = self.constants;
+  const A_PRECISION = requireConstant(self, 'A_PRECISION', funcName());
+
+  let S = 0n;
+  for (const _x of xp) {
+    S += _x;
+  }
+  if (S === 0n) {
+    return 0n;
+  }
+
+  let Dprev = 0n;
+  let D = S;
+  const Ann = amp * BI_N_COINS;
+  for (const _i of _.range(255)) {
+    let D_P = D;
+    for (const _x of xp) {
+      // If division by 0, this will be borked: only withdrawal will work. And that is good
+      D_P = (D_P * D) / (_x * BI_N_COINS + 1n);
+    }
+    Dprev = D;
+    D =
+      (((Ann * S) / A_PRECISION + D_P * BI_N_COINS) * D) /
+      (((Ann - A_PRECISION) * D) / A_PRECISION + (BI_N_COINS + 1n) * D_P);
+    // Equality with the precision of 1
+    if (D > Dprev) {
+      if (D - Dprev <= 1n) {
+        return D;
+      }
+    } else {
+      if (Dprev - D <= 1n) {
+        return D;
+      }
+    }
+  }
+
+  // convergence typically occurs in 4 rounds or less, this should be unreachable!
+  // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
+  throw new Error(
+    `${self.IMPLEMENTATION_NAME}: function ${funcName()} didn't converge`,
+  );
+};
+
 const implementations: Record<ImplementationNames, get_D> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: CHANGE,
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: factoryPlain2Basic,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: factoryPlain2Basic,
 
-  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: CHANGE,
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: CHANGE,
-  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
-  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: customPlain2CoinFrax,
 
-  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: CHANGE,
-  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: customAvalanche3CoinLending,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: customAvalanche3CoinLending,
 
   [ImplementationNames.FACTORY_V1_META_BTC]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_V1_META_USD]: customPlain2CoinFrax,

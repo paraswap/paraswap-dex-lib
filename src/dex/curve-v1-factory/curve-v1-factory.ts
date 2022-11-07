@@ -141,8 +141,11 @@ export class CurveV1Factory
           false,
         );
 
-        const nCoins = ImplementationConstants[customPool.name].N_COINS;
-        const useLending = ImplementationConstants[customPool.name].USE_LENDING;
+        const {
+          N_COINS: nCoins,
+          USE_LENDING: useLending,
+          isLending,
+        } = ImplementationConstants[customPool.name];
 
         const COINS = (
           await this.dexHelper.multiWrapper.tryAggregate(
@@ -189,6 +192,7 @@ export class CurveV1Factory
             poolConstants,
             customPool.liquidityApiSlug,
             customPool.lpTokenAddress,
+            isLending,
             useLending,
           );
         } else {
@@ -202,6 +206,7 @@ export class CurveV1Factory
             poolConstants,
             customPool.liquidityApiSlug,
             customPool.lpTokenAddress,
+            isLending,
             useLending,
             true,
           );

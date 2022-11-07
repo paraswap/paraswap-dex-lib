@@ -1,11 +1,7 @@
 import _ from 'lodash';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
-import {
-  ImplementationNames,
-  PoolConstants,
-  PoolState,
-} from '../types';
+import { ImplementationNames, PoolConstants, PoolState } from '../types';
 import { BasePoolPolling, MulticallReturnedTypes } from './base-pool-polling';
 import { uint256ToBigInt } from '../../../lib/decoders';
 import { funcName, _require } from '../../../utils';
@@ -18,7 +14,8 @@ type FunctionToCall =
   | 'exchangeRateCurrent'
   | 'fee'
   | 'balances'
-  | 'get_virtual_price';
+  | 'get_virtual_price'
+  | 'offpeg_fee_multiplier';
 
 const ContractABIs: Record<FunctionToCall, AbiItem> = {
   get_virtual_price: {
@@ -70,6 +67,14 @@ const ContractABIs: Record<FunctionToCall, AbiItem> = {
     type: 'function',
     gas: 2250,
   },
+  offpeg_fee_multiplier: {
+    stateMutability: 'view',
+    type: 'function',
+    name: 'offpeg_fee_multiplier',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    gas: 3408,
+  },
 };
 
 // This class is very limited to speed up the process. I don't know if it is extensible
@@ -85,6 +90,7 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
     readonly poolConstants: PoolConstants,
     readonly curveLiquidityApiSlug: string,
     readonly lpTokenAddress: Address,
+    readonly isLending: boolean,
     readonly useLending?: boolean[],
     readonly isUsedForPricing: boolean = false,
     readonly contractABIs = ContractABIs,
@@ -160,6 +166,18 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
       calls = calls.concat(exchangeRateCalls);
     }
 
+    // this.USE_LENDING and isLending are not really related
+    if (this.isLending) {
+      calls.push({
+        target: this.address,
+        callData: this.abiCoder.encodeFunctionCall(
+          this.contractABIs.offpeg_fee_multiplier,
+          [],
+        ),
+        decodeFunction: uint256ToBigInt,
+      });
+    }
+
     return calls;
   }
 
@@ -191,18 +209,21 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
 
     let exchangeRateCurrent: (bigint | undefined)[] | undefined;
 
+    let lastEndIndex = lastIndex + 1;
     if (this.useLending) {
       exchangeRateCurrent = new Array(this.useLending.length).fill(undefined);
       const exchangeRateResults = multiOutputs
-        .slice(lastIndex + this.poolConstants.COINS.length)
+        .slice(lastEndIndex, lastEndIndex + this.useLending.length)
         .map(e => e.returnData) as bigint[];
 
+      lastEndIndex += this.useLending.length;
       const indicesToFill = this.useLending.reduce<number[]>((acc, curr, i) => {
         if (curr) {
           acc.push(i);
         }
         return acc;
       }, []);
+
       _require(
         indicesToFill.length === exchangeRateResults.length,
         "indicesToFill and exchangeResults doesn't match",
@@ -212,9 +233,17 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
         },
         'indicesToFill.length === exchangeRateResults.length',
       );
+
       indicesToFill.forEach((indexToFill, currentIndex) => {
         exchangeRateResults[indexToFill] = exchangeRateResults[currentIndex];
       });
+    }
+
+    let offpeg_fee_multiplier: bigint | undefined;
+
+    if (this.isLending) {
+      offpeg_fee_multiplier = multiOutputs[lastEndIndex].returnData as bigint;
+      lastEndIndex++;
     }
 
     const newState: PoolState = {
@@ -225,6 +254,7 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
       exchangeRateCurrent,
       virtualPrice,
       totalSupply,
+      offpeg_fee_multiplier,
     };
 
     this._setState(newState, updatedAt);

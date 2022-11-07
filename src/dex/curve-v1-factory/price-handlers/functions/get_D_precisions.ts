@@ -1,71 +1,54 @@
 import _ from 'lodash';
 import { funcName } from '../../../../utils';
-import { ImplementationNames, PoolState } from '../../types';
-import { IPoolContext, _rates } from '../types';
-import { throwNotExist, requireConstant } from './utils';
+import { ImplementationNames } from '../../types';
+import { get_D_precisions, IPoolContext } from '../types';
+import { requireConstant, throwNotExist } from './utils';
 
-const customPlain3CoinSbtc: _rates = (
+const customAvalanche3CoinLending: get_D_precisions = (
   self: IPoolContext,
-  state: PoolState,
-): bigint[] => {
+  coin_balances: bigint[],
+  amp: bigint,
+): bigint => {
   const { N_COINS } = self.constants;
-  const USE_LENDING = requireConstant(self, 'USE_LENDING', funcName());
-  const LENDING_PRECISION = requireConstant(
-    self,
-    'LENDING_PRECISION',
-    funcName(),
-  );
   const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
-
-  if (state.exchangeRateCurrent === undefined) {
-    throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: exchangeRateCurrent is not provided`,
-    );
-  }
-
-  const result = [...PRECISION_MUL];
-  const use_lending = [...USE_LENDING];
+  const xp = [...PRECISION_MUL];
   for (const i of _.range(N_COINS)) {
-    let rate = LENDING_PRECISION; // Used with no lending
-    if (use_lending[i]) {
-      const currentRate = state.exchangeRateCurrent[i];
-      if (currentRate === undefined) {
-        throw new Error(
-          `${self.IMPLEMENTATION_NAME}: exchangeRateCurrent contains undefined value that supposed to be used: ${state.exchangeRateCurrent}`,
-        );
-      }
-      rate = currentRate;
-    }
-    result[i] *= rate;
+    xp[i] *= coin_balances[i];
   }
-  return result;
+  return self.get_D(self, xp, amp);
 };
 
-const notExist: _rates = (self: IPoolContext, state: PoolState) => {
-  return throwNotExist('_rates', self.IMPLEMENTATION_NAME);
+const notExist: get_D_precisions = (
+  self: IPoolContext,
+  coin_balances: bigint[],
+  amp: bigint,
+) => {
+  return throwNotExist('get_D_precisions', self.IMPLEMENTATION_NAME);
 };
 
-const implementations: Record<ImplementationNames, _rates> = {
+const implementations: Record<ImplementationNames, get_D_precisions> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 
   [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: notExist,
   [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: notExist,
 
-  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: notExist,
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
   [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: notExist,
   [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: notExist,
-  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: notExist,
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
   [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: notExist,
 
-  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: notExist,
-  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: notExist,
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]:
+    customAvalanche3CoinLending,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
   [ImplementationNames.FACTORY_V1_META_BTC]: notExist,
   [ImplementationNames.FACTORY_V1_META_USD]: notExist,

@@ -1,4 +1,8 @@
-import { ImplementationNames, PoolContextConstants } from '../../types';
+import {
+  ImplementationNames,
+  PoolContextConstants,
+  PoolState,
+} from '../../types';
 import { IPoolContext } from '../types';
 
 export const throwNotExist = (
@@ -31,4 +35,22 @@ export const requireConstant = <T extends keyof PoolContextConstants>(
 
   // Proper typing is not working. I do not know why :(
   return value as NonNullable<PoolContextConstants[T]>;
+};
+
+export const requireValue = <T extends keyof PoolState>(
+  self: IPoolContext,
+  state: PoolState,
+  stateVarName: T,
+  funcName: string,
+): NonNullable<PoolState[T]> => {
+  const value = state[stateVarName];
+  if (!value) {
+    throw new Error(
+      `Required state value ${stateVarName} was not specified for function ` +
+        `${funcName} in ${self.IMPLEMENTATION_NAME} implementation`,
+    );
+  }
+
+  // Proper typing is not working. I do not know why :(
+  return value as NonNullable<PoolState[T]>;
 };

@@ -5,7 +5,15 @@ export type _calc_withdraw_one_coin = (
   state: PoolState,
   _token_amount: bigint,
   i: number,
-) => [bigint, bigint, bigint | undefined];
+) => [bigint, bigint | undefined, bigint | undefined];
+
+export type _dynamic_fee = (
+  self: IPoolContext,
+  xpi: bigint,
+  xpj: bigint,
+  _fee: bigint,
+  _feemul: bigint,
+) => bigint;
 
 export type _rates = (self: IPoolContext, state: PoolState) => bigint[];
 
@@ -35,6 +43,12 @@ export type get_D_mem = (
   self: IPoolContext,
   state: PoolState,
   _balances: bigint[],
+  amp: bigint,
+) => bigint;
+
+export type get_D_precisions = (
+  self: IPoolContext,
+  coin_balances: bigint[],
   amp: bigint,
 ) => bigint;
 
@@ -81,12 +95,14 @@ export interface IPoolContext {
   readonly constants: PoolContextConstants;
 
   _calc_withdraw_one_coin: _calc_withdraw_one_coin;
+  _dynamic_fee: _dynamic_fee;
   _rates: _rates;
   _xp_mem: _xp_mem;
   _xp: _xp;
   calc_token_amount: calc_token_amount;
   calc_withdraw_one_coin: calc_withdraw_one_coin;
   get_D_mem: get_D_mem;
+  get_D_precision: get_D_precisions;
   get_D: get_D;
   get_dy_underlying: get_dy_underlying;
   get_dy: get_dy;

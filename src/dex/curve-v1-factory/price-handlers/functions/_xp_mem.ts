@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { funcName } from '../../../../utils';
 import { ImplementationNames } from '../../types';
 import { IPoolContext, _xp_mem } from '../types';
-import { requireConstant } from './utils';
+import { requireConstant, throwNotExist } from './utils';
 
 const customPlain3CoinThree: _xp_mem = (
   self: IPoolContext,
@@ -12,19 +12,6 @@ const customPlain3CoinThree: _xp_mem = (
   const { N_COINS, PRECISION } = self.constants;
   const RATES = requireConstant(self, 'RATES', funcName());
   const result = [...RATES];
-  for (const i of _.range(Number(N_COINS))) {
-    result[i] = (result[i] * _balances[i]) / PRECISION;
-  }
-  return result;
-};
-
-const customPlain3CoinSbtc: _xp_mem = (
-  self: IPoolContext,
-  _rates: bigint[],
-  _balances: bigint[],
-): bigint[] => {
-  const { N_COINS, PRECISION } = self.constants;
-  const result = [..._rates];
   for (const i of _.range(Number(N_COINS))) {
     result[i] = (result[i] * _balances[i]) / PRECISION;
   }
@@ -45,25 +32,33 @@ const factoryPlain2Basic: _xp_mem = (
   return result;
 };
 
+const notExist: _xp_mem = (
+  self: IPoolContext,
+  _rates: bigint[],
+  _balances: bigint[],
+) => {
+  return throwNotExist('_xp_mem', self.IMPLEMENTATION_NAME);
+};
+
 const implementations: Record<ImplementationNames, _xp_mem> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: factoryPlain2Basic,
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: factoryPlain2Basic,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: CHANGE,
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: factoryPlain2Basic,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: factoryPlain2Basic,
 
-  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: notExist,
 
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: CHANGE,
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: CHANGE,
-  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: notExist,
 
-  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: factoryPlain2Basic,
 
-  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: CHANGE,
-  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: notExist,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: notExist,
 
   [ImplementationNames.FACTORY_V1_META_BTC]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_V1_META_USD]: factoryPlain2Basic,

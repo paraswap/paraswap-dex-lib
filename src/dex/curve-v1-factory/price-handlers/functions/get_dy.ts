@@ -1,7 +1,8 @@
+import _ from 'lodash';
 import { ImplementationNames, PoolState } from '../../types';
 import { funcName } from '../../../../utils';
 import { get_dy, IPoolContext } from '../types';
-import { requireConstant } from './utils';
+import { requireConstant, requireValue } from './utils';
 
 const factoryPlain2Basic: get_dy = (
   self: IPoolContext,
@@ -120,25 +121,69 @@ const customPlain3CoinBtc: get_dy = (
   return dy - _fee;
 };
 
+const customAvalanche3CoinLending: get_dy = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+) => {
+  const { N_COINS, FEE_DENOMINATOR } = self.constants;
+  const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
+  const offpeg_fee_multiplier = requireValue(
+    self,
+    state,
+    'offpeg_fee_multiplier',
+    funcName(),
+  );
+
+  const xp = [...state.balances];
+
+  const precisions = [...PRECISION_MUL];
+  for (const k of _.range(N_COINS)) {
+    xp[k] *= precisions[k];
+  }
+
+  const x = xp[i] + dx * precisions[i];
+  const y = self.get_y(self, state, i, j, x, xp);
+  const dy = (xp[j] - y) / precisions[j];
+  const _fee =
+    (self._dynamic_fee(
+      self,
+      (xp[i] + x) / 2n,
+      (xp[j] + y) / 2n,
+      state.fee,
+      offpeg_fee_multiplier,
+    ) *
+      dy) /
+    FEE_DENOMINATOR;
+
+  return dy - _fee;
+};
+
 const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: CHANGE,
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: factoryPlain2Basic,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: factoryPlain2Basic,
 
-  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: CHANGE,
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: CHANGE,
-  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
-  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: CHANGE,
+  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: factoryPlain2Basic,
 
-  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: CHANGE,
-  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: CHANGE,
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]:
+    customAvalanche3CoinLending,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
   [ImplementationNames.FACTORY_V1_META_BTC]: factoryV1MetaUsd,
   [ImplementationNames.FACTORY_V1_META_USD]: factoryV1MetaUsd,
