@@ -268,9 +268,7 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
                         ...state.oracles[token].oraclesBindState,
                       },
                       latestRoundId: state.oracles[token].latestRoundId,
-                      historicalOracleState: {
-                        historicalData,
-                      },
+                      historicalOracleState: historicalData,
                     },
                   };
                 }, {});
@@ -289,7 +287,6 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
             }
             // setPriceStatisticsLookbackStepInRound
             case SwaapV1Pool.LB_STEP_IN_ROUND_TOPIC: {
-              const data = log.data.toString();
               const value = Number(SwaapV1Pool.getValueFromAnonymousEvent(log));
               const oldRoundLookbackWindow =
                 (state.parameters.priceStatisticsLookbackInRound - 1) *
@@ -390,9 +387,7 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
                         ...state.oracles[token].oraclesBindState,
                       },
                       latestRoundId: state.oracles[token].latestRoundId,
-                      historicalOracleState: {
-                        historicalData,
-                      },
+                      historicalOracleState: historicalData,
                     },
                   };
                 }, {});

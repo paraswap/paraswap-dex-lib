@@ -81,6 +81,11 @@ describe('SwaapV1 Event', function () {
       [29828025, '0x7f5f7411c2c7ec60e2db946abbe7dc354254870b'],
     ],
     AnswerUpdated: [[29799898, '0x7f5f7411c2c7ec60e2db946abbe7dc354254870b']],
+    LB_STEP_IN_ROUND_TOPIC: [
+      [33424651, '0x7f5f7411c2c7ec60e2db946abbe7dc354254870b'],
+    ],
+    SWAP_FEE_TOPIC: [[33678249, '0x7f5f7411c2c7ec60e2db946abbe7dc354254870b']],
+    Z_TOPIC: [[33679213, '0x7f5f7411c2c7ec60e2db946abbe7dc354254870b']],
   };
 
   describe('SwaapV1EventPool', function () {
