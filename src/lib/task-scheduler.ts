@@ -25,7 +25,7 @@ export class TaskScheduler {
   private async executeTask() {
     if (this._timer) {
       // Just in case
-      this.cleatTimer();
+      this.clearTimer();
     }
 
     try {
@@ -37,7 +37,7 @@ export class TaskScheduler {
     }
   }
 
-  cleatTimer() {
+  clearTimer() {
     if (this._timer) {
       clearTimeout(this._timer);
       this._timer = undefined;
@@ -45,7 +45,7 @@ export class TaskScheduler {
   }
 
   setTimer(delay: number) {
-    this.cleatTimer();
+    this.clearTimer();
 
     if (this.preventNewTimer) {
       return;
@@ -56,6 +56,6 @@ export class TaskScheduler {
 
   releaseResources() {
     this.preventNewTimer = true;
-    this.cleatTimer();
+    this.clearTimer();
   }
 }
