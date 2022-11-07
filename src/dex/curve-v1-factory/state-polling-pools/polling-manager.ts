@@ -1,6 +1,10 @@
 import { MultiWrapper } from '../../../lib/multi-wrapper';
 import { BasePoolPolling } from './base-pool-polling';
 
+/*
+ * Since we are updating all pools state at once, I need some generalized iterator without state,
+ * just to go for every pool, get multicall requests and apply them into new state
+ */
 export class StatePollingManager {
   static async updatePoolsInBatch(
     multiWrapper: MultiWrapper,

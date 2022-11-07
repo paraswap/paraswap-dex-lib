@@ -99,6 +99,8 @@ export class CurveV1Factory
       threePool: new Interface(ThreePoolABI as JsonFragment[]),
     };
 
+    // I had to put this initialization into CurveV1 because I have to have access to mapping
+    // from address to custom pool
     const allPriceHandlers = Object.values(
       this.config.factoryPoolImplementations,
     ).reduce<Record<string, PriceHandler>>((acc, curr) => {
@@ -244,6 +246,7 @@ export class CurveV1Factory
           callData: this.ifaces.factory.encodeFunctionData('pool_count'),
           decodeFunction: uint256DecodeToNumber,
         },
+        // This is used later to request all available implementations. In particular meta implementations
         {
           target: factoryAddress,
           callData: this.ifaces.factory.encodeFunctionData('base_pool_count'),
@@ -326,6 +329,8 @@ export class CurveV1Factory
     // This is divider between pools related results and implementations
     const factoryResultsDivider = callDataFromFactoryPools.length;
 
+    // Implementations must be requested from factory, but it accepts as arg basePool address
+    // for metaPools
     callDataFromFactoryPools = callDataFromFactoryPools.concat(
       ...basePoolAddresses.map(basePoolAddress => ({
         target: factoryAddress,
@@ -341,6 +346,10 @@ export class CurveV1Factory
             parsed => parsed[0].map((p: string) => p.toLowerCase()),
           ),
       })),
+      // To receive plain pool implementation address, you have to call plain_implementations
+      // with two variables: N_COINS and implementations_index
+      // N_COINS is between 2-4. Currently more than 4 coins is not supported
+      // as for implementation index, there are only 0-9 indexes
       ..._.flattenDeep(
         _.range(2, FACTORY_MAX_PLAIN_COINS).map(coinNumber =>
           _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(implInd => ({

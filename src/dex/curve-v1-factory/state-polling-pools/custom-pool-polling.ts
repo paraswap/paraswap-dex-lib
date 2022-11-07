@@ -17,6 +17,9 @@ type FunctionToCall =
   | 'get_virtual_price'
   | 'offpeg_fee_multiplier';
 
+// There are many ABIs from different contracts. In order to not bring all of them
+// in repository, I just picked only the ones I am using. I think it is more neat and readable,
+// rather then having all ABIs
 const ContractABIs: Record<FunctionToCall, AbiItem> = {
   get_virtual_price: {
     name: 'get_virtual_price',
@@ -217,6 +220,8 @@ export class CustomBasePoolForFactory extends BasePoolPolling {
         .map(e => e.returnData) as bigint[];
 
       lastEndIndex += this.useLending.length;
+      // We had array with booleans and I filtered of `false` and sent request.
+      // So, now I must map that results to original indices. That is the reason of this complication
       const indicesToFill = this.useLending.reduce<number[]>((acc, curr, i) => {
         if (curr) {
           acc.push(i);

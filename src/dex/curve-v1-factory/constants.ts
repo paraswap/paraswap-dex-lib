@@ -11,8 +11,8 @@ export const MAX_ALLOWED_STATE_DELAY_MS = 30 * 1000;
 
 export const POOL_EXCHANGE_GAS_COST = 200 * 1000;
 
+// Pooltracker relevant variables
 export const CURVE_API_URL = 'https://api.curve.fi/api/getPools';
-
 export const NETWORK_ID_TO_NAME: Record<number, string> = {
   [Network.MAINNET]: 'ethereum',
   [Network.POLYGON]: 'polygon',

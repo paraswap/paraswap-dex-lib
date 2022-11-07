@@ -87,6 +87,21 @@ export type get_y = (
   xp_: bigint[],
 ) => bigint;
 
+/*
+ * This is customized self context that is used for pricing. It gives us big flexibility
+ * to include any available function implementation we want.
+ * There is one problem. Not all classes ahs all functions and not all functions we need
+ * That is solved by throwing function: notExist and notImplemented.
+ * If something is not implemented or not exist we except to not call it ever.
+ * If it happens by mistake we will know by raised exception and it means something is missed
+ *
+ * Here we have pool constants. They can not be requested from RPC, so it must be set from source code
+ * Instead of having implementationAddress, I operated on Name level. Address level is put on config level
+ * since different metaPool implementations have different addresses on different chains, but
+ * pools may be duplicated and that is resembled in name.
+ * But mostly custom pools are quite unique. Actually, not very unique, there are many implementations
+ * that looks different, but essentially the same. I tried to not unite them into one implementations for simplicity
+ */
 export interface IPoolContext {
   readonly _basePool?: IPoolContext;
 

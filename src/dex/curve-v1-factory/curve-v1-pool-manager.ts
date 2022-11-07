@@ -13,11 +13,20 @@ import { PriceHandler } from './price-handlers/price-handler';
 import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
 
+/*
+ * The idea of FactoryPoolManager is to try to abstract both pool types: fully event based
+ * semi event based into one wall `PoolManager`. Currently we only support only
+ * semi event based, but it may be extended in future when we make full transition from CurveV1
+ */
+
 export class CurveV1FactoryPoolManager {
-  // This is needed because we initialize all factory pools + 3 custom pools
-  // That 3 custom pools are not fully supported. I need them only in meta pools
+  // This is needed because we initialize all factory pools + custom pools
+  // Custom pools are not fully supported. I need them only in meta pools as base pool
   // to get poolState, but not for pricing requests.
   // It appears from CurveV1 and CurveV1Factory duality
+  // Sometimes it happens that as customPool we have factory plain pool, in that case I use
+  // isUsedForPricing flag to identify if it must be used for pricing or not. If yes,
+  // it goes to statePollingPoolsFromId
   private poolsForOnlyState: Record<string, BasePoolPolling> = {};
 
   // poolsForOnly State and statePollingPoolsFromId must not have overlapping in pool

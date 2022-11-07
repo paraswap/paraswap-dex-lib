@@ -677,6 +677,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
 };
 
+// This become quite ugly :(
+// I just wanted to make sure that every address is lowercased and it is not missed it config changes at some point
 const configAddressesNormalizer = (
   config: DexConfigMap<DexParams>,
 ): DexConfigMap<DexParams> => {
@@ -684,6 +686,7 @@ const configAddressesNormalizer = (
     for (const network of Object.keys(config[dexKey])) {
       const _config = config[dexKey][+network];
 
+      // Normalize custom pool fields
       Object.keys(_config.customPools).forEach(p => {
         _config.customPools[p].address =
           _config.customPools[p].address.toLowerCase();
@@ -709,6 +712,7 @@ const configAddressesNormalizer = (
         {},
       );
 
+      // Unite everything into top level config
       const normalizedConfig: DexParams = {
         factoryAddress: _config.factoryAddress
           ? _config.factoryAddress.toLowerCase()

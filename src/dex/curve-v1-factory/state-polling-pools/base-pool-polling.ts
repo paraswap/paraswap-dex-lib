@@ -9,6 +9,7 @@ import { Address } from 'paraswap-core';
 export type MulticallReturnedTypes = bigint | bigint[];
 
 export abstract class BasePoolPolling {
+  // Used for logger. Better to have which class is failing
   readonly CLASS_NAME = this.constructor.name;
 
   readonly fullName: string;
@@ -19,12 +20,15 @@ export abstract class BasePoolPolling {
 
   protected abiCoder = Web3EthAbi as unknown as AbiCoder;
 
+  // This values is used in PoolTracker
   liquidityUSD = 0;
 
   readonly isMetaPool: boolean;
   readonly underlyingCoins: string[];
   readonly underlyingDecimals: number[];
 
+  // Custom pools usually are not used for pricing. But there examples, when
+  // factory plain goes as custom one. In that case we must use that for pricing
   readonly isUsedForPricing: boolean = true;
 
   constructor(
@@ -61,6 +65,8 @@ export abstract class BasePoolPolling {
     updatedAt: number,
   ): void;
 
+  // Each type of implementation: currently two (Factory and Custom) may have different
+  // set of multicall requests. It is useful to make calls tha shouldn't fail
   abstract getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[];
 
   getState(): PoolState | null {
@@ -82,6 +88,8 @@ export abstract class BasePoolPolling {
     return null;
   }
 
+  // It must be called once every calculation is done and we are ready to return
+  // result from getPricesVolume
   getPoolData(srcAddress: Address, destAddress: Address): CurveV1FactoryData {
     const iC = this.poolConstants.COINS.indexOf(srcAddress);
     const jC = this.poolConstants.COINS.indexOf(destAddress);

@@ -1,6 +1,11 @@
 import { Interface } from '@ethersproject/abi';
 import { Address } from '../../types';
 
+// The difference between PoolContextConstants and PoolConstants lies in the fact
+// that PoolContextConstants can not be requested from RPC. They are hardcoded
+// never be changed. Contrary PoolConstants may change or may be initialized with different values
+// for different addresses or chains
+
 export type PoolContextConstants = {
   // These are not actually context relevant fro pricing constants, but helpful in identifying different
   // aspects of implementation
@@ -121,6 +126,8 @@ export enum CustomImplementationNames {
   CUSTOM_POLYGON_3COIN_LENDING = 'custom_polygon_3coin_lending',
 }
 
+// This is just a hack to blend to enums into one. One must blend actual values
+// and then export type as well
 export const ImplementationNames = {
   ...CustomImplementationNames,
   ...FactoryImplementationNames,
