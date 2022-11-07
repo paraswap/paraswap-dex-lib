@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
+import { Interface, JsonFragment, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
@@ -12,20 +12,20 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { Address } from 'paraswap-core';
+import StableSwap3PoolABI from '../../abi/curve-v1/StableSwap3Pool.json';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  i: number,
+  j: number,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [i, j, amount]),
   }));
 }
 
@@ -42,24 +42,25 @@ function decodeReaderResult(
 
 async function checkOnChainPricing(
   curveV1Factory: CurveV1Factory,
+  exchangeAddress: Address,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  i: number,
+  j: number,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from curveV1Factory.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    i,
+    j,
   );
+
   const readerResult = (
     await curveV1Factory.dexHelper.multiContract.methods
       .aggregate(readerCallData)
@@ -82,7 +83,6 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
-  funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
 
@@ -122,10 +122,13 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     curveV1Factory,
-    funcNameToCheck,
+    poolPrices![0].data.exchange,
+    poolPrices![0].data.underlyingSwap ? 'get_dy_underlying' : 'get_dy',
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    poolPrices![0].data.i,
+    poolPrices![0].data.j,
   );
 }
 
@@ -165,6 +168,10 @@ describe('CurveV1Factory', function () {
       }
     });
 
+    afterAll(() => {
+      curveV1Factory.releaseResources();
+    });
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         curveV1Factory,
@@ -175,7 +182,6 @@ describe('CurveV1Factory', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'get_underlying_dy',
       );
     });
 
@@ -232,6 +238,10 @@ describe('CurveV1Factory', function () {
       }
     });
 
+    afterAll(() => {
+      curveV1Factory.releaseResources();
+    });
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         curveV1Factory,
@@ -242,7 +252,6 @@ describe('CurveV1Factory', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'get_dy',
       );
     });
 
@@ -299,6 +308,10 @@ describe('CurveV1Factory', function () {
       }
     });
 
+    afterAll(() => {
+      curveV1Factory.releaseResources();
+    });
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         curveV1Factory,
@@ -309,7 +322,6 @@ describe('CurveV1Factory', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'get_dy',
       );
     });
 
@@ -366,6 +378,10 @@ describe('CurveV1Factory', function () {
       }
     });
 
+    afterAll(() => {
+      curveV1Factory.releaseResources();
+    });
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         curveV1Factory,
@@ -376,7 +392,6 @@ describe('CurveV1Factory', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'get_dy_underlying',
       );
     });
 
@@ -433,6 +448,10 @@ describe('CurveV1Factory', function () {
       }
     });
 
+    afterAll(() => {
+      curveV1Factory.releaseResources();
+    });
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         curveV1Factory,
@@ -443,7 +462,6 @@ describe('CurveV1Factory', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'get_dy',
       );
     });
 
@@ -500,6 +518,10 @@ describe('CurveV1Factory', function () {
       }
     });
 
+    afterAll(() => {
+      curveV1Factory.releaseResources();
+    });
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         curveV1Factory,
@@ -510,7 +532,6 @@ describe('CurveV1Factory', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'get_dy',
       );
     });
 
