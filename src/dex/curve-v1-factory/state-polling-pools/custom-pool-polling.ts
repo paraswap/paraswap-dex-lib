@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
 import { ImplementationNames, PoolConstants, PoolState } from '../types';
-import { BasePoolPolling, MulticallReturnedTypes } from './base-pool-polling';
+import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import { uint256ToBigInt } from '../../../lib/decoders';
 import { funcName, _require } from '../../../utils';
 import { Address } from 'paraswap-core';
@@ -83,7 +83,7 @@ const ContractABIs: Record<FunctionToCall, AbiItem> = {
 // This class is very limited to speed up the process. I don't know if it is extensible
 // for other pools. I just wanted to make support for custom pools that are used under
 // factory meta pools
-export class CustomBasePoolForFactory extends BasePoolPolling {
+export class CustomBasePoolForFactory extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,

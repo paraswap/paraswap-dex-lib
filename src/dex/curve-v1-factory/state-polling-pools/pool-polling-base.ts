@@ -8,7 +8,7 @@ import { Address } from 'paraswap-core';
 
 export type MulticallReturnedTypes = bigint | bigint[];
 
-export abstract class BasePoolPolling {
+export abstract class PoolPollingBase {
   // Used for logger. Better to have which class is failing
   readonly CLASS_NAME = this.constructor.name;
 
@@ -39,7 +39,7 @@ export abstract class BasePoolPolling {
     readonly poolConstants: PoolConstants,
     readonly address: Address,
     readonly curveLiquidityApiSlug: string,
-    readonly baseStatePoolPolling: BasePoolPolling | undefined,
+    readonly baseStatePoolPolling: PoolPollingBase | undefined,
     readonly isSrcFeeOnTransferSupported: boolean,
   ) {
     this.fullName = `${dexKey}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;

@@ -56,7 +56,7 @@ import {
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import { BigNumber, BytesLike } from 'ethers';
 import { FactoryStateHandler } from './state-polling-pools/factory-pool-polling';
-import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
+import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
 import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-polling';
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
@@ -178,7 +178,7 @@ export class CurveV1Factory
           lpTokenAddress: customPool.lpTokenAddress,
         };
 
-        let newPool: BasePoolPolling;
+        let newPool: PoolPollingBase;
         if (
           Object.values<ImplementationNames>(
             CustomImplementationNames,
@@ -411,7 +411,7 @@ export class CurveV1Factory
         ImplementationConstants[factoryImplementationFromConfig.name];
 
       let isMeta: boolean = false;
-      let basePoolStateFetcher: BasePoolPolling | undefined;
+      let basePoolStateFetcher: PoolPollingBase | undefined;
       if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
         isMeta = true;
         const basePoolIdentifier = this.getPoolIdentifier(
@@ -525,7 +525,7 @@ export class CurveV1Factory
       const srcTokenAddress = srcToken.address.toLowerCase();
       const destTokenAddress = destToken.address.toLowerCase();
 
-      let pools: BasePoolPolling[] = [];
+      let pools: PoolPollingBase[] = [];
       if (limitPools !== undefined) {
         pools = limitPools
           .map(poolIdentifier =>
@@ -534,7 +534,7 @@ export class CurveV1Factory
               _isSrcTokenTransferFeeToBeExchanged,
             ),
           )
-          .filter((pool): pool is BasePoolPolling => pool !== null);
+          .filter((pool): pool is PoolPollingBase => pool !== null);
       } else {
         pools = this.poolManager.getPoolsForPair(
           srcTokenAddress,

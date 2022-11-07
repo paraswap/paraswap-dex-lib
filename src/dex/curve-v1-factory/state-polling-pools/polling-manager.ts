@@ -1,5 +1,5 @@
 import { MultiWrapper } from '../../../lib/multi-wrapper';
-import { BasePoolPolling } from './base-pool-polling';
+import { PoolPollingBase } from './pool-polling-base';
 
 /*
  * Since we are updating all pools state at once, I need some generalized iterator without state,
@@ -8,7 +8,7 @@ import { BasePoolPolling } from './base-pool-polling';
 export class StatePollingManager {
   static async updatePoolsInBatch(
     multiWrapper: MultiWrapper,
-    pools: BasePoolPolling[],
+    pools: PoolPollingBase[],
   ) {
     if (pools.length === 0) {
       return;

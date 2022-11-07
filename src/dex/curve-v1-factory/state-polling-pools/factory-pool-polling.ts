@@ -2,7 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
 import { FactoryImplementationNames, PoolConstants, PoolState } from '../types';
-import { BasePoolPolling, MulticallReturnedTypes } from './base-pool-polling';
+import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import FactoryCurveV1ABI from '../../../abi/curve-v1-factory/FactoryCurveV1.json';
 import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
@@ -10,7 +10,7 @@ import { funcName } from '../../../utils';
 import { Address } from 'paraswap-core';
 import { BigNumber } from 'ethers';
 
-export class FactoryStateHandler extends BasePoolPolling {
+export class FactoryStateHandler extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
@@ -20,7 +20,7 @@ export class FactoryStateHandler extends BasePoolPolling {
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
     readonly isSrcFeeOnTransferSupported: boolean,
-    private basePoolStateFetcher?: BasePoolPolling,
+    private basePoolStateFetcher?: PoolPollingBase,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),

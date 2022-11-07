@@ -10,7 +10,7 @@ import {
   STATE_UPDATE_RETRY_FREQUENCY_MS,
 } from './constants';
 import { PriceHandler } from './price-handlers/price-handler';
-import { BasePoolPolling } from './state-polling-pools/base-pool-polling';
+import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
 
 /*
@@ -27,10 +27,10 @@ export class CurveV1FactoryPoolManager {
   // Sometimes it happens that as customPool we have factory plain pool, in that case I use
   // isUsedForPricing flag to identify if it must be used for pricing or not. If yes,
   // it goes to statePollingPoolsFromId
-  private poolsForOnlyState: Record<string, BasePoolPolling> = {};
+  private poolsForOnlyState: Record<string, PoolPollingBase> = {};
 
   // poolsForOnly State and statePollingPoolsFromId must not have overlapping in pool
-  private statePollingPoolsFromId: Record<string, BasePoolPolling> = {};
+  private statePollingPoolsFromId: Record<string, PoolPollingBase> = {};
 
   // This is fast lookup table when you look for pair and searching for coins in all pools
   private coinAddressesToPoolIdentifiers: Record<string, string[]> = {};
@@ -79,7 +79,7 @@ export class CurveV1FactoryPoolManager {
     this.taskScheduler.releaseResources();
   }
 
-  initializeNewPool(identifier: string, pool: BasePoolPolling) {
+  initializeNewPool(identifier: string, pool: PoolPollingBase) {
     if (this.statePollingPoolsFromId[identifier]) {
       return;
     }
@@ -110,7 +110,7 @@ export class CurveV1FactoryPoolManager {
     this.allCurveLiquidityApiSlugs.add(pool.curveLiquidityApiSlug);
   }
 
-  initializeNewPoolForState(identifier: string, pool: BasePoolPolling) {
+  initializeNewPoolForState(identifier: string, pool: PoolPollingBase) {
     // Temporary hack before every pool is ported into new architecture
     if (pool.isUsedForPricing) {
       this.initializeNewPool(identifier, pool);
@@ -132,7 +132,7 @@ export class CurveV1FactoryPoolManager {
     srcTokenAddress: string,
     destTokenAddress: string,
     isSrcFeeOnTransferToBeExchanged?: boolean,
-  ): BasePoolPolling[] {
+  ): PoolPollingBase[] {
     const inSrcTokenIdentifiers =
       this.coinAddressesToPoolIdentifiers[srcTokenAddress];
     const inDestTokenIdentifiers =
@@ -158,7 +158,7 @@ export class CurveV1FactoryPoolManager {
             : false,
         ),
       )
-      .filter((p): p is BasePoolPolling => {
+      .filter((p): p is PoolPollingBase => {
         if (p === null) {
           return false;
         }
@@ -181,7 +181,7 @@ export class CurveV1FactoryPoolManager {
   getPool(
     identifier: string,
     isSrcFeeOnTransferTokenToBeExchanged: boolean,
-  ): BasePoolPolling | null {
+  ): PoolPollingBase | null {
     const pool = this.statePollingPoolsFromId[identifier.toLowerCase()];
     if (pool !== undefined) {
       if (
@@ -269,13 +269,13 @@ export class CurveV1FactoryPoolManager {
     }
   }
 
-  getPoolsWithToken(tokenAddress: Address): BasePoolPolling[] {
+  getPoolsWithToken(tokenAddress: Address): PoolPollingBase[] {
     const poolIdentifiers = this.coinAddressesToPoolIdentifiers[tokenAddress];
     if (poolIdentifiers === undefined) {
       return [];
     }
     return poolIdentifiers
       .map(poolIdentifier => this.getPool(poolIdentifier, false))
-      .filter((p): p is BasePoolPolling => p !== null);
+      .filter((p): p is PoolPollingBase => p !== null);
   }
 }
