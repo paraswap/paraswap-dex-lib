@@ -269,6 +269,9 @@ export abstract class StatefulEventSubscriber<State>
     ) {
       const network = this.dexHelper.config.data.network;
       const createNewState = async () => {
+        if (this.state !== null) {
+          return true;
+        }
         const latestBlockNumber =
           this.dexHelper.blockManager.getLatestBlockNumber();
         this.logger.warn(
