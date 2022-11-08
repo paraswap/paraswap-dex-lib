@@ -172,7 +172,7 @@ describe('CurveV1Factory', function () {
     });
 
     afterAll(() => {
-      curveV1Factory.releaseResources();
+      if (curveV1Factory) curveV1Factory.releaseResources();
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -216,8 +216,8 @@ describe('CurveV1Factory', function () {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'MATIC';
-    const destTokenSymbol = 'stMATIC';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'axlUSDC';
 
     const amountsForSell = [
       0n,
@@ -242,7 +242,7 @@ describe('CurveV1Factory', function () {
     });
 
     afterAll(() => {
-      curveV1Factory.releaseResources();
+      if (curveV1Factory) curveV1Factory.releaseResources();
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -312,7 +312,7 @@ describe('CurveV1Factory', function () {
     });
 
     afterAll(() => {
-      curveV1Factory.releaseResources();
+      if (curveV1Factory) curveV1Factory.releaseResources();
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -382,7 +382,7 @@ describe('CurveV1Factory', function () {
     });
 
     afterAll(() => {
-      curveV1Factory.releaseResources();
+      if (curveV1Factory) curveV1Factory.releaseResources();
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -452,7 +452,7 @@ describe('CurveV1Factory', function () {
     });
 
     afterAll(() => {
-      curveV1Factory.releaseResources();
+      if (curveV1Factory) curveV1Factory.releaseResources();
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -522,7 +522,7 @@ describe('CurveV1Factory', function () {
     });
 
     afterAll(() => {
-      curveV1Factory.releaseResources();
+      if (curveV1Factory) curveV1Factory.releaseResources();
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
