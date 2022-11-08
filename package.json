@@ -1,6 +1,10 @@
 {
   "name": "@paraswap/dex-lib",
+<<<<<<< HEAD
   "version": "2.9.3",
+=======
+  "version": "2.9.2-promises-scheduler.0",
+>>>>>>> 55f2285 (2.9.2-promises-scheduler.0)
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
