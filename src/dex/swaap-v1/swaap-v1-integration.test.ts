@@ -12,9 +12,7 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-const specificBlockNumber = 35194402;
-const specificBlockTimestamp = BigInt(1667574117);
+import { BlockHeader } from 'web3-eth';
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -89,7 +87,7 @@ async function testPricingOnNetwork(
   swaapV1: SwaapV1,
   network: Network,
   dexKey: string,
-  blockNumber: number,
+  block: BlockHeader,
   srcTokenSymbol: string,
   destTokenSymbol: string,
   side: SwapSide,
@@ -101,7 +99,7 @@ async function testPricingOnNetwork(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     side,
-    blockNumber,
+    block.number,
   );
   console.log(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
@@ -115,8 +113,8 @@ async function testPricingOnNetwork(
     networkTokens[destTokenSymbol],
     amounts,
     side,
-    blockNumber,
-    specificBlockTimestamp,
+    block.number,
+    BigInt(block.timestamp),
     pools,
   );
   console.log(
@@ -134,7 +132,7 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     swaapV1,
-    blockNumber,
+    block.number,
     poolPrices![0].prices,
     amounts,
     networkTokens[srcTokenSymbol].address,
@@ -145,7 +143,8 @@ async function testPricingOnNetwork(
 
 describe('SwaapV1', function () {
   const dexKey = 'SwaapV1';
-  let blockNumber: number = specificBlockNumber;
+
+  let block: BlockHeader | undefined = undefined;
   let swaapV1: SwaapV1;
 
   describe('Polygon', () => {
@@ -177,8 +176,11 @@ describe('SwaapV1', function () {
 
     beforeAll(async () => {
       swaapV1 = new SwaapV1(network, dexKey, dexHelper);
+
+      block = await dexHelper.web3Provider.eth.getBlock('latest');
+
       if (swaapV1.initializePricing) {
-        await swaapV1.initializePricing(blockNumber);
+        await swaapV1.initializePricing(block.number);
       }
     });
 
@@ -187,7 +189,7 @@ describe('SwaapV1', function () {
         swaapV1,
         network,
         dexKey,
-        blockNumber,
+        block!,
         srcTokenSymbol,
         destTokenSymbol,
         SwapSide.SELL,
@@ -200,7 +202,7 @@ describe('SwaapV1', function () {
         swaapV1,
         network,
         dexKey,
-        blockNumber,
+        block!,
         srcTokenSymbol,
         destTokenSymbol,
         SwapSide.BUY,

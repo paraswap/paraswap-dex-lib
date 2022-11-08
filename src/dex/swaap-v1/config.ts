@@ -25,14 +25,14 @@ export const Adapters: {
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
-        name: 'PolygonAdapter01',
-        index: 1,
+        name: 'PolygonAdapter02',
+        index: 6,
       },
     ],
     [SwapSide.BUY]: [
       {
-        name: 'PolygonAdapter01',
-        index: 1,
+        name: 'PolygonBuyAdapter',
+        index: 4,
       },
     ],
   },

@@ -63,7 +63,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.config = SwaapV1Config[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
     this.subgraphURL = this.config.subgraphURL;

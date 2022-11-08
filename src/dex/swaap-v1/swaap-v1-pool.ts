@@ -53,7 +53,9 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
     protected dexHelper: IDexHelper,
   ) {
     super(
-      `${dexKey}-${pool.id}`,
+      dexKey,
+      pool.id,
+      dexHelper,
       dexHelper.getLogger(`${dexKey}-${network}-${pool.id}`),
     );
 
