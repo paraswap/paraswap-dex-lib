@@ -277,15 +277,16 @@ export abstract class StatefulEventSubscriber<State>
         try {
           const state = await this.generateState(latestBlockNumber);
           this.setState(state, latestBlockNumber);
+          return true;
         } catch (e) {
           this.logger.error(
             `${network}: ${this.parentName} ${this.name}: (${latestBlockNumber}) failed fetch state:`,
             e,
           );
-          setTimeout(createNewState, CREATE_NEW_STATE_RETRY_INTERVAL_MS);
         }
+        return false;
       };
-      createNewState();
+      this.dexHelper.promiseScheduler.addPromise(createNewState);
     }
   }
 
