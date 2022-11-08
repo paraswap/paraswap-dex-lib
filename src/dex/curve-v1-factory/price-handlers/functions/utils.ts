@@ -26,7 +26,7 @@ export const requireConstant = <T extends keyof PoolContextConstants>(
   funcName: string,
 ): NonNullable<PoolContextConstants[T]> => {
   const value = self.constants[constantName];
-  if (!value) {
+  if (value === undefined) {
     throw new Error(
       `Required constant ${constantName} was not specified for function ` +
         `${funcName} in ${self.IMPLEMENTATION_NAME} implementation`,
@@ -44,7 +44,7 @@ export const requireValue = <T extends keyof PoolState>(
   funcName: string,
 ): NonNullable<PoolState[T]> => {
   const value = state[stateVarName];
-  if (!value) {
+  if (value === undefined) {
     throw new Error(
       `Required state value ${stateVarName} was not specified for function ` +
         `${funcName} in ${self.IMPLEMENTATION_NAME} implementation`,

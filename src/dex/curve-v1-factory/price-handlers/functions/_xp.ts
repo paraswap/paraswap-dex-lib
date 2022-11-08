@@ -63,7 +63,7 @@ const implementations: Record<ImplementationNames, _xp> = {
   [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: notExist,
 
   [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: customPlain2CoinFrax,
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: notExist,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: notExist,
 
   [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: notExist,

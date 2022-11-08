@@ -99,7 +99,7 @@ const customAvalanche3CoinLending: _calc_withdraw_one_coin = (
   _token_amount: bigint,
   i: number,
 ) => {
-  const { N_COINS, BI_N_COINS, FEE_DENOMINATOR, PRECISION } = self.constants;
+  const { N_COINS, BI_N_COINS, FEE_DENOMINATOR } = self.constants;
   const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
   const offpeg_fee_multiplier = requireValue(
     self,

@@ -136,7 +136,7 @@ export class CurveV1Factory
           baseImplementationName = customBasePool.name;
         }
       }
-      acc[curr.name] = new PriceHandler(
+      acc[curr.address] = new PriceHandler(
         this.logger,
         curr.name,
         baseImplementationName,
@@ -184,7 +184,7 @@ export class CurveV1Factory
             _.range(0, nCoins).map(i => ({
               target: customPool.address,
               callData: this.abiCoder.encodeFunctionCall(
-                this._getCoinsABI('arg0', customPool.coinsInputType),
+                this._getCoinsABI(customPool.coinsInputType),
                 [i.toString()],
               ),
               decodeFunction: addressDecode,
@@ -489,6 +489,7 @@ export class CurveV1Factory
         this.logger,
         this.dexKey,
         factoryImplementationFromConfig.name,
+        implementationAddress.toLowerCase(),
         poolAddresses[i],
         factoryAddress,
         poolIdentifier,
@@ -623,10 +624,17 @@ export class CurveV1Factory
             return null;
           }
 
+          if (state.balances.every(b => b === 0n)) {
+            this.logger.trace(
+              `${this.dexKey} on ${this.dexHelper.config.data.network}: State balances equal to 0 in pool ${pool.address}`,
+            );
+            return null;
+          }
+
           const poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
 
           let outputs: bigint[] = this.poolManager
-            .getPriceHandler(pool.implementationName)
+            .getPriceHandler(pool.implementationAddress)
             .getOutputs(
               state,
               amountsWithUnitAndFee,
@@ -841,9 +849,8 @@ export class CurveV1Factory
     );
   }
 
-  private _getCoinsABI(name: string, type: string): AbiItem {
+  private _getCoinsABI(type: string): AbiItem {
     const newCoinsType = _.cloneDeep(this.coinsTypeTemplate);
-    newCoinsType.inputs![0].name = name;
     newCoinsType.inputs![0].type = type;
     return newCoinsType;
   }

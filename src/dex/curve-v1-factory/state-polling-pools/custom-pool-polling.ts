@@ -115,6 +115,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       logger,
       dexKey,
       implementationName,
+      address,
       poolIdentifier,
       poolConstants,
       address,

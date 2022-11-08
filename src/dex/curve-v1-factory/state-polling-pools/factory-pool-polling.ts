@@ -20,13 +20,14 @@ export class FactoryStateHandler extends PoolPollingBase {
     readonly logger: Logger,
     readonly dexKey: string,
     readonly implementationName: FactoryImplementationNames,
+    implementationAddress: Address,
     readonly address: Address,
     readonly factoryAddress: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
     readonly poolContextConstants: PoolContextConstants,
     readonly isSrcFeeOnTransferSupported: boolean,
-    private basePoolStateFetcher?: PoolPollingBase,
+    baseStatePoolPolling?: PoolPollingBase,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
@@ -35,16 +36,17 @@ export class FactoryStateHandler extends PoolPollingBase {
       logger,
       dexKey,
       implementationName,
+      implementationAddress,
       poolIdentifier,
       poolConstants,
       address,
       '/factory',
       false,
-      basePoolStateFetcher,
+      baseStatePoolPolling,
       isSrcFeeOnTransferSupported,
     );
 
-    if (this.isMetaPool && this.basePoolStateFetcher === undefined) {
+    if (this.isMetaPool && this.baseStatePoolPolling === undefined) {
       throw new Error(
         `${this.fullName}: is instantiated with error. basePoolStateFetcher is not provided`,
       );
@@ -105,7 +107,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     let basePoolState: PoolState | undefined;
     if (this.isMetaPool) {
       // Check for undefined done in constructor
-      const retrievedBasePoolState = this.basePoolStateFetcher!.getState();
+      const retrievedBasePoolState = this.baseStatePoolPolling!.getState();
 
       if (retrievedBasePoolState === null) {
         this.logger.error(

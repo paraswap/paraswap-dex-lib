@@ -98,8 +98,8 @@ export class CurveV1FactoryPoolManager {
     );
   }
 
-  getPriceHandler(implementationName: string): PriceHandler {
-    return this.allPriceHandlers[implementationName];
+  getPriceHandler(implementationAddress: string): PriceHandler {
+    return this.allPriceHandlers[implementationAddress];
   }
 
   releaseResources() {

@@ -35,6 +35,7 @@ export abstract class PoolPollingBase {
     readonly logger: Logger,
     readonly dexKey: string,
     readonly implementationName: string,
+    readonly implementationAddress: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
     readonly address: Address,
