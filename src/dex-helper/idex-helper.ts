@@ -1,5 +1,5 @@
 import { Provider } from '@ethersproject/providers';
-import { Address, LoggerConstructor } from '../types';
+import { LoggerConstructor } from '../types';
 import { ICache } from './icache';
 import { IRequestWrapper } from './irequest-wrapper';
 import { IBlockManager } from './iblock-manager';

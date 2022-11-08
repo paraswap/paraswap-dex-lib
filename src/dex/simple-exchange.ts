@@ -1,12 +1,13 @@
 import { Interface } from '@ethersproject/abi';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
-import { ETHER_ADDRESS } from '../constants';
+import { CACHE_PREFIX, ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 import ERC20ABI from '../abi/erc20.json';
 import { isETHAddress } from '../utils';
 import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
@@ -14,10 +15,28 @@ export class SimpleExchange {
   erc20Interface: Interface;
   needWrapNative = false;
 
-  constructor(protected augustusAddress: Address, private provider: Web3) {
+  protected augustusAddress: Address;
+  private provider: Web3;
+
+  protected network: number;
+  protected dexmapKey: string;
+
+  readonly cacheStateKey: string;
+
+  constructor(dexHelper: IDexHelper, public dexKey: string) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
     this.abiCoder = Web3Abi as unknown as AbiCoder;
+
+    this.network = dexHelper.config.data.network;
+    this.augustusAddress = dexHelper.config.data.augustusAddress;
+    this.provider = dexHelper.web3Provider;
+
+    this.dexmapKey =
+      `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
+
+    this.cacheStateKey =
+      `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
   }
 
   private async hasAugustusAllowance(

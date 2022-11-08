@@ -11,6 +11,7 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import StablePoolABI from '../abi/StablePool.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 type StablePoolData = {
   exchange: string;
@@ -39,8 +40,8 @@ export class StablePool
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  constructor(augustusAddress: Address, network: number, provider: Web3) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'stablePool');
     this.exchangeRouterInterface = new Interface(StablePoolABI);
   }
 

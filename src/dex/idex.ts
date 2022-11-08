@@ -92,6 +92,8 @@ export interface IDexPricing<ExchangeData> {
   // Specify if current Dex integration can handle fee on transfer tokens
   readonly isFeeOnTransferSupported: boolean;
 
+  readonly cacheStateKey: string;
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
@@ -138,6 +140,9 @@ export interface IDexPricing<ExchangeData> {
   // you must put it here
   releaseResources?(): AsyncOrSync<void>;
 
+  // Build an event based pool with all the info to create inside
+  // a redis key name poolKey
+  addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<boolean>;
   // return true if the userAddress is is blacklisted from the exchange
   // useful for RFQ system
   isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
