@@ -431,6 +431,11 @@ export class CurveV1Factory
 
     const stateInitializePromises: Promise<void>[] = [];
     _.chunk(resultsFromFactory, 3).forEach((result, i) => {
+      if (this.config.disabledPools.has(poolAddresses[i])) {
+        this.logger.trace(`Filtering disabled pool ${poolAddresses[i]}`);
+        return;
+      }
+
       const [implementationAddress, coins, coins_decimals] = result as [
         string,
         string[],

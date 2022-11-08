@@ -15,6 +15,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       factoryAddress: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
       stateUpdatePeriodMs: 5 * 1000,
+      disabledPools: new Set([]),
       factoryPoolImplementations: {
         '0x2f956eee002b0debd468cf2e0490d1aec65e027f': {
           name: ImplementationNames.FACTORY_V1_META_BTC,
@@ -153,6 +154,17 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.POLYGON]: {
       factoryAddress: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
       stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([
+        '0x666Dc3b4baBfd063FaF965BD020024AF0dC51B64',
+        '0x88C4D6534165510b2E2CAF0A130d4F70aA4B6d71',
+        '0xE4199bC5C5C1F63dbA47B56B6dB7144C51CF0bF8',
+        '0xdaedd59fa2c5c63d46a3bae5ed115247df9eb6ec',
+        '0x3ce39825ab258693cedb8daf1db441627d011371',
+        '0x632F9Be4Bf42e0dBb461CFcC0CF788538a49ED6D',
+        '0x1197Ae7F43695Be80127365b494E8BF850f4752A',
+        '0x40caB7C05fc1686e198C8d6d6aA4aaCF77BE8590',
+        '0x64FFf0e27c223097c824f9d9278eFD5B55c3430e',
+      ]),
       factoryPoolImplementations: {
         '0x571FF5b7b346F706aa48d696a9a4a288e9Bb4091': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -245,6 +257,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.FANTOM]: {
       factoryAddress: '0x686d67265703D1f124c45E33d47d794c566889Ba',
       stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
       factoryPoolImplementations: {
         '0x61E10659fe3aa93d036d099405224E4Ac24996d0': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -355,6 +368,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.AVALANCHE]: {
       factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
       stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
       factoryPoolImplementations: {
         '0x697434ca761d4f86b553784b69f4f37f5edf54df': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -446,6 +460,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.ARBITRUM]: {
       factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
       stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
       factoryPoolImplementations: {
         '0x54e8A25d0Ac0E4945b697C80b8372445FEA17A62': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -556,6 +571,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.OPTIMISM]: {
       factoryAddress: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
       stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
       factoryPoolImplementations: {
         '0xC2b1DF84112619D190193E48148000e3990Bf627': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -767,6 +783,9 @@ const configAddressesNormalizer = (
         stateUpdatePeriodMs: _config.stateUpdatePeriodMs,
         factoryPoolImplementations,
         customPools,
+        disabledPools: new Set(
+          Array.from(_config.disabledPools).map(normalizeAddress),
+        ),
       };
       config[dexKey][+network] = normalizedConfig;
     }

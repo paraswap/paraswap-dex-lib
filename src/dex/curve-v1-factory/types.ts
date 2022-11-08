@@ -160,6 +160,9 @@ export type DexParams = {
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;
+  // Some pools are broken or self destructed. Took from here:
+  // https://github.com/curvefi/curve-api/blob/ae000317722aec94c7cff7c9a09f3bb6e8c9a3f8/constants/configs.js#L92
+  disabledPools: Set<Address>;
 };
 
 export enum CurveSwapFunctions {
