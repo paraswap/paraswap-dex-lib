@@ -51,6 +51,7 @@ import {
   addressDecode,
   generalDecoder,
   uint256DecodeToNumber,
+  uint8ToNumber,
 } from '../../lib/decoders';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import { BigNumber, BytesLike } from 'ethers';
@@ -191,12 +192,21 @@ export class CurveV1Factory
           )
         ).map(r => r.returnData);
 
+        const coins_decimals = (
+          await this.dexHelper.multiWrapper.tryAggregate(
+            true,
+            COINS.map(c => ({
+              target: c,
+              callData: this.ifaces.erc20.encodeFunctionData('decimals', []),
+              decodeFunction: uint8ToNumber,
+            })),
+          )
+        ).map(r => r.returnData);
+
         const poolConstants: PoolConstants = {
           COINS,
-          coins_decimals: customPool.coins_decimals,
-          rate_multipliers: this._calcRateMultipliers(
-            customPool.coins_decimals,
-          ),
+          coins_decimals,
+          rate_multipliers: this._calcRateMultipliers(coins_decimals),
           lpTokenAddress: customPool.lpTokenAddress,
         };
 
