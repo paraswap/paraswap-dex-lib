@@ -16,6 +16,7 @@ import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
 import { BlockHeader } from 'web3-eth';
+import { PromiseScheduler } from '../lib/promise-scheduler';
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
@@ -159,6 +160,7 @@ export class DummyDexHelper implements IDexHelper {
   provider: Provider;
   multiContract: Contract;
   multiWrapper: MultiWrapper;
+  promiseScheduler: PromiseScheduler;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
   web3Provider: Web3;
@@ -189,6 +191,12 @@ export class DummyDexHelper implements IDexHelper {
     this.multiWrapper = new MultiWrapper(
       this.multiContract,
       this.getLogger(`MultiWrapper`),
+    );
+
+    this.promiseScheduler = new PromiseScheduler(
+      100,
+      50,
+      this.getLogger(`PromiseScheduler-${this.config.data.network}`),
     );
   }
 }
