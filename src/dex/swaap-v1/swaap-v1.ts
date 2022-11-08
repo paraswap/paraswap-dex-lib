@@ -112,14 +112,8 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       poolConfig,
       this.dexHelper,
     );
-    const state = await pool.generateState(blockNumber);
-    pool.setState(state, blockNumber);
 
-    this.dexHelper.blockManager.subscribeToLogs(
-      pool,
-      pool.addressSubscribers,
-      blockNumber,
-    );
+    await pool.initialize(blockNumber);
     this.eventPools[poolConfig.id] = pool;
   }
 
