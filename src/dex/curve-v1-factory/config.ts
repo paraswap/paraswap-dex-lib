@@ -123,6 +123,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [18, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714': {
           name: CustomImplementationNames.CUSTOM_PLAIN_3COIN_SBTC,
@@ -131,6 +132,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [8, 8, 18],
           coinsInputType: 'int128',
+          balancesInputType: 'int128',
         },
         '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7': {
           name: CustomImplementationNames.CUSTOM_PLAIN_3COIN_THREE,
@@ -139,6 +141,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [18, 6, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0x93054188d876f558f4a66B2EF1d97d16eDf0895B': {
           name: CustomImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC,
@@ -147,6 +150,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [8, 8],
           coinsInputType: 'int128',
+          balancesInputType: 'int128',
         },
       },
     },
@@ -231,6 +235,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [18, 6, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67': {
           name: CustomImplementationNames.CUSTOM_POLYGON_2COIN_LENDING,
@@ -239,6 +244,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [8, 8],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
       },
     },
@@ -333,6 +339,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [18, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604': {
           name: CustomImplementationNames.CUSTOM_FANTOM_2COIN_BTC,
@@ -341,6 +348,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [8, 8],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
           name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
@@ -349,6 +357,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [18, 6, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
       },
     },
@@ -432,6 +441,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [18, 6, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         // This contract is not verified. I think it is just abandoned. I am commenting both related
         // btc meta pools
@@ -534,6 +544,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [6, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0xC9B8a3FDECB9D5b218d02555a8Baf332E5B740d5': {
           name: FactoryImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -542,6 +553,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/factory',
           coins_decimals: [18, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb': {
           name: CustomImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC,
@@ -550,6 +562,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [8, 8],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
       },
     },
@@ -634,6 +647,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/main',
           coins_decimals: [18, 6, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
         '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7': {
           name: FactoryImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -642,6 +656,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/factory',
           coins_decimals: [18, 6],
           coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
         },
       },
     },
@@ -733,6 +748,7 @@ const configAddressesNormalizer = (
           liquidityApiSlug: customPoolConfig.liquidityApiSlug,
           coins_decimals: customPoolConfig.coins_decimals,
           coinsInputType: customPoolConfig.coinsInputType,
+          balancesInputType: customPoolConfig.balancesInputType,
           address: normalizeAddress(customPoolConfig.address),
           lpTokenAddress: normalizeAddress(customPoolConfig.lpTokenAddress),
         };

@@ -152,7 +152,8 @@ export type CustomPoolConfig = {
   // There are some difference in input like uint128 or uint256
   // If we don't use proper type encoding we receive an error
   // You must specify what typ must be encoded/decoded for coins request
-  coinsInputType: string
+  coinsInputType: string;
+  balancesInputType: string;
 };
 
 export type DexParams = {

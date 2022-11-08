@@ -62,7 +62,7 @@ import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
 import { AbiItem } from 'web3-utils';
 
-const DefaultCoinsType: AbiItem = {
+const DefaultCoinsABI: AbiItem = {
   type: 'function',
   name: 'coins',
   inputs: [
@@ -107,7 +107,7 @@ export class CurveV1Factory
     protected adapters = Adapters[network] || {},
     protected config = CurveV1FactoryConfig[dexKey][network],
     // This type is used to support different encoding for uint128 and uint256 args
-    private coinsTypeTemplate: AbiItem = DefaultCoinsType,
+    private coinsTypeTemplate: AbiItem = DefaultCoinsABI,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -198,7 +198,6 @@ export class CurveV1Factory
           lpTokenAddress: customPool.lpTokenAddress,
         };
 
-        console.log(customPool.address);
         let newPool: PoolPollingBase;
         if (
           Object.values<ImplementationNames>(
@@ -216,6 +215,7 @@ export class CurveV1Factory
             customPool.liquidityApiSlug,
             customPool.lpTokenAddress,
             isLending,
+            customPool.balancesInputType,
             useLending,
           );
         } else {
@@ -230,12 +230,18 @@ export class CurveV1Factory
             customPool.liquidityApiSlug,
             customPool.lpTokenAddress,
             isLending,
+            customPool.balancesInputType,
             useLending,
             true,
           );
         }
 
         this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
+
+        await this.poolManager.initializeIndividualPollingPoolState(
+          poolIdentifier,
+          CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
+        );
       }),
     );
     this.areCustomPoolsFetched = true;
@@ -408,6 +414,7 @@ export class CurveV1Factory
       }
     });
 
+    const stateInitializePromises: Promise<void>[] = [];
     _.chunk(resultsFromFactory, 3).forEach((result, i) => {
       const [implementationAddress, coins, coins_decimals] = result as [
         string,
@@ -471,7 +478,16 @@ export class CurveV1Factory
       );
 
       this.poolManager.initializeNewPool(poolIdentifier, newPool);
+
+      stateInitializePromises.push(
+        this.poolManager.initializeIndividualPollingPoolState(
+          poolIdentifier,
+          factoryImplementationConstants.isFeeOnTransferSupported,
+        ),
+      );
     });
+
+    await Promise.all(stateInitializePromises);
 
     this.areFactoryPoolsFetched = true;
   }

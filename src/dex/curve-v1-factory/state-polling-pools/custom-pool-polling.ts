@@ -65,7 +65,7 @@ const ContractABIs: Record<FunctionToCall, AbiItem> = {
   balances: {
     name: 'balances',
     outputs: [{ type: 'uint256', name: '' }],
-    inputs: [{ type: 'uint256', name: 'arg0' }],
+    inputs: [{ type: 'uint256', name: '' }],
     stateMutability: 'view',
     type: 'function',
     gas: 2250,
@@ -84,6 +84,11 @@ const ContractABIs: Record<FunctionToCall, AbiItem> = {
 // for other pools. I just wanted to make support for custom pools that are used under
 // factory meta pools
 export class CustomBasePoolForFactory extends PoolPollingBase {
+  // We don't have any fee on transfer tokens for custom pools yet.
+  // Created separate value to not forget to change in different places after
+  // add support for all pools
+  static IS_SRC_FEE_ON_TRANSFER_SUPPORTED: false;
+
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
@@ -94,6 +99,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly curveLiquidityApiSlug: string,
     readonly lpTokenAddress: Address,
     readonly isLendingPool: boolean,
+    readonly balancesInputType: string,
     readonly useLending?: boolean[],
     readonly isUsedForPricing: boolean = false,
     readonly contractABIs = ContractABIs,
@@ -109,7 +115,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       curveLiquidityApiSlug,
       isLendingPool,
       undefined,
-      false,
+      CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
     );
   }
 
@@ -143,9 +149,10 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       },
       _.range(this.poolConstants.COINS.length).map(i => ({
         target: this.address,
-        callData: this.abiCoder.encodeFunctionCall(this.contractABIs.balances, [
-          i.toString(),
-        ]),
+        callData: this.abiCoder.encodeFunctionCall(
+          this._getBalancesABI(this.balancesInputType),
+          [i.toString()],
+        ),
         decodeFunction: uint256ToBigInt,
       })),
     ].flat();
@@ -155,10 +162,10 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
         .map((useLending, i) =>
           useLending
             ? {
-                target: this.address,
+                target: this.poolConstants.COINS[i],
                 callData: this.abiCoder.encodeFunctionCall(
-                  this.contractABIs.balances,
-                  [i.toString()],
+                  this.contractABIs.exchangeRateCurrent,
+                  [],
                 ),
                 decodeFunction: uint256ToBigInt,
               }
@@ -217,7 +224,11 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     if (this.useLending) {
       exchangeRateCurrent = new Array(this.useLending.length).fill(undefined);
       const exchangeRateResults = multiOutputs
-        .slice(lastEndIndex, lastEndIndex + this.useLending.length)
+        .slice(
+          lastEndIndex,
+          // Filter false elements before checking length
+          lastEndIndex + this.useLending.filter(el => el).length,
+        )
         .map(e => e.returnData) as bigint[];
 
       lastEndIndex += this.useLending.length;
@@ -264,5 +275,11 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     };
 
     this._setState(newState, updatedAt);
+  }
+
+  private _getBalancesABI(type: string): AbiItem {
+    const newBalancesType = _.cloneDeep(this.contractABIs.balances);
+    newBalancesType.inputs![0].type = type;
+    return newBalancesType;
   }
 }

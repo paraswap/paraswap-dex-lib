@@ -74,6 +74,24 @@ export class CurveV1FactoryPoolManager {
     );
   }
 
+  async initializeIndividualPollingPoolState(
+    identifier: string,
+    isSrcFeeOnTransferTokenToBeExchanged: boolean,
+  ) {
+    const pool = this.getPool(identifier, isSrcFeeOnTransferTokenToBeExchanged);
+    if (pool === null) {
+      this.logger.error(
+        `${identifier}: can not initialize first state for pool`,
+      );
+      return;
+    }
+
+    await this.statePollingManager.updatePoolsInBatch(
+      this.dexHelper.multiWrapper,
+      [pool],
+    );
+  }
+
   getPriceHandler(implementationName: string): PriceHandler {
     return this.allPriceHandlers[implementationName];
   }
