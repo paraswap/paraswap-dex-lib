@@ -33,6 +33,7 @@ export class FactoryStateHandler extends PoolPollingBase {
       poolConstants,
       address,
       '/factory',
+      false,
       basePoolStateFetcher,
       isSrcFeeOnTransferSupported,
     );

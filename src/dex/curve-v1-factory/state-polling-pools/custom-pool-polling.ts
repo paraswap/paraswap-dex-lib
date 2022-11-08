@@ -93,7 +93,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly poolConstants: PoolConstants,
     readonly curveLiquidityApiSlug: string,
     readonly lpTokenAddress: Address,
-    readonly isLending: boolean,
+    readonly isLendingPool: boolean,
     readonly useLending?: boolean[],
     readonly isUsedForPricing: boolean = false,
     readonly contractABIs = ContractABIs,
@@ -107,6 +107,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       poolConstants,
       address,
       curveLiquidityApiSlug,
+      isLendingPool,
       undefined,
       false,
     );
@@ -170,7 +171,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     }
 
     // this.USE_LENDING and isLending are not really related
-    if (this.isLending) {
+    if (this.isLendingPool) {
       calls.push({
         target: this.address,
         callData: this.abiCoder.encodeFunctionCall(
@@ -246,7 +247,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
 
     let offpeg_fee_multiplier: bigint | undefined;
 
-    if (this.isLending) {
+    if (this.isLendingPool) {
       offpeg_fee_multiplier = multiOutputs[lastEndIndex].returnData as bigint;
       lastEndIndex++;
     }

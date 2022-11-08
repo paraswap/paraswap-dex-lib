@@ -130,7 +130,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           lpTokenAddress: '0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3',
           liquidityApiSlug: '/main',
           coins_decimals: [8, 8, 18],
-          coinsInputType: 'uint128',
+          coinsInputType: 'int128',
         },
         '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7': {
           name: CustomImplementationNames.CUSTOM_PLAIN_3COIN_THREE,
@@ -146,7 +146,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           lpTokenAddress: '0x49849C98ae39Fff122806C06791Fa73784FB3675',
           liquidityApiSlug: '/main',
           coins_decimals: [8, 8],
-          coinsInputType: 'uint128',
+          coinsInputType: 'int128',
         },
       },
     },

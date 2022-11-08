@@ -39,6 +39,7 @@ export abstract class PoolPollingBase {
     readonly poolConstants: PoolConstants,
     readonly address: Address,
     readonly curveLiquidityApiSlug: string,
+    readonly isLendingPool: boolean,
     readonly baseStatePoolPolling: PoolPollingBase | undefined,
     readonly isSrcFeeOnTransferSupported: boolean,
   ) {

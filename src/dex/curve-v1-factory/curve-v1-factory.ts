@@ -63,12 +63,11 @@ import { PriceHandler } from './price-handlers/price-handler';
 import { AbiItem } from 'web3-utils';
 
 const DefaultCoinsType: AbiItem = {
-  stateMutability: 'view',
   type: 'function',
   name: 'coins',
   inputs: [
     {
-      name: 'i',
+      name: '',
       type: 'uint256',
     },
   ],
@@ -78,7 +77,6 @@ const DefaultCoinsType: AbiItem = {
       type: 'address',
     },
   ],
-  gas: 582,
 };
 
 export class CurveV1Factory
@@ -129,7 +127,10 @@ export class CurveV1Factory
       if (curr.basePoolAddress) {
         const customBasePool = this.config.customPools[curr.basePoolAddress];
         if (customBasePool === undefined) {
-          console.log(0);
+          this.logger.error(
+            `${this.dexKey} on ${this.dexHelper.config.data.network}: can not get customBasePool from basePoolAddress`,
+          );
+          return acc;
         } else {
           baseImplementationName = customBasePool.name;
         }
@@ -153,6 +154,7 @@ export class CurveV1Factory
 
   async initializePricing(blockNumber: number) {
     await this.fetchFactoryPools();
+    this.poolManager.initializePollingPools();
   }
 
   async initializeCustomPollingPools() {
@@ -164,7 +166,6 @@ export class CurveV1Factory
       Object.values(this.config.customPools).map(async customPool => {
         const poolIdentifier = this.getPoolIdentifier(
           customPool.address,
-          false,
           false,
         );
 
@@ -180,7 +181,7 @@ export class CurveV1Factory
             _.range(0, nCoins).map(i => ({
               target: customPool.address,
               callData: this.abiCoder.encodeFunctionCall(
-                this._getCoinsABI(customPool.coinsInputType),
+                this._getCoinsABI('arg0', customPool.coinsInputType),
                 [i.toString()],
               ),
               decodeFunction: addressDecode,
@@ -236,7 +237,7 @@ export class CurveV1Factory
 
         this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
       }),
-    ).catch(e => console.log(e));
+    );
     this.areCustomPoolsFetched = true;
   }
 
@@ -437,16 +438,16 @@ export class CurveV1Factory
         const basePoolIdentifier = this.getPoolIdentifier(
           factoryImplementationFromConfig.basePoolAddress,
           false,
-          false,
         );
         const basePool = this.poolManager.getPool(basePoolIdentifier, false);
         if (basePool === null) {
           this.logger.error(
-            `${this.dexKey}_${this.dexHelper.config.data.network}: custom base pool was not initialized properly. ` +
+            `${this.dexKey}_${this.dexHelper.config.data.network}: custom base pool ${basePoolIdentifier} was not initialized properly. ` +
               `You must call initializeCustomPollingPools before fetching factory`,
           );
           return;
         }
+        basePoolStateFetcher = basePool;
       }
 
       const poolConstants: PoolConstants = {
@@ -455,11 +456,7 @@ export class CurveV1Factory
         rate_multipliers: this._calcRateMultipliers(coins_decimals),
       };
 
-      const poolIdentifier = this.getPoolIdentifier(
-        poolAddresses[i],
-        isMeta,
-        false,
-      );
+      const poolIdentifier = this.getPoolIdentifier(poolAddresses[i], isMeta);
 
       const newPool = new FactoryStateHandler(
         this.logger,
@@ -483,12 +480,8 @@ export class CurveV1Factory
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  getPoolIdentifier(
-    poolAddress: string,
-    isMeta: boolean,
-    isLending: boolean,
-  ): string {
-    return `${this.dexKey}_${poolAddress}_${isMeta}_${isLending}`;
+  getPoolIdentifier(poolAddress: string, isMeta: boolean): string {
+    return `${this.dexKey}_${poolAddress}_${isMeta}`;
   }
 
   async getPoolIdentifiers(
@@ -514,7 +507,7 @@ export class CurveV1Factory
     );
 
     return pools.map(pool =>
-      this.getPoolIdentifier(pool.address, pool.isMetaPool, false),
+      this.getPoolIdentifier(pool.address, pool.isMetaPool),
     );
 
     return [];
@@ -811,8 +804,9 @@ export class CurveV1Factory
     );
   }
 
-  private _getCoinsABI(type: string): AbiItem {
+  private _getCoinsABI(name: string, type: string): AbiItem {
     const newCoinsType = _.cloneDeep(this.coinsTypeTemplate);
+    newCoinsType.inputs![0].name = name;
     newCoinsType.inputs![0].type = type;
     return newCoinsType;
   }

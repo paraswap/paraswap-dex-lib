@@ -12,6 +12,7 @@ import {
 import { PriceHandler } from './price-handlers/price-handler';
 import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
+import { NULL_ADDRESS } from '../../constants';
 
 /*
  * The idea of FactoryPoolManager is to try to abstract both pool types: fully event based
@@ -33,6 +34,8 @@ export class CurveV1FactoryPoolManager {
   private statePollingPoolsFromId: Record<string, PoolPollingBase> = {};
 
   // This is fast lookup table when you look for pair and searching for coins in all pools
+  // In fact it is skewed in favor of CRV, so we still end up with 100 pools for CRV token.
+  // It should bo considered for optimizing
   private coinAddressesToPoolIdentifiers: Record<string, string[]> = {};
 
   private allCurveLiquidityApiSlugs: Set<string> = new Set(['/factory']);
@@ -92,7 +95,9 @@ export class CurveV1FactoryPoolManager {
 
     this.statePollingPoolsFromId[identifier] = pool;
 
-    const allCoins = pool.poolConstants.COINS.concat(pool.underlyingCoins);
+    const allCoins = pool.poolConstants.COINS.concat(
+      pool.underlyingCoins,
+    ).filter(p => p !== NULL_ADDRESS);
     // It is not quite efficient, but since it is done only on init part,
     // I think it should be ok
     allCoins.forEach(c => {
@@ -182,7 +187,7 @@ export class CurveV1FactoryPoolManager {
     identifier: string,
     isSrcFeeOnTransferTokenToBeExchanged: boolean,
   ): PoolPollingBase | null {
-    const pool = this.statePollingPoolsFromId[identifier.toLowerCase()];
+    const pool = this.statePollingPoolsFromId[identifier];
     if (pool !== undefined) {
       if (
         isSrcFeeOnTransferTokenToBeExchanged &&
@@ -194,7 +199,7 @@ export class CurveV1FactoryPoolManager {
       }
     }
 
-    const fromStateOnlyPools = this.poolsForOnlyState[identifier.toLowerCase()];
+    const fromStateOnlyPools = this.poolsForOnlyState[identifier];
     if (fromStateOnlyPools !== undefined) {
       if (
         isSrcFeeOnTransferTokenToBeExchanged &&
