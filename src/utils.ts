@@ -286,7 +286,7 @@ export class Utils {
   }
 
   static Parse(data: any): any {
-    return deepTypecast(_.cloneDeep(JSON.parse(data)), [
+    return deepTypecast(JSON.parse(data), [
       {
         checker: checkerStringWithBigIntPrefix,
         caster: casterStringToBigInt,
