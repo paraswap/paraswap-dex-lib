@@ -44,7 +44,7 @@ export class PromiseScheduler {
         ++count;
         if (count == promisesToExecute.length) {
           this.logger.info(
-            `async parallel done on ${this.promises.length} promises`,
+            `async parallel done on ${promisesToExecute.length} promises`,
           );
           setTimeout(this.run.bind(this), this.intervalMs);
         }
