@@ -17,13 +17,13 @@ export class PromiseScheduler {
   }
 
   private async run() {
-    this.logger.info(
-      `start async parallel on ${this.promises.length} promises`,
-    );
     if (this.promises.length === 0) {
       setTimeout(this.run.bind(this), this.intervalMs);
       return;
     }
+    this.logger.info(
+      `start async parallel on ${this.promises.length} promises`,
+    );
 
     const promisesToExecute = this.promises;
     this.promises = [];
