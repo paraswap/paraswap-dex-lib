@@ -1,7 +1,12 @@
 import _ from 'lodash';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
-import { ImplementationNames, PoolConstants, PoolState } from '../types';
+import {
+  ImplementationNames,
+  PoolConstants,
+  PoolContextConstants,
+  PoolState,
+} from '../types';
 import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import { uint256ToBigInt } from '../../../lib/decoders';
 import { funcName, _require } from '../../../utils';
@@ -96,6 +101,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly address: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
+    readonly poolContextConstants: PoolContextConstants,
     readonly curveLiquidityApiSlug: string,
     readonly lpTokenAddress: Address,
     readonly isLendingPool: boolean,
@@ -208,11 +214,11 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       return;
     }
 
-    const lastIndex = 3;
     const A = multiOutputs[0].returnData as bigint;
     const fee = multiOutputs[1].returnData as bigint;
     const virtualPrice = multiOutputs[2].returnData as bigint;
-    const totalSupply = multiOutputs[lastIndex].returnData as bigint;
+    const totalSupply = multiOutputs[3].returnData as bigint;
+    const lastIndex = 4;
 
     const balances = multiOutputs
       .slice(lastIndex, lastIndex + this.poolConstants.COINS.length)
@@ -264,7 +270,9 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     }
 
     const newState: PoolState = {
-      A,
+      A: this.poolContextConstants.A_PRECISION
+        ? A * this.poolContextConstants.A_PRECISION
+        : A,
       fee,
       balances,
       constants: this.poolConstants,

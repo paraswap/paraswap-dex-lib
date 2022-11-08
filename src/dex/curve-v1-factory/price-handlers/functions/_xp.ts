@@ -16,7 +16,7 @@ const customPlain3CoinThree: _xp = (
     funcName(),
   );
   const result = [...RATES];
-  for (const i of _.range(Number(N_COINS))) {
+  for (const i of _.range(N_COINS)) {
     result[i] = (result[i] * state.balances[i]) / LENDING_PRECISION;
   }
   return result;

@@ -1,3 +1,4 @@
+import { Logger } from 'log4js';
 import { MultiWrapper } from '../../../lib/multi-wrapper';
 import { PoolPollingBase } from './pool-polling-base';
 
@@ -7,8 +8,11 @@ import { PoolPollingBase } from './pool-polling-base';
  */
 export class StatePollingManager {
   static async updatePoolsInBatch(
+    logger: Logger,
+    network: number,
     multiWrapper: MultiWrapper,
     pools: PoolPollingBase[],
+    blockNumber?: number,
   ) {
     if (pools.length === 0) {
       return;
@@ -23,16 +27,29 @@ export class StatePollingManager {
       })
       .flat();
 
-    const result = await multiWrapper.tryAggregate(false, callDatas);
-    const updatedAt = Date.now();
-
-    let lastStart = 0;
-    pools.map((p, i) => {
-      p.setState(
-        result.slice(lastStart, lastStart + poolResultDivider[i]),
-        updatedAt,
+    try {
+      const result = await multiWrapper.tryAggregate(
+        false,
+        callDatas,
+        blockNumber,
       );
-      lastStart += poolResultDivider[i];
-    });
+      const updatedAt = Date.now();
+
+      let lastStart = 0;
+      pools.map((p, i) => {
+        p.setState(
+          result.slice(lastStart, lastStart + poolResultDivider[i]),
+          updatedAt,
+        );
+        lastStart += poolResultDivider[i];
+      });
+    } catch (e) {
+      logger.error(
+        `Network ${network}: Failed to update state for pools: ${pools
+          .map(p => p.address)
+          .join(',')}: `,
+        e,
+      );
+    }
   }
 }

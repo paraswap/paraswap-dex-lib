@@ -153,11 +153,12 @@ export class CurveV1Factory
   }
 
   async initializePricing(blockNumber: number) {
-    await this.fetchFactoryPools();
+    // This is only to start timer, each pool is initialized with updated state
     this.poolManager.initializePollingPools();
+    await this.fetchFactoryPools(blockNumber);
   }
 
-  async initializeCustomPollingPools() {
+  async initializeCustomPollingPools(blockNumber?: number) {
     if (this.areCustomPoolsFetched) {
       return;
     }
@@ -169,11 +170,12 @@ export class CurveV1Factory
           false,
         );
 
+        const poolContextConstants = ImplementationConstants[customPool.name];
         const {
           N_COINS: nCoins,
           USE_LENDING: useLending,
           isLending,
-        } = ImplementationConstants[customPool.name];
+        } = poolContextConstants;
 
         const COINS = (
           await this.dexHelper.multiWrapper.tryAggregate(
@@ -212,6 +214,7 @@ export class CurveV1Factory
             customPool.address,
             poolIdentifier,
             poolConstants,
+            poolContextConstants,
             customPool.liquidityApiSlug,
             customPool.lpTokenAddress,
             isLending,
@@ -227,6 +230,7 @@ export class CurveV1Factory
             customPool.address,
             poolIdentifier,
             poolConstants,
+            poolContextConstants,
             customPool.liquidityApiSlug,
             customPool.lpTokenAddress,
             isLending,
@@ -241,13 +245,14 @@ export class CurveV1Factory
         await this.poolManager.initializeIndividualPollingPoolState(
           poolIdentifier,
           CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
+          blockNumber,
         );
       }),
     );
     this.areCustomPoolsFetched = true;
   }
 
-  async fetchFactoryPools() {
+  async fetchFactoryPools(blockNumber?: number) {
     if (this.areFactoryPoolsFetched) {
       return;
     }
@@ -255,7 +260,7 @@ export class CurveV1Factory
     // There is no scenario when we need to call initialize custom pools without factory pools
     // So I put it here to not forget call, because custom pools must be initialised before factory pools
     // This function may be called multiple times, but will execute only once
-    this.initializeCustomPollingPools();
+    this.initializeCustomPollingPools(blockNumber);
 
     const { factoryAddress } = this.config;
     if (!factoryAddress) {
@@ -473,6 +478,7 @@ export class CurveV1Factory
         factoryAddress,
         poolIdentifier,
         poolConstants,
+        factoryImplementationConstants,
         factoryImplementationConstants.isFeeOnTransferSupported,
         basePoolStateFetcher,
       );

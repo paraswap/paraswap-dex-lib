@@ -1,7 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
-import { FactoryImplementationNames, PoolConstants, PoolState } from '../types';
+import {
+  FactoryImplementationNames,
+  PoolConstants,
+  PoolContextConstants,
+  PoolState,
+} from '../types';
 import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import FactoryCurveV1ABI from '../../../abi/curve-v1-factory/FactoryCurveV1.json';
 import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
@@ -19,6 +24,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     readonly factoryAddress: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
+    readonly poolContextConstants: PoolContextConstants,
     readonly isSrcFeeOnTransferSupported: boolean,
     private basePoolStateFetcher?: PoolPollingBase,
     private factoryIface: Interface = new Interface(
@@ -57,7 +63,10 @@ export class FactoryStateHandler extends PoolPollingBase {
         callData: this.factoryIface.encodeFunctionData('get_fees', [
           this.address,
         ]),
-        decodeFunction: uint256ToBigInt,
+        decodeFunction: (result: MultiResult<BytesLike>) =>
+          generalDecoder(result, ['uint256', 'uint256'], [0n, 0n], parsed =>
+            parsed.map((p: BigNumber) => BigInt(p.toString())),
+          ),
       },
       {
         target: this.factoryAddress,
@@ -108,7 +117,9 @@ export class FactoryStateHandler extends PoolPollingBase {
     }
 
     const newState: PoolState = {
-      A,
+      A: this.poolContextConstants.A_PRECISION
+        ? A * this.poolContextConstants.A_PRECISION
+        : A,
       fee: fees[0], // Array has [fee, adminFee], but we want only fee
       balances: balances,
       constants: this.poolConstants,

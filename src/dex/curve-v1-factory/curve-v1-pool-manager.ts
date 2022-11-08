@@ -67,6 +67,8 @@ export class CurveV1FactoryPoolManager {
 
   updatePollingPoolsInBatch() {
     this.statePollingManager.updatePoolsInBatch(
+      this.logger,
+      this.dexHelper.config.data.network,
       this.dexHelper.multiWrapper,
       Object.values(this.statePollingPoolsFromId).concat(
         Object.values(this.poolsForOnlyState),
@@ -77,6 +79,7 @@ export class CurveV1FactoryPoolManager {
   async initializeIndividualPollingPoolState(
     identifier: string,
     isSrcFeeOnTransferTokenToBeExchanged: boolean,
+    blockNumber?: number,
   ) {
     const pool = this.getPool(identifier, isSrcFeeOnTransferTokenToBeExchanged);
     if (pool === null) {
@@ -87,8 +90,11 @@ export class CurveV1FactoryPoolManager {
     }
 
     await this.statePollingManager.updatePoolsInBatch(
+      this.logger,
+      this.dexHelper.config.data.network,
       this.dexHelper.multiWrapper,
       [pool],
+      blockNumber,
     );
   }
 
