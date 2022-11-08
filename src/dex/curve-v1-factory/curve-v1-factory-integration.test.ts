@@ -162,6 +162,9 @@ describe('CurveV1Factory', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      console.log(
+        `Received blockNumber ${blockNumber} on network ${dexHelper.config.data.network}`,
+      );
       curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
       if (curveV1Factory.initializePricing) {
         await curveV1Factory.initializePricing(blockNumber);
