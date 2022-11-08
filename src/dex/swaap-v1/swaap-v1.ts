@@ -87,6 +87,12 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       ? _blockNumber
       : await this.dexHelper.provider.getBlockNumber();
     const allPools = await this.fetchAllSubgraphPools(blockNumber);
+
+    await SwaapV1.initPools(
+      this.dexHelper,
+      blockNumber,
+      Object.values(allPools),
+    );
     if (!allPools)
       if (init) {
         throw new Error(

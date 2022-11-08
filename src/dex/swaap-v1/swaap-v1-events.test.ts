@@ -124,7 +124,7 @@ describe('SwaapV1 Event', function () {
 
           await testEventSubscriber(
             startSubPoolSwaapV1Pool,
-            startSubPoolSwaapV1Pool.addressSubscribers,
+            startSubPoolSwaapV1Pool.addressesSubscribed,
             (_blockNumber: number) =>
               fetchOnePoolState(endSubPoolSwaapV1Pool, _blockNumber),
             blockNumber,
