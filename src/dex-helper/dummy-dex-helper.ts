@@ -190,13 +190,13 @@ export class DummyDexHelper implements IDexHelper {
       Number(amount / BigInt(10 ** token.decimals));
     this.multiWrapper = new MultiWrapper(
       this.multiContract,
-      this.getLogger(`MultiWrapper`),
+      this.getLogger(`MultiWrapper-${network}`),
     );
 
     this.promiseScheduler = new PromiseScheduler(
       100,
       5,
-      this.getLogger(`PromiseScheduler-${this.config.data.network}`),
+      this.getLogger(`PromiseScheduler-${network}`),
     );
   }
 }
