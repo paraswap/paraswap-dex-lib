@@ -773,7 +773,7 @@ export class CurveV1Factory
 
   async updatePoolState(): Promise<void> {
     if (!this.areFactoryPoolsFetched) {
-      await this.fetchFactoryPools();
+      await this.fetchFactoryPools(undefined, false);
     }
 
     await this.poolManager.fetchLiquiditiesFromApi();
