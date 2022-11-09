@@ -53,6 +53,7 @@ import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
+import { SwaapV1 } from './swaap-v1/swaap-v1';
 
 const LegacyDexes = [
   CurveV2,
@@ -104,6 +105,7 @@ const Dexes = [
   Cone,
   Synthetix,
   CurveV1Factory,
+  SwaapV1
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
