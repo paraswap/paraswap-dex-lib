@@ -195,7 +195,7 @@ export class DummyDexHelper implements IDexHelper {
 
     this.promiseScheduler = new PromiseScheduler(
       100,
-      50,
+      5,
       this.getLogger(`PromiseScheduler-${this.config.data.network}`),
     );
   }
