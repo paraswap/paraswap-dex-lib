@@ -497,7 +497,9 @@ export class KyberDmm
       Object.entries(poolsState).map(async ([poolAddress, state]) => {
         if (!pair.pools[poolAddress]) {
           await this.addPool(pair, poolAddress, state, blockNumber);
-        } else pair.pools[poolAddress].setState(state, blockNumber);
+        } else {
+          await pair.pools[poolAddress].setState(state, blockNumber);
+        }
       }),
     );
   }

@@ -19,7 +19,7 @@ export interface EventSubscriber {
   //Indicates that all events up to the given block number will be skipped.
   //When this is called, all states with block number less than the given block
   //number must be discarded.
-  restart(blockNumber: number): void;
+  restart(blockNumber: number): AsyncOrSync<void>;
 
   //Called to roll forward the state from log events and clear the invalid flag
   //if it has been set.  It is assumed that the logs are presented in
@@ -35,7 +35,7 @@ export interface EventSubscriber {
   //Will be called on a chain reorganisation prior to updating with new logs.
   //All state corresponding to blocks after the given number must be discarded,
   //except for the most recent state, if the invalid flag isn't still set.
-  rollback(blockNumber: number): void;
+  rollback(blockNumber: number): AsyncOrSync<void>;
 
   //This will be called to set an invalid flag, when the block manager cannot
   //guarantee that all previously derived states are valid.  When this flag is

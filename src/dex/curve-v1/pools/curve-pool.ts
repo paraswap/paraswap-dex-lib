@@ -103,8 +103,12 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   }
 
   async setup(blockNumber: number, poolState: PoolState | null = null) {
-    if (!poolState) poolState = await this.generateState(blockNumber);
-    if (blockNumber) this.setState(poolState, blockNumber);
+    if (!poolState) {
+      poolState = await this.generateState(blockNumber);
+    }
+    if (blockNumber) {
+      await this.setState(poolState, blockNumber);
+    }
   }
 
   protected getRates() {

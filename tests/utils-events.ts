@@ -49,7 +49,7 @@ export async function testEventSubscriber<SubscriberState>(
   }
 
   // Set subscriber state before the event block
-  eventSubscriber.setState(
+  await eventSubscriber.setState(
     poolState as DeepReadonly<SubscriberState>,
     blockNumber - 1,
   );

@@ -17,8 +17,6 @@ type InitializeStateOptions<State> = {
   initCallback?: (state: DeepReadonly<State>) => void;
 };
 
-const CREATE_NEW_STATE_RETRY_INTERVAL_MS = 1000;
-
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
 {
@@ -78,7 +76,7 @@ export abstract class StatefulEventSubscriber<State>
   ) {
     let masterBn: undefined | number = undefined;
     if (options && options.state) {
-      this.setState(options.state, blockNumber);
+      await this.setState(options.state, blockNumber);
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(
@@ -117,14 +115,14 @@ export abstract class StatefulEventSubscriber<State>
           }
           // set state and the according blockNumber. state.bn can be smaller, greater or equal
           // to blockNumber
-          this.setState(state.state, blockNumber);
+          await this.setState(state.state, blockNumber);
         } else {
           // if no state found in cache generate new state using rpc
           this.logger.info(
             `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
           );
           const state = await this.generateState(blockNumber);
-          this.setState(state, blockNumber);
+          await this.setState(state, blockNumber);
 
           // we should publish only if generateState succeeded
           this.dexHelper.cache.publish('new_pools', this.cacheName);
@@ -135,7 +133,7 @@ export abstract class StatefulEventSubscriber<State>
           `${this.parentName}: ${this.name}: cache generating state`,
         );
         const state = await this.generateState(blockNumber);
-        this.setState(state, blockNumber);
+        await this.setState(state, blockNumber);
       }
     }
 
@@ -194,13 +192,13 @@ export abstract class StatefulEventSubscriber<State>
     blockNumber?: number | 'latest',
   ): AsyncOrSync<DeepReadonly<State>>;
 
-  restart(blockNumber: number): void {
+  async restart(blockNumber: number): Promise<void> {
     for (const bn in this.stateHistory) {
       if (+bn >= blockNumber) break;
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
-      this._setState(null, blockNumber);
+      await this._setState(null, blockNumber);
     }
   }
 
@@ -240,7 +238,7 @@ export abstract class StatefulEventSubscriber<State>
       }
       if (!this.state) {
         const freshState = await this.generateState(blockNumber);
-        this.setState(freshState, blockNumber);
+        await this.setState(freshState, blockNumber);
       }
       //Find the last state before the blockNumber of the logs
       let stateBeforeLog: DeepReadonly<State> | undefined;
@@ -255,7 +253,9 @@ export abstract class StatefulEventSubscriber<State>
           logs.slice(index, indexBlockEnd),
           blockHeader,
         );
-        if (nextState) this.setState(nextState, blockNumber);
+        if (nextState) {
+          await this.setState(nextState, blockNumber);
+        }
       }
       lastBlockNumber = blockNumber;
       index = indexBlockEnd;
@@ -279,7 +279,7 @@ export abstract class StatefulEventSubscriber<State>
         );
         try {
           const state = await this.generateState(latestBlockNumber);
-          this.setState(state, latestBlockNumber);
+          await this.setState(state, latestBlockNumber);
           return true;
         } catch (e) {
           this.logger.error(
@@ -296,7 +296,7 @@ export abstract class StatefulEventSubscriber<State>
   //Removes all states that are beyond the given block number and sets the
   //current state to the latest one that is left, if any, unless the invalid
   //flag is not set, in which case the most recent state can be kept.
-  rollback(blockNumber: number): void {
+  async rollback(blockNumber: number): Promise<void> {
     if (this.invalid) {
       let lastBn = undefined;
       //loop in the ascending order of the blockNumber. V8 property when object keys are number.
@@ -310,9 +310,9 @@ export abstract class StatefulEventSubscriber<State>
       }
 
       if (lastBn) {
-        this._setState(this.stateHistory[lastBn], lastBn);
+        await this._setState(this.stateHistory[lastBn], lastBn);
       } else {
-        this._setState(null, blockNumber);
+        await this._setState(null, blockNumber);
       }
     } else {
       //Keep the current state in this.state and in the history
@@ -347,7 +347,7 @@ export abstract class StatefulEventSubscriber<State>
     return this.state;
   }
 
-  _setState(state: DeepReadonly<State> | null, blockNumber: number) {
+  async _setState(state: DeepReadonly<State> | null, blockNumber: number) {
     if (
       this.dexHelper.config.isSlave &&
       this.masterPoolNeeded &&
@@ -360,7 +360,7 @@ export abstract class StatefulEventSubscriber<State>
       this.dexHelper.cache.addBatchHGet(
         this.mapKey,
         this.name,
-        (result: string | null) => {
+        async (result: string | null) => {
           if (!result) {
             this.logger.warn('received null result');
             return false;
@@ -373,7 +373,7 @@ export abstract class StatefulEventSubscriber<State>
           this.logger.info(
             `${this.parentName}: ${this.name}: received state from a scheduled job`,
           );
-          this.setState(state.state, state.bn);
+          await this.setState(state.state, state.bn);
           return true;
         },
       );
@@ -387,28 +387,30 @@ export abstract class StatefulEventSubscriber<State>
     }
 
     this.logger.info(`${this.parentName}: ${this.name} saving state in cache`);
-    this.dexHelper.cache.hset(
-      this.mapKey,
-      this.name,
-      Utils.Serialize({
-        bn: blockNumber,
-        state,
-      }),
-    );
+
+    const stateAsStr = await Utils.Serialize({
+      bn: blockNumber,
+      state,
+    });
+
+    this.dexHelper.cache.hset(this.mapKey, this.name, stateAsStr);
   }
 
   //Saves the state into the stateHistory, and cleans up any old state that is
   //no longer needed.  If the blockNumber is greater than or equal to the
   //current state, then the current state will be updated and the invalid flag
   //can be reset.
-  setState(state: DeepReadonly<State>, blockNumber: number): void {
+  async setState(
+    state: DeepReadonly<State>,
+    blockNumber: number,
+  ): Promise<void> {
     if (!blockNumber) {
       this.logger.error('setState() with blockNumber', blockNumber);
       return;
     }
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
-      this._setState(state, blockNumber);
+      await this._setState(state, blockNumber);
       this.invalid = false;
     }
     const minBlockNumberToKeep = this.stateBlockNumber - MAX_BLOCKS_HISTORY;

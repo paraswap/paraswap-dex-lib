@@ -46,6 +46,6 @@ export interface ICache {
   addBatchHGet(
     mapKey: string,
     key: string,
-    cb: (result: string | null) => boolean,
+    cb: (result: string | null) => Promise<boolean>,
   ): void;
 }

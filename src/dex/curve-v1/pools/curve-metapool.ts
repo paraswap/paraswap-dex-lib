@@ -196,8 +196,13 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   }
 
   async setup(blockNumber: number, poolState: MetapoolState | null = null) {
-    if (!poolState) poolState = await this.generateState(blockNumber);
-    if (blockNumber) this.setState(poolState, blockNumber);
+    if (!poolState) {
+      poolState = await this.generateState(blockNumber);
+    }
+
+    if (blockNumber) {
+      await this.setState(poolState, blockNumber);
+    }
   }
 
   protected getRates() {

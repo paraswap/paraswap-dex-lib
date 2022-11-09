@@ -434,7 +434,9 @@ export class UniswapV2
           pairState.feeCode,
           blockNumber,
         );
-      } else pair.pool.setState(pairState, blockNumber);
+      } else {
+        await pair.pool.setState(pairState, blockNumber);
+      }
     }
   }
 

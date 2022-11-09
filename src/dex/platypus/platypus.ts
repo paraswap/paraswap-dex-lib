@@ -383,7 +383,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
               let state = pool.getState(blockNumber);
               if (!state) {
                 state = await pool.generateState(blockNumber);
-                pool.setState(state, blockNumber);
+                await pool.setState(state, blockNumber);
               }
               if (state.params.paused) return null;
               const [unit, ...prices] = pool.computePrices(

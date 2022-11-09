@@ -180,7 +180,7 @@ export class BalancerV1
         poolsMissingState.map(async (poolInfo, i) => {
           const poolState = poolStates[i];
           if (this.eventPools[poolInfo.id]) {
-            this.eventPools[poolInfo.id].setState(poolState, blockNumber);
+            await this.eventPools[poolInfo.id].setState(poolState, blockNumber);
           } else {
             const newPool = new BalancerV1EventPool(
               this.dexKey,

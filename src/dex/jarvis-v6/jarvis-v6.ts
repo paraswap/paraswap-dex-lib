@@ -147,7 +147,7 @@ export class JarvisV6
     const eventState = pool.getState(blockNumber);
     if (eventState) return eventState;
     const onChainState = await pool.generateState(blockNumber);
-    pool.setState(onChainState, blockNumber);
+    await pool.setState(onChainState, blockNumber);
     return onChainState;
   }
 

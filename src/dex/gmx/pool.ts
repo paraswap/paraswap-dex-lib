@@ -102,7 +102,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     const evenState = this.getState(blockNumber);
     if (evenState) return evenState;
     const onChainState = await this.generateState(blockNumber);
-    this.setState(onChainState, blockNumber);
+    await this.setState(onChainState, blockNumber);
     return onChainState;
   }
 

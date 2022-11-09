@@ -125,7 +125,7 @@ export class Nerve
             `State for ${this.dexKey} pool ${eventPool.name} on ${this.network} is stale or invalid on block ${_blockNumber}. Generating new one`,
           );
           const newState = await eventPool.generateState(_blockNumber);
-          eventPool.setState(newState, _blockNumber);
+          await eventPool.setState(newState, _blockNumber);
           return { state: newState, pool: eventPool };
         } else {
           return { state, pool: eventPool };
@@ -238,7 +238,7 @@ export class Nerve
           } catch (e) {
             // Something unexpected happen, so set invalidated state.
             // Later it will be regenerated
-            pool.setState({ ...state, isValid: false }, blockNumber);
+            await pool.setState({ ...state, isValid: false }, blockNumber);
             this.logger.error(
               `${this.dexKey} protocol ${pool.name} (${pool.address}) pool can not calculate out swap for amount ${_amount}`,
               e,

@@ -328,6 +328,13 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.18.6"
 
+"@babel/runtime@^7.20.1":
+  version "7.20.1"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.20.1.tgz#1148bb33ab252b165a06698fde7576092a78b4a9"
+  integrity sha512-mrzLkl6U9YLF8qpqI7TB82PESyEGjm/0Ly91jG575eVxMMlb8fYfOXFZIJ8XfLrJZQbm7dlKry2bJmXBUEkdFg==
+  dependencies:
+    regenerator-runtime "^0.13.10"
+
 "@babel/template@^7.18.10":
   version "7.18.10"
   resolved "https://registry.yarnpkg.com/@babel/template/-/template-7.18.10.tgz#6f9134835970d1dbf0835c0d100c9f38de0c5e71"
@@ -1589,6 +1596,11 @@
   integrity sha512-Nz4MPhecOFArtm81gFQvQqdV7XYCrWKx5uUt6GNHredFHn1i2mtWqXTON7EPXMtNi1qjtjEM/VCHDhcHsAMLXQ==
   dependencies:
     "@types/yargs-parser" "*"
+
+"@types/yieldable-json@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@types/yieldable-json/-/yieldable-json-2.0.0.tgz#df7ac24ef5da6d95af2be9728d83a12fe2326e04"
+  integrity sha512-AvO9CeRWiT9fDPv9kn9OGtH0d1K1DRSy7jsEn/WqAPjUqR4xPP53EYUlO/Jj3aajDKOtszjIebc6ACoaYijnyA==
 
 abortcontroller-polyfill@^1.1.9:
   version "1.7.3"
@@ -4130,6 +4142,11 @@ jest@^29.0.3:
     import-local "^3.0.2"
     jest-cli "^29.0.3"
 
+js-coroutines@^2.4.36:
+  version "2.4.36"
+  resolved "https://registry.yarnpkg.com/js-coroutines/-/js-coroutines-2.4.36.tgz#2324584cd6fdab691f5f5c5649142e7df5f57c07"
+  integrity sha512-6f1q+Ix2ZkIuXZMaxWK8DsGzg1EO3wu6IPc0opO0ogDjfM5kC+BRuRW/JbChqXYhlMSiJeviJ6m/QY2Xoyw3Yg==
+
 js-sha3@0.5.7, js-sha3@^0.5.7:
   version "0.5.7"
   resolved "https://registry.yarnpkg.com/js-sha3/-/js-sha3-0.5.7.tgz#0d4ffd8002d5333aabaf4a23eed2f6374c9f28e7"
@@ -5071,6 +5088,11 @@ readable-stream@^3.6.0:
     inherits "^2.0.3"
     string_decoder "^1.1.1"
     util-deprecate "^1.0.1"
+
+regenerator-runtime@^0.13.10:
+  version "0.13.10"
+  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.10.tgz#ed07b19616bcbec5da6274ebc75ae95634bfc2ee"
+  integrity sha512-KepLsg4dU12hryUO7bp/axHAKvwGOCV0sGloQtpagJ12ai+ojVDqkeGSiRX1zlq+kjIMZ1t7gpze+26QqtdGqw==
 
 request@^2.79.0:
   version "2.88.2"
@@ -6564,6 +6586,11 @@ yargs@^17.3.1:
     string-width "^4.2.3"
     y18n "^5.0.5"
     yargs-parser "^21.0.0"
+
+yieldable-json@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/yieldable-json/-/yieldable-json-2.0.1.tgz#728f759e252607d18b26a38fc1f2256e6a255f63"
+  integrity sha512-kFDzXrWlXXt21MQPCul6gAMwwiLoz6XgCbQF+2qNChqdiZnc1SW3l/b/x/XzlZchG2iaVjDIDW5Fnz+sL+FbCw==
 
 yn@3.1.1:
   version "3.1.1"
