@@ -19,6 +19,7 @@ export const NETWORK_ID_TO_NAME: Record<number, string> = {
   [Network.FANTOM]: 'fantom',
   [Network.AVALANCHE]: 'avalanche',
   [Network.ARBITRUM]: 'arbitrum',
+  [Network.OPTIMISM]: 'optimism',
 };
 
 // They are hardcoded in factory contract. If factory is changing, must be

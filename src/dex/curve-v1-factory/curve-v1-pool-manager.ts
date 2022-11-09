@@ -273,7 +273,7 @@ export class CurveV1FactoryPoolManager {
         // This is needed to reduce complexity and don't track when each API was updated. We either update
         // everything or don't update anything and invalidate liquidity amounts
         this.logger.error(
-          `${this.name}: some of the Curve API requests fail. Won't update anything.`,
+          `${this.name} ${this.dexHelper.config.data.network}: some of the Curve API requests fail. Won't update anything.`,
         );
         return;
       }
