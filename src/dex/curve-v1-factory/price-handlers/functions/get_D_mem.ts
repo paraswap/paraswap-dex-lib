@@ -66,8 +66,8 @@ export const implementations: Record<ImplementationNames, get_D_mem> = {
 
   [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: notExist,
 
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: notExist,
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: notExist,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: notExist,
 
   [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: factoryPlain2Basic,
