@@ -171,7 +171,10 @@ export class CurveV1FactoryPoolManager {
     // elements and use only that? Because while doing intersection, it still
     // iterates on all elements since we are not using any hashed structure like Set
     let intersectedPoolIdentifiersSubset: string[] = [];
-    if (inSrcTokenIdentifiers && inDestTokenIdentifiers) {
+    if (
+      inSrcTokenIdentifiers !== undefined &&
+      inDestTokenIdentifiers !== undefined
+    ) {
       intersectedPoolIdentifiersSubset = _.intersection(
         inSrcTokenIdentifiers,
         inDestTokenIdentifiers,

@@ -608,6 +608,10 @@ export class CurveV1Factory
       const srcTokenAddress = srcToken.address.toLowerCase();
       const destTokenAddress = destToken.address.toLowerCase();
 
+      if (srcTokenAddress === destTokenAddress) {
+        return null;
+      }
+
       let pools: PoolPollingBase[] = [];
       if (limitPools !== undefined) {
         pools = limitPools
@@ -617,7 +621,11 @@ export class CurveV1Factory
               _isSrcTokenTransferFeeToBeExchanged,
             ),
           )
-          .filter((pool): pool is PoolPollingBase => pool !== null);
+          .filter(
+            (pool): pool is PoolPollingBase =>
+              pool !== null &&
+              pool.getPoolData(srcTokenAddress, destTokenAddress) !== null,
+          );
       } else {
         pools = this.poolManager.getPoolsForPair(
           srcTokenAddress,
