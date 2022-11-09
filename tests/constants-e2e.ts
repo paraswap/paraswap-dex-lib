@@ -237,6 +237,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x0c10bf8fcb7bf5412187a595ab97a3609160b5c6',
       decimals: 18,
     },
+    alETH: {
+      address: '0x0100546f2cd4c9d97f798ffc9755e47865ff7ee6',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -704,6 +708,7 @@ export const Holders: {
     sETH: '0x5fe009d78afabc1b04abd2d4361f8e95cd402648',
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
+    alETH: '0x500a4f1280a0b63f47862d658b6c335cc939aaed',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -733,7 +738,7 @@ export const Holders: {
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
     stMATIC: '0x3b39669766fe815aa91834b3bd258dea3edbb6d5',
-    axlUSDC: '0xa355216527196860bfb8d3332e5cfd6d56221fa5',
+    axlUSDC: '0x1fa636f69bd279443e3a3d64ae48314e43e3ea5f',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
@@ -797,7 +802,7 @@ export const Holders: {
     DAI: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WETH: '0xc2707568D31F3fB1Fc55B2F8b2ae5682eAa72041',
     USDC: '0x1714400FF23dB4aF24F9fd64e7039e6597f18C2b',
-    FRAX: '0xf07d553b195080f84f582e88ecdd54baa122b279',
+    FRAX: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',
     nETH: '0xa067668661c84476afcdc6fa5d758c4c01c34352',
     AAVE: '0x7185fbff199928cbae71990ecb3cc4a7be2ff00a',

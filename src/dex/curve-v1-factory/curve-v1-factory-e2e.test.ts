@@ -2,11 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -18,7 +14,6 @@ function testForNetwork(
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
-  nativeTokenAmount: string,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -26,9 +21,7 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [
       SwapSide.SELL,
@@ -38,8 +31,6 @@ function testForNetwork(
         ContractMethod.megaSwap,
       ],
     ],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -47,38 +38,25 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                tokenBAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -99,13 +77,11 @@ describe('CurveV1Factory E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDD';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
-    const nativeTokenAmount = '1000000000000000000';
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '111000000000000000000';
 
     testForNetwork(
       network,
@@ -114,7 +90,114 @@ describe('CurveV1Factory E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      nativeTokenAmount,
+    );
+  });
+  describe('Mainnet Native', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'ETH';
+    const tokenBSymbol: string = 'alETH';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'axlUSDC';
+
+    const tokenAAmount: string = '111000000';
+    const tokenBAmount: string = '111000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+
+    const tokenASymbol: string = 'YUSD';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '111000000000000000000';
+    const tokenBAmount: string = '111000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+
+    const tokenASymbol: string = 'TOR';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '111000000000000000000';
+    const tokenBAmount: string = '111000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'VST';
+    const tokenBSymbol: string = 'FRAX';
+
+    const tokenAAmount: string = '111000000000000000000';
+    const tokenBAmount: string = '111000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const tokenASymbol: string = 'sETH';
+    const tokenBSymbol: string = 'ETH';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
     );
   });
 });
