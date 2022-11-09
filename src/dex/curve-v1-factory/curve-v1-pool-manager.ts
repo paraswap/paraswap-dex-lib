@@ -33,6 +33,11 @@ export class CurveV1FactoryPoolManager {
   // poolsForOnly State and statePollingPoolsFromId must not have overlapping in pool
   private statePollingPoolsFromId: Record<string, PoolPollingBase> = {};
 
+  // This is fast lookup table when you look for pair and searching for coins in all pools
+  // In fact it is skewed in favor of CRV, so we still end up with 100 pools for CRV token.
+  // It should bo considered for optimizing
+  private coinAddressesToPoolIdentifiers: Record<string, string[]> = {};
+
   private allCurveLiquidityApiSlugs: Set<string> = new Set(['/factory']);
 
   private statePollingManager = StatePollingManager;
@@ -114,6 +119,23 @@ export class CurveV1FactoryPoolManager {
 
     this.statePollingPoolsFromId[identifier] = pool;
 
+    const allCoins = pool.poolConstants.COINS.concat(
+      Object.keys(pool.underlyingCoinsToIndices),
+    ).filter(p => p !== NULL_ADDRESS);
+    // It is not quite efficient, but since it is done only on init part,
+    // I think it should be ok
+    allCoins.forEach(c => {
+      const identifiers = this.coinAddressesToPoolIdentifiers[c];
+      if (identifiers === undefined) {
+        this.coinAddressesToPoolIdentifiers[c] = [identifier];
+      } else {
+        this.coinAddressesToPoolIdentifiers[c].push(identifier);
+        this.coinAddressesToPoolIdentifiers[c] = _.uniq(
+          this.coinAddressesToPoolIdentifiers[c],
+        );
+      }
+    });
+
     this.allCurveLiquidityApiSlugs.add(pool.curveLiquidityApiSlug);
   }
 
@@ -145,17 +167,48 @@ export class CurveV1FactoryPoolManager {
     destTokenAddress: string,
     isSrcFeeOnTransferToBeExchanged?: boolean,
   ): PoolPollingBase[] {
-    return Object.values(this.statePollingPoolsFromId).filter(pool => {
-      if (
-        isSrcFeeOnTransferToBeExchanged === true &&
-        !pool.isSrcFeeOnTransferSupported
-      ) {
-        return false;
-      }
+    const inSrcTokenIdentifiers =
+      this.coinAddressesToPoolIdentifiers[srcTokenAddress];
+    const inDestTokenIdentifiers =
+      this.coinAddressesToPoolIdentifiers[destTokenAddress];
 
-      const poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
-      return poolData !== null;
-    });
+    // I am not sure about this intersection. Maybe better take pool with longer
+    // elements and use only that? Because while doing intersection, it still
+    // iterates on all elements since we are not using any hashed structure like Set
+    let intersectedPoolIdentifiersSubset: string[] = [];
+    if (
+      inSrcTokenIdentifiers !== undefined &&
+      inDestTokenIdentifiers !== undefined
+    ) {
+      intersectedPoolIdentifiersSubset = _.intersection(
+        inSrcTokenIdentifiers,
+        inDestTokenIdentifiers,
+      );
+    }
+
+    const pools = intersectedPoolIdentifiersSubset
+      .map(identifier =>
+        this.getPool(
+          identifier,
+          isSrcFeeOnTransferToBeExchanged
+            ? isSrcFeeOnTransferToBeExchanged
+            : false,
+        ),
+      )
+      .filter((p): p is PoolPollingBase => {
+        if (p === null) {
+          return false;
+        }
+
+        const poolData = p.getPoolData(srcTokenAddress, destTokenAddress);
+        if (poolData === null) {
+          return false;
+        }
+
+        return true;
+      });
+
+    return pools;
   }
 
   getPool(
@@ -253,11 +306,12 @@ export class CurveV1FactoryPoolManager {
   }
 
   getPoolsWithToken(tokenAddress: Address): PoolPollingBase[] {
-    return Object.values(this.statePollingPoolsFromId).filter(pool => {
-      return (
-        pool.coinsToIndices[tokenAddress] !== undefined ||
-        pool.underlyingCoinsToIndices[tokenAddress] !== undefined
-      );
-    });
+    const poolIdentifiers = this.coinAddressesToPoolIdentifiers[tokenAddress];
+    if (poolIdentifiers === undefined) {
+      return [];
+    }
+    return poolIdentifiers
+      .map(poolIdentifier => this.getPool(poolIdentifier, false))
+      .filter((p): p is PoolPollingBase => p !== null);
   }
 }
