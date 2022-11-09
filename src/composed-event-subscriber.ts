@@ -43,13 +43,14 @@ export abstract class ComposedEventSubscriber<
   private multiCallSlices: [number, number][] = [];
 
   constructor(
+    parentName: string,
     name: string,
     logger: Logger,
     protected dexHelper: IDexHelper,
     private parts: PartialEventSubscriber<State, any>[],
     private blankState: DeepReadonly<State>,
   ) {
-    super(name, logger);
+    super(parentName, name, dexHelper, logger);
 
     this.addressesSubscribed = [];
     for (const p of this.parts) {

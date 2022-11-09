@@ -23,7 +23,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
   reader: Contract;
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -73,6 +73,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     );
     super(
       parentName,
+      'pool',
       dexHelper.getLogger(`${parentName}-${network}`),
       dexHelper,
       [...Object.values(chainlinkMap), fastPriceFeed, usdg, vault],

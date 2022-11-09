@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.8.17",
+  "version": "2.9.4",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -11,6 +11,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@types/async": "^3.2.15",
     "@types/axios": "0.14.0",
     "@types/jest": "26.0.24",
     "@types/lodash": "4.14.178",
@@ -41,7 +42,10 @@
     "@ethersproject/bytes": "^5.6.1",
     "@ethersproject/contracts": "5.4.1",
     "@ethersproject/providers": "5.4.1",
+    "async": "^3.2.4",
     "bignumber.js": "9.1.0",
+    "cross-fetch": "^3.1.5",
+    "es6-promise": "^4.2.8",
     "ethers": "^5.6.7",
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",

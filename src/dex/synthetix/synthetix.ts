@@ -49,12 +49,12 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
   constructor(
     readonly network: Network,
-    protected dexKey: string,
+    dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly config = SynthetixConfig[dexKey][network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.config = this.normalizeConfig(this.config);
     this.logger = dexHelper.getLogger(dexKey);
     this.combinedIface = new Interface(CombinedSynthetixABI);

@@ -114,13 +114,13 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     dexConfig = CurveV1Config[dexKey][network],
 
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.pools = Object.keys(dexConfig.pools).reduce<
       Record<string, PoolConfig>
     >((acc, key) => {
@@ -428,11 +428,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           throw new Error(
             `Error_${this.dexKey} requested unsupported event pool with address ${poolAddress}`,
           );
-        this.dexHelper.blockManager.subscribeToLogs(
-          newPool,
-          poolAddress,
-          blockNumber,
-        );
+        newPool.addressesSubscribed = [poolAddress];
+        await newPool.initialize(blockNumber);
         poolsToFetch.push(newPool);
       } else if (!pool.getState(blockNumber)) {
         unavailablePools.push(poolAddress);

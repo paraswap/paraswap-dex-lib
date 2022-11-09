@@ -98,8 +98,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0x176a9403f7147eb907bd3b13ffb8bbd5de5c8f1f',
-      PolygonBuyAdapter: '0xD7d3E2491cc495faAa9a770cBDC7535fD1446D8C',
+      PolygonAdapter02: '0x97768fD3A529ee29B433cbb5E45E63F3bFFf0A93',
+      PolygonBuyAdapter: '0x40e11AE88A9402A34208D05bFB7E88171d2f58a0',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -216,7 +216,16 @@ export function generateConfig(network: number): Config {
 }
 
 export class ConfigHelper {
-  constructor(public data: Config) {}
+  public masterBlockNumberCacheKey: string;
+
+  constructor(
+    public isSlave: boolean,
+    public data: Config,
+    private masterCachePrefix: string,
+  ) {
+    this.masterBlockNumberCacheKey =
+      `${masterCachePrefix}_${data.network}_bn`.toLowerCase();
+  }
 
   wrapETH(token: Token): Token {
     return isETHAddress(token.address)

@@ -26,7 +26,7 @@ export class Excalibur extends UniswapV2 {
 
   constructor(
     protected network: Network,
-    public dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
     super(

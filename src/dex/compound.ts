@@ -6,6 +6,7 @@ import { SimpleExchange } from './simple-exchange';
 import Ceth from '../abi/Compound_CETH.json'; // CETH abi
 import { isETHAddress } from '../utils';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export type CompoundData = {
   fromCToken: boolean;
@@ -23,12 +24,8 @@ export class Compound
   static dexKeys = ['compound'];
   cethInterface: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'compound');
     this.cethInterface = new Interface(Ceth as JsonFragment[]);
   }
 

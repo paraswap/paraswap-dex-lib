@@ -5,6 +5,7 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BancorABI from '../abi/Bancor.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 const BANCOR_NETWORK: { [network: string]: string } = {
   1: '0x2F9EC37d6CcFFf1caB21733BdaDEdE11c823cCB0',
@@ -39,12 +40,8 @@ export class Bancor
   static dexKeys = ['bancor'];
   exchangeRouterInterface: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'bancor');
     this.exchangeRouterInterface = new Interface(BancorABI as JsonFragment[]);
   }
 

@@ -25,7 +25,7 @@ export class Velodrome extends Solidly {
 
   constructor(
     protected network: Network,
-    public dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
     super(

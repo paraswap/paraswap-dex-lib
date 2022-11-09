@@ -3,6 +3,8 @@ import { AsyncOrSync } from 'ts-essentials';
 
 export interface EventSubscriber {
   //Contains a descriptive name for this subscriber, to be shown in logs etc.
+  readonly parentName: string;
+
   readonly name: string;
 
   //This field is set by BlockManager when you call subscribeToLogs() on it.
@@ -27,6 +29,7 @@ export interface EventSubscriber {
   update(
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [blockNumber: number]: Readonly<BlockHeader> }>,
+    blockNumberForMissingStateRegen?: number,
   ): AsyncOrSync<void>;
 
   //Will be called on a chain reorganisation prior to updating with new logs.
@@ -48,4 +51,10 @@ export interface IBlockManager {
     contractAddress: Address | Address[],
     afterBlockNumber: number,
   ): void;
+
+  //This return the latest blockNumber that the blockManager has processed
+  getLatestBlockNumber(): number;
+
+  //This return the latest active BlockHeader
+  getActiveChainHead(): Readonly<BlockHeader> | undefined;
 }
