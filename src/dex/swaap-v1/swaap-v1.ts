@@ -464,7 +464,10 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
           currentTimestamp,
         );
       } catch (e) {
-        this.logger.error('Failed to get historical round data', e);
+        this.logger.warn(
+          `Failed to get historical round data: (unit: ${unitVolume})`,
+          e,
+        );
         unitAmountOut = 0n;
       }
 
