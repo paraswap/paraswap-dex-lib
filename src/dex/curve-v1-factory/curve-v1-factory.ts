@@ -159,7 +159,11 @@ export class CurveV1Factory
     await this.fetchFactoryPools(blockNumber);
   }
 
-  async initializeCustomPollingPools(blockNumber?: number) {
+  async initializeCustomPollingPools(
+    blockNumber?: number,
+    // We don't want to initialize state for PoolTracker. It doesn't make any sense
+    initializeInitialState: boolean = true,
+  ) {
     if (this.areCustomPoolsFetched) {
       return;
     }
@@ -252,17 +256,25 @@ export class CurveV1Factory
 
         this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
 
-        await this.poolManager.initializeIndividualPollingPoolState(
-          poolIdentifier,
-          CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
-          blockNumber,
-        );
+        if (initializeInitialState) {
+          await this.poolManager.initializeIndividualPollingPoolState(
+            poolIdentifier,
+            CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
+            blockNumber,
+          );
+        }
       }),
     );
     this.areCustomPoolsFetched = true;
   }
 
-  async fetchFactoryPools(blockNumber?: number) {
+  async fetchFactoryPools(
+    blockNumber?: number,
+    // Variable initializeInitialState is only for poolTracker. We don't want to keep state updated with scheduler
+    // We just want to initialize factory pools and send request to CurveAPI
+    // Other values are not used
+    initializeInitialState: boolean = true,
+  ) {
     if (this.areFactoryPoolsFetched) {
       return;
     }
@@ -270,7 +282,10 @@ export class CurveV1Factory
     // There is no scenario when we need to call initialize custom pools without factory pools
     // So I put it here to not forget call, because custom pools must be initialised before factory pools
     // This function may be called multiple times, but will execute only once
-    this.initializeCustomPollingPools(blockNumber);
+    await this.initializeCustomPollingPools(
+      blockNumber,
+      initializeInitialState,
+    );
 
     const { factoryAddress } = this.config;
     if (!factoryAddress) {
@@ -460,7 +475,10 @@ export class CurveV1Factory
 
       let isMeta: boolean = false;
       let basePoolStateFetcher: PoolPollingBase | undefined;
-      if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
+      if (
+        initializeInitialState &&
+        factoryImplementationFromConfig.basePoolAddress !== undefined
+      ) {
         isMeta = true;
         const basePoolIdentifier = this.getPoolIdentifier(
           factoryImplementationFromConfig.basePoolAddress,
@@ -501,12 +519,14 @@ export class CurveV1Factory
 
       this.poolManager.initializeNewPool(poolIdentifier, newPool);
 
-      stateInitializePromises.push(
-        this.poolManager.initializeIndividualPollingPoolState(
-          poolIdentifier,
-          factoryImplementationConstants.isFeeOnTransferSupported,
-        ),
-      );
+      if (initializeInitialState) {
+        stateInitializePromises.push(
+          this.poolManager.initializeIndividualPollingPoolState(
+            poolIdentifier,
+            factoryImplementationConstants.isFeeOnTransferSupported,
+          ),
+        );
+      }
     });
 
     await Promise.all(stateInitializePromises);
