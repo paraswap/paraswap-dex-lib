@@ -146,14 +146,19 @@ export class CurveV1FactoryPoolManager {
       return;
     }
 
-    if (
-      this.statePollingPoolsFromId[identifier] ||
-      this.poolsForOnlyState[identifier]
-    ) {
+    if (this.poolsForOnlyState[identifier]) {
+      this.logger.trace(
+        `${this.name}: pool with identifier ${identifier} is already initialized`,
+      );
+      return;
+    }
+
+    if (this.statePollingPoolsFromId[identifier]) {
       throw new Error(
-        `${this.name}: pool with ${identifier} is already initialized`,
+        `${this.name}: pool with ${identifier} is not used for pricing, but already initialized as factory pool`,
       );
     }
+
     this.poolsForOnlyState[identifier] = pool;
   }
 
