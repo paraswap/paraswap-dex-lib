@@ -347,6 +347,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0x750e4c4984a9e0f12978ea6742bc1c5d248f40ed',
       decimals: 6,
     },
+    deUSDC: {
+      address: '0x1ddcaa4ed761428ae348befc6718bcb12e63bfaa',
+      decimals: 6,
+    },
+    amUSDT: {
+      address: '0x60d55f02a771d515e077c9c2403a1ef324885cec',
+      decimals: 6,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -739,6 +747,8 @@ export const Holders: {
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
     stMATIC: '0x3b39669766fe815aa91834b3bd258dea3edbb6d5',
     axlUSDC: '0x1fa636f69bd279443e3a3d64ae48314e43e3ea5f',
+    deUSDC: '0x94d5ead1f80cf0b4d3480ab59dff16d47c93e9fe',
+    amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',

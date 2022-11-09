@@ -128,6 +128,44 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
+  // We don't support in current implementation working on unwrapped asset with Zap
+  // describe('Polygon deUSDC', () => {
+  //   const network = Network.POLYGON;
+
+  //   const tokenASymbol: string = 'deUSDC';
+  //   const tokenBSymbol: string = 'USDT';
+
+  //   const tokenAAmount: string = '111000000';
+  //   const tokenBAmount: string = '111000000';
+
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //   );
+  // });
+
+  describe('Polygon amUSDT', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'deUSDC';
+    const tokenBSymbol: string = 'amUSDT';
+
+    const tokenAAmount: string = '111000000';
+    const tokenBAmount: string = '111000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 

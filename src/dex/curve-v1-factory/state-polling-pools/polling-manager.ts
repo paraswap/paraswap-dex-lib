@@ -46,8 +46,9 @@ export class StatePollingManager {
     } catch (e) {
       logger.error(
         `Network ${network}: Failed to update state for pools: ${pools
+          .slice(0, 10)
           .map(p => p.address)
-          .join(',')}: `,
+          .join(',')}${pools.length > 10 ? '...' : ''}: `,
         e,
       );
     }

@@ -458,22 +458,22 @@ export class CurveV1Factory
         return;
       }
 
-      const [implementationAddress, coins, coins_decimals] = result as [
+      let [implementationAddress, coins, coins_decimals] = result as [
         string,
         string[],
         number[],
       ];
 
+      implementationAddress = implementationAddress.toLowerCase();
+      coins = coins.map(c => c.toLowerCase()).filter(c => c !== NULL_ADDRESS);
+      coins_decimals = coins_decimals.filter(cd => cd !== 0);
+
       const factoryImplementationFromConfig =
-        this.config.factoryPoolImplementations[
-          implementationAddress.toLowerCase()
-        ];
+        this.config.factoryPoolImplementations[implementationAddress];
 
       if (
         factoryImplementationFromConfig === undefined &&
-        !this.config.disabledImplementations.has(
-          implementationAddress.toLowerCase(),
-        )
+        !this.config.disabledImplementations.has(implementationAddress)
       ) {
         this._reportForUnspecifiedImplementation(
           implementationAddress,
@@ -508,7 +508,7 @@ export class CurveV1Factory
       }
 
       const poolConstants: PoolConstants = {
-        COINS: coins.map(c => c.toLowerCase()),
+        COINS: coins,
         coins_decimals,
         rate_multipliers: this._calcRateMultipliers(coins_decimals),
       };
