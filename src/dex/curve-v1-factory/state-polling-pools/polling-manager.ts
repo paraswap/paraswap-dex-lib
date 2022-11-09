@@ -48,7 +48,7 @@ export class StatePollingManager {
         `Network ${network}: Failed to update state for pools: ${pools
           .slice(0, 10)
           .map(p => p.address)
-          .join(',')}${pools.length > 10 ? '...' : ''}: `,
+          .join(', ')}${pools.length > 10 ? '...' : ''}: `,
         e,
       );
     }
