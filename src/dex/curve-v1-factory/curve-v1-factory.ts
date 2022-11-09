@@ -341,7 +341,10 @@ export class CurveV1Factory
       customPool => customPool.address,
     );
     basePoolAddresses.forEach(basePool => {
-      if (!customPoolAddresses.includes(basePool)) {
+      if (
+        !customPoolAddresses.includes(basePool) &&
+        !this.config.disabledPools.has(basePool)
+      ) {
         this._reportForUnspecifiedCustomPool(basePool);
       }
     });
@@ -434,7 +437,11 @@ export class CurveV1Factory
 
     const allAvailableImplementations = _.flattenDeep(
       allResultsFromFactory.slice(factoryResultsDivider) as string[],
-    ).filter(implementation => implementation !== NULL_ADDRESS);
+    ).filter(
+      implementation =>
+        implementation !== NULL_ADDRESS &&
+        !this.config.disabledImplementations.has(implementation),
+    );
 
     allAvailableImplementations.forEach(implementation => {
       const currentImplementation =
@@ -462,7 +469,12 @@ export class CurveV1Factory
           implementationAddress.toLowerCase()
         ];
 
-      if (factoryImplementationFromConfig === undefined) {
+      if (
+        factoryImplementationFromConfig === undefined &&
+        !this.config.disabledImplementations.has(
+          implementationAddress.toLowerCase(),
+        )
+      ) {
         this._reportForUnspecifiedImplementation(
           implementationAddress,
           poolAddresses[i],
