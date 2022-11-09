@@ -269,6 +269,9 @@ export abstract class StatefulEventSubscriber<State>
     ) {
       const network = this.dexHelper.config.data.network;
       const createNewState = async () => {
+        if (this.state !== null) {
+          return true;
+        }
         const latestBlockNumber =
           this.dexHelper.blockManager.getLatestBlockNumber();
         this.logger.warn(
@@ -277,15 +280,16 @@ export abstract class StatefulEventSubscriber<State>
         try {
           const state = await this.generateState(latestBlockNumber);
           this.setState(state, latestBlockNumber);
+          return true;
         } catch (e) {
           this.logger.error(
             `${network}: ${this.parentName} ${this.name}: (${latestBlockNumber}) failed fetch state:`,
             e,
           );
-          setTimeout(createNewState, CREATE_NEW_STATE_RETRY_INTERVAL_MS);
         }
+        return false;
       };
-      createNewState();
+      this.dexHelper.promiseScheduler.addPromise(createNewState);
     }
   }
 
