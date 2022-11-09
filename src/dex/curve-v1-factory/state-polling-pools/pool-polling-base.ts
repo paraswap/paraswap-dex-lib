@@ -24,7 +24,9 @@ export abstract class PoolPollingBase {
   liquidityUSD = 0;
 
   readonly isMetaPool: boolean;
-  readonly underlyingCoins: string[];
+  // For more efficient search in coins
+  readonly coinsToIndices: Record<Address, number>;
+  readonly underlyingCoinsToIndices: Record<Address, number>;
   readonly underlyingDecimals: number[];
 
   // Custom pools usually are not used for pricing. But there examples, when
@@ -46,9 +48,13 @@ export abstract class PoolPollingBase {
   ) {
     this.fullName = `${dexKey}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
     this.isMetaPool = baseStatePoolPolling !== undefined;
-    this.underlyingCoins = baseStatePoolPolling
-      ? [poolConstants.COINS[0], ...baseStatePoolPolling.poolConstants.COINS]
-      : [];
+    this.coinsToIndices = this._reduceToIndexMapping(poolConstants.COINS);
+    this.underlyingCoinsToIndices = baseStatePoolPolling
+      ? this._reduceToIndexMapping([
+          poolConstants.COINS[0],
+          ...baseStatePoolPolling.poolConstants.COINS,
+        ])
+      : {};
     this.underlyingDecimals = baseStatePoolPolling
       ? [
           poolConstants.coins_decimals[0],
@@ -90,13 +96,14 @@ export abstract class PoolPollingBase {
     return null;
   }
 
-  // It must be called once every calculation is done and we are ready to return
-  // result from getPricesVolume
-  getPoolData(srcAddress: Address, destAddress: Address): CurveV1FactoryData {
-    const iC = this.poolConstants.COINS.indexOf(srcAddress);
-    const jC = this.poolConstants.COINS.indexOf(destAddress);
+  getPoolData(
+    srcAddress: Address,
+    destAddress: Address,
+  ): CurveV1FactoryData | null {
+    const iC = this.coinsToIndices[srcAddress];
+    const jC = this.coinsToIndices[destAddress];
 
-    if (iC !== -1 && jC !== -1) {
+    if (iC !== undefined && jC !== undefined) {
       return {
         exchange: this.address,
         i: iC,
@@ -106,9 +113,10 @@ export abstract class PoolPollingBase {
     }
 
     if (this.isMetaPool) {
-      const iU = this.underlyingCoins.indexOf(srcAddress);
-      const jU = this.underlyingCoins.indexOf(destAddress);
-      if (iU !== -1 && jU !== -1) {
+      const iU = this.underlyingCoinsToIndices[srcAddress];
+      const jU = this.underlyingCoinsToIndices[destAddress];
+
+      if (iU !== undefined && jU !== undefined) {
         return {
           exchange: this.address,
           i: iU,
@@ -118,8 +126,13 @@ export abstract class PoolPollingBase {
       }
     }
 
-    throw new Error(
-      `${this.fullName}: one or both tokens can not be exchanged in this pool: ${srcAddress} -> ${destAddress}`,
-    );
+    return null;
+  }
+
+  private _reduceToIndexMapping(values: string[]): Record<string, number> {
+    return values.reduce<Record<string, number>>((acc, curr, i) => {
+      acc[curr] = i;
+      return acc;
+    }, {});
   }
 }

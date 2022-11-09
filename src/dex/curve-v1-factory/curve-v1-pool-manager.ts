@@ -120,7 +120,7 @@ export class CurveV1FactoryPoolManager {
     this.statePollingPoolsFromId[identifier] = pool;
 
     const allCoins = pool.poolConstants.COINS.concat(
-      pool.underlyingCoins,
+      Object.keys(pool.underlyingCoinsToIndices),
     ).filter(p => p !== NULL_ADDRESS);
     // It is not quite efficient, but since it is done only on init part,
     // I think it should be ok
@@ -191,17 +191,13 @@ export class CurveV1FactoryPoolManager {
         if (p === null) {
           return false;
         }
-        const iC = p.poolConstants.COINS.indexOf(srcTokenAddress);
-        const jC = p.poolConstants.COINS.indexOf(destTokenAddress);
 
-        if (iC !== -1 && jC !== -1) {
-          return true;
+        const poolData = p.getPoolData(srcTokenAddress, destTokenAddress);
+        if (poolData === null) {
+          return false;
         }
 
-        const iU = p.underlyingCoins.indexOf(srcTokenAddress);
-        const jU = p.underlyingCoins.indexOf(destTokenAddress);
-
-        return iU !== -1 && jU !== -1;
+        return true;
       });
 
     return pools;
@@ -239,24 +235,27 @@ export class CurveV1FactoryPoolManager {
   }
 
   async fetchLiquiditiesFromApi() {
+    let URL: string = '';
     try {
       let someFailed = false;
       const responses = await Promise.all(
-        Array.from(Array.from(this.allCurveLiquidityApiSlugs)).map(async slug =>
-          this.dexHelper.httpRequest.get<{
-            success: boolean;
-            data: {
-              poolData: {
-                usdTotal: number;
-                address: string;
-                usdTotalExcludingBasePool: number;
-              }[];
-            };
-          }>(
-            `${CURVE_API_URL}/${
+        Array.from(Array.from(this.allCurveLiquidityApiSlugs)).map(
+          async slug => {
+            URL = `${CURVE_API_URL}/${
               NETWORK_ID_TO_NAME[this.dexHelper.config.data.network]
-            }${slug}`,
-          ),
+            }${slug}`;
+
+            return this.dexHelper.httpRequest.get<{
+              success: boolean;
+              data: {
+                poolData: {
+                  usdTotal: number;
+                  address: string;
+                  usdTotalExcludingBasePool: number;
+                }[];
+              };
+            }>(URL);
+          },
         ),
       );
       const addressToLiquidity: Record<string, number> = {};
@@ -292,7 +291,7 @@ export class CurveV1FactoryPoolManager {
       });
     } catch (e) {
       this.logger.error(
-        `${this.name}: Error fetching liquidity from CurveV2 API: `,
+        `${this.name}: Error fetching liquidity from CurveV2 API ${URL}: `,
         e,
       );
     }

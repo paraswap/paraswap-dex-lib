@@ -653,6 +653,13 @@ export class CurveV1Factory
 
           const poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
 
+          if (poolData === null) {
+            this.logger.error(
+              `${pool.fullName}: one or both tokens can not be exchanged in pool ${pool.address}: ${srcTokenAddress} -> ${destTokenAddress}`,
+            );
+            return null;
+          }
+
           let outputs: bigint[] = this.poolManager
             .getPriceHandler(pool.implementationAddress)
             .getOutputs(
@@ -813,7 +820,9 @@ export class CurveV1Factory
         }
 
         const underlyingConnectors: Token[] = [];
-        for (const [i, underlying] of pool.underlyingCoins.entries()) {
+        for (const [underlying, i] of Object.entries(
+          pool.underlyingCoinsToIndices,
+        )) {
           if (underlying === _tokenAddress) {
             inUnderlying = true;
           } else {
