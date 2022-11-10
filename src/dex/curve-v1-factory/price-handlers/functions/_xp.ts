@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
 import { IPoolContext, _xp } from '../types';
 import { requireConstant, throwNotExist } from './utils';
@@ -9,11 +8,11 @@ const customPlain3CoinThree: _xp = (
   state: PoolState,
 ): bigint[] => {
   const { N_COINS } = self.constants;
-  const RATES = requireConstant(self, 'RATES', funcName());
+  const RATES = requireConstant(self, 'RATES', 'customPlain3CoinThree');
   const LENDING_PRECISION = requireConstant(
     self,
     'LENDING_PRECISION',
-    funcName(),
+    'customPlain3CoinThree',
   );
   const result = [...RATES];
   for (const i of _.range(N_COINS)) {
@@ -27,7 +26,7 @@ const customPlain2CoinFrax: _xp = (
   state: PoolState,
 ): bigint[] => {
   const { N_COINS, PRECISION } = self.constants;
-  const RATES = requireConstant(self, 'RATES', funcName());
+  const RATES = requireConstant(self, 'RATES', 'customPlain2CoinFrax');
   const result = [...RATES];
   for (const i of _.range(Number(N_COINS))) {
     result[i] = (result[i] * state.balances[i]) / PRECISION;

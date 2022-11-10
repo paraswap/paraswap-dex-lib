@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { funcName } from '../../../../utils';
 import { ImplementationNames } from '../../types';
 import { get_D_precisions, IPoolContext } from '../types';
 import { requireConstant, throwNotExist } from './utils';
@@ -10,7 +9,11 @@ const customAvalanche3CoinLending: get_D_precisions = (
   amp: bigint,
 ): bigint => {
   const { N_COINS } = self.constants;
-  const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
+  const PRECISION_MUL = requireConstant(
+    self,
+    'PRECISION_MUL',
+    'customAvalanche3CoinLending',
+  );
   const xp = [...PRECISION_MUL];
   for (const i of _.range(N_COINS)) {
     xp[i] *= coin_balances[i];

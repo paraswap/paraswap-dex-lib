@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import { uint256ToBigInt } from '../../../lib/decoders';
-import { funcName, _require } from '../../../utils';
+import { _require } from '../../../utils';
 import { Address } from 'paraswap-core';
 import { AbiItem } from 'web3-utils';
 
@@ -205,11 +205,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
   ): void {
     if (!multiOutputs.every(o => o.success)) {
       this.logger.error(
-        `${this.CLASS_NAME} ${this.implementationName} ${
-          this.dexKey
-        } ${funcName()}: Some of the calls for pool ${
-          this.address
-        } generate state failed: `,
+        `${this.CLASS_NAME} ${this.implementationName} ${this.dexKey} setState: Some of the calls for pool ${this.address} generate state failed: `,
       );
       // No need to update with corrupted state
       return;

@@ -324,23 +324,6 @@ export const normalizeAddress = (address: string) => {
   return getAddress(address).toLowerCase();
 };
 
-// This is helper function to extract function name for logging purposes
-// I think it is not correct when we hardcode function name in log message
-export function funcName() {
-  // funcName.caller.name is not working in strict mode, so using workaround
-
-  let name = 'error_parsing_func_name';
-  try {
-    const stack = new Error().stack;
-    if (stack === undefined) {
-      return name;
-    }
-    return stack.split('\n')[2].trim().split(' ')[1];
-  } catch (e) {
-    return name;
-  }
-}
-
 // In some case we need block timestamp, but instead of real one, we can use
 // just current time in BigInt
 export function currentBigIntTimestampInS() {

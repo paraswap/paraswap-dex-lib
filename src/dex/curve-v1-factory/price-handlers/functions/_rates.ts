@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
 import { IPoolContext, _rates } from '../types';
 import { throwNotExist, requireConstant } from './utils';
@@ -9,19 +8,25 @@ const customPlain3CoinSbtc: _rates = (
   state: PoolState,
 ): bigint[] => {
   const { N_COINS } = self.constants;
-  const USE_LENDING = requireConstant(self, 'USE_LENDING', funcName());
+  const USE_LENDING = requireConstant(
+    self,
+    'USE_LENDING',
+    'customPlain3CoinSbtc',
+  );
   const LENDING_PRECISION = requireConstant(
     self,
     'LENDING_PRECISION',
-    funcName(),
+    'customPlain3CoinSbtc',
   );
-  const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
+  const PRECISION_MUL = requireConstant(
+    self,
+    'PRECISION_MUL',
+    'customPlain3CoinSbtc',
+  );
 
   if (state.exchangeRateCurrent === undefined) {
     throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: exchangeRateCurrent is not provided`,
+      `${self.IMPLEMENTATION_NAME} customPlain3CoinSbtc: exchangeRateCurrent is not provided`,
     );
   }
 

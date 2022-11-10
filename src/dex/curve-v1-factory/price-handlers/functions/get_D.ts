@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
 import { get_D, IPoolContext } from '../types';
 import { requireConstant } from './utils';
@@ -52,7 +51,11 @@ const customPlain2CoinFrax: get_D = (
   amp: bigint,
 ): bigint => {
   const { BI_N_COINS } = self.constants;
-  const A_PRECISION = requireConstant(self, 'A_PRECISION', funcName());
+  const A_PRECISION = requireConstant(
+    self,
+    'A_PRECISION',
+    'customPlain2CoinFrax',
+  );
 
   let S = 0n;
   let Dprev = 0n;
@@ -91,7 +94,7 @@ const customPlain2CoinFrax: get_D = (
   // convergence typically occurs in 4 rounds or less, this should be unreachable!
   // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function ${funcName()} didn't converge`,
+    `${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
   );
 };
 
@@ -101,7 +104,11 @@ const factoryPlain2Basic: get_D = (
   amp: bigint,
 ): bigint => {
   const { BI_N_COINS } = self.constants;
-  const A_PRECISION = requireConstant(self, 'A_PRECISION', funcName());
+  const A_PRECISION = requireConstant(
+    self,
+    'A_PRECISION',
+    'factoryPlain2Basic',
+  );
 
   let S = 0n;
   for (const _x of xp) {
@@ -134,7 +141,7 @@ const factoryPlain2Basic: get_D = (
   // convergence typically occurs in 4 rounds or less, this should be unreachable!
   // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function ${funcName()} didn't converge`,
+    `${self.IMPLEMENTATION_NAME}: function factoryPlain2Basic didn't converge`,
   );
 };
 
@@ -144,7 +151,11 @@ const customAvalanche3CoinLending: get_D = (
   amp: bigint,
 ): bigint => {
   const { BI_N_COINS } = self.constants;
-  const A_PRECISION = requireConstant(self, 'A_PRECISION', funcName());
+  const A_PRECISION = requireConstant(
+    self,
+    'A_PRECISION',
+    'customAvalanche3CoinLending',
+  );
 
   let S = 0n;
   for (const _x of xp) {
@@ -182,7 +193,7 @@ const customAvalanche3CoinLending: get_D = (
   // convergence typically occurs in 4 rounds or less, this should be unreachable!
   // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function ${funcName()} didn't converge`,
+    `${self.IMPLEMENTATION_NAME}: function customAvalanche3CoinLending didn't converge`,
   );
 };
 
@@ -205,8 +216,10 @@ const implementations: Record<ImplementationNames, get_D> = {
 
   [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: customPlain2CoinFrax,
 
-  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: customAvalanche3CoinLending,
-  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: customAvalanche3CoinLending,
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]:
+    customAvalanche3CoinLending,
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]:
+    customAvalanche3CoinLending,
 
   [ImplementationNames.FACTORY_V1_META_BTC]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_V1_META_USD]: customPlain2CoinFrax,

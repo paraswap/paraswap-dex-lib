@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { funcName, _require } from '../../../../utils';
+import { _require } from '../../../../utils';
 import { ImplementationNames } from '../../types';
 import { get_y_D, IPoolContext } from '../types';
 import { requireConstant, throwNotImplemented } from './utils';
@@ -61,7 +61,11 @@ const customPlain2CoinFrax: get_y_D = (
   D: bigint,
 ): bigint => {
   const { N_COINS, BI_N_COINS } = self.constants;
-  const A_PRECISION = requireConstant(self, 'A_PRECISION', funcName());
+  const A_PRECISION = requireConstant(
+    self,
+    'A_PRECISION',
+    'customPlain2CoinFrax',
+  );
 
   _require(i >= 0, 'i below zero', { A_: A, i, xp, D }, 'i >== 0');
   _require(i < N_COINS, 'i above N_COINS', { A_: A, i, xp, D }, 'i < N_COINS');
@@ -100,7 +104,7 @@ const customPlain2CoinFrax: get_y_D = (
     }
   }
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function ${funcName()} didn't converge`,
+    `${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
   );
 };
 

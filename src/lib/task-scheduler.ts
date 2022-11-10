@@ -1,6 +1,5 @@
 import { Logger } from 'log4js';
 import { AsyncOrSync } from 'ts-essentials';
-import { funcName } from '../utils';
 
 export class TaskScheduler {
   private _timer?: NodeJS.Timeout;
@@ -32,7 +31,7 @@ export class TaskScheduler {
       await this.task();
       this.setTimer(this.updatePeriodMs);
     } catch (e: unknown) {
-      this.logger.error(`${this.name} ${funcName()} can not execute task: `, e);
+      this.logger.error(`${this.name} executeTask can not execute task: `, e);
       this.setTimer(this.updateRetryPeriodMs);
     }
   }

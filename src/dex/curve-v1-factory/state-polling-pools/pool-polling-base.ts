@@ -1,7 +1,6 @@
 import Web3EthAbi, { AbiCoder } from 'web3-eth-abi';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
-import { funcName } from '../../../utils';
 import { MAX_ALLOWED_STATE_DELAY_MS } from '../constants';
 import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
 import { Address } from 'paraswap-core';
@@ -85,11 +84,11 @@ export abstract class PoolPollingBase {
       return this._poolState;
     } else if (this._poolState) {
       this.logger.error(
-        `${this.fullName} ${funcName()}: state is older than max allowed time`,
+        `${this.fullName} getState: state is older than max allowed time`,
       );
     } else {
       this.logger.error(
-        `${this.fullName} ${funcName()}: state was not initialized properly`,
+        `${this.fullName} getState: state was not initialized properly`,
       );
     }
 

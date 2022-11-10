@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { ImplementationNames, PoolState } from '../../types';
-import { funcName, _require } from '../../../../utils';
+import { _require } from '../../../../utils';
 import { get_y, IPoolContext } from '../types';
 import { requireConstant } from './utils';
 
@@ -73,7 +73,11 @@ const customPlain2CoinFrax = (
   xp: bigint[],
 ) => {
   const { N_COINS, BI_N_COINS } = self.constants;
-  const A_PRECISION = requireConstant(self, 'A_PRECISION', funcName());
+  const A_PRECISION = requireConstant(
+    self,
+    'A_PRECISION',
+    'customPlain2CoinFrax',
+  );
 
   // x in the input is converted to the same price/precision
 
@@ -123,7 +127,7 @@ const customPlain2CoinFrax = (
     }
   }
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function ${funcName()} didn't converge`,
+    `${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
   );
 };
 

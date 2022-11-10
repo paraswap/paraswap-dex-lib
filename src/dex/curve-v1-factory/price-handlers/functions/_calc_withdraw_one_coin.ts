@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
 import { IPoolContext, _calc_withdraw_one_coin } from '../types';
 import { requireConstant, requireValue, throwNotImplemented } from './utils';
@@ -11,11 +10,15 @@ const customPlain3CoinThree: _calc_withdraw_one_coin = (
   i: number,
 ) => {
   const { N_COINS, BI_N_COINS, FEE_DENOMINATOR } = self.constants;
-  const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
+  const PRECISION_MUL = requireConstant(
+    self,
+    'PRECISION_MUL',
+    'customPlain3CoinThree',
+  );
 
   if (state.totalSupply === undefined) {
     throw new Error(
-      `${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`,
+      `${self.IMPLEMENTATION_NAME} customPlain3CoinThree: totalSupply is not provided`,
     );
   }
 
@@ -58,7 +61,7 @@ const customArbitrum2CoinBtc: _calc_withdraw_one_coin = (
   const { N_COINS, BI_N_COINS, FEE_DENOMINATOR, PRECISION } = self.constants;
   if (state.totalSupply === undefined) {
     throw new Error(
-      `${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`,
+      `${self.IMPLEMENTATION_NAME} customArbitrum2CoinBtc: totalSupply is not provided`,
     );
   }
 
@@ -100,17 +103,21 @@ const customAvalanche3CoinLending: _calc_withdraw_one_coin = (
   i: number,
 ) => {
   const { N_COINS, BI_N_COINS, FEE_DENOMINATOR } = self.constants;
-  const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
+  const PRECISION_MUL = requireConstant(
+    self,
+    'PRECISION_MUL',
+    'customAvalanche3CoinLending',
+  );
   const offpeg_fee_multiplier = requireValue(
     self,
     state,
     'offpeg_fee_multiplier',
-    funcName(),
+    'customAvalanche3CoinLending',
   );
 
   if (state.totalSupply === undefined) {
     throw new Error(
-      `${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`,
+      `${self.IMPLEMENTATION_NAME} customAvalanche3CoinLending: totalSupply is not provided`,
     );
   }
 
@@ -158,7 +165,7 @@ const customFantom2CoinBtc: _calc_withdraw_one_coin = (
 ) => {
   if (state.totalSupply === undefined) {
     throw new Error(
-      `${self.IMPLEMENTATION_NAME} ${funcName()}: totalSupply is not provided`,
+      `${self.IMPLEMENTATION_NAME} customFantom2CoinBtc: totalSupply is not provided`,
     );
   }
   const result = customPlain3CoinThree(self, state, _token_amount, i);

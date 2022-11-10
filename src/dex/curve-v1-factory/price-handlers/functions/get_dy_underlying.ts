@@ -1,5 +1,4 @@
 import { BI_POWS } from '../../../../bigint-constants';
-import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
 import { get_dy_underlying, IPoolContext } from '../types';
 import { throwNotExist, requireConstant } from './utils';
@@ -13,30 +12,28 @@ const factoryV1MetaUsd: get_dy_underlying = (
 ): bigint => {
   if (state.basePoolState === undefined) {
     throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: received state with undefined basePoolState`,
+      `${self.IMPLEMENTATION_NAME} factoryV1MetaUsd: received state with undefined basePoolState`,
     );
   }
   if (self._basePool === undefined) {
     throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: received self with undefined _basePool`,
+      `${self.IMPLEMENTATION_NAME} factoryV1MetaUsd: received self with undefined _basePool`,
     );
   }
 
   const { PRECISION, FEE_DENOMINATOR } = self.constants;
-  const MAX_COIN = requireConstant(self, 'MAX_COIN', funcName());
-  const BASE_N_COINS = requireConstant(self, 'BASE_N_COINS', funcName());
+  const MAX_COIN = requireConstant(self, 'MAX_COIN', 'factoryV1MetaUsd');
+  const BASE_N_COINS = requireConstant(
+    self,
+    'BASE_N_COINS',
+    'factoryV1MetaUsd',
+  );
 
   const { basePoolState, constants } = state;
 
   if (basePoolState.virtualPrice === undefined) {
     throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: basePoolState.virtualPrice is not defined`,
+      `${self.IMPLEMENTATION_NAME} factoryV1MetaUsd: basePoolState.virtualPrice is not defined`,
     );
   }
 
@@ -123,28 +120,26 @@ const factoryMetaUsdFraxUsdc: get_dy_underlying = (
 ): bigint => {
   if (state.basePoolState === undefined) {
     throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: received state with undefined basePoolState`,
+      `${self.IMPLEMENTATION_NAME} factoryMetaUsdFraxUsdc: received state with undefined basePoolState`,
     );
   }
   if (self._basePool === undefined) {
     throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: received self with undefined _basePool`,
+      `${self.IMPLEMENTATION_NAME} factoryMetaUsdFraxUsdc: received self with undefined _basePool`,
     );
   }
 
   const { PRECISION, FEE_DENOMINATOR } = self.constants;
-  const MAX_COIN = requireConstant(self, 'MAX_COIN', funcName());
-  const BASE_N_COINS = requireConstant(self, 'BASE_N_COINS', funcName());
+  const MAX_COIN = requireConstant(self, 'MAX_COIN', 'factoryMetaUsdFraxUsdc');
+  const BASE_N_COINS = requireConstant(
+    self,
+    'BASE_N_COINS',
+    'factoryMetaUsdFraxUsdc',
+  );
 
   if (state.basePoolState.virtualPrice === undefined) {
     throw new Error(
-      `${
-        self.IMPLEMENTATION_NAME
-      } ${funcName()}: state.basePoolState.virtualPrice is not defined`,
+      `${self.IMPLEMENTATION_NAME} factoryMetaUsdFraxUsdc: state.basePoolState.virtualPrice is not defined`,
     );
   }
 

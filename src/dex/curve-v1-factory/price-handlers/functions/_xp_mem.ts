@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { funcName } from '../../../../utils';
 import { ImplementationNames } from '../../types';
 import { IPoolContext, _xp_mem } from '../types';
 import { requireConstant, throwNotExist } from './utils';
@@ -10,7 +9,7 @@ const customPlain3CoinThree: _xp_mem = (
   _balances: bigint[],
 ): bigint[] => {
   const { N_COINS, PRECISION } = self.constants;
-  const RATES = requireConstant(self, 'RATES', funcName());
+  const RATES = requireConstant(self, 'RATES', 'customPlain3CoinThree');
   const result = [...RATES];
   for (const i of _.range(Number(N_COINS))) {
     result[i] = (result[i] * _balances[i]) / PRECISION;

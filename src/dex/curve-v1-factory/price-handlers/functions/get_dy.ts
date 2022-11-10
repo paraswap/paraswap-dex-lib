@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import { ImplementationNames, PoolState } from '../../types';
-import { funcName } from '../../../../utils';
 import { get_dy, IPoolContext } from '../types';
 import { requireConstant, requireValue } from './utils';
 
@@ -49,7 +48,7 @@ const factoryV1MetaUsd: get_dy = (
 ): bigint => {
   if (state.basePoolState?.virtualPrice === undefined) {
     throw new Error(
-      `${self.IMPLEMENTATION_NAME} ${funcName}: basePoolState virtualPrice is undefined`,
+      `${self.IMPLEMENTATION_NAME} factoryV1MetaUsd: basePoolState virtualPrice is undefined`,
     );
   }
 
@@ -73,7 +72,7 @@ const customPlain3CoinThree: get_dy = (
   dx: bigint,
 ): bigint => {
   const { FEE_DENOMINATOR, PRECISION } = self.constants;
-  const RATES = requireConstant(self, 'RATES', funcName());
+  const RATES = requireConstant(self, 'RATES', 'customPlain3CoinThree');
   const rates = [...RATES];
   const xp = self._xp(self, state);
 
@@ -92,7 +91,7 @@ const customPlain2CoinFrax: get_dy = (
   dx: bigint,
 ): bigint => {
   const { FEE_DENOMINATOR, PRECISION } = self.constants;
-  const RATES = requireConstant(self, 'RATES', funcName());
+  const RATES = requireConstant(self, 'RATES', 'customPlain2CoinFrax');
   const rates = [...RATES];
   const xp = self._xp(self, state);
 
@@ -129,12 +128,16 @@ const customAvalanche3CoinLending: get_dy = (
   dx: bigint,
 ) => {
   const { N_COINS, FEE_DENOMINATOR } = self.constants;
-  const PRECISION_MUL = requireConstant(self, 'PRECISION_MUL', funcName());
+  const PRECISION_MUL = requireConstant(
+    self,
+    'PRECISION_MUL',
+    'customAvalanche3CoinLending',
+  );
   const offpeg_fee_multiplier = requireValue(
     self,
     state,
     'offpeg_fee_multiplier',
-    funcName(),
+    'customAvalanche3CoinLending',
   );
 
   const xp = [...state.balances];

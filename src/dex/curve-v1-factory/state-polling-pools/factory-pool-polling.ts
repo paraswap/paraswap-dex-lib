@@ -11,7 +11,6 @@ import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import FactoryCurveV1ABI from '../../../abi/curve-v1-factory/FactoryCurveV1.json';
 import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
-import { funcName } from '../../../utils';
 import { Address } from 'paraswap-core';
 import { BigNumber } from 'ethers';
 
@@ -90,9 +89,7 @@ export class FactoryStateHandler extends PoolPollingBase {
   ): void {
     if (!multiOutputs.every(o => o.success)) {
       this.logger.error(
-        `${this.dexKey} ${funcName()}: Some of the calls to ${
-          this.address
-        } generate state failed: `,
+        `${this.dexKey} setState: Some of the calls to ${this.address} generate state failed: `,
       );
       // No need to update with corrupted state
       return;

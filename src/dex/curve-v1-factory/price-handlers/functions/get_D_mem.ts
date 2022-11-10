@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { funcName } from '../../../../utils';
 import { ImplementationNames, PoolState } from '../../types';
 import { get_D_mem, IPoolContext } from '../types';
 import { requireConstant, throwNotExist, throwNotImplemented } from './utils';
@@ -20,7 +19,7 @@ const customPlain3CoinThree = (
   _balances: bigint[],
   amp: bigint,
 ): bigint => {
-  const RATES = requireConstant(self, 'RATES', funcName());
+  const RATES = requireConstant(self, 'RATES', 'customPlain3CoinThree');
   return self.get_D(self, self._xp_mem(self, RATES, _balances), amp);
 };
 
