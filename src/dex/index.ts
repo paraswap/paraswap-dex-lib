@@ -53,6 +53,7 @@ import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
+import { Integral } from './integral/integral';
 
 const LegacyDexes = [
   CurveV2,
@@ -103,7 +104,8 @@ const Dexes = [
   Velodrome,
   Cone,
   Synthetix,
-  SwaapV1
+  SwaapV1,
+  Integral,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
