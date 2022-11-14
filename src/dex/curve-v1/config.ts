@@ -800,6 +800,20 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: true,
           baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
         },
+        FRAX: {
+          underlying: [],
+          coins: [
+            '0x853d955aCEf822Db058eb8505911ED77F175b99e', // FRAX
+            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+          ],
+          address: '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2',
+          name: 'frax',
+          type: 1,
+          version: 3,
+          isLending: false,
+          isMetapool: false,
+          baseToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        },
       },
     },
     [Network.POLYGON]: {
