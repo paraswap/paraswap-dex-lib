@@ -200,6 +200,15 @@ export class CurveV1FactoryPoolManager {
           return false;
         }
 
+        const currentState = p.getState();
+        if (
+          currentState === null ||
+          // Pool has no liquidity
+          currentState.balances.every(b => b === 0n)
+        ) {
+          return false;
+        }
+
         const poolData = p.getPoolData(srcTokenAddress, destTokenAddress);
         if (poolData === null) {
           return false;

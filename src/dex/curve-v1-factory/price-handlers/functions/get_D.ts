@@ -3,6 +3,12 @@ import { ImplementationNames, PoolState } from '../../types';
 import { get_D, IPoolContext } from '../types';
 import { requireConstant } from './utils';
 
+/*
+ * This function get_D may be optimized further. We are doing many redundant
+ * calculations. It can be calculated once per new state and once for each implementation.
+ * Not for every request and amount
+ */
+
 const customPlain3CoinThree: get_D = (
   self: IPoolContext,
   xp: bigint[],
