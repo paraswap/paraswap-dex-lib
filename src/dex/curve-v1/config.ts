@@ -762,25 +762,25 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         },
-        cyPool: {
-          underlying: [
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-            '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-          ],
-          coins: [
-            '0x8e595470Ed749b85C6F7669de83EAe304C2ec68F',
-            '0x76Eb2FE28b36B3ee97F3Adae0C69606eeDB2A37c',
-            '0x48759F220ED983dB51fA7A8C0D2AAb8f3ce4166a',
-          ],
-          address: '0x2dded6Da1BF5DBdF597C45fcFaa3194e53EcfeAF',
-          name: 'cyDAI/cyUSDT/cyUSDC',
-          type: 2,
-          version: 3,
-          isLending: true,
-          isMetapool: false,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
+        // cyPool: {
+        //   underlying: [
+        //     '0x6b175474e89094c44da98b954eedeac495271d0f',
+        //     '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        //     '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        //   ],
+        //   coins: [
+        //     '0x8e595470Ed749b85C6F7669de83EAe304C2ec68F',
+        //     '0x76Eb2FE28b36B3ee97F3Adae0C69606eeDB2A37c',
+        //     '0x48759F220ED983dB51fA7A8C0D2AAb8f3ce4166a',
+        //   ],
+        //   address: '0x2dded6Da1BF5DBdF597C45fcFaa3194e53EcfeAF',
+        //   name: 'cyDAI/cyUSDT/cyUSDC',
+        //   type: 2,
+        //   version: 3,
+        //   isLending: true,
+        //   isMetapool: false,
+        //   baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
+        // },
         rai: {
           underlying: [
             '0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919',
