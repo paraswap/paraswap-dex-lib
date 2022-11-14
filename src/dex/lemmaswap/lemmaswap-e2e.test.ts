@@ -139,10 +139,10 @@ describe('Lemmaswap E2E', () => {
     const network = Network.OPTIMISM;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'ETH';
+    const tokenASymbol: string = 'WETH';
     const tokenBSymbol: string = 'USDC';
 
-    const ethAmount = '1000000000000000';
+    const ethAmount = '2000000000000000';
     const usdcAmount = '10000000';
 
     const tokens = Tokens[network];

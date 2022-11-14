@@ -12,7 +12,6 @@ export type LemmaswapData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
-  exchange: Address;
 };
 
 export type DexParams = {
