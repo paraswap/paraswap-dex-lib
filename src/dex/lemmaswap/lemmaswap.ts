@@ -230,7 +230,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
 
     return [
       {
-        prices: prices.slice(1),
+        prices: prices,
         unit: amounts[0],
         gasCost: LemmaSwapGasCost,
         exchange: this.dexKey,
@@ -247,31 +247,33 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     amounts: bigint[],
   ): Promise<any[] | null> {
     if (!amounts) return null;
-    return amounts.map(async amount => {
-      if (amount.toString() == '0') {
-        return 0n;
-      } else {
-        const rawResult = await this.opt_provider.send('eth_call', [
-          await forwarder.populateTransaction.getAmountsOut(
-            this.WETH_WHALE_WALLET,
-            this.LemmaSwapAddress,
-            amount,
-            [srcToken, destToken],
-          ),
-          'pending',
-          {
-            [forwarder.address]: {
-              code: FORWARDER_ARTIFACT.deployedBytecode.object,
+    return await Promise.all(
+      amounts.map(async amount => {
+        if (amount.toString() == '0') return 0n;
+        {
+          const rawResult = await this.opt_provider.send('eth_call', [
+            await forwarder.populateTransaction.getAmountsOut(
+              this.WETH_WHALE_WALLET,
+              this.LemmaSwapAddress,
+              amount,
+              [srcToken, destToken],
+            ),
+            'pending',
+            {
+              [forwarder.address]: {
+                code: FORWARDER_ARTIFACT.deployedBytecode.object,
+              },
+              [this.WETH_WHALE_WALLET]: {
+                code: WALLET_ARTIFACT.deployedBytecode.object,
+              },
             },
-            [this.WETH_WHALE_WALLET]: {
-              code: WALLET_ARTIFACT.deployedBytecode.object,
-            },
-          },
-        ]);
-        const amountOut = await coder.decode(['uint256[]'], rawResult)[0];
-        return amountOut;
-      }
-    });
+          ]);
+          const amountOut = coder.decode(['uint256[]'], rawResult)[0];
+          console.log('amountOut: ', amountOut[1].toString());
+          return amountOut[1].toString();
+        }
+      }),
+    );
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
