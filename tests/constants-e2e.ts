@@ -31,6 +31,10 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
       decimals: 18,
     },
+    wstETH: {
+      address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
+      decimals: 18,
+    },
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
@@ -642,6 +646,7 @@ export const Holders: {
     WBTC: '0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
+    wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',
     WETH: '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8',
     USDT: '0x5754284f345afc66a98fbb0a0afe71e0f007b949',
     XAUT: '0xc4e161e8d8a4bc4ac762ab33a28bbac5474203d7',
