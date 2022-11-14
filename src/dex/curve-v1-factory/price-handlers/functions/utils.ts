@@ -4,6 +4,7 @@ import {
   PoolState,
 } from '../../types';
 import { IPoolContext } from '../types';
+import curveV1FactoryNodeCache from '../../curve-v1-factory-node-cache';
 
 export const throwNotExist = (
   funcName: string,
@@ -53,4 +54,19 @@ export const requireValue = <T extends keyof PoolState>(
 
   // Proper typing is not working. I do not know why :(
   return value as NonNullable<PoolState[T]>;
+};
+
+export const getCachedValueOrCallFunc = <T>(
+  key: string,
+  // Function must be already bounded by any args you want to use
+  func: () => T,
+): T => {
+  const cached = curveV1FactoryNodeCache.get<T>(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const calculated = func();
+  curveV1FactoryNodeCache.set(key, calculated);
+  return calculated;
 };

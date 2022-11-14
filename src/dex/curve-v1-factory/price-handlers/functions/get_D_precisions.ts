@@ -1,7 +1,11 @@
 import _ from 'lodash';
 import { ImplementationNames } from '../../types';
 import { get_D_precisions, IPoolContext } from '../types';
-import { requireConstant, throwNotExist } from './utils';
+import {
+  getCachedValueOrCallFunc,
+  requireConstant,
+  throwNotExist,
+} from './utils';
 
 const customAvalanche3CoinLending: get_D_precisions = (
   self: IPoolContext,
@@ -29,6 +33,21 @@ const notExist: get_D_precisions = (
   return throwNotExist('get_D_precisions', self.IMPLEMENTATION_NAME);
 };
 
+const makeFuncCacheable = (func: get_D_precisions): get_D_precisions => {
+  return (self: IPoolContext, coin_balances: bigint[], amp: bigint) => {
+    const cacheKey =
+      `get_D_precisions-` +
+      `PRECISION_MUL:${self.constants.PRECISION_MUL?.join(',')}` +
+      `coin_balances:${coin_balances.join(',')}-` +
+      `amp:${amp}`;
+
+    return getCachedValueOrCallFunc(
+      cacheKey,
+      func.bind(undefined, self, coin_balances, amp),
+    );
+  };
+};
+
 const implementations: Record<ImplementationNames, get_D_precisions> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: notExist,
@@ -38,20 +57,24 @@ const implementations: Record<ImplementationNames, get_D_precisions> = {
   [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: notExist,
   [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: notExist,
 
-  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]:
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: makeFuncCacheable(
     customAvalanche3CoinLending,
+  ),
 
   [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: notExist,
   [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: notExist,
-  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]:
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: makeFuncCacheable(
     customAvalanche3CoinLending,
+  ),
 
   [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: notExist,
 
-  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]:
+  [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]: makeFuncCacheable(
     customAvalanche3CoinLending,
-  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]:
+  ),
+  [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]: makeFuncCacheable(
     customAvalanche3CoinLending,
+  ),
 
   [ImplementationNames.FACTORY_V1_META_BTC]: notExist,
   [ImplementationNames.FACTORY_V1_META_USD]: notExist,

@@ -20,7 +20,7 @@ const customPlain3CoinThree = (
   amp: bigint,
 ): bigint => {
   const RATES = requireConstant(self, 'RATES', 'customPlain3CoinThree');
-  return self.get_D(self, self._xp_mem(self, RATES, _balances), amp);
+  return self.get_D(self, self._xp_mem(self, [...RATES], _balances), amp);
 };
 
 const customPlain3CoinSbtc = (

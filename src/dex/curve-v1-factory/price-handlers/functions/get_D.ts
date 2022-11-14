@@ -1,7 +1,7 @@
 import _ from 'lodash';
-import { ImplementationNames, PoolState } from '../../types';
+import { ImplementationNames } from '../../types';
 import { get_D, IPoolContext } from '../types';
-import { requireConstant } from './utils';
+import { getCachedValueOrCallFunc, requireConstant } from './utils';
 
 /*
  * This function get_D may be optimized further. We are doing many redundant
@@ -203,60 +203,110 @@ const customAvalanche3CoinLending: get_D = (
   );
 };
 
+const makeFuncCacheable = (func: get_D): get_D => {
+  return (self: IPoolContext, xp: bigint[], amp: bigint) => {
+    const cacheKey =
+      `get_D-` +
+      `A_PRECISION:${self.constants.A_PRECISION?.toString()}` +
+      `xp:${xp.join(',')}-` +
+      `amp:${amp}`;
+
+    return getCachedValueOrCallFunc(
+      cacheKey,
+      func.bind(undefined, self, xp, amp),
+    );
+  };
+};
+
 const implementations: Record<ImplementationNames, get_D> = {
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
-  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
-  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: makeFuncCacheable(
+    customPlain3CoinThree,
+  ),
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: makeFuncCacheable(
+    customPlain3CoinThree,
+  ),
+  [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: makeFuncCacheable(
+    customPlain3CoinThree,
+  ),
 
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]: factoryPlain2Basic,
-  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]: factoryPlain2Basic,
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_BTC]:
+    makeFuncCacheable(factoryPlain2Basic),
+  [ImplementationNames.CUSTOM_ARBITRUM_2COIN_USD]:
+    makeFuncCacheable(factoryPlain2Basic),
 
-  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]:
+  [ImplementationNames.CUSTOM_AVALANCHE_3COIN_LENDING]: makeFuncCacheable(
     customAvalanche3CoinLending,
+  ),
 
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]: customPlain2CoinFrax,
-  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]: customPlain2CoinFrax,
-  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]:
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_BTC]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.CUSTOM_FANTOM_2COIN_USD]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.CUSTOM_FANTOM_3COIN_LENDING]: makeFuncCacheable(
     customAvalanche3CoinLending,
+  ),
 
-  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]: customPlain2CoinFrax,
+  [ImplementationNames.CUSTOM_OPTIMISM_3COIN_USD]:
+    makeFuncCacheable(customPlain2CoinFrax),
 
   [ImplementationNames.CUSTOM_POLYGON_2COIN_LENDING]:
     customAvalanche3CoinLending,
   [ImplementationNames.CUSTOM_POLYGON_3COIN_LENDING]:
     customAvalanche3CoinLending,
 
-  [ImplementationNames.FACTORY_V1_META_BTC]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_V1_META_USD]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_V1_META_BTC]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_V1_META_USD]:
+    makeFuncCacheable(customPlain2CoinFrax),
 
-  [ImplementationNames.FACTORY_META_BTC]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_BTC_BALANCES]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_META_BTC_BALANCES]:
+    makeFuncCacheable(customPlain2CoinFrax),
 
-  [ImplementationNames.FACTORY_META_BTC_REN]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_BTC_BALANCES_REN]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC_REN]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_REN]:
+    makeFuncCacheable(customPlain2CoinFrax),
 
-  [ImplementationNames.FACTORY_META_USD]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_META_USD_BALANCES]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_USD]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_META_USD_BALANCES]:
+    makeFuncCacheable(customPlain2CoinFrax),
 
-  [ImplementationNames.FACTORY_META_USD_FRAX_USDC]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_USD_FRAX_USDC]:
+    makeFuncCacheable(customPlain2CoinFrax),
   [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]:
-    customPlain2CoinFrax,
+    makeFuncCacheable(customPlain2CoinFrax),
 
-  [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: factoryPlain2Basic,
-  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: factoryPlain2Basic,
-  [ImplementationNames.FACTORY_PLAIN_2_ETH]: factoryPlain2Basic,
-  [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_BALANCES]:
+    makeFuncCacheable(factoryPlain2Basic),
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]:
+    makeFuncCacheable(factoryPlain2Basic),
+  [ImplementationNames.FACTORY_PLAIN_2_ETH]:
+    makeFuncCacheable(factoryPlain2Basic),
+  [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]:
+    makeFuncCacheable(factoryPlain2Basic),
 
-  [ImplementationNames.FACTORY_PLAIN_3_BALANCES]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_3_BASIC]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_3_ETH]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_3_OPTIMIZED]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_3_BALANCES]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_PLAIN_3_BASIC]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_PLAIN_3_ETH]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_PLAIN_3_OPTIMIZED]:
+    makeFuncCacheable(customPlain2CoinFrax),
 
-  [ImplementationNames.FACTORY_PLAIN_4_BALANCES]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_4_BASIC]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_4_ETH]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_4_BALANCES]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_PLAIN_4_BASIC]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_PLAIN_4_ETH]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]:
+    makeFuncCacheable(customPlain2CoinFrax),
 };
 
 export default implementations;
