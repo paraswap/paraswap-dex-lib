@@ -153,28 +153,6 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     // return [];
   }
 
-  // async getAmountsOut(
-  //   fromAmount: any,
-  //   path: any,
-  //   whale: any
-  // ): Promise<number[] | null> {
-  //   const provider: any = this.dexHelper.web3Provider;
-  //   const forwarder = new ethers.Contract(this.FORWARDER_ADDRESS, FORWARDER_ARTIFACT.abi, provider);
-  //   const rawResult = await provider.send(
-  //       'eth_call',
-  //       [
-  //           await forwarder.populateTransaction.getAmountsOut(whale, this.LemmaSwapAddress, fromAmount, path),
-  //           'pending',
-  //           {
-  //               [forwarder.address]: { code: FORWARDER_ARTIFACT.deployedBytecode.object },
-  //               [whale]: { code: WALLET_ARTIFACT.deployedBytecode.object }
-  //           },
-  //       ],
-  //   );
-  //   const amountsOut = ethers.utils.defaultAbiCoder.decode(['uint256[]'], rawResult)[0];
-  //   return [fromAmount, amountsOut];
-  // };
-
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
@@ -187,22 +165,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<LemmaswapData>> {
-    console.log('getPricesVolume----++');
-    // const prices = this.getAmountsOut(
-    //   amounts[0],
-    //   [srcToken, destToken],
-    //   WETH_WHALE_WALLET,
-    // );
-    // if (!prices) return null;
-    // const num = prices.slice(1)
-    // console.log('getPricesVolume----++??', this.FORWARDER_ADDRESS);
-    // this.FORWARDER_ADDRESS = ethers.utils.hexlify(crypto.randomBytes(20));
-    // this.FORWARDER_ADDRESS = this.dexHelper.web3Provider.utils.randomHex(20);
     console.log('getPricesVolume----++', this.FORWARDER_ADDRESS);
-
-    const provider: any = this.dexHelper.web3Provider;
-    console.log('getPricesVolume----++', this.FORWARDER_ADDRESS);
-    // const forwarder = new ethers.Contract(this.FORWARDER_ADDRESS, FORWARDER_ARTIFACT.abi, provider);
     const forwarder = new Contract(
       this.FORWARDER_ADDRESS,
       FORWARDER_ARTIFACT.abi,
