@@ -14,7 +14,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
   CurveV1Factory: {
     [Network.MAINNET]: {
       factoryAddress: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
-      stateUpdatePeriodMs: 5 * 1000,
+      stateUpdatePeriodMs: 300 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
       factoryPoolImplementations: {
@@ -154,7 +154,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.POLYGON]: {
       factoryAddress: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
-      stateUpdatePeriodMs: 2 * 1000,
+      stateUpdatePeriodMs: 300 * 1000,
       disabledPools: new Set([
         '0x666Dc3b4baBfd063FaF965BD020024AF0dC51B64',
         '0x88C4D6534165510b2E2CAF0A130d4F70aA4B6d71',
@@ -258,7 +258,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.FANTOM]: {
       factoryAddress: '0x686d67265703D1f124c45E33d47d794c566889Ba',
-      stateUpdatePeriodMs: 2 * 1000,
+      stateUpdatePeriodMs: 300 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
       factoryPoolImplementations: {
@@ -370,7 +370,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.AVALANCHE]: {
       factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
-      stateUpdatePeriodMs: 2 * 1000,
+      stateUpdatePeriodMs: 300 * 1000,
       // FIX: This must be removed when we go for full CurveV1 event based support
       disabledPools: new Set(['0x16a7da911a4dd1d83f3ff066fe28f3c792c50d90']),
       disabledImplementations: new Set([
@@ -467,7 +467,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.ARBITRUM]: {
       factoryAddress: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
-      stateUpdatePeriodMs: 2 * 1000,
+      stateUpdatePeriodMs: 300 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
       factoryPoolImplementations: {
@@ -579,7 +579,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     },
     [Network.OPTIMISM]: {
       factoryAddress: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
-      stateUpdatePeriodMs: 2 * 1000,
+      stateUpdatePeriodMs: 300 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
       factoryPoolImplementations: {

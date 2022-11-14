@@ -638,6 +638,10 @@ export class CurveV1Factory
         return null;
       }
 
+      this.logger.info(
+        `${this.dexKey}: Used ${pools.length} pools for pricing`,
+      );
+
       if (pools.length > 10) {
         // I expect this to not happen
         this.logger.warn(
