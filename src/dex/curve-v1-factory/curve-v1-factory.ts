@@ -638,6 +638,13 @@ export class CurveV1Factory
         return null;
       }
 
+      if (pools.length > 10) {
+        // I expect this to not happen
+        this.logger.warn(
+          `${this.dexKey}: There are more than 10 pools found for pair: ${srcTokenAddress}-${destTokenAddress}`,
+        );
+      }
+
       const amountsWithUnit = [
         getBigIntPow(srcToken.decimals),
         ...amounts.slice(1),

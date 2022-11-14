@@ -115,7 +115,14 @@ export abstract class PoolPollingBase {
       const iU = this.underlyingCoinsToIndices[srcAddress];
       const jU = this.underlyingCoinsToIndices[destAddress];
 
-      if (iU !== undefined && jU !== undefined) {
+      // For metapool we want to consider exchange only if either of coins
+      // src or dest are using 0 index (mixed exchange between meta and base pool)
+      // If both of them > 0, then it is just ordinary pool and we shouldn't consider
+      // this pool for exchange. Otherwise, we will have many duplicates for common pools
+      // like ThreePool, where almost every pool will have USDT/DAI/USDC as there basis pool
+      // While in current implementation we have customPools excluded from pricing,
+      // I expect them to be included in old CurveV1 implementation
+      if (iU !== undefined && jU !== undefined && !(iU > 0 && jU > 0)) {
         return {
           exchange: this.address,
           i: iU,
