@@ -262,7 +262,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
       destToken.address,
       amounts,
     );
-    console.log('prices+++**:', prices);
+    console.log('prices:', prices);
     if (!prices) return null;
 
     return [
@@ -284,17 +284,10 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     amounts: bigint[],
   ): Promise<any[] | null> {
     if (!amounts) return null;
-    console.log('Hiq110');
-    // let amountsOut: bigint[] | null
     return amounts.map(async amount => {
-      // for ( var i = 0; i < amounts.length; i++) {
       if (amount.toString() == '0') {
-        // console.log('hi1', i);
-        // amountsOut[i] = BigInt(0);
-        // continue;
         return 0n;
       } else {
-        // console.log('hi2', i);
         const rawResult = await this.opt_provider.send('eth_call', [
           await forwarder.populateTransaction.getAmountsOut(
             this.WETH_WHALE_WALLET,
@@ -314,14 +307,8 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
         ]);
         const amountOut = await coder.decode(['uint256[]'], rawResult)[0];
         return amountOut;
-        // amountsOut[i] = await coder.decode(['uint256[]'], rawResult)[0];
       }
-      // return amountsOut;
-      // }
     });
-    // console.log('Hiq11');
-    // if (!amountsOut) return null;
-    // return amountsOut;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
