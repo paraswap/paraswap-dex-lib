@@ -139,6 +139,7 @@ describe('Lemmaswap E2E', () => {
     const network = Network.OPTIMISM;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
+    const nativeTokenSymbol: string = 'ETH';
     const tokenASymbol: string = 'WETH';
     const tokenBSymbol: string = 'USDC';
 
@@ -151,13 +152,13 @@ describe('Lemmaswap E2E', () => {
       generateConfig(network).privateHttpProvider,
       network,
     );
-
-    const ethToken = tokens[tokenASymbol];
+    const nativeToken = tokens[nativeTokenSymbol];
+    const wethToken = tokens[tokenASymbol];
     const usdcToken = tokens[tokenBSymbol];
 
-    const ethHolder = holders[tokenASymbol];
-    const wethHolder = '0xD9a1Ed9AAC149bf9bD655F9b9DdECF9bD04316b3';
+    const ethHolder = holders[nativeTokenSymbol];
     const usdcHolder = holders[tokenBSymbol];
+    const wethHolder = '0xD9a1Ed9AAC149bf9bD655F9b9DdECF9bD04316b3';
 
     // testForNetwork(
     //   network,
@@ -175,9 +176,37 @@ describe('Lemmaswap E2E', () => {
       const contractMethod = ContractMethod.simpleSwap;
       const side = SwapSide.SELL;
 
+      it('ETH -> USDC', async () => {
+        await testE2E(
+          nativeToken,
+          usdcToken,
+          ethHolder,
+          ethAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> ETH', async () => {
+        await testE2E(
+          usdcToken,
+          nativeToken,
+          usdcHolder,
+          usdcAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+
       it('WETH -> USDC', async () => {
         await testE2E(
-          ethToken,
+          wethToken,
           usdcToken,
           wethHolder,
           ethAmount,
@@ -192,7 +221,7 @@ describe('Lemmaswap E2E', () => {
       it('USDC -> WETH', async () => {
         await testE2E(
           usdcToken,
-          ethToken,
+          wethToken,
           usdcHolder,
           usdcAmount,
           side,

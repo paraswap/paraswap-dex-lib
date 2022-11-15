@@ -1,8 +1,5 @@
-import ethers, { Contract } from 'ethers';
-import crypto from 'crypto';
-import whaleWallets from './whaleWallets.json';
+import { Contract } from 'ethers';
 import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
-
 import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
@@ -23,7 +20,6 @@ import { LemmaswapData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { LemmaswapConfig, Adapters } from './config';
 import { LemmaswapEventPool } from './lemmaswap-pool';
-import erc20ABI from '../../abi/erc20.json';
 import lemmaSwapABI from '../../abi/lemmaswap/LemmaSwap.json';
 import FORWARDER_ARTIFACT from '../../abi/lemmaswap/withByteCode/LemmaSwapForwarder.json';
 import WALLET_ARTIFACT from '../../abi/lemmaswap/withByteCode/UnlockedWallet.json';
@@ -31,11 +27,22 @@ import WALLET_ARTIFACT from '../../abi/lemmaswap/withByteCode/UnlockedWallet.jso
 const LemmaSwapGasCost = 80 * 1000;
 const coder = new AbiCoder();
 
+export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
+  [Network.OPTIMISM]: {
+    WETH: {
+      address: '0x4200000000000000000000000000000000000006',
+      decimals: 18,
+    },
+  },
+};
+
 const tokenToWhales: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.OPTIMISM]: {
-    // USDC WBTC WETH LINK AAVE CRV PERP ==> whaleaddresses
+    // ETH USDC WBTC WETH LINK AAVE CRV PERP ==> whaleaddresses
+    '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
+      '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
     '0x7F5c764cBc14f9669B88837ca1490cCa17c31607':
       '0x85149247691df622eaF1a8Bd0CaFd40BC45154a9',
     '0x68f180fcce6836688e9084f035309e29bf0a2095':
@@ -60,7 +67,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
 
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
 
@@ -71,6 +78,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
   public FORWARDER_ADDRESS: Address;
   public LemmaSwapAddress: Address;
   public opt_provider: any;
+  public ETHER_ADDRESS: any;
 
   logger: Logger;
 
@@ -85,6 +93,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     this.lemmaswap = new Interface(lemmaSwapABI.abi);
     this.FORWARDER_ADDRESS = this.dexHelper.web3Provider.utils.randomHex(20);
     this.LemmaSwapAddress = '0x6B283Cbcd24fdF67E1C4E23d28815C2607eEfE29';
+    this.ETHER_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
     this.opt_provider = this.dexHelper.provider;
     // this.eventPools = new LemmaswapEventPool(
     //   dexKey,
@@ -118,10 +127,13 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    const from = this.dexHelper.config.wrapETH(srcToken);
+    let from: any;
+    if (srcToken.address != this.ETHER_ADDRESS) {
+      from = this.dexHelper.config.wrapETH(srcToken);
+    } else {
+      from = srcToken;
+    }
     const to = this.dexHelper.config.wrapETH(destToken);
-
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];
     }
@@ -166,7 +178,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
         gasCost: LemmaSwapGasCost,
         exchange: this.dexKey,
         data: {},
-        poolAddresses: [], // TODO SUNNY
+        poolAddresses: [this.LemmaSwapAddress],
       },
     ];
   }
@@ -178,7 +190,20 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     amounts: bigint[],
   ): Promise<BigInt[] | null> {
     if (!amounts) return null;
-    const tokensToWhales = tokenToWhales[Network.OPTIMISM][srcToken.toString()];
+    let _srcToken: string;
+    let _destToken: string;
+    if (srcToken == this.ETHER_ADDRESS) {
+      _srcToken = Tokens[Network.OPTIMISM]['WETH'].address;
+      _destToken = destToken.toString();
+    } else if (destToken == this.ETHER_ADDRESS) {
+      _srcToken = srcToken.toString();
+      _destToken = Tokens[Network.OPTIMISM]['WETH'].address;
+    } else {
+      _srcToken = srcToken.toString();
+      _destToken = destToken.toString();
+    }
+
+    const tokensToWhales = tokenToWhales[Network.OPTIMISM][_srcToken];
     return await Promise.all(
       amounts.map(async amount => {
         if (amount.toString() == '0') return 0n;
@@ -188,7 +213,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
               tokensToWhales,
               this.LemmaSwapAddress,
               amount,
-              [srcToken, destToken],
+              [_srcToken, _destToken],
             ),
             'pending',
             {
@@ -224,8 +249,6 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     data: LemmaswapData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-
     // Encode here the payload for adapter
     const payload = '';
 
@@ -248,21 +271,35 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     data: LemmaswapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    // const { exchange } = data;
     const deadline = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
-
     // Encode here the transaction arguments
-    const swapData = this.lemmaswap.encodeFunctionData(
-      'swapExactTokensForTokens',
-      [
+    let swapData;
+    if (srcToken == this.ETHER_ADDRESS) {
+      const weth = Tokens[Network.OPTIMISM]['WETH'];
+      swapData = this.lemmaswap.encodeFunctionData('swapExactETHForTokens', [
+        destAmount,
+        [weth.address, destToken],
+        this.augustusAddress,
+        deadline,
+      ]);
+    } else if (destToken == this.ETHER_ADDRESS) {
+      const weth = Tokens[Network.OPTIMISM]['WETH'];
+      swapData = this.lemmaswap.encodeFunctionData('swapExactTokensForETH', [
+        srcAmount,
+        destAmount,
+        [srcToken, weth.address],
+        this.augustusAddress,
+        deadline,
+      ]);
+    } else {
+      swapData = this.lemmaswap.encodeFunctionData('swapExactTokensForTokens', [
         srcAmount,
         destAmount,
         [srcToken, destToken],
         this.augustusAddress,
         deadline,
-      ],
-    );
+      ]);
+    }
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
