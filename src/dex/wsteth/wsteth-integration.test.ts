@@ -191,13 +191,11 @@ describe('wstETH', function () {
       );
       console.log(`${stETHTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newWstETH.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][stETHTokenSymbol].address,
-          dexKey,
-        );
-      }
+      checkPoolsLiquidity(
+        poolLiquidity,
+        Tokens[network][stETHTokenSymbol].address,
+        dexKey,
+      );
     });
   });
 });
