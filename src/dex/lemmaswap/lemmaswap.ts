@@ -36,6 +36,22 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
   },
 };
 
+export const SupportedTokens: {
+  [network: number]: { [symbol: string]: boolean };
+} = {
+  [Network.OPTIMISM]: {
+    '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE': true,
+    '0x7F5c764cBc14f9669B88837ca1490cCa17c31607': true,
+    '0x68f180fcce6836688e9084f035309e29bf0a2095': true,
+    '0x4200000000000000000000000000000000000006': true,
+    '0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6': true,
+    '0x76FB31fb4af56892A25e32cFC43De717950c9278': true,
+    '0x0994206dfe8de6ec6920ff4d779b0d950605fb53': true,
+    '0x9e1028F5F1D5eDE59748FFceE5532509976840E0': true,
+    '0x96F2539d3684dbde8B3242A51A73B66360a5B541': true,
+  },
+};
+
 const tokenToWhales: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
@@ -44,12 +60,12 @@ const tokenToWhales: {
     '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
       '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
     '0x7F5c764cBc14f9669B88837ca1490cCa17c31607':
-      '0x85149247691df622eaF1a8Bd0CaFd40BC45154a9',
+      '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     '0x68f180fcce6836688e9084f035309e29bf0a2095':
       '0x078f358208685046a11c85e8ad32895ded33a249',
     '0x4200000000000000000000000000000000000006':
       '0x85149247691df622eaF1a8Bd0CaFd40BC45154a9',
-    '0x350a791bfc2c21f9ed5d10980dad2e2638ffa7f6':
+    '0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6':
       '0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530',
     '0x76FB31fb4af56892A25e32cFC43De717950c9278':
       '0xf329e36c7bf6e5e86ce2150875a84ce77f477375',
@@ -57,6 +73,8 @@ const tokenToWhales: {
       '0x9644a6920bd0a1923c2c6c1dddf691b7a42e8a65',
     '0x9e1028F5F1D5eDE59748FFceE5532509976840E0':
       '0xd360b73b19fb20ac874633553fb1007e9fcb2b78',
+    '0x96F2539d3684dbde8B3242A51A73B66360a5B541':
+      '0x0f3BF5c241B6625C0fA781ED137fDe6786b2e66f',
   },
 };
 
@@ -66,7 +84,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
   // protected eventPools: LemmaswapEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
+
   readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
@@ -86,7 +104,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
     this.logger = dexHelper.getLogger(dexKey);
@@ -107,9 +125,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
-  }
+  async initializePricing(blockNumber: number) {}
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -158,29 +174,37 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<LemmaswapData>> {
-    const forwarder = new Contract(
-      this.FORWARDER_ADDRESS,
-      FORWARDER_ARTIFACT.abi,
-    );
+    let isSrcToken: boolean = false;
+    let isDestToken: boolean = false;
+    isSrcToken = SupportedTokens[Network.OPTIMISM][srcToken.address];
+    isDestToken = SupportedTokens[Network.OPTIMISM][srcToken.address];
+    if (isSrcToken && isDestToken) {
+      const forwarder = new Contract(
+        this.FORWARDER_ADDRESS,
+        FORWARDER_ARTIFACT.abi,
+      );
 
-    const prices: any = await this.getAmountOut(
-      forwarder,
-      srcToken.address,
-      destToken.address,
-      amounts,
-    );
-    if (!prices) return null;
+      const prices: any = await this.getAmountOut(
+        forwarder,
+        srcToken.address,
+        destToken.address,
+        amounts,
+      );
+      if (!prices) return null;
 
-    return [
-      {
-        prices: prices,
-        unit: amounts[0],
-        gasCost: LemmaSwapGasCost,
-        exchange: this.dexKey,
-        data: {},
-        poolAddresses: [this.LemmaSwapAddress],
-      },
-    ];
+      return [
+        {
+          prices: prices,
+          unit: amounts[0],
+          gasCost: LemmaSwapGasCost,
+          exchange: this.dexKey,
+          data: {},
+          poolAddresses: [this.LemmaSwapAddress],
+        },
+      ];
+    }
+    // Tokens is not supported if null returns.
+    return null;
   }
 
   async getAmountOut(
@@ -234,7 +258,6 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<LemmaswapData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -316,9 +339,7 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
   // update common state required for calculating
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
+  async updatePoolState(): Promise<void> {}
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
@@ -326,13 +347,10 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
     return [];
   }
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
+  releaseResources(): AsyncOrSync<void> {}
 }
