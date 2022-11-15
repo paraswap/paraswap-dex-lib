@@ -18,6 +18,7 @@ import { WstETHData, PoolState, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WstETHConfig, Adapters } from './config';
 import { uintDecode } from '../../lib/decoders';
+import { Utils } from '../../utils';
 import WSTETH_ABI from '../../abi/wstETH.json';
 import STETH_ABI from '../../abi/stETH.json';
 
@@ -39,8 +40,8 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
 
   logger: Logger;
 
-  private stateBlockNumber: number = 0;
-  private state: PoolState = {
+  private state: { blockNumber: number } & PoolState = {
+    blockNumber: 0,
     totalPooledEther: 0n,
     totalShares: 0n,
   };
@@ -120,29 +121,48 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
     }
     const wrap = srcTokenAddress === this.config.stETHAddress;
 
-    if (blockNumber > this.stateBlockNumber) {
-      const calls = [
-        {
-          target: this.config.stETHAddress,
-          callData: WstETH.stETHIface.encodeFunctionData('getTotalPooledEther'),
-          decodeFunction: uintDecode,
-        },
-        {
-          target: this.config.stETHAddress,
-          callData: WstETH.stETHIface.encodeFunctionData('getTotalShares'),
-          decodeFunction: uintDecode,
-        },
-      ];
-      const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-        true,
-        calls,
-        blockNumber,
+    if (blockNumber > this.state.blockNumber) {
+      const cached = await this.dexHelper.cache.get(
+        this.dexKey,
+        this.network,
+        'state',
       );
-      this.stateBlockNumber = blockNumber;
-      this.state = {
-        totalPooledEther: results[0].returnData,
-        totalShares: results[1].returnData,
-      };
+      if (cached) {
+        this.state = Utils.Parse(cached);
+      }
+      if (blockNumber > this.state.blockNumber) {
+        const calls = [
+          {
+            target: this.config.stETHAddress,
+            callData: WstETH.stETHIface.encodeFunctionData(
+              'getTotalPooledEther',
+            ),
+            decodeFunction: uintDecode,
+          },
+          {
+            target: this.config.stETHAddress,
+            callData: WstETH.stETHIface.encodeFunctionData('getTotalShares'),
+            decodeFunction: uintDecode,
+          },
+        ];
+        const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+          true,
+          calls,
+          blockNumber,
+        );
+        this.state = {
+          blockNumber,
+          totalPooledEther: results[0].returnData,
+          totalShares: results[1].returnData,
+        };
+        this.dexHelper.cache.setex(
+          this.dexKey,
+          this.network,
+          'state',
+          60,
+          Utils.Serialize(this.state),
+        );
+      }
     }
 
     const calc = wrap ? this.calcWrap : this.calcUnwrap;
