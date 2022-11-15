@@ -49,7 +49,7 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     const config = WstETHConfig[dexKey][network];
