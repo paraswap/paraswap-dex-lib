@@ -142,7 +142,7 @@ describe('Lemmaswap E2E', () => {
     const tokenASymbol: string = 'WETH';
     const tokenBSymbol: string = 'USDC';
 
-    const ethAmount = '2000000000000000';
+    const ethAmount = '1000000000000000';
     const usdcAmount = '10000000';
 
     const tokens = Tokens[network];
@@ -156,6 +156,7 @@ describe('Lemmaswap E2E', () => {
     const usdcToken = tokens[tokenBSymbol];
 
     const ethHolder = holders[tokenASymbol];
+    const wethHolder = '0xD9a1Ed9AAC149bf9bD655F9b9DdECF9bD04316b3';
     const usdcHolder = holders[tokenBSymbol];
 
     // testForNetwork(
@@ -168,19 +169,17 @@ describe('Lemmaswap E2E', () => {
     //   nativeTokenAmount,
     // );
 
-    it('Hi', async () => {});
-
     // TODO: Add any additional test cases required to test Lemmaswap
 
     describe('SimpleSwap SELL', () => {
       const contractMethod = ContractMethod.simpleSwap;
       const side = SwapSide.SELL;
 
-      it('ETH -> USDC', async () => {
+      it('WETH -> USDC', async () => {
         await testE2E(
           ethToken,
           usdcToken,
-          ethHolder,
+          wethHolder,
           ethAmount,
           side,
           dexKey,
@@ -189,19 +188,20 @@ describe('Lemmaswap E2E', () => {
           provider,
         );
       });
-      //   it('wrapped -> native', async () => {
-      //     // await testE2E(
-      //     //   wrappedToken,
-      //     //   nativeToken,
-      //     //   wrappedHolder,
-      //     //   wrappedAmount,
-      //     //   side,
-      //     //   dexKey,
-      //     //   contractMethod,
-      //     //   network,
-      //     //   provider,
-      //     // );
-      //   });
+
+      it('USDC -> WETH', async () => {
+        await testE2E(
+          usdcToken,
+          ethToken,
+          usdcHolder,
+          usdcAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
     });
   });
 });

@@ -27,44 +27,31 @@ import erc20ABI from '../../abi/erc20.json';
 import lemmaSwapABI from '../../abi/lemmaswap/LemmaSwap.json';
 import FORWARDER_ARTIFACT from '../../abi/lemmaswap/withByteCode/LemmaSwapForwarder.json';
 import WALLET_ARTIFACT from '../../abi/lemmaswap/withByteCode/UnlockedWallet.json';
-import { Provider } from '@ethersproject/providers';
 
 const LemmaSwapGasCost = 80 * 1000;
 const coder = new AbiCoder();
 
-// const LemmaSwapAddress = "0x6B283Cbcd24fdF67E1C4E23d28815C2607eEfE29";
-// const optimismProvider = process.env.HTTP_PROVIDER_10;//weirdly for infura as a provider it doesn't work for optimism kovan, try it with an alchemy provider
-// const provider = ethers.getDefaultProvider(optimismProvider);
-// const lemmaSwapInstance = new ethers.Contract(LemmaSwapAddress, lemmaSwapABI.abi, provider);
-
-// Use a random address to "deploy" our forwarder contract to.
-// const FORWARDER_ADDRESS = ethers.utils.hexlify(crypto.randomBytes(20));
-// const WBTC_WHALE_WALLET = '0x078f358208685046a11c85e8ad32895ded33a249';//WBTC mainnet
-// const WETH_WHALE_WALLET = '0x85149247691df622eaF1a8Bd0CaFd40BC45154a9';//WETH mainnet
-// const LINK_WHALE_WALLET = '0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530';//LINK mainnet
-// const AAVE_WHALE_WALLET = '0xf329e36c7bf6e5e86ce2150875a84ce77f477375';//AAVE mainnet
-// const CRV_WHALE_WALLET = '0x9644a6920bd0a1923c2c6c1dddf691b7a42e8a65';//CRV mainnet
-// const PERP_WHALE_WALLET = '0xd360b73b19fb20ac874633553fb1007e9fcb2b78';//PERP mainnet
-
-// var token_to_whale = {
-//     // tokenAddress => token_whale_address
-//     "0x4200000000000000000000000000000000000006": WETH_WHALE_WALLET,
-//     "0x68f180fcce6836688e9084f035309e29bf0a2095": WBTC_WHALE_WALLET,
-//     "0x350a791bfc2c21f9ed5d10980dad2e2638ffa7f6": LINK_WHALE_WALLET,
-//     "0x76FB31fb4af56892A25e32cFC43De717950c9278": AAVE_WHALE_WALLET,
-//     "0x0994206dfe8de6ec6920ff4d779b0d950605fb53": CRV_WHALE_WALLET,
-//     "0x9e1028F5F1D5eDE59748FFceE5532509976840E0": PERP_WHALE_WALLET,
-// };
-
-// const TokensToWhales: { [network: number]: { [symbol: string]: any } } = {};
-// const tokensByNetwork: { [network: number]: any } = {
-//   [Network.MAINNET]: token_to_whale,
-// };
-// for (const [key, tokens] of Object.entries(tokensByNetwork)) {
-//   for (const token of tokens) {
-//     TokensToWhales[1][token.aSymbol] = token;
-//   }
-// }
+const tokenToWhales: {
+  [network: number]: { [tokenAddress: string]: Address };
+} = {
+  [Network.OPTIMISM]: {
+    // USDC WBTC WETH LINK AAVE CRV PERP ==> whaleaddresses
+    '0x7F5c764cBc14f9669B88837ca1490cCa17c31607':
+      '0x85149247691df622eaF1a8Bd0CaFd40BC45154a9',
+    '0x68f180fcce6836688e9084f035309e29bf0a2095':
+      '0x078f358208685046a11c85e8ad32895ded33a249',
+    '0x4200000000000000000000000000000000000006':
+      '0x85149247691df622eaF1a8Bd0CaFd40BC45154a9',
+    '0x350a791bfc2c21f9ed5d10980dad2e2638ffa7f6':
+      '0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530',
+    '0x76FB31fb4af56892A25e32cFC43De717950c9278':
+      '0xf329e36c7bf6e5e86ce2150875a84ce77f477375',
+    '0x0994206dfe8de6ec6920ff4d779b0d950605fb53':
+      '0x9644a6920bd0a1923c2c6c1dddf691b7a42e8a65',
+    '0x9e1028F5F1D5eDE59748FFceE5532509976840E0':
+      '0xd360b73b19fb20ac874633553fb1007e9fcb2b78',
+  },
+};
 
 const THIRTY_MINUTES = 60 * 30;
 
@@ -82,10 +69,8 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
 
   readonly lemmaswap: Interface;
   public FORWARDER_ADDRESS: Address;
-  public WETH_WHALE_WALLET: Address;
   public LemmaSwapAddress: Address;
   public opt_provider: any;
-  // const provider = ethers.getDefaultProvider(optimismProvider);
 
   logger: Logger;
 
@@ -96,12 +81,9 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
-    // this.lemmaSwapInstance = new ethers.Contract(LemmaSwapAddress, lemmaSwapABI.abi, dexHelper);
     this.logger = dexHelper.getLogger(dexKey);
     this.lemmaswap = new Interface(lemmaSwapABI.abi);
-
     this.FORWARDER_ADDRESS = this.dexHelper.web3Provider.utils.randomHex(20);
-    this.WETH_WHALE_WALLET = '0x85149247691df622eaF1a8Bd0CaFd40BC45154a9';
     this.LemmaSwapAddress = '0x6B283Cbcd24fdF67E1C4E23d28815C2607eEfE29';
     this.opt_provider = this.dexHelper.provider;
     // this.eventPools = new LemmaswapEventPool(
@@ -150,7 +132,6 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
 
     const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
     return [poolIdentifier];
-    // return [];
   }
 
   // Returns pool prices for amounts.
@@ -165,67 +146,17 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<LemmaswapData>> {
-    console.log('getPricesVolume----++', this.FORWARDER_ADDRESS);
     const forwarder = new Contract(
       this.FORWARDER_ADDRESS,
       FORWARDER_ARTIFACT.abi,
     );
 
-    console.log('forwarder----++', forwarder.address);
-    console.log('amounts----++', amounts.toString(), amounts.length);
-    console.log('srcToken----++', srcToken);
-    console.log('destToken----++', destToken);
-
-    // const allAmountsout: any = amounts.map(async amount => {
-    // // let allAmountsout: any
-    // // for (var i=0; i<amounts.length; i++) {
-
-    //   console.log('iii: ', amount.toString());
-
-    //   if (amount.toString() == '0') {
-    //     console.log('iii-hey: ', amount.toString());
-    //     return BigInt(0);
-    //   }
-
-    //   const rawResult = await this.opt_provider.send(
-    //       'eth_call',
-    //       [
-    //           await forwarder.populateTransaction.getAmountsOut(
-    //             this.WETH_WHALE_WALLET,
-    //             this.LemmaSwapAddress,
-    //             amount, [srcToken.address, destToken.address]
-    //           ),
-    //           'pending',
-    //           {
-    //               [forwarder.address]: { code: FORWARDER_ARTIFACT.deployedBytecode.object },
-    //               [this.WETH_WHALE_WALLET]: { code: WALLET_ARTIFACT.deployedBytecode.object }
-    //           },
-    //       ],
-    //   );
-    //   const amountsOut = await coder.decode(['uint256[]'], rawResult)[0];
-    //   // console.log('amountsOut.slice(1): ', amountsOut.slice(1));
-    //   // console.log('amountsOut-: ', amountsOut[0]);
-    //   // console.log('amounts.length-: ', amounts.length);
-    //   // console.log('amounts-: ', amounts);
-
-    //   // if (amountsOut > 0) return null;
-    //   // console.log('after amountsOut----++', amountsOut);
-    //   return amountsOut;
-    //   // allAmountsout[i] = amountsOut;
-    //   // } else {
-    //   //   console.log('ii---', i);
-    //   //   // return 0;
-    //   //   allAmountsout[i] = 0;
-    //   // }
-    // })
-    // console.log('allll amountOuts----++', allAmountsout);
-    const prices = await this.getAmountOut(
+    const prices: any = await this.getAmountOut(
       forwarder,
       srcToken.address,
       destToken.address,
       amounts,
     );
-    console.log('prices:', prices);
     if (!prices) return null;
 
     return [
@@ -245,15 +176,16 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     srcToken: Address,
     destToken: Address,
     amounts: bigint[],
-  ): Promise<any[] | null> {
+  ): Promise<BigInt[] | null> {
     if (!amounts) return null;
+    const tokensToWhales = tokenToWhales[Network.OPTIMISM][srcToken.toString()];
     return await Promise.all(
       amounts.map(async amount => {
         if (amount.toString() == '0') return 0n;
         {
           const rawResult = await this.opt_provider.send('eth_call', [
             await forwarder.populateTransaction.getAmountsOut(
-              this.WETH_WHALE_WALLET,
+              tokensToWhales,
               this.LemmaSwapAddress,
               amount,
               [srcToken, destToken],
@@ -263,13 +195,12 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
               [forwarder.address]: {
                 code: FORWARDER_ARTIFACT.deployedBytecode.object,
               },
-              [this.WETH_WHALE_WALLET]: {
+              [tokensToWhales]: {
                 code: WALLET_ARTIFACT.deployedBytecode.object,
               },
             },
           ]);
           const amountOut = coder.decode(['uint256[]'], rawResult)[0];
-          console.log('amountOut: ', amountOut[1].toString());
           return amountOut[1].toString();
         }
       }),
@@ -294,7 +225,6 @@ export class Lemmaswap extends SimpleExchange implements IDex<LemmaswapData> {
     side: SwapSide,
   ): AdapterExchangeParam {
     // TODO: complete me!
-    // const { exchange } = data;
 
     // Encode here the payload for adapter
     const payload = '';
