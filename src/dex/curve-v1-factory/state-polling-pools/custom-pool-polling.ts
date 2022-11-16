@@ -1,4 +1,4 @@
-import _, { update } from 'lodash';
+import _ from 'lodash';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
 import {
@@ -203,120 +203,106 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     multiOutputs: MultiResult<MulticallReturnedTypes>[],
     updatedAt: number,
   ): void {
+    if (!multiOutputs.every(o => o.success)) {
+      this.logger.error(
+        `${this.CLASS_NAME} ${this.implementationName} ${this.dexKey} setState: Some of the calls for pool ${this.address} generate state failed: `,
+      );
+      // No need to update with corrupted state
+      return;
+    }
+
+    const A = multiOutputs[0].returnData as bigint;
+    const fee = multiOutputs[1].returnData as bigint;
+    const virtualPrice = multiOutputs[2].returnData as bigint;
+    const totalSupply = multiOutputs[3].returnData as bigint;
+    const lastIndex = 4;
+
+    const balances = multiOutputs
+      .slice(lastIndex, lastIndex + this.poolConstants.COINS.length)
+      .map(e => e.returnData) as bigint[];
+
+    let exchangeRateCurrent: (bigint | undefined)[] | undefined;
+
+    let lastEndIndex = lastIndex + 1;
+    if (this.useLending) {
+      exchangeRateCurrent = new Array(this.useLending.length).fill(undefined);
+      const exchangeRateResults = multiOutputs
+        .slice(
+          lastEndIndex,
+          // Filter false elements before checking length
+          lastEndIndex + this.useLending.filter(el => el).length,
+        )
+        .map(e => e.returnData) as bigint[];
+
+      lastEndIndex += this.useLending.length;
+      // We had array with booleans and I filtered of `false` and sent request.
+      // So, now I must map that results to original indices. That is the reason of this complication
+      const indicesToFill = this.useLending.reduce<number[]>((acc, curr, i) => {
+        if (curr) {
+          acc.push(i);
+        }
+        return acc;
+      }, []);
+
+      _require(
+        indicesToFill.length === exchangeRateResults.length,
+        "indicesToFill and exchangeResults doesn't match",
+        {
+          indicesToFill: indicesToFill.length,
+          exchangeRateResults: exchangeRateResults.length,
+        },
+        'indicesToFill.length === exchangeRateResults.length',
+      );
+
+      indicesToFill.forEach((indexToFill, currentIndex) => {
+        exchangeRateResults[indexToFill] = exchangeRateResults[currentIndex];
+      });
+    }
+
+    let offpeg_fee_multiplier: bigint | undefined;
+
+    if (this.isLendingPool) {
+      offpeg_fee_multiplier = multiOutputs[lastEndIndex].returnData as bigint;
+      lastEndIndex++;
+    }
+
     if (this._poolState === null) {
       this._poolState = {
-        A: 0n,
-        balances: [],
-        fee: 0n,
-        constants: {
-          COINS: [],
-          coins_decimals: [],
-          rate_multipliers: [],
-        },
+        A: this.poolContextConstants.A_PRECISION
+          ? A * this.poolContextConstants.A_PRECISION
+          : A,
+        fee,
+        balances,
+        constants: this.poolConstants,
+        exchangeRateCurrent,
+        virtualPrice,
+        totalSupply,
+        offpeg_fee_multiplier,
       };
-      this._stateLastUpdatedAt = updatedAt;
+    } else {
+      this._poolState.A = this.poolContextConstants.A_PRECISION
+        ? A * this.poolContextConstants.A_PRECISION
+        : A;
+      this._poolState.fee = fee;
+      this._poolState.exchangeRateCurrent = exchangeRateCurrent;
+      this._poolState.virtualPrice = virtualPrice;
+      this._poolState.totalSupply = totalSupply;
+      this._poolState.offpeg_fee_multiplier = offpeg_fee_multiplier;
+
+      _require(
+        this._poolState.balances.length === balances.length,
+        `New state balances.length doesn't match old state balances.length`,
+        { oldState: this._poolState.balances, newState: balances },
+        'this._poolState.balances.length === state.balances.length',
+      );
+
+      for (const [i, _] of this._poolState.balances.entries()) {
+        this._poolState.balances[i] = balances[i];
+      }
+
+      // I skip state.constants update as they are not changing
     }
-    return;
-    // if (!multiOutputs.every(o => o.success)) {
-    //   this.logger.error(
-    //     `${this.CLASS_NAME} ${this.implementationName} ${this.dexKey} setState: Some of the calls for pool ${this.address} generate state failed: `,
-    //   );
-    //   // No need to update with corrupted state
-    //   return;
-    // }
-
-    // const A = multiOutputs[0].returnData as bigint;
-    // const fee = multiOutputs[1].returnData as bigint;
-    // const virtualPrice = multiOutputs[2].returnData as bigint;
-    // const totalSupply = multiOutputs[3].returnData as bigint;
-    // const lastIndex = 4;
-
-    // const balances = multiOutputs
-    //   .slice(lastIndex, lastIndex + this.poolConstants.COINS.length)
-    //   .map(e => e.returnData) as bigint[];
-
-    // let exchangeRateCurrent: (bigint | undefined)[] | undefined;
-
-    // let lastEndIndex = lastIndex + 1;
-    // if (this.useLending) {
-    //   exchangeRateCurrent = new Array(this.useLending.length).fill(undefined);
-    //   const exchangeRateResults = multiOutputs
-    //     .slice(
-    //       lastEndIndex,
-    //       // Filter false elements before checking length
-    //       lastEndIndex + this.useLending.filter(el => el).length,
-    //     )
-    //     .map(e => e.returnData) as bigint[];
-
-    //   lastEndIndex += this.useLending.length;
-    //   // We had array with booleans and I filtered of `false` and sent request.
-    //   // So, now I must map that results to original indices. That is the reason of this complication
-    //   const indicesToFill = this.useLending.reduce<number[]>((acc, curr, i) => {
-    //     if (curr) {
-    //       acc.push(i);
-    //     }
-    //     return acc;
-    //   }, []);
-
-    //   _require(
-    //     indicesToFill.length === exchangeRateResults.length,
-    //     "indicesToFill and exchangeResults doesn't match",
-    //     {
-    //       indicesToFill: indicesToFill.length,
-    //       exchangeRateResults: exchangeRateResults.length,
-    //     },
-    //     'indicesToFill.length === exchangeRateResults.length',
-    //   );
-
-    //   indicesToFill.forEach((indexToFill, currentIndex) => {
-    //     exchangeRateResults[indexToFill] = exchangeRateResults[currentIndex];
-    //   });
-    // }
-
-    // let offpeg_fee_multiplier: bigint | undefined;
-
-    // if (this.isLendingPool) {
-    //   offpeg_fee_multiplier = multiOutputs[lastEndIndex].returnData as bigint;
-    //   lastEndIndex++;
-    // }
-
-    // if (this._poolState === null) {
-    //   this._poolState = {
-    //     A: this.poolContextConstants.A_PRECISION
-    //       ? A * this.poolContextConstants.A_PRECISION
-    //       : A,
-    //     fee,
-    //     balances,
-    //     constants: this.poolConstants,
-    //     exchangeRateCurrent,
-    //     virtualPrice,
-    //     totalSupply,
-    //     offpeg_fee_multiplier,
-    //   };
-    // } else {
-    //   this._poolState.A = this.poolContextConstants.A_PRECISION
-    //     ? A * this.poolContextConstants.A_PRECISION
-    //     : A;
-    //   this._poolState.fee = fee;
-    //   this._poolState.exchangeRateCurrent = exchangeRateCurrent;
-    //   this._poolState.virtualPrice = virtualPrice;
-    //   this._poolState.totalSupply = totalSupply;
-    //   this._poolState.offpeg_fee_multiplier = offpeg_fee_multiplier;
-
-    //   _require(
-    //     this._poolState.balances.length === balances.length,
-    //     `New state balances.length doesn't match old state balances.length`,
-    //     { oldState: this._poolState.balances, newState: balances },
-    //     'this._poolState.balances.length === state.balances.length',
-    //   );
-
-    //   for (const [i, _] of this._poolState.balances.entries()) {
-    //     this._poolState.balances[i] = balances[i];
-    //   }
-
-    //   // I skip state.constants update as they are not changing
-    // }
-    // this._stateLastUpdatedAt = updatedAt;
+    this._stateLastUpdatedAt = updatedAt;
   }
 
   private _getBalancesABI(type: string): AbiItem {
