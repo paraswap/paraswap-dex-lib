@@ -88,65 +88,79 @@ export class FactoryStateHandler extends PoolPollingBase {
     multiOutputs: MultiResult<MulticallReturnedTypes>[],
     updatedAt: number,
   ): void {
-    if (!multiOutputs.every(o => o.success)) {
-      this.logger.error(
-        `${this.dexKey} setState: Some of the calls to ${this.address} generate state failed: `,
-      );
-      // No need to update with corrupted state
-      return;
-    }
-
-    const [A, fees, balances] = multiOutputs.map(o => o.returnData) as [
-      bigint,
-      bigint[],
-      bigint[],
-    ];
-
-    let basePoolState: PoolState | undefined;
-    if (this.isMetaPool) {
-      // Check for undefined done in constructor
-      const retrievedBasePoolState = this.baseStatePoolPolling!.getState();
-
-      if (retrievedBasePoolState === null) {
-        this.logger.error(
-          `${this.CLASS_NAME} ${this.dexKey} ${this.address}: Can not retrieve base pool state`,
-        );
-        return;
-      }
-      basePoolState = retrievedBasePoolState;
-    }
-
     if (this._poolState === null) {
       this._poolState = {
-        A: this.poolContextConstants.A_PRECISION
-          ? A * this.poolContextConstants.A_PRECISION
-          : A,
-        fee: fees[0], // Array has [fee, adminFee], but we want only fee
-        balances: balances,
-        constants: this.poolConstants,
-        basePoolState,
+        A: 0n,
+        balances: [],
+        fee: 0n,
+        constants: {
+          COINS: [],
+          coins_decimals: [],
+          rate_multipliers: [],
+        },
       };
-    } else {
-      this._poolState.A = this.poolContextConstants.A_PRECISION
-        ? A * this.poolContextConstants.A_PRECISION
-        : A;
-      this._poolState.fee = fees[0];
-
-      _require(
-        this._poolState.balances.length === balances.length,
-        `New state balances.length doesn't match old state balances.length`,
-        { oldState: this._poolState.balances, newState: balances },
-        'this._poolState.balances.length === state.balances.length',
-      );
-
-      for (const [i, _] of this._poolState.balances.entries()) {
-        this._poolState.balances[i] = balances[i];
-      }
-
-      this._poolState.basePoolState = basePoolState;
-
-      // I skip state.constants update as they are not changing
+      this._stateLastUpdatedAt = updatedAt;
     }
-    this._stateLastUpdatedAt = updatedAt;
+    return;
+    // if (!multiOutputs.every(o => o.success)) {
+    //   this.logger.error(
+    //     `${this.dexKey} setState: Some of the calls to ${this.address} generate state failed: `,
+    //   );
+    //   // No need to update with corrupted state
+    //   return;
+    // }
+
+    // const [A, fees, balances] = multiOutputs.map(o => o.returnData) as [
+    //   bigint,
+    //   bigint[],
+    //   bigint[],
+    // ];
+
+    // let basePoolState: PoolState | undefined;
+    // if (this.isMetaPool) {
+    //   // Check for undefined done in constructor
+    //   const retrievedBasePoolState = this.baseStatePoolPolling!.getState();
+
+    //   if (retrievedBasePoolState === null) {
+    //     this.logger.error(
+    //       `${this.CLASS_NAME} ${this.dexKey} ${this.address}: Can not retrieve base pool state`,
+    //     );
+    //     return;
+    //   }
+    //   basePoolState = retrievedBasePoolState;
+    // }
+
+    // if (this._poolState === null) {
+    //   this._poolState = {
+    //     A: this.poolContextConstants.A_PRECISION
+    //       ? A * this.poolContextConstants.A_PRECISION
+    //       : A,
+    //     fee: fees[0], // Array has [fee, adminFee], but we want only fee
+    //     balances: balances,
+    //     constants: this.poolConstants,
+    //     basePoolState,
+    //   };
+    // } else {
+    //   this._poolState.A = this.poolContextConstants.A_PRECISION
+    //     ? A * this.poolContextConstants.A_PRECISION
+    //     : A;
+    //   this._poolState.fee = fees[0];
+
+    //   _require(
+    //     this._poolState.balances.length === balances.length,
+    //     `New state balances.length doesn't match old state balances.length`,
+    //     { oldState: this._poolState.balances, newState: balances },
+    //     'this._poolState.balances.length === state.balances.length',
+    //   );
+
+    //   for (const [i, _] of this._poolState.balances.entries()) {
+    //     this._poolState.balances[i] = balances[i];
+    //   }
+
+    //   this._poolState.basePoolState = basePoolState;
+
+    //   // I skip state.constants update as they are not changing
+    // }
+    // this._stateLastUpdatedAt = updatedAt;
   }
 }
