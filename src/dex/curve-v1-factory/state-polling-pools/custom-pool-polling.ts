@@ -280,23 +280,26 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
         offpeg_fee_multiplier,
       };
     } else {
-      // this._poolState.A = this.poolContextConstants.A_PRECISION
-      //   ? A * this.poolContextConstants.A_PRECISION
-      //   : A;
-      // this._poolState.fee = fee;
-      // this._poolState.exchangeRateCurrent = exchangeRateCurrent;
-      // this._poolState.virtualPrice = virtualPrice;
-      // this._poolState.totalSupply = totalSupply;
-      // this._poolState.offpeg_fee_multiplier = offpeg_fee_multiplier;
-      // _require(
-      //   this._poolState.balances.length === balances.length,
-      //   `New state balances.length doesn't match old state balances.length`,
-      //   { oldState: this._poolState.balances, newState: balances },
-      //   'this._poolState.balances.length === state.balances.length',
-      // );
-      // for (const [i, _] of this._poolState.balances.entries()) {
-      //   this._poolState.balances[i] = balances[i];
-      // }
+      this._poolState.A = this.poolContextConstants.A_PRECISION
+        ? A * this.poolContextConstants.A_PRECISION
+        : A;
+      this._poolState.fee = fee;
+      this._poolState.exchangeRateCurrent = exchangeRateCurrent;
+      this._poolState.virtualPrice = virtualPrice;
+      this._poolState.totalSupply = totalSupply;
+      this._poolState.offpeg_fee_multiplier = offpeg_fee_multiplier;
+
+      _require(
+        this._poolState.balances.length === balances.length,
+        `New state balances.length doesn't match old state balances.length`,
+        { oldState: this._poolState.balances, newState: balances },
+        'this._poolState.balances.length === state.balances.length',
+      );
+
+      for (const [i, _] of this._poolState.balances.entries()) {
+        this._poolState.balances[i] = balances[i];
+      }
+
       // I skip state.constants update as they are not changing
     }
     this._stateLastUpdatedAt = updatedAt;
