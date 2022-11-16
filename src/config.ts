@@ -99,6 +99,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
             secretKey: 'secret',
           },
         },
+        rateTTLMs: 1000 * 60 * 60 * 1,
       },
     },
   },

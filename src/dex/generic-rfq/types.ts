@@ -14,18 +14,14 @@ export type PairMap = {
   [pairName: string]: Pair;
 };
 
-export type PairsResponse = {
-  pairs: PairMap;
-};
+export type PairsResponse = PairMap;
 
 export type TokenWithInfo = Token & {
   name: string;
   description: string;
 };
 
-export type TokensResponse = {
-  tokens: Record<string, TokenWithInfo>;
-};
+export type TokensResponse = Record<string, TokenWithInfo>;
 
 export type BlackListResponse = {
   blacklist: string[];
@@ -68,17 +64,21 @@ type RequestConfigWithAuth = RequestConfig & {
 };
 
 export type GenericRFQWsMessage = {
-  message: string;
+  message: 'tokens' | 'pairs' | 'prices' | 'blacklist';
+  tokens?: TokensResponse;
+  pairs?: PairsResponse;
   prices?: RatesResponse;
+  blacklist?: BlackListResponse;
 };
 
 export type RFQConfig = {
-  tokensConfig: FetcherParams;
-  pairsConfig: FetcherParams;
-  rateConfig: FetcherParams;
+  tokensConfig?: FetcherParams;
+  pairsConfig?: FetcherParams;
+  rateConfig?: FetcherParams;
   firmRateConfig: RequestConfigWithAuth;
   blacklistConfig?: FetcherParams;
   websocketConfig?: WebsocketConfig<GenericRFQWsMessage>;
+  rateTTLMs: number;
   maker: Address;
 };
 

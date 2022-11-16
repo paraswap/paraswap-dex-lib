@@ -11,7 +11,7 @@ import {
 } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 import { parseInt } from 'lodash';
-import { startTestServer } from './example-api.test';
+import { startTestServer } from './example-api.testhelper';
 import { ethers } from 'ethers';
 import { RFQConfig } from './types';
 
@@ -107,6 +107,7 @@ const config: RFQConfig = {
     intervalMs: 1000 * 60 * 60 * 10, // every 10 minute
     dataTTLS: 1000 * 60 * 60 * 10, // ttl 10 minute
   },
+  rateTTLMs: 1000 * 60 * 60 * 1,
 };
 
 describe('GenericRFQ', function () {
@@ -229,10 +230,13 @@ describe('GenericRFQ', function () {
     expect(isBlacklisted).toBe(false);
   });
 
-  it.only('getPoolIdentifiers and getPricesVolume with websocketConfig', async function () {
+  it('getPoolIdentifiers and getPricesVolume with websocketConfig', async function () {
     const dexHelper = new DummyDexHelper(Network.MAINNET);
     const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
+    config.tokensConfig = undefined;
+    config.pairsConfig = undefined;
+    config.rateConfig = undefined;
     config.websocketConfig = {
       url: `ws://localhost:${PORT_TEST_SERVER}/`,
       reconnectDelayMs: 1000 * 5,
@@ -272,7 +276,7 @@ describe('GenericRFQ', function () {
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
 
-  afterAll(() => {
-    stopServer();
+  afterAll(async () => {
+    await stopServer();
   });
 });

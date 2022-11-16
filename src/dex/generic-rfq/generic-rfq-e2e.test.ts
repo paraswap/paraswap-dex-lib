@@ -9,7 +9,7 @@ import {
   GENERIC_ADDR1,
   testAccount,
 } from '../../../tests/constants-e2e';
-import { startTestServer } from './example-api.test';
+import { startTestServer } from './example-api.testhelper';
 
 jest.setTimeout(1000 * 60 * 3);
 
@@ -104,7 +104,7 @@ describe('GenericRFQ E2E Mainnet', () => {
     });
   });
 
-  afterAll(() => {
-    stopServer();
+  afterAll(async () => {
+    await stopServer();
   });
 });

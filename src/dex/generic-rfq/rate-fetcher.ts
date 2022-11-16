@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { info } from 'console';
 import { ethers } from 'ethers';
 import { SwapSide } from 'paraswap-core';
 import { BN_0, BN_1 } from '../../bignumber-constants';
@@ -12,7 +11,7 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
-import { WebsocketClientWithHttpFallback } from '../../lib/websocket-client/websocket-client';
+import { WebsocketClient } from '../../lib/websocket-client/websocket-client';
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
 import { calculateOrderHash } from '../paraswap-limit-orders/utils';
@@ -42,12 +41,12 @@ export const reversePrice = (price: PriceAndAmountBigNumber) =>
 export class RateFetcher {
   private augustusAddress: Address;
 
-  private tokensFetcher: Fetcher<TokensResponse>;
-  private pairsFetcher: Fetcher<PairsResponse>;
-  private rateFetcher: Fetcher<RatesResponse>;
+  private tokensFetcher?: Fetcher<TokensResponse>;
+  private pairsFetcher?: Fetcher<PairsResponse>;
+  private rateFetcher?: Fetcher<RatesResponse>;
   private blackListFetcher?: Fetcher<BlackListResponse>;
 
-  private wsClient?: WebsocketClientWithHttpFallback<GenericRFQWsMessage>;
+  private wsClient?: WebsocketClient<GenericRFQWsMessage>;
 
   private tokens: Record<string, TokenWithInfo> = {};
   private addressToTokenMap: Record<string, TokenWithInfo> = {};
@@ -65,47 +64,62 @@ export class RateFetcher {
   ) {
     this.augustusAddress = dexHelper.config.data.augustusAddress.toLowerCase();
 
-    this.tokensFetcher = new Fetcher<TokensResponse>(
-      dexHelper.httpRequest,
-      {
-        info: {
-          requestOptions: config.tokensConfig.reqParams,
-          caster: this.castTokensResponse.bind(this),
-          authenticate: authHttp(config.tokensConfig.secret),
-        },
-        handler: this.handleTokensResponse.bind(this),
-      },
-      config.tokensConfig.intervalMs,
-      this.logger,
-    );
+    if (
+      !config.websocketConfig &&
+      !config.tokensConfig &&
+      !config.pairsConfig &&
+      !config.rateConfig
+    ) {
+      throw new Error('Missing config for RFQ');
+    }
 
-    this.pairsFetcher = new Fetcher<PairsResponse>(
-      dexHelper.httpRequest,
-      {
-        info: {
-          requestOptions: config.pairsConfig.reqParams,
-          caster: this.castPairs.bind(this),
-          authenticate: authHttp(config.pairsConfig.secret),
+    if (config.tokensConfig) {
+      this.tokensFetcher = new Fetcher<TokensResponse>(
+        dexHelper.httpRequest,
+        {
+          info: {
+            requestOptions: config.tokensConfig.reqParams,
+            caster: this.castTokensResponse.bind(this),
+            authenticate: authHttp(config.tokensConfig.secret),
+          },
+          handler: this.handleTokensResponse.bind(this),
         },
-        handler: this.handlePairsResponse.bind(this),
-      },
-      config.pairsConfig.intervalMs,
-      this.logger,
-    );
+        config.tokensConfig.intervalMs,
+        this.logger,
+      );
+    }
 
-    this.rateFetcher = new Fetcher<RatesResponse>(
-      dexHelper.httpRequest,
-      {
-        info: {
-          requestOptions: config.rateConfig.reqParams,
-          caster: this.castRateResponse.bind(this),
-          authenticate: authHttp(config.rateConfig.secret),
+    if (config.pairsConfig) {
+      this.pairsFetcher = new Fetcher<PairsResponse>(
+        dexHelper.httpRequest,
+        {
+          info: {
+            requestOptions: config.pairsConfig.reqParams,
+            caster: this.castPairs.bind(this),
+            authenticate: authHttp(config.pairsConfig.secret),
+          },
+          handler: this.handlePairsResponse.bind(this),
         },
-        handler: this.handleRatesResponse.bind(this),
-      },
-      config.rateConfig.intervalMs,
-      logger,
-    );
+        config.pairsConfig.intervalMs,
+        this.logger,
+      );
+    }
+
+    if (config.rateConfig) {
+      this.rateFetcher = new Fetcher<RatesResponse>(
+        dexHelper.httpRequest,
+        {
+          info: {
+            requestOptions: config.rateConfig.reqParams,
+            caster: this.castRateResponse.bind(this),
+            authenticate: authHttp(config.rateConfig.secret),
+          },
+          handler: this.handleRatesResponse.bind(this),
+        },
+        config.rateConfig.intervalMs,
+        logger,
+      );
+    }
 
     if (config.blacklistConfig) {
       this.blackListFetcher = new Fetcher<BlackListResponse>(
@@ -128,7 +142,7 @@ export class RateFetcher {
     }
 
     if (config.websocketConfig) {
-      this.wsClient = new WebsocketClientWithHttpFallback(
+      this.wsClient = new WebsocketClient(
         'WebscoketClient',
         this.logger,
         config.websocketConfig,
@@ -138,8 +152,14 @@ export class RateFetcher {
   }
 
   start() {
-    this.tokensFetcher.startPolling();
-    this.pairsFetcher.startPolling();
+    if (this.tokensFetcher) {
+      this.tokensFetcher.startPolling();
+    }
+
+    if (this.pairsFetcher) {
+      this.pairsFetcher.startPolling();
+    }
+
     if (this.blackListFetcher) {
       this.blackListFetcher.startPolling();
     }
@@ -150,9 +170,17 @@ export class RateFetcher {
   }
 
   stop() {
-    this.tokensFetcher.stopPolling();
-    this.pairsFetcher.stopPolling();
-    this.rateFetcher.stopPolling();
+    if (this.tokensFetcher) {
+      this.tokensFetcher.stopPolling();
+    }
+
+    if (this.pairsFetcher) {
+      this.pairsFetcher.stopPolling();
+    }
+
+    if (this.rateFetcher) {
+      this.rateFetcher.stopPolling();
+    }
 
     if (this.blackListFetcher) {
       this.blackListFetcher.stopPolling();
@@ -169,16 +197,12 @@ export class RateFetcher {
     }
 
     const parsed = data as TokensResponse;
-    if (!parsed.tokens) {
-      return null;
-    }
-
     return parsed;
   }
 
-  private handleTokensResponse(data: TokensResponse) {
-    for (const tokenName of Object.keys(data.tokens)) {
-      const token = data.tokens[tokenName];
+  private handleTokensResponse(tokens: TokensResponse) {
+    for (const tokenName of Object.keys(tokens)) {
+      const token = tokens[tokenName];
       token.address = token.address.toLowerCase();
       this.tokens[tokenName] = token;
     }
@@ -199,34 +223,34 @@ export class RateFetcher {
     }
 
     const parsed = data as PairsResponse;
-    if (!parsed.pairs) {
-      return null;
-    }
     return parsed;
   }
 
   private castRateResponse(data: unknown): RatesResponse | null {
-    if (!data) {
+    if (!data || typeof data !== 'object') {
       return null;
     }
 
     return data as RatesResponse;
   }
 
-  private handlePairsResponse(resp: PairsResponse) {
+  private handlePairsResponse(pairs: PairsResponse) {
     this.pairs = {};
 
-    if (this.rateFetcher.isPolling()) {
+    if (this.rateFetcher && this.rateFetcher.isPolling()) {
       this.rateFetcher.stopPolling();
     }
 
-    const pairs: PairMap = {};
-    for (const pairName of Object.keys(resp.pairs)) {
-      pairs[pairName] = resp.pairs[pairName];
+    const _pairs: PairMap = {};
+    for (const pairName of Object.keys(pairs)) {
+      _pairs[pairName] = pairs[pairName];
     }
 
-    this.pairs = pairs;
-    this.rateFetcher.startPolling();
+    this.pairs = _pairs;
+
+    if (this.rateFetcher) {
+      this.rateFetcher.startPolling();
+    }
   }
 
   private casteBlacklistResponse(data: unknown): BlackListResponse | null {
@@ -260,9 +284,16 @@ export class RateFetcher {
       this.logger.debug(`received msg ${JSON.stringify(msg)}`);
     }
 
-    if (msg.message === 'prices' && msg.prices) {
-      console.log(msg);
+    if (msg.message === 'tokens' && msg.tokens) {
+      this.handleTokensResponse(msg.tokens);
+    } else if (msg.message === 'pairs' && msg.pairs) {
+      this.handlePairsResponse(msg.pairs);
+    } else if (msg.message === 'prices' && msg.prices) {
       this.handleRatesResponse(msg.prices);
+    } else if (msg.message === 'blacklist' && msg.blacklist) {
+      this.handleBlackListResponse(msg.blacklist);
+    } else {
+      this.logger.warn('received unhandled msg');
     }
   }
 
@@ -288,7 +319,7 @@ export class RateFetcher {
           this.dexKey,
           this.dexHelper.config.data.network,
           `${baseToken.address}_${quoteToken.address}_bids`,
-          this.config.rateConfig.dataTTLS,
+          this.config.rateTTLMs,
           JSON.stringify(prices.bids),
         );
       }
@@ -298,17 +329,11 @@ export class RateFetcher {
           this.dexKey,
           this.dexHelper.config.data.network,
           `${baseToken.address}_${quoteToken.address}_asks`,
-          this.config.rateConfig.dataTTLS,
+          this.config.rateTTLMs,
           JSON.stringify(prices.asks),
         );
       }
     }
-  }
-
-  checkHealth(): boolean {
-    return [this.tokensFetcher, this.rateFetcher].some(
-      f => f.lastFetchSucceeded,
-    );
   }
 
   public getPairsLiqudity(tokenAddress: string) {

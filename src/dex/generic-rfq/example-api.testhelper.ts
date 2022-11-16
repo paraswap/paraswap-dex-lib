@@ -16,45 +16,41 @@ import {
   TokenWithInfo,
   TokensResponse,
   PairsResponse,
+  GenericRFQWsMessage,
 } from './types';
 import { reversePrice } from './rate-fetcher';
 import http from 'http';
 import { WebSocketServer } from 'ws';
-import { sleep } from '../../../tests/utils';
 
 const tokens: TokensResponse = {
-  tokens: {
-    WETH: {
-      symbol: 'WETH',
-      name: 'Wrapped Ether',
-      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-      description: 'Canonical wrapped Ether on Ethereum mainnet',
-      decimals: 18,
-      type: 'ERC20',
-    },
-    DAI: {
-      symbol: 'DAI',
-      name: 'Wrapped Ether',
-      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
-      description: 'Canonical wrapped Ether on Ethereum mainnet',
-      decimals: 18,
-      type: 'ERC20',
-    },
+  WETH: {
+    symbol: 'WETH',
+    name: 'Wrapped Ether',
+    address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    description: 'Canonical wrapped Ether on Ethereum mainnet',
+    decimals: 18,
+    type: 'ERC20',
+  },
+  DAI: {
+    symbol: 'DAI',
+    name: 'Wrapped Ether',
+    address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    description: 'Canonical wrapped Ether on Ethereum mainnet',
+    decimals: 18,
+    type: 'ERC20',
   },
 };
 
 const pairs: PairsResponse = {
-  pairs: {
-    'WETH/DAI': {
-      base: 'WETH',
-      quote: 'DAI',
-      liquidityUSD: 468000,
-    },
+  'WETH/DAI': {
+    base: 'WETH',
+    quote: 'DAI',
+    liquidityUSD: 468000,
   },
 };
 
-const addressToTokenMap = Object.keys(tokens.tokens).reduce((acc, key) => {
-  const obj = tokens.tokens[key];
+const addressToTokenMap = Object.keys(tokens).reduce((acc, key) => {
+  const obj = tokens[key];
   if (!obj) {
     return acc;
   }
@@ -87,7 +83,38 @@ const blacklist = {
   blacklist: ['0x6dac5CAc7bbCCe4DB3c1Cc5c8FE39DcDdE52A36F'],
 };
 
-const wsMockMessages = [
+const wsMockMessages: GenericRFQWsMessage[] = [
+  {
+    message: 'tokens',
+    tokens: {
+      WETH: {
+        symbol: 'WETH',
+        name: 'Wrapped Ether',
+        address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        description: 'Canonical wrapped Ether on Ethereum mainnet',
+        decimals: 18,
+        type: 'ERC20',
+      },
+      DAI: {
+        symbol: 'DAI',
+        name: 'Wrapped Ether',
+        address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+        description: 'Canonical wrapped Ether on Ethereum mainnet',
+        decimals: 18,
+        type: 'ERC20',
+      },
+    },
+  },
+  {
+    message: 'pairs',
+    pairs: {
+      'WETH/DAI': {
+        base: 'WETH',
+        quote: 'DAI',
+        liquidityUSD: 468000,
+      },
+    },
+  },
   {
     message: 'prices',
     prices: {
@@ -101,6 +128,12 @@ const wsMockMessages = [
           ['1551.423100000000000000', '1.169000000000000000'],
         ],
       },
+    },
+  },
+  {
+    message: 'blacklist',
+    blacklist: {
+      blacklist: ['0xb91627ff8913acad42b8ab83ff2a0469b70425f0'],
     },
   },
 ];
@@ -136,8 +169,6 @@ export const startTestServer = (account: ethers.Wallet) => {
 
   wsServer.on('connection', async client => {
     console.log('WebSocket new connection');
-
-    await sleep(2000);
     for (const msg of wsMockMessages) {
       client.send(JSON.stringify(msg));
     }
@@ -250,6 +281,10 @@ export const startTestServer = (account: ethers.Wallet) => {
 
   httpServer.listen(parseInt(process.env.TEST_PORT!, 10));
   return () => {
-    httpServer.close();
+    return new Promise(resolve => {
+      httpServer.close(cb => {
+        resolve(1);
+      });
+    });
   };
 };
