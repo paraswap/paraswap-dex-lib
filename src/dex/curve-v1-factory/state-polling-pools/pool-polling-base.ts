@@ -62,11 +62,6 @@ export abstract class PoolPollingBase {
       : [];
   }
 
-  protected _setState(state: PoolState, updateAt: number) {
-    this._poolState = state;
-    this._stateLastUpdatedAt = updateAt;
-  }
-
   abstract setState(
     multiOutputs: MultiResult<MulticallReturnedTypes>[],
     updatedAt: number,

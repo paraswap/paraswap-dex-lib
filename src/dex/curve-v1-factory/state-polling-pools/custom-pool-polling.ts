@@ -266,20 +266,43 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       lastEndIndex++;
     }
 
-    const newState: PoolState = {
-      A: this.poolContextConstants.A_PRECISION
+    if (this._poolState === null) {
+      this._poolState = {
+        A: this.poolContextConstants.A_PRECISION
+          ? A * this.poolContextConstants.A_PRECISION
+          : A,
+        fee,
+        balances,
+        constants: this.poolConstants,
+        exchangeRateCurrent,
+        virtualPrice,
+        totalSupply,
+        offpeg_fee_multiplier,
+      };
+    } else {
+      this._poolState.A = this.poolContextConstants.A_PRECISION
         ? A * this.poolContextConstants.A_PRECISION
-        : A,
-      fee,
-      balances,
-      constants: this.poolConstants,
-      exchangeRateCurrent,
-      virtualPrice,
-      totalSupply,
-      offpeg_fee_multiplier,
-    };
+        : A;
+      this._poolState.fee = fee;
+      this._poolState.exchangeRateCurrent = exchangeRateCurrent;
+      this._poolState.virtualPrice = virtualPrice;
+      this._poolState.totalSupply = totalSupply;
+      this._poolState.offpeg_fee_multiplier = offpeg_fee_multiplier;
 
-    this._setState(newState, updatedAt);
+      _require(
+        this._poolState.balances.length === balances.length,
+        `New state balances.length doesn't match old state balances.length`,
+        { oldState: this._poolState.balances, newState: balances },
+        'this._poolState.balances.length === state.balances.length',
+      );
+
+      for (const [i, _] of this._poolState.balances.entries()) {
+        this._poolState.balances[i] = balances[i];
+      }
+
+      // I skip state.constants update as they are not changing
+    }
+    this._stateLastUpdatedAt = updatedAt;
   }
 
   private _getBalancesABI(type: string): AbiItem {

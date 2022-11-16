@@ -13,6 +13,7 @@ import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
 import { Address } from 'paraswap-core';
 import { BigNumber } from 'ethers';
+import { _require } from '../../../utils';
 
 export class FactoryStateHandler extends PoolPollingBase {
   constructor(
@@ -115,16 +116,37 @@ export class FactoryStateHandler extends PoolPollingBase {
       basePoolState = retrievedBasePoolState;
     }
 
-    const newState: PoolState = {
-      A: this.poolContextConstants.A_PRECISION
+    if (this._poolState === null) {
+      this._poolState = {
+        A: this.poolContextConstants.A_PRECISION
+          ? A * this.poolContextConstants.A_PRECISION
+          : A,
+        fee: fees[0], // Array has [fee, adminFee], but we want only fee
+        balances: balances,
+        constants: this.poolConstants,
+        basePoolState,
+      };
+    } else {
+      this._poolState.A = this.poolContextConstants.A_PRECISION
         ? A * this.poolContextConstants.A_PRECISION
-        : A,
-      fee: fees[0], // Array has [fee, adminFee], but we want only fee
-      balances: balances,
-      constants: this.poolConstants,
-      basePoolState,
-    };
+        : A;
+      this._poolState.fee = fees[0];
 
-    this._setState(newState, updatedAt);
+      _require(
+        this._poolState.balances.length === balances.length,
+        `New state balances.length doesn't match old state balances.length`,
+        { oldState: this._poolState.balances, newState: balances },
+        'this._poolState.balances.length === state.balances.length',
+      );
+
+      for (const [i, _] of this._poolState.balances.entries()) {
+        this._poolState.balances[i] = balances[i];
+      }
+
+      this._poolState.basePoolState = basePoolState;
+
+      // I skip state.constants update as they are not changing
+    }
+    this._stateLastUpdatedAt = updatedAt;
   }
 }
