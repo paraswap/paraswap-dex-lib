@@ -28,21 +28,20 @@ export class StatePollingManager {
       .flat();
 
     try {
-      const result = await multiWrapper.tryAggregate(
-        false,
-        callDatas,
-        blockNumber,
-      );
-      const updatedAt = Date.now();
-
-      let lastStart = 0;
-      pools.map((p, i) => {
-        p.setState(
-          result.slice(lastStart, lastStart + poolResultDivider[i]),
-          updatedAt,
-        );
-        lastStart += poolResultDivider[i];
-      });
+      // const result = await multiWrapper.tryAggregate(
+      //   false,
+      //   callDatas,
+      //   blockNumber,
+      // );
+      // const updatedAt = Date.now();
+      // let lastStart = 0;
+      // pools.map((p, i) => {
+      //   p.setState(
+      //     result.slice(lastStart, lastStart + poolResultDivider[i]),
+      //     updatedAt,
+      //   );
+      //   lastStart += poolResultDivider[i];
+      // });
     } catch (e) {
       logger.error(
         `Network ${network}: Failed to update state for pools: ${pools
