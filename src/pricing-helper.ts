@@ -16,6 +16,7 @@ import {
 } from './constants';
 import { DexAdapterService } from './dex';
 import { IDex, IRouteOptimizer } from './dex/idex';
+import { isSrcTokenTransferFeeToBeExchanged } from './utils';
 
 export class PricingHelper {
   logger: Logger;
@@ -205,6 +206,14 @@ export class PricingHelper {
               );
 
               const dexInstance = this.dexAdapterService.getDexByKey(key);
+
+              if (
+                isSrcTokenTransferFeeToBeExchanged(transferFees) &&
+                !dexInstance.isFeeOnTransferSupported
+              ) {
+                clearTimeout(timer);
+                return resolve(null);
+              }
 
               dexInstance
                 .getPricesVolume(
