@@ -43,6 +43,10 @@ export class StatePollingManager {
         );
         lastStart += poolResultDivider[i];
       });
+
+      logger.trace(
+        `CurveV1Factory: successfully updated state for ${pools.length} pools on network ${network}`,
+      );
     } catch (e) {
       logger.error(
         `Network ${network}: Failed to update state for pools: ${pools

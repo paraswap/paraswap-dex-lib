@@ -157,6 +157,7 @@ export class CurveV1Factory
     // This is only to start timer, each pool is initialized with updated state
     this.poolManager.initializePollingPools();
     await this.fetchFactoryPools(blockNumber);
+    this.logger.info(`${this.dexKey}: successfully initialized`);
   }
 
   async initializeCustomPollingPools(
