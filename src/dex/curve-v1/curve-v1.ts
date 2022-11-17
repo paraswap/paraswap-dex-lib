@@ -54,6 +54,7 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   interpolate,
+  isDestTokenTransferFeeToBeExchanged,
   isSrcTokenTransferFeeToBeExchanged,
   Utils,
 } from '../../utils';
@@ -105,6 +106,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   protected eventSupportedPools: string[];
   protected factoryAddress: string | null;
   protected baseTokens: Record<string, TokenWithReasonableVolume>;
+
+  protected disableFeeOnTransferTokenAddresses: Set<string>;
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
@@ -170,6 +173,15 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       };
       return acc;
     }, {});
+
+    this.disableFeeOnTransferTokenAddresses =
+      dexConfig.disableFeeOnTransferTokenAddresses
+        ? new Set<string>(
+            Array.from(
+              dexConfig.disableFeeOnTransferTokenAddresses.values(),
+            ).map(addr => addr.toLowerCase()),
+          )
+        : new Set<string>();
 
     this.exchangeRouterInterface = new Interface(CurveABI as JsonFragment[]);
 
@@ -294,8 +306,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   }
 
   getPoolConfigs(from: Token, to: Token) {
-    const fromAddress = from.address.toLowerCase();
-    const toAddress = to.address.toLowerCase();
+    const fromAddress = from.address;
+    const toAddress = to.address;
     return Object.values(this.pools).filter(config => {
       const underlying = config.underlying.map((add: string) =>
         add.toLowerCase(),
@@ -696,8 +708,18 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         return null;
       }
 
+      _from.address = _from.address.toLowerCase();
+      _to.address = _to.address.toLowerCase();
+
       const _isSrcTokenTransferFeeToBeExchanged =
-        isSrcTokenTransferFeeToBeExchanged(transferFees);
+        this.disableFeeOnTransferTokenAddresses.has(_from.address)
+          ? false
+          : isSrcTokenTransferFeeToBeExchanged(transferFees);
+
+      const _isDestTokenTransferFeeToBeExchanged =
+        this.disableFeeOnTransferTokenAddresses.has(_to.address)
+          ? false
+          : isDestTokenTransferFeeToBeExchanged(transferFees);
 
       // We first filter out pools which were explicitly excluded and pools which are already used
       // then for the good pools we set the boolean to be true for used pools
@@ -805,12 +827,14 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           const indexes = this.getSwapIndexes(_from, _to, poolConfig);
           const [i, j, swapType] = indexes;
 
-          _price.rates = applyTransferFee(
-            _price.rates,
-            side,
-            transferFees.destDexFee,
-            this.DEST_TOKEN_DEX_TRANSFERS,
-          );
+          if (_isDestTokenTransferFeeToBeExchanged) {
+            _price.rates = applyTransferFee(
+              _price.rates,
+              side,
+              transferFees.destDexFee,
+              this.DEST_TOKEN_DEX_TRANSFERS,
+            );
+          }
 
           acc.push({
             prices: [0n, ..._price.rates.slice(1)],
