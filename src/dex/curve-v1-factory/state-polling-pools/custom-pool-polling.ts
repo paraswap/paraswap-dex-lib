@@ -1,11 +1,10 @@
 import _ from 'lodash';
 import { Logger } from 'log4js';
-import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
+import { MultiCallParams } from '../../../lib/multi-wrapper';
 import {
   ImplementationNames,
   PoolConstants,
   PoolContextConstants,
-  PoolState,
 } from '../types';
 import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import { uint256ToBigInt } from '../../../lib/decoders';
@@ -199,40 +198,28 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     return calls;
   }
 
-  setState(
-    multiOutputs: MultiResult<MulticallReturnedTypes>[],
-    updatedAt: number,
-  ): void {
-    if (!multiOutputs.every(o => o.success)) {
-      this.logger.error(
-        `${this.CLASS_NAME} ${this.implementationName} ${this.dexKey} setState: Some of the calls for pool ${this.address} generate state failed: `,
-      );
-      // No need to update with corrupted state
-      return;
-    }
-
-    const A = multiOutputs[0].returnData as bigint;
-    const fee = multiOutputs[1].returnData as bigint;
-    const virtualPrice = multiOutputs[2].returnData as bigint;
-    const totalSupply = multiOutputs[3].returnData as bigint;
+  setState(multiOutputs: MulticallReturnedTypes[], updatedAt: number): void {
+    const A = multiOutputs[0] as bigint;
+    const fee = multiOutputs[1] as bigint;
+    const virtualPrice = multiOutputs[2] as bigint;
+    const totalSupply = multiOutputs[3] as bigint;
     const lastIndex = 4;
 
-    const balances = multiOutputs
-      .slice(lastIndex, lastIndex + this.poolConstants.COINS.length)
-      .map(e => e.returnData) as bigint[];
+    const balances = multiOutputs.slice(
+      lastIndex,
+      lastIndex + this.poolConstants.COINS.length,
+    ) as bigint[];
 
     let exchangeRateCurrent: (bigint | undefined)[] | undefined;
 
     let lastEndIndex = lastIndex + 1;
     if (this.useLending) {
       exchangeRateCurrent = new Array(this.useLending.length).fill(undefined);
-      const exchangeRateResults = multiOutputs
-        .slice(
-          lastEndIndex,
-          // Filter false elements before checking length
-          lastEndIndex + this.useLending.filter(el => el).length,
-        )
-        .map(e => e.returnData) as bigint[];
+      const exchangeRateResults = multiOutputs.slice(
+        lastEndIndex,
+        // Filter false elements before checking length
+        lastEndIndex + this.useLending.filter(el => el).length,
+      ) as bigint[];
 
       lastEndIndex += this.useLending.length;
       // We had array with booleans and I filtered of `false` and sent request.
@@ -262,7 +249,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     let offpeg_fee_multiplier: bigint | undefined;
 
     if (this.isLendingPool) {
-      offpeg_fee_multiplier = multiOutputs[lastEndIndex].returnData as bigint;
+      offpeg_fee_multiplier = multiOutputs[lastEndIndex] as bigint;
       lastEndIndex++;
     }
 

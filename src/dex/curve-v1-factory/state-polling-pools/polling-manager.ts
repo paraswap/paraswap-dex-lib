@@ -28,11 +28,7 @@ export class StatePollingManager {
       .flat();
 
     try {
-      const result = await multiWrapper.tryAggregate(
-        false,
-        callDatas,
-        blockNumber,
-      );
+      const result = await multiWrapper.aggregate(callDatas, blockNumber);
       const updatedAt = Date.now();
 
       let lastStart = 0;

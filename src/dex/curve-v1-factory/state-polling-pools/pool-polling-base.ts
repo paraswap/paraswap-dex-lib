@@ -1,6 +1,6 @@
 import Web3EthAbi, { AbiCoder } from 'web3-eth-abi';
 import { Logger } from 'log4js';
-import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
+import { MultiCallParams } from '../../../lib/multi-wrapper';
 import { MAX_ALLOWED_STATE_DELAY_MS } from '../constants';
 import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
 import { Address } from 'paraswap-core';
@@ -63,7 +63,7 @@ export abstract class PoolPollingBase {
   }
 
   abstract setState(
-    multiOutputs: MultiResult<MulticallReturnedTypes>[],
+    multiOutputs: MulticallReturnedTypes[],
     updatedAt: number,
   ): void;
 

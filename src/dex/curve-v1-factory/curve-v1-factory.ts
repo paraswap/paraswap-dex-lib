@@ -183,19 +183,16 @@ export class CurveV1Factory
           isLending,
         } = poolContextConstants;
 
-        const COINS = (
-          await this.dexHelper.multiWrapper.tryAggregate(
-            true,
-            _.range(0, nCoins).map(i => ({
-              target: customPool.address,
-              callData: this.abiCoder.encodeFunctionCall(
-                this._getCoinsABI(customPool.coinsInputType),
-                [i.toString()],
-              ),
-              decodeFunction: addressDecode,
-            })),
-          )
-        ).map(r => r.returnData);
+        const COINS = await this.dexHelper.multiWrapper.aggregate(
+          _.range(0, nCoins).map(i => ({
+            target: customPool.address,
+            callData: this.abiCoder.encodeFunctionCall(
+              this._getCoinsABI(customPool.coinsInputType),
+              [i.toString()],
+            ),
+            decodeFunction: addressDecode,
+          })),
+        );
 
         const coins_decimals = (
           await this.dexHelper.multiWrapper.tryAggregate(
@@ -365,7 +362,9 @@ export class CurveV1Factory
         {
           target: factoryAddress,
           callData: this.ifaces.factory.encodeFunctionData('get_coins', [p]),
-          decodeFunction: (result: MultiResult<BytesLike>): string[] =>
+          decodeFunction: (
+            result: MultiResult<BytesLike> | BytesLike,
+          ): string[] =>
             generalDecoder<string[]>(
               result,
               ['address[4]'],
@@ -376,7 +375,9 @@ export class CurveV1Factory
         {
           target: factoryAddress,
           callData: this.ifaces.factory.encodeFunctionData('get_decimals', [p]),
-          decodeFunction: (result: MultiResult<BytesLike>): number[] =>
+          decodeFunction: (
+            result: MultiResult<BytesLike> | BytesLike,
+          ): number[] =>
             generalDecoder<number[]>(
               result,
               ['uint256[4]'],
@@ -399,7 +400,9 @@ export class CurveV1Factory
           'metapool_implementations',
           [basePoolAddress],
         ),
-        decodeFunction: (result: MultiResult<BytesLike>): string[] =>
+        decodeFunction: (
+          result: MultiResult<BytesLike> | BytesLike,
+        ): string[] =>
           generalDecoder<string[]>(
             result,
             ['address[10]'],

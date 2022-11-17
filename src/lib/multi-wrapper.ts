@@ -10,52 +10,39 @@ export type MultiResult<T> = {
 export type MultiCallParams<T> = {
   target: string;
   callData: string;
-  decodeFunction: (str: MultiResult<string>) => T;
+  decodeFunction: (str: MultiResult<string> | string) => T;
   cb?: (data: T) => void;
 };
-
-export type AggregateMultiCallParams<T> = Omit<
-  MultiCallParams<T>,
-  'decodeFunction'
-> & { decodeFunction: (str: string) => T };
 
 export class MultiWrapper {
   /* eslint-disable-next-line */
   constructor(private multi: Contract, private logger: Logger) {}
 
   async aggregate<T>(
-    calls: AggregateMultiCallParams<T>[],
+    calls: MultiCallParams<T>[],
     blockNumber?: number | string,
     batchSize: number = 500,
-  ): Promise<T[] | null> {
-    try {
-      const aggregatedResult = await Promise.all(
-        _.chunk(calls, batchSize).map(async batch =>
-          this.multi.methods.aggregate(batch).call(undefined, blockNumber),
-        ),
-      );
-      const results = aggregatedResult.reduce<string[]>((acc, res) => {
-        acc.push(...res);
-        return acc;
-      }, []);
+  ): Promise<T[]> {
+    const aggregatedResult = await Promise.all(
+      _.chunk(calls, batchSize).map(async batch =>
+        this.multi.methods.aggregate(batch).call(undefined, blockNumber),
+      ),
+    );
+    const results = aggregatedResult.reduce<string[]>((acc, res) => {
+      acc.push(...res);
+      return acc;
+    }, []);
 
-      return results.map((result: string, index: number) => {
-        const requested = calls[index];
-        const res = calls[index].decodeFunction(result);
+    return results.map((result: string, index: number) => {
+      const requested = calls[index];
+      const res = calls[index].decodeFunction(result);
 
-        if (requested.cb) {
-          requested.cb(res);
-        }
+      if (requested.cb) {
+        requested.cb(res);
+      }
 
-        return res;
-      });
-    } catch (e) {
-      this.logger.error(
-        `Multicall request with ${calls.length} calls failed: `,
-        e,
-      );
-      return null;
-    }
+      return res;
+    });
   }
 
   async tryAggregate<T>(

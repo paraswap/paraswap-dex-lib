@@ -15,6 +15,9 @@ import { Address } from 'paraswap-core';
 import { BigNumber } from 'ethers';
 import { _require } from '../../../utils';
 
+const DEFAULT_2_ZERO_ARRAY = [0n, 0n];
+const DEFAULT_4_ZERO_ARRAY = [0n, 0n, 0n, 0n];
+
 export class FactoryStateHandler extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
@@ -65,9 +68,12 @@ export class FactoryStateHandler extends PoolPollingBase {
         callData: this.factoryIface.encodeFunctionData('get_fees', [
           this.address,
         ]),
-        decodeFunction: (result: MultiResult<BytesLike>) =>
-          generalDecoder(result, ['uint256', 'uint256'], [0n, 0n], parsed =>
-            parsed.map((p: BigNumber) => BigInt(p.toString())),
+        decodeFunction: (result: MultiResult<BytesLike> | BytesLike) =>
+          generalDecoder(
+            result,
+            ['uint256', 'uint256'],
+            DEFAULT_2_ZERO_ARRAY,
+            parsed => parsed.map((p: BigNumber) => p.toBigInt()),
           ),
       },
       {
@@ -75,32 +81,17 @@ export class FactoryStateHandler extends PoolPollingBase {
         callData: this.factoryIface.encodeFunctionData('get_balances', [
           this.address,
         ]),
-        decodeFunction: (result: MultiResult<BytesLike>) =>
-          generalDecoder(result, ['uint256[4]'], [0n, 0n, 0n, 0n], parsed =>
-            parsed[0].map((p: BigNumber) => BigInt(p.toString())),
+        decodeFunction: (result: MultiResult<BytesLike> | BytesLike) =>
+          generalDecoder(result, ['uint256[4]'], DEFAULT_4_ZERO_ARRAY, parsed =>
+            parsed[0].map((p: BigNumber) => p.toBigInt()),
           ),
       },
     ];
     return calls;
   }
 
-  setState(
-    multiOutputs: MultiResult<MulticallReturnedTypes>[],
-    updatedAt: number,
-  ): void {
-    if (!multiOutputs.every(o => o.success)) {
-      this.logger.error(
-        `${this.dexKey} setState: Some of the calls to ${this.address} generate state failed: `,
-      );
-      // No need to update with corrupted state
-      return;
-    }
-
-    const [A, fees, balances] = multiOutputs.map(o => o.returnData) as [
-      bigint,
-      bigint[],
-      bigint[],
-    ];
+  setState(multiOutputs: MulticallReturnedTypes[], updatedAt: number): void {
+    const [A, fees, balances] = multiOutputs as [bigint, bigint[], bigint[]];
 
     let basePoolState: PoolState | undefined;
     if (this.isMetaPool) {
