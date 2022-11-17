@@ -28,10 +28,14 @@ export class MultiWrapper {
         this.multi.methods.aggregate(batch).call(undefined, blockNumber),
       ),
     );
-    const results = aggregatedResult.reduce<string[]>((acc, res) => {
-      acc.push(...res.returnData);
-      return acc;
-    }, []);
+
+    let globalInd = 0;
+    const results: string[] = new Array(calls.length);
+    for (const res of aggregatedResult) {
+      for (const element of res.returnData) {
+        results[globalInd++] = element;
+      }
+    }
 
     return results.map((result: string, index: number) => {
       const requested = calls[index];
@@ -51,10 +55,10 @@ export class MultiWrapper {
     blockNumber?: number | string,
     batchSize: number = 500,
   ): Promise<MultiResult<T>[]> {
-    const allCalls = [];
+    const allCalls = new Array(Math.ceil(calls.length / batchSize));
     for (let i = 0; i < calls.length; i += batchSize) {
       const batch = calls.slice(i, i + batchSize);
-      allCalls.push(batch);
+      allCalls[Math.floor(i / batchSize)] = batch;
     }
 
     const aggregatedResult = await Promise.all(
@@ -65,13 +69,13 @@ export class MultiWrapper {
       ),
     );
 
-    const results = aggregatedResult.reduce<MultiResult<string>[]>(
-      (acc, res) => {
-        acc.push(...res);
-        return acc;
-      },
-      [],
-    );
+    let globalInd = 0;
+    const results: MultiResult<string>[] = new Array(calls.length);
+    for (const res of aggregatedResult) {
+      for (const element of res) {
+        results[globalInd++] = element;
+      }
+    }
 
     return results.map((result: MultiResult<string>, index: number) => {
       const requested = calls[index];
