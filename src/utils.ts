@@ -329,3 +329,9 @@ export const normalizeAddress = (address: string) => {
 export function currentBigIntTimestampInS() {
   return BigInt(Math.floor(Date.now() / 1000));
 }
+
+export const isDestTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(transferFees.destFee || transferFees.destDexFee);
+};
