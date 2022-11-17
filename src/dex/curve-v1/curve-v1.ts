@@ -306,8 +306,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   }
 
   getPoolConfigs(from: Token, to: Token) {
-    const fromAddress = from.address;
-    const toAddress = to.address;
+    const fromAddress = from.address.toLowerCase();
+    const toAddress = to.address.toLowerCase();
     return Object.values(this.pools).filter(config => {
       const underlying = config.underlying.map((add: string) =>
         add.toLowerCase(),
