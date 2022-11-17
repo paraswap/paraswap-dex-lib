@@ -163,5 +163,7 @@ export const uint24ToNumber = (
 export const uint24ToBigInt = (
   result: MultiResult<BytesLike> | BytesLike,
 ): bigint => {
-  return generalDecoder(result, ['uint24'], 0n, value => value[0].toBigInt());
+  return generalDecoder(result, ['uint24'], 0n, value =>
+    BigInt(value[0].toString()),
+  );
 };

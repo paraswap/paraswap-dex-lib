@@ -29,7 +29,7 @@ export class MultiWrapper {
       ),
     );
     const results = aggregatedResult.reduce<string[]>((acc, res) => {
-      acc.push(...res);
+      acc.push(...res.returnData);
       return acc;
     }, []);
 
