@@ -54,6 +54,7 @@ import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { Camelot } from './camelot/camelot';
 
 const LegacyDexes = [
   CurveV2,
@@ -106,6 +107,7 @@ const Dexes = [
   Synthetix,
   SwaapV1,
   WstETH,
+  Camelot,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
