@@ -15,8 +15,6 @@ export abstract class PoolPollingBase {
 
   protected _poolState: PoolState | null = null;
 
-  protected _stateLastUpdatedAt: number = 0;
-
   protected abiCoder = Web3EthAbi as unknown as AbiCoder;
 
   // This values is used in PoolTracker
@@ -35,6 +33,7 @@ export abstract class PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
+    readonly cacheStateKey: string,
     readonly implementationName: string,
     readonly implementationAddress: Address,
     readonly poolIdentifier: string,
@@ -62,20 +61,30 @@ export abstract class PoolPollingBase {
       : [];
   }
 
-  abstract setState(
-    multiOutputs: MulticallReturnedTypes[],
-    updatedAt: number,
-  ): void;
+  async setState(newState: PoolState): Promise<void> {
+    // If we need more fancy handling for state replacement, it is a good place for that
+    this._poolState = newState;
+  }
 
   // Each type of implementation: currently two (Factory and Custom) may have different
-  // set of multicall requests. It is useful to make calls tha shouldn't fail
+  // set of multicall requests. It is useful to make calls that shouldn't fail
   abstract getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[];
 
+  abstract parseMultiResultsToStateValues(
+    multiOutputs: MulticallReturnedTypes[],
+    blockNumber: number,
+    updatedAtMs: number,
+  ): PoolState;
+
+  isStateUpToDate(state: PoolState | null): boolean {
+    return (
+      state !== null &&
+      Date.now() - state.updatedAtMs < MAX_ALLOWED_STATE_DELAY_MS
+    );
+  }
+
   getState(): PoolState | null {
-    if (
-      this._poolState &&
-      Date.now() - this._stateLastUpdatedAt < MAX_ALLOWED_STATE_DELAY_MS
-    ) {
+    if (this.isStateUpToDate(this._poolState)) {
       return this._poolState;
     } else if (this._poolState) {
       this.logger.error(

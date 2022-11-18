@@ -68,8 +68,7 @@ export class CurveV1FactoryPoolManager {
   updatePollingPoolsInBatch() {
     this.statePollingManager.updatePoolsInBatch(
       this.logger,
-      this.dexHelper.config.data.network,
-      this.dexHelper.multiWrapper,
+      this.dexHelper,
       Object.values(this.statePollingPoolsFromId).concat(
         Object.values(this.poolsForOnlyState),
       ),
@@ -91,8 +90,7 @@ export class CurveV1FactoryPoolManager {
 
     await this.statePollingManager.updatePoolsInBatch(
       this.logger,
-      this.dexHelper.config.data.network,
-      this.dexHelper.multiWrapper,
+      this.dexHelper,
       [pool],
       blockNumber,
     );

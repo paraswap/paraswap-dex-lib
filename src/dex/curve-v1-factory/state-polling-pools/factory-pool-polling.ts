@@ -22,6 +22,7 @@ export class FactoryStateHandler extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
+    cacheStateKey: string,
     readonly implementationName: FactoryImplementationNames,
     implementationAddress: Address,
     readonly address: Address,
@@ -38,6 +39,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     super(
       logger,
       dexKey,
+      cacheStateKey,
       implementationName,
       implementationAddress,
       poolIdentifier,
@@ -90,7 +92,11 @@ export class FactoryStateHandler extends PoolPollingBase {
     return calls;
   }
 
-  setState(multiOutputs: MulticallReturnedTypes[], updatedAt: number): void {
+  parseMultiResultsToStateValues(
+    multiOutputs: MulticallReturnedTypes[],
+    blockNumber: number,
+    updatedAtMs: number,
+  ): PoolState {
     const [A, fees, balances] = multiOutputs as [bigint, bigint[], bigint[]];
 
     let basePoolState: PoolState | undefined;
@@ -99,45 +105,23 @@ export class FactoryStateHandler extends PoolPollingBase {
       const retrievedBasePoolState = this.baseStatePoolPolling!.getState();
 
       if (retrievedBasePoolState === null) {
-        this.logger.error(
+        throw new Error(
           `${this.CLASS_NAME} ${this.dexKey} ${this.address}: Can not retrieve base pool state`,
         );
-        return;
       }
       basePoolState = retrievedBasePoolState;
     }
 
-    if (this._poolState === null) {
-      this._poolState = {
-        A: this.poolContextConstants.A_PRECISION
-          ? A * this.poolContextConstants.A_PRECISION
-          : A,
-        fee: fees[0], // Array has [fee, adminFee], but we want only fee
-        balances: balances,
-        constants: this.poolConstants,
-        basePoolState,
-      };
-    } else {
-      this._poolState.A = this.poolContextConstants.A_PRECISION
+    return {
+      A: this.poolContextConstants.A_PRECISION
         ? A * this.poolContextConstants.A_PRECISION
-        : A;
-      this._poolState.fee = fees[0];
-
-      _require(
-        this._poolState.balances.length === balances.length,
-        `New state balances.length doesn't match old state balances.length`,
-        { oldState: this._poolState.balances, newState: balances },
-        'this._poolState.balances.length === state.balances.length',
-      );
-
-      for (const [i, _] of this._poolState.balances.entries()) {
-        this._poolState.balances[i] = balances[i];
-      }
-
-      this._poolState.basePoolState = basePoolState;
-
-      // I skip state.constants update as they are not changing
-    }
-    this._stateLastUpdatedAt = updatedAt;
+        : A,
+      fee: fees[0], // Array has [fee, adminFee], but we want only fee
+      balances: balances,
+      constants: this.poolConstants,
+      basePoolState,
+      updatedAtMs,
+      blockNumber,
+    };
   }
 }

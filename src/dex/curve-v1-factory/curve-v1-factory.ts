@@ -222,6 +222,7 @@ export class CurveV1Factory
           newPool = new CustomBasePoolForFactory(
             this.logger,
             this.dexKey,
+            this.cacheStateKey,
             customPool.name,
             customPool.address,
             poolIdentifier,
@@ -238,6 +239,7 @@ export class CurveV1Factory
           newPool = new CustomBasePoolForFactory(
             this.logger,
             this.dexKey,
+            this.cacheStateKey,
             customPool.name,
             customPool.address,
             poolIdentifier,
@@ -522,6 +524,7 @@ export class CurveV1Factory
       const newPool = new FactoryStateHandler(
         this.logger,
         this.dexKey,
+        this.cacheStateKey,
         factoryImplementationFromConfig.name,
         implementationAddress.toLowerCase(),
         poolAddresses[i],

@@ -141,7 +141,7 @@ export interface IDexPricing<ExchangeData> {
   releaseResources?(): AsyncOrSync<void>;
 
   // Build an event based pool with all the info to create inside
-  // a redis key name poolKey
+  // a cache key name poolKey
   addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<boolean>;
   // return true if the userAddress is is blacklisted from the exchange
   // useful for RFQ system
