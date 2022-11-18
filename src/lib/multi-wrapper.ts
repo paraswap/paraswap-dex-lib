@@ -30,23 +30,20 @@ export class MultiWrapper {
     );
 
     let globalInd = 0;
-    const results: string[] = new Array(calls.length);
+    const resultsUndecoded: string[] = new Array(calls.length);
     for (const res of aggregatedResult) {
       for (const element of res.returnData) {
-        results[globalInd++] = element;
+        resultsUndecoded[globalInd++] = element;
       }
     }
 
-    return results.map((result: string, index: number) => {
-      const requested = calls[index];
-      const res = calls[index].decodeFunction(result);
+    const results: T[] = new Array(resultsUndecoded.length);
+    for (const [i, undecodedElement] of resultsUndecoded.entries()) {
+      results[i] = calls[i].decodeFunction(undecodedElement);
+      calls[i].cb?.(results[i]);
+    }
 
-      if (requested.cb) {
-        requested.cb(res);
-      }
-
-      return res;
-    });
+    return results;
   }
 
   async tryAggregate<T>(
@@ -70,34 +67,34 @@ export class MultiWrapper {
     );
 
     let globalInd = 0;
-    const results: MultiResult<string>[] = new Array(calls.length);
+    const resultsUndecoded: MultiResult<string>[] = new Array(calls.length);
     for (const res of aggregatedResult) {
       for (const element of res) {
-        results[globalInd++] = element;
+        resultsUndecoded[globalInd++] = element;
       }
     }
 
-    return results.map((result: MultiResult<string>, index: number) => {
-      const requested = calls[index];
-      if (!result.success) {
+    const results: MultiResult<T>[] = new Array(resultsUndecoded.length);
+    for (const [i, undecodedElement] of resultsUndecoded.entries()) {
+      if (!undecodedElement.success) {
         this.logger.error(
-          `Multicall request number ${index} for ${requested.target} failed`,
+          `Multicall request number ${i} for ${calls[i].target} failed`,
         );
-        return {
+
+        results[i] = {
           success: false,
         } as MultiResult<T>;
+        continue;
       }
 
-      const res = {
+      results[i] = {
         success: true,
-        returnData: calls[index].decodeFunction(result),
+        returnData: calls[i].decodeFunction(undecodedElement.returnData),
       } as MultiResult<T>;
 
-      if (requested.cb) {
-        requested.cb(res.returnData);
-      }
+      calls[i].cb?.(results[i].returnData);
+    }
 
-      return res;
-    });
+    return results;
   }
 }
