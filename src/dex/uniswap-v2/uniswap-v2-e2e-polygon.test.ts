@@ -1353,9 +1353,9 @@ describe('UniswapV2 E2E Polygon', () => {
       it('QuickSwap MATIC -> TOKEN', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.USDC,
+          tokens.WETH,
           holders.MATIC,
-          '7000000000000000000',
+          '100000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1365,10 +1365,10 @@ describe('UniswapV2 E2E Polygon', () => {
       });
       it('QuickSwap TOKEN -> MATIC', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.WETH,
           tokens.MATIC,
-          holders.DAI,
-          '700000000000000000000',
+          holders.WETH,
+          '70000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1378,10 +1378,10 @@ describe('UniswapV2 E2E Polygon', () => {
       });
       it('QuickSwap TOKEN -> TOKEN', async () => {
         await testE2E(
-          tokens.USDC,
-          tokens.ETH,
-          holders.WMATIC,
-          '700000000000000000',
+          tokens.WETH,
+          tokens.WMATIC,
+          holders.WETH,
+          '70000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1392,12 +1392,12 @@ describe('UniswapV2 E2E Polygon', () => {
     });
 
     describe('Multiswap', () => {
-      it('QuickSwap MATIC -> TOKEN', async () => {
+      it('Multiswap MATIC -> TOKEN', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.USDC,
+          tokens.WETH,
           holders.MATIC,
-          '7000000000000000000',
+          '100000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -1405,12 +1405,12 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('QuickSwap TOKEN -> MATIC', async () => {
+      it('Multiswap TOKEN -> MATIC', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.WETH,
           tokens.MATIC,
-          holders.DAI,
-          '7000000000000000000',
+          holders.WETH,
+          '70000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -1418,12 +1418,12 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('QuickSwap TOKEN -> TOKEN', async () => {
+      it('Multiswap TOKEN -> TOKEN', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.WETH,
           tokens.WMATIC,
-          holders.DAI,
-          '7000000000000000000',
+          holders.WETH,
+          '70000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -1434,12 +1434,12 @@ describe('UniswapV2 E2E Polygon', () => {
     });
 
     describe('BuyMethod', () => {
-      it('QuickSwap MATIC -> TOKEN', async () => {
+      it('Multiswap MATIC -> TOKEN', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.USDC,
+          tokens.WETH,
           holders.MATIC,
-          '7000000000000000000',
+          '70000000000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.buy,
@@ -1449,10 +1449,10 @@ describe('UniswapV2 E2E Polygon', () => {
       });
       it('QuickSwap TOKEN -> MATIC', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.WETH,
           tokens.MATIC,
-          holders.DAI,
-          '7000000000000000000',
+          holders.WETH,
+          '100000000000000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.buy,
@@ -1462,10 +1462,10 @@ describe('UniswapV2 E2E Polygon', () => {
       });
       it('QuickSwap TOKEN -> TOKEN', async () => {
         await testE2E(
-          tokens.USDC,
+          tokens.WETH,
           tokens.WMATIC,
-          holders.DAI,
-          '70000000000000000000',
+          holders.WETH,
+          '100000000000000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.buy,
@@ -1478,12 +1478,12 @@ describe('UniswapV2 E2E Polygon', () => {
     describe('FeeOnTransfer', () => {
       describe('sell', () => {
         describe('megaSwap', () => {
-          it('WMATIC -> USDC', async () => {
+          it('WMATIC -> WETH', async () => {
             await testE2E(
               tokens.WMATIC,
-              tokens.USDC,
+              tokens.WETH,
               holders.WMATIC,
-              '1000000000000000000',
+              '100000000000000000',
               SwapSide.SELL,
               dexKey,
               ContractMethod.megaSwap,
@@ -1494,30 +1494,15 @@ describe('UniswapV2 E2E Polygon', () => {
               { srcFee: 0, destFee: 0, srcDexFee: 0, destDexFee: 500 },
             );
           });
-          it('USDC -> WMATIC', async () => {
-            await testE2E(
-              tokens.USDC,
-              tokens.WMATIC,
-              holders.HANZO,
-              '41234567000000000',
-              SwapSide.SELL,
-              dexKey,
-              ContractMethod.megaSwap,
-              network,
-              provider,
-              undefined,
-              undefined,
-              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
-            );
-          });
+          
         });
         describe('swapOnUniswapV2Fork', () => {
           it('WMATIC -> USDC', async () => {
             await testE2E(
               tokens.WMATIC,
-              tokens.USDC,
+              tokens.WETH,
               holders.WMATIC,
-              '1000000000000000000',
+              '100000000000000000',
               SwapSide.SELL,
               dexKey,
               ContractMethod.swapOnUniswapV2Fork,
@@ -1528,12 +1513,12 @@ describe('UniswapV2 E2E Polygon', () => {
               { srcFee: 0, destFee: 0, srcDexFee: 0, destDexFee: 500 },
             );
           });
-          it('USDC -> WMATIC', async () => {
+          it('WETH -> WMATIC', async () => {
             await testE2E(
-              tokens.USDC,
+              tokens.WETH,
               tokens.WMATIC,
-              holders.HANZO,
-              '41234567000000000',
+              holders.WETH,
+              '70000000000000',
               SwapSide.SELL,
               dexKey,
               ContractMethod.swapOnUniswapV2Fork,
