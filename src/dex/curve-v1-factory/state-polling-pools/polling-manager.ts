@@ -37,8 +37,8 @@ export class StatePollingManager {
 
     const result = await dexHelper.multiWrapper.aggregate(
       callDatas,
-      3000,
       _blockNumber,
+      3000,
     );
     const updatedAt = Date.now();
 
@@ -84,6 +84,7 @@ export class StatePollingManager {
             p.poolIdentifier,
             Utils.Serialize(newStates[i]),
           );
+          p.setState(newStates[i]);
         }),
       );
       logger.info(
