@@ -162,6 +162,9 @@ describe('CurveV1Factory', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // @ts-expect-error for testing there is dummy blocknumber, but it is not
+      // part of the interface
+      dexHelper.blockManager._blockNumber = blockNumber;
       console.log(
         `Received blockNumber ${blockNumber} on network ${dexHelper.config.data.network}`,
       );
@@ -235,6 +238,9 @@ describe('CurveV1Factory', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // @ts-expect-error for testing there is dummy blocknumber, but it is not
+      // part of the interface
+      dexHelper.blockManager._blockNumber = blockNumber;
       curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
       if (curveV1Factory.initializePricing) {
         await curveV1Factory.initializePricing(blockNumber);
@@ -305,6 +311,9 @@ describe('CurveV1Factory', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // @ts-expect-error for testing there is dummy blocknumber, but it is not
+      // part of the interface
+      dexHelper.blockManager._blockNumber = blockNumber;
       curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
       if (curveV1Factory.initializePricing) {
         await curveV1Factory.initializePricing(blockNumber);
@@ -375,6 +384,9 @@ describe('CurveV1Factory', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // @ts-expect-error for testing there is dummy blocknumber, but it is not
+      // part of the interface
+      dexHelper.blockManager._blockNumber = blockNumber;
       curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
       if (curveV1Factory.initializePricing) {
         await curveV1Factory.initializePricing(blockNumber);
@@ -445,6 +457,9 @@ describe('CurveV1Factory', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // @ts-expect-error for testing there is dummy blocknumber, but it is not
+      // part of the interface
+      dexHelper.blockManager._blockNumber = blockNumber;
       curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
       if (curveV1Factory.initializePricing) {
         await curveV1Factory.initializePricing(blockNumber);
@@ -515,6 +530,9 @@ describe('CurveV1Factory', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // @ts-expect-error for testing there is dummy blocknumber, but it is not
+      // part of the interface
+      dexHelper.blockManager._blockNumber = blockNumber;
       curveV1Factory = new CurveV1Factory(network, dexKey, dexHelper);
       if (curveV1Factory.initializePricing) {
         await curveV1Factory.initializePricing(blockNumber);
