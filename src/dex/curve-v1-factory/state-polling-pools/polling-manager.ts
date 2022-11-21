@@ -8,6 +8,7 @@ import { PoolPollingBase } from './pool-polling-base';
  * Since we are updating all pools state at once, I need some generalized iterator without state,
  * just to go for every pool, get multicall requests and apply them into new state
  */
+
 export class StatePollingManager {
   static async fetchStatesFromRPC(
     dexHelper: IDexHelper,
@@ -20,11 +21,11 @@ export class StatePollingManager {
 
     const newStates = new Array(pools.length);
 
-    const poolResultDivider = new Array<number>(pools.length).fill(0);
+    const poolResultDividers = new Array<number>(pools.length).fill(0);
     const callDatas = pools
       .map((p, i) => {
         const poolCalldata = p.getStateMultiCalldata();
-        poolResultDivider[i] = poolCalldata.length;
+        poolResultDividers[i] = poolCalldata.length;
         return poolCalldata;
       })
       .flat();
@@ -46,12 +47,12 @@ export class StatePollingManager {
     await Promise.all(
       pools.map(async (p, i) => {
         const newState = p.parseMultiResultsToStateValues(
-          result.slice(lastStart, lastStart + poolResultDivider[i]),
+          result.slice(lastStart, lastStart + poolResultDividers[i]),
           _blockNumber,
           updatedAt,
         );
         newStates[i] = newState;
-        lastStart += poolResultDivider[i];
+        lastStart += poolResultDividers[i];
       }),
     );
     return newStates;
@@ -63,6 +64,7 @@ export class StatePollingManager {
     pools: PoolPollingBase[],
     blockNumber?: number,
   ) {
+    const dexKey = pools.length > 0 ? pools[0].dexKey : 'CurveV1Factory';
     try {
       const newStates = await StatePollingManager.fetchStatesFromRPC(
         dexHelper,
@@ -80,13 +82,16 @@ export class StatePollingManager {
           dexHelper.cache.hset(
             p.cacheStateKey,
             p.poolIdentifier,
-            Utils.Parse(newStates[i]),
+            Utils.Serialize(newStates[i]),
           );
         }),
       );
+      logger.info(
+        `${dexKey}: all (${pools.length}) pools state was successfully updated on network ${dexHelper.config.data.network}`,
+      );
     } catch (e) {
       logger.error(
-        `${pools.length > 0 ? pools[0].dexKey : 'CurveV1Factory'}: On network ${
+        `${dexKey}: On network ${
           dexHelper.config.data.network
         } failed to update state for pools: ${pools
           .slice(0, 10)
@@ -103,6 +108,9 @@ export class StatePollingManager {
     pools: PoolPollingBase[],
     blockNumber?: number,
   ) {
+    const dexKey = pools.length > 0 ? pools[0].dexKey : 'CurveV1Factory';
+    const poolsForRPCUpdate: PoolPollingBase[] = [];
+
     await Promise.all(
       pools.map(async p => {
         try {
@@ -131,23 +139,30 @@ export class StatePollingManager {
           `${p.dexKey}-${p.poolIdentifier}: state wasn't received from cache. Falling back to RPC`,
         );
 
-        try {
-          const [newState] = await StatePollingManager.fetchStatesFromRPC(
-            dexHelper,
-            [p],
-            blockNumber,
-          );
-          p.setState(newState);
-          return;
-        } catch (e) {
-          logger.error(
-            `${p.dexKey}-${p.poolIdentifier}: couldn't update state from RPC:`,
-            e,
-          );
-          return;
-        }
+        poolsForRPCUpdate.push(p);
       }),
     );
+
+    try {
+      const newStates = await StatePollingManager.fetchStatesFromRPC(
+        dexHelper,
+        poolsForRPCUpdate,
+        blockNumber,
+      );
+      poolsForRPCUpdate.forEach((p, i) => p.setState(newStates[i]));
+      return;
+    } catch (e) {
+      logger.error(
+        `${dexKey}: On network ${
+          dexHelper.config.data.network
+        } failed to fetch state from RPC for pools: ${pools
+          .slice(0, 10)
+          .map(p => p.address)
+          .join(', ')}${pools.length > 10 ? '...' : ''}: `,
+        e,
+      );
+      return;
+    }
   }
 
   static async updatePoolsInBatch(
@@ -175,6 +190,7 @@ export class StatePollingManager {
         blockNumber,
       );
     }
+
     logger.trace(
       `CurveV1Factory: successfully updated state for ${pools.length} pools on network ${dexHelper.config.data.network}`,
     );

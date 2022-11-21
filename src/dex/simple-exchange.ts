@@ -13,7 +13,9 @@ export class SimpleExchange {
   simpleSwapHelper: Interface;
   protected abiCoder: AbiCoder;
   erc20Interface: Interface;
+
   needWrapNative = false;
+  isFeeOnTransferSupported = false;
 
   protected augustusAddress: Address;
   private provider: Web3;

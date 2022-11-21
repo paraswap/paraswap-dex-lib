@@ -94,6 +94,11 @@ export interface IDexPricing<ExchangeData> {
 
   readonly cacheStateKey: string;
 
+  // Used to determine if current dex is state polling type or not
+  // Set to true if there are many pools polling state and there is no
+  // event base support for this Dex
+  readonly isStatePollingDex?: boolean;
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
