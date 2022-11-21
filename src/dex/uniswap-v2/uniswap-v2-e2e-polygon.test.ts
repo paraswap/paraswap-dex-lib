@@ -1345,4 +1345,246 @@ describe('UniswapV2 E2E Polygon', () => {
       });
     });
   });
+
+  describe('Swapsicle', () => {
+    const dexKey = 'Swapsicle';
+
+    describe('Simpleswap', () => {
+      it('QuickSwap MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.USDC,
+          holders.MATIC,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('QuickSwap TOKEN -> MATIC', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MATIC,
+          holders.DAI,
+          '700000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('QuickSwap TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.ETH,
+          holders.WMATIC,
+          '700000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multiswap', () => {
+      it('QuickSwap MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.USDC,
+          holders.MATIC,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('QuickSwap TOKEN -> MATIC', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MATIC,
+          holders.DAI,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('QuickSwap TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WMATIC,
+          holders.DAI,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('BuyMethod', () => {
+      it('QuickSwap MATIC -> TOKEN', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.USDC,
+          holders.MATIC,
+          '7000000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+      it('QuickSwap TOKEN -> MATIC', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MATIC,
+          holders.DAI,
+          '7000000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+      it('QuickSwap TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WMATIC,
+          holders.DAI,
+          '70000000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('FeeOnTransfer', () => {
+      describe('sell', () => {
+        describe('megaSwap', () => {
+          it('WMATIC -> USDC', async () => {
+            await testE2E(
+              tokens.WMATIC,
+              tokens.USDC,
+              holders.WMATIC,
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 0, destDexFee: 500 },
+            );
+          });
+          it('USDC -> WMATIC', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.WMATIC,
+              holders.HANZO,
+              '41234567000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
+        });
+        describe('swapOnUniswapV2Fork', () => {
+          it('WMATIC -> USDC', async () => {
+            await testE2E(
+              tokens.WMATIC,
+              tokens.USDC,
+              holders.WMATIC,
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.swapOnUniswapV2Fork,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 0, destDexFee: 500 },
+            );
+          });
+          it('USDC -> WMATIC', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.WMATIC,
+              holders.HANZO,
+              '41234567000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.swapOnUniswapV2Fork,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
+        });
+      });
+      describe('buy', () => {
+        describe('buy', () => {
+          it('USDC -> WMATIC', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.WMATIC,
+              holders.USDC,
+              '1000000000000000000',
+              SwapSide.BUY,
+              dexKey,
+              ContractMethod.buy,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
+        });
+        describe('buyOnUniswapV2Fork', () => {
+          it('USDC -> WMATIC', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.WMATIC,
+              holders.USDC,
+              '1000000000000000000',
+              SwapSide.BUY,
+              dexKey,
+              ContractMethod.buyOnUniswapV2Fork,
+              network,
+              provider,
+              undefined,
+              undefined,
+              { srcFee: 0, destFee: 0, srcDexFee: 500, destDexFee: 0 },
+            );
+          });
+        });
+      });
+    });
+  });
+
 });
