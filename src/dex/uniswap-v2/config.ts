@@ -449,6 +449,14 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x9e43ee37212e3296c7f6087d3e0a37b48a4e4e413538dac0fd18cfe2f80666c1',
       feeCode: 30,
     },
+    [Network.POLYGON]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/jenniyus/swapsicle-exchange-polygon',
+      factoryAddress: '0x1eb5644fAC0FB43f79dE25C0BaB94F0d56062718',
+      initCode:
+        '0x647d9b2d483bb87af1032b1d49b999692ae322ab75628ce2fb56e3cd52fe4feb',
+      feeCode: 30,
+    },
   },
   QuickSwap: {
     [Network.POLYGON]: {
