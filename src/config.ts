@@ -43,7 +43,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-      Adapter03: '0xe609AEAb29245b235F63dDc23a34eD911524818a',
+      Adapter03: '0x79359292fFD5C3307084084B5b7C3e81D733Ee98',
       BuyAdapter: '0x737E642eec6e5bD675022ADC6D726EB19FF74383',
     },
     uniswapV2ExchangeRouterAddress:
@@ -160,8 +160,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0x176a9403f7147eb907bd3b13ffb8bbd5de5c8f1f',
-      PolygonBuyAdapter: '0xD7d3E2491cc495faAa9a770cBDC7535fD1446D8C',
+      PolygonAdapter02: '0x97768fD3A529ee29B433cbb5E45E63F3bFFf0A93',
+      PolygonBuyAdapter: '0x40e11AE88A9402A34208D05bFB7E88171d2f58a0',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
