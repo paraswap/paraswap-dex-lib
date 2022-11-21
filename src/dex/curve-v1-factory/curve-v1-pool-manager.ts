@@ -66,12 +66,19 @@ export class CurveV1FactoryPoolManager {
   }
 
   updatePollingPoolsInBatch() {
+    // This is the sorted array of pools to update. Main point is - first are pools
+    // from non-meta pools and only after that meta pools.
+    // It may be optimized preparing this pools before hand
+    const pools = Object.values(this.poolsForOnlyState).concat(
+      Object.values(this.statePollingPoolsFromId).sort(
+        (a, b) => +a.isMetaPool - +b.isMetaPool,
+      ),
+    );
+
     this.statePollingManager.updatePoolsInBatch(
       this.logger,
       this.dexHelper,
-      Object.values(this.statePollingPoolsFromId).concat(
-        Object.values(this.poolsForOnlyState),
-      ),
+      pools,
     );
   }
 

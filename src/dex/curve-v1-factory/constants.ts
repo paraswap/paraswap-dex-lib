@@ -6,7 +6,7 @@ export const STATE_UPDATE_PERIOD_MS = 5 * 1000;
 
 export const STATE_UPDATE_RETRY_PERIOD_MS = 1000;
 
-export const MAX_ALLOWED_STATE_DELAY_MS = 10 * 1000;
+export const MAX_ALLOWED_STATE_DELAY_MS = 15 * 1000;
 
 export const POOL_EXCHANGE_GAS_COST = 200 * 1000;
 
