@@ -87,6 +87,8 @@ export class CurveV1Factory
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = true;
+  readonly isStatePollingDex = true;
+
   readonly poolManager: CurveV1FactoryPoolManager;
   readonly ifaces: CurveV1FactoryIfaces;
 

@@ -135,15 +135,17 @@ export class StatePollingManager {
           );
         }
 
-        logger.warn(
-          `${p.dexKey}-${p.poolIdentifier}: state wasn't received from cache. Falling back to RPC`,
-        );
-
         poolsForRPCUpdate.push(p);
       }),
     );
 
     try {
+      logger.warn(
+        `${poolsForRPCUpdate.length} pools: ${pools
+          .map(p => p.address)
+          .join(', ')} don't have state in cache. Falling back to RPC`,
+      );
+
       const newStates = await StatePollingManager.fetchStatesFromRPC(
         dexHelper,
         poolsForRPCUpdate,
@@ -192,7 +194,7 @@ export class StatePollingManager {
     }
 
     logger.trace(
-      `CurveV1Factory: successfully updated state for ${pools.length} pools on network ${dexHelper.config.data.network}`,
+      `CurveV1Factory: finished updated state for ${pools.length} pools on network ${dexHelper.config.data.network}`,
     );
   }
 }
