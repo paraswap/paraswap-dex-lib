@@ -10,7 +10,7 @@ import { PoolPollingBase } from './pool-polling-base';
  */
 
 export class StatePollingManager {
-  static async fetchStatesFromRPC(
+  static async fetchAndSetStatesFromRPC(
     dexHelper: IDexHelper,
     pools: PoolPollingBase[],
     blockNumber?: number,
@@ -38,23 +38,23 @@ export class StatePollingManager {
     const result = await dexHelper.multiWrapper.aggregate(
       callDatas,
       _blockNumber,
-      3000,
+      1000,
     );
     const updatedAt = Date.now();
 
     let lastStart = 0;
 
-    await Promise.all(
-      pools.map(async (p, i) => {
-        const newState = p.parseMultiResultsToStateValues(
-          result.slice(lastStart, lastStart + poolResultDividers[i]),
-          _blockNumber,
-          updatedAt,
-        );
-        newStates[i] = newState;
-        lastStart += poolResultDividers[i];
-      }),
-    );
+    pools.map((p, i) => {
+      const newState = p.parseMultiResultsToStateValues(
+        result.slice(lastStart, lastStart + poolResultDividers[i]),
+        _blockNumber,
+        updatedAt,
+      );
+      p.setState(newState);
+      newStates[i] = newState;
+      lastStart += poolResultDividers[i];
+    });
+
     return newStates;
   }
 
@@ -66,7 +66,7 @@ export class StatePollingManager {
   ) {
     const dexKey = pools.length > 0 ? pools[0].dexKey : 'CurveV1Factory';
     try {
-      const newStates = await StatePollingManager.fetchStatesFromRPC(
+      const newStates = await StatePollingManager.fetchAndSetStatesFromRPC(
         dexHelper,
         pools,
         blockNumber,
@@ -79,12 +79,11 @@ export class StatePollingManager {
       );
       await Promise.all(
         pools.map(async (p, i) => {
-          dexHelper.cache.hset(
+          await dexHelper.cache.hset(
             p.cacheStateKey,
             p.poolIdentifier,
             Utils.Serialize(newStates[i]),
           );
-          p.setState(newStates[i]);
         }),
       );
       logger.info(
@@ -147,12 +146,11 @@ export class StatePollingManager {
           .join(', ')} don't have state in cache. Falling back to RPC`,
       );
 
-      const newStates = await StatePollingManager.fetchStatesFromRPC(
+      await StatePollingManager.fetchAndSetStatesFromRPC(
         dexHelper,
         poolsForRPCUpdate,
         blockNumber,
       );
-      poolsForRPCUpdate.forEach((p, i) => p.setState(newStates[i]));
       return;
     } catch (e) {
       logger.error(
