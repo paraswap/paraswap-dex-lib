@@ -33,7 +33,7 @@ export class StatePollingManager {
     const _blockNumber =
       blockNumber !== undefined
         ? blockNumber
-        : dexHelper.blockManager.getLatestBlockNumber();
+        : await dexHelper.web3Provider.eth.getBlockNumber();
 
     const result = await dexHelper.multiWrapper.aggregate(
       callDatas,
