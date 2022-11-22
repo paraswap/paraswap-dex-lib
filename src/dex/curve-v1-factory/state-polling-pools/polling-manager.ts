@@ -173,9 +173,14 @@ export class StatePollingManager {
     dexHelper: IDexHelper,
     pools: PoolPollingBase[],
     blockNumber?: number,
+    liquidityUpdateFunc?: Function,
   ) {
     if (pools.length === 0) {
       return;
+    }
+
+    if (liquidityUpdateFunc) {
+      await liquidityUpdateFunc();
     }
 
     if (dexHelper.config.isSlave) {

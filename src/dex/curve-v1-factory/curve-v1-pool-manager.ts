@@ -5,6 +5,7 @@ import { IDexHelper } from '../../dex-helper';
 import { TaskScheduler } from '../../lib/task-scheduler';
 import {
   CURVE_API_URL,
+  LIQUIDITY_UPDATE_PERIOD_MS,
   NETWORK_ID_TO_NAME,
   STATE_UPDATE_PERIOD_MS,
   STATE_UPDATE_RETRY_PERIOD_MS,
@@ -43,6 +44,8 @@ export class CurveV1FactoryPoolManager {
   private statePollingManager = StatePollingManager;
   private taskScheduler: TaskScheduler;
 
+  private liquidityUpdatedAtMs: number = 0;
+
   constructor(
     private name: string,
     private logger: Logger,
@@ -69,16 +72,22 @@ export class CurveV1FactoryPoolManager {
     // This is the sorted array of pools to update. Main point is - first are pools
     // from non-meta pools and only after that meta pools.
     // It may be optimized preparing this pools before hand
+    const filteredPoolsByLiquidity = Object.values(
+      this.statePollingPoolsFromId,
+    ).filter(p => p.liquidityUSD > 1000);
+
     const pools = Object.values(this.poolsForOnlyState).concat(
-      Object.values(this.statePollingPoolsFromId).sort(
-        (a, b) => +a.isMetaPool - +b.isMetaPool,
-      ),
+      filteredPoolsByLiquidity.sort((a, b) => +a.isMetaPool - +b.isMetaPool),
     );
 
     this.statePollingManager.updatePoolsInBatch(
       this.logger,
       this.dexHelper,
       pools,
+      undefined,
+      Date.now() - this.liquidityUpdatedAtMs > LIQUIDITY_UPDATE_PERIOD_MS
+        ? this.fetchLiquiditiesFromApi.bind(this)
+        : undefined,
     );
   }
 
@@ -311,6 +320,8 @@ export class CurveV1FactoryPoolManager {
         }
         pool.liquidityUSD = poolLiquidity;
       });
+
+      this.liquidityUpdatedAtMs = Date.now();
     } catch (e) {
       this.logger.error(
         `${this.name}: Error fetching liquidity from CurveV2 API ${URL}: `,
