@@ -35,12 +35,12 @@ export type PriceAndAmount = [string, string];
 export type PriceAndAmountBigNumber = [BigNumber, BigNumber];
 
 export type PairPriceResponse = {
-  bids: PriceAndAmount[];
-  asks: PriceAndAmount[];
+  bids?: PriceAndAmount[];
+  asks?: PriceAndAmount[];
 };
 
 export type RatesResponse = {
-  [pair: string]: PairPriceResponse;
+  prices: { [pair: string]: PairPriceResponse };
 };
 
 export type RFQSecret = {
@@ -59,8 +59,6 @@ export type FetcherParams = {
 export type Rates = Array<[string, string]>;
 export type BigNumberRate = [BigNumber, BigNumber];
 export type BigNumberRates = Array<BigNumberRate>;
-
-export type RFQModel = 'firm' | 'indicative';
 
 type RequestConfigWithAuth = RequestConfig & {
   secret?: RFQSecret;
@@ -82,11 +80,9 @@ export type TokenWithAmount = Token & {
 export type RFQPayload = {
   makerAsset: Address;
   takerAsset: Address;
-  model: RFQModel;
   makerAmount?: string;
   takerAmount?: string;
-  taker: Address;
-  txOrigin: Address;
+  userAddress: Address;
 };
 
 export type AugustusOrderWithStringAndSignature = AugustusOrderWithString & {

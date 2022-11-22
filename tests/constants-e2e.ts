@@ -3,6 +3,8 @@ import {
   balanceOfFn,
   allowanceFn,
   SmartToken,
+  balancesFn,
+  allowedFn,
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
@@ -34,10 +36,14 @@ export const Tokens: {
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
+      addBalance: balancesFn,
+      addAllowance: allowedFn,
     },
     WBTC: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
       decimals: 8,
+      addBalance: balancesFn,
+      addAllowance: allowedFn,
     },
     BADGER: {
       address: '0x3472A5A71965499acd81997a54BBA8D852C6E53d',

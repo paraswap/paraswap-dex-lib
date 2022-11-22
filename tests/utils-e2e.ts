@@ -28,6 +28,7 @@ import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import { GIFTER_ADDRESS } from './constants-e2e';
+import { sleep } from './utils';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -288,6 +289,7 @@ export type TestParamE2E = {
   srcTokenAllowanceOverrides?: Record<Address, string>;
   destTokenBalanceOverrides?: Record<Address, string>;
   destTokenAllowanceOverrides?: Record<Address, string>;
+  sleepMs?: number;
 };
 
 const makeFakeTransferToSenderAddress = (
@@ -320,6 +322,7 @@ export async function newTestE2E({
   poolIdentifiers,
   limitOrderProvider,
   transferFees,
+  sleepMs,
 }: TestParamE2E) {
   const amount = BigInt(_amount);
   const twiceAmount = BigInt(_amount) * 2n;
@@ -407,7 +410,9 @@ export async function newTestE2E({
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
-  // await sleep(5000);
+  if (sleepMs) {
+    await sleep(sleepMs);
+  }
   try {
     const priceRoute = await paraswap.getPrices(
       srcToken.token,

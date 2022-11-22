@@ -120,7 +120,7 @@ class DummyCache implements ICache {
   ): void {}
 }
 
-class DummyRequestWrapper implements IRequestWrapper {
+export class DummyRequestWrapper implements IRequestWrapper {
   async get(
     url: string,
     timeout?: number,

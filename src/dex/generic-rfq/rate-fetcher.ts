@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { info } from 'console';
 import { ethers } from 'ethers';
 import { SwapSide } from 'paraswap-core';
 import { BN_0, BN_1 } from '../../bignumber-constants';
@@ -38,8 +37,6 @@ export const reversePrice = (price: PriceAndAmountBigNumber) =>
   ] as PriceAndAmountBigNumber;
 
 export class RateFetcher {
-  private augustusAddress: Address;
-
   private tokensFetcher: Fetcher<TokensResponse>;
   private pairsFetcher: Fetcher<PairsResponse>;
   private rateFetcher: Fetcher<RatesResponse>;
@@ -59,8 +56,6 @@ export class RateFetcher {
     private dexKey: string,
     private logger: Logger,
   ) {
-    this.augustusAddress = dexHelper.config.data.augustusAddress.toLowerCase();
-
     this.tokensFetcher = new Fetcher<TokensResponse>(
       dexHelper.httpRequest,
       {
@@ -110,6 +105,7 @@ export class RateFetcher {
           info: {
             requestOptions: config.blacklistConfig.reqParams,
             caster: this.casteBlacklistResponse.bind(this),
+            authenticate: authHttp(config.rateConfig.secret),
           },
           handler: this.handleBlackListResponse.bind(this),
         },
@@ -236,19 +232,23 @@ export class RateFetcher {
 
   private handleRatesResponse(resp: RatesResponse) {
     const pairs = this.pairs;
-    for (const pairName of Object.keys(resp)) {
+    Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
-        continue;
+        return;
       }
-      const prices = resp[pairName];
+      const prices = resp.prices[pairName];
+
+      if (!prices.asks || !prices.bids) {
+        return;
+      }
 
       const baseToken = this.tokens[pair.base];
       const quoteToken = this.tokens[pair.quote];
 
       if (!baseToken || !quoteToken) {
         this.logger.warn(`missing base or quote token`);
-        continue;
+        return;
       }
 
       if (prices.bids.length) {
@@ -270,7 +270,7 @@ export class RateFetcher {
           JSON.stringify(prices.asks),
         );
       }
-    }
+    });
   }
 
   checkHealth(): boolean {
@@ -377,7 +377,7 @@ export class RateFetcher {
     destToken: Token,
     amount: string,
     side: SwapSide,
-    txOrigin: Address,
+    userAddress: Address,
   ) {
     let orderPrices: PriceAndAmountBigNumber[] | null = null;
     try {
@@ -398,11 +398,9 @@ export class RateFetcher {
     const payload: RFQPayload = {
       makerAsset: destToken.address,
       takerAsset: srcToken.address,
-      model: 'firm',
       makerAmount: side === SwapSide.BUY ? amount : undefined,
       takerAmount: side === SwapSide.SELL ? amount : undefined,
-      taker: this.augustusAddress,
-      txOrigin,
+      userAddress,
     };
 
     return {
@@ -470,7 +468,7 @@ export class RateFetcher {
     _destToken: Token,
     srcAmount: string,
     side: SwapSide,
-    txOrigin: Address,
+    userAddress: Address,
   ): Promise<OrderInfo> {
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
     const destToken = this.dexHelper.config.wrapETH(_destToken);
@@ -484,7 +482,7 @@ export class RateFetcher {
       destToken,
       srcAmount,
       side,
-      txOrigin,
+      userAddress,
     );
 
     if (!result) {

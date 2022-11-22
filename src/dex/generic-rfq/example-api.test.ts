@@ -16,6 +16,7 @@ import {
   TokenWithInfo,
   TokensResponse,
   PairsResponse,
+  RatesResponse,
 } from './types';
 import { reversePrice } from './rate-fetcher';
 
@@ -59,24 +60,26 @@ const addressToTokenMap = Object.keys(tokens.tokens).reduce((acc, key) => {
   return acc;
 }, {} as Record<string, TokenWithInfo>);
 
-const prices: Record<string, PairPriceResponse> = {
-  'WETH/DAI': {
-    bids: [
-      ['1333.425240000000000000', '1.166200000000000000'],
-      ['1333.024812000000000000', '1.166200000000000000'],
-      ['1332.624384000000000000', '1.166200000000000000'],
-      ['1332.223956000000000000', '1.166200000000000000'],
-      ['1331.823528000000000000', '1.166200000000000000'],
-      ['1331.423100000000000000', '1.169000000000000000'],
-    ],
-    asks: [
-      ['1336.745410000000000000', '1.166200000000000000'],
-      ['1337.146033000000000000', '1.166200000000000000'],
-      ['1337.546656000000000000', '1.166200000000000000'],
-      ['1337.947279000000000000', '1.166200000000000000'],
-      ['1338.347902000000000000', '1.166200000000000000'],
-      ['1338.748525000000000000', '1.169000000000000000'],
-    ],
+const prices: RatesResponse = {
+  prices: {
+    'WETH/DAI': {
+      bids: [
+        ['1333.425240000000000000', '1.166200000000000000'],
+        ['1333.024812000000000000', '1.166200000000000000'],
+        ['1332.624384000000000000', '1.166200000000000000'],
+        ['1332.223956000000000000', '1.166200000000000000'],
+        ['1331.823528000000000000', '1.166200000000000000'],
+        ['1331.423100000000000000', '1.169000000000000000'],
+      ],
+      asks: [
+        ['1336.745410000000000000', '1.166200000000000000'],
+        ['1337.146033000000000000', '1.166200000000000000'],
+        ['1337.546656000000000000', '1.166200000000000000'],
+        ['1337.947279000000000000', '1.166200000000000000'],
+        ['1338.347902000000000000', '1.166200000000000000'],
+        ['1338.748525000000000000', '1.169000000000000000'],
+      ],
+    },
   },
 };
 
@@ -134,8 +137,8 @@ export const startTestServer = (account: ethers.Wallet) => {
     payload.makerAsset = payload.makerAsset.toLowerCase();
     payload.takerAsset = payload.takerAsset.toLowerCase();
 
-    const makerAssetSymbol = addressToTokenMap[payload.makerAsset].symbol;
-    const takerAssetSymbol = addressToTokenMap[payload.takerAsset].symbol;
+    const makerAssetSymbol = addressToTokenMap[payload.makerAsset].symbol!;
+    const takerAssetSymbol = addressToTokenMap[payload.takerAsset].symbol!;
 
     let reversed = false;
 
@@ -144,17 +147,17 @@ export const startTestServer = (account: ethers.Wallet) => {
     if (payload.makerAmount) {
       // buy
       let _prices: PairPriceResponse =
-        prices[`${makerAssetSymbol}/${takerAssetSymbol}`];
+        prices.prices[`${makerAssetSymbol}/${takerAssetSymbol}`];
       if (!_prices) {
-        _prices = prices[`${takerAssetSymbol}/${makerAssetSymbol}`];
+        _prices = prices.prices[`${takerAssetSymbol}/${makerAssetSymbol}`];
         reversed = true;
       }
       if (!reversed) {
         value = new BigNumber(payload.makerAmount).times(
-          new BigNumber(_prices.asks[0][0]),
+          new BigNumber(_prices.asks![0][0]),
         );
       } else {
-        const reversedPrices = _prices.bids.map(price =>
+        const reversedPrices = _prices.bids!.map(price =>
           reversePrice([new BigNumber(price[0]), new BigNumber(price[1])]),
         );
         value = new BigNumber(payload.makerAmount).times(
@@ -164,18 +167,18 @@ export const startTestServer = (account: ethers.Wallet) => {
     } else if (payload.takerAmount) {
       // sell
       let _prices: PairPriceResponse =
-        prices[`${takerAssetSymbol}/${makerAssetSymbol}`];
+        prices.prices[`${takerAssetSymbol}/${makerAssetSymbol}`];
 
       if (!_prices) {
-        _prices = prices[`${makerAssetSymbol}/${takerAssetSymbol}`];
+        _prices = prices.prices[`${makerAssetSymbol}/${takerAssetSymbol}`];
         reversed = true;
       }
       if (!reversed) {
         value = new BigNumber(payload.takerAmount).times(
-          new BigNumber(_prices.bids[0][0]),
+          new BigNumber(_prices.bids![0][0]),
         );
       } else {
-        const reversedPrices = _prices.bids.map(price =>
+        const reversedPrices = _prices.bids!.map(price =>
           reversePrice([new BigNumber(price[0]), new BigNumber(price[1])]),
         );
         value = new BigNumber(payload.takerAmount).times(
@@ -186,7 +189,7 @@ export const startTestServer = (account: ethers.Wallet) => {
 
     const order = {
       maker: account.address,
-      taker: payload.txOrigin,
+      taker: payload.userAddress,
       expiry: 0,
       makerAsset: payload.makerAsset,
       takerAsset: payload.takerAsset,
