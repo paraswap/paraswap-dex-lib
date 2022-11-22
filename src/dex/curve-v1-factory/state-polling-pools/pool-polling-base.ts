@@ -1,7 +1,7 @@
 import Web3EthAbi, { AbiCoder } from 'web3-eth-abi';
 import { Logger } from 'log4js';
 import { MultiCallParams } from '../../../lib/multi-wrapper';
-import { MAX_ALLOWED_STATE_DELAY_MS } from '../constants';
+import { MAX_ALLOWED_STATE_DELAY_MS, MIN_LIQUIDITY_IN_USD } from '../constants';
 import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
 import { Address } from 'paraswap-core';
 
@@ -97,6 +97,10 @@ export abstract class PoolPollingBase {
     }
 
     return null;
+  }
+
+  hasEnoughLiquidity(): boolean {
+    return this.liquidityUSD > MIN_LIQUIDITY_IN_USD;
   }
 
   getPoolData(

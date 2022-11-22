@@ -74,7 +74,7 @@ export class CurveV1FactoryPoolManager {
     // It may be optimized preparing this pools before hand
     const filteredPoolsByLiquidity = Object.values(
       this.statePollingPoolsFromId,
-    ).filter(p => p.liquidityUSD > 1000);
+    ).filter(p => p.hasEnoughLiquidity());
 
     const pools = Object.values(this.poolsForOnlyState).concat(
       filteredPoolsByLiquidity.sort((a, b) => +a.isMetaPool - +b.isMetaPool),
@@ -210,7 +210,7 @@ export class CurveV1FactoryPoolManager {
         ),
       )
       .filter((p): p is PoolPollingBase => {
-        if (p === null) {
+        if (p === null || !p.hasEnoughLiquidity()) {
           return false;
         }
 
