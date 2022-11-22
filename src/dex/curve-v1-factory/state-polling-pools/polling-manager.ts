@@ -44,7 +44,7 @@ export class StatePollingManager {
 
     let lastStart = 0;
 
-    pools.map((p, i) => {
+    for (const [i, p] of pools.entries()) {
       const newState = p.parseMultiResultsToStateValues(
         result.slice(lastStart, lastStart + poolResultDividers[i]),
         _blockNumber,
@@ -53,7 +53,7 @@ export class StatePollingManager {
       p.setState(newState);
       newStates[i] = newState;
       lastStart += poolResultDividers[i];
-    });
+    }
 
     return newStates;
   }
