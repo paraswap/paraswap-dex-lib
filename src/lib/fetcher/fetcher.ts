@@ -112,7 +112,7 @@ export default class Fetcher<T> {
         reqInfo.handler(parsedData);
         this.logger.debug(`(${options.url}) received new data`);
       });
-    setTimeout(this.fetch, this.pollIntervalMs);
+    setTimeout(this.fetch.bind(this), this.pollIntervalMs);
   }
 
   private getUrls(): string[] {
