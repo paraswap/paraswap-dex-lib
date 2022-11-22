@@ -22,7 +22,7 @@ function authByParams(
   signature.update(payload);
 
   headers['X-AUTH-TIMESTAMP'] = timestamp;
-  headers['X-AUTH-SIGN'] = signature.digest('hex');
+  headers['X-AUTH-SIGNATURE'] = signature.digest('hex');
 
   return headers;
 }
