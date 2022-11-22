@@ -15,6 +15,8 @@ export const POOL_EXCHANGE_GAS_COST = 200 * 1000;
 // This is a liquidity threshold used for pool state update
 export const MIN_LIQUIDITY_IN_USD = 10;
 
+export const LIQUIDITY_FETCH_TIMEOUT = 1000;
+
 // Pooltracker relevant variables
 export const CURVE_API_URL = 'https://api.curve.fi/api/getPools';
 export const NETWORK_ID_TO_NAME: Record<number, string> = {
