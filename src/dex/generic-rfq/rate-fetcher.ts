@@ -1,22 +1,14 @@
 import BigNumber from 'bignumber.js';
-import { ethers } from 'ethers';
 import { SwapSide } from 'paraswap-core';
-import { BN_0, BN_1 } from '../../bignumber-constants';
+import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import Fetcher from '../../lib/fetcher/fetcher';
-import { getBalances } from '../../lib/tokens/balancer-fetcher';
-import {
-  AssetType,
-  DEFAULT_ID_ERC20,
-  DEFAULT_ID_ERC20_AS_STRING,
-} from '../../lib/tokens/types';
+
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
-import { calculateOrderHash } from '../paraswap-limit-orders/utils';
 import { authHttp } from './security';
 import {
-  AugustusOrderWithStringAndSignature,
   BlackListResponse,
   PairMap,
   PairsResponse,
@@ -29,6 +21,15 @@ import {
   TokensResponse,
   TokenWithInfo,
 } from './types';
+import { checkOrder } from './utils';
+import {
+  blacklistResponseValidator,
+  firmRateResponseValidator,
+  pairsResponseValidator,
+  pricesResponse,
+  tokensResponseValidator,
+  validateAndCast,
+} from './validators';
 
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
   [
@@ -61,7 +62,12 @@ export class RateFetcher {
       {
         info: {
           requestOptions: config.tokensConfig.reqParams,
-          caster: this.castTokensResponse.bind(this),
+          caster: (data: unknown) => {
+            return validateAndCast<TokensResponse>(
+              data,
+              tokensResponseValidator,
+            );
+          },
           authenticate: authHttp(config.tokensConfig.secret),
         },
         handler: this.handleTokensResponse.bind(this),
@@ -75,7 +81,9 @@ export class RateFetcher {
       {
         info: {
           requestOptions: config.pairsConfig.reqParams,
-          caster: this.castPairs.bind(this),
+          caster: (data: unknown) => {
+            return validateAndCast<PairsResponse>(data, pairsResponseValidator);
+          },
           authenticate: authHttp(config.pairsConfig.secret),
         },
         handler: this.handlePairsResponse.bind(this),
@@ -89,7 +97,9 @@ export class RateFetcher {
       {
         info: {
           requestOptions: config.rateConfig.reqParams,
-          caster: this.castRateResponse.bind(this),
+          caster: (data: unknown) => {
+            return validateAndCast<RatesResponse>(data, pricesResponse);
+          },
           authenticate: authHttp(config.rateConfig.secret),
         },
         handler: this.handleRatesResponse.bind(this),
@@ -104,7 +114,12 @@ export class RateFetcher {
         {
           info: {
             requestOptions: config.blacklistConfig.reqParams,
-            caster: this.casteBlacklistResponse.bind(this),
+            caster: (data: unknown) => {
+              return validateAndCast<BlackListResponse>(
+                data,
+                blacklistResponseValidator,
+              );
+            },
             authenticate: authHttp(config.rateConfig.secret),
           },
           handler: this.handleBlackListResponse.bind(this),
@@ -138,19 +153,6 @@ export class RateFetcher {
     }
   }
 
-  private castTokensResponse(data: unknown): TokensResponse | null {
-    if (!data || typeof data !== 'object') {
-      return null;
-    }
-
-    const parsed = data as TokensResponse;
-    if (!parsed.tokens) {
-      return null;
-    }
-
-    return parsed;
-  }
-
   private handleTokensResponse(data: TokensResponse) {
     for (const tokenName of Object.keys(data.tokens)) {
       const token = data.tokens[tokenName];
@@ -168,26 +170,6 @@ export class RateFetcher {
     }, {} as Record<string, TokenWithInfo>);
   }
 
-  private castPairs(data: unknown): PairsResponse | null {
-    if (!data || typeof data !== 'object') {
-      return null;
-    }
-
-    const parsed = data as PairsResponse;
-    if (!parsed.pairs) {
-      return null;
-    }
-    return parsed;
-  }
-
-  private castRateResponse(data: unknown): RatesResponse | null {
-    if (!data) {
-      return null;
-    }
-
-    return data as RatesResponse;
-  }
-
   private handlePairsResponse(resp: PairsResponse) {
     this.pairs = {};
 
@@ -202,19 +184,6 @@ export class RateFetcher {
 
     this.pairs = pairs;
     this.rateFetcher.startPolling();
-  }
-
-  private casteBlacklistResponse(data: unknown): BlackListResponse | null {
-    if (!data) {
-      return null;
-    }
-
-    const parsed = data as BlackListResponse;
-    if (!parsed.blacklist) {
-      return null;
-    }
-
-    return parsed;
   }
 
   private handleBlackListResponse(resp: BlackListResponse) {
@@ -372,97 +341,6 @@ export class RateFetcher {
     return orderPrices as PriceAndAmountBigNumber[];
   }
 
-  private async getPayload(
-    srcToken: Token,
-    destToken: Token,
-    amount: string,
-    side: SwapSide,
-    userAddress: Address,
-  ) {
-    let orderPrices: PriceAndAmountBigNumber[] | null = null;
-    try {
-      orderPrices = await this.getOrderPrice(srcToken, destToken, side);
-      if (!orderPrices) {
-        return {
-          value: BN_0,
-        };
-      }
-    } catch (e) {
-      this.logger.error(e);
-      return { error: e };
-    }
-    if (!orderPrices) {
-      return null;
-    }
-
-    const payload: RFQPayload = {
-      makerAsset: destToken.address,
-      takerAsset: srcToken.address,
-      makerAmount: side === SwapSide.BUY ? amount : undefined,
-      takerAmount: side === SwapSide.SELL ? amount : undefined,
-      userAddress,
-    };
-
-    return {
-      payload,
-    };
-  }
-
-  private buildOrderHash(order: AugustusOrderWithStringAndSignature): string {
-    return calculateOrderHash(
-      this.dexHelper.config.data.network,
-      order,
-      this.dexHelper.config.data.augustusRFQAddress,
-    );
-  }
-
-  private async checkOrder(order: AugustusOrderWithStringAndSignature) {
-    const balances = await getBalances(this.dexHelper.multiWrapper, [
-      {
-        owner: order.maker,
-        asset: order.makerAsset,
-        assetType: AssetType.ERC20,
-        ids: [
-          {
-            id: DEFAULT_ID_ERC20,
-            spenders: [this.dexHelper.config.data.augustusRFQAddress],
-          },
-        ],
-      },
-    ]);
-
-    const balance = balances[0];
-
-    const makerAmountBigInt = BigInt(order.makerAmount);
-    const makerBalance = BigInt(balance.amounts[DEFAULT_ID_ERC20_AS_STRING]);
-    if (makerBalance <= makerAmountBigInt) {
-      throw new Error(
-        `maker does not have enough balance (request ${makerAmountBigInt} value ${makerBalance}`,
-      );
-    }
-
-    const takerBalance = BigInt(
-      balance.allowances[DEFAULT_ID_ERC20_AS_STRING][
-        this.dexHelper.config.data.augustusRFQAddress
-      ],
-    );
-    if (takerBalance <= makerAmountBigInt) {
-      throw new Error(
-        `maker does not have enough allowance (request ${makerAmountBigInt} value ${takerBalance}`,
-      );
-    }
-
-    const hash = this.buildOrderHash(order);
-
-    const recovered = ethers.utils
-      .recoverAddress(hash, order.signature)
-      .toLowerCase();
-
-    if (recovered !== order.maker.toLowerCase()) {
-      throw new Error(`signature is invalid`);
-    }
-  }
-
   async getFirmRate(
     _srcToken: Token,
     _destToken: Token,
@@ -477,32 +355,17 @@ export class RateFetcher {
       throw new Error('getFirmRate failed with srcAmount == 0');
     }
 
-    const result = await this.getPayload(
-      srcToken,
-      destToken,
-      srcAmount,
-      side,
+    const _payload: RFQPayload = {
+      makerAsset: destToken.address,
+      takerAsset: srcToken.address,
+      makerAmount: side === SwapSide.BUY ? srcAmount : undefined,
+      takerAmount: side === SwapSide.SELL ? srcAmount : undefined,
       userAddress,
-    );
-
-    if (!result) {
-      this.logger.error(`getPayload failed with empty payload`);
-      throw new Error('getFirmRate failed with empty payload');
-    }
-
-    if (result.error) {
-      this.logger.error(`getPayload failed with error: `, result.error);
-      throw new Error('getFirmRate failed no payload');
-    }
-
-    if (!result.payload) {
-      this.logger.error(`No payload ${JSON.stringify(result)}`);
-      throw new Error('getFirmRate failed no payload');
-    }
+    };
 
     try {
       let payload = {
-        data: result.payload,
+        data: _payload,
         ...this.config.firmRateConfig,
       };
 
@@ -511,33 +374,35 @@ export class RateFetcher {
         delete payload.secret;
       }
 
-      const { data } =
-        await this.dexHelper.httpRequest.request<RFQFirmRateResponse>(payload);
+      const { data } = await this.dexHelper.httpRequest.request<unknown>(
+        payload,
+      );
 
-      if (data.status === 'rejected') {
-        this.logger.warn(
-          `getFirmRate failed ${JSON.stringify(
-            result,
-          )}, result:${JSON.stringify(data)}`,
-        );
-        throw new Error('getFirmRate rejected');
-      }
+      const firmRateResp = validateAndCast<RFQFirmRateResponse>(
+        data,
+        firmRateResponseValidator,
+      );
 
-      await this.checkOrder(data.order);
+      await checkOrder(
+        this.dexHelper.config.data.network,
+        this.dexHelper.config.data.augustusRFQAddress,
+        this.dexHelper.multiWrapper,
+        firmRateResp.order,
+      );
 
       return {
         order: {
-          maker: data.order.maker,
-          taker: data.order.taker,
-          expiry: data.order.expiry,
-          nonceAndMeta: data.order.nonceAndMeta,
-          makerAsset: data.order.makerAsset,
-          takerAsset: data.order.takerAsset,
-          makerAmount: data.order.makerAmount,
-          takerAmount: data.order.takerAmount,
+          maker: firmRateResp.order.maker,
+          taker: firmRateResp.order.taker,
+          expiry: firmRateResp.order.expiry,
+          nonceAndMeta: firmRateResp.order.nonceAndMeta,
+          makerAsset: firmRateResp.order.makerAsset,
+          takerAsset: firmRateResp.order.takerAsset,
+          makerAmount: firmRateResp.order.makerAmount,
+          takerAmount: firmRateResp.order.takerAmount,
         },
-        signature: data.order.signature,
-        takerTokenFillAmount: data.order.takerAmount,
+        signature: firmRateResp.order.signature,
+        takerTokenFillAmount: firmRateResp.order.takerAmount,
         permitMakerAsset: '0x',
         permitTakerAsset: '0x',
       };

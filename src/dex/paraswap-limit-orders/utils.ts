@@ -15,10 +15,18 @@ export function buildOrderData(
     chainId: chainId,
     verifyingContract: contractAddress,
   };
+
+  let expiry = 0;
+  if (params.expiry.length > 10) {
+    expiry = toUnixTimestamp(new Date(params.expiry));
+  } else {
+    expiry = Number(params.expiry);
+  }
+
   const types = { Order: BUILD_ORDER_CONSTANTS.ORDER_INTERFACE };
   const order = {
     nonceAndMeta: params.nonceAndMeta,
-    expiry: params.expiry ? toUnixTimestamp(new Date(params.expiry)) : 0,
+    expiry,
     makerAsset: params.makerAsset,
     takerAsset: params.takerAsset,
     maker: params.maker,

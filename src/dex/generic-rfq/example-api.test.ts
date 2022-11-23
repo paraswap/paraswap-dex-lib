@@ -211,7 +211,6 @@ export const startTestServer = (account: ethers.Wallet) => {
     };
 
     return res.status(200).json({
-      status: 'accepted',
       order: orderToPostToApi,
     });
   });

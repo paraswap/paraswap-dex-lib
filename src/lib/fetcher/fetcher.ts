@@ -8,7 +8,7 @@ const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 
 export type RequestInfo<T> = {
   requestOptions: RequestConfig;
-  caster: (data: unknown) => T | null;
+  caster: (data: unknown) => T;
   authenticate?: (options: RequestConfig) => RequestConfig;
   excludedFieldsCaching?: string[];
 };
@@ -37,8 +37,8 @@ export default class Fetcher<T> {
     }
   }
 
-  async fetch() {
-    if (this.stop === true) {
+  async fetch(force: boolean = false) {
+    if (this.stop === true && !force) {
       return;
     }
 
@@ -97,22 +97,24 @@ export default class Fetcher<T> {
         const reqInfo = this.requests[i];
         const info = reqInfo.info;
         const options = reqInfo.info.requestOptions;
+        this.logger.debug(`(${options.url}) received new data`);
 
-        const parsedData = info.caster(response.data);
-
-        if (!parsedData) {
+        try {
+          const parsedData = info.caster(response.data);
+          reqInfo.handler(parsedData);
+        } catch (e) {
           this.logger.debug(
             `(${options.url}) received incorrect data ${JSON.stringify(
               response.data,
             )}`,
+            e,
           );
           return;
         }
-
-        reqInfo.handler(parsedData);
-        this.logger.debug(`(${options.url}) received new data`);
       });
     setTimeout(this.fetch.bind(this), this.pollIntervalMs);
+
+    return failures;
   }
 
   private getUrls(): string[] {
