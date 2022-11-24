@@ -21,6 +21,10 @@ export class TaskScheduler {
     }
   }
 
+  reinitializeTaskScheduler() {
+    this.preventNewTimer = false;
+  }
+
   private async executeTask() {
     if (this._timer) {
       // Just in case

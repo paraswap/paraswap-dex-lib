@@ -65,6 +65,7 @@ export class CurveV1FactoryPoolManager {
   }
 
   initializePollingPools() {
+    this.taskScheduler.reinitializeTaskScheduler();
     // Execute and start timer
     this.taskScheduler.setTimer(0);
   }
