@@ -459,3 +459,11 @@ export async function newTestE2E({
     }
   }
 }
+
+export const getEnv = (envName: string): string => {
+  if (!process.env[envName]) {
+    throw new Error(`Missing ${envName}`);
+  }
+
+  return process.env[envName]!;
+};

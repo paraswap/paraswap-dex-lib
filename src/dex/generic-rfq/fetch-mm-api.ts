@@ -65,7 +65,7 @@ const configTokens: FetcherParams = {
   dataTTLS: 10 * 1000,
 };
 
-const debug = false;
+const debug = true;
 
 const requestWrapper = new DummyRequestWrapper();
 

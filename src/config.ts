@@ -39,7 +39,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
-    privateHttpProvider: process.env.HTTP_PROVIDER,
+    privateHttpProvider: process.env.HTTP_PROVIDER_1,
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',

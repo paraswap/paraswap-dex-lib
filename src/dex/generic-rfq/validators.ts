@@ -78,7 +78,7 @@ const ext: joi.Extension = {
         return isAscOrder
           ? values
           : helpers.message({
-              custom: 'array is not asc sorted',
+              custom: `array is not asc sorted ${JSON.stringify(values)}`,
             });
       },
     },
@@ -91,7 +91,7 @@ const ext: joi.Extension = {
         return isAscOrder
           ? values
           : helpers.message({
-              custom: 'array is not desc sorted',
+              custom: `array is not desc sorted ${JSON.stringify(values)}`,
             });
       },
     },
