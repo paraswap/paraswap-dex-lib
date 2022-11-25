@@ -139,9 +139,13 @@ export class StatePollingManager {
       }),
     );
 
+    if (poolsForRPCUpdate.length === 0) {
+      return;
+    }
+
     try {
       logger.warn(
-        `${poolsForRPCUpdate.length} pools: ${pools
+        `${poolsForRPCUpdate.length} pools: ${poolsForRPCUpdate
           .map(p => p.address)
           .join(', ')} don't have state in cache. Falling back to RPC`,
       );
