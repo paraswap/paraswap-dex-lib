@@ -458,65 +458,67 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result = poolsToUse.poolWithState
-        .filter((pool, i) => states[i].liquidity > 0n)
-        .map((pool, i) => {
-          const state = states[i];
+      const result = poolsToUse.poolWithState.map((pool, i) => {
+        const state = states[i];
 
-          const unitResult = this._getOutputs(
-            state,
-            [unitAmount],
-            zeroForOne,
-            side,
-          );
-          const pricesResult = this._getOutputs(
-            state,
-            _amounts,
-            zeroForOne,
-            side,
-          );
+        if (state.liquidity <= 0n) {
+          return null;
+        }
 
-          if (!unitResult || !pricesResult) {
-            this.logger.debug('Prices or unit is not calculated');
-            return null;
-          }
+        const unitResult = this._getOutputs(
+          state,
+          [unitAmount],
+          zeroForOne,
+          side,
+        );
+        const pricesResult = this._getOutputs(
+          state,
+          _amounts,
+          zeroForOne,
+          side,
+        );
 
-          const prices = [0n, ...pricesResult.outputs];
-          const gasCost = [
-            0,
-            ...pricesResult.outputs.map((p, index) => {
-              if (p == 0n) {
-                return 0;
-              } else {
-                return (
-                  UNISWAPV3_FUNCTION_CALL_GAS_COST +
-                  pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
-                );
-              }
-            }),
-          ];
-          return {
-            unit: unitResult.outputs[0],
-            prices,
-            data: {
-              path: [
-                {
-                  tokenIn: _srcAddress,
-                  tokenOut: _destAddress,
-                  fee: pool.feeCode.toString(),
-                },
-              ],
-            },
-            poolIdentifier: this.getPoolIdentifier(
-              pool.token0,
-              pool.token1,
-              pool.feeCode,
-            ),
-            exchange: this.dexKey,
-            gasCost: gasCost,
-            poolAddresses: [pool.poolAddress],
-          };
-        });
+        if (!unitResult || !pricesResult) {
+          this.logger.debug('Prices or unit is not calculated');
+          return null;
+        }
+
+        const prices = [0n, ...pricesResult.outputs];
+        const gasCost = [
+          0,
+          ...pricesResult.outputs.map((p, index) => {
+            if (p == 0n) {
+              return 0;
+            } else {
+              return (
+                UNISWAPV3_FUNCTION_CALL_GAS_COST +
+                pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
+              );
+            }
+          }),
+        ];
+        return {
+          unit: unitResult.outputs[0],
+          prices,
+          data: {
+            path: [
+              {
+                tokenIn: _srcAddress,
+                tokenOut: _destAddress,
+                fee: pool.feeCode.toString(),
+              },
+            ],
+          },
+          poolIdentifier: this.getPoolIdentifier(
+            pool.token0,
+            pool.token1,
+            pool.feeCode,
+          ),
+          exchange: this.dexKey,
+          gasCost: gasCost,
+          poolAddresses: [pool.poolAddress],
+        };
+      });
       const rpcResults = await rpcResultsPromise;
 
       const notNullResult = result.filter(
