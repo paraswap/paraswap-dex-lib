@@ -1,3 +1,4 @@
+import { MetavaultTradeConfig } from './config';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -6,7 +7,6 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { MetavaultTrade } from './metavault-trade';
-import { MetavaultTradeConfig } from './config';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -16,25 +16,30 @@ import { Tokens } from '../../../tests/constants-e2e';
 import ReaderABI from '../../abi/metavault-trade/reader.json';
 
 const network = Network.POLYGON;
-const TokenASymbol = 'USDT';
+const TokenASymbol = 'DAI';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'WMATIC';
+const TokenBSymbol = 'WBTC';
 const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
   0n,
-  1000000000n,
-  2000000000n,
-  3000000000n,
-  4000000000n,
-  5000000000n,
+  1n * BI_POWS[TokenA.decimals],
+  2n * BI_POWS[TokenA.decimals],
+  3n * BI_POWS[TokenA.decimals],
+  4n * BI_POWS[TokenA.decimals],
+  5n * BI_POWS[TokenA.decimals],
+  6n * BI_POWS[TokenA.decimals],
+  7n * BI_POWS[TokenA.decimals],
+  8n * BI_POWS[TokenA.decimals],
+  9n * BI_POWS[TokenA.decimals],
+  10n * BI_POWS[TokenA.decimals],
 ];
 
 const dexKey = 'MetavaultTrade';
 const params = MetavaultTradeConfig[dexKey][network];
 const readerInterface = new Interface(ReaderABI);
-const readerAddress = '0x01dd8b434a83cbddfa24f2ef1fe2d6920ca03734';
+const readerAddress = '0x01dd8B434A83cbdDFa24f2ef1fe2D6920ca03734';
 
 describe('MetavaultTrade', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -50,6 +55,7 @@ describe('MetavaultTrade', function () {
       SwapSide.SELL,
       blocknumber,
     );
+
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
@@ -82,11 +88,17 @@ describe('MetavaultTrade', function () {
       ]),
     }));
 
+    console.log('readerCallData', readerCallData);
+
     const readerResult = (
       await dexHelper.multiContract.methods
         .aggregate(readerCallData)
         .call({}, blocknumber)
     ).returnData;
+
+    console.log('readerResult');
+    console.log(readerResult);
+
     const expectedPrices = readerResult.map((p: any) =>
       BigInt(
         readerInterface.decodeFunctionResult('getAmountOut', p)[0].toString(),

@@ -49,6 +49,7 @@ import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
+import { MetavaultTrade } from './metavault-trade/metavault-trade';
 
 const LegacyDexes = [
   Curve,
@@ -96,6 +97,7 @@ const Dexes = [
   Velodrome,
   Cone,
   Synthetix,
+  MetavaultTrade,
 ];
 
 export type LegacyDexConstructor = new (

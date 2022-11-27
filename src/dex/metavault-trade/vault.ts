@@ -1,26 +1,21 @@
-import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
+import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
+import { BlockHeader } from 'web3-eth';
+import VaultABI from '../../abi/metavault-trade/vault.json';
 import { PartialEventSubscriber } from '../../composed-event-subscriber';
 import { Lens } from '../../lens';
-import VaultABI from '../../abi/metavault-trade/vault.json';
-import { VaultUtils } from './vault-utils';
 import {
-  VaultConfig,
-  VaultState,
-  FastPriceFeedConfig,
-  PoolState,
-} from './types';
-import { VaultPriceFeed } from './vault-price-feed';
-import { USDM } from './usdm';
-import {
+  Address,
+  Log,
+  Logger,
   MultiCallInput,
   MultiCallOutput,
-  Address,
-  Logger,
-  Log,
 } from '../../types';
-import { BlockHeader } from 'web3-eth';
+import { VaultConfig, VaultState } from './types';
+import { USDM } from './usdm';
+import { VaultPriceFeed } from './vault-price-feed';
+import { VaultUtils } from './vault-utils';
 
 export class Vault<State> extends PartialEventSubscriber<State, VaultState> {
   static readonly interface: Interface = new Interface(VaultABI);
@@ -252,7 +247,7 @@ export class Vault<State> extends PartialEventSubscriber<State, VaultState> {
     return vaultState;
   }
 
-  public getUSDGAmount(state: DeepReadonly<State>, token: Address): bigint {
+  public getUSDMAmount(state: DeepReadonly<State>, token: Address): bigint {
     return this.lens.get()(state).usdmAmounts[token];
   }
 

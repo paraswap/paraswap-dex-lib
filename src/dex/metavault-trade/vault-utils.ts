@@ -8,7 +8,7 @@ export class VaultUtils<State> {
   getFeeBasisPoints(
     state: DeepReadonly<State>,
     _token: Address,
-    _usdgDelta: bigint,
+    _usdmDelta: bigint,
     _feeBasisPoints: bigint,
     _taxBasisPoints: bigint,
     _increment: boolean,
@@ -17,10 +17,10 @@ export class VaultUtils<State> {
       return _feeBasisPoints;
     }
 
-    const initialAmount = this.vault.getUSDGAmount(state, _token);
-    let nextAmount = initialAmount + _usdgDelta;
+    const initialAmount = this.vault.getUSDMAmount(state, _token);
+    let nextAmount = initialAmount + _usdmDelta;
     if (!_increment) {
-      nextAmount = _usdgDelta > initialAmount ? 0n : initialAmount - _usdgDelta;
+      nextAmount = _usdmDelta > initialAmount ? 0n : initialAmount - _usdmDelta;
     }
 
     const targetAmount = this.vault.getTargetUsdmAmount(state, _token);

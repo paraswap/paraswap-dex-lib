@@ -103,97 +103,6 @@
   },
   {
     "inputs": [],
-    "name": "bnb",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "bnbBusd",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "btc",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "btcBnb",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "chainlinkFlags",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "eth",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ethBnb",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "favorPrimaryPrice",
     "outputs": [
       {
@@ -213,60 +122,7 @@
         "type": "address"
       }
     ],
-    "name": "getAmmPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_token",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "_maximise",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_primaryPrice",
-        "type": "uint256"
-      }
-    ],
-    "name": "getAmmPriceV2",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_pair",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "_divByReserve0",
-        "type": "bool"
-      }
-    ],
-    "name": "getPairPrice",
+    "name": "getLatestPrimaryPrice",
     "outputs": [
       {
         "internalType": "uint256",
@@ -291,7 +147,7 @@
       },
       {
         "internalType": "bool",
-        "name": "_includeAmmPrice",
+        "name": "",
         "type": "bool"
       },
       {
@@ -322,43 +178,9 @@
         "internalType": "bool",
         "name": "_maximise",
         "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_includeAmmPrice",
-        "type": "bool"
       }
     ],
     "name": "getPriceV1",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_token",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "_maximise",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_includeAmmPrice",
-        "type": "bool"
-      }
-    ],
-    "name": "getPriceV2",
     "outputs": [
       {
         "internalType": "uint256",
@@ -444,19 +266,6 @@
       }
     ],
     "name": "isAdjustmentAdditive",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "isAmmEnabled",
     "outputs": [
       {
         "internalType": "bool",
@@ -602,19 +411,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_chainlinkFlags",
-        "type": "address"
-      }
-    ],
-    "name": "setChainlinkFlags",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "bool",
         "name": "_favorPrimaryPrice",
         "type": "bool"
@@ -646,19 +442,6 @@
         "type": "bool"
       }
     ],
-    "name": "setIsAmmEnabled",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bool",
-        "name": "_isEnabled",
-        "type": "bool"
-      }
-    ],
     "name": "setIsSecondaryPriceEnabled",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -673,29 +456,6 @@
       }
     ],
     "name": "setMaxStrictPriceDeviation",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_bnbBusd",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_ethBnb",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_btcBnb",
-        "type": "address"
-      }
-    ],
-    "name": "setPairs",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -789,42 +549,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_btc",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_eth",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_bnb",
-        "type": "address"
-      }
-    ],
-    "name": "setTokens",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bool",
-        "name": "_useV2Pricing",
-        "type": "bool"
-      }
-    ],
-    "name": "setUseV2Pricing",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -862,19 +586,6 @@
       }
     ],
     "name": "strictStableTokens",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "useV2Pricing",
     "outputs": [
       {
         "internalType": "bool",

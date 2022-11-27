@@ -1,5 +1,5 @@
-import { ChainLinkState } from '../../lib/chainlink';
 import { Address } from '../../types';
+import { ChainLinkState } from '../../lib/chainlink';
 
 export type PoolState = {
   primaryPrices: { [poolAddress: string]: ChainLinkState };
@@ -21,8 +21,16 @@ export type USDMState = {
   totalSupply: bigint;
 };
 
+export type VaultPriceFeedState = {
+  lastUpdatedAt: number;
+};
+
 export type MetavaultTradeData = {
-  exchange: string;
+  // TODO: MetavaultTradeData is the dex data that is
+  // returned by the API that can be used for
+  // tx building. The data structure should be minimal.
+  // Complete me!
+  // exchange: Address;
 };
 
 export type DexParams = {
@@ -43,12 +51,13 @@ export type DexParams = {
 export type FastPriceFeedConfig = {
   priceDuration: number;
   maxDeviationBasisPoints: bigint;
-  favorFastPrice: boolean;
-  volBasisPoints: bigint;
+  favorFastPrice: Record<string, boolean>;
+  spreadBasisPointsIfInactive: bigint;
+  spreadBasisPointsIfChainError: bigint;
+  maxPriceUpdateDelay: number;
 };
 
 export type VaultPriceFeedConfig = {
-  isAmmEnabled: boolean;
   isSecondaryPriceEnabled: boolean;
   strictStableTokens: { [address: string]: boolean };
   spreadBasisPoints: { [address: string]: bigint };
@@ -56,7 +65,6 @@ export type VaultPriceFeedConfig = {
   isAdjustmentAdditive: { [address: string]: boolean };
   priceDecimals: { [address: string]: number };
   maxStrictPriceDeviation: bigint;
-  useV2Pricing: boolean;
   priceSampleSpace: number;
 };
 

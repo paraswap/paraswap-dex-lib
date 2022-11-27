@@ -1,4 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
+import { Interface } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -11,16 +12,15 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MetavaultTradeData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { MetavaultTradeConfig, Adapters } from './config';
-import { MetavaultTradeEventPool } from './pool';
+import { MetavaultTradeEventPool } from './metavault-trade-pool';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
-import { Interface } from '@ethersproject/abi';
 
 const MetavaultTradeGasCost = 300 * 1000;
 
@@ -35,6 +35,7 @@ export class MetavaultTrade
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MetavaultTradeConfig);
@@ -46,10 +47,10 @@ export class MetavaultTrade
   logger: Logger;
 
   constructor(
-    readonly network: Network,
-    readonly dexKey: string,
-    readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
+    protected network: Network,
+    protected dexKey: string,
+    protected dexHelper: IDexHelper,
+    protected adapters = Adapters[network],
     protected params: DexParams = MetavaultTradeConfig[dexKey][network],
   ) {
     super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
@@ -66,6 +67,7 @@ export class MetavaultTrade
       blockNumber,
       this.dexHelper.multiContract,
     );
+
     config.tokenAddresses.forEach(
       (token: Address) => (this.supportedTokensMap[token] = true),
     );
@@ -76,17 +78,47 @@ export class MetavaultTrade
       this.logger,
       config,
     );
+
     this.dexHelper.blockManager.subscribeToLogs(
       this.pool,
       this.pool.addressesSubscribed,
       blockNumber,
     );
+
+    // await this.pool.initialize(blockNumber);
+  }
+
+  async getEventPoolForBlock(blockNumber: number) {
+    const config = await MetavaultTradeEventPool.getConfig(
+      this.params,
+      blockNumber,
+      this.dexHelper.multiContract,
+    );
+
+    const pool = new MetavaultTradeEventPool(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      this.logger,
+      config,
+    );
+
+    return pool;
+  }
+
+  async getConfig(blockNumber: number) {
+    const config = await MetavaultTradeEventPool.getConfig(
+      this.params,
+      blockNumber,
+      this.dexHelper.multiContract,
+    );
+    return config;
   }
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return this.adapters[side];
   }
 
   // Returns list of pool identifiers that can be used
@@ -106,6 +138,7 @@ export class MetavaultTrade
     const destAddress = this.dexHelper.config
       .wrapETH(destToken)
       .address.toLowerCase();
+
     if (
       srcAddress !== destAddress &&
       this.supportedTokensMap[srcAddress] &&
@@ -145,10 +178,12 @@ export class MetavaultTrade
       return null;
     const srcPoolIdentifier = `${this.dexKey}_${srcAddress}`;
     const destPoolIdentifier = `${this.dexKey}_${destAddress}`;
+
     const pools = [srcPoolIdentifier, destPoolIdentifier];
     if (limitPools && pools.some(p => !limitPools.includes(p))) return null;
 
     const unitVolume = getBigIntPow(srcToken.decimals);
+
     const prices = await this.pool.getAmountOut(
       srcAddress,
       destAddress,
@@ -164,9 +199,7 @@ export class MetavaultTrade
         unit: prices[0],
         gasCost: MetavaultTradeGasCost,
         exchange: this.dexKey,
-        data: {
-          exchange: '',
-        },
+        data: {},
         poolAddresses: [this.params.vault],
       },
     ];
@@ -179,9 +212,6 @@ export class MetavaultTrade
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -197,10 +227,6 @@ export class MetavaultTrade
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -227,11 +253,6 @@ export class MetavaultTrade
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {
     if (!this.supportedTokens.length) {
       const tokenAddresses = await MetavaultTradeEventPool.getWhitelistedTokens(
@@ -246,6 +267,7 @@ export class MetavaultTrade
         target: t,
         callData: decimalsCallData,
       }));
+
       const res = (
         await this.dexHelper.multiContract.methods
           .aggregate(tokenBalanceMultiCall)
@@ -270,10 +292,12 @@ export class MetavaultTrade
       MetavaultTrade.erc20Interface.encodeFunctionData('balanceOf', [
         this.params.vault,
       ]);
+
     const tokenBalanceMultiCall = this.supportedTokens.map(t => ({
       target: t.address,
       callData: erc20BalanceCalldata,
     }));
+
     const res = (
       await this.dexHelper.multiContract.methods
         .aggregate(tokenBalanceMultiCall)
@@ -291,6 +315,7 @@ export class MetavaultTrade
         this.dexHelper.getTokenUSDPrice(t, tokenBalances[i]),
       ),
     );
+
     this.vaultUSDBalance = tokenBalancesUSD.reduce(
       (sum: number, curr: number) => sum + curr,
     );

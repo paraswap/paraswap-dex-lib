@@ -1,19 +1,20 @@
 import { Interface } from '@ethersproject/abi';
-import { Address, MultiCallInput, MultiCallOutput } from '../../types';
-import { PoolState, VaultPriceFeedConfig } from './types';
-import { FastPriceFeed } from './fast-price-feed';
+import { DeepReadonly } from 'ts-essentials';
 import VaultPriceFeedAbi from '../../abi/metavault-trade/vault-price-feed.json';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
-import { DeepReadonly } from 'ts-essentials';
+import { Address, MultiCallInput, MultiCallOutput } from '../../types';
+import { FastPriceFeed } from './fast-price-feed';
+import { VaultPriceFeedConfig } from './types';
+
+//export class USDM<State> extends PartialEventSubscriber<State, USDMState>
 
 export class VaultPriceFeed<State> {
   BASIS_POINTS_DIVISOR = 10000n;
   PRICE_PRECISION = 10n ** 30n;
   ONE_USD = this.PRICE_PRECISION;
 
-  static interface = new Interface(VaultPriceFeedAbi);
+  static readonly interface: Interface = new Interface(VaultPriceFeedAbi);
 
-  protected isAmmEnabled: boolean;
   protected isSecondaryPriceEnabled: boolean;
   protected strictStableTokens: { [address: string]: boolean };
   protected spreadBasisPoints: { [address: string]: bigint };
@@ -21,7 +22,6 @@ export class VaultPriceFeed<State> {
   protected isAdjustmentAdditive: { [address: string]: boolean };
   protected priceDecimals: { [address: string]: number };
   protected maxStrictPriceDeviation: bigint;
-  protected useV2Pricing: boolean;
   protected priceSampleSpace: number;
 
   constructor(
@@ -29,7 +29,6 @@ export class VaultPriceFeed<State> {
     protected primaryPrices: { [token: string]: ChainLinkSubscriber<State> },
     protected secondaryPrice: FastPriceFeed<State>,
   ) {
-    this.isAmmEnabled = config.isAmmEnabled;
     this.isSecondaryPriceEnabled = config.isSecondaryPriceEnabled;
     this.strictStableTokens = config.strictStableTokens;
     this.spreadBasisPoints = config.spreadBasisPoints;
@@ -37,7 +36,6 @@ export class VaultPriceFeed<State> {
     this.isAdjustmentAdditive = config.isAdjustmentAdditive;
     this.priceDecimals = config.priceDecimals;
     this.maxStrictPriceDeviation = config.maxStrictPriceDeviation;
-    this.useV2Pricing = config.useV2Pricing;
     this.priceSampleSpace = config.priceSampleSpace;
   }
 
@@ -48,9 +46,7 @@ export class VaultPriceFeed<State> {
     _includeAmmPrice: boolean,
     _useSwapPricing: boolean,
   ): bigint {
-    let price = this.useV2Pricing
-      ? this.getPriceV2(state, _token, _maximise, _includeAmmPrice)
-      : this.getPriceV1(state, _token, _maximise, _includeAmmPrice);
+    let price = this.getPriceV1(state, _token, _maximise, _includeAmmPrice);
 
     const adjustmentBps = this.adjustmentBasisPoints[_token];
     if (adjustmentBps > 0n) {
@@ -69,17 +65,6 @@ export class VaultPriceFeed<State> {
     return price;
   }
 
-  getPriceV2(
-    state: DeepReadonly<State>,
-    _token: Address,
-    _maximise: boolean,
-    _includeAmmPrice: boolean,
-  ): bigint {
-    throw new Error(
-      'getPriceV2 implementation is not complete, devs should disable the dex or complete the implementation',
-    );
-  }
-
   getPriceV1(
     state: DeepReadonly<State>,
     _token: Address,
@@ -87,18 +72,6 @@ export class VaultPriceFeed<State> {
     _includeAmmPrice: boolean,
   ): bigint {
     let price = this.getPrimaryPrice(state, _token, _maximise);
-
-    if (_includeAmmPrice && this.isAmmEnabled) {
-      const ammPrice = this.getAmmPrice(state, _token);
-      if (ammPrice > 0n) {
-        if (_maximise && ammPrice > price) {
-          price = ammPrice;
-        }
-        if (!_maximise && ammPrice < price) {
-          price = ammPrice;
-        }
-      }
-    }
 
     if (this.isSecondaryPriceEnabled) {
       price = this.getSecondaryPrice(state, _token, price, _maximise);
@@ -136,12 +109,6 @@ export class VaultPriceFeed<State> {
     return (
       (price * (this.BASIS_POINTS_DIVISOR - _spreadBasisPoints)) /
       this.BASIS_POINTS_DIVISOR
-    );
-  }
-
-  getAmmPrice(state: DeepReadonly<State>, token: Address): bigint {
-    throw new Error(
-      'getAmmPrice implementation is not complete, devs should disable the dex or complete the implementation',
     );
   }
 
@@ -229,10 +196,6 @@ export class VaultPriceFeed<State> {
     return [
       {
         target: vaultPriceFeedAddress,
-        callData: VaultPriceFeed.interface.encodeFunctionData('isAmmEnabled'),
-      },
-      {
-        target: vaultPriceFeedAddress,
         callData: VaultPriceFeed.interface.encodeFunctionData(
           'isSecondaryPriceEnabled',
         ),
@@ -279,10 +242,6 @@ export class VaultPriceFeed<State> {
       },
       {
         target: vaultPriceFeedAddress,
-        callData: VaultPriceFeed.interface.encodeFunctionData('useV2Pricing'),
-      },
-      {
-        target: vaultPriceFeedAddress,
         callData:
           VaultPriceFeed.interface.encodeFunctionData('priceSampleSpace'),
       },
@@ -295,10 +254,6 @@ export class VaultPriceFeed<State> {
   ): VaultPriceFeedConfig {
     let i = 0;
     return {
-      isAmmEnabled: VaultPriceFeed.interface.decodeFunctionResult(
-        'isAmmEnabled',
-        multicallOutputs[i++],
-      )[0],
       isSecondaryPriceEnabled: VaultPriceFeed.interface.decodeFunctionResult(
         'isSecondaryPriceEnabled',
         multicallOutputs[i++],
@@ -370,10 +325,6 @@ export class VaultPriceFeed<State> {
           )[0]
           .toString(),
       ),
-      useV2Pricing: VaultPriceFeed.interface.decodeFunctionResult(
-        'useV2Pricing',
-        multicallOutputs[i++],
-      )[0],
       priceSampleSpace: parseInt(
         VaultPriceFeed.interface
           .decodeFunctionResult('priceSampleSpace', multicallOutputs[i++])[0]

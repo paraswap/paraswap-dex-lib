@@ -1,16 +1,17 @@
+import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Lens, lens } from '../../lens';
-import { Address, Log, Logger, MultiCallInput } from '../../types';
-import { ComposedEventSubscriber } from '../../composed-event-subscriber';
-import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState, DexParams, PoolConfig } from './types';
-import { ChainLinkSubscriber } from '../../lib/chainlink';
-import { FastPriceFeed } from './fast-price-feed';
-import { VaultPriceFeed } from './vault-price-feed';
-import { Vault } from './vault';
-import { USDM } from './usdm';
 import { Contract } from 'web3-eth-contract';
 import ReaderABI from '../../abi/metavault-trade/reader.json';
+import { ComposedEventSubscriber } from '../../composed-event-subscriber';
+import { IDexHelper } from '../../dex-helper/idex-helper';
+import { lens } from '../../lens';
+import { ChainLinkSubscriber } from '../../lib/chainlink';
+import { Address, Log, Logger, MultiCallInput } from '../../types';
+import { DexParams, PoolConfig, PoolState } from './types';
+import { FastPriceFeed } from './fast-price-feed';
+import { USDM } from './usdm';
+import { Vault } from './vault';
+import { VaultPriceFeed } from './vault-price-feed';
 
 const MAX_AMOUNT_IN_CACHE_TTL = 5 * 60;
 
@@ -22,8 +23,16 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
   vault: Vault<PoolState>;
   reader: Contract;
 
+  handlers: {
+    [event: string]: (
+      event: any,
+      state: DeepReadonly<PoolState>,
+      log: Readonly<Log>,
+    ) => DeepReadonly<PoolState> | null;
+  } = {};
+
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -44,6 +53,7 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
       },
       {},
     );
+
     const fastPriceFeed = new FastPriceFeed(
       config.fastPriceFeed,
       config.fastPriceEvents,
@@ -52,16 +62,19 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
       lens<DeepReadonly<PoolState>>().secondaryPrices,
       dexHelper.getLogger(`${parentName}-${network} fastPriceFeed`),
     );
+
     const vaultPriceFeed = new VaultPriceFeed(
       config.vaultPriceFeedConfig,
       chainlinkMap,
       fastPriceFeed,
     );
+
     const usdm = new USDM(
       config.usdmAddress,
       lens<DeepReadonly<PoolState>>().usdm,
       dexHelper.getLogger(`${parentName}-${network} USDG`),
     );
+
     const vault = new Vault(
       config.vaultAddress,
       config.tokenAddresses,
@@ -71,8 +84,9 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
       lens<DeepReadonly<PoolState>>().vault,
       dexHelper.getLogger(`${parentName}-${network} vault`),
     );
+
     super(
-      parentName,
+      'MetavaultTradePool',
       dexHelper.getLogger(`${parentName}-${network}`),
       dexHelper,
       [...Object.values(chainlinkMap), fastPriceFeed, usdm, vault],
@@ -90,6 +104,7 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
         },
       },
     );
+
     this.vault = vault;
     this.reader = new this.dexHelper.web3Provider.eth.Contract(
       ReaderABI as any,
@@ -108,16 +123,18 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
   async getMaxAmountIn(_tokenIn: Address, _tokenOut: Address): Promise<bigint> {
     const cacheKey = `maxAmountIn_${_tokenIn}_${_tokenOut}`;
     const maxAmountCached = await this.dexHelper.cache.get(
-      this.parentName,
+      this.name,
       this.network,
       cacheKey,
     );
+
     if (maxAmountCached) return BigInt(maxAmountCached);
+
     const maxAmount: string = await this.reader.methods
       .getMaxAmountIn(this.vault.vaultAddress, _tokenIn, _tokenOut)
       .call();
     this.dexHelper.cache.setex(
-      this.parentName,
+      this.name,
       this.network,
       cacheKey,
       MAX_AMOUNT_IN_CACHE_TTL,
@@ -126,8 +143,6 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
     return BigInt(maxAmount);
   }
 
-  // Reference to the original implementation
-  // https://github.com/gmx-io/gmx-contracts/blob/master/contracts/peripherals/Reader.sol#L71
   async getAmountOut(
     _tokenIn: Address,
     _tokenOut: Address,
@@ -240,31 +255,23 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
     return tokens;
   }
 
-  static async getConfig(
-    dexParams: DexParams,
+  static async getPriceFeedsForTokens(
+    tokens: string[],
+    vaultPriceFeedAddress: Address,
     blockNumber: number | 'latest',
     multiContract: Contract,
-  ): Promise<PoolConfig> {
-    const tokens = await this.getWhitelistedTokens(
-      dexParams.vault,
-      blockNumber,
-      multiContract,
-    );
+  ) {
+    const getPriceFeedCalldata = tokens.map(t => ({
+      callData: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [t]),
+      target: vaultPriceFeedAddress,
+    }));
 
-    // get price chainlink price feed
-    const getPriceFeedCalldata = tokens.map(t => {
-      return {
-        callData: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [
-          t,
-        ]),
-        target: dexParams.priceFeed,
-      };
-    });
     const priceFeedResult = (
       await multiContract.methods
         .aggregate(getPriceFeedCalldata)
         .call({}, blockNumber)
     ).returnData;
+
     const priceFeeds = priceFeedResult.map((p: any) =>
       VaultPriceFeed.interface
         .decodeFunctionResult('priceFeeds', p)[0]
@@ -272,6 +279,16 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
         .toLowerCase(),
     );
 
+    return priceFeeds;
+  }
+
+  static async getContractConfigs(
+    priceFeeds: string[],
+    tokens: string[],
+    dexParams: DexParams,
+    blockNumber: number | 'latest',
+    multiContract: Contract,
+  ) {
     // get config for all event listeners
     let multicallSlices: [number, number][] = [];
     let multiCallData: MultiCallInput[] = [];
@@ -286,13 +303,16 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
 
     const fastPriceFeedConfigCallData = FastPriceFeed.getConfigMulticallInputs(
       dexParams.fastPriceFeed,
+      tokens,
     );
+
     multiCallData.push(...fastPriceFeedConfigCallData);
     multicallSlices.push([i, i + fastPriceFeedConfigCallData.length]);
     i += fastPriceFeedConfigCallData.length;
 
     const vaultPriceFeedConfigCallData =
       VaultPriceFeed.getConfigMulticallInputs(dexParams.priceFeed, tokens);
+
     multiCallData.push(...vaultPriceFeedConfigCallData);
     multicallSlices.push([i, i + vaultPriceFeedConfigCallData.length]);
     i += vaultPriceFeedConfigCallData.length;
@@ -301,6 +321,7 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
       dexParams.vault,
       tokens,
     );
+
     multiCallData.push(...vaultConfigCallData);
     multicallSlices.push([i, i + vaultConfigCallData.length]);
     i += vaultConfigCallData.length;
@@ -317,7 +338,7 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
         configResults.slice(...multicallSlices.shift()!)[0],
       );
       chainlink[token] = {
-        proxy: priceFeeds.shift(),
+        proxy: priceFeeds.shift() || '',
         aggregator,
       };
     }
@@ -327,6 +348,7 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
     );
     const fastPriceFeedConfig = FastPriceFeed.getConfig(
       fastPriceFeedConfigResults,
+      tokens,
     );
 
     const vaultPriceFeedConfigResults = configResults.slice(
@@ -339,6 +361,45 @@ export class MetavaultTradeEventPool extends ComposedEventSubscriber<PoolState> 
 
     const vaultConfigResults = configResults.slice(...multicallSlices.shift()!);
     const vaultConfig = Vault.getConfig(vaultConfigResults, tokens);
+
+    return {
+      fastPriceFeedConfig,
+      vaultPriceFeedConfig,
+      vaultConfig,
+      chainlink,
+    };
+  }
+
+  static async getConfig(
+    dexParams: DexParams,
+    blockNumber: number | 'latest',
+    multiContract: Contract,
+  ): Promise<PoolConfig> {
+    const tokens = await this.getWhitelistedTokens(
+      dexParams.vault,
+      blockNumber,
+      multiContract,
+    );
+    const priceFeeds = await this.getPriceFeedsForTokens(
+      tokens,
+      dexParams.priceFeed,
+      blockNumber,
+      multiContract,
+    );
+    const configResults = await this.getContractConfigs(
+      priceFeeds,
+      tokens,
+      dexParams,
+      blockNumber,
+      multiContract,
+    );
+
+    const {
+      fastPriceFeedConfig,
+      vaultPriceFeedConfig,
+      vaultConfig,
+      chainlink,
+    } = configResults;
 
     return {
       vaultAddress: dexParams.vault,
