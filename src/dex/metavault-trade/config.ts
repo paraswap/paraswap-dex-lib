@@ -23,7 +23,7 @@ export const Adapters: {
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
-        name: 'NEW_ADAPTER_HERE', // TODO: New adaptor which contains MetavaultTrade's Swap Route should come here...
+        name: 'NEW_ADAPTER_HERE', // TODO: New adaptor which contains MetavaultTrade's Swap Route should come here
         index: 1,
       },
     ],
