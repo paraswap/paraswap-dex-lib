@@ -1,9 +1,13 @@
-export { SwapSide, ContractMethod } from 'paraswap-core';
+export { SwapSide, ContractMethod } from '@paraswap/core';
+
+export const PORT_TEST_SERVER = process.env.TEST_PORT;
+
+export const ETHER_ADDRESS =
+  '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'.toLowerCase();
+
+export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export const CACHE_PREFIX = 'dl';
-
-export const ETHER_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export const MAX_UINT =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
