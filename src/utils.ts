@@ -322,3 +322,9 @@ export const isSrcTokenTransferFeeToBeExchanged = (
 ) => {
   return !!(transferFees.srcFee || transferFees.srcDexFee);
 };
+
+export const isDestTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(transferFees.destFee || transferFees.destDexFee);
+};

@@ -10,7 +10,7 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -62,6 +62,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       'function latestRoundData() view returns (tuple(uint80 roundId, ' +
         'int256 answer, uint256 startedAt, uint256 updatedAt, ' +
         'uint80 answeredInRound))',
+    ]),
+    erc20BalanceOf: new Interface([
+      'function balanceOf(address) view returns (uint256)',
     ]),
   };
 
@@ -246,6 +249,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
               [],
             ),
           },
+          {
+            target: t.address,
+            callData: WooFi.ifaces.erc20BalanceOf.encodeFunctionData(
+              'balanceOf',
+              [this.config.wooPPAddress],
+            ),
+          },
         ])
         .flat();
 
@@ -279,6 +289,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         callData: WooFi.ifaces.guardian.encodeFunctionData('globalBound', []),
       });
 
+      calldata.push({
+        target: this.quoteTokenAddress,
+        callData: WooFi.ifaces.erc20BalanceOf.encodeFunctionData('balanceOf', [
+          this.config.wooPPAddress,
+        ]),
+      });
+
       this._encodedStateRequestCalldata = calldata;
     }
 
@@ -295,31 +312,39 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       .call({}, blockNumber || 'latest');
 
     // Last requests are standalone
-    const maxNumber = calldata.length - 5;
+    const maxNumber = calldata.length - 6;
 
     const [
       baseFeeRates,
       baseInfos,
       baseTokenInfos,
       chainlinkLatestRoundDatas,
+      baseTokenBalances,
       quoteTokenInfo,
       quoteChainlinkAnswer,
       oracleTimestamp,
       isPaused,
       globalBound,
+      quoteTokenBalance,
     ] = [
-      // Skip three as they are infos, tokenInfo and latestRoundData
-      _.range(0, maxNumber, 4).map(index =>
+      // Skip n steps as they are infos, tokenInfo and latestRoundData etc.
+      _.range(0, maxNumber, 5).map(index =>
         WooFi.ifaces.fee.decodeFunctionResult('feeRate', data[index][1]),
       ),
-      _.range(1, maxNumber, 4).map(index =>
+      _.range(1, maxNumber, 5).map(index =>
         WooFi.ifaces.oracle.decodeFunctionResult('state', data[index][1]),
       ),
-      _.range(2, maxNumber, 4).map(index =>
+      _.range(2, maxNumber, 5).map(index =>
         WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[index][1]),
       ),
-      _.range(3, maxNumber, 4).map(index =>
+      _.range(3, maxNumber, 5).map(index =>
         this._readChanLinkResponse(data[index]),
+      ),
+      _.range(4, maxNumber, 5).map(index =>
+        WooFi.ifaces.erc20BalanceOf.decodeFunctionResult(
+          'balanceOf',
+          data[index][1],
+        ),
       ),
       WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[maxNumber][1]),
       this._readChanLinkResponse(data[maxNumber + 1]),
@@ -329,6 +354,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       WooFi.ifaces.PP.decodeFunctionResult('paused', data[maxNumber + 3][1])[0],
       WooFi.ifaces.guardian
         .decodeFunctionResult('globalBound', data[maxNumber + 4][1])[0]
+        .toBigInt(),
+      WooFi.ifaces.erc20BalanceOf
+        .decodeFunctionResult('balanceOf', data[maxNumber + 5][1])[0]
         .toBigInt(),
     ];
 
@@ -345,6 +373,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       chainlink: {
         latestRoundDatas: {},
       },
+      wooPPBalances: {},
     };
 
     this._fillTokenInfoState(state, this.quoteTokenAddress, quoteTokenInfo);
@@ -369,6 +398,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       const refInfo = this._refInfos[this.baseTokens[index].address];
       state.chainlink.latestRoundDatas[refInfo.chainlinkRefOracle] = value;
     });
+
+    baseTokenBalances.map((value, index) => {
+      state.wooPPBalances[this.baseTokens[index].address] = BigInt(
+        value[0]._hex,
+      );
+    });
+    state.wooPPBalances[this.config.quoteToken.address] = quoteTokenBalance;
 
     return state;
   }

@@ -36,6 +36,7 @@ export type DexParams = {
   factoryAddress: string | null;
   eventSupportedPools: string[];
   pools: Record<string, PoolConfig>;
+  disableFeeOnTransferTokenAddresses?: Set<string>;
 };
 
 export enum CurveSwapFunctions {

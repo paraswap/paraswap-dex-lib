@@ -461,6 +461,10 @@ export class UniswapV3
       const result = poolsToUse.poolWithState.map((pool, i) => {
         const state = states[i];
 
+        if (state.liquidity <= 0n) {
+          return null;
+        }
+
         const unitResult = this._getOutputs(
           state,
           [unitAmount],

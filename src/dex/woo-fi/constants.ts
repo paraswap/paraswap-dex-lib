@@ -17,4 +17,5 @@ export const NULL_STATE: PoolState = {
     refInfos: {},
   },
   chainlink: { latestRoundDatas: {} },
+  wooPPBalances: {},
 };
