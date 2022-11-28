@@ -1,7 +1,13 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Network, ContractMethod, SwapSide, MAX_UINT } from '../../constants';
+import {
+  Network,
+  ContractMethod,
+  SwapSide,
+  MAX_UINT,
+  PORT_TEST_SERVER,
+} from '../../constants';
 import { generateConfig } from '../../config';
 import { newTestE2E } from '../../../tests/utils-e2e';
 import {
@@ -23,6 +29,60 @@ describe('GenericRFQ E2E Mainnet', () => {
   const destToken = smartTokens.DAI;
 
   const config = generateConfig(network);
+  config.rfqConfigs = {
+    DummyParaSwapPool: {
+      maker: process.env.TEST_ADDRESS!,
+      tokensConfig: {
+        reqParams: {
+          url: `http://localhost:${PORT_TEST_SERVER}/tokens`,
+          method: 'GET',
+        },
+        secret: {
+          domain: 'paraswap-test',
+          accessKey: 'access',
+          secretKey: 'secret',
+        },
+        intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+        dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+      },
+      pairsConfig: {
+        reqParams: {
+          url: `http://localhost:${PORT_TEST_SERVER}/pairs`,
+          method: 'GET',
+        },
+        secret: {
+          domain: 'paraswap-test',
+          accessKey: 'access',
+          secretKey: 'secret',
+        },
+        intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+        dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+      },
+      rateConfig: {
+        reqParams: {
+          url: `http://localhost:${PORT_TEST_SERVER}/prices`,
+          method: 'GET',
+        },
+        secret: {
+          domain: 'paraswap-test',
+          accessKey: 'access',
+          secretKey: 'secret',
+        },
+        intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
+        dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
+      },
+      firmRateConfig: {
+        url: `http://localhost:${PORT_TEST_SERVER}/firm`,
+        method: 'POST',
+        secret: {
+          domain: 'paraswap-test',
+          accessKey: 'access',
+          secretKey: 'secret',
+        },
+      },
+      rateTTLMs: 1000 * 60 * 60 * 1,
+    },
+  };
 
   describe('GenericRFQ', () => {
     const dexKey = 'DummyParaSwapPool';

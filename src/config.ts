@@ -1,6 +1,6 @@
 import { Config, Address, Token } from './types';
 
-import { Network, PORT_TEST_SERVER, ETHER_ADDRESS } from './constants';
+import { Network, ETHER_ADDRESS } from './constants';
 import { isETHAddress } from './utils';
 import { RFQConfig } from './dex/generic-rfq/types';
 
@@ -48,60 +48,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
-    rfqConfigs: {
-      DummyParaSwapPool: {
-        maker: process.env.TEST_ADDRESS!,
-        tokensConfig: {
-          reqParams: {
-            url: `http://localhost:${PORT_TEST_SERVER}/tokens`,
-            method: 'GET',
-          },
-          secret: {
-            domain: 'paraswap-test',
-            accessKey: 'access',
-            secretKey: 'secret',
-          },
-          intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-          dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
-        },
-        pairsConfig: {
-          reqParams: {
-            url: `http://localhost:${PORT_TEST_SERVER}/pairs`,
-            method: 'GET',
-          },
-          secret: {
-            domain: 'paraswap-test',
-            accessKey: 'access',
-            secretKey: 'secret',
-          },
-          intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-          dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
-        },
-        rateConfig: {
-          reqParams: {
-            url: `http://localhost:${PORT_TEST_SERVER}/prices`,
-            method: 'GET',
-          },
-          secret: {
-            domain: 'paraswap-test',
-            accessKey: 'access',
-            secretKey: 'secret',
-          },
-          intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-          dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
-        },
-        firmRateConfig: {
-          url: `http://localhost:${PORT_TEST_SERVER}/firm`,
-          method: 'POST',
-          secret: {
-            domain: 'paraswap-test',
-            accessKey: 'access',
-            secretKey: 'secret',
-          },
-        },
-        rateTTLMs: 1000 * 60 * 60 * 1,
-      },
-    },
+    rfqConfigs: {},
   },
   [Network.ROPSTEN]: {
     network: Network.ROPSTEN,
