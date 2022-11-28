@@ -11,11 +11,13 @@ import {
   PoolPrices,
   SimpleExchangeParam,
   Token,
+  TransferFeeParams,
 } from '../../types';
 import {
   ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
   SwapSide,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -53,6 +55,8 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   interpolate,
+  isDestTokenTransferFeeToBeExchanged,
+  isSrcTokenTransferFeeToBeExchanged,
   Utils,
 } from '../../utils';
 import { BN_0, getBigNumberPow } from '../../bignumber-constants';
@@ -74,6 +78,7 @@ import {
   CurveSwapFunctions,
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -81,8 +86,6 @@ const CURVE_LENDING_POOl_GAS = 340 * 1000;
 const CURVE_POOL_GAS = 200 * 1000;
 
 const coder = new AbiCoder();
-
-const SETUP_RETRY_TIMEOUT = 5 * 1000;
 
 export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   exchangeRouterInterface: Interface;
@@ -95,6 +98,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   private logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = true;
 
   private decimalsCoinsAndUnderlying: Record<string, number> = {};
 
@@ -103,18 +107,23 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   protected factoryAddress: string | null;
   protected baseTokens: Record<string, TokenWithReasonableVolume>;
 
+  protected disableFeeOnTransferTokenAddresses: Set<string>;
+
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1Config);
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     dexConfig = CurveV1Config[dexKey][network],
 
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.pools = Object.keys(dexConfig.pools).reduce<
       Record<string, PoolConfig>
     >((acc, key) => {
@@ -139,6 +148,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         tokenAddress: poolConf.tokenAddress
           ? poolConf.tokenAddress.toLowerCase()
           : undefined,
+        isFeeOnTransferSupported: poolConf.isFeeOnTransferSupported,
       };
 
       return acc;
@@ -163,6 +173,15 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       };
       return acc;
     }, {});
+
+    this.disableFeeOnTransferTokenAddresses =
+      dexConfig.disableFeeOnTransferTokenAddresses
+        ? new Set<string>(
+            Array.from(
+              dexConfig.disableFeeOnTransferTokenAddresses.values(),
+            ).map(addr => addr.toLowerCase()),
+          )
+        : new Set<string>();
 
     this.exchangeRouterInterface = new Interface(CurveABI as JsonFragment[]);
 
@@ -421,11 +440,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           throw new Error(
             `Error_${this.dexKey} requested unsupported event pool with address ${poolAddress}`,
           );
-        this.dexHelper.blockManager.subscribeToLogs(
-          newPool,
-          poolAddress,
-          blockNumber,
-        );
+        newPool.addressesSubscribed = [poolAddress];
+        await newPool.initialize(blockNumber);
         poolsToFetch.push(newPool);
       } else if (!pool.getState(blockNumber)) {
         unavailablePools.push(poolAddress);
@@ -507,8 +523,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
     const _width = Math.floor(chunks / onChainChunks);
 
-    // Curve only supports sells
-    const unitVolume = getBigIntPow(fromToken.decimals);
+    const unitVolume = amounts[0];
+    amounts[0] = 0n;
 
     const _amounts = [unitVolume].concat(
       Array.from(Array(onChainChunks).keys()).map(
@@ -616,7 +632,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       rates[0] = pool.get_dy_underlying(
         fromIndex,
         toIndex,
-        getBigNumberPow(fromBigNumbers),
+        amounts[0],
         state as any,
       );
 
@@ -631,12 +647,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             );
       }
     } else {
-      rates[0] = pool.get_dy(
-        fromIndex,
-        toIndex,
-        getBigNumberPow(fromBigNumbers),
-        state as any,
-      );
+      rates[0] = pool.get_dy(fromIndex, toIndex, amounts[0], state as any);
 
       for (let i = 1; i < amounts.length; i++) {
         rates[i] = this.noMorePrice(rates, i)
@@ -685,33 +696,47 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
-    // from: Token,
-    // to: Token,
-    // amounts: bigint[],
-    // side: SwapSide,
-    // routeID: number,
-    // usedPools: { [poolIdentifier: string]: number } | null,
-    // version: string,
-    // isAmountsLinear: boolean,
-    // excludedPools: string[],
-    // // Last two are useful for testing purposes
-    // useCache: boolean,
-    // useEvent: boolean,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<CurveV1Data> | null> {
     try {
       if (side === SwapSide.BUY) {
         return null;
       }
 
+      _from.address = _from.address.toLowerCase();
+      _to.address = _to.address.toLowerCase();
+
+      const _isSrcTokenTransferFeeToBeExchanged =
+        this.disableFeeOnTransferTokenAddresses.has(_from.address)
+          ? false
+          : isSrcTokenTransferFeeToBeExchanged(transferFees);
+
+      const _isDestTokenTransferFeeToBeExchanged =
+        this.disableFeeOnTransferTokenAddresses.has(_to.address)
+          ? false
+          : isDestTokenTransferFeeToBeExchanged(transferFees);
+
       // We first filter out pools which were explicitly excluded and pools which are already used
       // then for the good pools we set the boolean to be true for used pools
       // and for each pool we take the address.
       const goodPoolConfigs = this.getPoolConfigs(_from, _to).filter(p => {
-        if (!limitPools) {
-          return true;
+        if (limitPools !== undefined) {
+          const id = this.getPoolIdentifier(p.name);
+          if (!limitPools.includes(id)) {
+            return false;
+          }
         }
-        const id = this.getPoolIdentifier(p.name);
-        return limitPools!.includes(id);
+
+        if (_isSrcTokenTransferFeeToBeExchanged) {
+          // Fee on transfers supported only when flag is specified
+          return !!p.isFeeOnTransferSupported;
+        }
+        return true;
       });
 
       const goodPoolAddress = goodPoolConfigs.map(p => p.address);
@@ -727,6 +752,24 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         return null;
       }
 
+      const amountsWithUnit = [
+        getBigIntPow(_from.decimals),
+        ...amounts.slice(1),
+      ];
+      const amountsWithUnitAndFee = _isSrcTokenTransferFeeToBeExchanged
+        ? applyTransferFee(
+            applyTransferFee(
+              amountsWithUnit,
+              side,
+              transferFees.srcFee,
+              SRC_TOKEN_PARASWAP_TRANSFERS,
+            ),
+            side,
+            transferFees.srcDexFee,
+            this.SRC_TOKEN_DEX_TRANSFERS,
+          )
+        : amountsWithUnit;
+
       let _prices = new Array();
 
       const eventPools = goodPoolAddress.filter(p =>
@@ -737,7 +780,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         const pricesEvents = await this.getRatesEventPools(
           _from,
           _to,
-          amounts.map(a => new BigNumber(a.toString())),
+          amountsWithUnitAndFee.map(a => new BigNumber(a.toString())),
           _from.decimals,
           eventPools,
           eventPoolIndexes,
@@ -761,7 +804,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         const pricesOnChain = await this.getRatesOnChain(
           _from,
           _to,
-          amounts,
+          amountsWithUnitAndFee,
           onChainPools,
           onChainPoolIndexes,
           blockNumber,
@@ -783,6 +826,16 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             poolConfigsByAddress[_price.exchange.toLowerCase()];
           const indexes = this.getSwapIndexes(_from, _to, poolConfig);
           const [i, j, swapType] = indexes;
+
+          if (_isDestTokenTransferFeeToBeExchanged) {
+            _price.rates = applyTransferFee(
+              _price.rates,
+              side,
+              transferFees.destDexFee,
+              this.DEST_TOKEN_DEX_TRANSFERS,
+            );
+          }
+
           acc.push({
             prices: [0n, ..._price.rates.slice(1)],
             unit: _price.rates[0],

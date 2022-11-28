@@ -12,7 +12,13 @@ import {
   Network,
   ContractMethod,
 } from '../src/constants';
-import { OptimalRate, TxObject, Address, Token } from '../src/types';
+import {
+  OptimalRate,
+  TxObject,
+  Address,
+  Token,
+  TransferFeeParams,
+} from '../src/types';
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
@@ -170,6 +176,7 @@ export async function testE2E(
   provider: Provider,
   poolIdentifiers?: string[],
   limitOrderProvider?: DummyLimitOrderProvider,
+  transferFees?: TransferFeeParams,
 ) {
   const amount = BigInt(_amount);
   const ts = new TenderlySimulation(network);
@@ -221,6 +228,7 @@ export async function testE2E(
       swapSide,
       contractMethod,
       poolIdentifiers,
+      transferFees,
     );
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 

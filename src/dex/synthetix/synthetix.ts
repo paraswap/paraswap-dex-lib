@@ -33,6 +33,7 @@ import CombinedSynthetixABI from '../../abi/synthetix/CombinedSynthetix.abi.json
 export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   readonly combinedIface: Interface;
 
@@ -48,12 +49,12 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
   constructor(
     readonly network: Network,
-    protected dexKey: string,
+    dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly config = SynthetixConfig[dexKey][network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.config = this.normalizeConfig(this.config);
     this.logger = dexHelper.getLogger(dexKey);
     this.combinedIface = new Interface(CombinedSynthetixABI);

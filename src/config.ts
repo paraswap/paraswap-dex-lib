@@ -36,9 +36,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER,
     adapterAddresses: {
-      Adapter01: '0xBdd13a9dd364E5557e0710fC1d2Ac145B5e8f3bE',
+      Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-      Adapter03: '0xe609AEAb29245b235F63dDc23a34eD911524818a',
+      Adapter03: '0x79359292fFD5C3307084084B5b7C3e81D733Ee98',
       BuyAdapter: '0x737E642eec6e5bD675022ADC6D726EB19FF74383',
     },
     uniswapV2ExchangeRouterAddress:
@@ -96,9 +96,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     adapterAddresses: {
-      PolygonAdapter01: '0xa41B5Ab708fe1fe11CD6121006497b8549e8A695',
-      PolygonAdapter02: '0x176a9403f7147eb907bd3b13ffb8bbd5de5c8f1f',
-      PolygonBuyAdapter: '0xD7d3E2491cc495faAa9a770cBDC7535fD1446D8C',
+      PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
+      PolygonAdapter02: '0x97768fD3A529ee29B433cbb5E45E63F3bFFf0A93',
+      PolygonBuyAdapter: '0x40e11AE88A9402A34208D05bFB7E88171d2f58a0',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -116,7 +116,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
     privateHttpProvider: process.env.HTTP_PROVIDER_43114,
     adapterAddresses: {
-      AvalancheAdapter01: '0x6e8b66CC92fCD7fE1332664182BEB1161DBFc82d',
+      AvalancheAdapter01: '0x5b99094C3c2129F17b78cE5eBD1Cd8ADB887b340',
       AvalancheBuyAdapter: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     },
     uniswapV2ExchangeRouterAddress:
@@ -135,7 +135,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
     adapterAddresses: {
-      FantomAdapter01: '0x2A1b5Da9E380314602579aD269A99981DD01409c',
+      FantomAdapter01: '0xe5993623FF3ecD1f550124059252dDff804b3879',
       FantomBuyAdapter: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
     },
     uniswapV2ExchangeRouterAddress:
@@ -154,7 +154,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
     adapterAddresses: {
-      ArbitrumAdapter01: '0x6295Cd918b48e1D2a96cBae2fC70B29623c593c2',
+      ArbitrumAdapter01: '0x9b02ca178b7EbD5EF7dBF6a184c779c0aCA5D6dC',
       ArbitrumBuyAdapter: '0xeef30844023B355408C44224B9d4031609D316d4',
     },
     uniswapV2ExchangeRouterAddress:
@@ -215,7 +215,16 @@ export function generateConfig(network: number): Config {
 }
 
 export class ConfigHelper {
-  constructor(public data: Config) {}
+  public masterBlockNumberCacheKey: string;
+
+  constructor(
+    public isSlave: boolean,
+    public data: Config,
+    private masterCachePrefix: string,
+  ) {
+    this.masterBlockNumberCacheKey =
+      `${masterCachePrefix}_${data.network}_bn`.toLowerCase();
+  }
 
   wrapETH(token: Token): Token {
     return isETHAddress(token.address)

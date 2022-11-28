@@ -6,6 +6,7 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import MStableAssetABI from '../abi/MStableAsset.json';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 enum MStableFunctions {
   mint = 'mint',
@@ -46,12 +47,8 @@ export class MStable
   static dexKeys = ['mStable'];
   mStableAsset: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'mStable');
     this.mStableAsset = new Interface(MStableAssetABI as JsonFragment[]);
   }
 

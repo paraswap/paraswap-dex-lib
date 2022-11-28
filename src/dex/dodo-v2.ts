@@ -7,6 +7,7 @@ import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 const DODOAproveAddress: { [network: number]: Address } = {
   [Network.MAINNET]: '0xCB859eA579b28e02B87A1FDE08d087ab9dbE5149',
@@ -65,12 +66,8 @@ export class DodoV2
   static dexKeys = ['dodov2'];
   exchangeRouterInterface: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Web3,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'dodov2');
     this.exchangeRouterInterface = new Interface(
       DodoV2ProxyABI as JsonFragment[],
     );

@@ -26,6 +26,7 @@ const REF_CODE = 1;
 
 export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(Config);
@@ -36,12 +37,12 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   private wethGateway: Interface;
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected config = Config[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.wethGateway = new Interface(WETH_GATEWAY_ABI);
     this.pool = new Interface(POOL_ABI);

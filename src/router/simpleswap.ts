@@ -1,7 +1,6 @@
 import { IRouter } from './irouter';
 import {
   Address,
-  Adapters,
   OptimalRate,
   ConstractSimpleData,
   TxInfo,
@@ -14,7 +13,6 @@ import { isETHAddress, uuidToBytes16 } from '../utils';
 import { Weth } from '../dex/weth/weth';
 import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
 
-import { OptimalSwap } from '@paraswap/core';
 import { DexAdapterService } from '../dex';
 import {
   encodeFeePercent,

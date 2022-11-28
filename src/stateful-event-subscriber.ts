@@ -4,6 +4,20 @@ import { BlockHeader } from 'web3-eth';
 import { EventSubscriber } from './dex-helper/iblock-manager';
 
 import { MAX_BLOCKS_HISTORY } from './constants';
+import { IDexHelper } from './dex-helper';
+import { Utils } from './utils';
+
+type StateCache<State> = {
+  bn: number;
+  state: DeepReadonly<State>;
+};
+
+type InitializeStateOptions<State> = {
+  state?: DeepReadonly<State>;
+  initCallback?: (state: DeepReadonly<State>) => void;
+};
+
+const CREATE_NEW_STATE_RETRY_INTERVAL_MS = 1000;
 
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
@@ -20,11 +34,124 @@ export abstract class StatefulEventSubscriber<State>
   protected invalid: boolean = false;
 
   isTracking: () => boolean = () => false;
+  public addressesSubscribed: string[] = [];
 
-  constructor(public readonly name: string, protected logger: Logger) {}
+  private cacheName: string;
+
+  public name: string;
+
+  constructor(
+    public readonly parentName: string,
+    _name: string,
+    protected dexHelper: IDexHelper,
+    protected logger: Logger,
+    private masterPoolNeeded: boolean = false,
+    private mapKey: string = '',
+  ) {
+    this.name = _name.toLowerCase();
+    this.cacheName = `${this.mapKey}_${this.name}`.toLowerCase();
+  }
 
   getStateBlockNumber(): Readonly<number> {
     return this.stateBlockNumber;
+  }
+
+  //Function which set the initial state and bounded it to blockNumber
+  //There is multiple possible case:
+  // 1. You provide a state in options object the function will initialize with the provided state
+  //  with blockNumber and subscribe to logs.
+  // 2. if you are a master instance of dex-lib and no state is provided in options object
+  //  then the function generate a new state with blockNumber as height and set the state with
+  //  the result.
+  // 3. if you are a slave instance of dex-lib
+  //  either:
+  //    - If a state is found in the cache and the state is not null we set our state with the
+  //      cache state and cache blockNumber. Subscribe to logs with the cache blockNumber
+  //  or:
+  //    - If no valid state found in cache, we generate a new state with blockNumber
+  //      and se state with blockNumber. Subscribe to logs with blockNumber. The function
+  //      will also publish a message to cache to tell one master version of dex-lib that this slave
+  //      instance subscribed to a pool from dex this.parentName and name this.name.
+  async initialize(
+    blockNumber: number,
+    options?: InitializeStateOptions<State>,
+  ) {
+    let masterBn: undefined | number = undefined;
+    if (options && options.state) {
+      this.setState(options.state, blockNumber);
+    } else {
+      if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
+        let stateAsString = await this.dexHelper.cache.hget(
+          this.mapKey,
+          this.name,
+        );
+
+        // if there is a state in cache
+        if (stateAsString) {
+          const state: StateCache<State> = Utils.Parse(stateAsString);
+
+          if (state.state === null) {
+            this.logger.warn(
+              `${this.parentName}: ${this.name}: found null state in cache generate new one`,
+            );
+            state.state = await this.generateState(blockNumber);
+          } else {
+            this.logger.info(
+              `${this.parentName}: ${this.name}: found state from cache`,
+            );
+            blockNumber = state.bn;
+
+            const _masterBn = await this.dexHelper.cache.rawget(
+              this.dexHelper.config.masterBlockNumberCacheKey,
+            );
+            if (_masterBn) {
+              masterBn = parseInt(_masterBn, 10);
+              this.logger.info(
+                `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
+              );
+            } else {
+              this.logger.error(
+                `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
+              );
+            }
+          }
+          // set state and the according blockNumber. state.bn can be smaller, greater or equal
+          // to blockNumber
+          this.setState(state.state, blockNumber);
+        } else {
+          // if no state found in cache generate new state using rpc
+          this.logger.info(
+            `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
+          );
+          const state = await this.generateState(blockNumber);
+          this.setState(state, blockNumber);
+
+          // we should publish only if generateState succeeded
+          this.dexHelper.cache.publish('new_pools', this.cacheName);
+        }
+      } else {
+        // if you are not a slave instance always generate new state
+        this.logger.info(
+          `${this.parentName}: ${this.name}: cache generating state`,
+        );
+        const state = await this.generateState(blockNumber);
+        this.setState(state, blockNumber);
+      }
+    }
+
+    // apply a callback on the state
+    if (options && options.initCallback) {
+      if (this.state) {
+        options.initCallback(this.state);
+      }
+    }
+
+    // always subscribeToLogs
+    this.dexHelper.blockManager.subscribeToLogs(
+      this,
+      this.addressesSubscribed,
+      masterBn || blockNumber,
+    );
   }
 
   //Function which transforms the given state for the given log event.
@@ -73,7 +200,7 @@ export abstract class StatefulEventSubscriber<State>
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
-      this.state = null;
+      this._setState(null, blockNumber);
     }
   }
 
@@ -134,6 +261,36 @@ export abstract class StatefulEventSubscriber<State>
       index = indexBlockEnd;
     }
     this.invalid = false;
+
+    if (
+      !this.dexHelper.config.isSlave &&
+      this.masterPoolNeeded &&
+      this.state === null
+    ) {
+      const network = this.dexHelper.config.data.network;
+      const createNewState = async () => {
+        if (this.state !== null) {
+          return true;
+        }
+        const latestBlockNumber =
+          this.dexHelper.blockManager.getLatestBlockNumber();
+        this.logger.warn(
+          `${network}: ${this.parentName}: ${this.name}: master generate (latest: ${latestBlockNumber}) new state because state is null`,
+        );
+        try {
+          const state = await this.generateState(latestBlockNumber);
+          this.setState(state, latestBlockNumber);
+          return true;
+        } catch (e) {
+          this.logger.error(
+            `${network}: ${this.parentName} ${this.name}: (${latestBlockNumber}) failed fetch state:`,
+            e,
+          );
+        }
+        return false;
+      };
+      this.dexHelper.promiseScheduler.addPromise(createNewState);
+    }
   }
 
   //Removes all states that are beyond the given block number and sets the
@@ -141,16 +298,21 @@ export abstract class StatefulEventSubscriber<State>
   //flag is not set, in which case the most recent state can be kept.
   rollback(blockNumber: number): void {
     if (this.invalid) {
+      let lastBn = undefined;
+      //loop in the ascending order of the blockNumber. V8 property when object keys are number.
       for (const bn in this.stateHistory) {
-        if (+bn > blockNumber) {
+        const bnAsNumber = +bn;
+        if (bnAsNumber > blockNumber) {
           delete this.stateHistory[bn];
         } else {
-          this.state = this.stateHistory[bn];
-          this.stateBlockNumber = +bn;
+          lastBn = bnAsNumber;
         }
       }
-      if (this.state && this.stateBlockNumber > blockNumber) {
-        this.state = null;
+
+      if (lastBn) {
+        this._setState(this.stateHistory[lastBn], lastBn);
+      } else {
+        this._setState(null, blockNumber);
       }
     } else {
       //Keep the current state in this.state and in the history
@@ -185,6 +347,56 @@ export abstract class StatefulEventSubscriber<State>
     return this.state;
   }
 
+  _setState(state: DeepReadonly<State> | null, blockNumber: number) {
+    if (
+      this.dexHelper.config.isSlave &&
+      this.masterPoolNeeded &&
+      state === null
+    ) {
+      this.logger.info(
+        `${this.parentName}: ${this.name}: schedule a job to get state from cache`,
+      );
+
+      this.dexHelper.cache.addBatchHGet(
+        this.mapKey,
+        this.name,
+        (result: string | null) => {
+          if (!result) {
+            this.logger.warn('received null result');
+            return false;
+          }
+          const state: StateCache<State> = Utils.Parse(result);
+          if (!state.state) {
+            return false;
+          }
+
+          this.logger.info(
+            `${this.parentName}: ${this.name}: received state from a scheduled job`,
+          );
+          this.setState(state.state, state.bn);
+          return true;
+        },
+      );
+    }
+
+    this.state = state;
+    this.stateBlockNumber = blockNumber;
+
+    if (this.dexHelper.config.isSlave || !this.masterPoolNeeded) {
+      return;
+    }
+
+    this.logger.info(`${this.parentName}: ${this.name} saving state in cache`);
+    this.dexHelper.cache.hset(
+      this.mapKey,
+      this.name,
+      Utils.Serialize({
+        bn: blockNumber,
+        state,
+      }),
+    );
+  }
+
   //Saves the state into the stateHistory, and cleans up any old state that is
   //no longer needed.  If the blockNumber is greater than or equal to the
   //current state, then the current state will be updated and the invalid flag
@@ -196,8 +408,7 @@ export abstract class StatefulEventSubscriber<State>
     }
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
-      this.state = state;
-      this.stateBlockNumber = blockNumber;
+      this._setState(state, blockNumber);
       this.invalid = false;
     }
     const minBlockNumberToKeep = this.stateBlockNumber - MAX_BLOCKS_HISTORY;

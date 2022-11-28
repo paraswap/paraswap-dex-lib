@@ -45,6 +45,7 @@ export class ParaSwapLimitOrders
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(ParaSwapLimitOrdersConfig);
@@ -53,7 +54,7 @@ export class ParaSwapLimitOrders
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] ? Adapters[network] : {},
     protected augustusRFQAddress = ParaSwapLimitOrdersConfig[dexKey][
@@ -61,7 +62,7 @@ export class ParaSwapLimitOrders
     ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
