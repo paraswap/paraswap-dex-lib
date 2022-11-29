@@ -1,5 +1,7 @@
 import axios from 'axios';
+import { Address } from 'paraswap-core';
 import { TxObject } from '../src/types';
+import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
 const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID;
@@ -40,7 +42,7 @@ export class TenderlySimulation {
     }
   }
 
-  async simulate(params: TxObject) {
+  async simulate(params: TxObject, stateOverrides?: StateOverrides) {
     let _params = {
       from: params.from,
       to: params.to,
@@ -49,8 +51,34 @@ export class TenderlySimulation {
       value: params.value || '0',
       gas: this.maxGasLimit,
       input: params.data,
+      state_objects: {},
     };
     try {
+      if (stateOverrides) {
+        const result = await axios.post(
+          `
+        https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
+          stateOverrides,
+          {
+            headers: {
+              'x-access-key': TENDERLY_TOKEN!,
+            },
+          },
+        );
+
+        _params.state_objects = Object.keys(result.data.stateOverrides).reduce(
+          (acc, contract) => {
+            const _storage = result.data.stateOverrides[contract].value;
+
+            acc[contract] = {
+              storage: _storage,
+            };
+            return acc;
+          },
+          {} as Record<Address, StateSimulateApiOverride>,
+        );
+      }
+
       const { data } = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,

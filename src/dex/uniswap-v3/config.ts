@@ -1,7 +1,7 @@
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
-import { Address } from 'paraswap';
+import { Address } from '../../types';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
 

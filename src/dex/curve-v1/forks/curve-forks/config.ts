@@ -1,4 +1,4 @@
-import { SwapSide } from 'paraswap-core';
+import { SwapSide } from '@paraswap/core';
 import { Network } from '../../../../constants';
 import { AdapterMappings, DexConfigMap } from '../../../../types';
 import { DexParams } from '../../types';

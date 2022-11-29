@@ -10,6 +10,9 @@ export {
   ICache,
   IBlockManager,
   IRequestWrapper,
+  RequestConfig,
+  RequestHeaders,
+  Response,
   EventSubscriber,
 } from './dex-helper';
 

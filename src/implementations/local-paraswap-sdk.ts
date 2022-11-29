@@ -51,9 +51,10 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   constructor(
     protected network: number,
     protected dexKey: string,
+    rpcUrl: string,
     limitOrderProvider?: DummyLimitOrderProvider,
   ) {
-    this.dexHelper = new DummyDexHelper(this.network);
+    this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
     this.dexAdapterService = new DexAdapterService(
       this.dexHelper,
       this.network,

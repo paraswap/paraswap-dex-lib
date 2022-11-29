@@ -1,7 +1,7 @@
 import { DexParams } from './types';
 import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
-import { SwapSide } from 'paraswap-core';
+import { SwapSide } from '@paraswap/core';
 
 const WethGasCost = 50 * 1000;
 

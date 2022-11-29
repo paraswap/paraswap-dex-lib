@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getAddress } from 'ethers/lib/utils';
-import { SwapSide } from 'paraswap-core';
+import { SwapSide } from '@paraswap/core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger, TransferFeeParams } from './types';
@@ -13,6 +13,11 @@ export const prependWithOx = (str: string) =>
   str.startsWith('0x') ? str : '0x' + str;
 
 export const uuidToBytes16 = (uuid: string) => '0x' + uuid.replace(/-/g, '');
+
+export function toUnixTimestamp(date: Date | number): number {
+  const timestamp = date instanceof Date ? date.getTime() : date;
+  return Math.floor(timestamp / 1000);
+}
 
 // This function guarantees that the distribution adds up to exactly 100% by
 // applying rounding in the other direction for numbers with the most error.

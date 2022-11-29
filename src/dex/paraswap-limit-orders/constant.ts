@@ -1,3 +1,5 @@
+import { BuildOrderConstants } from './types';
+
 export const ONE_ORDER_GASCOST = 65500n;
 
 // In one swap we can use only MAX_ORDERS_COUNT_FOR_SWAP for pricing and tx building
@@ -12,3 +14,19 @@ export const MAX_ORDERS_USED_FOR_SWAP = BigInt(
 export const MAX_ORDERS_MULTI_FACTOR = BigInt(
   process.env.MAX_ORDERS_MULTI_FACTOR || '2',
 );
+
+export const BUILD_ORDER_CONSTANTS: BuildOrderConstants = {
+  NAME: 'AUGUSTUS RFQ',
+  VERSION: '1',
+
+  ORDER_INTERFACE: [
+    { name: 'nonceAndMeta', type: 'uint256' },
+    { name: 'expiry', type: 'uint128' },
+    { name: 'makerAsset', type: 'address' },
+    { name: 'takerAsset', type: 'address' },
+    { name: 'maker', type: 'address' },
+    { name: 'taker', type: 'address' },
+    { name: 'makerAmount', type: 'uint256' },
+    { name: 'takerAmount', type: 'uint256' },
+  ],
+};

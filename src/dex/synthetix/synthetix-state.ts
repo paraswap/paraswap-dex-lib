@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { ethers } from 'ethers';
 import { Interface } from '@ethersproject/abi';
-import { Address } from 'paraswap';
 import { NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';
@@ -54,6 +53,7 @@ import {
   SETTING_PURE_CHAINLINK_PRICE_FOR_ATOMIC_SWAPS_ENABLED,
   STATE_TTL_IN_MS,
 } from './constants';
+import { Address } from '@paraswap/core';
 
 export class SynthetixState {
   logger: Logger;
