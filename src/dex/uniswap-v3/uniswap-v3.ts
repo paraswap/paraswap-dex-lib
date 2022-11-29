@@ -276,15 +276,16 @@ export class UniswapV3
 
     const balances = await getBalances(this.dexHelper.multiWrapper, requests);
 
-    pools = pools.filter(
-      (pool, index) =>
-        balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING] >=
-        amounts[amounts.length - 1],
-    );
-
-    if (!pools.length) {
-      return null;
-    }
+    pools = pools.filter((pool, index) => {
+      const balance = balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
+      if (balance >= amounts[amounts.length - 1]) {
+        return true;
+      }
+      this.logger.warn(
+        `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
+      );
+      return false;
+    });
 
     pools.forEach(pool => {
       this.logger.warn(
