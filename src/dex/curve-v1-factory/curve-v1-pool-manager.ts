@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { Logger } from 'log4js';
-import { Address } from 'paraswap';
+import { Address } from '@paraswap/core';
 import { IDexHelper } from '../../dex-helper';
 import { TaskScheduler } from '../../lib/task-scheduler';
 import {

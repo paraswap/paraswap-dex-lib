@@ -1,4 +1,9 @@
-import { defaultAbiCoder, Interface, LogDescription } from 'ethers/lib/utils';
+import {
+  BytesLike,
+  defaultAbiCoder,
+  Interface,
+  LogDescription,
+} from 'ethers/lib/utils';
 
 import ERC20ABI from '../../abi/ERC20.abi.json';
 import ERC721ABI from '../../abi/ERC721.abi.json';
@@ -18,6 +23,7 @@ import {
   WETHWithdrawal,
 } from './types';
 import { MultiResult } from '../multi-wrapper';
+import { extractSuccessAndValue, generalDecoder } from '../decoders';
 
 export const erc20Iface = new Interface(ERC20ABI);
 export const wethIface = new Interface(WETHABI);
@@ -29,34 +35,41 @@ export function toUnixTimestamp(date: Date | number): number {
   return Math.floor(timestamp / 1000);
 }
 
-export const uintDecode = (result: MultiResult<string>): bigint => {
-  if (!result.success) {
-    return 0n;
-  }
-  return BigInt(defaultAbiCoder.decode(['uint'], result.returnData)[0]);
+export const uintDecode = (
+  result: MultiResult<BytesLike> | BytesLike,
+): bigint => {
+  return generalDecoder(result, ['uint'], 0n, value => value[0].toBigInt());
 };
 
-export const uint256ArrayDecode = (result: MultiResult<string>): bigint => {
-  if (!result.success) {
+export const uint256ArrayDecode = (
+  result: MultiResult<string> | string,
+): bigint => {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (isSuccess) {
     return 0n;
   }
-  return BigInt(defaultAbiCoder.decode(['uint256[]'], result.returnData)[0]);
+  return BigInt(defaultAbiCoder.decode(['uint256[]'], toDecode)[0]);
 };
 
-export const booleanDecode = (result: MultiResult<string>): boolean => {
-  if (!result.success) {
+export const booleanDecode = (
+  result: MultiResult<string> | string,
+): boolean => {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (isSuccess) {
     return false;
   }
-  return defaultAbiCoder.decode(['bool'], result.returnData)[0];
+  return defaultAbiCoder.decode(['bool'], toDecode)[0];
 };
 
-export const addressDecode = (result: MultiResult<string>): string => {
-  if (!result.success) {
+export const addressDecode = (result: MultiResult<string> | string): string => {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (isSuccess) {
     return '';
   }
-  return defaultAbiCoder
-    .decode(['address'], result.returnData)[0]
-    .toLowerCase();
+  return defaultAbiCoder.decode(['address'], toDecode)[0].toLowerCase();
 };
 
 export const extractOnlySuccess = (result: MultiResult<string>): boolean =>
