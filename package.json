@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.9.14",
+  "version": "2.9.16",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -11,7 +11,6 @@
     "access": "public"
   },
   "devDependencies": {
-    "@paraswap/core": "1.0.2",
     "@paraswap/sdk": "^6.0.0",
     "@types/async": "^3.2.15",
     "@types/axios": "0.14.0",
@@ -41,6 +40,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@paraswap/core": "^1.0.3",
     "async": "^3.2.4",
     "bignumber.js": "9.1.0",
     "cross-fetch": "^3.1.5",
