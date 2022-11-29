@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 import { TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
 

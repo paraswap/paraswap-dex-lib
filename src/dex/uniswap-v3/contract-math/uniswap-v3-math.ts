@@ -9,7 +9,7 @@ import { TickBitMap } from './TickBitMap';
 import { TickMath } from './TickMath';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { BI_MAX_INT } from '../../../bigint-constants';
 import {
   MAX_PRICING_COMPUTATION_STEPS_ALLOWED,

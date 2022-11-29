@@ -16,7 +16,7 @@ import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import { bigIntify, catchParseLogError } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
-import { NumberAsString } from 'paraswap-core';
+import { NumberAsString } from '@paraswap/core';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,

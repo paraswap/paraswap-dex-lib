@@ -1,7 +1,7 @@
 import { PoolState, TickInfo } from '../types';
 import { LiquidityMath } from './LiquidityMath';
 import { _require } from '../../../utils';
-import { NumberAsString } from 'paraswap-core';
+import { NumberAsString } from '@paraswap/core';
 import { ZERO_TICK_INFO } from '../constants';
 
 export class Tick {

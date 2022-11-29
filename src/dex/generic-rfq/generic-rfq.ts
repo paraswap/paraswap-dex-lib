@@ -15,7 +15,7 @@ import { ParaSwapLimitOrdersData } from '../paraswap-limit-orders/types';
 import { ONE_ORDER_GASCOST } from '../paraswap-limit-orders/constant';
 import { RateFetcher } from './rate-fetcher';
 import { PriceAndAmountBigNumber, RFQConfig } from './types';
-import { OptimalSwapExchange } from 'paraswap-core';
+import { OptimalSwapExchange } from '@paraswap/core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
 export const OVERORDER_BPS = 100;
