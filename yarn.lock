@@ -995,10 +995,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@paraswap/core@1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.2.tgz#ac6fbe4bd4b37df0b4013ef818028ee87b0ef0df"
-  integrity sha512-lIqMd8E133fCQDfWGi8LI4vDbkebheydwnaUwZbBRx8syiQ48Rb20wMQklF7KxYlmt1VW0m7HnsR1ROppv5deQ==
+"@paraswap/core@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.3.tgz#a1de0536a061f71cdc66de8ffda8da8464ec0a36"
+  integrity sha512-V3Lc6hmSvGIy+VwngCWNU4yW6lv4yRASxj7gO3NLol7chX4WjaLYp/lwh4O4kjJnfl36WMEQhbT7lwuVxXVwKA==
 
 "@paraswap/sdk@^6.0.0":
   version "6.0.0"
