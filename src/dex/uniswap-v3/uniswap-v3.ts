@@ -513,13 +513,14 @@ export class UniswapV3
 
         const requiredAmount = amounts[amounts.length - 1];
         if (balance < requiredAmount) {
-          this.logger.debug(
-            `pool (${pool.poolAddress}) (srcToken: ${_srcAddress}, side: ${side}) have ${balance} but we need ${requiredAmount} to use it`,
+          this.logger.warn(
+            `pool is missing liquidity (${pool.poolAddress}) (srcToken: ${_srcAddress}, side: ${side}) have ${balance} but we need ${requiredAmount} to use it`,
           );
           return null;
         }
 
         if (state.liquidity <= 0n) {
+          this.logger.warn(`pool have 0 liquidity`);
           return null;
         }
 
