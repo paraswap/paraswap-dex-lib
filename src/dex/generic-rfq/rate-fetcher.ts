@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { SwapSide } from 'paraswap-core';
+import { SwapSide } from '@paraswap/core';
 import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
