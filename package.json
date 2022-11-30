@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.9.14-uniswap-v3-empty-pool-fix.2",
+  "version": "2.9.14-uniswap-v3-empty-pool-fix.3",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
