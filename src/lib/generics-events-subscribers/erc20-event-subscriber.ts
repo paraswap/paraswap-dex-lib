@@ -25,9 +25,12 @@ export const handleTransferEvent = (
   const erc20Transfer = decodeERC20Transfer(event);
 
   if (erc20Transfer.from in state) {
+    state = _.cloneDeep(state);
     state[erc20Transfer.from].balance -= erc20Transfer.value;
   }
+
   if (erc20Transfer.to in state) {
+    state = _.cloneDeep(state);
     state[erc20Transfer.to].balance += erc20Transfer.value;
   }
 
@@ -41,6 +44,7 @@ export const handleWrappedDeposit = (
   const deposit = decodeWrappedDeposit(event);
 
   if (deposit.dst in state) {
+    state = _.cloneDeep(state);
     state[deposit.dst].balance += deposit.wad;
   }
 
@@ -54,6 +58,7 @@ export const handleWrappedWithdrawal = (
   const deposit = decodeWrappedWithdrawal(event);
 
   if (deposit.src in state) {
+    state = _.cloneDeep(state);
     state[deposit.src].balance -= deposit.wad;
   }
 
@@ -90,9 +95,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     logs: Readonly<Log>[],
     blockHeader: Readonly<BlockHeader>,
   ): Promise<DeepReadonly<ERC20StateMap> | null> {
-    const clonedState = _.cloneDeep(state);
-
-    let newState = await super.processBlockLogs(clonedState, logs, blockHeader);
+    let newState = await super.processBlockLogs(state, logs, blockHeader);
     if (!newState) {
       let newState = await this.generateState(blockHeader.number);
     }
