@@ -246,7 +246,7 @@ export const decodeBalanceAndAllowanceMultiResult = (
 export const getBalances = async (
   multiv2: MultiWrapper,
   reqs: BalanceRequest[],
-  blockNumber: number | string = 'latest',
+  blockNumber: number | 'latest' = 'latest',
 ): Promise<UserBalance[]> => {
   const calls: MultiCallParams<MultiCallParamsType>[] = []; // TODO: compute the size on advance
 
