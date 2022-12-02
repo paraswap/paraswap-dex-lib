@@ -154,7 +154,9 @@ export class StatePollingManager {
       logger.warn(
         `${dexKey}: ${poolsForRPCUpdate.length} pools: ${poolsForRPCUpdate
           .map(p => p.address)
-          .join(', ')} don't have state in cache. Falling back to RPC`,
+          .join(', ')} don't have state in cache on network ${
+          dexHelper.config.data.network
+        }. Falling back to RPC`,
       );
 
       await StatePollingManager.fetchAndSetStatesFromRPC(
