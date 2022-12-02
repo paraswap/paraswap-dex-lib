@@ -209,7 +209,7 @@ export class CurveV1Factory
                   target: factoryAddress,
                   callData: this.ifaces.factory.encodeFunctionData(
                     'get_implementation_address',
-                    [customPool],
+                    [customPool.address],
                   ),
                   decodeFunction: addressDecode,
                 },
