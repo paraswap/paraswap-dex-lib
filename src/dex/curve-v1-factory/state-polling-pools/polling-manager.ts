@@ -1,4 +1,5 @@
 import { Logger } from 'log4js';
+import { Network } from '../../../constants';
 import { IDexHelper } from '../../../dex-helper';
 import { Utils, _require } from '../../../utils';
 import { PoolState } from '../types';
@@ -30,10 +31,15 @@ export class StatePollingManager {
       })
       .flat();
 
-    const _blockNumber =
-      blockNumber !== undefined
-        ? blockNumber
-        : await dexHelper.web3Provider.eth.getBlockNumber();
+    let _blockNumber = blockNumber;
+    if (_blockNumber === undefined) {
+      _blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // In order to prevent header not found thing on fast chains, take pessimistically one
+      // block header ago. That way we will have less error updating state and serving price
+      if (dexHelper.config.data.network !== +Network.MAINNET) {
+        _blockNumber -= 1;
+      }
+    }
 
     const result = await dexHelper.multiWrapper.aggregate(
       callDatas,
@@ -145,7 +151,7 @@ export class StatePollingManager {
 
     try {
       logger.warn(
-        `${poolsForRPCUpdate.length} pools: ${poolsForRPCUpdate
+        `${dexKey}: ${poolsForRPCUpdate.length} pools: ${poolsForRPCUpdate
           .map(p => p.address)
           .join(', ')} don't have state in cache. Falling back to RPC`,
       );

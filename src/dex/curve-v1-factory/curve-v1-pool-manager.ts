@@ -326,7 +326,7 @@ export class CurveV1FactoryPoolManager {
       this.liquidityUpdatedAtMs = Date.now();
     } catch (e) {
       this.logger.error(
-        `${this.name}: Error fetching liquidity from CurveV2 API ${URL}: `,
+        `${this.name}: Error fetching liquidity from Curve API ${URL}: `,
         e,
       );
     }
