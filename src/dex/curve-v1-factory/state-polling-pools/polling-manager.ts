@@ -33,17 +33,18 @@ export class StatePollingManager {
 
     let _blockNumber = blockNumber;
     if (_blockNumber === undefined) {
-      _blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      // In order to prevent header not found thing on fast chains, take pessimistically one
-      // block header ago. That way we will have less error updating state and serving price
-      if (dexHelper.config.data.network !== +Network.MAINNET) {
-        _blockNumber -= 1;
-      }
+      // If we were not given with blockNumber, set state blockNumber to 0,
+      // that is indicating that block number was the latest.
+      // If we request here latest blockNumber and try to send query, we frequently
+      // hit problem with late nodes. Some node may give us blockNumber 10,
+      // but when trying to do query we may hit node that is only on 9 blocknumber
+      // And it is a problem. Especially on Optimism and Avalanche.
+      _blockNumber = 0;
     }
 
     const result = await dexHelper.multiWrapper.aggregate(
       callDatas,
-      _blockNumber,
+      blockNumber,
       1000,
     );
     const updatedAt = Date.now();
