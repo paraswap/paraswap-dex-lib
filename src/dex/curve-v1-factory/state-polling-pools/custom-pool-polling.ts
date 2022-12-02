@@ -12,6 +12,7 @@ import { uint256ToBigInt } from '../../../lib/decoders';
 import { _require } from '../../../utils';
 import { Address } from 'paraswap-core';
 import { AbiItem } from 'web3-utils';
+import { NULL_ADDRESS } from '../../../constants';
 
 type FunctionToCall =
   | 'A'
@@ -99,6 +100,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly dexKey: string,
     cacheStateKey: string,
     readonly implementationName: ImplementationNames,
+    readonly implementationAddress: Address,
     readonly address: Address,
     stateUpdatePeriodMs: number,
     readonly poolIdentifier: string,
@@ -118,7 +120,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       dexKey,
       cacheStateKey,
       implementationName,
-      address,
+      implementationAddress === NULL_ADDRESS ? address : implementationAddress,
       stateUpdatePeriodMs,
       poolIdentifier,
       poolConstants,

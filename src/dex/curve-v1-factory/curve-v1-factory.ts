@@ -171,6 +171,14 @@ export class CurveV1Factory
       return;
     }
 
+    const { factoryAddress } = this.config;
+    if (!factoryAddress) {
+      this.logger.warn(
+        `${this.dexKey}: No factory address specified for ${this.network}`,
+      );
+      return;
+    }
+
     await Promise.all(
       Object.values(this.config.customPools).map(async customPool => {
         const poolIdentifier = this.getPoolIdentifier(
@@ -185,16 +193,30 @@ export class CurveV1Factory
           isLending,
         } = poolContextConstants;
 
-        const COINS = await this.dexHelper.multiWrapper.aggregate(
-          _.range(0, nCoins).map(i => ({
-            target: customPool.address,
-            callData: this.abiCoder.encodeFunctionCall(
-              this._getCoinsABI(customPool.coinsInputType),
-              [i.toString()],
-            ),
-            decodeFunction: addressDecode,
-          })),
-        );
+        const coinsAndImplementations =
+          await this.dexHelper.multiWrapper.aggregate(
+            _.range(0, nCoins)
+              .map(i => ({
+                target: customPool.address,
+                callData: this.abiCoder.encodeFunctionCall(
+                  this._getCoinsABI(customPool.coinsInputType),
+                  [i.toString()],
+                ),
+                decodeFunction: addressDecode,
+              }))
+              .concat([
+                {
+                  target: factoryAddress,
+                  callData: this.ifaces.factory.encodeFunctionData(
+                    'get_implementation_address',
+                    [customPool],
+                  ),
+                  decodeFunction: addressDecode,
+                },
+              ]),
+          );
+        const COINS = coinsAndImplementations.slice(0, -1);
+        const implementationAddress = coinsAndImplementations.slice(-1)[0];
 
         const coins_decimals = (
           await this.dexHelper.multiWrapper.tryAggregate(
@@ -226,6 +248,7 @@ export class CurveV1Factory
             this.dexKey,
             this.cacheStateKey,
             customPool.name,
+            implementationAddress,
             customPool.address,
             this.config.stateUpdatePeriodMs,
             poolIdentifier,
@@ -244,6 +267,7 @@ export class CurveV1Factory
             this.dexKey,
             this.cacheStateKey,
             customPool.name,
+            implementationAddress,
             customPool.address,
             this.config.stateUpdatePeriodMs,
             poolIdentifier,
