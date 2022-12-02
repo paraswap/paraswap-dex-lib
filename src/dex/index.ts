@@ -55,6 +55,7 @@ import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { OPX } from './opx/opx';
 
 const LegacyDexes = [
   CurveV2,
@@ -107,6 +108,7 @@ const Dexes = [
   Synthetix,
   SwaapV1,
   WstETH,
+  OPX,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
