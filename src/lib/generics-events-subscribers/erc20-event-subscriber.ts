@@ -117,15 +117,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     return null;
   }
 
-  async subscribeToWalletBalanceChange(
-    wallet: Address,
-    blockNumber: number,
-  ): Promise<void> {
-    if (this.walletAddresses.has(wallet)) {
-      return;
-    }
-    this.walletAddresses.add(wallet);
-
+  private async getBalanceRPC(wallet: string, blockNumber: number) {
     const balances = await getBalances(
       this.dexHelper.multiWrapper,
       [
@@ -144,12 +136,27 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       blockNumber,
     );
 
+    return balances[0];
+  }
+
+  async subscribeToWalletBalanceChange(
+    wallet: Address,
+    blockNumber: number,
+  ): Promise<void> {
+    if (this.walletAddresses.has(wallet)) {
+      return;
+    }
+    this.walletAddresses.add(wallet);
+
     let state = this.getState(blockNumber) as ERC20StateMap;
     if (state === null) {
       state = {} as ERC20StateMap;
     }
+
+    const balance = await this.getBalanceRPC(wallet, blockNumber);
+
     state[wallet] = {
-      balance: balances[0].amounts[DEFAULT_ID_ERC20_AS_STRING],
+      balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
     };
 
     this.setState(state, blockNumber);
@@ -186,15 +193,23 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     return {};
   }
 
-  getBalance(wallet: Address, blockNumber: number): bigint {
-    const state = this.getState(blockNumber);
+  async getBalance(wallet: Address, blockNumber: number): Promise<bigint> {
+    const state = this.getState(blockNumber) as ERC20StateMap;
 
     if (state === null) {
       throw new Error(`State is null`);
     }
 
     if (!(wallet in state)) {
-      throw new Error(`Missing wallet ${wallet}`);
+      this.logger.warn(
+        `Missing wallet ${wallet} for ${this.token} fallinging back to rpc`,
+      );
+      const balance = await this.getBalanceRPC(wallet, blockNumber);
+
+      // this is ok because we don't modify readonly data
+      state[wallet] = {
+        balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
+      };
     }
 
     return state[wallet].balance;
