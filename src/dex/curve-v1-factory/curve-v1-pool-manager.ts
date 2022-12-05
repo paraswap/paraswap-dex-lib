@@ -365,7 +365,9 @@ export class CurveV1FactoryPoolManager {
 
       this.liquidityUpdatedAtMs = Date.now();
 
-      this.logger.info(`${this.name}: successfully fetched liquidity updates`);
+      this.logger.info(
+        `${this.name} ${this.dexHelper.config.data.network}: successfully fetched liquidity updates`,
+      );
 
       // Update cache if it is master version
       if (!this.dexHelper.config.isSlave) {
