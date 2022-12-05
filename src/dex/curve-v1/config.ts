@@ -943,6 +943,9 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
         },
       },
+      disableFeeOnTransferTokenAddresses: new Set([
+        '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84', // stETH
+      ]),
     },
     [Network.POLYGON]: {
       baseTokens: {

@@ -56,14 +56,6 @@ export class MultiWrapper {
         } as MultiResult<T>;
       }
 
-      try {
-        const res = {
-          success: true,
-          returnData: calls[index].decodeFunction(result),
-        } as MultiResult<T>;
-      } catch (e) {
-        console.log(e, requested);
-      }
       const res = {
         success: true,
         returnData: calls[index].decodeFunction(result),

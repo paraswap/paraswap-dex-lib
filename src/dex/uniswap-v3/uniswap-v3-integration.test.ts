@@ -9,7 +9,7 @@ import { UniswapV3 } from './uniswap-v3';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDC';

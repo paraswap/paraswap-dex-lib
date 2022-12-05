@@ -41,6 +41,12 @@ import { DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
+import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
+import {
+  AssetType,
+  DEFAULT_ID_ERC20,
+  DEFAULT_ID_ERC20_AS_STRING,
+} from '../../lib/tokens/types';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -252,6 +258,35 @@ export class UniswapV3
       return null;
     }
     this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
+
+    const requests = pools.map<BalanceRequest>(
+      pool => ({
+        owner: pool.poolAddress,
+        asset: side == SwapSide.SELL ? from.address : to.address,
+        assetType: AssetType.ERC20,
+        ids: [
+          {
+            id: DEFAULT_ID_ERC20,
+            spenders: [],
+          },
+        ],
+      }),
+      [],
+    );
+
+    const balances = await getBalances(this.dexHelper.multiWrapper, requests);
+
+    pools = pools.filter((pool, index) => {
+      const balance = balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
+      if (balance >= amounts[amounts.length - 1]) {
+        return true;
+      }
+      this.logger.warn(
+        `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
+      );
+      return false;
+    });
+
     pools.forEach(pool => {
       this.logger.warn(
         `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
@@ -460,6 +495,34 @@ export class UniswapV3
 
       const result = poolsToUse.poolWithState.map((pool, i) => {
         const state = states[i];
+
+        let balance = 0n;
+        if (_srcAddress === pool.token0) {
+          if (side === SwapSide.SELL) {
+            balance = pool.getBalanceToken0(blockNumber);
+          } else {
+            balance = pool.getBalanceToken1(blockNumber);
+          }
+        } else {
+          if (side === SwapSide.SELL) {
+            balance = pool.getBalanceToken1(blockNumber);
+          } else {
+            balance = pool.getBalanceToken0(blockNumber);
+          }
+        }
+
+        const requiredAmount = amounts[amounts.length - 1];
+        if (balance < requiredAmount) {
+          this.logger.warn(
+            `pool is missing liquidity (${pool.poolAddress}) (srcToken: ${_srcAddress}, side: ${side}) have ${balance} but we need ${requiredAmount} to use it`,
+          );
+          return null;
+        }
+
+        if (state.liquidity <= 0n) {
+          this.logger.warn(`pool have 0 liquidity`);
+          return null;
+        }
 
         const unitResult = this._getOutputs(
           state,

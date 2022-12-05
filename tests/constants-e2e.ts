@@ -1,7 +1,29 @@
-import { Address, Token } from '../src/types';
+import {
+  SmartTokenParams,
+  balanceOfFn,
+  allowanceFn,
+  SmartToken,
+  balancesFn,
+  allowedFn,
+} from '../tests/smart-tokens';
+import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
+import { ethers } from 'ethers';
 
-export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
+export const GIFTER_ADDRESS = '0xb22fC4eC94D555A5049593ca4552c810Fb8a6d00';
+export const GENERIC_ADDR1 = '0xbe9317f6711e2da074fe1f168fd9c402bc0a9d1b';
+export const GENERIC_ADDR2 = '0x230a1ac45690b9ae1176389434610b9526d2f21b';
+
+const PK_KEY = process.env.TEST_PK_KEY;
+
+if (!PK_KEY) {
+  throw new Error('Mising TEST_PK_KEY');
+}
+export const testAccount = new ethers.Wallet(PK_KEY!);
+
+export const Tokens: {
+  [network: number]: { [symbol: string]: SmartTokenParams };
+} = {
   [Network.MAINNET]: {
     ETH: {
       address: ETHER_ADDRESS,
@@ -14,10 +36,14 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
+      addBalance: balancesFn,
+      addAllowance: allowedFn,
     },
     WBTC: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
       decimals: 8,
+      addBalance: balancesFn,
+      addAllowance: allowedFn,
     },
     BADGER: {
       address: '0x3472A5A71965499acd81997a54BBA8D852C6E53d',
@@ -31,9 +57,15 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
       decimals: 18,
     },
+    wstETH: {
+      address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
+      decimals: 18,
+    },
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
+      addBalance: balanceOfFn,
+      addAllowance: allowanceFn,
     },
     SETH: {
       address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
@@ -46,6 +78,8 @@ export const Tokens: { [network: number]: { [symbol: string]: Token } } = {
     DAI: {
       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
       decimals: 18,
+      addBalance: balanceOfFn,
+      addAllowance: allowanceFn,
     },
     MLN: {
       address: '0xec67005c4e498ec7f55e092bd1d35cbc47c91892',
@@ -642,8 +676,9 @@ export const Holders: {
     WBTC: '0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
+    wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',
     WETH: '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8',
-    USDT: '0x5a52e96bacdabb82fd05763e25335261b270efcb',
+    USDT: '0x5754284f345afc66a98fbb0a0afe71e0f007b949',
     XAUT: '0xc4e161e8d8a4bc4ac762ab33a28bbac5474203d7',
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
@@ -679,7 +714,7 @@ export const Holders: {
     aETH: '0xc03c4476fbe25138bf724fa1b95551c6e6b8fd2c',
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
-    BBAUSD: '0x3a3ee61f7c6e1994a2001762250a5e17b2061b6d',
+    BBAUSD: '0x4361b7425cff39b1be9bf12cee2ef32f89656cda',
     sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
     sETH: '0x5fe009d78afabc1b04abd2d4361f8e95cd402648',
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
@@ -715,7 +750,7 @@ export const Holders: {
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
     WFTM: '0x4901C740607E415685b4d09E4Aa960329cd183Ca',
-    USDC: '0x5d13f4bf21db713e17e04d711e0bf7eaf18540d6',
+    USDC: '0xd1e4a32679216f4a4dd38e45dab9bc4b8a45e592',
     FUSDT: '0xca436e14855323927d6e6264470ded36455fc8bd',
     aFanUSDT: '0xb0c9c5b5211de3a75b61bb798887b76accd64193',
     aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
@@ -729,7 +764,7 @@ export const Holders: {
     WBNB: '0x59d779bed4db1e734d3fda3172d45bc3063ecd69',
     BUSD: '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe',
     BNB: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
-    USDT: '0xd6216fc19db775df9774a6e33526131da7d19a2c',
+    USDT: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
     USDC: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
@@ -744,7 +779,7 @@ export const Holders: {
     WAVAX: '0xAc1F5F1eDBcAE771be00d0eC044deC5BEdbFd816',
     sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
     USDCe: '0xCe2CC46682E9C6D5f174aF598fb4931a9c0bE68e',
-    USDC: '0xa130d4ae4DdbfF373397CCe138e896Bb39f549f0',
+    USDC: '0x4aefa39caeadd662ae31ab0ce7c8c2c9c0a013e8',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
     USDT: '0x715f3c533Cf264215Ba8BE00838a053284351086',
     WETHe: '0xD291B51f7a1a1F4917D085F2a7731A447E4aF82D',
@@ -793,6 +828,20 @@ export const Holders: {
     sUSD: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
   },
 };
+
+export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
+  const network = parseInt(_network, 10);
+  acc[+network] = Object.keys(Tokens[network]).reduce((_acc, tokenName) => {
+    const token: SmartTokenParams = Tokens[network][tokenName]!;
+
+    if (token.addAllowance && token.addBalance) {
+      _acc[tokenName] = new SmartToken(token);
+    }
+
+    return _acc;
+  }, {} as Record<string, SmartToken>);
+  return acc;
+}, {} as Record<number, Record<string, SmartToken>>);
 
 export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.MAINNET]: 'ETH',

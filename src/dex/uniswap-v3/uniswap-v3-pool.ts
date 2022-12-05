@@ -4,7 +4,10 @@ import { AbiItem } from 'web3-utils';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  InitializeStateOptions,
+  StatefulEventSubscriber,
+} from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
@@ -16,13 +19,15 @@ import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import { bigIntify, catchParseLogError } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
-import { NumberAsString } from 'paraswap-core';
+import { NumberAsString } from '@paraswap/core';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
 } from './constants';
 import { TickBitMap } from './contract-math/TickBitMap';
+import { ERC20EventSubscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber';
+import { getERC20Subscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber-factory';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -52,6 +57,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   public readonly poolIface = new Interface(UniswapV3PoolABI);
 
   public readonly feeCodeAsString;
+
+  public token0sub: ERC20EventSubscriber;
+  public token1sub: ERC20EventSubscriber;
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -83,6 +91,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       stateMultiAddress,
     );
 
+    this.token0sub = getERC20Subscriber(this.dexHelper, this.token0);
+    this.token1sub = getERC20Subscriber(this.dexHelper, this.token1);
+
     // Add handlers
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
     this.handlers['Burn'] = this.handleBurnEvent.bind(this);
@@ -102,7 +113,45 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   set poolAddress(address: Address) {
-    this._poolAddress = address;
+    this._poolAddress = address.toLowerCase();
+  }
+
+  async initialize(
+    blockNumber: number,
+    options?: InitializeStateOptions<PoolState>,
+  ) {
+    await super.initialize(blockNumber, options);
+    // only if the super call succeed
+
+    const initPromises = [];
+    if (!this.token0sub.isInitialized) {
+      initPromises.push(
+        this.token0sub.initialize(blockNumber, {
+          state: {},
+        }),
+      );
+    }
+
+    if (!this.token1sub.isInitialized) {
+      initPromises.push(
+        this.token1sub.initialize(blockNumber, {
+          state: {},
+        }),
+      );
+    }
+
+    await Promise.all(initPromises);
+
+    await Promise.all([
+      this.token0sub.subscribeToWalletBalanceChange(
+        this.poolAddress,
+        blockNumber,
+      ),
+      this.token1sub.subscribeToWalletBalanceChange(
+        this.poolAddress,
+        blockNumber,
+      ),
+    ]);
   }
 
   protected async processBlockLogs(
@@ -384,5 +433,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       };
       return acc;
     }, ticks);
+  }
+
+  public getBalanceToken0(blockNumber: number) {
+    return this.token0sub.getBalance(this.poolAddress, blockNumber);
+  }
+
+  public getBalanceToken1(blockNumber: number) {
+    return this.token1sub.getBalance(this.poolAddress, blockNumber);
   }
 }

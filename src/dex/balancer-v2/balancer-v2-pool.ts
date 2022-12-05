@@ -1,10 +1,12 @@
 import { Interface } from '@ethersproject/abi';
+import { BigNumber } from '@ethersproject/bignumber';
 import { MathSol } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import { getTokenScalingFactor, decodeThrowError } from './utils';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
+import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 import { BI_POWS } from '../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
@@ -361,12 +363,14 @@ export class StablePool extends BaseGeneralPool {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
+  metaPoolInterface: Interface;
 
   constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
     this.poolInterface = new Interface(StablePoolABI);
+    this.metaPoolInterface = new Interface(MetaStablePoolABI);
   }
 
   _onSwapGivenIn(
@@ -423,7 +427,7 @@ export class StablePool extends BaseGeneralPool {
   Helper function to construct onchain multicall data for StablePool.
   */
   getOnChainCalls(pool: SubgraphPoolBase): callData[] {
-    return [
+    const poolCallData: callData[] = [
       {
         target: this.vaultAddress,
         callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
@@ -441,6 +445,14 @@ export class StablePool extends BaseGeneralPool {
         ),
       },
     ];
+    if (pool.poolType === 'MetaStable') {
+      poolCallData.push({
+        target: pool.address,
+        callData:
+          this.metaPoolInterface.encodeFunctionData('getScalingFactors'),
+      });
+    }
+    return poolCallData;
   }
 
   /*
@@ -473,6 +485,15 @@ export class StablePool extends BaseGeneralPool {
       data[startIndex++],
       pool.address,
     );
+    let scalingFactors: BigNumber[] | undefined;
+    if (pool.poolType === 'MetaStable') {
+      scalingFactors = decodeThrowError(
+        this.metaPoolInterface,
+        'getScalingFactors',
+        data[startIndex++],
+        pool.address,
+      )[0];
+    }
 
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
@@ -481,6 +502,9 @@ export class StablePool extends BaseGeneralPool {
           const tokenState: TokenState = {
             balance: BigInt(poolTokens.balances[j].toString()),
           };
+
+          if (scalingFactors)
+            tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
 
           ptAcc[pt.toLowerCase()] = tokenState;
           return ptAcc;
