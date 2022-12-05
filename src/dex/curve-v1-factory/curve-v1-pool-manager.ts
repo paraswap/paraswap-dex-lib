@@ -5,7 +5,7 @@ import { IDexHelper } from '../../dex-helper';
 import { TaskScheduler } from '../../lib/task-scheduler';
 import {
   CURVE_API_URL,
-  LIQUIDITY_FETCH_TIMEOUT,
+  LIQUIDITY_FETCH_TIMEOUT_MS,
   LIQUIDITY_UPDATE_PERIOD_MS,
   NETWORK_ID_TO_NAME,
   STATE_UPDATE_PERIOD_MS,
@@ -328,7 +328,7 @@ export class CurveV1FactoryPoolManager {
                   usdTotalExcludingBasePool: number;
                 }[];
               };
-            }>(URL, LIQUIDITY_FETCH_TIMEOUT);
+            }>(URL, LIQUIDITY_FETCH_TIMEOUT_MS);
           },
         ),
       );
