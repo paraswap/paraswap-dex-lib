@@ -5,6 +5,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { IntegralPoolState } from './types';
 import IntegralRelayerABI from '../../abi/integral/relayer.json';
+import { Address } from '../../types';
 
 export class IntegralEventPool extends StatefulEventSubscriber<IntegralPoolState> {
   handlers: {
@@ -20,13 +21,15 @@ export class IntegralEventPool extends StatefulEventSubscriber<IntegralPoolState
   addressesSubscribed: string[];
 
   constructor(
-    protected parentName: string,
+    public parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
+    token0: Address,
+    token1: Address,
     logger: Logger,
-    protected integralIface = new Interface(IntegralRelayerABI), // TODO: add any additional params required for event subscriber
+    protected integralIface = new Interface(IntegralRelayerABI),
   ) {
-    super(parentName, logger);
+    super(parentName, `${token0}_${token1}`, dexHelper, logger);
 
     // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.integralIface.parseLog(log);
@@ -76,8 +79,12 @@ export class IntegralEventPool extends StatefulEventSubscriber<IntegralPoolState
     blockNumber: number,
   ): Promise<Readonly<IntegralPoolState>> {
     // TODO: complete me!
-    // const [reserve0, reserve1, price, mintFee, burnFee, swapFee] = [0,0,0,0,0,0].map((n) => BigInt(n))
-    // return {exists: true, reserve0, reserve1, price, mintFee, burnFee, swapFee}
-    return { price: 1n, invertedPrice: 2n, fee: 3n, limits0: [0n, 0n], limits1: [0n, 0n] };
+    return {
+      price: 0n,
+      invertedPrice: 0n,
+      fee: 0n,
+      limits0: [0n, 0n],
+      limits1: [0n, 0n],
+    };
   }
 }

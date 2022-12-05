@@ -33,14 +33,13 @@ const PRECISION = BI_POWS[18];
 const SUBGRAPH_TIMEOUT = 20 * 1000;
 const relayerInterface = new Interface(IntegralRelayerABI);
 
-export class Integral
-  extends SimpleExchange
-  implements IDex<IntegralData>
-{
+export class Integral extends SimpleExchange implements IDex<IntegralData> {
   pairs: { [key: string]: IntegralPair } = {};
-  protected eventPools: IntegralEventPool;
-
+  protected relayerAddress: Address;
+  protected subgraphURL: string | undefined;
   readonly hasConstantPriceLargeAmounts = false;
+
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(IntegralConfig);
@@ -48,25 +47,16 @@ export class Integral
   logger: Logger;
 
   constructor(
-    protected network: Network,
-    protected dexKey: string,
-    protected dexHelper: IDexHelper,
-    protected relayerAddress: Address = IntegralConfig[dexKey][network]
-      .relayerAddress,
-    protected subgraphURL: string | undefined = IntegralConfig[dexKey][
-      network
-    ].subgraphURL,
+    readonly network: Network,
+    readonly dexKey: string,
+    readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
-    this.eventPools = new IntegralEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
+    this.relayerAddress = IntegralConfig[dexKey][network].relayerAddress;
+    this.subgraphURL = IntegralConfig[dexKey][network].subgraphURL;
   }
 
   async initializePricing(blockNumber: number) { }
@@ -134,16 +124,18 @@ export class Integral
       return null;
     }
 
-    const unitAmount = getBigIntPow(side == SwapSide.SELL ? src.decimals : dest.decimals);
+    const unitAmount = getBigIntPow(
+      side == SwapSide.SELL ? src.decimals : dest.decimals,
+    );
     const unit =
       side == SwapSide.SELL
-        ? this.calculateAmountOutWithFee(unitAmount, src, dest, pairState, false)
-        : this.calcAmountInWithFee(unitAmount, src, dest, pairState, false);
+        ? this.quoteSell(unitAmount, src, dest, pairState, false)
+        : this.quoteBuy(unitAmount, src, dest, pairState, false);
     try {
       const prices =
         side == SwapSide.SELL
-          ? amounts.map(amount => this.calculateAmountOutWithFee(amount, src, dest, pairState))
-          : amounts.map(amount => this.calcAmountInWithFee(amount, src, dest, pairState));
+          ? amounts.map(amount => this.quoteSell(amount, src, dest, pairState))
+          : amounts.map(amount => this.quoteBuy(amount, src, dest, pairState));
 
       return [
         {
@@ -168,9 +160,7 @@ export class Integral
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(
-    poolPrices: PoolPrices<IntegralData>,
-  ): number | number[] {
+  getCalldataGasCost(poolPrices: PoolPrices<IntegralData>): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -213,9 +203,7 @@ export class Integral
 
     // Encode here the transaction arguments
     const swapData = relayerInterface.encodeFunctionData(
-      side === SwapSide.SELL
-        ? IntegralFunctions.swap
-        : IntegralFunctions.buy,
+      side === SwapSide.SELL ? IntegralFunctions.swap : IntegralFunctions.buy,
       [
         {
           ...{
@@ -341,18 +329,18 @@ export class Integral
       const calldata = [
         {
           target: this.relayerAddress,
-          callData: relayerInterface.encodeFunctionData(
-            'getPoolState',
-            [pair.token0.address, pair.token1.address],
-          ),
+          callData: relayerInterface.encodeFunctionData('getPoolState', [
+            pair.token0.address,
+            pair.token1.address,
+          ]),
         },
         {
           target: this.relayerAddress,
-          callData: relayerInterface.encodeFunctionData(
-            'getPoolState',
-            [pair.token1.address, pair.token0.address],
-          ),
-        }
+          callData: relayerInterface.encodeFunctionData('getPoolState', [
+            pair.token1.address,
+            pair.token0.address,
+          ]),
+        },
       ];
 
       const data: { returnData: any[] } =
@@ -363,17 +351,21 @@ export class Integral
       const result = relayerInterface.decodeFunctionResult(
         'getPoolState',
         data.returnData[0],
-      )
+      );
       const invertedResult = relayerInterface.decodeFunctionResult(
         'getPoolState',
         data.returnData[1],
-      )
+      );
       return {
         price: BigInt(result.price.toString()),
         invertedPrice: BigInt(invertedResult.price.toString()),
         fee: BigInt(result.fee.toString()),
-        limits0: [result.limitMin0, result.limitMax0].map((limit: BigNumber) => BigInt(limit.toString())),
-        limits1: [result.limitMin1, result.limitMax1].map((limit: BigNumber) => BigInt(limit.toString())),
+        limits0: [result.limitMin0, result.limitMax0].map((limit: BigNumber) =>
+          BigInt(limit.toString()),
+        ),
+        limits1: [result.limitMin1, result.limitMax1].map((limit: BigNumber) =>
+          BigInt(limit.toString()),
+        ),
       } as IntegralPoolState;
     } catch (e) {
       this.logger.error(
@@ -393,6 +385,8 @@ export class Integral
       this.dexKey,
       this.network,
       this.dexHelper,
+      pair.token0.address,
+      pair.token1.address,
       this.logger,
     );
 
@@ -440,7 +434,8 @@ export class Integral
   }
 
   private generatePairKey(tokenA: Token, tokenB: Token) {
-    const inverted = tokenA.address.toLowerCase() > tokenB.address.toLowerCase();
+    const inverted =
+      tokenA.address.toLowerCase() > tokenB.address.toLowerCase();
     const [token0, token1] = inverted ? [tokenB, tokenA] : [tokenA, tokenB];
     return {
       key: `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`,
@@ -449,34 +444,44 @@ export class Integral
     };
   }
 
-  private calculateAmountOutWithFee(
+  private quoteSell(
     amountIn: bigint,
     tokenIn: Token,
     tokenOut: Token,
     state: DeepReadonly<IntegralPoolState>,
-    checkLimit: boolean = true
+    checkLimit: boolean = true,
   ) {
     if (amountIn === 0n) {
       return 0n;
     }
-    const pair = this.findPair(tokenIn, tokenOut)
+    const pair = this.findPair(tokenIn, tokenOut);
     if (!pair) {
-      return 0n
+      return 0n;
     }
-    const inverted = !this.isFirst(tokenIn.address, pair)
+    const inverted = !this.isFirst(tokenIn.address, pair);
 
     const fee = (amountIn * state.fee) / PRECISION;
     const amountInMinusFee = amountIn - fee;
     const price = inverted ? state.invertedPrice : state.price;
-    const decimalsConverter = this.getDecimalsConverter(pair.token0.decimals, pair.token1.decimals, inverted);
+    const decimalsConverter = this.getDecimalsConverter(
+      pair.token0.decimals,
+      pair.token1.decimals,
+      inverted,
+    );
     const amountOut = (amountInMinusFee * price) / decimalsConverter;
-    if (checkLimit && !this.checkLimits(amountOut, this.isFirst(tokenOut.address, pair) ? state.limits0 : state.limits1)) {
-      throw new Error('Out of Limits')
+    if (
+      checkLimit &&
+      !this.checkLimits(
+        amountOut,
+        this.isFirst(tokenOut.address, pair) ? state.limits0 : state.limits1,
+      )
+    ) {
+      throw new Error('Out of Limits');
     }
     return amountOut;
   }
 
-  private calcAmountInWithFee(
+  private quoteBuy(
     amountOut: bigint,
     tokenIn: Token,
     tokenOut: Token,
@@ -486,28 +491,40 @@ export class Integral
     if (amountOut === 0n) {
       return 0n;
     }
-    const pair = this.findPair(tokenIn, tokenOut)
+    const pair = this.findPair(tokenIn, tokenOut);
     if (!pair) {
-      return 0n
+      return 0n;
     }
-    const inverted = !this.isFirst(tokenIn.address, pair)
-    if (checkLimit && !this.checkLimits(amountOut, this.isFirst(tokenOut.address, pair) ? state.limits0 : state.limits1)) {
-      throw new Error('Out of Limits')
+    const inverted = !this.isFirst(tokenIn.address, pair);
+    if (
+      checkLimit &&
+      !this.checkLimits(
+        amountOut,
+        this.isFirst(tokenOut.address, pair) ? state.limits0 : state.limits1,
+      )
+    ) {
+      throw new Error('Out of Limits');
     }
 
     const price = inverted ? state.invertedPrice : state.price;
-    const decimalsConverter = this.getDecimalsConverter(pair.token0.decimals, pair.token1.decimals, inverted);
+    const decimalsConverter = this.getDecimalsConverter(
+      pair.token0.decimals,
+      pair.token1.decimals,
+      inverted,
+    );
     const amountIn = this.ceil_div(amountOut * decimalsConverter, price);
     if (amountIn <= 0n) {
       return 0n;
     }
-    const amountInPlusFee = this.ceil_div(amountIn * PRECISION, PRECISION - state.fee);
-    // const fee = amountInPlusFee - amountIn
+    const amountInPlusFee = this.ceil_div(
+      amountIn * PRECISION,
+      PRECISION - state.fee,
+    );
     return amountInPlusFee;
   }
 
   private isFirst(address: string, pair: IntegralPair) {
-    return address.toLowerCase() === pair.token0.address.toLowerCase()
+    return address.toLowerCase() === pair.token0.address.toLowerCase();
   }
 
   private ceil_div(a: bigint, b: bigint) {
@@ -519,14 +536,21 @@ export class Integral
     }
   }
 
-  private getDecimalsConverter(decimals0: number, decimals1: number, inverted: boolean) {
-    return 10n ** (18n + BigInt(inverted ? decimals1 - decimals0 : decimals0 - decimals1))
+  private getDecimalsConverter(
+    decimals0: number,
+    decimals1: number,
+    inverted: boolean,
+  ) {
+    return (
+      10n **
+      (18n + BigInt(inverted ? decimals1 - decimals0 : decimals0 - decimals1))
+    );
   }
 
   private checkLimits(amount: bigint, limits: readonly [bigint, bigint]) {
     if (amount < limits[0] || amount > limits[1]) {
-      return false
+      return false;
     }
-    return true
+    return true;
   }
 }
