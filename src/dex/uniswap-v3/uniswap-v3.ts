@@ -84,7 +84,7 @@ export class UniswapV3
     protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
+    this.logger = dexHelper.getLogger(dexKey + '-' + network);
     this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
       UniswapV3MultiABI as AbiItem[],
       this.config.uniswapMulticall,
@@ -493,91 +493,93 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result = poolsToUse.poolWithState.map((pool, i) => {
-        const state = states[i];
+      const result = await Promise.all(
+        poolsToUse.poolWithState.map(async (pool, i) => {
+          const state = states[i];
 
-        let balance = 0n;
-        if (_srcAddress === pool.token0) {
-          if (side === SwapSide.SELL) {
-            balance = pool.getBalanceToken0(blockNumber);
-          } else {
-            balance = pool.getBalanceToken1(blockNumber);
-          }
-        } else {
-          if (side === SwapSide.SELL) {
-            balance = pool.getBalanceToken1(blockNumber);
-          } else {
-            balance = pool.getBalanceToken0(blockNumber);
-          }
-        }
-
-        const requiredAmount = amounts[amounts.length - 1];
-        if (balance < requiredAmount) {
-          this.logger.warn(
-            `pool is missing liquidity (${pool.poolAddress}) (srcToken: ${_srcAddress}, side: ${side}) have ${balance} but we need ${requiredAmount} to use it`,
-          );
-          return null;
-        }
-
-        if (state.liquidity <= 0n) {
-          this.logger.warn(`pool have 0 liquidity`);
-          return null;
-        }
-
-        const unitResult = this._getOutputs(
-          state,
-          [unitAmount],
-          zeroForOne,
-          side,
-        );
-        const pricesResult = this._getOutputs(
-          state,
-          _amounts,
-          zeroForOne,
-          side,
-        );
-
-        if (!unitResult || !pricesResult) {
-          this.logger.debug('Prices or unit is not calculated');
-          return null;
-        }
-
-        const prices = [0n, ...pricesResult.outputs];
-        const gasCost = [
-          0,
-          ...pricesResult.outputs.map((p, index) => {
-            if (p == 0n) {
-              return 0;
+          let balance = 0n;
+          if (_srcAddress === pool.token0) {
+            if (side === SwapSide.SELL) {
+              balance = await pool.getBalanceToken0(blockNumber);
             } else {
-              return (
-                UNISWAPV3_FUNCTION_CALL_GAS_COST +
-                pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
-              );
+              balance = await pool.getBalanceToken1(blockNumber);
             }
-          }),
-        ];
-        return {
-          unit: unitResult.outputs[0],
-          prices,
-          data: {
-            path: [
-              {
-                tokenIn: _srcAddress,
-                tokenOut: _destAddress,
-                fee: pool.feeCode.toString(),
-              },
-            ],
-          },
-          poolIdentifier: this.getPoolIdentifier(
-            pool.token0,
-            pool.token1,
-            pool.feeCode,
-          ),
-          exchange: this.dexKey,
-          gasCost: gasCost,
-          poolAddresses: [pool.poolAddress],
-        };
-      });
+          } else {
+            if (side === SwapSide.SELL) {
+              balance = await pool.getBalanceToken1(blockNumber);
+            } else {
+              balance = await pool.getBalanceToken0(blockNumber);
+            }
+          }
+
+          const requiredAmount = amounts[amounts.length - 1];
+          if (balance < requiredAmount) {
+            this.logger.warn(
+              `pool is missing liquidity (${pool.poolAddress}) (srcToken: ${_srcAddress}, side: ${side}) have ${balance} but we need ${requiredAmount} to use it`,
+            );
+            return null;
+          }
+
+          if (state.liquidity <= 0n) {
+            this.logger.warn(`pool have 0 liquidity`);
+            return null;
+          }
+
+          const unitResult = this._getOutputs(
+            state,
+            [unitAmount],
+            zeroForOne,
+            side,
+          );
+          const pricesResult = this._getOutputs(
+            state,
+            _amounts,
+            zeroForOne,
+            side,
+          );
+
+          if (!unitResult || !pricesResult) {
+            this.logger.debug('Prices or unit is not calculated');
+            return null;
+          }
+
+          const prices = [0n, ...pricesResult.outputs];
+          const gasCost = [
+            0,
+            ...pricesResult.outputs.map((p, index) => {
+              if (p == 0n) {
+                return 0;
+              } else {
+                return (
+                  UNISWAPV3_FUNCTION_CALL_GAS_COST +
+                  pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
+                );
+              }
+            }),
+          ];
+          return {
+            unit: unitResult.outputs[0],
+            prices,
+            data: {
+              path: [
+                {
+                  tokenIn: _srcAddress,
+                  tokenOut: _destAddress,
+                  fee: pool.feeCode.toString(),
+                },
+              ],
+            },
+            poolIdentifier: this.getPoolIdentifier(
+              pool.token0,
+              pool.token1,
+              pool.feeCode,
+            ),
+            exchange: this.dexKey,
+            gasCost: gasCost,
+            poolAddresses: [pool.poolAddress],
+          };
+        }),
+      );
       const rpcResults = await rpcResultsPromise;
 
       const notNullResult = result.filter(
