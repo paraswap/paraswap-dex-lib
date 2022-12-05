@@ -179,3 +179,5 @@ export type CurveV1FactoryIfaces = {
   erc20: Interface;
   threePool: Interface;
 };
+
+export type LiquidityInCache = Record<string, number>;

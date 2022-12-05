@@ -14,7 +14,8 @@ import {
 import { PriceHandler } from './price-handlers/price-handler';
 import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
-import { NULL_ADDRESS } from '../../constants';
+import { CACHE_PREFIX, NULL_ADDRESS } from '../../constants';
+import { LiquidityInCache } from './types';
 
 /*
  * The idea of FactoryPoolManager is to try to abstract both pool types: fully event based
@@ -47,6 +48,9 @@ export class CurveV1FactoryPoolManager {
 
   private liquidityUpdatedAtMs: number = 0;
 
+  private liquidityLastUpdateInfoKey: string;
+  private liquidityCacheKey: string;
+
   constructor(
     private name: string,
     private logger: Logger,
@@ -62,6 +66,10 @@ export class CurveV1FactoryPoolManager {
       stateUpdatePeriodMs,
       stateUpdateRetryPeriodMs,
     );
+    this.liquidityCacheKey = `${CACHE_PREFIX}_liquidity_in_usd`.toLowerCase();
+
+    // In cache we have one reserved key name where we get when all these keys were updated
+    this.liquidityLastUpdateInfoKey = `liquidityUpdatedAtMs`;
   }
 
   initializePollingPools() {
@@ -267,7 +275,37 @@ export class CurveV1FactoryPoolManager {
     return null;
   }
 
-  async fetchLiquiditiesFromApi() {
+  async fetchLiquiditiesFromApi(): Promise<void> {
+    // Role 1: In case of slave version try to fetch liquidity info from cache
+    if (this.dexHelper.config.isSlave) {
+      const liquiditiesUnparsed = await this.dexHelper.cache.get(
+        this.name,
+        this.dexHelper.config.data.network,
+        this.liquidityCacheKey,
+      );
+      if (liquiditiesUnparsed === null) {
+        this.logger.error(
+          `${this.name} ${this.dexHelper.config.data.network}: No liquidity info found in cache. Falling back to request`,
+        );
+      } else {
+        const liquiditiesParsed = JSON.parse(
+          liquiditiesUnparsed,
+        ) as LiquidityInCache;
+
+        this.liquidityUpdatedAtMs =
+          liquiditiesParsed[this.liquidityLastUpdateInfoKey];
+        for (const pool of Object.values(this.statePollingPoolsFromId)) {
+          if (liquiditiesParsed[pool.address] !== undefined) {
+            pool.liquidityUSD = liquiditiesParsed[pool.address];
+          } else {
+            pool.liquidityUSD = 0;
+          }
+        }
+        return;
+      }
+    }
+
+    // Role 2: In case if master version or fallback to requests
     let URL: string = '';
     try {
       let someFailed = false;
@@ -298,8 +336,10 @@ export class CurveV1FactoryPoolManager {
           break;
         }
         for (const poolData of data.data.poolData) {
-          addressToLiquidity[poolData.address.toLowerCase()] =
-            poolData.usdTotal || poolData.usdTotalExcludingBasePool;
+          if (poolData.usdTotalExcludingBasePool || poolData.usdTotal) {
+            addressToLiquidity[poolData.address.toLowerCase()] =
+              poolData.usdTotalExcludingBasePool || poolData.usdTotal;
+          }
         }
       }
       if (someFailed) {
@@ -314,16 +354,34 @@ export class CurveV1FactoryPoolManager {
       Object.values(this.statePollingPoolsFromId).map(pool => {
         const poolLiquidity = addressToLiquidity[pool.address];
         if (poolLiquidity === undefined) {
-          this.logger.error(
-            `${this.name}: while updating liquidity in USD for pool, ` +
-              `found pool ${pool.address} that is not included in Curve API pools`,
-          );
-          return;
+          pool.liquidityUSD = 0;
+        } else {
+          pool.liquidityUSD = poolLiquidity;
         }
-        pool.liquidityUSD = poolLiquidity;
       });
 
       this.liquidityUpdatedAtMs = Date.now();
+
+      // Update cache if it is master version
+      if (!this.dexHelper.config.isSlave) {
+        addressToLiquidity[this.liquidityLastUpdateInfoKey] =
+          this.liquidityUpdatedAtMs;
+
+        this.dexHelper.cache
+          .setex(
+            this.name,
+            this.dexHelper.config.data.network,
+            this.liquidityCacheKey,
+            Math.floor((LIQUIDITY_UPDATE_PERIOD_MS * 2) / 1000),
+            JSON.stringify(addressToLiquidity),
+          )
+          .catch(e => {
+            this.logger.error(
+              `${this.name}: failed to save new liquidity state to cache: `,
+              e,
+            );
+          });
+      }
     } catch (e) {
       this.logger.error(
         `${this.name}: Error fetching liquidity from Curve API ${URL}: `,
