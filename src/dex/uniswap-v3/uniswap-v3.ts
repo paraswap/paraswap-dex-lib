@@ -84,7 +84,7 @@ export class UniswapV3
     protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
+    this.logger = dexHelper.getLogger(dexKey + '-' + network);
     this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
       UniswapV3MultiABI as AbiItem[],
       this.config.uniswapMulticall,
