@@ -8,7 +8,7 @@ import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import Fetcher from '../../lib/fetcher/fetcher';
 import { getLogger } from '../../lib/log4js';
 import { MultiWrapper } from '../../lib/multi-wrapper';
-import { authHttp } from './security';
+import { genericRFQAuthHttp } from './security';
 import {
   BlackListResponse,
   FetcherParams,
@@ -48,6 +48,9 @@ const multiWrapper = new MultiWrapper(
 );
 
 const url = getEnv('GENERIC_RFQ_URL');
+const path = getEnv('GENERIC_RFQ_PATH_TO_OVERRIDE');
+
+const authHttp = genericRFQAuthHttp(path);
 
 const secret = {
   secretKey: atob(getEnv('GENERIC_RFQ_SECRET_KEY')),

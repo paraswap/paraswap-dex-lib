@@ -125,6 +125,8 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
     domain: 'paraswap',
   };
 
+  const pathToRemove = getEnv('GENERIC_RFQ_PATH_TO_OVERRIDE');
+
   return {
     maker: getEnv('GENERIC_RFQ_MAKER_ADDRESS'),
     tokensConfig: {
@@ -168,6 +170,7 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
       intervalMs: 1000 * 60 * 60 * 10,
       dataTTLS: 1000 * 60 * 60 * 11,
     },
+    pathToRemove,
   };
 };
 
@@ -200,7 +203,7 @@ describe('GenericRFQ YOUR_NAME E2E Mainnet', () => {
     );
 
     describe('Simpleswap', () => {
-      it.only('BUY USDC -> WBTC', async () => {
+      it('BUY USDC -> WBTC', async () => {
         await newTestE2E({
           config,
           srcToken,

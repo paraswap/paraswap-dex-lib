@@ -71,6 +71,7 @@ export type RFQConfig = {
   firmRateConfig: RequestConfigWithAuth;
   blacklistConfig?: FetcherParams;
   maker: Address;
+  pathToRemove?: string;
 };
 
 export type TokenWithAmount = Token & {
