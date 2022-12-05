@@ -301,6 +301,9 @@ export class CurveV1FactoryPoolManager {
             pool.liquidityUSD = 0;
           }
         }
+        this.logger.info(
+          `${this.name}: pools liquidity successfully updated from cache`,
+        );
         return;
       }
     }
@@ -361,6 +364,8 @@ export class CurveV1FactoryPoolManager {
       });
 
       this.liquidityUpdatedAtMs = Date.now();
+
+      this.logger.info(`${this.name}: successfully fetched liquidity updates`);
 
       // Update cache if it is master version
       if (!this.dexHelper.config.isSlave) {
