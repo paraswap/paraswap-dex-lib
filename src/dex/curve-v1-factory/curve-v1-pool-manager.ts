@@ -302,7 +302,7 @@ export class CurveV1FactoryPoolManager {
           }
         }
         this.logger.info(
-          `${this.name}: pools liquidity successfully updated from cache`,
+          `${this.name} ${this.dexHelper.config.data.network}: pools liquidity successfully updated from cache`,
         );
         return;
       }
