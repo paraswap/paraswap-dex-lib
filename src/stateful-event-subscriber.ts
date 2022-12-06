@@ -12,12 +12,10 @@ type StateCache<State> = {
   state: DeepReadonly<State>;
 };
 
-type InitializeStateOptions<State> = {
+export type InitializeStateOptions<State> = {
   state?: DeepReadonly<State>;
   initCallback?: (state: DeepReadonly<State>) => void;
 };
-
-const CREATE_NEW_STATE_RETRY_INTERVAL_MS = 1000;
 
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
@@ -39,6 +37,8 @@ export abstract class StatefulEventSubscriber<State>
   private cacheName: string;
 
   public name: string;
+
+  public isInitialized = false;
 
   constructor(
     public readonly parentName: string,
@@ -152,6 +152,7 @@ export abstract class StatefulEventSubscriber<State>
       this.addressesSubscribed,
       masterBn || blockNumber,
     );
+    this.isInitialized = true;
   }
 
   //Function which transforms the given state for the given log event.
