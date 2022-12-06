@@ -129,6 +129,7 @@ export class DexAdapterService {
   isLegacy: { [dexKey: string]: boolean } = {};
   // dexKeys only has keys for non legacy dexes
   dexKeys: string[] = [];
+  genericRFQDexKeys: Set<string> = new Set();
   uniswapV2Alias: string | null;
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
@@ -193,6 +194,7 @@ export class DexAdapterService {
         rfqConfigs[rfqName],
       );
       handleDex(dex, rfqName);
+      this.genericRFQDexKeys.add(rfqName.toLowerCase());
     });
 
     this.directFunctionsNames = [...LegacyDexes, ...Dexes]
@@ -251,6 +253,9 @@ export class DexAdapterService {
 
   getDexKeySpecial(dexKey: string, isAdapters: boolean = false) {
     dexKey = dexKey.toLowerCase();
+    if (this.genericRFQDexKeys.has(dexKey)) {
+      return dexKey;
+    }
     if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
     else if ('uniswapforkoptimized' === dexKey) {
       if (!this.uniswapV2Alias)
