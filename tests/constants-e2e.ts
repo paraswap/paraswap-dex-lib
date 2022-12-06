@@ -8,18 +8,10 @@ import {
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
-import { ethers } from 'ethers';
 
 export const GIFTER_ADDRESS = '0xb22fC4eC94D555A5049593ca4552c810Fb8a6d00';
 export const GENERIC_ADDR1 = '0xbe9317f6711e2da074fe1f168fd9c402bc0a9d1b';
 export const GENERIC_ADDR2 = '0x230a1ac45690b9ae1176389434610b9526d2f21b';
-
-const PK_KEY = process.env.TEST_PK_KEY;
-
-if (!PK_KEY) {
-  throw new Error('Mising TEST_PK_KEY');
-}
-export const testAccount = new ethers.Wallet(PK_KEY!);
 
 export const Tokens: {
   [network: number]: { [symbol: string]: SmartTokenParams };
@@ -387,6 +379,10 @@ export const Tokens: {
     },
     amUSDT: {
       address: '0x60d55f02a771d515e077c9c2403a1ef324885cec',
+      decimals: 6,
+    },
+    amUSDC: {
+      address: '0x1a13F4Ca1d028320A707D99520AbFefca3998b7F',
       decimals: 6,
     },
   },
@@ -781,9 +777,10 @@ export const Holders: {
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
     stMATIC: '0x3b39669766fe815aa91834b3bd258dea3edbb6d5',
-    axlUSDC: '0x1fa636f69bd279443e3a3d64ae48314e43e3ea5f',
+    axlUSDC: '0x42875ae5766dfd4d70772a3a956842e4b708d59a',
     deUSDC: '0x94d5ead1f80cf0b4d3480ab59dff16d47c93e9fe',
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
+    amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
@@ -865,7 +862,7 @@ export const Holders: {
     aOptWETH: '0x9CBF099ff424979439dFBa03F00B5961784c06ce',
     aOptUSDC: '0x70144e5b5bbf464cFf98d689254dc7C7223E01Ab',
     sBTC: '0xbbb33d2e7bd7ddc722e53da9ca8ee97df41cfabf',
-    sETH: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
+    sETH: '0xce3850927d0e631b6082f9d45a6391a3794c51eb',
     sUSD: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
   },
 };

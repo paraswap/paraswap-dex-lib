@@ -615,8 +615,6 @@ export class CurveV1Factory
     return pools.map(pool =>
       this.getPoolIdentifier(pool.address, pool.isMetaPool),
     );
-
-    return [];
   }
 
   async getPricesVolume(

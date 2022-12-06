@@ -148,14 +148,14 @@ describe('CurveV1Factory E2E', () => {
   //   );
   // });
 
-  describe('Polygon amUSDT', () => {
+  describe('Polygon amUSDC', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'deUSDC';
-    const tokenBSymbol: string = 'amUSDT';
+    const tokenBSymbol: string = 'amUSDC';
 
-    const tokenAAmount: string = '111000000';
-    const tokenBAmount: string = '111000000';
+    const tokenAAmount: string = '1000000';
+    const tokenBAmount: string = '1000000';
 
     testForNetwork(
       network,

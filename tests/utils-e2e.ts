@@ -62,6 +62,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     this.paraSwap = constructSimpleSDK({
       chainId: network,
       axios,
+      apiURL: testingEndpoint,
     });
   }
 
