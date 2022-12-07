@@ -301,7 +301,7 @@ export class CurveV1FactoryPoolManager {
             pool.liquidityUSD = 0;
           }
         }
-        this.logger.info(
+        this.logger.trace(
           `${this.name} ${this.dexHelper.config.data.network}: pools liquidity successfully updated from cache`,
         );
         return;
