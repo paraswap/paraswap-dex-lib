@@ -313,24 +313,22 @@ export class CurveV1FactoryPoolManager {
     try {
       let someFailed = false;
       const responses = await Promise.all(
-        Array.from(Array.from(this.allCurveLiquidityApiSlugs)).map(
-          async slug => {
-            URL = `${CURVE_API_URL}/${
-              NETWORK_ID_TO_NAME[this.dexHelper.config.data.network]
-            }${slug}`;
+        Array.from(this.allCurveLiquidityApiSlugs).map(async slug => {
+          URL = `${CURVE_API_URL}/${
+            NETWORK_ID_TO_NAME[this.dexHelper.config.data.network]
+          }${slug}`;
 
-            return this.dexHelper.httpRequest.get<{
-              success: boolean;
-              data: {
-                poolData: {
-                  usdTotal: number;
-                  address: string;
-                  usdTotalExcludingBasePool: number;
-                }[];
-              };
-            }>(URL, LIQUIDITY_FETCH_TIMEOUT_MS);
-          },
-        ),
+          return this.dexHelper.httpRequest.get<{
+            success: boolean;
+            data: {
+              poolData: {
+                usdTotal: number;
+                address: string;
+                usdTotalExcludingBasePool: number;
+              }[];
+            };
+          }>(URL, LIQUIDITY_FETCH_TIMEOUT_MS);
+        }),
       );
       const addressToLiquidity: Record<string, number> = {};
       for (const data of responses) {
