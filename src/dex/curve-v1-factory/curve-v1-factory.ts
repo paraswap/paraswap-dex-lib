@@ -758,9 +758,12 @@ export class CurveV1Factory
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
-          `Error_${this.dexKey}_getPrices: Aurelius block manager not yet instantiated`,
+          `Error_${this.dexKey}_${this.dexHelper.config.data.network}_getPrices: Aurelius block manager not yet instantiated`,
         );
-      this.logger.error(`Error_${this.dexKey}_getPrices`, e);
+      this.logger.error(
+        `Error_${this.dexKey}_${this.dexHelper.config.data.network}_getPrices`,
+        e,
+      );
       return null;
     }
   }
