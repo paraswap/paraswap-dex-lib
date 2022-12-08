@@ -11,7 +11,6 @@ import {
   isApprovedForAllERC721,
   uintDecode,
 } from './utils';
-
 import { MultiCallParams, MultiResult, MultiWrapper } from '../multi-wrapper';
 
 export type TokenIdRequest = {

@@ -163,6 +163,8 @@ export class DummyRequestWrapper implements IRequestWrapper {
 }
 
 class DummyBlockManager implements IBlockManager {
+  constructor(public _blockNumber: number = 42) {}
+
   subscribeToLogs(
     subscriber: EventSubscriber,
     contractAddress: Address | Address[],
@@ -175,12 +177,12 @@ class DummyBlockManager implements IBlockManager {
   }
 
   getLatestBlockNumber(): number {
-    return 42;
+    return this._blockNumber;
   }
 
   getActiveChainHead(): Readonly<BlockHeader> {
     return {
-      number: 42,
+      number: this._blockNumber,
       hash: '0x42',
     } as BlockHeader;
   }

@@ -195,7 +195,7 @@ export class UniswapV3
     const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolconfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
       );
       return false;
     }

@@ -1,6 +1,6 @@
 import { Address } from '../../../types';
 import { SBTCPool } from './sBTCpool';
-import StableSwapBBTC from '../../../abi/curve/StableSwapBBTC.json';
+import StableSwapBBTC from '../../../abi/curve-v1/StableSwapBBTC.json';
 import { CurveMetapool } from './curve-metapool';
 import { IDexHelper } from '../../../dex-helper';
 import { bigNumberify } from '../../../utils';
