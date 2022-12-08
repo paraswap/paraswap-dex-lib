@@ -291,7 +291,7 @@ export class CurveV1FactoryPoolManager {
           `${this.name} ${this.dexHelper.config.data.network}: No liquidity info found in cache. Falling back to request`,
         );
       } else {
-        // If we found something in redis, we parse that and update our local variables
+        // If we found something in cache, we parse that and update our local variables
         // Values can not be outdated, because I put TTL on each entry. In that case we just
         // receive null and fallback to request
         const liquiditiesParsed = JSON.parse(
