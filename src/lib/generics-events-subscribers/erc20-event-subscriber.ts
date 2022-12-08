@@ -227,9 +227,13 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       );
       if (!balanceAsString) {
         const res = await this.getBalanceRPC(wallet, 'latest');
+        this.logger.warn(
+          `fallback to rpc, get token balance ${this.token} ${wallet}`,
+        );
         return res.amounts[DEFAULT_ID_ERC20_AS_STRING];
       }
 
+      this.logger.debug('found balance in cache');
       return BigInt(balanceAsString);
     } else {
       const state = this.getState(blockNumber) as ERC20StateMap;
