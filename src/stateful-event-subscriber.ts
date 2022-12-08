@@ -34,7 +34,7 @@ export abstract class StatefulEventSubscriber<State>
   isTracking: () => boolean = () => false;
   public addressesSubscribed: string[] = [];
 
-  private cacheName: string;
+  public cacheName: string;
 
   public name: string;
 
@@ -46,7 +46,7 @@ export abstract class StatefulEventSubscriber<State>
     protected dexHelper: IDexHelper,
     protected logger: Logger,
     private masterPoolNeeded: boolean = false,
-    private mapKey: string = '',
+    public mapKey: string = '',
   ) {
     this.name = _name.toLowerCase();
     this.cacheName = `${this.mapKey}_${this.name}`.toLowerCase();

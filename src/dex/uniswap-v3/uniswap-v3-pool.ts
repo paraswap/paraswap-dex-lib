@@ -124,7 +124,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     // only if the super call succeed
 
     const initPromises = [];
-    if (!this.token0sub.isInitialized) {
+    if (!this.token0sub.isInitialized && !this.dexHelper.config.isSlave) {
       initPromises.push(
         this.token0sub.initialize(blockNumber, {
           state: {},
@@ -132,7 +132,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       );
     }
 
-    if (!this.token1sub.isInitialized) {
+    if (!this.token1sub.isInitialized && !this.dexHelper.config.isSlave) {
       initPromises.push(
         this.token1sub.initialize(blockNumber, {
           state: {},

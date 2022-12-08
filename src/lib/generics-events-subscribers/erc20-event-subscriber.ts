@@ -3,7 +3,7 @@ import { LogDescription } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { IDexHelper } from '../../dex-helper';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { Log, BlockHeader, Token, Address } from '../../types';
+import { Log, BlockHeader, Address } from '../../types';
 import { erc20Iface } from '../utils-interfaces';
 import {
   decodeERC20Transfer,
@@ -17,53 +17,7 @@ import {
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../tokens/types';
 import { ERC20Event, ERC20StateMap, WrappedEvent } from './types';
-
-export const handleTransferEvent = (
-  event: LogDescription,
-  state: ERC20StateMap,
-) => {
-  const erc20Transfer = decodeERC20Transfer(event);
-
-  if (erc20Transfer.from in state) {
-    state = _.cloneDeep(state);
-    state[erc20Transfer.from].balance -= erc20Transfer.value;
-  }
-
-  if (erc20Transfer.to in state) {
-    state = _.cloneDeep(state);
-    state[erc20Transfer.to].balance += erc20Transfer.value;
-  }
-
-  return state;
-};
-
-export const handleWrappedDeposit = (
-  event: LogDescription,
-  state: ERC20StateMap,
-) => {
-  const deposit = decodeWrappedDeposit(event);
-
-  if (deposit.dst in state) {
-    state = _.cloneDeep(state);
-    state[deposit.dst].balance += deposit.wad;
-  }
-
-  return state;
-};
-
-export const handleWrappedWithdrawal = (
-  event: LogDescription,
-  state: ERC20StateMap,
-) => {
-  const deposit = decodeWrappedWithdrawal(event);
-
-  if (deposit.src in state) {
-    state = _.cloneDeep(state);
-    state[deposit.src].balance -= deposit.wad;
-  }
-
-  return state;
-};
+import { CACHE_PREFIX } from '../../constants';
 
 export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap> {
   private walletAddresses: Set<string> = new Set<string>();
@@ -81,13 +35,74 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       token,
       dexHelper,
       dexHelper.getLogger(`${token}-${dexHelper.config.data.network}`),
+      false,
+      `${CACHE_PREFIX}_${dexHelper.config.data.network}_${token}_balances`,
     );
     this.token = token.toLowerCase();
     this.addressesSubscribed = [this.token];
 
-    this.handlers[ERC20Event.Transfer] = handleTransferEvent;
-    this.handlers[WrappedEvent.Deposit] = handleWrappedDeposit;
-    this.handlers[WrappedEvent.Withdrawal] = handleWrappedWithdrawal;
+    this.handlers[ERC20Event.Transfer] = this.handleTransferEvent.bind(this);
+    this.handlers[WrappedEvent.Deposit] = this.handleWrappedDeposit.bind(this);
+    this.handlers[WrappedEvent.Withdrawal] =
+      this.handleWrappedWithdrawal.bind(this);
+  }
+
+  handleTransferEvent(event: LogDescription, state: ERC20StateMap) {
+    const erc20Transfer = decodeERC20Transfer(event);
+
+    if (erc20Transfer.from in state) {
+      state = _.cloneDeep(state);
+      state[erc20Transfer.from].balance -= erc20Transfer.value;
+      this.dexHelper.cache.hset(
+        this.mapKey,
+        erc20Transfer.from,
+        state[erc20Transfer.from].balance.toString(),
+      );
+    }
+
+    if (erc20Transfer.to in state) {
+      state = _.cloneDeep(state);
+      state[erc20Transfer.to].balance += erc20Transfer.value;
+      this.dexHelper.cache.hset(
+        this.mapKey,
+        erc20Transfer.to,
+        state[erc20Transfer.to].balance.toString(),
+      );
+    }
+
+    return state;
+  }
+
+  handleWrappedDeposit(event: LogDescription, state: ERC20StateMap) {
+    const deposit = decodeWrappedDeposit(event);
+
+    if (deposit.dst in state) {
+      state = _.cloneDeep(state);
+      state[deposit.dst].balance += deposit.wad;
+      this.dexHelper.cache.hset(
+        this.mapKey,
+        deposit.dst,
+        state[deposit.dst].balance.toString(),
+      );
+    }
+
+    return state;
+  }
+
+  handleWrappedWithdrawal(event: LogDescription, state: ERC20StateMap) {
+    const deposit = decodeWrappedWithdrawal(event);
+
+    if (deposit.src in state) {
+      state = _.cloneDeep(state);
+      state[deposit.src].balance -= deposit.wad;
+      this.dexHelper.cache.hset(
+        this.mapKey,
+        deposit.src,
+        state[deposit.src].balance.toString(),
+      );
+    }
+
+    return state;
   }
 
   protected async processBlockLogs(
@@ -97,7 +112,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
   ): Promise<DeepReadonly<ERC20StateMap> | null> {
     let newState = await super.processBlockLogs(state, logs, blockHeader);
     if (!newState) {
-      let newState = await this.generateState(blockHeader.number);
+      newState = await this.generateState(blockHeader.number);
     }
 
     return newState;
@@ -117,7 +132,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     return null;
   }
 
-  private async getBalanceRPC(wallet: string, blockNumber: number) {
+  private async getBalanceRPC(wallet: string, blockNumber: number | 'latest') {
     const balances = await getBalances(
       this.dexHelper.multiWrapper,
       [
@@ -159,6 +174,12 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
     };
 
+    this.dexHelper.cache.hset(
+      this.mapKey,
+      balance.owner,
+      balance.amounts[DEFAULT_ID_ERC20_AS_STRING].toString(),
+    );
+
     this.setState(state, blockNumber);
   }
 
@@ -188,30 +209,48 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       acc[balance.owner] = {
         balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
       };
+      this.dexHelper.cache.hset(
+        this.mapKey,
+        balance.owner,
+        balance.amounts[DEFAULT_ID_ERC20_AS_STRING].toString(),
+      );
       return acc;
     }, {} as ERC20StateMap);
     return {};
   }
 
   async getBalance(wallet: Address, blockNumber: number): Promise<bigint> {
-    const state = this.getState(blockNumber) as ERC20StateMap;
-
-    if (state === null) {
-      throw new Error(`State is null`);
-    }
-
-    if (!(wallet in state)) {
-      this.logger.warn(
-        `Missing wallet ${wallet} for ${this.token} fallinging back to rpc`,
+    if (this.dexHelper.config.isSlave) {
+      const balanceAsString = await this.dexHelper.cache.hget(
+        this.mapKey,
+        wallet,
       );
-      const balance = await this.getBalanceRPC(wallet, blockNumber);
+      if (!balanceAsString) {
+        const res = await this.getBalanceRPC(wallet, 'latest');
+        return res.amounts[DEFAULT_ID_ERC20_AS_STRING];
+      }
 
-      // this is ok because we don't modify readonly data
-      state[wallet] = {
-        balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
-      };
+      return BigInt(balanceAsString);
+    } else {
+      const state = this.getState(blockNumber) as ERC20StateMap;
+
+      if (state === null) {
+        throw new Error(`State is null`);
+      }
+
+      if (!(wallet in state)) {
+        this.logger.warn(
+          `Missing wallet ${wallet} for ${this.token} fallinging back to rpc`,
+        );
+        const balance = await this.getBalanceRPC(wallet, blockNumber);
+
+        // this is ok because we don't modify readonly data
+        state[wallet] = {
+          balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
+        };
+      }
+
+      return state[wallet].balance;
     }
-
-    return state[wallet].balance;
   }
 }
