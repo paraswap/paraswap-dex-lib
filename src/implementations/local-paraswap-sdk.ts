@@ -38,6 +38,10 @@ export interface IParaSwapSDK {
   initializePricing?(): Promise<void>;
 
   releaseResources?(): Promise<void>;
+
+  dexHelper?: IDexHelper & {
+    replaceProviderWithRPC?: (rpcUrl: string) => void;
+  };
 }
 
 const chunks = 10;

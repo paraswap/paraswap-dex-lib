@@ -16,6 +16,7 @@ import get_dy_Implementations from './functions/get_dy';
 import get_y_D_Implementations from './functions/get_y_D';
 import get_y_Implementations from './functions/get_y';
 import constants_Implementations from './functions/constants';
+import { CONVERGENCE_ERROR_PREFIX } from '../constants';
 
 export class PriceHandler {
   readonly priceHandler: IPoolContext;
@@ -79,15 +80,27 @@ export class PriceHandler {
       if (amount === 0n) {
         return 0n;
       } else {
-        return isUnderlying
-          ? this.priceHandler.get_dy_underlying(
-              this.priceHandler,
-              state,
-              i,
-              j,
-              amount,
-            )
-          : this.priceHandler.get_dy(this.priceHandler, state, i, j, amount);
+        try {
+          return isUnderlying
+            ? this.priceHandler.get_dy_underlying(
+                this.priceHandler,
+                state,
+                i,
+                j,
+                amount,
+              )
+            : this.priceHandler.get_dy(this.priceHandler, state, i, j, amount);
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            e.message.startsWith(CONVERGENCE_ERROR_PREFIX)
+          ) {
+            this.logger.trace(`Convergence Error: `, e);
+          } else {
+            this.logger.error(`Unexpected error while calculating price: `, e);
+          }
+          return 0n;
+        }
       }
     });
   }

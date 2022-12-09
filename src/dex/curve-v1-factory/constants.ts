@@ -17,6 +17,8 @@ export const MIN_LIQUIDITY_IN_USD = 50;
 
 export const LIQUIDITY_FETCH_TIMEOUT_MS = 1_500;
 
+export const CONVERGENCE_ERROR_PREFIX = 'didnt_converge';
+
 // Pooltracker relevant variables
 export const CURVE_API_URL = 'https://api.curve.fi/api/getPools';
 export const NETWORK_ID_TO_NAME: Record<number, string> = {

@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { _require } from '../../../../utils';
+import { CONVERGENCE_ERROR_PREFIX } from '../../constants';
 import { ImplementationNames } from '../../types';
 import { get_y_D, IPoolContext } from '../types';
 import { requireConstant, throwNotImplemented } from './utils';
@@ -104,7 +105,7 @@ const customPlain2CoinFrax: get_y_D = (
     }
   }
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
+    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
   );
 };
 
