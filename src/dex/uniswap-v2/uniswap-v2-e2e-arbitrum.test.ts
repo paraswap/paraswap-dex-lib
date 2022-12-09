@@ -187,4 +187,40 @@ describe('UniswapV2 E2E Arbitrum', () => {
       });
     });
   });
+
+  describe('SwapFish', () => {
+    const dexKey = 'SwapFish';
+
+    describe('Simpleswap', () => {
+      it('SwapFish TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.USDC,
+          holders.WETH,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multiswap', () => {
+      it('SwapFish TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.USDC,
+          holders.WETH,
+          '70000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });
