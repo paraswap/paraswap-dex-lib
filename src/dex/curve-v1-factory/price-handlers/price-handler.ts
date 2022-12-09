@@ -96,6 +96,14 @@ export class PriceHandler {
             e.message.startsWith(CONVERGENCE_ERROR_PREFIX)
           ) {
             this.logger.trace(`Convergence Error: `, e);
+          } else if (
+            e instanceof Error &&
+            e.message.startsWith(`Division by zero`)
+          ) {
+            this.logger.trace(
+              `Zero division Error suppressed because mostly it is expected`,
+              e,
+            );
           } else {
             this.logger.error(`Unexpected error while calculating price: `, e);
           }
