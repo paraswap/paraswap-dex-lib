@@ -497,31 +497,23 @@ export class UniswapV3
         poolsToUse.poolWithState.map(async (pool, i) => {
           const state = states[i];
 
-          let balance = 0n;
+          let balanceDestToken = 0n;
           if (_srcAddress === pool.token0) {
             if (side === SwapSide.SELL) {
-              balance = await pool.getBalanceToken0(blockNumber);
+              balanceDestToken = await pool.getBalanceToken1(blockNumber);
             } else {
-              balance = await pool.getBalanceToken1(blockNumber);
+              balanceDestToken = await pool.getBalanceToken0(blockNumber);
             }
           } else {
             if (side === SwapSide.SELL) {
-              balance = await pool.getBalanceToken1(blockNumber);
+              balanceDestToken = await pool.getBalanceToken0(blockNumber);
             } else {
-              balance = await pool.getBalanceToken0(blockNumber);
+              balanceDestToken = await pool.getBalanceToken1(blockNumber);
             }
           }
 
-          const requiredAmount = amounts[amounts.length - 1];
-          if (balance < requiredAmount) {
-            this.logger.warn(
-              `pool is missing liquidity (${pool.poolAddress}) (srcToken: ${_srcAddress}, side: ${side}) have ${balance} but we need ${requiredAmount} to use it`,
-            );
-            return null;
-          }
-
           if (state.liquidity <= 0n) {
-            this.logger.warn(`pool have 0 liquidity`);
+            this.logger.trace(`pool have 0 liquidity`);
             return null;
           }
 
@@ -530,12 +522,14 @@ export class UniswapV3
             [unitAmount],
             zeroForOne,
             side,
+            balanceDestToken,
           );
           const pricesResult = this._getOutputs(
             state,
             _amounts,
             zeroForOne,
             side,
+            balanceDestToken,
           );
 
           if (!unitResult || !pricesResult) {
@@ -826,9 +820,24 @@ export class UniswapV3
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
+    destTokenBalance: bigint,
   ): OutputResult | null {
     try {
-      return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
+      const outputsResult = uniswapV3Math.queryOutputs(
+        state,
+        amounts,
+        zeroForOne,
+        side,
+      );
+
+      for (let i = 0; i < outputsResult.outputs.length; i++) {
+        if (outputsResult.outputs[i] > destTokenBalance) {
+          outputsResult.outputs[i] = 0n;
+          outputsResult.tickCounts[i] = 0;
+        }
+      }
+
+      return outputsResult;
     } catch (e) {
       this.logger.debug(
         `${this.dexKey}: received error in _getOutputs while calculating outputs`,
