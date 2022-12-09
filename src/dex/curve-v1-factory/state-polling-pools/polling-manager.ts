@@ -142,6 +142,10 @@ export class StatePollingManager {
           );
         }
 
+        if (p.baseStatePoolPolling) {
+          poolsForRPCUpdate.push(p.baseStatePoolPolling);
+        }
+
         poolsForRPCUpdate.push(p);
       }),
     );
