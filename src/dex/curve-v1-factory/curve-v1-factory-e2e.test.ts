@@ -167,24 +167,25 @@ describe('CurveV1Factory E2E', () => {
     );
   });
 
-  describe('Polygon MAI', () => {
-    const network = Network.POLYGON;
+  // Uncomment this when add support for unwrapping lending tokens
+  // describe('Polygon MAI', () => {
+  //   const network = Network.POLYGON;
 
-    const tokenASymbol: string = 'MAI';
-    const tokenBSymbol: string = 'USDC';
+  //   const tokenASymbol: string = 'MAI';
+  //   const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '11000000000000000000';
-    const tokenBAmount: string = '11000000';
+  //   const tokenAAmount: string = '11000000000000000000';
+  //   const tokenBAmount: string = '11000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //   );
+  // });
 
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
