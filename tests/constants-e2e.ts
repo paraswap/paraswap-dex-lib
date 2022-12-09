@@ -385,6 +385,10 @@ export const Tokens: {
       address: '0x1a13F4Ca1d028320A707D99520AbFefca3998b7F',
       decimals: 6,
     },
+    MAI: {
+      address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -781,6 +785,7 @@ export const Holders: {
     deUSDC: '0x94d5ead1f80cf0b4d3480ab59dff16d47c93e9fe',
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
+    MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
   },
   [Network.FANTOM]: {
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',

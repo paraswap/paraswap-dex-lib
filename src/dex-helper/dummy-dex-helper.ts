@@ -236,4 +236,8 @@ export class DummyDexHelper implements IDexHelper {
       this.getLogger(`PromiseScheduler-${network}`),
     );
   }
+
+  replaceProviderWithRPC(rpcUrl: string) {
+    this.provider = new StaticJsonRpcProvider(rpcUrl, this.config.data.network);
+  }
 }

@@ -8,7 +8,7 @@ export const STATE_UPDATE_RETRY_PERIOD_MS = 1000;
 
 export const LIQUIDITY_UPDATE_PERIOD_MS = 2 * 60 * 1000;
 
-export const MAX_ALLOWED_STATE_DELAY_FACTOR = 2;
+export const MAX_ALLOWED_STATE_DELAY_FACTOR = 3;
 
 export const POOL_EXCHANGE_GAS_COST = 200 * 1000;
 
@@ -16,6 +16,8 @@ export const POOL_EXCHANGE_GAS_COST = 200 * 1000;
 export const MIN_LIQUIDITY_IN_USD = 50;
 
 export const LIQUIDITY_FETCH_TIMEOUT_MS = 1_500;
+
+export const CONVERGENCE_ERROR_PREFIX = 'didnt_converge';
 
 // Pooltracker relevant variables
 export const CURVE_API_URL = 'https://api.curve.fi/api/getPools';

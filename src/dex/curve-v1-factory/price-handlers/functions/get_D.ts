@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { CONVERGENCE_ERROR_PREFIX } from '../../constants';
 import { ImplementationNames } from '../../types';
 import { get_D, IPoolContext } from '../types';
 import { getCachedValueOrCallFunc, requireConstant } from './utils';
@@ -100,7 +101,7 @@ const customPlain2CoinFrax: get_D = (
   // convergence typically occurs in 4 rounds or less, this should be unreachable!
   // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
+    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
   );
 };
 
@@ -147,7 +148,7 @@ const factoryPlain2Basic: get_D = (
   // convergence typically occurs in 4 rounds or less, this should be unreachable!
   // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function factoryPlain2Basic didn't converge`,
+    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function factoryPlain2Basic didn't converge`,
   );
 };
 
@@ -199,7 +200,7 @@ const customAvalanche3CoinLending: get_D = (
   // convergence typically occurs in 4 rounds or less, this should be unreachable!
   // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function customAvalanche3CoinLending didn't converge`,
+    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function customAvalanche3CoinLending didn't converge`,
   );
 };
 

@@ -3,6 +3,7 @@ import { ImplementationNames, PoolState } from '../../types';
 import { _require } from '../../../../utils';
 import { get_y, IPoolContext } from '../types';
 import { requireConstant } from './utils';
+import { CONVERGENCE_ERROR_PREFIX } from '../../constants';
 
 const customPlain3CoinThree = (
   self: IPoolContext,
@@ -127,7 +128,7 @@ const customPlain2CoinFrax = (
     }
   }
   throw new Error(
-    `${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
+    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
   );
 };
 
