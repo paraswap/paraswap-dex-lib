@@ -246,6 +246,7 @@ export class CurveV1Factory
           newPool = new CustomBasePoolForFactory(
             this.logger,
             this.dexKey,
+            this.dexHelper.config.data.network,
             this.cacheStateKey,
             customPool.name,
             implementationAddress,
@@ -265,6 +266,7 @@ export class CurveV1Factory
           newPool = new CustomBasePoolForFactory(
             this.logger,
             this.dexKey,
+            this.dexHelper.config.data.network,
             this.cacheStateKey,
             customPool.name,
             implementationAddress,
@@ -552,6 +554,7 @@ export class CurveV1Factory
       const newPool = new FactoryStateHandler(
         this.logger,
         this.dexKey,
+        this.dexHelper.config.data.network,
         this.cacheStateKey,
         factoryImplementationFromConfig.name,
         implementationAddress.toLowerCase(),
