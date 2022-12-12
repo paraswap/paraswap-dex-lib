@@ -821,7 +821,7 @@ export class UniswapV3
       );
 
       if (side === SwapSide.SELL) {
-        if (outputsResult.outputs.slice(-1)[0] > destTokenBalance) {
+        if (outputsResult.outputs[0] > destTokenBalance) {
           return null;
         }
 
