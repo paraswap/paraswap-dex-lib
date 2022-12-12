@@ -497,25 +497,15 @@ export class UniswapV3
         poolsToUse.poolWithState.map(async (pool, i) => {
           const state = states[i];
 
-          let balanceDestToken = 0n;
-          if (_srcAddress === pool.token0) {
-            if (side === SwapSide.SELL) {
-              balanceDestToken = await pool.getBalanceToken1(blockNumber);
-            } else {
-              balanceDestToken = await pool.getBalanceToken0(blockNumber);
-            }
-          } else {
-            if (side === SwapSide.SELL) {
-              balanceDestToken = await pool.getBalanceToken0(blockNumber);
-            } else {
-              balanceDestToken = await pool.getBalanceToken1(blockNumber);
-            }
-          }
-
           if (state.liquidity <= 0n) {
             this.logger.trace(`pool have 0 liquidity`);
             return null;
           }
+
+          const balanceDestToken =
+            _srcAddress === pool.token0
+              ? await pool.getBalanceToken1(blockNumber)
+              : await pool.getBalanceToken0(blockNumber);
 
           const unitResult = this._getOutputs(
             state,
@@ -830,10 +820,22 @@ export class UniswapV3
         side,
       );
 
-      for (let i = 0; i < outputsResult.outputs.length; i++) {
-        if (outputsResult.outputs[i] > destTokenBalance) {
-          outputsResult.outputs[i] = 0n;
-          outputsResult.tickCounts[i] = 0;
+      if (side === SwapSide.SELL) {
+        for (let i = 0; i < outputsResult.outputs.length; i++) {
+          if (outputsResult.outputs[i] > destTokenBalance) {
+            outputsResult.outputs[i] = 0n;
+            outputsResult.tickCounts[i] = 0;
+          }
+        }
+      } else {
+        // This may be improved by first checking outputs and requesting outputs
+        // only for amounts that makes more sense, but I don't think this is really
+        // important now
+        for (let i = 0; i < amounts.length; i++) {
+          if (amounts[i] > destTokenBalance) {
+            outputsResult.outputs[i] = 0n;
+            outputsResult.tickCounts[i] = 0;
+          }
         }
       }
 
