@@ -396,6 +396,10 @@ export const Tokens: {
       address: '0x5cc61a78f164885776aa610fb0fe1257df78e59b',
       decimals: 18,
     },
+    wBOMB: {
+      address: '0xc09a82ad5075b3067d80f54f05e1e22229699cc1',
+      decimals: 18,
+    },
   },
   [Network.BSC]: {
     DAI: {
@@ -758,6 +762,7 @@ export const Holders: {
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
     WETH: '0x2400bb4d7221ba530daee061d5afe219e9223eae',
     SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
+    wBOMB: '0x28aa4f9ffe21365473b64c161b566c3cdead0108',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',

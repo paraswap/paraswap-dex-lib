@@ -26,13 +26,32 @@ import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SolidlyStablePool } from './solidly-stable-pool';
 import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';
-import { PoolState, SolidlyPair, SolidlyPoolOrderedParams } from './types';
+import {
+  PoolState,
+  SolidlyData,
+  SolidlyPair,
+  SolidlyPool,
+  SolidlyPoolOrderedParams,
+} from './types';
 import { SolidlyConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 const erc20Iface = new Interface(erc20ABI);
 const solidlyPairIface = new Interface(solidlyPair);
 const defaultAbiCoder = new AbiCoder();
+
+function encodePools(
+  pools: SolidlyPool[],
+  feeFactor: number,
+): NumberAsString[] {
+  return pools.map(({ fee, direction, address }) => {
+    return (
+      (BigInt(feeFactor - fee) << 161n) +
+      ((direction ? 0n : 1n) << 160n) +
+      BigInt(address)
+    ).toString();
+  });
+}
 
 export class Solidly extends UniswapV2 {
   pairs: { [key: string]: SolidlyPair } = {};
@@ -362,6 +381,9 @@ export class Solidly extends UniswapV2 {
             factory: this.factoryAddress,
             initCode: this.initCode,
             feeFactor: this.feeFactor,
+            isFeeOnTransferInRoute: Object.values(transferFees).some(
+              f => f !== 0,
+            ),
             pools: [
               {
                 address: pairParam.exchange,
@@ -571,17 +593,26 @@ export class Solidly extends UniswapV2 {
     destToken: Address,
     srcAmount: NumberAsString,
     toAmount: NumberAsString, // required for buy case
-    data: UniswapData,
+    data: SolidlyData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    return super.getAdapterParam(
-      srcToken,
-      destToken,
-      srcAmount,
-      toAmount,
-      data,
-      side,
+    const pools = encodePools(data.pools, this.feeFactor);
+    const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          weth: 'address',
+          pools: 'uint256[]',
+          isFeeTokenInRoute: 'bool',
+        },
+      },
+      { weth, pools, isFeeTokenInRoute: data.isFeeTokenInRoute },
     );
+    return {
+      targetExchange: data.router,
+      payload,
+      networkFee: '0',
+    };
   }
 }
