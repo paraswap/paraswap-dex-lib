@@ -52,7 +52,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     iface.parseLog(log) as any as KyberDmmAbiEvents;
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
 
@@ -63,12 +63,12 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
     logger: Logger,
   ) {
     super(
-      parentName +
-        ' ' +
-        (token0.symbol || token0.address) +
+      parentName,
+      (token0.symbol || token0.address) +
         '-' +
         (token1.symbol || token1.address) +
         ' pool',
+      dexHelper,
       logger,
     );
   }

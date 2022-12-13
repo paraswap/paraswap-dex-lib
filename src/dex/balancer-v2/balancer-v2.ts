@@ -100,8 +100,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
-
   eventSupportedPoolTypes = [
     'Stable',
     'Weighted',
@@ -119,14 +117,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ).map(s => s.toLowerCase());
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected vaultAddress: Address,
     protected subgraphURL: string,
     protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, logger);
+    super(parentName, vaultAddress, dexHelper, logger);
     this.vaultInterface = new Interface(VaultABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
@@ -389,6 +387,7 @@ export class BalancerV2
   protected eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -403,14 +402,14 @@ export class BalancerV2
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected vaultAddress: Address = BalancerConfig[dexKey][network]
       .vaultAddress,
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
     this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
     this.logger = dexHelper.getLogger(dexKey);
@@ -425,13 +424,7 @@ export class BalancerV2
   }
 
   async setupEventPools(blockNumber: number) {
-    const poolState = await this.eventPools.generateState(blockNumber);
-    this.eventPools.setState(poolState, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.eventPools,
-      this.eventPools.addressesSubscribed,
-      blockNumber,
-    );
+    await this.eventPools.initialize(blockNumber);
   }
 
   async fetchEventDisabledPools() {

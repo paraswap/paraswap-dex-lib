@@ -1,4 +1,4 @@
-import { Address, UnoptimizedRate } from '../types';
+import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
@@ -6,7 +6,7 @@ import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
-import { UniswapV3 } from './uniswap-v3';
+import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
@@ -41,7 +41,6 @@ import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
-import Web3 from 'web3';
 import { Solidly } from './solidly/solidly';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
@@ -53,6 +52,10 @@ import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
+import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
+import { GenericRFQ } from './generic-rfq/generic-rfq';
+import { SwaapV1 } from './swaap-v1/swaap-v1';
+import { WstETH } from './wsteth/wsteth';
 
 const LegacyDexes = [
   CurveV2,
@@ -68,7 +71,6 @@ const LegacyDexes = [
   OneInchLp,
   DodoV1,
   DodoV2,
-  UniswapV3,
   QuickSwapV3,
   Jarvis,
   Lido,
@@ -82,6 +84,7 @@ const Dexes = [
   BalancerV1,
   BalancerV2,
   UniswapV2,
+  UniswapV3,
   BiSwap,
   MDEX,
   Dfyn,
@@ -103,13 +106,15 @@ const Dexes = [
   Velodrome,
   Cone,
   Synthetix,
+  CurveV1Factory,
+  SwaapV1,
+  WstETH,
 ];
 
-export type LegacyDexConstructor = new (
-  augustusAddress: Address,
-  network: number,
-  provider: Web3,
-) => IDexTxBuilder<any, any>;
+export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
+  any,
+  any
+>;
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];
@@ -147,39 +152,49 @@ export class DexAdapterService {
       });
     });
 
+    const handleDex = (newDex: IDex<any, any, any>, key: string) => {
+      const _key = key.toLowerCase();
+      this.isLegacy[_key] = false;
+      this.dexKeys.push(key);
+      this.dexInstances[_key] = newDex;
+
+      const sellAdaptersDex = (
+        this.dexInstances[_key] as IDex<any, any, any>
+      ).getAdapters(SwapSide.SELL);
+      if (sellAdaptersDex)
+        this.sellAdapters[_key] = sellAdaptersDex.map(({ name, index }) => ({
+          adapter: this.dexHelper.config.data.adapterAddresses[name],
+          index,
+        }));
+
+      const buyAdaptersDex = (
+        this.dexInstances[_key] as IDex<any, any, any>
+      ).getAdapters(SwapSide.BUY);
+      if (buyAdaptersDex)
+        this.buyAdapters[_key] = buyAdaptersDex.map(({ name, index }) => ({
+          adapter: this.dexHelper.config.data.adapterAddresses[name],
+          index,
+        }));
+    };
+
     Dexes.forEach(DexAdapter => {
       DexAdapter.dexKeysWithNetwork.forEach(({ key, networks }) => {
         if (networks.includes(network)) {
-          const _key = key.toLowerCase();
-          this.isLegacy[_key] = false;
-          this.dexKeys.push(key);
-          this.dexInstances[_key] = new DexAdapter(
-            this.network,
-            key,
-            this.dexHelper,
-          );
-
-          const sellAdaptersDex = (
-            this.dexInstances[_key] as IDex<any, any, any>
-          ).getAdapters(SwapSide.SELL);
-          if (sellAdaptersDex)
-            this.sellAdapters[_key] = sellAdaptersDex.map(
-              ({ name, index }) => ({
-                adapter: this.dexHelper.config.data.adapterAddresses[name],
-                index,
-              }),
-            );
-
-          const buyAdaptersDex = (
-            this.dexInstances[_key] as IDex<any, any, any>
-          ).getAdapters(SwapSide.BUY);
-          if (buyAdaptersDex)
-            this.buyAdapters[_key] = buyAdaptersDex.map(({ name, index }) => ({
-              adapter: this.dexHelper.config.data.adapterAddresses[name],
-              index,
-            }));
+          const dex = new DexAdapter(network, key, dexHelper);
+          handleDex(dex, key);
         }
       });
+    });
+
+    const rfqConfigs = dexHelper.config.data.rfqConfigs;
+    Object.keys(dexHelper.config.data.rfqConfigs).forEach(rfqName => {
+      const dex = new GenericRFQ(
+        network,
+        rfqName,
+        dexHelper,
+        rfqConfigs[rfqName],
+      );
+      handleDex(dex, rfqName);
     });
 
     this.directFunctionsNames = [...LegacyDexes, ...Dexes]
@@ -209,9 +224,7 @@ export class DexAdapterService {
         );
 
       this.dexInstances[_dexKey] = new (DexAdapter as LegacyDexConstructor)(
-        this.dexHelper.config.data.augustusAddress,
-        this.network,
-        this.dexHelper.web3Provider,
+        this.dexHelper,
       );
     }
 

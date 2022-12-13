@@ -94,7 +94,9 @@ describe('BalancerV2', function () {
 
       await balancerV2.initializePricing(blocknumber);
 
-      const pools = await balancerV2.getPoolIdentifiers(
+      //daniel: pricing for BPT swaps has been removed for the time being
+      //focus on main tokens swaps
+      /*const pools = await balancerV2.getPoolIdentifiers(
         DAI,
         BBADAI,
         SwapSide.SELL,
@@ -104,9 +106,7 @@ describe('BalancerV2', function () {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      //daniel: pricing for BPT swaps has been removed for the time being
-      //focus on main tokens swaps
-      /*const poolPrices = await balancerV2.getPricesVolume(
+      const poolPrices = await balancerV2.getPricesVolume(
         DAI,
         BBADAI,
         amounts,

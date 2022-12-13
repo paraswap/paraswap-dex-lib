@@ -18,6 +18,16 @@ export type AugustusOrder = {
   takerAmount: bigint;
 };
 
+export type AugustusOrderWithString = Omit<
+  AugustusOrder,
+  'expiry' | 'nonceAndMeta' | 'makerAmount' | 'takerAmount'
+> & {
+  expiry: string;
+  nonceAndMeta: BigIntAsString;
+  makerAmount: BigIntAsString;
+  takerAmount: BigIntAsString;
+};
+
 export type ParaSwapLimitOrderPriceSummary = {
   cumulativeMakerAmount: bigint;
   cumulativeTakerAmount: bigint;
@@ -65,3 +75,9 @@ export type OrderInfo = {
 };
 
 export type ParaSwapOrderResponse = OrderInfo;
+
+export type BuildOrderConstants = {
+  NAME: string;
+  VERSION: string;
+  ORDER_INTERFACE: { name: string; type: string }[];
+};
