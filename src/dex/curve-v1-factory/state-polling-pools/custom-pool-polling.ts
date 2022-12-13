@@ -98,6 +98,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
+    network: number,
     cacheStateKey: string,
     readonly implementationName: ImplementationNames,
     readonly implementationAddress: Address,
@@ -118,6 +119,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     super(
       logger,
       dexKey,
+      network,
       cacheStateKey,
       implementationName,
       implementationAddress === NULL_ADDRESS ? address : implementationAddress,

@@ -22,6 +22,7 @@ export class FactoryStateHandler extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
+    network: number,
     cacheStateKey: string,
     readonly implementationName: FactoryImplementationNames,
     implementationAddress: Address,
@@ -40,6 +41,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     super(
       logger,
       dexKey,
+      network,
       cacheStateKey,
       implementationName,
       implementationAddress,

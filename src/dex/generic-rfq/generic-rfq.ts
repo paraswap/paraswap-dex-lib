@@ -217,7 +217,9 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     tokenAddress: string,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const pairs = this.rateFetcher.getPairsLiqudity(tokenAddress.toLowerCase());
+    const pairs = this.rateFetcher.getPairsLiquidity(
+      tokenAddress.toLowerCase(),
+    );
 
     return pairs.map(pair => ({
       exchange: this.dexKey,

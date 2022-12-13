@@ -36,6 +36,7 @@ export abstract class PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
+    readonly network: number,
     readonly cacheStateKey: string,
     readonly implementationName: string,
     readonly implementationAddress: Address,
@@ -48,7 +49,7 @@ export abstract class PoolPollingBase {
     readonly baseStatePoolPolling: PoolPollingBase | undefined,
     readonly isSrcFeeOnTransferSupported: boolean,
   ) {
-    this.fullName = `${dexKey}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
+    this.fullName = `${dexKey}-${network}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
     this.isMetaPool = baseStatePoolPolling !== undefined;
     this.coinsToIndices = this._reduceToIndexMapping(poolConstants.COINS);
     this.underlyingCoinsToIndices = baseStatePoolPolling
