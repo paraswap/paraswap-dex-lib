@@ -20,7 +20,7 @@
 // import { providerManager } from '../../src/lib/web3-provider';
 // import { getManyPoolStates } from '../../src/lib/connectors/curve/getstate-multicall';
 // import multiABI from '../../src/lib/abi/multi.abi.json';
-// import StableSwapEURS from '../../src/lib/abi/curve/StableSwapEURS.json';
+// import StableSwapEURS from '../../src/lib/abi/curve-v1/StableSwapEURS.json';
 // import { StaticJsonRpcProvider } from '@ethersproject/providers';
 // import { doTest } from './utils';
 // import { MULTI } from '../../src/constants';

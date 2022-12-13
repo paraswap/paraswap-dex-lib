@@ -175,6 +175,20 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });*/
+
+      it('wstETH -> ETH, MetaStable Pool', async () => {
+        await testE2E(
+          tokens['wstETH'],
+          tokens['ETH'],
+          holders['wstETH'],
+          '3000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
     });
 
     describe('Multiswap', () => {

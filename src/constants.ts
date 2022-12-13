@@ -1,8 +1,13 @@
-import { Address } from './types';
-export { SwapSide, ContractMethod } from 'paraswap-core';
+export { SwapSide, ContractMethod } from '@paraswap/core';
 
-export const ETHER_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+export const PORT_TEST_SERVER = process.env.TEST_PORT;
+
+export const ETHER_ADDRESS =
+  '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'.toLowerCase();
+
 export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+export const CACHE_PREFIX = 'dl';
 
 export const MAX_UINT =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -29,8 +34,6 @@ export enum Network {
   FANTOM = 250,
   ARBITRUM = 42161,
   OPTIMISM = 10,
-  ZK_SYNC_MAINNET = 271,
-  ZK_SYNC_ROPSTEN = 273,
 }
 
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
@@ -38,3 +41,15 @@ export const SUBGRAPH_TIMEOUT = 20 * 1000;
 export enum LIMIT_ORDER_PROVIDERS {
   PARASWAP = 'ParaSwapLimitOrderProvider',
 }
+
+// transfer User -> Augustus
+export const SRC_TOKEN_PARASWAP_TRANSFERS = 1;
+// Transfer Augustus -> Dex
+export const SRC_TOKEN_DEX_TRANSFERS = 1;
+
+// transfer Augustus -> User
+export const DEST_TOKEN_PARASWAP_TRANSFERS = 1;
+// transfer Dex -> Augustus
+export const DEST_TOKEN_DEX_TRANSFERS = 1;
+
+export const BPS_MAX_VALUE = 10000n;

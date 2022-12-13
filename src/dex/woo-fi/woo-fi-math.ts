@@ -172,6 +172,12 @@ export class WooFiMath {
         baseAmount,
         quoteAmount,
       );
+
+      if (quoteAmount > this.state.wooPPBalances[this._quoteToken]) {
+        // require(quoteAmount <= IERC20(quoteToken).balanceOf(address(this)), 'WooPP: INSUFF_QUOTE');
+        return 0n;
+      }
+
       return quoteAmount;
     });
   }
@@ -251,6 +257,11 @@ export class WooFiMath {
         quoteAmount,
         baseAmount,
       );
+
+      if (baseAmount > this.state.wooPPBalances[baseToken]) {
+        // require(baseAmount <= IERC20(baseToken).balanceOf(address(this)), 'WooPP: INSUFF_BASE');
+        return 0n;
+      }
 
       return baseAmount;
     });

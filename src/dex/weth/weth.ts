@@ -30,6 +30,7 @@ export class Weth
   implements IDex<WethData, DexParams>, IWethDepositorWithdrawer
 {
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WethConfig);
@@ -40,13 +41,13 @@ export class Weth
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     protected unitPrice = BI_POWS[18],
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.address = dexHelper.config.data.wrappedNativeTokenAddress;
     this.logger = dexHelper.getLogger(dexKey);
   }

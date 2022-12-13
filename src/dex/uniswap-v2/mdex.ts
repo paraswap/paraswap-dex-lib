@@ -27,7 +27,7 @@ export class MDEX extends UniswapV2 {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
     super(

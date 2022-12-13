@@ -1,8 +1,10 @@
 import BigNumber from 'bignumber.js';
-import { SwapSide } from 'paraswap-core';
+import { getAddress } from 'ethers/lib/utils';
+import { SwapSide } from '@paraswap/core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
-import { DexConfigMap, Logger } from './types';
+import { DexConfigMap, Logger, TransferFeeParams } from './types';
+import _ from 'lodash';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -11,6 +13,11 @@ export const prependWithOx = (str: string) =>
   str.startsWith('0x') ? str : '0x' + str;
 
 export const uuidToBytes16 = (uuid: string) => '0x' + uuid.replace(/-/g, '');
+
+export function toUnixTimestamp(date: Date | number): number {
+  const timestamp = date instanceof Date ? date.getTime() : date;
+  return Math.floor(timestamp / 1000);
+}
 
 // This function guarantees that the distribution adds up to exactly 100% by
 // applying rounding in the other direction for numbers with the most error.
@@ -59,12 +66,10 @@ export function getBigIntPow(decimals: number): bigint {
 }
 
 export function stringifyWithBigInt(obj: unknown): string {
-  return typeof obj === 'object'
-    ? JSON.stringify(
-        obj,
-        (_key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
-      )
-    : '';
+  return JSON.stringify(
+    obj,
+    (_key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+  );
 }
 
 export function _require(
@@ -182,7 +187,123 @@ export function interpolate(
   });
 }
 
+export const bigIntify = (val: any) => BigInt(val);
+
+export const bigNumberify = (val: any) => new BigNumber(val);
+
+export const stringify = (val: any) => val.toString();
+
+export const catchParseLogError = (e: any, logger: Logger) => {
+  if (e instanceof Error) {
+    if (!e.message.includes('no matching event')) {
+      logger.error('Failed parse event', e);
+    }
+  }
+};
+
+const PREFIX_BIG_INT = 'bi@';
+const PREFIX_BIG_NUMBER = 'bn@';
+
+const stringCheckerBuilder = (prefix: string) => {
+  return (obj: any) => {
+    if (!_.isString(obj)) {
+      return false;
+    }
+    for (let i = 0; i < prefix.length; ++i) {
+      if (prefix[i] !== obj[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+};
+
+const checkerStringWithBigIntPrefix = stringCheckerBuilder(PREFIX_BIG_INT);
+const checkerStringWithBigNumberPrefix =
+  stringCheckerBuilder(PREFIX_BIG_NUMBER);
+
+const casterToStringbuilder = (prefix: string, obj: any) =>
+  prefix.concat(obj.toString());
+
+const casterBigIntToString = (obj: BigInt) =>
+  casterToStringbuilder(PREFIX_BIG_INT, obj);
+const casterBigNumberToString = (obj: BigNumber) =>
+  casterToStringbuilder(PREFIX_BIG_NUMBER, obj);
+
+const checkerBigInt = (obj: any) => typeof obj === 'bigint';
+const checkerBigNumber = (obj: any) => obj instanceof BigNumber;
+
+const stringCasterBuilder = (
+  prefix: string,
+  constructor: (str: string) => any,
+) => {
+  return (obj: string) => {
+    return constructor(obj.slice(prefix.length));
+  };
+};
+
+const casterStringToBigInt = stringCasterBuilder(
+  PREFIX_BIG_INT,
+  (str: string) => BigInt(str),
+);
+
+const casterStringToBigNumber = stringCasterBuilder(
+  PREFIX_BIG_NUMBER,
+  (str: string) => new BigNumber(str),
+);
+
+type TypeSerializer = {
+  checker: (obj: any) => boolean;
+  caster: (obj: any) => any;
+};
+
+export function deepTypecast(obj: any, types: TypeSerializer[]): any {
+  return _.forEach(obj, (val: any, key: any, obj: any) => {
+    for (const type of types) {
+      if (type.checker(val)) {
+        const cast = type.caster(val);
+        obj[key] = cast;
+        return;
+      }
+    }
+    const isObject = _.isObject(val);
+    if (isObject) {
+      deepTypecast(val, types);
+    } else {
+      obj[key] = val;
+    }
+  });
+}
+
 export class Utils {
+  static Serialize(data: any): string {
+    return JSON.stringify(
+      deepTypecast(_.cloneDeep(data), [
+        {
+          checker: checkerBigInt,
+          caster: casterBigIntToString,
+        },
+        {
+          checker: checkerBigNumber,
+          caster: casterBigNumberToString,
+        },
+      ]),
+    );
+  }
+
+  static Parse(data: any): any {
+    return deepTypecast(_.cloneDeep(JSON.parse(data)), [
+      {
+        checker: checkerStringWithBigIntPrefix,
+        caster: casterStringToBigInt,
+      },
+      {
+        checker: checkerStringWithBigNumberPrefix,
+        caster: casterStringToBigNumber,
+      },
+    ]);
+  }
+
   static timeoutPromise<T>(
     promise: Promise<T>,
     timeout: number,
@@ -197,16 +318,25 @@ export class Utils {
   }
 }
 
-export const bigIntify = (val: any) => BigInt(val);
+export const isSrcTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(transferFees.srcFee || transferFees.srcDexFee);
+};
 
-export const bigNumberify = (val: any) => new BigNumber(val);
+// This function is throwing error if address is not correct
+export const normalizeAddress = (address: string) => {
+  return getAddress(address).toLowerCase();
+};
 
-export const stringify = (val: any) => val.toString();
+// In some case we need block timestamp, but instead of real one, we can use
+// just current time in BigInt
+export function currentBigIntTimestampInS() {
+  return BigInt(Math.floor(Date.now() / 1000));
+}
 
-export const catchParseLogError = (e: any, logger: Logger) => {
-  if (e instanceof Error) {
-    if (!e.message.includes('no matching event')) {
-      logger.error('Failed parse event', e);
-    }
-  }
+export const isDestTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(transferFees.destFee || transferFees.destDexFee);
 };

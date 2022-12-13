@@ -47,6 +47,7 @@ export class JarvisV6
 
   // opt out of pool allocation as dex allows for constant price swaps
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(JarvisV6Config);
@@ -57,14 +58,14 @@ export class JarvisV6
   logger: Logger;
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
     protected poolConfigs: PoolConfig[] = JarvisV6Config[dexKey][network].pools,
     protected priceFeedAddress: Address = JarvisV6Config[dexKey][network]
       .priceFeedAddress,
   ) {
-    super(dexHelper.config.data.augustusAddress, dexHelper.web3Provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
 
@@ -103,15 +104,14 @@ export class JarvisV6
       },
     );
 
-    this.poolConfigs.forEach((pool, index) => {
-      const eventPool = this.eventPools[pool.address.toLowerCase()];
-      eventPool.setState(poolStates[index], blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        eventPool,
-        eventPool.addressesSubscribed,
-        blockNumber,
-      );
-    });
+    await Promise.all(
+      this.poolConfigs.map(async (pool, index) => {
+        const eventPool = this.eventPools[pool.address.toLowerCase()];
+        await eventPool.initialize(blockNumber, {
+          state: poolStates[index],
+        });
+      }),
+    );
   }
 
   // Returns the list of contract adapters (name and index)

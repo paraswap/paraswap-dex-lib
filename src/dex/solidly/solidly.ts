@@ -15,7 +15,7 @@ import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import solidlyFactoryABI from '../../abi/solidly/SolidlyFactory.json';
 import solidlyPair from '../../abi/solidly/SolidlyPair.json';
 import _ from 'lodash';
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SolidlyStablePool } from './solidly-stable-pool';
 import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';
@@ -31,6 +31,8 @@ export class Solidly extends UniswapV2 {
   stableFee?: number;
   volatileFee?: number;
 
+  readonly isFeeOnTransferSupported = false;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
       _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone']),
@@ -38,7 +40,7 @@ export class Solidly extends UniswapV2 {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     isDynamicFees = false,
     factoryAddress?: Address,

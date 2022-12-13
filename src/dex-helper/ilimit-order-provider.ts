@@ -1,6 +1,6 @@
 import { BigIntAsString, Address } from '../types';
 import { LIMIT_ORDER_PROVIDERS, Network } from '../constants';
-import { SwapSide } from 'paraswap-core';
+import { SwapSide } from '@paraswap/core';
 
 export interface ILimitOrderProvider<Order, OrderBook> {
   name: LIMIT_ORDER_PROVIDERS;

@@ -23,6 +23,7 @@ export type PoolConfig = {
   tokenAddress?: string;
   trackCoins?: boolean;
   useLending?: boolean[];
+  isFeeOnTransferSupported?: boolean;
 };
 
 export type TokenWithReasonableVolume = Token & {
@@ -32,9 +33,9 @@ export type TokenWithReasonableVolume = Token & {
 
 export type DexParams = {
   baseTokens: Record<string, TokenWithReasonableVolume>;
-  factoryAddress: string | null;
   eventSupportedPools: string[];
   pools: Record<string, PoolConfig>;
+  disableFeeOnTransferTokenAddresses?: Set<string>;
 };
 
 export enum CurveSwapFunctions {

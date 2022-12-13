@@ -1,6 +1,6 @@
 import { Address, Log } from '../../../types';
 import { SETHPool } from './sETHpool';
-import StableSwapSTETH from '../../../abi/curve/StableSwapSTETH.json';
+import StableSwapSTETH from '../../../abi/curve-v1/StableSwapSTETH.json';
 import { PoolState } from './curve-pool';
 import { DeepReadonly } from 'ts-essentials';
 import { IDexHelper } from '../../../dex-helper';
