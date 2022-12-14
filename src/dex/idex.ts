@@ -95,6 +95,11 @@ export interface IDexPricing<ExchangeData> {
 
   readonly cacheStateKey: string;
 
+  // Used to determine if current dex is state polling type or not
+  // Set to true if there are many pools polling state and there is no
+  // event base support for this Dex
+  readonly isStatePollingDex?: boolean;
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
@@ -142,7 +147,7 @@ export interface IDexPricing<ExchangeData> {
   releaseResources?(): AsyncOrSync<void>;
 
   // Build an event based pool with all the info to create inside
-  // a redis key name poolKey
+  // a cache key name poolKey
   addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<boolean>;
   // return true if the userAddress is is blacklisted from the exchange
   // useful for RFQ system

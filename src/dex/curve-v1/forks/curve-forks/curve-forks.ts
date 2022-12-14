@@ -2,7 +2,7 @@ import { bigNumberify, getDexKeysWithNetwork } from '../../../../utils';
 import { CurveV1 } from '../../curve-v1';
 import { ThreePool } from '../../pools/3pool';
 import { CurvePool } from '../../pools/curve-pool';
-import StableSwap3Pool from '../../../../abi/curve/StableSwap3Pool.json';
+import StableSwap3Pool from '../../../../abi/curve-v1/StableSwap3Pool.json';
 import { Network } from '../../../../constants';
 import { IDexHelper } from '../../../../dex-helper';
 import { Adapters, CurveForksConfig } from './config';

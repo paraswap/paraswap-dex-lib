@@ -33,7 +33,6 @@ export type TokenWithReasonableVolume = Token & {
 
 export type DexParams = {
   baseTokens: Record<string, TokenWithReasonableVolume>;
-  factoryAddress: string | null;
   eventSupportedPools: string[];
   pools: Record<string, PoolConfig>;
   disableFeeOnTransferTokenAddresses?: Set<string>;

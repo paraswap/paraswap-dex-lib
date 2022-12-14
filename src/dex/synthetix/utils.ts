@@ -1,6 +1,6 @@
 import { defaultAbiCoder, Result } from '@ethersproject/abi';
 import { BytesLike, ethers } from 'ethers';
-import { generalDecoder } from '../../lib/decoders';
+import { extractSuccessAndValue, generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { LatestRoundData, OracleObservation, Slot0 } from './types';
 
@@ -8,9 +8,11 @@ export const encodeStringToBytes32 = (value: string) =>
   ethers.utils.formatBytes32String(value);
 
 export const decodeObserveTickCumulatives = (
-  result: MultiResult<BytesLike>,
+  result: MultiResult<BytesLike> | BytesLike,
 ): Record<0 | 1, bigint> => {
-  if (!result.success || result.returnData === '0x') {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (!isSuccess || toDecode === '0x') {
     return {
       0: 0n,
       1: 0n,
@@ -18,7 +20,7 @@ export const decodeObserveTickCumulatives = (
   }
   const decoded = defaultAbiCoder.decode(
     ['int56[] tickCumulatives', 'uint160[]'],
-    result.returnData,
+    toDecode,
   );
 
   return {
@@ -27,8 +29,12 @@ export const decodeObserveTickCumulatives = (
   };
 };
 
-export const decodeUniswapV3Slot0 = (result: MultiResult<BytesLike>): Slot0 => {
-  if (!result.success || result.returnData === '0x') {
+export const decodeUniswapV3Slot0 = (
+  result: MultiResult<BytesLike> | BytesLike,
+): Slot0 => {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (!isSuccess || toDecode === '0x') {
     return {
       tick: 0n,
       observationCardinality: 0n,
@@ -39,7 +45,7 @@ export const decodeUniswapV3Slot0 = (result: MultiResult<BytesLike>): Slot0 => {
     [
       'tuple(uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',
     ],
-    result.returnData,
+    toDecode,
   )[0];
 
   return {
@@ -50,9 +56,11 @@ export const decodeUniswapV3Slot0 = (result: MultiResult<BytesLike>): Slot0 => {
 };
 
 export const decodeOracleObservation = (
-  result: MultiResult<BytesLike>,
+  result: MultiResult<BytesLike> | BytesLike,
 ): OracleObservation => {
-  if (!result.success || result.returnData === '0x') {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (!isSuccess || toDecode === '0x') {
     return {
       blockTimestamp: 0n,
       tickCumulative: 0n,
@@ -64,7 +72,7 @@ export const decodeOracleObservation = (
     [
       'tuple(uint32 blockTimestamp, int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128, bool initialized)',
     ],
-    result.returnData,
+    toDecode,
   )[0];
 
   return {
@@ -78,9 +86,11 @@ export const decodeOracleObservation = (
 };
 
 export const decodeLatestRoundData = (
-  result: MultiResult<BytesLike>,
+  result: MultiResult<BytesLike> | BytesLike,
 ): LatestRoundData => {
-  if (!result.success || result.returnData === '0x') {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (!isSuccess || toDecode === '0x') {
     return {
       answer: 0n,
       updatedAt: 0n,
@@ -92,7 +102,7 @@ export const decodeLatestRoundData = (
     [
       'tuple(uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)',
     ],
-    result.returnData,
+    toDecode,
   )[0];
 
   return {
@@ -102,7 +112,9 @@ export const decodeLatestRoundData = (
   };
 };
 
-export function synthStatusDecoder(result: MultiResult<BytesLike>): boolean[] {
+export function synthStatusDecoder(
+  result: MultiResult<BytesLike> | BytesLike,
+): boolean[] {
   return generalDecoder(
     result,
     ['bool[]', 'uint256[]'],

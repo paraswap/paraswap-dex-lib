@@ -62,6 +62,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     this.paraSwap = constructSimpleSDK({
       chainId: network,
       axios,
+      apiURL: testingEndpoint,
     });
   }
 
@@ -220,14 +221,15 @@ export async function testE2E(
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = useAPI
     ? new APIParaswapSDK(network, dexKey)
-    : new LocalParaswapSDK(
-        network,
-        dexKey,
-        `https://rpc.tenderly.co/fork/${ts.forkId}`,
-        limitOrderProvider,
-      );
+    : new LocalParaswapSDK(network, dexKey, '', limitOrderProvider);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
+
+  if (paraswap.dexHelper?.replaceProviderWithRPC) {
+    paraswap.dexHelper?.replaceProviderWithRPC(
+      `https://rpc.tenderly.co/fork/${ts.forkId}`,
+    );
+  }
 
   try {
     const priceRoute = await paraswap.getPrices(

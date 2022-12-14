@@ -248,7 +248,7 @@ export class RateFetcher {
     );
   }
 
-  public getPairsLiqudity(tokenAddress: string) {
+  public getPairsLiquidity(tokenAddress: string) {
     const token = this.addressToTokenMap[tokenAddress];
 
     const pairNames = Object.keys(this.pairs);

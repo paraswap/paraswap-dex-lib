@@ -1,7 +1,7 @@
 import { bigNumberify, getDexKeysWithNetwork } from '../../../../utils';
 import { CurveV1 } from '../../curve-v1';
 import { CurvePool } from '../../pools/curve-pool';
-import StableSwapSUSD from '../../../../abi/curve/StableSwapSUSD.json';
+import StableSwapSUSD from '../../../../abi/curve-v1/StableSwapSUSD.json';
 import { Network } from '../../../../constants';
 import { IDexHelper } from '../../../../dex-helper';
 import { Adapters, SwerveConfig } from './config';

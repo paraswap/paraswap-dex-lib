@@ -52,7 +52,8 @@ export class PricingHelper {
         );
       }
 
-      return await dexInstance.initializePricing(blockNumber);
+      await dexInstance.initializePricing(blockNumber);
+      this.logger.info(`${dexKey}: is successfully initialized`);
     } catch (e) {
       this.logger.error(`Error_startListening_${dexKey}:`, e);
       setTimeout(
@@ -95,7 +96,8 @@ export class PricingHelper {
 
       if (!dexInstance.releaseResources) return;
 
-      return await dexInstance.releaseResources();
+      await dexInstance.releaseResources();
+      this.logger.info(`${dexKey}: resources were successfully released`);
     } catch (e) {
       this.logger.error(`Error_releaseResources_${dexKey}:`, e);
       setTimeout(() => this.releaseDexResources(dexKey), SETUP_RETRY_TIMEOUT);

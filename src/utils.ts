@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { getAddress } from 'ethers/lib/utils';
 import { SwapSide } from '@paraswap/core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
@@ -322,6 +323,17 @@ export const isSrcTokenTransferFeeToBeExchanged = (
 ) => {
   return !!(transferFees.srcFee || transferFees.srcDexFee);
 };
+
+// This function is throwing error if address is not correct
+export const normalizeAddress = (address: string) => {
+  return getAddress(address).toLowerCase();
+};
+
+// In some case we need block timestamp, but instead of real one, we can use
+// just current time in BigInt
+export function currentBigIntTimestampInS() {
+  return BigInt(Math.floor(Date.now() / 1000));
+}
 
 export const isDestTokenTransferFeeToBeExchanged = (
   transferFees: TransferFeeParams,
