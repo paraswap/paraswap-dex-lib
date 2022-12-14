@@ -381,9 +381,7 @@ export class Solidly extends UniswapV2 {
             factory: this.factoryAddress,
             initCode: this.initCode,
             feeFactor: this.feeFactor,
-            isFeeOnTransferInRoute: Object.values(transferFees).some(
-              f => f !== 0,
-            ),
+            isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
             pools: [
               {
                 address: pairParam.exchange,
