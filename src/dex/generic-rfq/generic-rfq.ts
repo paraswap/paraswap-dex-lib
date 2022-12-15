@@ -25,6 +25,7 @@ export const overOrder = (amount: string, bps: number) =>
   ((BigInt(amount) * (BPS_MAX_VALUE + BigInt(bps))) / BPS_MAX_VALUE).toString();
 
 export class GenericRFQ extends ParaSwapLimitOrders {
+  readonly isStatePollingDex = true;
   private rateFetcher: RateFetcher;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] = [];
