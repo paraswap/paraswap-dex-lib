@@ -84,6 +84,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
 }
 
 export interface IDexPricing<ExchangeData> {
+  readonly dexKey: string;
   // This is true if the the DEX is simply
   // wrapping/ unwrapping like weth, lending pools, etc
   // or has a pool where arbitrarily large amounts has
