@@ -1,16 +1,21 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { ethers } from 'ethers';
 import { Network, ContractMethod, SwapSide, MAX_UINT } from '../../constants';
 import { generateConfig } from '../../config';
 import { newTestE2E, getEnv } from '../../../tests/utils-e2e';
-import {
-  SmartTokens,
-  GENERIC_ADDR1,
-  testAccount,
-} from '../../../tests/constants-e2e';
+import { SmartTokens, GENERIC_ADDR1 } from '../../../tests/constants-e2e';
 import { startTestServer } from './example-api.test';
 import { RFQConfig } from './types';
+
+const PK_KEY = process.env.TEST_PK_KEY;
+
+if (!PK_KEY) {
+  throw new Error('Missing TEST_PK_KEY');
+}
+
+const testAccount = new ethers.Wallet(PK_KEY!);
 
 jest.setTimeout(1000 * 60 * 3);
 

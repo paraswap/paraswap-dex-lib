@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Logger } from 'log4js';
 import { Contract } from 'web3-eth-contract';
 
@@ -9,7 +10,7 @@ export type MultiResult<T> = {
 export type MultiCallParams<T> = {
   target: string;
   callData: string;
-  decodeFunction: (str: MultiResult<string>) => T;
+  decodeFunction: (str: MultiResult<string> | string) => T;
   cb?: (data: T) => void;
 };
 
@@ -17,16 +18,44 @@ export class MultiWrapper {
   /* eslint-disable-next-line */
   constructor(private multi: Contract, private logger: Logger) {}
 
+  async aggregate<T>(
+    calls: MultiCallParams<T>[],
+    blockNumber?: number | string,
+    batchSize: number = 500,
+  ): Promise<T[]> {
+    const aggregatedResult = await Promise.all(
+      _.chunk(calls, batchSize).map(async batch =>
+        this.multi.methods.aggregate(batch).call(undefined, blockNumber),
+      ),
+    );
+
+    let globalInd = 0;
+    const resultsUndecoded: string[] = new Array(calls.length);
+    for (const res of aggregatedResult) {
+      for (const element of res.returnData) {
+        resultsUndecoded[globalInd++] = element;
+      }
+    }
+
+    const results: T[] = new Array(resultsUndecoded.length);
+    for (const [i, undecodedElement] of resultsUndecoded.entries()) {
+      results[i] = calls[i].decodeFunction(undecodedElement);
+      calls[i].cb?.(results[i]);
+    }
+
+    return results;
+  }
+
   async tryAggregate<T>(
     mandatory: boolean,
     calls: MultiCallParams<T>[],
     blockNumber?: number | string,
     batchSize: number = 500,
   ): Promise<MultiResult<T>[]> {
-    const allCalls = [];
+    const allCalls = new Array(Math.ceil(calls.length / batchSize));
     for (let i = 0; i < calls.length; i += batchSize) {
       const batch = calls.slice(i, i + batchSize);
-      allCalls.push(batch);
+      allCalls[Math.floor(i / batchSize)] = batch;
     }
 
     const aggregatedResult = await Promise.all(
@@ -37,34 +66,35 @@ export class MultiWrapper {
       ),
     );
 
-    const results = aggregatedResult.reduce<MultiResult<string>[]>(
-      (acc, res) => {
-        acc.push(...res);
-        return acc;
-      },
-      [],
-    );
+    let globalInd = 0;
+    const resultsUndecoded: MultiResult<string>[] = new Array(calls.length);
+    for (const res of aggregatedResult) {
+      for (const element of res) {
+        resultsUndecoded[globalInd++] = element;
+      }
+    }
 
-    return results.map((result: MultiResult<string>, index: number) => {
-      const requested = calls[index];
-      if (!result.success) {
+    const results: MultiResult<T>[] = new Array(resultsUndecoded.length);
+    for (const [i, undecodedElement] of resultsUndecoded.entries()) {
+      if (!undecodedElement.success) {
         this.logger.error(
-          `Multicall request number ${index} for ${requested.target} failed`,
+          `Multicall request number ${i} for ${calls[i].target} failed`,
         );
-        return {
+
+        results[i] = {
           success: false,
         } as MultiResult<T>;
+        continue;
       }
 
-      const res = {
+      results[i] = {
         success: true,
-        returnData: calls[index].decodeFunction(result),
+        returnData: calls[i].decodeFunction(undecodedElement.returnData),
       } as MultiResult<T>;
-      if (requested.cb) {
-        requested.cb(res.returnData);
-      }
 
-      return res;
-    });
+      calls[i].cb?.(results[i].returnData);
+    }
+
+    return results;
   }
 }

@@ -1,7 +1,7 @@
 // import BigNumber from 'bignumber.js';
 // import { Address } from '../../types';
 // import { ThreePool } from './3pool';
-// import StableSwapUSDN from '../../abi/curve/StableSwapUSDN.json';
+// import StableSwapUSDN from '../../abi/curve-v1/StableSwapUSDN.json';
 // import { CurveMetapool } from './curve-metapool';
 //
 // const bignumberify = (val: any) => new BigNumber(val);
