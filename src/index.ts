@@ -30,4 +30,6 @@ export {
   Config,
 } from './types';
 
+export { IDex } from './dex/idex';
+
 export { ConfigHelper } from './config';
