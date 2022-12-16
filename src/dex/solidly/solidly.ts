@@ -1,5 +1,11 @@
 import { UniswapV2 } from '../uniswap-v2/uniswap-v2';
-import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../constants';
+import {
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+  DEST_TOKEN_PARASWAP_TRANSFERS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
+} from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -7,6 +13,7 @@ import {
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
+  TransferFeeParams,
 } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import erc20ABI from '../../abi/erc20.json';
@@ -19,19 +26,41 @@ import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SolidlyStablePool } from './solidly-stable-pool';
 import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';
-import { PoolState, SolidlyPair, SolidlyPoolOrderedParams } from './types';
+import {
+  PoolState,
+  SolidlyData,
+  SolidlyPair,
+  SolidlyPool,
+  SolidlyPoolOrderedParams,
+} from './types';
 import { SolidlyConfig, Adapters } from './config';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 const erc20Iface = new Interface(erc20ABI);
 const solidlyPairIface = new Interface(solidlyPair);
 const defaultAbiCoder = new AbiCoder();
+
+function encodePools(
+  pools: SolidlyPool[],
+  feeFactor: number,
+): NumberAsString[] {
+  return pools.map(({ fee, direction, address }) => {
+    return (
+      (BigInt(feeFactor - fee) << 161n) +
+      ((direction ? 0n : 1n) << 160n) +
+      BigInt(address)
+    ).toString();
+  });
+}
 
 export class Solidly extends UniswapV2 {
   pairs: { [key: string]: SolidlyPair } = {};
   stableFee?: number;
   volatileFee?: number;
 
-  readonly isFeeOnTransferSupported = false;
+  readonly isFeeOnTransferSupported: boolean = true;
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
@@ -246,6 +275,12 @@ export class Solidly extends UniswapV2 {
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
@@ -266,17 +301,27 @@ export class Solidly extends UniswapV2 {
       await this.batchCatchUpPairs([[from, to]], blockNumber);
 
       const resultPromises = [false, true].map(async stable => {
+        // We don't support fee on transfer for stable pools yet
+        if (
+          stable &&
+          (transferFees.srcFee !== 0 || transferFees.srcDexFee !== 0)
+        ) {
+          return null;
+        }
+
         const poolIdentifier =
           `${this.dexKey}_${tokenAddress}` + this.poolPostfix(stable);
 
         if (limitPools && limitPools.every(p => p !== poolIdentifier))
           return null;
 
+        const isSell = side === SwapSide.SELL;
         const pairParam = await this.getSolidlyPairOrderedParams(
           from,
           to,
           blockNumber,
           stable,
+          transferFees.srcDexFee,
         );
 
         if (!pairParam) return null;
@@ -285,39 +330,58 @@ export class Solidly extends UniswapV2 {
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY ? to.decimals : from.decimals,
         );
+
+        const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
+          [unitAmount, ...amounts],
+          side,
+          isSell ? transferFees.srcFee : transferFees.destFee,
+          isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
+        );
+
         const unit =
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY
-            ? await this.getBuyPricePath(unitAmount, [pairParam])
-            : await this.getSellPricePath(unitAmount, [pairParam]);
+            ? await this.getBuyPricePath(unitVolumeWithFee, [pairParam])
+            : await this.getSellPricePath(unitVolumeWithFee, [pairParam]);
 
         const prices =
           // @ts-expect-error Buy side is not implemented yet
           side === SwapSide.BUY
             ? await Promise.all(
-                amounts.map(amount =>
+                amountsWithFee.map(amount =>
                   amount === 0n
                     ? 0n
                     : this.getBuyPricePath(amount, [pairParam]),
                 ),
               )
             : await Promise.all(
-                amounts.map(amount =>
+                amountsWithFee.map(amount =>
                   amount === 0n
                     ? 0n
                     : this.getSellPricePath(amount, [pairParam]),
                 ),
               );
 
+        const [unitOutWithFee, ...outputsWithFee] = applyTransferFee(
+          [unit, ...prices],
+          side,
+          // This part is confusing, because we treat differently SELL and BUY fees
+          // If Buy, we should apply transfer fee on srcToken on top of dexFee applied earlier
+          // But for Sell we should apply only one dexFee
+          isSell ? transferFees.destDexFee : transferFees.srcFee,
+          isSell ? this.DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
+        );
+
         return {
-          prices: prices,
-          unit: unit,
+          prices: outputsWithFee,
+          unit: unitOutWithFee,
           data: {
             router: this.router,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
             initCode: this.initCode,
             feeFactor: this.feeFactor,
+            isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
             pools: [
               {
                 address: pairParam.exchange,
@@ -436,6 +500,7 @@ export class Solidly extends UniswapV2 {
     to: Token,
     blockNumber: number,
     stable: boolean,
+    tokenDexTransferFee: number,
   ): Promise<SolidlyPoolOrderedParams | null> {
     const pair = await this.findSolidlyPair(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
@@ -449,6 +514,7 @@ export class Solidly extends UniswapV2 {
       return null;
     }
 
+    const fee = (pairState.feeCode + tokenDexTransferFee).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
     if (pairReversed) {
@@ -457,7 +523,7 @@ export class Solidly extends UniswapV2 {
         tokenOut: to.address,
         reservesIn: pairState.reserves1,
         reservesOut: pairState.reserves0,
-        fee: pairState.feeCode.toString(),
+        fee,
         direction: false,
         exchange: pair.exchange,
         decimalsIn: from.decimals,
@@ -470,7 +536,7 @@ export class Solidly extends UniswapV2 {
       tokenOut: to.address,
       reservesIn: pairState.reserves0,
       reservesOut: pairState.reserves1,
-      fee: pairState.feeCode.toString(),
+      fee,
       direction: true,
       exchange: pair.exchange,
       decimalsIn: from.decimals,
@@ -525,17 +591,26 @@ export class Solidly extends UniswapV2 {
     destToken: Address,
     srcAmount: NumberAsString,
     toAmount: NumberAsString, // required for buy case
-    data: UniswapData,
+    data: SolidlyData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    return super.getAdapterParam(
-      srcToken,
-      destToken,
-      srcAmount,
-      toAmount,
-      data,
-      side,
+    const pools = encodePools(data.pools, this.feeFactor);
+    const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          weth: 'address',
+          pools: 'uint256[]',
+          isFeeTokenInRoute: 'bool',
+        },
+      },
+      { weth, pools, isFeeTokenInRoute: data.isFeeTokenInRoute },
     );
+    return {
+      targetExchange: data.router,
+      payload,
+      networkFee: '0',
+    };
   }
 }

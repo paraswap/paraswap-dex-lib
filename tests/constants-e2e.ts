@@ -420,6 +420,10 @@ export const Tokens: {
       address: '0x5cc61a78f164885776aa610fb0fe1257df78e59b',
       decimals: 18,
     },
+    wBOMB: {
+      address: '0xc09a82ad5075b3067d80f54f05e1e22229699cc1',
+      decimals: 18,
+    },
     TOR: {
       address: '0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e',
       decimals: 18,
@@ -798,6 +802,7 @@ export const Holders: {
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
     WETH: '0x2400bb4d7221ba530daee061d5afe219e9223eae',
     SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
+    wBOMB: '0x28aa4f9ffe21365473b64c161b566c3cdead0108',
     TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',
   },
   [Network.BSC]: {
