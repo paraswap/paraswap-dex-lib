@@ -3,7 +3,10 @@ import { Log, Logger } from './types';
 import { BlockHeader } from 'web3-eth';
 import { EventSubscriber } from './dex-helper/iblock-manager';
 
-import { MAX_BLOCKS_HISTORY } from './constants';
+import {
+  MAX_BLOCKS_HISTORY,
+  STATEFUL_EVENT_SUBSCRIBER_LOG_BATCH_PERIOD,
+} from './constants';
 import { IDexHelper } from './dex-helper';
 import { Utils } from './utils';
 
@@ -39,6 +42,13 @@ export abstract class StatefulEventSubscriber<State>
   public name: string;
 
   public isInitialized = false;
+
+  private _aggregatedLogMessages: Record<
+    string,
+    { count: number; level: 'warn' | 'info' }
+  > = {};
+
+  private _lastPublishedTimeMs: number = 0;
 
   constructor(
     public readonly parentName: string,
@@ -363,7 +373,7 @@ export abstract class StatefulEventSubscriber<State>
         this.name,
         (result: string | null) => {
           if (!result) {
-            this.logger.warn('received null result');
+            this._logMessage(`received null result`, 'warn');
             return false;
           }
           const state: StateCache<State> = Utils.Parse(result);
@@ -396,6 +406,34 @@ export abstract class StatefulEventSubscriber<State>
         state,
       }),
     );
+  }
+
+  _logMessage(
+    message: string,
+    level: 'warn' | 'info',
+    publishPeriod: number = STATEFUL_EVENT_SUBSCRIBER_LOG_BATCH_PERIOD,
+  ) {
+    const now = Date.now();
+    if (now - this._lastPublishedTimeMs > publishPeriod) {
+      this._lastPublishedTimeMs = now;
+      Object.entries(this._aggregatedLogMessages).forEach(
+        ([message, aggregated]) => {
+          this.logger[aggregated.level](
+            `${message} (${aggregated.count}) counts`,
+          );
+        },
+      );
+      this._aggregatedLogMessages = {};
+    } else {
+      if (this._aggregatedLogMessages[message] === undefined) {
+        this._aggregatedLogMessages[message] = {
+          count: 0,
+          level,
+        };
+      } else {
+        this._aggregatedLogMessages[message].count++;
+      }
+    }
   }
 
   //Saves the state into the stateHistory, and cleans up any old state that is
