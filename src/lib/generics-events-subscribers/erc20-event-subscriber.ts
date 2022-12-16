@@ -203,7 +203,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       request,
       blockNumber,
     );
-    balances.reduce((acc, balance) => {
+    return balances.reduce((acc, balance) => {
       acc[balance.owner] = {
         balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
       };
@@ -214,7 +214,6 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       );
       return acc;
     }, {} as ERC20StateMap);
-    return {};
   }
 
   async getBalance(wallet: Address, blockNumber: number): Promise<bigint> {
