@@ -373,7 +373,7 @@ export abstract class StatefulEventSubscriber<State>
         this.name,
         (result: string | null) => {
           if (!result) {
-            this._logMessage(`received null result`, 'warn');
+            this._logBatchTypicalMessages(`received null result`, 'warn');
             return false;
           }
           const state: StateCache<State> = Utils.Parse(result);
@@ -408,7 +408,11 @@ export abstract class StatefulEventSubscriber<State>
     );
   }
 
-  _logMessage(
+  // This is really very limited log aggregator function used in one place (currently)
+  // If you consider using this, be careful to not pass custom message as they won't be
+  // aggregated. And don't pass same message with different log levels. It will lead
+  // to inconsistent log level choice
+  _logBatchTypicalMessages(
     message: string,
     level: 'warn' | 'info',
     publishPeriod: number = STATEFUL_EVENT_SUBSCRIBER_LOG_BATCH_PERIOD,
@@ -430,9 +434,8 @@ export abstract class StatefulEventSubscriber<State>
           count: 0,
           level,
         };
-      } else {
-        this._aggregatedLogMessages[message].count++;
       }
+      this._aggregatedLogMessages[message].count++;
     }
   }
 
