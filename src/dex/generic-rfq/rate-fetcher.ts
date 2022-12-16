@@ -50,7 +50,7 @@ export class RateFetcher {
 
   private firmRateAuth?: (options: RequestConfig) => void;
 
-  private blackListCacheKey: string;
+  public blackListCacheKey: string;
 
   private authHttp: (
     secet: RFQSecret,
