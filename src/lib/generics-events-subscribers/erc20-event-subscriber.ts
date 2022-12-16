@@ -51,7 +51,6 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     const erc20Transfer = decodeERC20Transfer(event);
 
     if (erc20Transfer.from in state) {
-      state = _.cloneDeep(state);
       state[erc20Transfer.from].balance -= erc20Transfer.value;
       this.dexHelper.cache.hset(
         this.mapKey,
@@ -61,7 +60,6 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     }
 
     if (erc20Transfer.to in state) {
-      state = _.cloneDeep(state);
       state[erc20Transfer.to].balance += erc20Transfer.value;
       this.dexHelper.cache.hset(
         this.mapKey,
@@ -77,7 +75,6 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     const deposit = decodeWrappedDeposit(event);
 
     if (deposit.dst in state) {
-      state = _.cloneDeep(state);
       state[deposit.dst].balance += deposit.wad;
       this.dexHelper.cache.hset(
         this.mapKey,
@@ -93,7 +90,6 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     const deposit = decodeWrappedWithdrawal(event);
 
     if (deposit.src in state) {
-      state = _.cloneDeep(state);
       state[deposit.src].balance -= deposit.wad;
       this.dexHelper.cache.hset(
         this.mapKey,
@@ -110,8 +106,10 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     logs: Readonly<Log>[],
     blockHeader: Readonly<BlockHeader>,
   ): Promise<DeepReadonly<ERC20StateMap> | null> {
-    let newState = await super.processBlockLogs(state, logs, blockHeader);
+    const _state = _.cloneDeep(state);
+    let newState = await super.processBlockLogs(_state, logs, blockHeader);
     if (!newState) {
+      this.logger.warn('received empty state generate new one');
       newState = await this.generateState(blockHeader.number);
     }
 
