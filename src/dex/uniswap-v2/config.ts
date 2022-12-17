@@ -481,6 +481,22 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
       feeCode: 30,
     },
+    [Network.MAINNET]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-ethereum',
+      factoryAddress: '0x2F0C7C98462651BB2102F6Cd05acDAd333E031b0',
+      initCode:
+        '2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.OPTIMISM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-optimism',
+      factoryAddress: '0x2f0c7c98462651bb2102f6cd05acdad333e031b0',
+      initCode:
+        '2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
   },
   QuickSwap: {
     [Network.POLYGON]: {
