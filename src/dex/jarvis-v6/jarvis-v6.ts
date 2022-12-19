@@ -36,6 +36,8 @@ import { BI_POWS } from '../../bigint-constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Contract } from 'web3-eth-contract';
 import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
+import * as multicallABI from './multicall/abi';
+import { multicallAddress } from './multicall/config';
 
 export class JarvisV6
   extends SimpleExchange
@@ -206,9 +208,39 @@ export class JarvisV6
     poolAddress: Address,
     blockNumber: number,
   ): Promise<JarvisV6SystemMaxVars> {
+    const multiContract = new Contract(multicallABI, multicallAddress);
+    const encodedResp = (await multiContract.methods
+      .aggregate([
+        {
+          target: poolAddress,
+          callData: this.poolInterface.encodeFunctionData(
+            'maxTokensCapacity',
+            [],
+          ),
+        },
+        {
+          target: poolAddress,
+          callData: this.poolInterface.encodeFunctionData(
+            'totalSyntheticTokens',
+            [],
+          ),
+        },
+      ])
+      .call({}, blockNumber)) as { returnData: [string, string] };
+
+    const maxTokensCapacity = this.poolInterface
+      .decodeFunctionResult('maxTokensCapacity', encodedResp.returnData[0])[0]
+      .toString();
+    const totalSyntheticTokens = this.poolInterface
+      .decodeFunctionResult(
+        'totalSyntheticTokens',
+        encodedResp.returnData[1],
+      )[0]
+      .toString();
+
     return {
-      maxTokensCapacity: BigInt(0), // TODO
-      totalSyntheticTokens: BigInt(0), // TODO
+      maxTokensCapacity: BigInt(maxTokensCapacity),
+      totalSyntheticTokens: BigInt(totalSyntheticTokens),
     };
   }
 
