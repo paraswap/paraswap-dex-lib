@@ -468,8 +468,11 @@ export class BalancerV2
     const _from = wrapETH(from, this.network);
     const _to = wrapETH(to, this.network);
 
+    console.log(_from.address.toLowerCase(), _to.address.toLowerCase());
+    console.log(JSON.stringify(this.eventPools.allPools));
     const pools = this.getPools(_from, _to);
 
+    console.log(pools);
     const identifiers: string[] = [];
 
     pools.forEach(p => {
@@ -541,6 +544,7 @@ export class BalancerV2
           })
         : poolsWithTokens;
 
+      console.log(allowedPools);
       if (!allowedPools.length) return null;
 
       const unitVolume = getBigIntPow(

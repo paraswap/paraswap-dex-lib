@@ -8,22 +8,21 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 
 const WETH = {
-  address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
   decimals: 18,
 };
-
 const DAI = {
-  address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+  address: '0x6b175474e89094c44da98b954eedeac495271d0f',
   decimals: 18,
 };
 
 const USDC = {
-  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
   decimals: 6,
 };
 
 const BBADAI = {
-  address: '0x804cdb9116a10bb78768d31500002355a1b18067bf8f',
+  address: '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
   decimals: 18,
 };
 
@@ -132,7 +131,7 @@ describe('BalancerV2', function () {
     });
   });
 
-  describe('PhantomStable', () => {
+  describe.only('PhantomStable', () => {
     /*
     As advised by @shresth this test has been commented out.
     checkPoolPrices expects price to decrease as higher amounts are used. Linear/PhantomStable can sometimes return same or better.
@@ -140,36 +139,36 @@ describe('BalancerV2', function () {
       PhantomStable Pool: DAI>BBADAI
       prices: [ 0n, 1002063220340675582n, 2004126440858960874n ] (1002063220340675582, 1002063220518285292)
     */
-    // it('getPoolIdentifiers and getPricesVolume', async function () {
-    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
-    //   const blocknumber = await dexHelper.provider.getBlockNumber();
-    //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+    it('getPoolIdentifiers and getPricesVolume', async function () {
+      const dexHelper = new DummyDexHelper(Network.MAINNET);
+      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
-    //   await balancerV2.initializePricing(blocknumber);
+      await balancerV2.initializePricing(blocknumber);
 
-    //   const pools = await balancerV2.getPoolIdentifiers(
-    //     BBAUSD,
-    //     BBADAI,
-    //     SwapSide.SELL,
-    //     blocknumber,
-    //   );
-    //   console.log('BBAUSD <> BBADAI Pool Identifiers: ', pools);
+      const pools = await balancerV2.getPoolIdentifiers(
+        BBAUSD,
+        BBADAI,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log('BBAUSD <> BBADAI Pool Identifiers: ', pools);
 
-    //   expect(pools.length).toBeGreaterThan(0);
+      expect(pools.length).toBeGreaterThan(0);
 
-    //   const poolPrices = await balancerV2.getPricesVolume(
-    //     BBAUSD,
-    //     BBADAI,
-    //     amounts,
-    //     SwapSide.SELL,
-    //     blocknumber,
-    //     pools,
-    //   );
-    //   console.log('BBAUSD <> BBADAI Pool Prices: ', poolPrices);
+      const poolPrices = await balancerV2.getPricesVolume(
+        BBAUSD,
+        BBADAI,
+        amounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
+      console.log('BBAUSD <> BBADAI Pool Prices: ', poolPrices);
 
-    //   expect(poolPrices).not.toBeNull();
-    //   checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-    // });
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    });
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
