@@ -11,12 +11,8 @@ import {
   MultiCallInput,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import {
-  getDexKeysWithNetwork,
-  getBigIntPow,
-  isETHAddress,
-  wrapETH,
-} from '../../utils';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { getDexKeysWithNetwork, getBigIntPow, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -54,6 +50,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   };
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(PlatypusConfig);
@@ -62,11 +59,11 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network], // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
     this.config = PlatypusConfig[dexKey][network];
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }
@@ -298,15 +295,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       } else {
         throw new Error(`${this.dexKey} cfgInfo invalid pool type`);
       }
-      await (async <P>(p: P extends PlatypusPoolBase<infer S> ? P : never) => {
-        const state = await p.generateState(blockNumber);
-        p.setState(state, blockNumber);
-      })(pool);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        pool.addressesSubscribed,
-        blockNumber,
-      );
+      await pool.initialize(blockNumber);
       eventPools[poolAddress] = pool;
     }
     this.eventPools = eventPools;
@@ -348,8 +337,8 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
     return this.findPools(
-      wrapETH(srcToken, this.network).address.toLowerCase(),
-      wrapETH(destToken, this.network).address.toLowerCase(),
+      this.dexHelper.config.wrapETH(srcToken).address.toLowerCase(),
+      this.dexHelper.config.wrapETH(destToken).address.toLowerCase(),
     ).map(p => this.getPoolIdentifier(p));
   }
 
@@ -372,14 +361,12 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       );
       return null;
     }
-    const srcTokenAddress = wrapETH(
-      srcToken,
-      this.network,
-    ).address.toLowerCase();
-    const destTokenAddress = wrapETH(
-      destToken,
-      this.network,
-    ).address.toLowerCase();
+    const srcTokenAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destTokenAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (srcTokenAddress === destTokenAddress) return null;
     return (
       await Promise.all(
@@ -427,6 +414,11 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
           ),
       )
     ).filter((p): p is PoolPrices<PlatypusData> => !!p);
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<PlatypusData>): number | number[] {
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
   // Encode params required by the exchange adapter
@@ -497,7 +489,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     await this.init(blockNumber);
     if (!this.cfgInfo)
       throw new Error(

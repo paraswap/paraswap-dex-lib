@@ -4,13 +4,15 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { SwapSide, Network } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -23,11 +25,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { WooFiConfig, Adapters } from './config';
 import { WooFiMath } from './woo-fi-math';
-import {
-  MIN_CONVERSION_RATE,
-  USD_PRECISION,
-  WOO_FI_GAS_COST,
-} from './constants';
+import { MIN_CONVERSION_RATE, WOO_FI_GAS_COST } from './constants';
 import wooPPABI from '../../abi/woo-fi/WooPP.abi.json';
 import wooFeeManagerABI from '../../abi/woo-fi/WooFeeManager.abi.json';
 import woOracleABI from '../../abi/woo-fi/Wooracle.abi.json';
@@ -65,10 +63,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         'int256 answer, uint256 startedAt, uint256 updatedAt, ' +
         'uint80 answeredInRound))',
     ]),
+    erc20BalanceOf: new Interface([
+      'function balanceOf(address) view returns (uint256)',
+    ]),
   };
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   readonly quoteTokenAddress: Address;
 
@@ -81,12 +83,12 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly config = WooFiConfig[dexKey][network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
     // Normalise once all config addresses and use across all scenarios
@@ -117,6 +119,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       wooOracleAddress: this.config.wooOracleAddress.toLowerCase(),
       wooFeeManagerAddress: this.config.wooFeeManagerAddress.toLowerCase(),
       wooGuardianAddress: this.config.wooGuardianAddress.toLowerCase(),
+      rebateTo: this.config.rebateTo.toLowerCase(),
       quoteToken: {
         ...this.config.quoteToken,
         address: this.config.quoteToken.address.toLowerCase(),
@@ -188,6 +191,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     return Object.values(this.config.baseTokens);
   }
 
+  get isRefInfosEmpty(): boolean {
+    return Object.keys(this._refInfos).length === 0;
+  }
+
   protected _fillTokenInfoState(
     state: PoolState,
     address: string,
@@ -242,6 +249,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
               [],
             ),
           },
+          {
+            target: t.address,
+            callData: WooFi.ifaces.erc20BalanceOf.encodeFunctionData(
+              'balanceOf',
+              [this.config.wooPPAddress],
+            ),
+          },
         ])
         .flat();
 
@@ -275,6 +289,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
         callData: WooFi.ifaces.guardian.encodeFunctionData('globalBound', []),
       });
 
+      calldata.push({
+        target: this.quoteTokenAddress,
+        callData: WooFi.ifaces.erc20BalanceOf.encodeFunctionData('balanceOf', [
+          this.config.wooPPAddress,
+        ]),
+      });
+
       this._encodedStateRequestCalldata = calldata;
     }
 
@@ -291,31 +312,39 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       .call({}, blockNumber || 'latest');
 
     // Last requests are standalone
-    const maxNumber = calldata.length - 5;
+    const maxNumber = calldata.length - 6;
 
     const [
       baseFeeRates,
       baseInfos,
       baseTokenInfos,
       chainlinkLatestRoundDatas,
+      baseTokenBalances,
       quoteTokenInfo,
       quoteChainlinkAnswer,
       oracleTimestamp,
       isPaused,
       globalBound,
+      quoteTokenBalance,
     ] = [
-      // Skip three as they are infos, tokenInfo and latestRoundData
-      _.range(0, maxNumber, 4).map(index =>
+      // Skip n steps as they are infos, tokenInfo and latestRoundData etc.
+      _.range(0, maxNumber, 5).map(index =>
         WooFi.ifaces.fee.decodeFunctionResult('feeRate', data[index][1]),
       ),
-      _.range(1, maxNumber, 4).map(index =>
+      _.range(1, maxNumber, 5).map(index =>
         WooFi.ifaces.oracle.decodeFunctionResult('state', data[index][1]),
       ),
-      _.range(2, maxNumber, 4).map(index =>
+      _.range(2, maxNumber, 5).map(index =>
         WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[index][1]),
       ),
-      _.range(3, maxNumber, 4).map(index =>
+      _.range(3, maxNumber, 5).map(index =>
         this._readChanLinkResponse(data[index]),
+      ),
+      _.range(4, maxNumber, 5).map(index =>
+        WooFi.ifaces.erc20BalanceOf.decodeFunctionResult(
+          'balanceOf',
+          data[index][1],
+        ),
       ),
       WooFi.ifaces.PP.decodeFunctionResult('tokenInfo', data[maxNumber][1]),
       this._readChanLinkResponse(data[maxNumber + 1]),
@@ -325,6 +354,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       WooFi.ifaces.PP.decodeFunctionResult('paused', data[maxNumber + 3][1])[0],
       WooFi.ifaces.guardian
         .decodeFunctionResult('globalBound', data[maxNumber + 4][1])[0]
+        .toBigInt(),
+      WooFi.ifaces.erc20BalanceOf
+        .decodeFunctionResult('balanceOf', data[maxNumber + 5][1])[0]
         .toBigInt(),
     ];
 
@@ -341,6 +373,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       chainlink: {
         latestRoundDatas: {},
       },
+      wooPPBalances: {},
     };
 
     this._fillTokenInfoState(state, this.quoteTokenAddress, quoteTokenInfo);
@@ -365,6 +398,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       const refInfo = this._refInfos[this.baseTokens[index].address];
       state.chainlink.latestRoundDatas[refInfo.chainlinkRefOracle] = value;
     });
+
+    baseTokenBalances.map((value, index) => {
+      state.wooPPBalances[this.baseTokens[index].address] = BigInt(
+        value[0]._hex,
+      );
+    });
+    state.wooPPBalances[this.config.quoteToken.address] = quoteTokenBalance;
 
     return state;
   }
@@ -392,11 +432,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     const _srcAddress = _srcToken.address.toLowerCase();
     const _destAddress = _destToken.address.toLowerCase();
+
+    if (_srcAddress === _destAddress) return [];
 
     if (
       !this.tokenByAddress[_srcAddress] ||
@@ -426,11 +468,13 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     if (side === SwapSide.BUY) return null;
 
     try {
-      const _srcToken = wrapETH(srcToken, this.network);
-      const _destToken = wrapETH(destToken, this.network);
+      const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+      const _destToken = this.dexHelper.config.wrapETH(destToken);
 
       const _srcAddress = _srcToken.address.toLowerCase();
       const _destAddress = _destToken.address.toLowerCase();
+
+      if (_srcAddress === _destAddress) return null;
 
       if (
         !this.tokenByAddress[_srcAddress] ||
@@ -499,6 +543,11 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     }
   }
 
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<WooFiData>): number | number[] {
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+  }
+
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -509,9 +558,14 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
+    const payload = this.abiCoder.encodeParameter(
+      'address',
+      this.config.rebateTo,
+    );
+
     return {
       targetExchange: this.config.wooPPAddress,
-      payload: '0x',
+      payload,
       networkFee: '0',
     };
   }
@@ -551,7 +605,7 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
       _amount, // amount
       MIN_CONVERSION_RATE, // minAmount
       this.augustusAddress, // to
-      NULL_ADDRESS, // rebateTo
+      this.config.rebateTo, // rebateTo
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -565,6 +619,10 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
   }
 
   async updatePoolState(): Promise<void> {
+    if (this.isRefInfosEmpty) {
+      this._refInfos = await this._getRefInfos();
+    }
+
     const state = await this.getState();
 
     const tokenBalancesUSD = await Promise.all(
@@ -581,10 +639,9 @@ export class WooFi extends SimpleExchange implements IDex<WooFiData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const wrappedTokenAddress = wrapETH(
-      { address: tokenAddress, decimals: 0 },
-      this.network,
-    ).address.toLowerCase();
+    const wrappedTokenAddress = this.dexHelper.config
+      .wrapETH({ address: tokenAddress, decimals: 0 })
+      .address.toLowerCase();
 
     if (!this.tokenByAddress[wrappedTokenAddress]) return [];
     if (!this.latestState) return [];

@@ -10,6 +10,9 @@ import { VaultPriceFeed } from './vault-price-feed';
 import { Vault } from './vault';
 import { USDG } from './usdg';
 import { Contract } from 'web3-eth-contract';
+import ReaderABI from '../../abi/gmx/reader.json';
+
+const MAX_AMOUNT_IN_CACHE_TTL = 5 * 60;
 
 export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
   PRICE_PRECISION = 10n ** 30n;
@@ -17,9 +20,10 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
   BASIS_POINTS_DIVISOR = 10000n;
 
   vault: Vault<PoolState>;
+  reader: Contract;
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -69,6 +73,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     );
     super(
       parentName,
+      'pool',
       dexHelper.getLogger(`${parentName}-${network}`),
       dexHelper,
       [...Object.values(chainlinkMap), fastPriceFeed, usdg, vault],
@@ -87,6 +92,10 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       },
     );
     this.vault = vault;
+    this.reader = new this.dexHelper.web3Provider.eth.Contract(
+      ReaderABI as any,
+      config.readerAddress,
+    );
   }
 
   async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {
@@ -97,6 +106,27 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     return onChainState;
   }
 
+  async getMaxAmountIn(_tokenIn: Address, _tokenOut: Address): Promise<bigint> {
+    const cacheKey = `maxAmountIn_${_tokenIn}_${_tokenOut}`;
+    const maxAmountCached = await this.dexHelper.cache.get(
+      this.parentName,
+      this.network,
+      cacheKey,
+    );
+    if (maxAmountCached) return BigInt(maxAmountCached);
+    const maxAmount: string = await this.reader.methods
+      .getMaxAmountIn(this.vault.vaultAddress, _tokenIn, _tokenOut)
+      .call();
+    this.dexHelper.cache.setex(
+      this.parentName,
+      this.network,
+      cacheKey,
+      MAX_AMOUNT_IN_CACHE_TTL,
+      maxAmount,
+    );
+    return BigInt(maxAmount);
+  }
+
   // Reference to the original implementation
   // https://github.com/gmx-io/gmx-contracts/blob/master/contracts/peripherals/Reader.sol#L71
   async getAmountOut(
@@ -105,6 +135,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     _amountsIn: bigint[],
     blockNumber: number,
   ): Promise<bigint[] | null> {
+    const maxAmountIn = await this.getMaxAmountIn(_tokenIn, _tokenOut);
     const state = await this.getStateOrGenerate(blockNumber);
     const priceIn = this.vault.getMinPrice(state, _tokenIn);
     const priceOut = this.vault.getMaxPrice(state, _tokenOut);
@@ -125,6 +156,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     const tokenOutUnit = BigInt(10 ** tokenOutDecimals);
 
     return _amountsIn.map(_amountIn => {
+      if (_amountIn > maxAmountIn) return 0n;
       let feeBasisPoints;
       {
         let usdgAmount = (_amountIn * priceIn) / this.PRICE_PRECISION;
@@ -220,7 +252,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       multiContract,
     );
 
-    // get price chainlink pricefeed
+    // get price chainlink price feed
     const getPriceFeedCalldata = tokens.map(t => {
       return {
         callData: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [
@@ -255,6 +287,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
 
     const fastPriceFeedConfigCallData = FastPriceFeed.getConfigMulticallInputs(
       dexParams.fastPriceFeed,
+      tokens,
     );
     multiCallData.push(...fastPriceFeedConfigCallData);
     multicallSlices.push([i, i + fastPriceFeedConfigCallData.length]);
@@ -296,6 +329,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     );
     const fastPriceFeedConfig = FastPriceFeed.getConfig(
       fastPriceFeedConfigResults,
+      tokens,
     );
 
     const vaultPriceFeedConfigResults = configResults.slice(
@@ -311,6 +345,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
 
     return {
       vaultAddress: dexParams.vault,
+      readerAddress: dexParams.reader,
       priceFeed: dexParams.priceFeed,
       fastPriceFeed: dexParams.fastPriceFeed,
       fastPriceEvents: dexParams.fastPriceEvents,

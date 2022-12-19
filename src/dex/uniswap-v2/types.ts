@@ -120,7 +120,7 @@ export type UniswapV2Data = {
   wethAddress?: string;
 };
 
-export type DexParams = {
+export interface DexParams {
   subgraphURL?: string;
   factoryAddress: Address;
   initCode: string;
@@ -128,7 +128,7 @@ export type DexParams = {
   feeCode: number;
   router?: Address;
   adapters?: { [side: string]: { name: string; index: number }[] | null };
-};
+}
 
 export interface UniswapV2PoolOrderedParams {
   tokenIn: string;

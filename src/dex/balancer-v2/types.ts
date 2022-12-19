@@ -95,3 +95,8 @@ export interface callData {
   callData: string;
 }
 export type PoolStateMap = { [address: string]: PoolState };
+
+export interface PoolStateCache {
+  blockNumber: number;
+  poolState: PoolStateMap;
+}

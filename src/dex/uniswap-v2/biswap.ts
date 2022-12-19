@@ -1,4 +1,4 @@
-import { UniswapV2 } from './uniswap-v2';
+import { UniswapV2, UniswapV2Pair } from './uniswap-v2';
 import { Network } from '../../constants';
 import { Address, DexConfigMap } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
@@ -14,7 +14,7 @@ export const BiSwapConfig: DexConfigMap<DexParams> = {
       initCode:
         '0xfea293c909d87cd4153593f077b76bb7e94340200f4ee84211ae8e4f9bd7ffdf',
       poolGasCost: 120 * 1000,
-      feeCode: 0, // this is ingored as BiSwap uses dynamic fees
+      feeCode: 0, // this is ignored as BiSwap uses dynamic fees
     },
   },
 };
@@ -27,7 +27,7 @@ export class BiSwap extends UniswapV2 {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
     super(
@@ -44,9 +44,9 @@ export class BiSwap extends UniswapV2 {
     this.biSwapPool = new Interface(BiSwapPoolABI);
   }
 
-  protected getFeesMultiCallData(poolAddress: Address) {
+  protected getFeesMultiCallData(pair: UniswapV2Pair) {
     const callEntry = {
-      target: poolAddress,
+      target: pair.exchange!,
       callData: this.biSwapPool.encodeFunctionData('swapFee', []),
     };
     const callDecoder = (values: any[]) =>

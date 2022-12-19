@@ -30,6 +30,7 @@ export type GMXData = {
 
 export type DexParams = {
   vault: Address;
+  reader: Address;
   priceFeed: Address;
   fastPriceFeed: Address;
   fastPriceEvents: Address;
@@ -45,8 +46,10 @@ export type DexParams = {
 export type FastPriceFeedConfig = {
   priceDuration: number;
   maxDeviationBasisPoints: bigint;
-  favorFastPrice: boolean;
-  volBasisPoints: bigint;
+  favorFastPrice: Record<string, boolean>;
+  spreadBasisPointsIfInactive: bigint;
+  spreadBasisPointsIfChainError: bigint;
+  maxPriceUpdateDelay: number;
 };
 
 export type VaultPriceFeedConfig = {
@@ -78,6 +81,7 @@ export type VaultConfig = {
 
 export type PoolConfig = {
   vaultAddress: Address;
+  readerAddress: Address;
   priceFeed: Address;
   fastPriceFeed: Address;
   fastPriceEvents: Address;

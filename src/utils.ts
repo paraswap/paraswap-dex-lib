@@ -1,33 +1,23 @@
-import { BI_POWS } from './bigint-constants';
+import BigNumber from 'bignumber.js';
+import { getAddress } from 'ethers/lib/utils';
+import { SwapSide } from '@paraswap/core';
+import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
-import { Address, Token, DexConfigMap } from './types';
-
-export const WethMap: { [network: number]: Address } = {
-  1: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-  3: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-  4: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-  42: '0xd0a1e359811322d97991e03f863a0c30c2cf029c',
-  56: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
-  137: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
-  43114: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
-  250: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
-};
+import { DexConfigMap, Logger, TransferFeeParams } from './types';
+import _ from 'lodash';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
-
-export const isWETH = (address: Address, network = 1) =>
-  WethMap[network].toLowerCase() === address.toLowerCase();
-
-export const wrapETH = (token: Token, network: number): Token =>
-  isETHAddress(token.address) && WethMap[network]
-    ? { address: WethMap[network], decimals: 18 }
-    : token;
 
 export const prependWithOx = (str: string) =>
   str.startsWith('0x') ? str : '0x' + str;
 
 export const uuidToBytes16 = (uuid: string) => '0x' + uuid.replace(/-/g, '');
+
+export function toUnixTimestamp(date: Date | number): number {
+  const timestamp = date instanceof Date ? date.getTime() : date;
+  return Math.floor(timestamp / 1000);
+}
 
 // This function guarantees that the distribution adds up to exactly 100% by
 // applying rounding in the other direction for numbers with the most error.
@@ -75,6 +65,278 @@ export function getBigIntPow(decimals: number): bigint {
   return value === undefined ? BigInt(`1${'0'.repeat(decimals)}`) : value;
 }
 
-export const _require = (b: boolean, message: string) => {
-  if (!b) throw new Error(message);
+export function stringifyWithBigInt(obj: unknown): string {
+  return JSON.stringify(
+    obj,
+    (_key, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
+  );
+}
+
+export function _require(
+  b: boolean,
+  message: string,
+  values?: Record<string, unknown>,
+  condition?: string,
+): void {
+  if (!b) {
+    let receivedValues = '';
+    if (values && condition) {
+      const keyValueStr = Object.entries(values)
+        .map(([k, v]) => `${k}=${stringifyWithBigInt(v)}`)
+        .join(', ');
+      receivedValues = `Values: ${keyValueStr}. Condition: ${condition} violated. `;
+    }
+    throw new Error(
+      `${receivedValues}Error message: ${message ? message : 'undefined'}`,
+    );
+  }
+}
+
+interface SliceCallsInput<T, U> {
+  inputArray: T[];
+  execute: (inputSlice: T[], sliceIndex: number) => U;
+  sliceLength: number;
+}
+
+// author: @velenir. source: https://github.com/paraswap/paraswap-volume-tracker/blob/ceaf5e267c9720b190b19c17465b438f57f41851/src/lib/utils/helpers.ts#L20
+export function sliceCalls<T, U>({
+  inputArray,
+  execute,
+  sliceLength,
+}: SliceCallsInput<T, U>): [U, ...U[]] {
+  if (sliceLength >= inputArray.length) return [execute(inputArray, 0)];
+  const results: U[] = [];
+
+  for (
+    let i = 0, sliceIndex = 0;
+    i < inputArray.length;
+    i += sliceLength, ++sliceIndex
+  ) {
+    const inputSlice = inputArray.slice(i, i + sliceLength);
+    const resultOfSlice = execute(inputSlice, sliceIndex);
+    results.push(resultOfSlice);
+  }
+
+  return results as [U, ...U[]];
+}
+
+// We assume that the rate always gets worse when be go bigger in volume.
+// Both oldVolume and newVolume are sorted
+// Considering these assumption, whenever we don't have a price we consider
+// the price for the next volume price available and interpolate linearly.
+// Interpolate can be useful in two cases
+// -> you have a smaller chunked prices and you want go to a higher chunked prices
+// -> you have a linear prices and you want go to a not skewed prices
+// -> could be used by the order book exchanges as an orderbook works almost with the same principles.
+// p = p[i-1] + (p[i] - p[i-1])/(q[i]-q[i-1])*(v-q[i-1])
+export function interpolate(
+  oldVolume: bigint[],
+  oldPrices: bigint[],
+  newVolume: bigint[],
+  side: SwapSide,
+): bigint[] {
+  let maxPrice = oldPrices[0];
+  let isValid = [true];
+  for (let p of oldPrices.slice(1)) {
+    if (p >= maxPrice) {
+      maxPrice = p;
+      isValid.push(true);
+    } else {
+      isValid.push(false);
+    }
+  }
+
+  let i = 0;
+  return newVolume.map(v => {
+    if (v === 0n) return 0n;
+
+    while (i < oldVolume.length && v > oldVolume[i]) i++;
+
+    // if we don't have any more prices for a bigger volume return last price for sell and infinity for buy
+    if (i >= oldVolume.length) {
+      return !isValid[oldPrices.length - 1]
+        ? 0n
+        : side === SwapSide.SELL
+        ? oldPrices[oldPrices.length - 1]
+        : BI_MAX_UINT256;
+    }
+
+    if (!isValid[i]) return 0n;
+
+    // if the current volume is equal to oldVolume then just use that
+    if (oldVolume[i] === v) return oldPrices[i];
+
+    if (i > 0 && !isValid[i - 1]) return 0n;
+
+    // As we know that derivative of the prices can't go up we apply a linear interpolation
+    const lastOldVolume = i > 0 ? oldVolume[i - 1] : 0n;
+    const lastOldPrice = i > 0 ? oldPrices[i - 1] : 0n;
+
+    // Old code - this doesn't work because slope can be very small and gets
+    // rounded badly in bignumber.js, so need to do the division later
+    //const slope = oldPrices[i]
+    //  .minus(lastOldPrice)
+    //  .div(oldVolume[i].minus(lastOldVolume));
+    //return lastOldPrice.plus(slope.times(v.minus(lastOldVolume)));
+
+    return (
+      lastOldPrice +
+      ((oldPrices[i] - lastOldPrice) * (v - lastOldVolume)) /
+        (oldVolume[i] - lastOldVolume)
+    );
+  });
+}
+
+export const bigIntify = (val: any) => BigInt(val);
+
+export const bigNumberify = (val: any) => new BigNumber(val);
+
+export const stringify = (val: any) => val.toString();
+
+export const catchParseLogError = (e: any, logger: Logger) => {
+  if (e instanceof Error) {
+    if (!e.message.includes('no matching event')) {
+      logger.error('Failed parse event', e);
+    }
+  }
+};
+
+const PREFIX_BIG_INT = 'bi@';
+const PREFIX_BIG_NUMBER = 'bn@';
+
+const stringCheckerBuilder = (prefix: string) => {
+  return (obj: any) => {
+    if (!_.isString(obj)) {
+      return false;
+    }
+    for (let i = 0; i < prefix.length; ++i) {
+      if (prefix[i] !== obj[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+};
+
+const checkerStringWithBigIntPrefix = stringCheckerBuilder(PREFIX_BIG_INT);
+const checkerStringWithBigNumberPrefix =
+  stringCheckerBuilder(PREFIX_BIG_NUMBER);
+
+const casterToStringbuilder = (prefix: string, obj: any) =>
+  prefix.concat(obj.toString());
+
+const casterBigIntToString = (obj: BigInt) =>
+  casterToStringbuilder(PREFIX_BIG_INT, obj);
+const casterBigNumberToString = (obj: BigNumber) =>
+  casterToStringbuilder(PREFIX_BIG_NUMBER, obj);
+
+const checkerBigInt = (obj: any) => typeof obj === 'bigint';
+const checkerBigNumber = (obj: any) => obj instanceof BigNumber;
+
+const stringCasterBuilder = (
+  prefix: string,
+  constructor: (str: string) => any,
+) => {
+  return (obj: string) => {
+    return constructor(obj.slice(prefix.length));
+  };
+};
+
+const casterStringToBigInt = stringCasterBuilder(
+  PREFIX_BIG_INT,
+  (str: string) => BigInt(str),
+);
+
+const casterStringToBigNumber = stringCasterBuilder(
+  PREFIX_BIG_NUMBER,
+  (str: string) => new BigNumber(str),
+);
+
+type TypeSerializer = {
+  checker: (obj: any) => boolean;
+  caster: (obj: any) => any;
+};
+
+export function deepTypecast(obj: any, types: TypeSerializer[]): any {
+  return _.forEach(obj, (val: any, key: any, obj: any) => {
+    for (const type of types) {
+      if (type.checker(val)) {
+        const cast = type.caster(val);
+        obj[key] = cast;
+        return;
+      }
+    }
+    const isObject = _.isObject(val);
+    if (isObject) {
+      deepTypecast(val, types);
+    } else {
+      obj[key] = val;
+    }
+  });
+}
+
+export class Utils {
+  static Serialize(data: any): string {
+    return JSON.stringify(
+      deepTypecast(_.cloneDeep(data), [
+        {
+          checker: checkerBigInt,
+          caster: casterBigIntToString,
+        },
+        {
+          checker: checkerBigNumber,
+          caster: casterBigNumberToString,
+        },
+      ]),
+    );
+  }
+
+  static Parse(data: any): any {
+    return deepTypecast(_.cloneDeep(JSON.parse(data)), [
+      {
+        checker: checkerStringWithBigIntPrefix,
+        caster: casterStringToBigInt,
+      },
+      {
+        checker: checkerStringWithBigNumberPrefix,
+        caster: casterStringToBigNumber,
+      },
+    ]);
+  }
+
+  static timeoutPromise<T>(
+    promise: Promise<T>,
+    timeout: number,
+    message: string,
+  ): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((resolve, reject) => {
+        setTimeout(() => reject(message), timeout);
+      }),
+    ]);
+  }
+}
+
+export const isSrcTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(transferFees.srcFee || transferFees.srcDexFee);
+};
+
+// This function is throwing error if address is not correct
+export const normalizeAddress = (address: string) => {
+  return getAddress(address).toLowerCase();
+};
+
+// In some case we need block timestamp, but instead of real one, we can use
+// just current time in BigInt
+export function currentBigIntTimestampInS() {
+  return BigInt(Math.floor(Date.now() / 1000));
+}
+
+export const isDestTokenTransferFeeToBeExchanged = (
+  transferFees: TransferFeeParams,
+) => {
+  return !!(transferFees.destFee || transferFees.destDexFee);
 };

@@ -4,6 +4,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -11,7 +12,8 @@ import {
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
-import { wrapETH, getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -37,6 +39,7 @@ export class Nerve
   protected eventPools: EventPoolMappings = {};
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   readonly minConversionRate = '1';
 
@@ -53,13 +56,13 @@ export class Nerve
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     protected poolConfigs = NerveConfig[dexKey][network].poolConfigs,
     protected nervePoolIface = new Interface(nervePoolABIDefault),
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -81,13 +84,7 @@ export class Nerve
       this.eventPools[poolIdentifier] = newPool;
 
       // Generate first state for the blockNumber and subscribe to logs
-      const newPoolState = await newPool.generateState(blockNumber);
-      newPool.setState(newPoolState, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        newPool,
-        newPool.addressesSubscribed,
-        blockNumber,
-      );
+      await newPool.initialize(blockNumber);
     } else {
       this.logger.warn(
         `We don't support metapools for Nerve. Check config: ${poolConfig.name}`,
@@ -116,7 +113,7 @@ export class Nerve
 
     const _blockNumber =
       blockNumber === undefined
-        ? await this.dexHelper.provider.getBlockNumber()
+        ? await this.dexHelper.web3Provider.eth.getBlockNumber()
         : blockNumber;
 
     // TODO: Need to batch this RPC calls in one multicall
@@ -125,7 +122,7 @@ export class Nerve
         let state = eventPool.getState(_blockNumber);
         if (!state || !state.isValid) {
           this.logger.info(
-            `State for ${this.dexKey} pool ${eventPool.name} is stale or invalid on block ${_blockNumber}. Generating new one`,
+            `State for ${this.dexKey} pool ${eventPool.name} on ${this.network} is stale or invalid on block ${_blockNumber}. Generating new one`,
           );
           const newState = await eventPool.generateState(_blockNumber);
           eventPool.setState(newState, _blockNumber);
@@ -145,8 +142,8 @@ export class Nerve
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     return this.allPools
       .filter(pool => {
@@ -169,8 +166,8 @@ export class Nerve
     try {
       if (side === SwapSide.BUY) return null;
 
-      const _srcToken = wrapETH(srcToken, this.network);
-      const _destToken = wrapETH(destToken, this.network);
+      const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+      const _destToken = this.dexHelper.config.wrapETH(destToken);
 
       if (
         _srcToken.address.toLowerCase() === _destToken.address.toLowerCase()
@@ -208,6 +205,10 @@ export class Nerve
 
       const result: ExchangePrices<NerveData> = [];
       for (const { pool, state } of statePoolPair) {
+        if (state.paused) {
+          continue;
+        }
+
         const srcIndex = pool.tokens.findIndex(
           token =>
             token.address.toLowerCase() === _srcToken.address.toLowerCase(),
@@ -216,6 +217,10 @@ export class Nerve
           token =>
             token.address.toLowerCase() === _destToken.address.toLowerCase(),
         );
+
+        if (srcIndex === -1 || destIndex === -1) {
+          continue;
+        }
 
         const _prices: bigint[] = [];
         for (const _amount of _amounts) {
@@ -236,6 +241,7 @@ export class Nerve
             pool.setState({ ...state, isValid: false }, blockNumber);
             this.logger.error(
               `${this.dexKey} protocol ${pool.name} (${pool.address}) pool can not calculate out swap for amount ${_amount}`,
+              e,
             );
             return null;
           }
@@ -267,6 +273,17 @@ export class Nerve
       this.logger.error(`Error_getPrices:`, e);
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<NerveData>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.INDEX +
+      CALLDATA_GAS_COST.INDEX +
+      CALLDATA_GAS_COST.TIMESTAMP
+    );
   }
 
   getAdapterParam(
@@ -338,10 +355,10 @@ export class Nerve
   ): Promise<PoolLiquidity[]> {
     // We set decimals to default as we don't really care of actual number.
     // We use here only address
-    const wrappedTokenAddress = wrapETH(
-      { address: tokenAddress, decimals: 18 },
-      this.network,
-    );
+    const wrappedTokenAddress = this.dexHelper.config.wrapETH({
+      address: tokenAddress,
+      decimals: 18,
+    });
 
     const selectedPools = this.allPools.filter(pool =>
       pool.tokenAddresses.includes(wrappedTokenAddress.address),

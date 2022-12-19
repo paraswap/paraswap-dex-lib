@@ -3,19 +3,18 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 describe('UniswapV2 E2E Avalanche', () => {
   const network = Network.AVALANCHE;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
 
   describe('PangolinSwap', () => {
     const dexKey = 'PangolinSwap';
@@ -457,6 +456,142 @@ describe('UniswapV2 E2E Avalanche', () => {
         await testE2E(
           tokens.WAVAX,
           tokens.USDT,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
+  describe('Swapsicle', () => {
+    const dexKey = 'Swapsicle';
+
+    describe('simpleSwap', () => {
+      it('USDC -> MIM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MIM,
+          holders.USDC,
+          '3000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('MIM -> USDC', async () => {
+        await testE2E(
+          tokens.MIM,
+          tokens.USDC,
+          holders.MIM,
+          '3000000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> USDCe', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDCe,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('multiSwap', () => {
+      it('USDC -> MIM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MIM,
+          holders.USDC,
+          '3000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('MIM -> USDC', async () => {
+        await testE2E(
+          tokens.MIM,
+          tokens.USDC,
+          holders.MIM,
+          '3000000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> USDCe', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDCe,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('megaSwap', () => {
+      it('USDC -> MIM', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MIM,
+          holders.USDC,
+          '3000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('MIM -> USDC', async () => {
+        await testE2E(
+          tokens.MIM,
+          tokens.USDC,
+          holders.MIM,
+          '3000000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> USDCe', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDCe,
           holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,

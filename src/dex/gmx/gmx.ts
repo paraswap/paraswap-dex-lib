@@ -3,13 +3,14 @@ import {
   Token,
   Address,
   ExchangePrices,
-  Log,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -17,7 +18,6 @@ import { GMXData, DexParams } from './types';
 import { GMXEventPool } from './pool';
 import { SimpleExchange } from '../simple-exchange';
 import { GMXConfig, Adapters } from './config';
-import { wrapETH } from '../../utils';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
 
@@ -31,6 +31,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(GMXConfig);
@@ -43,12 +44,12 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
     protected params: DexParams = GMXConfig[dexKey][network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -71,11 +72,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       this.logger,
       config,
     );
-    this.dexHelper.blockManager.subscribeToLogs(
-      this.pool,
-      this.pool.addressesSubscribed,
-      blockNumber,
-    );
+    await this.pool.initialize(blockNumber);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -85,7 +82,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   }
 
   // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifers must be unique
+  // for a given swap. poolIdentifiers must be unique
   // across DEXes.
   async getPoolIdentifiers(
     srcToken: Token,
@@ -94,9 +91,14 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     blockNumber: number,
   ): Promise<string[]> {
     if (side === SwapSide.BUY || !this.pool) return [];
-    const srcAddress = wrapETH(srcToken, this.network).address.toLowerCase();
-    const destAddress = wrapETH(destToken, this.network).address.toLowerCase();
+    const srcAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (
+      srcAddress !== destAddress &&
       this.supportedTokensMap[srcAddress] &&
       this.supportedTokensMap[destAddress]
     ) {
@@ -118,9 +120,14 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<GMXData>> {
     if (side === SwapSide.BUY || !this.pool) return null;
-    const srcAddress = wrapETH(srcToken, this.network).address.toLowerCase();
-    const destAddress = wrapETH(destToken, this.network).address.toLowerCase();
+    const srcAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (
+      srcAddress === destAddress ||
       !(
         this.supportedTokensMap[srcAddress] &&
         this.supportedTokensMap[destAddress]
@@ -152,6 +159,11 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
         poolAddresses: [this.params.vault],
       },
     ];
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<GMXData>): number | number[] {
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
   getAdapterParam(

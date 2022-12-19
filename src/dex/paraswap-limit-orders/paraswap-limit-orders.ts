@@ -4,6 +4,7 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
@@ -14,48 +15,55 @@ import {
   PreprocessTransactionOptions,
 } from '../../types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../../constants';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ParaSwapLimitOrdersData,
-  ParaSwapLimitOrderResponse,
-  ParaSwapLimitOrderPriceSummary,
-  ParaSwapPriceSummaryResponse,
+  ParaSwapOrderResponse,
+  ParaSwapOrderBookResponse,
   OrderInfo,
+  ParaSwapOrderBook,
 } from './types';
-import { ParaSwapLimitOrdersConfig, Adapters } from './config';
+import { Adapters, ParaSwapLimitOrdersConfig } from './config';
 import { LimitOrderExchange } from '../limit-order-exchange';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
-import { ONE_ORDER_GASCOST } from './constant';
+import {
+  MAX_ORDERS_MULTI_FACTOR,
+  MAX_ORDERS_USED_FOR_SWAP,
+  ONE_ORDER_GASCOST,
+} from './constant';
+import BigNumber from 'bignumber.js';
+
+const BLACKLIST_CACHE_PREFIX = `lo_blacklist`;
 
 export class ParaSwapLimitOrders
-  extends LimitOrderExchange<
-    ParaSwapLimitOrderResponse,
-    ParaSwapPriceSummaryResponse
-  >
+  extends LimitOrderExchange<ParaSwapOrderResponse, ParaSwapOrderBookResponse>
   implements IDex<ParaSwapLimitOrdersData>
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(ParaSwapLimitOrdersConfig);
 
   logger: Logger;
 
+  protected augustusRFQAddress: Address;
+
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] ? Adapters[network] : {},
-    protected augustusRFQAddress = ParaSwapLimitOrdersConfig[dexKey][
-      network
-    ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
+    this.augustusRFQAddress =
+      dexHelper.config.data.augustusRFQAddress.toLowerCase();
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -72,16 +80,25 @@ export class ParaSwapLimitOrders
     return `${this.dexKey.toLowerCase()}_${srcToken}_${destToken}`;
   }
 
+  async isBlacklisted(userAddress: string): Promise<boolean> {
+    const value = await this.dexHelper.cache.rawget(
+      `${BLACKLIST_CACHE_PREFIX}_${userAddress}`.toLowerCase(),
+    );
+    if (value) {
+      return true;
+    }
+
+    return false;
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
-
-    const _srcToken = wrapETH(srcToken, this.network);
-    const _destToken = wrapETH(destToken, this.network);
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     const _srcAddress = _srcToken.address.toLowerCase();
     const _destAddress = _destToken.address.toLowerCase();
@@ -90,12 +107,9 @@ export class ParaSwapLimitOrders
       return [];
     }
 
-    const priceSummary = await this._getLatestPriceSummary(
-      _srcAddress,
-      _destAddress,
-    );
+    const orderBook = await this._getLatestOrderBook(_srcAddress, _destAddress);
 
-    if (priceSummary === null) return [];
+    if (orderBook === null) return [];
 
     return [this.getIdentifier(_srcAddress, _destAddress)];
   }
@@ -108,11 +122,9 @@ export class ParaSwapLimitOrders
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<ParaSwapLimitOrdersData>> {
-    if (side === SwapSide.BUY) return null;
-
     try {
-      const _srcToken = wrapETH(srcToken, this.network);
-      const _destToken = wrapETH(destToken, this.network);
+      const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+      const _destToken = this.dexHelper.config.wrapETH(destToken);
 
       const _srcAddress = _srcToken.address.toLowerCase();
       const _destAddress = _destToken.address.toLowerCase();
@@ -127,35 +139,39 @@ export class ParaSwapLimitOrders
       )
         return null;
 
-      const unitVolume = getBigIntPow(_srcToken.decimals);
-
-      const _amounts = [unitVolume, ...amounts.slice(1)];
-
-      let priceSummary = await this._getLatestPriceSummary(
-        _srcAddress,
-        _destAddress,
+      const isSell = side === SwapSide.SELL;
+      const unitVolume = getBigIntPow(
+        isSell ? _srcToken.decimals : _destToken.decimals,
       );
 
-      if (priceSummary === null) return null;
+      let orderBook = await this._getLatestOrderBook(_srcAddress, _destAddress);
 
-      const orderCosts = [...Array(priceSummary.length)].map((_0, index) =>
-        BigInt((index + 1) * ONE_ORDER_GASCOST),
+      if (orderBook === null) return null;
+
+      // Unit is volume is not increasing, so better to request separate
+      let {
+        prices: [unit],
+      } = this._getPrices([unitVolume], orderBook, isSell);
+
+      const { prices, gasCosts, maxOrdersCount } = this._getPrices(
+        amounts,
+        orderBook,
+        isSell,
       );
 
-      const { prices: _prices, costs: gasCosts } = this._getPrices(
-        _amounts,
-        priceSummary,
-        orderCosts,
-      );
-
-      const unit = _prices[0];
-      gasCosts[0] = 0n;
+      if (unit === 0n) {
+        // If we didn't fulfill unit amount, scale up latest amount till unit
+        unit = (unitVolume * prices.slice(-1)[0]) / amounts.slice(-1)[0];
+      }
 
       return [
         {
           unit,
-          prices: [0n, ..._prices.slice(1)],
-          data: { orderInfos: null },
+          prices,
+          data: {
+            orderInfos: null,
+            maxOrdersCount,
+          },
           poolIdentifier: expectedIdentifier,
           exchange: this.dexKey,
           gasCost: gasCosts.map(v => Number(v)),
@@ -173,6 +189,57 @@ export class ParaSwapLimitOrders
     }
   }
 
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(
+    poolPrices: PoolPrices<ParaSwapLimitOrdersData>,
+  ): number | number[] {
+    return (poolPrices.gasCost as number[]).map(g => {
+      if (!g) return 0;
+      const numOrders = Number(BigInt(g) / ONE_ORDER_GASCOST);
+      return (
+        CALLDATA_GAS_COST.DEX_NO_PAYLOAD +
+        CALLDATA_GAS_COST.LENGTH_LARGE +
+        // Struct header
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        // Struct -> orderInfos[] header
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        // Struct -> orderInfos[]
+        CALLDATA_GAS_COST.LENGTH_SMALL +
+        // Struct -> orderInfos[0:numOrders] headers
+        CALLDATA_GAS_COST.OFFSET_SMALL +
+        CALLDATA_GAS_COST.OFFSET_LARGE * (numOrders - 1) +
+        // Struct -> orderInfos[0:numOrders]
+        numOrders *
+          // Struct -> orderInfos[i] -> order
+          (CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.TIMESTAMP +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.ADDRESS +
+            CALLDATA_GAS_COST.AMOUNT +
+            CALLDATA_GAS_COST.AMOUNT +
+            // Struct -> orderInfos[i] -> signature header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> takerTokenFillAmount
+            CALLDATA_GAS_COST.AMOUNT +
+            // Struct -> orderInfos[i] -> permitTakerAsset header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> permitMakerAsset header
+            CALLDATA_GAS_COST.OFFSET_LARGE +
+            // Struct -> orderInfos[i] -> signature
+            CALLDATA_GAS_COST.LENGTH_SMALL +
+            CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.FULL_WORD +
+            CALLDATA_GAS_COST.wordNonZeroBytes(1) +
+            // Struct -> orderInfos[i] -> permitTakerAsset
+            CALLDATA_GAS_COST.ZERO +
+            // Struct -> orderInfos[i] -> permitMakerAsset
+            CALLDATA_GAS_COST.ZERO)
+      );
+    });
+  }
+
   async preProcessTransaction?(
     optimalSwapExchange: OptimalSwapExchange<ParaSwapLimitOrdersData>,
     srcToken: Token,
@@ -182,15 +249,32 @@ export class ParaSwapLimitOrders
   ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
     const userAddress = options.txOrigin;
 
-    const srcWrapped = wrapETH(srcToken, this.network).address.toLowerCase();
-    const destWrapped = wrapETH(destToken, this.network).address.toLowerCase();
+    const srcWrapped = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destWrapped = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
+
+    const isSell = side === SwapSide.SELL;
+    const amountWithSlippage = isSell
+      ? BigInt(
+          new BigNumber(optimalSwapExchange.destAmount.toString())
+            .times(options.slippageFactor)
+            .toFixed(0),
+        )
+      : BigInt(
+          options.slippageFactor
+            .times(optimalSwapExchange.srcAmount.toString())
+            .toFixed(0),
+        );
 
     const { encodingValues, minDeadline } =
       await this._prepareOrdersForTransaction(
         srcWrapped,
         destWrapped,
-        optimalSwapExchange.srcAmount,
-        optimalSwapExchange.destAmount,
+        isSell ? optimalSwapExchange.srcAmount : amountWithSlippage.toString(),
+        isSell ? amountWithSlippage.toString() : optimalSwapExchange.destAmount,
         side,
         userAddress,
       );
@@ -218,10 +302,7 @@ export class ParaSwapLimitOrders
     data: ParaSwapLimitOrdersData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-
     const { orderInfos } = data;
-
     if (orderInfos === null) {
       throw new Error(
         `Error_${this.dexKey}_getAdapterParam payload is not received. It may be because of` +
@@ -229,8 +310,9 @@ export class ParaSwapLimitOrders
       );
     }
 
+    const isSell = side === SwapSide.SELL;
     const orderInfoParamType = this.rfqIface.getFunction(
-      'tryBatchFillOrderTakerAmount',
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
     ).inputs[0];
 
     const orderInfoTypes = orderInfoParamType.format(
@@ -257,8 +339,6 @@ export class ParaSwapLimitOrders
     data: ParaSwapLimitOrdersData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-
     const { orderInfos } = data;
 
     if (orderInfos === null) {
@@ -268,9 +348,10 @@ export class ParaSwapLimitOrders
       );
     }
 
+    const isSell = side === SwapSide.SELL;
     const swapData = this.rfqIface.encodeFunctionData(
-      'tryBatchFillOrderTakerAmount',
-      [orderInfos, srcAmount, this.augustusAddress],
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
+      [orderInfos, isSell ? srcAmount : destAmount, this.augustusAddress],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -290,33 +371,35 @@ export class ParaSwapLimitOrders
     return [];
   }
 
-  private async _getLatestPriceSummary(
+  private async _getLatestOrderBook(
     src: Address,
     dest: Address,
-  ): Promise<ParaSwapLimitOrderPriceSummary[] | null> {
-    const priceSummaryUnparsed =
-      await this._limitOrderProvider!.fetchPriceSummary(
-        this.network,
-        src,
-        dest,
-      );
+  ): Promise<ParaSwapOrderBook[] | null> {
+    const orderBookUnparsed = await this._limitOrderProvider!.fetchOrderBook(
+      this.network,
+      src,
+      dest,
+    );
 
-    if (priceSummaryUnparsed === null || priceSummaryUnparsed.length === 0) {
+    if (orderBookUnparsed === null || orderBookUnparsed.length === 0) {
       this.logger.trace(
-        `${this.dexKey}: No priceSummary found for ${src} and ${dest} on ${this.network} network`,
+        `${this.dexKey}: No orderBook found for ${src} and ${dest} on ${this.network} network`,
       );
       return null;
     }
 
-    return priceSummaryUnparsed
-      .map(priceSummary => ({
-        cumulativeMakerAmount: BigInt(priceSummary.cumulativeMakerAmount),
-        cumulativeTakerAmount: BigInt(priceSummary.cumulativeTakerAmount),
+    return orderBookUnparsed
+      .map(orderBook => ({
+        swappableMakerBalance: BigInt(orderBook.swappableMakerBalance),
+        swappableTakerBalance: BigInt(orderBook.swappableTakerBalance),
+        makerAmount: BigInt(orderBook.makerAmount),
+        takerAmount: BigInt(orderBook.takerAmount),
+        isFillOrKill: orderBook.isFillOrKill,
       }))
       .filter(
-        priceSummary =>
-          priceSummary.cumulativeMakerAmount > 0n &&
-          priceSummary.cumulativeTakerAmount > 0n,
+        orderBook =>
+          orderBook.swappableMakerBalance > 0n &&
+          orderBook.swappableTakerBalance > 0n,
       );
   }
 
@@ -346,12 +429,24 @@ export class ParaSwapLimitOrders
 
     if (orderInfos === null)
       throw new Error(
-        `${this.dexHelper}: Orders have been changed, therefore no sufficient amount was found to fulfill this transaction`,
+        `${
+          this.dexKey
+        }: No orders received from _limitOrderProvider fetchAndReserveOrders request with params: ${JSON.stringify(
+          {
+            network: this.network,
+            srcToken,
+            destToken,
+            srcAmount,
+            destAmount,
+            side,
+            userAddress,
+          },
+        )}`,
       );
 
     const encodingValues: OrderInfo[] = new Array(orderInfos.length);
 
-    let minDeadline = BI_MAX_UINT;
+    let minDeadline = BI_MAX_UINT256;
     for (const [i, orderInfo] of orderInfos.entries()) {
       // Find minimum deadline value
       const { order } = orderInfo;
@@ -386,39 +481,113 @@ export class ParaSwapLimitOrders
 
   private _getPrices(
     amounts: bigint[],
-    priceSummary: ParaSwapLimitOrderPriceSummary[],
-    orderCosts: bigint[],
-  ): { prices: bigint[]; costs: bigint[] } {
-    const prices = new Array<bigint>(amounts.length);
-    const costs = new Array<bigint>(amounts.length);
+    orderBook: ParaSwapOrderBook[],
+    isSell: boolean,
+  ): { prices: bigint[]; gasCosts: bigint[]; maxOrdersCount: number } {
+    const prices = new Array<bigint>(amounts.length).fill(0n);
+    const gasCosts = new Array<bigint>(amounts.length).fill(0n);
+    let maxOrdersCount = 0;
 
-    for (let j = 0; j < amounts.length; j++) {
-      let i = 0;
-      while (
-        i < priceSummary.length &&
-        amounts[j] > priceSummary[i].cumulativeTakerAmount
-      )
-        i++;
+    const calcOutFunc = isSell
+      ? this._calcMakerFromTakerAmount
+      : this._calcTakerFromMakerAmount;
 
-      if (i === 0) {
-        prices[j] =
-          (priceSummary[i].cumulativeMakerAmount * amounts[j]) /
-          priceSummary[i].cumulativeTakerAmount;
-        costs[j] = orderCosts[i];
-      } else if (i < priceSummary.length) {
-        prices[j] =
-          priceSummary[i - 1].cumulativeMakerAmount +
-          ((priceSummary[i].cumulativeMakerAmount -
-            priceSummary[i - 1].cumulativeMakerAmount) *
-            (amounts[j] - priceSummary[i - 1].cumulativeTakerAmount)) /
-            (priceSummary[i].cumulativeTakerAmount -
-              priceSummary[i - 1].cumulativeTakerAmount);
-        costs[j] = orderCosts[i];
-      } else {
-        prices[j] = 0n;
-        costs[j] = 0n;
+    const srcKeyAmount = isSell
+      ? 'swappableTakerBalance'
+      : 'swappableMakerBalance';
+    const destKeyAmount = isSell
+      ? 'swappableMakerBalance'
+      : 'swappableTakerBalance';
+
+    const orderThresholdDenominators = [
+      BigInt(MAX_ORDERS_USED_FOR_SWAP) * BigInt(MAX_ORDERS_MULTI_FACTOR),
+      BigInt(MAX_ORDERS_USED_FOR_SWAP),
+    ];
+
+    for (const orderThresholdDenominator of orderThresholdDenominators) {
+      let latestFilteredOrderBook = orderBook;
+      for (const [i, amount] of amounts.entries()) {
+        if (!(prices[i] === 0n && gasCosts[i] === 0n)) {
+          // We don't want to recalculate prices if previous iterations succeeded
+          continue;
+        }
+
+        if (amount === 0n) {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+          continue;
+        }
+
+        const amountThreshold = amount / orderThresholdDenominator;
+
+        latestFilteredOrderBook = latestFilteredOrderBook.filter(
+          ob => ob[srcKeyAmount] >= amountThreshold,
+        );
+
+        if (latestFilteredOrderBook.length === 0) {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+          continue;
+        }
+
+        let toFill = amount;
+        let numberOfOrders = 0n;
+        let filled = 0n;
+
+        for (const order of latestFilteredOrderBook) {
+          if (toFill > 0n) {
+            if (toFill > order[srcKeyAmount]) {
+              toFill -= order[srcKeyAmount];
+              filled += order[destKeyAmount];
+              numberOfOrders++;
+            } else if (order.isFillOrKill) {
+              continue;
+            } else {
+              filled += calcOutFunc(
+                toFill,
+                order.makerAmount,
+                order.takerAmount,
+              );
+              toFill = 0n;
+              numberOfOrders++;
+            }
+          }
+          if (numberOfOrders >= MAX_ORDERS_USED_FOR_SWAP) {
+            break;
+          }
+        }
+
+        if (numberOfOrders > MAX_ORDERS_USED_FOR_SWAP) {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+        } else if (toFill === 0n) {
+          prices[i] = filled;
+          gasCosts[i] = numberOfOrders * ONE_ORDER_GASCOST;
+          maxOrdersCount = Math.max(maxOrdersCount, +numberOfOrders.toString());
+        } else {
+          prices[i] = 0n;
+          gasCosts[i] = 0n;
+        }
       }
     }
-    return { prices, costs };
+    return { prices, gasCosts, maxOrdersCount };
+  }
+
+  private _calcTakerFromMakerAmount(
+    swappableMakerAmount: bigint,
+    makerAmount: bigint,
+    takerAmount: bigint,
+  ): bigint {
+    return (
+      (swappableMakerAmount * takerAmount + (makerAmount - 1n)) / makerAmount
+    );
+  }
+
+  private _calcMakerFromTakerAmount(
+    swappableTakerAmount: bigint,
+    makerAmount: bigint,
+    takerAmount: bigint,
+  ): bigint {
+    return (swappableTakerAmount * makerAmount) / takerAmount;
   }
 }

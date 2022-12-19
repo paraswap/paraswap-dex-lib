@@ -41,7 +41,7 @@ describe('BalancerV2', function () {
   describe('Weighted', () => {
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
       await balancerV2.initializePricing(blocknumber);
@@ -68,6 +68,8 @@ describe('BalancerV2', function () {
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
       expect(poolPrices?.[0].gasCost).toBe(150000); // TO DO
+
+      await balancerV2.releaseResources();
     });
 
     it('getTopPoolsForToken', async function () {
@@ -87,7 +89,7 @@ describe('BalancerV2', function () {
   describe('Linear', () => {
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
       await balancerV2.initializePricing(blocknumber);
@@ -115,6 +117,8 @@ describe('BalancerV2', function () {
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
       expect(poolPrices?.[0].gasCost).toBe(100000); // TO DO
+
+      await balancerV2.releaseResources();
     });
 
     it('getTopPoolsForToken', async function () {
@@ -141,7 +145,7 @@ describe('BalancerV2', function () {
     */
     // it('getPoolIdentifiers and getPricesVolume', async function () {
     //   const dexHelper = new DummyDexHelper(Network.MAINNET);
-    //   const blocknumber = await dexHelper.provider.getBlockNumber();
+    //   const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
     //   await balancerV2.initializePricing(blocknumber);
     //   const pools = await balancerV2.getPoolIdentifiers(
@@ -163,6 +167,7 @@ describe('BalancerV2', function () {
     //   console.log('BBAUSD <> BBADAI Pool Prices: ', poolPrices);
     //   expect(poolPrices).not.toBeNull();
     //   checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    //   await balancerV2.releaseResources();
     // });
     // it('getTopPoolsForToken', async function () {
     //   const dexHelper = new DummyDexHelper(Network.MAINNET);

@@ -4,17 +4,18 @@ import {
   DummyLimitOrderProvider,
   IDexHelper,
 } from '../dex-helper';
+import BigNumber from 'bignumber.js';
 import { TransactionBuilder } from '../transaction-builder';
 import { PricingHelper } from '../pricing-helper';
 import { DexAdapterService } from '../dex';
-import { Address, Token, OptimalRate, TxObject } from '../types';
 import {
-  SwapSide,
-  AugustusAddress,
-  TokenTransferProxyAddress,
-  NULL_ADDRESS,
-  ContractMethod,
-} from '../constants';
+  Address,
+  Token,
+  OptimalRate,
+  TxObject,
+  TransferFeeParams,
+} from '../types';
+import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
 
 export interface IParaSwapSDK {
@@ -25,6 +26,7 @@ export interface IParaSwapSDK {
     side: SwapSide,
     contractMethod: ContractMethod,
     _poolIdentifiers?: string[],
+    transferFees?: TransferFeeParams,
   ): Promise<OptimalRate>;
 
   buildTransaction(
@@ -34,6 +36,12 @@ export interface IParaSwapSDK {
   ): Promise<TxObject>;
 
   initializePricing?(): Promise<void>;
+
+  releaseResources?(): Promise<void>;
+
+  dexHelper?: IDexHelper & {
+    replaceProviderWithRPC?: (rpcUrl: string) => void;
+  };
 }
 
 const chunks = 10;
@@ -47,9 +55,10 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   constructor(
     protected network: number,
     protected dexKey: string,
+    rpcUrl: string,
     limitOrderProvider?: DummyLimitOrderProvider,
   ) {
-    this.dexHelper = new DummyDexHelper(this.network);
+    this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
     this.dexAdapterService = new DexAdapterService(
       this.dexHelper,
       this.network,
@@ -67,8 +76,12 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   }
 
   async initializePricing() {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
+  }
+
+  async releaseResources() {
+    await this.pricingHelper.releaseResources([this.dexKey]);
   }
 
   async getPrices(
@@ -78,8 +91,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     side: SwapSide,
     contractMethod: ContractMethod,
     _poolIdentifiers?: string[],
+    transferFees?: TransferFeeParams,
   ): Promise<OptimalRate> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     const poolIdentifiers =
       (_poolIdentifiers && { [this.dexKey]: _poolIdentifiers }) ||
       (await this.pricingHelper.getPoolIdentifiers(
@@ -101,6 +115,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       blockNumber,
       [this.dexKey],
       poolIdentifiers,
+      transferFees,
     );
 
     if (!poolPrices || poolPrices.length == 0)
@@ -151,8 +166,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
-      tokenTransferProxy: TokenTransferProxyAddress[this.network],
-      contractAddress: AugustusAddress[this.network],
+      tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
+      contractAddress: this.dexHelper.config.data.augustusAddress,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
@@ -175,11 +190,11 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     // Set deadline to be 10 min from now
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
 
-    const slippageFactor =
-      BigInt(minMaxAmount.toString()) /
-      (priceRoute.side === SwapSide.SELL
-        ? BigInt(priceRoute.destAmount)
-        : BigInt(priceRoute.srcAmount));
+    const slippageFactor = new BigNumber(minMaxAmount.toString()).div(
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount,
+    );
 
     // Call preprocessTransaction for each exchange before we build transaction
     try {
@@ -208,7 +223,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         dexLibExchange.getTokenFromAddress(swap.destToken),
                         priceRoute.side,
                         {
-                          slippageFactor: slippageFactor.toString(),
+                          slippageFactor,
                           txOrigin: userAddress,
                         },
                       );

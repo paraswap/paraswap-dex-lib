@@ -1,10 +1,10 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BProtocolABI from '../abi/BProtocol.json';
+import { IDexHelper } from '../dex-helper';
 
 export type BProtocolData = {
   exchange: string;
@@ -21,12 +21,8 @@ export class BProtocol
   static dexKeys = ['bprotocol'];
   exchangeRouterInterface: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Provider,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'bprotocol');
     this.exchangeRouterInterface = new Interface(
       BProtocolABI as JsonFragment[],
     );

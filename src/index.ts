@@ -10,6 +10,9 @@ export {
   ICache,
   IBlockManager,
   IRequestWrapper,
+  RequestConfig,
+  RequestHeaders,
+  Response,
   EventSubscriber,
 } from './dex-helper';
 
@@ -24,4 +27,7 @@ export {
   LoggerConstructor,
   Logger,
   BlockHeader,
+  Config,
 } from './types';
+
+export { ConfigHelper } from './config';

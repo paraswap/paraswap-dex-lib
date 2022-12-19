@@ -39,6 +39,7 @@ export type PoolState = {
   chainlink: {
     latestRoundDatas: Record<Address, LatestRoundData>;
   };
+  wooPPBalances: Record<Address, bigint>;
 };
 
 export type WooFiData = {};
@@ -50,4 +51,5 @@ export type DexParams = {
   wooGuardianAddress: Address;
   quoteToken: Token;
   baseTokens: Record<string, Token>;
+  rebateTo: Address;
 };

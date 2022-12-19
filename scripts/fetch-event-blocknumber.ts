@@ -3,9 +3,11 @@ dotenv.config();
 
 import { Contract } from '@ethersproject/contracts';
 import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
-import ABI from '../src/abi/balancer-v2/vault.json';
-import { ProviderURL, Network } from '../src/constants';
+import { Network } from '../src/constants';
 import { Address } from '../src/types';
+import { generateConfig } from '../src/config';
+// TODO: Import correct ABI
+import ABI from '../src/abi/erc20.json';
 
 // This is a helper script to fetch blockNumbers where a certain
 // event was released by a certain contract
@@ -37,9 +39,13 @@ async function getBlockNumbersForEvents(
   }
 }
 
-const network = Network.MAINNET;
-const eventNames = ['Swap', 'PoolBalanceChanged'];
-const address = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
-const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+// TODO: Set your values here
+const network = Network.AVALANCHE;
+const eventNames = ['Transfer'];
+const address = '0xc0253c3cc6aa5ab407b5795a04c28fb063273894';
+const provider = new StaticJsonRpcProvider(
+  generateConfig(network).privateHttpProvider,
+  network,
+);
 
 getBlockNumbersForEvents(address, ABI, eventNames, 0, 2000, provider);

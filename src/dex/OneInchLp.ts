@@ -1,11 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import OneInchLpABI from '../abi/OneInchLp.json';
 import { isETHAddress } from '../utils';
+import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 export type OneInchLpData = {
   exchange: string; // _DOUBLE_CHECK_
@@ -28,12 +29,8 @@ export class OneInchLp
   static dexKeys = ['oneinchlp'];
   exchangeRouterInterface: Interface;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Provider,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'oneinchlp');
     this.exchangeRouterInterface = new Interface(
       OneInchLpABI as JsonFragment[],
     );

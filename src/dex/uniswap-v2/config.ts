@@ -89,6 +89,34 @@ export const Adapters: {
       },
     ],
   },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'ArbitrumAdapter01',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'ArbitrumBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'OptimismAdapter01',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'OptimismBuyAdapter',
+        index: 1,
+      },
+    ],
+  },
 };
 
 export const UniswapV2Config: DexConfigMap<DexParams> = {
@@ -404,11 +432,27 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
       feeCode: 30,
     },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/sushiswap/arbitrum-exchange',
+      factoryAddress: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      initCode:
+        '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
+      feeCode: 30,
+    },
+  },
+  Swapsicle: {
+    [Network.AVALANCHE]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/billy93/exchange',
+      factoryAddress: '0x9C60C867cE07a3c403E2598388673C10259EC768',
+      initCode:
+        '0x9e43ee37212e3296c7f6087d3e0a37b48a4e4e413538dac0fd18cfe2f80666c1',
+      feeCode: 30,
+    },
   },
   QuickSwap: {
     [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap06',
+      subgraphURL: 'https://api.fura.org/subgraphs/name/quickswap',
       factoryAddress: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       initCode:
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
@@ -554,6 +598,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xc6b4cc64699496d0514c783d6aca5142c3b61e327524db01cabfa4248e430e49',
       poolGasCost: 120 * 1000,
       feeCode: 10,
+    },
+  },
+  ZipSwap: {
+    [Network.OPTIMISM]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/nonamefits/zipswap',
+      factoryAddress: '0x8BCeDD62DD46F1A76F8A1633d4f5B76e0CDa521E',
+      initCode:
+        '0x1a76b7e7272f6187014e23f04d1b2e543eed2fd1f76481149008cc6eacb05c22',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
     },
   },
 };

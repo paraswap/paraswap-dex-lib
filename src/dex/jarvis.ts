@@ -1,10 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
 import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import JarvisABI from '../abi/Jarvis.json';
+import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 const THIRTY_MINUTES = 60 * 30;
 
@@ -62,12 +63,8 @@ export class Jarvis
   poolInterface: Interface;
   needWrapNative = false;
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Provider,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'jarvis');
     this.poolInterface = new Interface(JarvisABI as JsonFragment[]);
   }
 

@@ -1,4 +1,4 @@
-import { UniswapV2 } from './uniswap-v2';
+import { UniswapV2, UniswapV2Pair } from './uniswap-v2';
 import { Network } from '../../constants';
 import { Address, DexConfigMap } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
@@ -27,7 +27,7 @@ export class MDEX extends UniswapV2 {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
     super(
@@ -44,11 +44,11 @@ export class MDEX extends UniswapV2 {
     this.mdexFactory = new Interface(MDEXFactoryABI);
   }
 
-  protected getFeesMultiCallData(poolAddress: Address) {
+  protected getFeesMultiCallData(pair: UniswapV2Pair) {
     const callEntry = {
       target: this.factoryAddress,
       callData: this.mdexFactory.encodeFunctionData('getPairFees', [
-        poolAddress,
+        pair.exchange!,
       ]),
     };
 

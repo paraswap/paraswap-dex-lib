@@ -18,18 +18,40 @@ export type AugustusOrder = {
   takerAmount: bigint;
 };
 
+export type AugustusOrderWithString = Omit<
+  AugustusOrder,
+  'expiry' | 'nonceAndMeta' | 'makerAmount' | 'takerAmount'
+> & {
+  expiry: string;
+  nonceAndMeta: BigIntAsString;
+  makerAmount: BigIntAsString;
+  takerAmount: BigIntAsString;
+};
+
 export type ParaSwapLimitOrderPriceSummary = {
   cumulativeMakerAmount: bigint;
   cumulativeTakerAmount: bigint;
 };
 
-export type ParaSwapPriceSummaryResponse = {
-  cumulativeMakerAmount: BigIntAsString;
-  cumulativeTakerAmount: BigIntAsString;
+export type ParaSwapOrderBookResponse = {
+  swappableMakerBalance: BigIntAsString;
+  swappableTakerBalance: BigIntAsString;
+  makerAmount: BigIntAsString;
+  takerAmount: BigIntAsString;
+  isFillOrKill: boolean;
+};
+
+export type ParaSwapOrderBook = {
+  swappableMakerBalance: bigint;
+  swappableTakerBalance: bigint;
+  makerAmount: bigint;
+  takerAmount: bigint;
+  isFillOrKill: boolean;
 };
 
 export type ParaSwapLimitOrdersData = {
   orderInfos: OrderInfo[] | null;
+  maxOrdersCount?: number;
 };
 
 export type DexParams = {
@@ -52,4 +74,10 @@ export type OrderInfo = {
   permitMakerAsset: string;
 };
 
-export type ParaSwapLimitOrderResponse = OrderInfo;
+export type ParaSwapOrderResponse = OrderInfo;
+
+export type BuildOrderConstants = {
+  NAME: string;
+  VERSION: string;
+  ORDER_INTERFACE: { name: string; type: string }[];
+};

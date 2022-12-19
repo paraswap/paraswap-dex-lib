@@ -6,6 +6,7 @@ import {
   PoolPrices,
   ExchangePrices,
   UnoptimizedRate,
+  TransferFeeParams,
 } from './types';
 import {
   SwapSide,
@@ -15,6 +16,7 @@ import {
 } from './constants';
 import { DexAdapterService } from './dex';
 import { IDex, IRouteOptimizer } from './dex/idex';
+import { isSrcTokenTransferFeeToBeExchanged } from './utils';
 
 export class PricingHelper {
   logger: Logger;
@@ -40,9 +42,20 @@ export class PricingHelper {
 
       if (!dexInstance.initializePricing) return;
 
-      return await dexInstance.initializePricing(blockNumber);
+      if (
+        !this.dexAdapterService.dexHelper.config.isSlave &&
+        dexInstance.cacheStateKey
+      ) {
+        this.logger.info(`remove cached state ${dexInstance.cacheStateKey}`);
+        this.dexAdapterService.dexHelper.cache.rawdel(
+          dexInstance.cacheStateKey,
+        );
+      }
+
+      await dexInstance.initializePricing(blockNumber);
+      this.logger.info(`${dexKey}: is successfully initialized`);
     } catch (e) {
-      this.logger.error('Error_startListening:', e);
+      this.logger.error(`Error_startListening_${dexKey}:`, e);
       setTimeout(
         () => this.initializeDex(dexKey, blockNumber),
         SETUP_RETRY_TIMEOUT,
@@ -59,7 +72,7 @@ export class PricingHelper {
       return this.dexAdapterService.getDexByKey(key);
     } catch (e) {
       if (e instanceof Error && e.message.startsWith('Invalid Dex Key')) {
-        this.logger.warn(`Dex ${key} was not found in getAllDexKeys`);
+        this.logger.warn(`Dex ${key} was not found in getDexByKey`);
         return null;
       }
       // Unexpected error
@@ -71,6 +84,24 @@ export class PricingHelper {
     return await Promise.all(
       dexKeys.map(key => this.initializeDex(key, blockNumber)),
     );
+  }
+
+  public async releaseResources(dexKeys: string[]) {
+    return await Promise.all(dexKeys.map(key => this.releaseDexResources(key)));
+  }
+
+  private async releaseDexResources(dexKey: string) {
+    try {
+      const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+
+      if (!dexInstance.releaseResources) return;
+
+      await dexInstance.releaseResources();
+      this.logger.info(`${dexKey}: resources were successfully released`);
+    } catch (e) {
+      this.logger.error(`Error_releaseResources_${dexKey}:`, e);
+      setTimeout(() => this.releaseDexResources(dexKey), SETUP_RETRY_TIMEOUT);
+    }
   }
 
   public async getPoolIdentifiers(
@@ -126,6 +157,26 @@ export class PricingHelper {
     );
   }
 
+  getDexsSupportingFeeOnTransfer(): string[] {
+    const allDexKeys = this.dexAdapterService.getAllDexKeys();
+    return allDexKeys
+      .map(dexKey => {
+        try {
+          const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
+          if (dexInstance.isFeeOnTransferSupported) {
+            return dexKey;
+          }
+        } catch (e) {
+          if (
+            !(e instanceof Error && e.message.startsWith(`Invalid Dex Key`))
+          ) {
+            throw e;
+          }
+        }
+      })
+      .filter((d: string | undefined): d is string => !!d);
+  }
+
   public async getPoolPrices(
     from: Token,
     to: Token,
@@ -134,6 +185,13 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     limitPoolsMap: { [key: string]: string[] | null } | null,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
+    rollupL1ToL2GasRatio?: number,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
@@ -151,6 +209,14 @@ export class PricingHelper {
 
               const dexInstance = this.dexAdapterService.getDexByKey(key);
 
+              if (
+                isSrcTokenTransferFeeToBeExchanged(transferFees) &&
+                !dexInstance.isFeeOnTransferSupported
+              ) {
+                clearTimeout(timer);
+                return resolve(null);
+              }
+
               dexInstance
                 .getPricesVolume(
                   from,
@@ -159,8 +225,50 @@ export class PricingHelper {
                   side,
                   blockNumber,
                   limitPools ? limitPools : undefined,
+                  transferFees,
                 )
-                .then(resolve, reject)
+                .then(poolPrices => {
+                  try {
+                    if (!poolPrices || !rollupL1ToL2GasRatio) {
+                      return resolve(poolPrices);
+                    }
+                    return resolve(
+                      poolPrices.map(pp => {
+                        pp.gasCostL2 = pp.gasCost;
+                        const gasCostL1 = dexInstance.getCalldataGasCost(pp);
+                        if (
+                          typeof pp.gasCost === 'number' &&
+                          typeof gasCostL1 === 'number'
+                        ) {
+                          pp.gasCost += Math.ceil(
+                            rollupL1ToL2GasRatio * gasCostL1,
+                          );
+                        } else if (
+                          typeof pp.gasCost !== 'number' &&
+                          typeof gasCostL1 !== 'number'
+                        ) {
+                          if (pp.gasCost.length !== gasCostL1.length) {
+                            throw new Error(
+                              `getCalldataGasCost returned wrong array length in dex ${key}`,
+                            );
+                          }
+                          pp.gasCost = pp.gasCost.map(
+                            (g, i) =>
+                              g +
+                              Math.ceil(rollupL1ToL2GasRatio * gasCostL1[i]),
+                          );
+                        } else {
+                          throw new Error(
+                            `getCalldataGasCost returned wrong type in dex ${key}`,
+                          );
+                        }
+                        return pp;
+                      }),
+                    );
+                  } catch (e) {
+                    reject(e);
+                  }
+                }, reject)
                 .finally(() => {
                   clearTimeout(timer);
                 });

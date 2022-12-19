@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
-import { Address, Log, Logger } from '../../types';
+import { Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { EventHandler, NervePoolConfig, PoolState } from './types';
@@ -20,8 +20,6 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: Address[];
-
   poolIface: Interface;
 
   lpTokenIface: Interface;
@@ -29,7 +27,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   private _tokenAddresses?: string[];
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -44,7 +42,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       );
     }
 
-    super(`${parentName}_${poolConfig.name}`, logger);
+    super(parentName, `${poolConfig.name}`, dexHelper, logger);
     this.math = new NervePoolMath(this.name, this.logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
@@ -137,6 +135,10 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
         target: this.lpToken.address,
         callData: this.lpTokenIface.encodeFunctionData('totalSupply', []),
       },
+      {
+        target: this.address,
+        callData: this.poolIface.encodeFunctionData('paused', []),
+      },
       _.range(0, this.numTokens).map(poolIndex => ({
         target: this.address,
         callData: this.poolIface.encodeFunctionData('getTokenBalance', [
@@ -149,7 +151,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       .aggregate(calldata)
       .call({}, blockNumber);
 
-    const [swapStorage, lpToken_supply, balances] = [
+    const [swapStorage, lpToken_supply, paused, balances] = [
       this.poolIface.decodeFunctionResult('swapStorage', data.returnData[0]),
       bigIntify(
         this.lpTokenIface.decodeFunctionResult(
@@ -157,8 +159,9 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
           data.returnData[1],
         )[0]._hex,
       ),
+      this.poolIface.decodeFunctionResult('paused', data.returnData[2]),
       _.flatten(
-        _.range(2, this.numTokens + 2).map(i =>
+        _.range(3, this.numTokens + 3).map(i =>
           bigIntify(
             this.poolIface.decodeFunctionResult(
               'getTokenBalance',
@@ -190,6 +193,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       balances,
       tokenPrecisionMultipliers: this.tokenPrecisionMultipliers,
       isValid: true,
+      paused: paused[0],
     };
   }
 
@@ -282,7 +286,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       const dyAdminFee =
         (dyFee * state.adminFee) /
         this.math.FEE_DENOMINATOR /
-        state.tokenPrecisionMultipliers[tokenIndexFrom];
+        state.tokenPrecisionMultipliers[tokenIndexTo];
 
       state.balances[tokenIndexFrom] += transferredDx;
       state.balances[tokenIndexTo] -= dy + dyAdminFee;

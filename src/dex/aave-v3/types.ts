@@ -1,4 +1,4 @@
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 
 export type Data = {
   fromAToken: boolean;

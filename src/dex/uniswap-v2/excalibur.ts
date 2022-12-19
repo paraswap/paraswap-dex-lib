@@ -1,4 +1,4 @@
-import { UniswapV2 } from './uniswap-v2';
+import { UniswapV2, UniswapV2Pair } from './uniswap-v2';
 import { Network } from '../../constants';
 import { Address, DexConfigMap } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
@@ -13,7 +13,7 @@ export const ExcaliburConfig: DexConfigMap<DexParams> = {
       factoryAddress: '0x08b3CCa975a82cFA6f912E0eeDdE53A629770D3f',
       initCode:
         '0x3b43fe52e9f2b1864ca8a959ca3ac9c5fbc46f6379347e5f7d4e60b0ca479792',
-      feeCode: 0, // this is ingored as Excalibur uses dynamic fees
+      feeCode: 0, // this is ignored as Excalibur uses dynamic fees
     },
   },
 };
@@ -26,7 +26,7 @@ export class Excalibur extends UniswapV2 {
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
     super(
@@ -42,9 +42,9 @@ export class Excalibur extends UniswapV2 {
     this.excaliburPool = new Interface(excaliburPoolABI);
   }
 
-  protected getFeesMultiCallData(poolAddress: Address) {
+  protected getFeesMultiCallData(pair: UniswapV2Pair) {
     const callEntry = {
-      target: poolAddress,
+      target: pair.exchange!,
       callData: this.excaliburPool.encodeFunctionData('feeAmount', []),
     };
     const callDecoder = (values: any[]) =>

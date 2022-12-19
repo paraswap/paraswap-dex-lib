@@ -7,13 +7,9 @@ import {
   Holders,
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
-import {
-  Network,
-  ProviderURL,
-  ContractMethod,
-  SwapSide,
-} from '../../constants';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { generateConfig } from '../../config';
 
 describe('MakerPsm E2E', () => {
   const dexKey = 'MakerPsm';
@@ -22,7 +18,10 @@ describe('MakerPsm E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(ProviderURL[network], network);
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAI';

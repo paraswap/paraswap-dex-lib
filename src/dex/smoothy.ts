@@ -10,6 +10,8 @@ import {
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import SmoothyABI from '../abi/Smoothy.json';
+import Web3 from 'web3';
+import { IDexHelper } from '../dex-helper';
 
 type SmoothyData = {
   exchange: string;
@@ -36,12 +38,8 @@ export class Smoothy
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  constructor(
-    augustusAddress: Address,
-    private network: number,
-    provider: Provider,
-  ) {
-    super(augustusAddress, provider);
+  constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'smoothy');
     this.exchangeRouterInterface = new Interface(SmoothyABI);
   }
 

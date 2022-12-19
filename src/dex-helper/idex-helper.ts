@@ -1,17 +1,22 @@
 import { Provider } from '@ethersproject/providers';
-import { Address, LoggerConstructor } from '../types';
+import { LoggerConstructor } from '../types';
 import { ICache } from './icache';
 import { IRequestWrapper } from './irequest-wrapper';
 import { IBlockManager } from './iblock-manager';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { Token } from '../types';
+import { ConfigHelper } from '../config';
+import { MultiWrapper } from '../lib/multi-wrapper';
+import { PromiseScheduler } from '../lib/promise-scheduler';
 
 export interface IDexHelper {
+  config: ConfigHelper;
   cache: ICache;
   httpRequest: IRequestWrapper;
-  augustusAddress: Address;
   multiContract: Contract;
+  multiWrapper: MultiWrapper;
+  promiseScheduler: PromiseScheduler;
   provider: Provider;
   web3Provider: Web3;
   blockManager: IBlockManager;

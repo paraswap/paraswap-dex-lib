@@ -1,7 +1,6 @@
 import { IRouter } from './irouter';
 import {
   Address,
-  Adapters,
   OptimalRate,
   ConstractSimpleData,
   TxInfo,
@@ -14,7 +13,7 @@ import { isETHAddress, uuidToBytes16 } from '../utils';
 import { Weth } from '../dex/weth/weth';
 import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
 
-import { OptimalSwap } from 'paraswap-core';
+import { OptimalSwap } from '@paraswap/core';
 import { DexAdapterService } from '../dex';
 import {
   encodeFeePercent,
@@ -87,7 +86,8 @@ export abstract class SimpleRouterBase<RouterParam>
     partialContractSimpleData: PartialContractSimpleData;
     networkFee: string;
   }> {
-    const wethAddress = Weth.getAddress(priceRoute.network);
+    const wethAddress =
+      this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress;
 
     const rawSimpleParams = await Promise.all(
       priceRoute.bestRoute[0].swaps.flatMap((swap, swapIndex) =>
@@ -102,7 +102,9 @@ export abstract class SimpleRouterBase<RouterParam>
           // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
           // Also that it is a direct swap.
           const _srcAmount =
-            swapIndex > 0 || this.side === SwapSide.SELL
+            swapIndex > 0 ||
+            this.side === SwapSide.SELL ||
+            this.dexAdapterService.getDexKeySpecial(se.exchange) === 'zerox'
               ? se.srcAmount
               : (
                   (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /

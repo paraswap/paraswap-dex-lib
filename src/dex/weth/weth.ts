@@ -2,18 +2,15 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import {
-  getDexKeysWithNetwork,
-  isETHAddress,
-  WethMap,
-  isWETH,
-} from '../../utils';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -33,26 +30,30 @@ export class Weth
   implements IDex<WethData, DexParams>, IWethDepositorWithdrawer
 {
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WethConfig);
 
-  public static getAddress(network: number = 1): Address {
-    return WethMap[network];
-  }
+  readonly address: Address;
 
   logger: Logger;
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     protected unitPrice = BI_POWS[18],
     protected poolGasCost = WethConfig[dexKey][network].poolGasCost,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
+    this.address = dexHelper.config.data.wrappedNativeTokenAddress;
     this.logger = dexHelper.getLogger(dexKey);
+  }
+
+  isWETH(tokenAddress: Address) {
+    return this.address.toLowerCase() === tokenAddress.toLowerCase();
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -65,13 +66,10 @@ export class Weth
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (
-      isETHAddress(srcToken.address) &&
-      isWETH(destToken.address, this.network)
-    ) {
+    if (isETHAddress(srcToken.address) && this.isWETH(destToken.address)) {
       return [`${this.network}_${destToken.address}`];
     } else if (
-      isWETH(srcToken.address, this.network) &&
+      this.isWETH(srcToken.address) &&
       isETHAddress(destToken.address)
     ) {
       return [`${this.network}_${srcToken.address}`];
@@ -89,10 +87,8 @@ export class Weth
     limitPools?: string[],
   ): Promise<null | ExchangePrices<WethData>> {
     const isWETHSwap =
-      (isETHAddress(srcToken.address) &&
-        isWETH(destToken.address, this.network)) ||
-      (isWETH(srcToken.address, this.network) &&
-        isETHAddress(destToken.address));
+      (isETHAddress(srcToken.address) && this.isWETH(destToken.address)) ||
+      (this.isWETH(srcToken.address) && isETHAddress(destToken.address));
 
     if (!isWETHSwap) return null;
 
@@ -102,10 +98,15 @@ export class Weth
         unit: this.unitPrice,
         gasCost: this.poolGasCost,
         exchange: this.dexKey,
-        poolAddresses: [Weth.getAddress(this.network)],
+        poolAddresses: [this.address],
         data: null,
       },
     ];
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<WethData>): number | number[] {
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
   getAdapterParam(
@@ -117,7 +118,7 @@ export class Weth
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: Weth.getAddress(this.network),
+      targetExchange: this.address,
       payload: '0x',
       networkFee: '0',
     };
@@ -143,7 +144,7 @@ export class Weth
       destToken,
       destAmount,
       swapData,
-      Weth.getAddress(this.network),
+      this.address,
     );
   }
 
@@ -159,7 +160,7 @@ export class Weth
     destAmount: string,
     side: SwapSide,
   ): DepositWithdrawReturn {
-    const wethToken = Weth.getAddress(this.network);
+    const wethToken = this.address;
 
     let deposit: DepositWithdrawData | undefined;
     let withdraw: DepositWithdrawData | undefined;

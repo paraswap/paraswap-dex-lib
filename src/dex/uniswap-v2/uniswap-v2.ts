@@ -7,12 +7,14 @@ import {
   AdapterExchangeParam,
   Address,
   ExchangePrices,
+  PoolPrices,
   Log,
   Logger,
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
   TxInfo,
+  TransferFeeParams,
 } from '../../types';
 import {
   UniswapData,
@@ -25,20 +27,21 @@ import {
 } from './types';
 import { IDex } from '../idex';
 import {
+  DEST_TOKEN_PARASWAP_TRANSFERS,
   ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
   SUBGRAPH_TIMEOUT,
 } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { SimpleExchange } from '../simple-exchange';
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { IDexHelper } from '../../dex-helper';
 import {
-  wrapETH,
   getDexKeysWithNetwork,
   isETHAddress,
   prependWithOx,
-  WethMap,
   getBigIntPow,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
@@ -47,11 +50,17 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
-import { BI_MAX_UINT } from '../../bigint-constants';
+import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
+
+const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
 export const RESERVE_LIMIT = 2n ** 112n - 1n;
 
-const DefaultUniswapV2PoolGasCost = 90 * 1000;
+const LogCallTopics = [
+  '0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1', // event Sync(uint112 reserve0, uint112 reserve1) // uni-V2 and most forks
+  '0xcf2aa50876cdfbb541206f89af0ee78d44a2abf8d328e37fa4917f982149848a', // event Sync(uint256 reserve0, uint256 reserve1) // commonly seen in solidly & forks
+];
 
 interface UniswapV2PoolState {
   reserves0: string;
@@ -72,18 +81,18 @@ export const directUniswapFunctionName = [
   UniswapV2Functions.buyOnUniswapV2Fork,
 ];
 
-export type UniswapV2Pair = {
+export interface UniswapV2Pair {
   token0: Token;
   token1: Token;
   exchange?: Address;
   pool?: UniswapV2EventPool;
-};
+}
 
 export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
   decoder = (log: Log) => this.iface.parseLog(log);
 
   constructor(
-    protected parentName: string,
+    parentName: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
     private token0: Token,
@@ -98,12 +107,12 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private iface: Interface = uniswapV2Iface,
   ) {
     super(
-      parentName +
-        ' ' +
-        (token0.symbol || token0.address) +
+      parentName,
+      (token0.symbol || token0.address) +
         '-' +
         (token1.symbol || token1.address) +
         ' pool',
+      dexHelper,
       logger,
     );
   }
@@ -112,6 +121,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     state: DeepReadonly<UniswapV2PoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<UniswapV2PoolState> | null> {
+    if (!LogCallTopics.includes(log.topics[0])) return null;
+
     const event = this.decoder(log);
     switch (event.name) {
       case 'Sync':
@@ -158,28 +169,13 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
   }
 }
 
-export const UniswapV2ExchangeRouter: { [network: number]: Address } = {
-  [Network.POLYGON]: '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
-  [Network.MAINNET]: '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
-  [Network.ROPSTEN]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.BSC]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.AVALANCHE]: '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-  [Network.FANTOM]: '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
-};
-
-// Apply extra fee for certain tokens when used as input to swap (basis points)
-// These could be tokens with fee on transfer or rounding error on balances
-// Token addresses must be in lower case!
-export const TOKEN_EXTRA_FEE: { [tokenAddress: string]: number } = {
-  // stETH - uses balances based on shares which causes rounding errors
-  '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 1,
-  '0x8b3192f5eebd8579568a2ed41e6feb402f93f73f': 200,
-};
-
-function encodePools(pools: UniswapPool[]): NumberAsString[] {
+function encodePools(
+  pools: UniswapPool[],
+  feeFactor: number,
+): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(10000 - fee) << 161n) +
+      (BigInt(feeFactor - fee) << 161n) +
       ((direction ? 0n : 1n) << 160n) +
       BigInt(address)
     ).toString();
@@ -201,13 +197,16 @@ export class UniswapV2
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported: boolean = true;
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV2Config);
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected isDynamicFees = false,
     protected factoryAddress: Address = UniswapV2Config[dexKey][network]
@@ -226,9 +225,9 @@ export class UniswapV2
       Adapters[network],
     protected router = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].router) ??
-      UniswapV2ExchangeRouter[network],
+      dexHelper.config.data.uniswapV2ExchangeRouterAddress,
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
@@ -242,7 +241,7 @@ export class UniswapV2
 
   // getFeesMultiCallData should be override
   // when isDynamicFees is set to true
-  protected getFeesMultiCallData(poolAddress: Address):
+  protected getFeesMultiCallData(pair: UniswapV2Pair):
     | undefined
     | {
         callEntry: { target: Address; callData: string };
@@ -258,8 +257,7 @@ export class UniswapV2
     feeCode: number,
     blockNumber: number,
   ) {
-    const { callEntry, callDecoder } =
-      this.getFeesMultiCallData(pair.exchange!) || {};
+    const { callEntry, callDecoder } = this.getFeesMultiCallData(pair) || {};
     pair.pool = new UniswapV2EventPool(
       this.dexKey,
       this.dexHelper,
@@ -273,49 +271,33 @@ export class UniswapV2
       callDecoder,
       this.decoderIface,
     );
+    pair.pool.addressesSubscribed.push(pair.exchange!);
 
-    if (blockNumber)
-      pair.pool.setState({ reserves0, reserves1, feeCode }, blockNumber);
-    this.dexHelper.blockManager.subscribeToLogs(
-      pair.pool,
-      pair.exchange!,
-      blockNumber,
-    );
+    await pair.pool.initialize(blockNumber, {
+      state: { reserves0, reserves1, feeCode },
+    });
   }
 
   async getBuyPrice(
     priceParams: UniswapV2PoolOrderedParams,
     destAmount: bigint,
   ): Promise<bigint> {
-    const { reservesIn, reservesOut, fee } = priceParams;
-
-    const numerator = BigInt(reservesIn) * destAmount * BigInt(this.feeFactor);
-    const denominator =
-      (BigInt(this.feeFactor) - BigInt(fee)) *
-      (BigInt(reservesOut) - destAmount);
-
-    if (denominator <= 0n) return BI_MAX_UINT;
-    return 1n + numerator / denominator;
+    return Uniswapv2ConstantProductPool.getBuyPrice(
+      priceParams,
+      destAmount,
+      this.feeFactor,
+    );
   }
 
   async getSellPrice(
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
-    const { reservesIn, reservesOut, fee } = priceParams;
-
-    if (BigInt(reservesIn) + srcAmount > RESERVE_LIMIT) {
-      return 0n;
-    }
-
-    const amountInWithFee = srcAmount * BigInt(this.feeFactor - parseInt(fee));
-
-    const numerator = amountInWithFee * BigInt(reservesOut);
-
-    const denominator =
-      BigInt(reservesIn) * BigInt(this.feeFactor) + amountInWithFee;
-
-    return denominator === 0n ? 0n : numerator / denominator;
+    return Uniswapv2ConstantProductPool.getSellPrice(
+      priceParams,
+      srcAmount,
+      this.feeFactor,
+    );
   }
 
   async getBuyPricePath(
@@ -368,7 +350,7 @@ export class UniswapV2
   ): Promise<UniswapV2PoolState[]> {
     try {
       const multiCallFeeData = pairs.map(pair =>
-        this.getFeesMultiCallData(pair.exchange!),
+        this.getFeesMultiCallData(pair),
       );
       const calldata = pairs
         .map((pair, i) => {
@@ -460,6 +442,7 @@ export class UniswapV2
     from: Token,
     to: Token,
     blockNumber: number,
+    tokenDexTransferFee: number,
   ): Promise<UniswapV2PoolOrderedParams | null> {
     const pair = await this.findPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) return null;
@@ -472,9 +455,7 @@ export class UniswapV2
       );
       return null;
     }
-    const fee = (
-      pairState.feeCode + (TOKEN_EXTRA_FEE[from.address.toLowerCase()] || 0)
-    ).toString();
+    const fee = (pairState.feeCode + tokenDexTransferFee).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
     if (pairReversed) {
@@ -505,8 +486,8 @@ export class UniswapV2
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const from = wrapETH(_from, this.network);
-    const to = wrapETH(_to, this.network);
+    const from = this.dexHelper.config.wrapETH(_from);
+    const to = this.dexHelper.config.wrapETH(_to);
 
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];
@@ -528,10 +509,16 @@ export class UniswapV2
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
-      const from = wrapETH(_from, this.network);
-      const to = wrapETH(_to, this.network);
+      const from = this.dexHelper.config.wrapETH(_from);
+      const to = this.dexHelper.config.wrapETH(_to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
@@ -550,33 +537,56 @@ export class UniswapV2
         return null;
 
       await this.batchCatchUpPairs([[from, to]], blockNumber);
-
-      const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
+      const isSell = side === SwapSide.SELL;
+      const pairParam = await this.getPairOrderedParams(
+        from,
+        to,
+        blockNumber,
+        transferFees.srcDexFee,
+      );
 
       if (!pairParam) return null;
 
-      const unitAmount = getBigIntPow(
-        side == SwapSide.BUY ? to.decimals : from.decimals,
-      );
-      const unit =
-        side == SwapSide.BUY
-          ? await this.getBuyPricePath(unitAmount, [pairParam])
-          : await this.getSellPricePath(unitAmount, [pairParam]);
+      const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
-      const prices =
-        side == SwapSide.BUY
-          ? await Promise.all(
-              amounts.map(amount => this.getBuyPricePath(amount, [pairParam])),
-            )
-          : await Promise.all(
-              amounts.map(amount => this.getSellPricePath(amount, [pairParam])),
-            );
+      const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
+        [unitAmount, ...amounts],
+        side,
+        isSell ? transferFees.srcFee : transferFees.destFee,
+        isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
+      );
+
+      const unit = isSell
+        ? await this.getSellPricePath(unitVolumeWithFee, [pairParam])
+        : await this.getBuyPricePath(unitVolumeWithFee, [pairParam]);
+
+      const prices = isSell
+        ? await Promise.all(
+            amountsWithFee.map(amount =>
+              this.getSellPricePath(amount, [pairParam]),
+            ),
+          )
+        : await Promise.all(
+            amountsWithFee.map(amount =>
+              this.getBuyPricePath(amount, [pairParam]),
+            ),
+          );
+
+      const [unitOutWithFee, ...outputsWithFee] = applyTransferFee(
+        [unit, ...prices],
+        side,
+        // This part is confusing, because we treat differently SELL and BUY fees
+        // If Buy, we should apply transfer fee on srcToken on top of dexFee applied earlier
+        // But for Sell we should apply only one dexFee
+        isSell ? transferFees.destDexFee : transferFees.srcFee,
+        isSell ? this.DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
+      );
 
       // As uniswapv2 just has one pool per token pair
       return [
         {
-          prices: prices,
-          unit: unit,
+          prices: outputsWithFee,
+          unit: unitOutWithFee,
           data: {
             router: this.router,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
@@ -605,6 +615,24 @@ export class UniswapV2
       this.logger.error(`Error_getPrices:`, e);
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<UniswapV2Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> weth
+      CALLDATA_GAS_COST.ADDRESS +
+      // ParentStruct -> pools[] header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> pools[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> pools[0]
+      CALLDATA_GAS_COST.wordNonZeroBytes(22)
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -701,7 +729,7 @@ export class UniswapV2
   getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
     if (!isETHAddress(srcToken) && !isETHAddress(destToken))
       return NULL_ADDRESS;
-    return weth || WethMap[this.network];
+    return weth || this.dexHelper.config.data.wrappedNativeTokenAddress;
   }
 
   getAdapterParam(
@@ -712,7 +740,7 @@ export class UniswapV2
     data: UniswapData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const pools = encodePools(data.pools);
+    const pools = encodePools(data.pools, this.feeFactor);
     const weth = this.getWETHAddress(srcToken, destToken, data.weth);
     const payload = this.abiCoder.encodeParameter(
       {
@@ -738,7 +766,7 @@ export class UniswapV2
     data: UniswapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const pools = encodePools(data.pools);
+    const pools = encodePools(data.pools, this.feeFactor);
     const weth = this.getWETHAddress(src, dest, data.weth);
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
@@ -794,7 +822,7 @@ export class UniswapV2
             srcAmount,
             destAmount,
             this.getWETHAddress(srcToken, destToken, _data.weth),
-            encodePools(_data.pools),
+            encodePools(_data.pools, this.feeFactor),
           ];
 
         case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
@@ -804,7 +832,7 @@ export class UniswapV2
             srcAmount,
             destAmount,
             this.getWETHAddress(srcToken, destToken, _data.weth),
-            encodePools(_data.pools),
+            encodePools(_data.pools, this.feeFactor),
             permit,
           ];
 

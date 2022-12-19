@@ -3,6 +3,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import _ from 'lodash';
 import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { PRECISION } from './fee-formula';
 import {
   getTradeInfo,
@@ -14,6 +15,7 @@ import {
 import {
   AdapterExchangeParam,
   ExchangePrices,
+  PoolPrices,
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
@@ -32,7 +34,7 @@ import { Contract } from 'web3-eth-contract';
 import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
-import { getBigIntPow, getDexKeysWithNetwork, wrapETH } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -51,18 +53,19 @@ export class KyberDmm
   exchangeRouterInterface: Interface;
 
   readonly hasConstantPriceLargeAmounts = false;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(KyberDmmConfig);
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected config = KyberDmmConfig[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
 
     this.logger = dexHelper.getLogger(dexKey);
 
@@ -80,8 +83,8 @@ export class KyberDmm
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    from = wrapETH(from, this.network);
-    to = wrapETH(to, this.network);
+    from = this.dexHelper.config.wrapETH(from);
+    to = this.dexHelper.config.wrapETH(to);
 
     const pair = await this.findPair(from, to);
 
@@ -226,7 +229,7 @@ export class KyberDmm
     );
   }
 
-  private addPool(
+  private async addPool(
     pair: KyberDmmPair,
     poolAddress: string,
     poolData: KyberDmmPoolState,
@@ -246,12 +249,10 @@ export class KyberDmm
         this.logger,
       );
       pair.pools[poolAddress] = pool;
-      if (blockNumber) pool.setState(poolData, blockNumber);
-      this.dexHelper.blockManager.subscribeToLogs(
-        pool,
-        poolAddress,
-        blockNumber,
-      );
+      pool.addressesSubscribed.push(poolAddress);
+      await pool.initialize(blockNumber, {
+        state: poolData,
+      });
     }
   }
 
@@ -268,8 +269,8 @@ export class KyberDmm
         return null;
       }
 
-      from = wrapETH(from, this.network);
-      to = wrapETH(to, this.network);
+      from = this.dexHelper.config.wrapETH(from);
+      to = this.dexHelper.config.wrapETH(to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
@@ -311,6 +312,21 @@ export class KyberDmm
       this.logger.error(`${this.dexKey}_getPrices`, e);
       return null;
     }
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<KyberDmmData>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_LARGE +
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS * 2
+    );
   }
 
   private async getPoolPrice(
@@ -477,11 +493,13 @@ export class KyberDmm
       pair.exchanges = pair.exchanges.filter(pool => poolsState[pool]);
     }
 
-    Object.entries(poolsState).forEach(([poolAddress, state]) => {
-      if (!pair.pools[poolAddress]) {
-        this.addPool(pair, poolAddress, state, blockNumber);
-      } else pair.pools[poolAddress].setState(state, blockNumber);
-    });
+    await Promise.all(
+      Object.entries(poolsState).map(async ([poolAddress, state]) => {
+        if (!pair.pools[poolAddress]) {
+          await this.addPool(pair, poolAddress, state, blockNumber);
+        } else pair.pools[poolAddress].setState(state, blockNumber);
+      }),
+    );
   }
 
   private async getPairOrderedParams(

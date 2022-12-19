@@ -2,12 +2,15 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 import { ethers } from 'ethers';
-import { Address } from 'paraswap-core';
-import { Network, NULL_ADDRESS, ProviderURL } from '../src/constants';
+import { Address } from '@paraswap/core';
+import { Network, NULL_ADDRESS } from '../src/constants';
 import { ParaSwapLimitOrdersConfig } from '../src/dex/paraswap-limit-orders/config';
+import { generateConfig } from '../src/config';
 
 const network = Network.ROPSTEN;
-const provider = ethers.getDefaultProvider(ProviderURL[network]);
+const provider = ethers.getDefaultProvider(
+  generateConfig(network).privateHttpProvider,
+);
 const makerPK = process.env.MAKER_PK || '';
 const taker = '0xCf8C4a46816b146Ed613d23f6D22e1711915d653';
 

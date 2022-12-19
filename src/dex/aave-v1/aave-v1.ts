@@ -3,12 +3,14 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -35,6 +37,7 @@ export class AaveV1
   implements IDex<AaveV1Data, AaveV1Param>
 {
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AaveV1Config);
@@ -45,10 +48,10 @@ export class AaveV1
 
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper, // TODO: add any additional optional params to support other fork DEXes
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.aavePool = new Interface(AAVE_LENDING_POOL_ABI_V1 as JsonFragment[]);
     this.aContract = new Interface(ERC20 as JsonFragment[]);
@@ -111,6 +114,15 @@ export class AaveV1
         poolAddresses: [fromAToken ? srcToken.address : destToken.address],
       },
     ];
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<AaveV1Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS
+    );
   }
 
   // Encode params required by the exchange adapter

@@ -3,18 +3,15 @@ import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
-import {
-  wrapETH,
-  getDexKeysWithNetwork,
-  isETHAddress,
-  getBigIntPow,
-} from '../../utils';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { getDexKeysWithNetwork, isETHAddress, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Data, Param, PoolAndWethFunctions } from './types';
@@ -29,6 +26,7 @@ const REF_CODE = 1;
 
 export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   readonly hasConstantPriceLargeAmounts = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(Config);
@@ -39,12 +37,12 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   private wethGateway: Interface;
   constructor(
     protected network: Network,
-    protected dexKey: string,
+    dexKey: string,
     protected dexHelper: IDexHelper,
     protected config = Config[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper.augustusAddress, dexHelper.provider);
+    super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.wethGateway = new Interface(WETH_GATEWAY_ABI);
     this.pool = new Interface(POOL_ABI);
@@ -71,8 +69,8 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   ): Promise<string[]> {
     const aToken = getATokenIfAaveV3Pair(
       this.network,
-      wrapETH(srcToken, this.network),
-      wrapETH(destToken, this.network),
+      this.dexHelper.config.wrapETH(srcToken),
+      this.dexHelper.config.wrapETH(destToken),
     );
 
     if (aToken === null) return [];
@@ -88,8 +86,8 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<Data>> {
-    const _src = wrapETH(srcToken, this.network);
-    const _dst = wrapETH(destToken, this.network);
+    const _src = this.dexHelper.config.wrapETH(srcToken);
+    const _dst = this.dexHelper.config.wrapETH(destToken);
 
     const aToken = getATokenIfAaveV3Pair(this.network, _src, _dst);
 
@@ -114,6 +112,15 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
         poolAddresses: [fromAToken ? srcToken.address : destToken.address],
       },
     ];
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(poolPrices: PoolPrices<Data>): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.ADDRESS
+    );
   }
 
   getAdapterParam(
