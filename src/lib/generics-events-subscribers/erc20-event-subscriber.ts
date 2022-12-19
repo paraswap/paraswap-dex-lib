@@ -18,6 +18,7 @@ import {
 } from '../tokens/types';
 import { ERC20Event, ERC20StateMap, WrappedEvent } from './types';
 import { CACHE_PREFIX } from '../../constants';
+import { catchParseLogError } from '../../utils';
 
 export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap> {
   private walletAddresses: Set<string> = new Set<string>();
@@ -121,10 +122,13 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<ERC20StateMap> | null {
-    const event = erc20Iface.parseLog(log);
-
-    if (event.name in this.handlers) {
-      return this.handlers[event.name](event, state);
+    try {
+      const event = erc20Iface.parseLog(log);
+      if (event.name in this.handlers) {
+        return this.handlers[event.name](event, state);
+      }
+    } catch (e) {
+      catchParseLogError(e, this.logger);
     }
 
     return null;
