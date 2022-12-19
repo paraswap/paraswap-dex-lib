@@ -37,8 +37,6 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Contract } from 'web3-eth-contract';
 import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 
-const POOL_CACHE_REFRESH_INTERVAL = 60 * 5; // 5 minutes
-
 export class JarvisV6
   extends SimpleExchange
   implements IDex<JarvisV6Data, JarvisV6Params>
@@ -203,73 +201,14 @@ export class JarvisV6
     ];
   }
 
+  // Called a lot of times
   async getSystemMaxVars(
     poolAddress: Address,
     blockNumber: number,
   ): Promise<JarvisV6SystemMaxVars> {
-    const cacheKey = `${this.dexKey}_systemMaxVars_${poolAddress}`;
-    const cachedSystemMaxVars = await this.dexHelper.cache.getAndCacheLocally(
-      this.dexKey,
-      this.network,
-      cacheKey,
-      POOL_CACHE_REFRESH_INTERVAL,
-    );
-
-    if (cachedSystemMaxVars) {
-      const { maxTokensCapacity, totalSyntheticTokens } =
-        JSON.parse(cachedSystemMaxVars);
-
-      return {
-        maxTokensCapacity: BigInt(maxTokensCapacity),
-        totalSyntheticTokens: BigInt(totalSyntheticTokens),
-      };
-    }
-
-    const multiContract = this.dexHelper.multiContract;
-    const encodedResp = (await multiContract.methods
-      .aggregate([
-        {
-          target: poolAddress,
-          callData: this.poolInterface.encodeFunctionData(
-            'maxTokensCapacity',
-            [],
-          ),
-        },
-        {
-          target: poolAddress,
-          callData: this.poolInterface.encodeFunctionData(
-            'totalSyntheticTokens',
-            [],
-          ),
-        },
-      ])
-      .call({}, blockNumber)) as { returnData: [string, string] };
-
-    const maxTokensCapacity = this.poolInterface
-      .decodeFunctionResult('maxTokensCapacity', encodedResp.returnData[0])[0]
-      .toString();
-    const totalSyntheticTokens = this.poolInterface
-      .decodeFunctionResult(
-        'totalSyntheticTokens',
-        encodedResp.returnData[1],
-      )[0]
-      .toString();
-
-    const systemMaxVarStr = JSON.stringify({
-      maxTokensCapacity,
-      totalSyntheticTokens,
-    });
-    this.dexHelper.cache.setexAndCacheLocally(
-      this.dexKey,
-      this.network,
-      cacheKey,
-      POOL_CACHE_REFRESH_INTERVAL,
-      systemMaxVarStr,
-    );
-
     return {
-      maxTokensCapacity: BigInt(maxTokensCapacity),
-      totalSyntheticTokens: BigInt(totalSyntheticTokens),
+      maxTokensCapacity: BigInt(0), // TODO
+      totalSyntheticTokens: BigInt(0), // TODO
     };
   }
 
