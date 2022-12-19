@@ -131,7 +131,7 @@ describe('BalancerV2', function () {
     });
   });
 
-  describe.only('PhantomStable', () => {
+  describe('PhantomStable', () => {
     /*
     As advised by @shresth this test has been commented out.
     checkPoolPrices expects price to decrease as higher amounts are used. Linear/PhantomStable can sometimes return same or better.
@@ -139,49 +139,41 @@ describe('BalancerV2', function () {
       PhantomStable Pool: DAI>BBADAI
       prices: [ 0n, 1002063220340675582n, 2004126440858960874n ] (1002063220340675582, 1002063220518285292)
     */
-    it('getPoolIdentifiers and getPricesVolume', async function () {
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
-
-      await balancerV2.initializePricing(blocknumber);
-
-      const pools = await balancerV2.getPoolIdentifiers(
-        BBAUSD,
-        BBADAI,
-        SwapSide.SELL,
-        blocknumber,
-      );
-      console.log('BBAUSD <> BBADAI Pool Identifiers: ', pools);
-
-      expect(pools.length).toBeGreaterThan(0);
-
-      const poolPrices = await balancerV2.getPricesVolume(
-        BBAUSD,
-        BBADAI,
-        amounts,
-        SwapSide.SELL,
-        blocknumber,
-        pools,
-      );
-      console.log('BBAUSD <> BBADAI Pool Prices: ', poolPrices);
-
-      expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-    });
-
-    it('getTopPoolsForToken', async function () {
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
-
-      const poolLiquidity = await balancerV2.getTopPoolsForToken(
-        BBAUSD.address,
-        10,
-      );
-      console.log('BBAUSD Top Pools:', poolLiquidity);
-
-      checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
-    });
+    // it('getPoolIdentifiers and getPricesVolume', async function () {
+    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
+    //   const blocknumber = await dexHelper.provider.getBlockNumber();
+    //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+    //   await balancerV2.initializePricing(blocknumber);
+    //   const pools = await balancerV2.getPoolIdentifiers(
+    //     BBAUSD,
+    //     BBADAI,
+    //     SwapSide.SELL,
+    //     blocknumber,
+    //   );
+    //   console.log('BBAUSD <> BBADAI Pool Identifiers: ', pools);
+    //   expect(pools.length).toBeGreaterThan(0);
+    //   const poolPrices = await balancerV2.getPricesVolume(
+    //     BBAUSD,
+    //     BBADAI,
+    //     amounts,
+    //     SwapSide.SELL,
+    //     blocknumber,
+    //     pools,
+    //   );
+    //   console.log('BBAUSD <> BBADAI Pool Prices: ', poolPrices);
+    //   expect(poolPrices).not.toBeNull();
+    //   checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+    // });
+    // it('getTopPoolsForToken', async function () {
+    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
+    //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+    //   const poolLiquidity = await balancerV2.getTopPoolsForToken(
+    //     BBAUSD.address,
+    //     10,
+    //   );
+    //   console.log('BBAUSD Top Pools:', poolLiquidity);
+    //   checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
+    // });
   });
 
   describe('VirtualBoosted Pools', () => {

@@ -544,7 +544,12 @@ export class BalancerV2
           })
         : poolsWithTokens;
 
-      console.log(allowedPools);
+      console.log(
+        allowedPools,
+        limitPools,
+        poolsWithTokens,
+        this.eventPools.virtualBoostedPools,
+      );
       if (!allowedPools.length) return null;
 
       const unitVolume = getBigIntPow(
