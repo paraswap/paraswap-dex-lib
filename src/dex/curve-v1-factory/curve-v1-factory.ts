@@ -151,14 +151,12 @@ export class CurveV1Factory
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
       dexHelper,
       allPriceHandlers,
-      this.config.stateUpdatePeriodMs,
     );
   }
 
   async initializePricing(blockNumber: number) {
-    // This is only to start timer, each pool is initialized with updated state
-    this.poolManager.initializePollingPools();
     await this.fetchFactoryPools(blockNumber);
+    await this.poolManager.fetchLiquiditiesFromApi();
     this.logger.info(`${this.dexKey}: successfully initialized`);
   }
 
@@ -949,5 +947,12 @@ export class CurveV1Factory
     const newCoinsType = _.cloneDeep(this.coinsTypeTemplate);
     newCoinsType.inputs![0].type = type;
     return newCoinsType;
+  }
+
+  async syncState(
+    blockNumber: number,
+    limitPools: string[] | undefined,
+  ): Promise<void> {
+    await this.poolManager.updatePollingPoolsInBatch(blockNumber, limitPools);
   }
 }

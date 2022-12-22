@@ -2,7 +2,7 @@ import Web3EthAbi, { AbiCoder } from 'web3-eth-abi';
 import { Logger } from 'log4js';
 import { MultiCallParams } from '../../../lib/multi-wrapper';
 import {
-  MAX_ALLOWED_STATE_DELAY_FACTOR,
+  MAX_ALLOWED_STATE_DELAY_TIME_MS,
   MIN_LIQUIDITY_IN_USD,
 } from '../constants';
 import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
@@ -84,8 +84,7 @@ export abstract class PoolPollingBase {
   isStateUpToDate(state: PoolState | null): boolean {
     return (
       state !== null &&
-      Date.now() - state.updatedAtMs <
-        this.stateUpdatePeriodMs * MAX_ALLOWED_STATE_DELAY_FACTOR
+      Date.now() - state.updatedAtMs < MAX_ALLOWED_STATE_DELAY_TIME_MS
     );
   }
 

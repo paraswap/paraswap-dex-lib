@@ -152,6 +152,8 @@ export interface IDexPricing<ExchangeData> {
   // return true if the userAddress is is blacklisted from the exchange
   // useful for RFQ system
   isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
+
+  syncState?(blockNumber: number, poolIdentifiers?: string[]): Promise<void>;
 }
 
 export interface IDexPooltracker {
