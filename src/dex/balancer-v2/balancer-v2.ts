@@ -25,7 +25,16 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
+import {
+  VirtualBoostedPool,
+  SwapData,
+  BoostedPools,
+} from './VirtualBoostedPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
+import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
+import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
+import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -38,6 +47,7 @@ import {
   OptimizedBalancerV2Data,
   SwapTypes,
   PoolStateMap,
+  BalancerSwap,
   PoolStateCache,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -54,6 +64,7 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
+    totalLiquidity
   }
 }`;
 
@@ -69,7 +80,7 @@ const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestamp
 }`;
 
 // These should match the Balancer Pool types available on Subgraph
-enum BalancerPoolTypes {
+export enum BalancerPoolTypes {
   Weighted = 'Weighted',
   Stable = 'Stable',
   MetaStable = 'MetaStable',
@@ -77,6 +88,7 @@ enum BalancerPoolTypes {
   Investment = 'Investment',
   AaveLinear = 'AaveLinear',
   StablePhantom = 'StablePhantom',
+  VirtualBoosted = 'VirtualBoosted',
   ERC4626Linear = 'ERC4626Linear',
 }
 
@@ -98,10 +110,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   pools: {
-    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
+    [type: string]:
+      | WeightedPool
+      | StablePool
+      | LinearPool
+      | PhantomStablePool
+      | VirtualBoostedPool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
+  public virtualBoostedPools: BoostedPools = {};
   vaultDecoder: (log: Log) => any;
 
   eventSupportedPoolTypes = [
@@ -130,16 +148,37 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ) {
     super(parentName, vaultAddress, dexHelper, logger);
     this.vaultInterface = new Interface(VaultABI);
+    const weightedPoolInterface = new Interface(WeightedPoolABI);
     const weightedPool = new WeightedPool(
       this.vaultAddress,
       this.vaultInterface,
+      weightedPoolInterface,
     );
-    const stablePool = new StablePool(this.vaultAddress, this.vaultInterface);
+    const stablePoolInterface = new Interface(StablePoolABI);
+    const stablePool = new StablePool(
+      this.vaultAddress,
+      this.vaultInterface,
+      stablePoolInterface,
+    );
+    const metaStablePoolInterface = new Interface(MetaStablePoolABI);
     const stablePhantomPool = new PhantomStablePool(
       this.vaultAddress,
       this.vaultInterface,
+      metaStablePoolInterface,
     );
-    const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
+    const linearPoolInterface = new Interface(LinearPoolABI);
+    const linearPool = new LinearPool(
+      this.vaultAddress,
+      this.vaultInterface,
+      linearPoolInterface,
+    );
+
+    const virtualBoostedPool = new VirtualBoostedPool(
+      this.vaultAddress,
+      this.vaultInterface,
+      linearPoolInterface,
+      metaStablePoolInterface,
+    );
 
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
@@ -151,6 +190,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // ERC4626Linear has the same maths and ABI as AaveLinear (has different factory)
     this.pools[BalancerPoolTypes.ERC4626Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
+    this.pools[BalancerPoolTypes.VirtualBoosted] = virtualBoostedPool;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -236,7 +276,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
-    const allPools = await this.fetchAllSubgraphPools();
+    const subgraphPools = await this.fetchAllSubgraphPools();
+    const virtualBoostedPools = VirtualBoostedPool.createPools(subgraphPools);
+    this.virtualBoostedPools = virtualBoostedPools.dictionary;
+    // Add the virtual pools to the list of all pools from the Subgraph
+    const allPools = [...virtualBoostedPools.subgraph, ...subgraphPools];
     this.allPools = allPools;
     const eventSupportedPools = allPools.filter(
       pool =>
@@ -282,11 +326,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     from: Token,
     to: Token,
     pool: SubgraphPoolBase,
-    poolState: PoolState,
+    poolStates: { [address: string]: PoolState },
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
-  ): { unit: bigint; prices: bigint[] } | null {
+  ): { unit: bigint; prices: bigint[]; gasCost: number } | null {
     if (!this.isSupportedPool(pool.poolType)) {
       console.error(`Unsupported Pool Type: ${pool.poolType}`);
       return null;
@@ -296,9 +340,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     const poolPairData = this.pools[pool.poolType].parsePoolPairData(
       pool,
-      poolState,
+      poolStates,
       from.address,
       to.address,
+      this.virtualBoostedPools,
     );
 
     if (
@@ -315,7 +360,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       _amounts,
       poolPairData as any,
     );
-    return { unit: _prices[0], prices: [0n, ..._prices.slice(1)] };
+    return {
+      unit: _prices[0],
+      prices: [0n, ..._prices.slice(1)],
+      gasCost: poolPairData.gasCost,
+    };
   }
 
   async getOnChainState(
@@ -326,7 +375,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       .map(pool => {
         if (!this.isSupportedPool(pool.poolType)) return [];
 
-        return this.pools[pool.poolType].getOnChainCalls(pool);
+        return this.pools[pool.poolType].getOnChainCalls(
+          pool,
+          this.virtualBoostedPools,
+        );
       })
       .flat();
 
@@ -350,7 +402,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
         const [decoded, newIndex] = this.pools[
           pool.poolType
-        ].decodeOnChainCalls(pool, returnData, i);
+        ].decodeOnChainCalls(pool, returnData, i, this.virtualBoostedPools);
         i = newIndex;
         acc = { ...acc, ...decoded };
         return acc;
@@ -367,6 +419,8 @@ export class BalancerV2
   implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
 {
   protected eventPools: BalancerV2EventPool;
+  // Stores subgraph pools for updatePoolState/getTopPoolsForToken
+  allPools?: SubgraphPoolBase[];
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
@@ -515,11 +569,28 @@ export class BalancerV2
     const _from = this.dexHelper.config.wrapETH(from);
     const _to = this.dexHelper.config.wrapETH(to);
 
+    console.log(_from.address.toLowerCase(), _to.address.toLowerCase());
+    console.log(JSON.stringify(this.eventPools.allPools));
     const pools = this.getPools(_from, _to);
 
-    return pools.map(
-      ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
-    );
+    console.log(pools);
+    const identifiers: string[] = [];
+
+    pools.forEach(p => {
+      identifiers.push(`${this.dexKey}_${p.address.toLowerCase()}`);
+      if (p.poolType === 'VirtualBoosted') {
+        identifiers.push(
+          `${this.dexKey}_${p.address.toLowerCase()}virtualboosted`,
+        );
+        // VirtualBoosted pool should return identifiers for all the internal pools
+        // e.g. for bbausd this is 3 Linear pools and the PhantomStable linking them
+        p.tokens.forEach(t =>
+          identifiers.push(`${this.dexKey}_${t.linearPoolAddr?.toLowerCase()}`),
+        );
+      }
+    });
+
+    return identifiers;
   }
 
   /**
@@ -564,13 +635,51 @@ export class BalancerV2
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
 
-      const allPools = this.getPools(_from, _to);
-      const allowedPools = limitPools
-        ? allPools.filter(({ address }) =>
-            limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
-          )
-        : allPools;
+      const poolsWithTokens = this.getPools(_from, _to);
 
+      // limit pools are IDS of pools we can use (preceded with BalancerV2_)
+      // poolsWithTokens contains pool data for pools with tokenIn/Out
+      // allowedPools contains pool data for pools with tokenIn/Out that are in limit list
+      const allowedPools = limitPools
+        ? poolsWithTokens.filter(pool => {
+            if (
+              !limitPools.includes(
+                `${this.dexKey}_${pool.address.toLowerCase()}`,
+              )
+            )
+              return false;
+
+            const id = pool.id.split(pool.poolType.toLowerCase())[0];
+            // VirtualPools must have all their internal pools in limitPools
+            if (this.eventPools.virtualBoostedPools[id]) {
+              if (
+                !limitPools.includes(
+                  `${this.dexKey}_${pool.address.toLowerCase()}virtualboosted`,
+                )
+              )
+                return false;
+
+              for (let t of this.eventPools.virtualBoostedPools[id]
+                .mainTokens) {
+                if (
+                  !limitPools.includes(
+                    `${this.dexKey}_${t.linearPoolAddr.toLowerCase()}`,
+                  )
+                )
+                  return false;
+              }
+            }
+
+            return true;
+          })
+        : poolsWithTokens;
+
+      console.log(
+        allowedPools,
+        limitPools,
+        poolsWithTokens,
+        this.eventPools.virtualBoostedPools,
+      );
       if (!allowedPools.length) return null;
 
       const unitVolume = getBigIntPow(
@@ -609,6 +718,11 @@ export class BalancerV2
         );
       }
 
+      const completePoolStates = {
+        ...eventPoolStatesRO,
+        ...nonEventPoolStates,
+      };
+
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
           const poolAddress = pool.address.toLowerCase();
@@ -624,22 +738,31 @@ export class BalancerV2
               _from,
               _to,
               pool,
-              poolState,
+              completePoolStates,
               amounts,
               unitVolume,
               side,
             );
-            if (!res) return;
+            if (!res) return null;
+
+            let poolAddresses = [poolAddress];
+            const id = pool.id.split(pool.poolType.toLowerCase())[0];
+            if (this.eventPools.virtualBoostedPools[id]) {
+              this.eventPools.virtualBoostedPools[id].mainTokens.forEach(t => {
+                poolAddresses.push(t.linearPoolAddr.toLowerCase());
+              });
+            }
+
             return {
               unit: res.unit,
               prices: res.prices,
               data: {
                 poolId: pool.id,
               },
-              poolAddresses: [poolAddress],
+              poolAddresses,
               exchange: this.dexKey,
-              gasCost: 150 * 1000,
-              poolIdentifier: `${this.dexKey}_${poolAddress}`,
+              gasCost: res.gasCost,
+              poolIdentifier: `${this.dexKey}_${pool.id}`,
             };
           } catch (e) {
             this.logger.error(
@@ -767,7 +890,40 @@ export class BalancerV2
     };
   }
 
-  private getBalancerParam(
+  updateSwapAsset(
+    tokenIndex: number,
+    swapAssets: string[],
+    currentAssets: string[],
+  ): number {
+    const token = swapAssets[tokenIndex];
+    const currentIndex = currentAssets.indexOf(token);
+    if (currentIndex === -1) {
+      currentAssets.push(token);
+      return currentAssets.length - 1;
+    } else {
+      return currentIndex;
+    }
+  }
+
+  updateSwapAssets(swapData: SwapData, currentAssets: string[]): SwapData {
+    // Update currentAssets. By the end it will contain all assets from all swaps.
+    // Update each swap index to match currentAsset
+    swapData.swaps.forEach(swap => {
+      swap.assetInIndex = this.updateSwapAsset(
+        swap.assetInIndex,
+        swapData.assets,
+        currentAssets,
+      );
+      swap.assetOutIndex = this.updateSwapAsset(
+        swap.assetOutIndex,
+        swapData.assets,
+        currentAssets,
+      );
+    });
+    return swapData;
+  }
+
+  getBalancerParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
@@ -775,18 +931,45 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): BalancerParam {
+    // assets array will contain list of all assets used in all swaps
+    let assets: string[] = [srcToken, destToken];
+    // swap asset indices will be match to assets array
+    let swaps: BalancerSwap[] = [];
+
+    // swaps contains poolId and amount data
+    data.swaps.forEach(swap => {
+      if (swap.poolId.includes(VirtualBoostedPool.poolType.toLowerCase())) {
+        // VirtualBoostedPools swaps will consist of multihops.
+        // getSwapData will construct the relevant swaps, assets and limits
+        const swapData = VirtualBoostedPool.getSwapData(
+          srcToken,
+          destToken,
+          swap.poolId,
+          swap.amount,
+          this.eventPools.virtualBoostedPools,
+        );
+
+        // Update assets and swaps with any new assets or indices
+        const updatedSwaps = this.updateSwapAssets(swapData, assets);
+        swaps = [...swaps, ...updatedSwaps.swaps];
+      } else {
+        // Non-virtual pools will be a direct swap src>dst
+        swaps.push({
+          poolId: swap.poolId,
+          assetInIndex: 0,
+          assetOutIndex: 1,
+          amount: swap.amount,
+          userData: '0x',
+        });
+      }
+    });
+
     // BalancerV2 Uses Address(0) as ETH
-    const assets = [srcToken, destToken].map(t =>
+    assets = assets.map(t =>
       t.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? NULL_ADDRESS : t,
     );
 
-    const swaps = data.swaps.map(s => ({
-      poolId: s.poolId,
-      assetInIndex: 0,
-      assetOutIndex: 1,
-      amount: s.amount,
-      userData: '0x',
-    }));
+    const limits: string[] = Array(assets.length).fill(MAX_INT);
 
     const funds = {
       sender: this.augustusAddress,
@@ -794,8 +977,6 @@ export class BalancerV2
       fromInternalBalance: false,
       toInternalBalance: false,
     };
-
-    const limits = [MAX_INT, MAX_INT];
 
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
@@ -841,34 +1022,32 @@ export class BalancerV2
     );
   }
 
-  async getTopPoolsForToken(
-    tokenAddress: Address,
-    count: number,
-  ): Promise<PoolLiquidity[]> {
-    const variables = {
-      tokens: [tokenAddress],
-      count,
-    };
+  // This is called once before getTopPoolsForToken is
+  // called for multiple tokens. This can be helpful to
+  // update common state required for calculating
+  // getTopPoolsForToken. It is optional for a DEX
+  // to implement this
+  async updatePoolState(): Promise<void> {
+    const query = `
+      query {
+          pools: pools(first: 1000, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
+            id
+            address
+            poolType
+            tokens {
+              address
+              decimals
+            }
+            mainIndex
+            wrappedIndex
+            totalLiquidity
+            tokensList
+          }
+      }`;
 
-    const query = `query ($tokens: [Bytes!], $count: Int) {
-      pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
-           where: {tokensList_contains: $tokens,
-                   swapEnabled: true,
-                   totalLiquidity_gt: 0}) {
-        address
-        totalLiquidity
-        tokens {
-          address
-          decimals
-        }
-      }
-    }`;
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
-      {
-        query,
-        variables,
-      },
+      { query },
       SUBGRAPH_TIMEOUT,
     );
 
@@ -877,7 +1056,30 @@ export class BalancerV2
         `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
       );
 
-    const pools = _.map(data.pools, (pool: any) => ({
+    // Create virtual pool info
+    const virtualBoostedPools = VirtualBoostedPool.createPools(data.pools);
+
+    // Combine virtual pools with sg pools and order by liquidity
+    this.allPools = [...data.pools, ...virtualBoostedPools.subgraph].sort(
+      (a, b) => b.totalLiquidity - a.totalLiquidity,
+    );
+  }
+
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    count: number,
+  ): Promise<PoolLiquidity[]> {
+    if (!this.allPools) await this.updatePoolState();
+
+    const poolsWithToken = this.allPools
+      ?.filter(p =>
+        p.tokens.some(
+          token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+        ),
+      )
+      .slice(0, count);
+
+    const pools = _.map(poolsWithToken, (pool: any) => ({
       exchange: this.dexKey,
       address: pool.address.toLowerCase(),
       connectorTokens: pool.tokens.reduce(
