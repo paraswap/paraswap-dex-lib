@@ -332,7 +332,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     side: SwapSide,
   ): { unit: bigint; prices: bigint[]; gasCost: number } | null {
     if (!this.isSupportedPool(pool.poolType)) {
-      console.error(`Unsupported Pool Type: ${pool.poolType}`);
+      this.logger.error(`Unsupported Pool Type: ${pool.poolType}`);
       return null;
     }
 
@@ -569,11 +569,8 @@ export class BalancerV2
     const _from = this.dexHelper.config.wrapETH(from);
     const _to = this.dexHelper.config.wrapETH(to);
 
-    console.log(_from.address.toLowerCase(), _to.address.toLowerCase());
-    console.log(JSON.stringify(this.eventPools.allPools));
     const pools = this.getPools(_from, _to);
 
-    console.log(pools);
     const identifiers: string[] = [];
 
     pools.forEach(p => {
@@ -674,12 +671,6 @@ export class BalancerV2
           })
         : poolsWithTokens;
 
-      console.log(
-        allowedPools,
-        limitPools,
-        poolsWithTokens,
-        this.eventPools.virtualBoostedPools,
-      );
       if (!allowedPools.length) return null;
 
       const unitVolume = getBigIntPow(
