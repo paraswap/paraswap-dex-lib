@@ -423,7 +423,7 @@ export abstract class StatefulEventSubscriber<State>
       Object.entries(this._aggregatedLogMessages).forEach(
         ([message, aggregated]) => {
           this.logger[aggregated.level](
-            `${message} (${aggregated.count}) counts`,
+            `${message} (${aggregated.count}) counts, now=${now}`,
           );
         },
       );
