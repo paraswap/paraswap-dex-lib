@@ -100,10 +100,15 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
 
   async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {
     const evenState = this.getState(blockNumber);
-    if (evenState) return evenState;
-    const onChainState = await this.generateState(blockNumber);
-    this.setState(onChainState, blockNumber);
-    return onChainState;
+    if (evenState) {
+      return evenState;
+    }
+
+    const onChainStateWithBn = await this.generateState(blockNumber);
+
+    this.setState(onChainStateWithBn.state, onChainStateWithBn.blockNumber);
+
+    return onChainStateWithBn.state;
   }
 
   async getMaxAmountIn(_tokenIn: Address, _tokenOut: Address): Promise<bigint> {

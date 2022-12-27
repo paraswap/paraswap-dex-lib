@@ -5,7 +5,10 @@ import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger, Token } from '../../types';
 import { SwapSide } from '../../constants';
 import { catchParseLogError } from '../../utils';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, PoolInfo, FractionAsString } from './types';
 import { BN_POWS } from '../../bignumber-constants';
@@ -172,14 +175,21 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    return (
+  async generateState(
+    blockNumber: number,
+  ): Promise<GenerateStateResult<PoolState>> {
+    const state = (
       await generatePoolStates(
         [this.poolInfo],
         this.balancerMulticall,
         blockNumber,
       )
     )[0];
+
+    return {
+      blockNumber,
+      state,
+    };
   }
 
   handleJoinPool(

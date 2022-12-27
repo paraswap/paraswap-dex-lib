@@ -8,7 +8,6 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
-  MultiCallInput,
 } from '../../types';
 import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -21,9 +20,7 @@ import {
   SwaapV1Data,
   SwaapV1PoolState,
   SubgraphPoolBase,
-  SwaapV1ProxySwapArguments,
   SwaapV1PoolSwapArguments,
-  SwaapV1Swap,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import {
@@ -585,7 +582,11 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       allowedPools.map(async poolAddress => {
         let state = this.eventPools[poolAddress].getState(blockNumber);
         if (!state) {
-          state = await this.eventPools[poolAddress].generateState(blockNumber);
+          const newStateWithBn = await this.eventPools[
+            poolAddress
+          ].generateState(blockNumber);
+          state = newStateWithBn.state;
+          blockNumber = newStateWithBn.blockNumber;
         }
         let [unit, prices] = this.getPricesPool(
           from.address,

@@ -3,10 +3,12 @@ import { DeepReadonly } from 'ts-essentials';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import { getFee, getRFactor } from './fee-formula';
 import { KyberDmmAbiEvents, TradeInfo } from './types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BI_POWS } from '../../bigint-constants';
 
 export type KyberDmmPools = { [poolAddress: string]: KyberDmmPool };
 
@@ -122,7 +124,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<KyberDmmPoolState>> {
+  ): Promise<GenerateStateResult<KyberDmmPoolState>> {
     const data: { returnData: any[] } =
       await this.dexHelper.multiContract.methods
         .aggregate([
@@ -166,19 +168,22 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
       .map(a => BigInt(a.toString()));
 
     return {
-      trendData: {
-        shortEMA,
-        longEMA,
-        lastBlockVolume,
-        lastTradeBlock,
+      blockNumber,
+      state: {
+        trendData: {
+          shortEMA,
+          longEMA,
+          lastBlockVolume,
+          lastTradeBlock,
+        },
+        reserves: {
+          reserves0,
+          reserves1,
+          vReserves0,
+          vReserves1,
+        },
+        ampBps: this.ampBps,
       },
-      reserves: {
-        reserves0,
-        reserves1,
-        vReserves0,
-        vReserves1,
-      },
-      ampBps: this.ampBps,
     };
   }
 }

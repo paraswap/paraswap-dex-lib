@@ -3,13 +3,17 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
 import { Log, Logger } from '../../types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { EventHandler, NervePoolConfig, PoolState } from './types';
 import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
 import { bigIntify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
+import { blockAndAggregate } from '../../utils';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   readonly math: NervePoolMath;
@@ -125,7 +129,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<PoolState>> {
+  ): Promise<GenerateStateResult<PoolState>> {
     const calldata = _.flattenDeep([
       {
         target: this.address,
@@ -147,9 +151,13 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       })),
     ]);
 
-    const data = await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
-      .call({}, blockNumber);
+    const results = await blockAndAggregate(
+      this.dexHelper.multiContract,
+      calldata,
+      blockNumber,
+    );
+
+    const data = results.results;
 
     const [swapStorage, lpToken_supply, paused, balances] = [
       this.poolIface.decodeFunctionResult('swapStorage', data.returnData[0]),
@@ -173,27 +181,30 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     ];
 
     return {
-      initialA: bigIntify(swapStorage.initialA._hex),
-      futureA: bigIntify(swapStorage.futureA._hex),
-      initialATime: bigIntify(swapStorage.initialATime._hex),
-      futureATime: bigIntify(swapStorage.futureATime._hex),
-      // If we have swapFee or fee, use these values, otherwise set to zero
-      swapFee:
-        ((swapStorage.swapFee || swapStorage.fee) &&
-          bigIntify((swapStorage.swapFee || swapStorage.fee)._hex)) ||
-        0n,
-      adminFee: bigIntify(swapStorage.adminFee._hex),
-      defaultDepositFee:
-        swapStorage.defaultDepositFee &&
-        bigIntify(swapStorage.defaultDepositFee._hex),
-      defaultWithdrawFee:
-        swapStorage.defaultWithdrawFee &&
-        bigIntify(swapStorage.defaultWithdrawFee._hex),
-      lpToken_supply,
-      balances,
-      tokenPrecisionMultipliers: this.tokenPrecisionMultipliers,
-      isValid: true,
-      paused: paused[0],
+      blockNumber: results.blockNumber,
+      state: {
+        initialA: bigIntify(swapStorage.initialA._hex),
+        futureA: bigIntify(swapStorage.futureA._hex),
+        initialATime: bigIntify(swapStorage.initialATime._hex),
+        futureATime: bigIntify(swapStorage.futureATime._hex),
+        // If we have swapFee or fee, use these values, otherwise set to zero
+        swapFee:
+          ((swapStorage.swapFee || swapStorage.fee) &&
+            bigIntify((swapStorage.swapFee || swapStorage.fee)._hex)) ||
+          0n,
+        adminFee: bigIntify(swapStorage.adminFee._hex),
+        defaultDepositFee:
+          swapStorage.defaultDepositFee &&
+          bigIntify(swapStorage.defaultDepositFee._hex),
+        defaultWithdrawFee:
+          swapStorage.defaultWithdrawFee &&
+          bigIntify(swapStorage.defaultWithdrawFee._hex),
+        lpToken_supply,
+        balances,
+        tokenPrecisionMultipliers: this.tokenPrecisionMultipliers,
+        isValid: true,
+        paused: paused[0],
+      },
     };
   }
 

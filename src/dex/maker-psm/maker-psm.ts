@@ -14,7 +14,10 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -174,8 +177,10 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    return (
+  async generateState(
+    blockNumber: number,
+  ): Promise<GenerateStateResult<PoolState>> {
+    const state = (
       await getOnChainState(
         this.dexHelper.multiContract,
         [this.poolConfig],
@@ -183,6 +188,11 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
         blockNumber,
       )
     )[0];
+
+    return {
+      blockNumber,
+      state,
+    };
   }
 }
 
@@ -276,9 +286,10 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
   ): Promise<PoolState> {
     const eventState = pool.getState(blockNumber);
     if (eventState) return eventState;
-    const onChainState = await pool.generateState(blockNumber);
-    pool.setState(onChainState, blockNumber);
-    return onChainState;
+    const onChainStateWithBn = await pool.generateState(blockNumber);
+    pool.setState(onChainStateWithBn.state, onChainStateWithBn.blockNumber);
+
+    return onChainStateWithBn.state;
   }
 
   computePrices(

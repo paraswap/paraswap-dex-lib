@@ -35,7 +35,10 @@ import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
@@ -275,7 +278,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return allPools;
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+  async generateState(
+    blockNumber: number,
+  ): Promise<GenerateStateResult<PoolStateMap>> {
     const subgraphPools = await this.fetchAllSubgraphPools();
     const virtualBoostedPools = VirtualBoostedPool.createPools(subgraphPools);
     this.virtualBoostedPools = virtualBoostedPools.dictionary;
@@ -291,7 +296,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       eventSupportedPools,
       blockNumber,
     );
-    return allPoolsLatestState;
+    return {
+      blockNumber,
+      state: allPoolsLatestState,
+    };
   }
 
   handleSwap(event: any, pool: PoolState, log: Log): PoolState {

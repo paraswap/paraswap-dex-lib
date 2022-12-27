@@ -1,8 +1,11 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import _ from 'lodash';
+import _, { result } from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  GenerateStateResult,
+  StatefulEventSubscriber,
+} from '../../stateful-event-subscriber';
 import {
   AdapterExchangeParam,
   Address,
@@ -43,6 +46,7 @@ import {
   isETHAddress,
   prependWithOx,
   getBigIntPow,
+  blockAndAggregate,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
@@ -137,7 +141,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<UniswapV2PoolState>> {
+  ): Promise<GenerateStateResult<UniswapV2PoolState>> {
     let calldata = [
       {
         target: this.poolAddress,
@@ -149,10 +153,13 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.methods
-        .aggregate(calldata)
-        .call({}, blockNumber);
+    const results = await blockAndAggregate(
+      this.dexHelper.multiContract,
+      calldata,
+      blockNumber,
+    );
+
+    const data = results.results;
 
     const decodedData = coder.decode(
       ['uint112', 'uint112', 'uint32'],
@@ -160,11 +167,14 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     );
 
     return {
-      reserves0: decodedData[0].toString(),
-      reserves1: decodedData[1].toString(),
-      feeCode: this.dynamicFees
-        ? this.feesMultiCallDecoder!(data.returnData[1])
-        : this.feeCode,
+      blockNumber: results.blockNumber,
+      state: {
+        reserves0: decodedData[0].toString(),
+        reserves1: decodedData[1].toString(),
+        feeCode: this.dynamicFees
+          ? this.feesMultiCallDecoder!(data.returnData[1])
+          : this.feeCode,
+      },
     };
   }
 }

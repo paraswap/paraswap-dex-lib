@@ -20,6 +20,11 @@ export type InitializeStateOptions<State> = {
   initCallback?: (state: DeepReadonly<State>) => void;
 };
 
+export type GenerateStateResult<State> = {
+  state: DeepReadonly<State>;
+  blockNumber: number;
+};
+
 export abstract class StatefulEventSubscriber<State>
   implements EventSubscriber
 {
@@ -104,7 +109,10 @@ export abstract class StatefulEventSubscriber<State>
             this.logger.warn(
               `${this.parentName}: ${this.name}: found null state in cache generate new one`,
             );
-            state.state = await this.generateState(blockNumber);
+            const stateAndBn = await this.generateState(blockNumber);
+
+            state.state = stateAndBn.state;
+            state.bn = stateAndBn.blockNumber;
           } else {
             this.logger.info(
               `${this.parentName}: ${this.name}: found state from cache`,
@@ -133,8 +141,8 @@ export abstract class StatefulEventSubscriber<State>
           this.logger.info(
             `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
           );
-          const state = await this.generateState(blockNumber);
-          this.setState(state, blockNumber);
+          const stateAndBn = await this.generateState(blockNumber);
+          this.setState(stateAndBn.state, stateAndBn.blockNumber);
 
           // we should publish only if generateState succeeded
           this.dexHelper.cache.publish('new_pools', this.cacheName);
@@ -144,8 +152,8 @@ export abstract class StatefulEventSubscriber<State>
         this.logger.info(
           `${this.parentName}: ${this.name}: cache generating state`,
         );
-        const state = await this.generateState(blockNumber);
-        this.setState(state, blockNumber);
+        const stateAndBn = await this.generateState(blockNumber);
+        this.setState(stateAndBn.state, stateAndBn.blockNumber);
       }
     }
 
@@ -203,7 +211,7 @@ export abstract class StatefulEventSubscriber<State>
   //generate one from scratch.
   abstract generateState(
     blockNumber?: number | 'latest',
-  ): AsyncOrSync<DeepReadonly<State>>;
+  ): AsyncOrSync<GenerateStateResult<State>>;
 
   restart(blockNumber: number): void {
     for (const bn in this.stateHistory) {
@@ -250,8 +258,8 @@ export abstract class StatefulEventSubscriber<State>
         ++indexBlockEnd;
       }
       if (!this.state) {
-        const freshState = await this.generateState(blockNumber);
-        this.setState(freshState, blockNumber);
+        const freshStateAndBn = await this.generateState(blockNumber);
+        this.setState(freshStateAndBn.state, freshStateAndBn.blockNumber);
       }
       //Find the last state before the blockNumber of the logs
       let stateBeforeLog: DeepReadonly<State> | undefined;
@@ -283,18 +291,16 @@ export abstract class StatefulEventSubscriber<State>
         if (this.state !== null) {
           return true;
         }
-        const latestBlockNumber =
-          this.dexHelper.blockManager.getLatestBlockNumber();
         this.logger.warn(
-          `${network}: ${this.parentName}: ${this.name}: master generate (latest: ${latestBlockNumber}) new state because state is null`,
+          `${network}: ${this.parentName}: ${this.name}: master generate (latest) new state because state is null`,
         );
         try {
-          const state = await this.generateState(latestBlockNumber);
-          this.setState(state, latestBlockNumber);
+          const stateAndBn = await this.generateState('latest');
+          this.setState(stateAndBn.state, stateAndBn.blockNumber);
           return true;
         } catch (e) {
           this.logger.error(
-            `${network}: ${this.parentName} ${this.name}: (${latestBlockNumber}) failed fetch state:`,
+            `${network}: ${this.parentName} ${this.name}: (latest) failed fetch state:`,
             e,
           );
         }

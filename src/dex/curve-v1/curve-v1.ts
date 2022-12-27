@@ -348,7 +348,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       );
 
       for (let i = 0; i < poolsToFetch.length; i++) {
-        await poolsToFetch[i].setup(blockNumber, poolStates[i] as any);
+        await poolsToFetch[i].setup(
+          poolStates.blockNumber,
+          poolStates.states[i] as any,
+        );
         this.eventPools.push(poolsToFetch[i]);
       }
       return unavailablePools;

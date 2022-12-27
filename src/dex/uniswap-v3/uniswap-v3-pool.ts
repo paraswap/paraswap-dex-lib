@@ -5,6 +5,7 @@ import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
+  GenerateStateResult,
   InitializeStateOptions,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
@@ -17,7 +18,7 @@ import {
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
-import { bigIntify, catchParseLogError } from '../../utils';
+import { bigIntify, blockAndAggregate, catchParseLogError } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { NumberAsString } from '@paraswap/core';
 import {
@@ -49,6 +50,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   readonly stateMultiContract: Contract;
 
+  readonly stateMultiInterface: Interface;
+
   private _stateRequestCallData?: {
     funcName: string;
     params: unknown[];
@@ -64,7 +67,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
-    stateMultiAddress: Address,
+    private stateMultiAddress: Address,
     protected readonly factoryAddress: Address,
     public readonly feeCode: bigint,
     token0: Address,
@@ -90,6 +93,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       UniswapV3StateMulticallABI as AbiItem[],
       stateMultiAddress,
     );
+
+    this.stateMultiInterface = new Interface(UniswapV3StateMulticallABI);
 
     this.token0sub = getERC20Subscriber(this.dexHelper, this.token0);
     this.token1sub = getERC20Subscriber(this.dexHelper, this.token1);
@@ -161,7 +166,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ): Promise<DeepReadonly<PoolState> | null> {
     const newState = await super.processBlockLogs(state, logs, blockHeader);
     if (newState && !newState.isValid) {
-      return await this.generateState(blockHeader.number);
+      const newStateWithBn = await this.generateState(blockHeader.number);
+      this.setState(newStateWithBn.state, newStateWithBn.blockNumber);
+      return newStateWithBn.state;
     }
     return newState;
   }
@@ -236,14 +243,28 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<GenerateStateResult<PoolState>> {
     const callData = this._getStateRequestCallData();
 
-    const results = await this.stateMultiContract.methods[callData.funcName](
-      ...callData.params,
-    ).call({}, blockNumber || 'latest');
+    const calls = [
+      this.stateMultiInterface.encodeFunctionData(
+        callData.funcName,
+        callData.params,
+      ),
+    ];
 
-    const _state = results;
+    const _results = await blockAndAggregate(
+      this.dexHelper.multiContract,
+      calls.map(call => ({
+        target: this.stateMultiAddress,
+        callData: call,
+      })),
+      blockNumber,
+    );
+
+    const _state = _results.results;
 
     const tickBitmap = {};
     const ticks = {};
@@ -269,32 +290,35 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const requestedRange = this.getBitmapRangeToRequest();
 
     return {
-      pool: _state.pool,
-      blockTimestamp: bigIntify(_state.blockTimestamp),
-      slot0: {
-        sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
-        tick: currentTick,
-        observationIndex: +_state.slot0.observationIndex,
-        observationCardinality: +_state.slot0.observationCardinality,
-        observationCardinalityNext: +_state.slot0.observationCardinalityNext,
-        feeProtocol: bigIntify(_state.slot0.feeProtocol),
+      blockNumber: _results.blockNumber,
+      state: {
+        pool: _state.pool,
+        blockTimestamp: bigIntify(_state.blockTimestamp),
+        slot0: {
+          sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
+          tick: currentTick,
+          observationIndex: +_state.slot0.observationIndex,
+          observationCardinality: +_state.slot0.observationCardinality,
+          observationCardinalityNext: +_state.slot0.observationCardinalityNext,
+          feeProtocol: bigIntify(_state.slot0.feeProtocol),
+        },
+        liquidity: bigIntify(_state.liquidity),
+        fee: this.feeCode,
+        tickSpacing,
+        maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
+        tickBitmap,
+        ticks,
+        observations,
+        isValid: true,
+        startTickBitmap,
+        lowestKnownTick:
+          (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
+          tickSpacing,
+        highestKnownTick:
+          ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
+            BigInt.asIntN(24, 255n)) *
+          tickSpacing,
       },
-      liquidity: bigIntify(_state.liquidity),
-      fee: this.feeCode,
-      tickSpacing,
-      maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
-      tickBitmap,
-      ticks,
-      observations,
-      isValid: true,
-      startTickBitmap,
-      lowestKnownTick:
-        (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
-        tickSpacing,
-      highestKnownTick:
-        ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
-          BigInt.asIntN(24, 255n)) *
-        tickSpacing,
     };
   }
 

@@ -2,7 +2,10 @@ import _ from 'lodash';
 import { LogDescription } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { IDexHelper } from '../../dex-helper';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../stateful-event-subscriber';
 import { Log, BlockHeader, Address } from '../../types';
 import { erc20Iface } from '../utils-interfaces';
 import {
@@ -108,10 +111,12 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     blockHeader: Readonly<BlockHeader>,
   ): Promise<DeepReadonly<ERC20StateMap> | null> {
     const _state = _.cloneDeep(state);
-    let newState = await super.processBlockLogs(_state, logs, blockHeader);
+    const newState = await super.processBlockLogs(_state, logs, blockHeader);
     if (!newState) {
       this.logger.warn('received empty state generate new one');
-      newState = await this.generateState(blockHeader.number);
+      const newStateWithBn = await this.generateState(blockHeader.number);
+      this.setState(newStateWithBn.state, newStateWithBn.blockNumber);
+      return newStateWithBn.state;
     }
 
     return newState;
@@ -185,7 +190,9 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     this.setState(state, blockNumber);
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<ERC20StateMap>> {
+  async generateState(
+    blockNumber: number,
+  ): Promise<GenerateStateResult<ERC20StateMap>> {
     const request = Array.from(this.walletAddresses).reduce((acc, wallet) => {
       acc.push({
         owner: wallet,
@@ -207,17 +214,20 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       request,
       blockNumber,
     );
-    return balances.reduce((acc, balance) => {
-      acc[balance.owner] = {
-        balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
-      };
-      this.dexHelper.cache.hset(
-        this.mapKey,
-        balance.owner,
-        balance.amounts[DEFAULT_ID_ERC20_AS_STRING].toString(),
-      );
-      return acc;
-    }, {} as ERC20StateMap);
+    return {
+      blockNumber,
+      state: balances.reduce((acc, balance) => {
+        acc[balance.owner] = {
+          balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
+        };
+        this.dexHelper.cache.hset(
+          this.mapKey,
+          balance.owner,
+          balance.amounts[DEFAULT_ID_ERC20_AS_STRING].toString(),
+        );
+        return acc;
+      }, {} as ERC20StateMap),
+    };
   }
 
   async getBalance(wallet: Address, blockNumber: number): Promise<bigint> {

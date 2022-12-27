@@ -3,7 +3,10 @@ import { Interface } from '@ethersproject/abi';
 import BigNumber from 'bignumber.js';
 import { Logger } from 'log4js';
 import { Address, Log } from '../../../types';
-import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../../stateful-event-subscriber';
 import { DeepReadonly } from 'ts-essentials';
 // import { getManyPoolStates } from './getstate-multicall';
 import { BN_0, BN_POWS } from '../../../bignumber-constants';
@@ -103,8 +106,14 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   }
 
   async setup(blockNumber: number, poolState: PoolState | null = null) {
-    if (!poolState) poolState = await this.generateState(blockNumber);
-    if (blockNumber) this.setState(poolState, blockNumber);
+    if (!poolState) {
+      const poolStateWithBn = await this.generateState(blockNumber);
+      poolState = poolStateWithBn.state as PoolState;
+      blockNumber = poolStateWithBn.blockNumber;
+    }
+    if (blockNumber) {
+      this.setState(poolState, blockNumber);
+    }
   }
 
   protected getRates() {
@@ -114,10 +123,19 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<Readonly<PoolState>> {
-    return (
-      await getManyPoolStates([this], this.dexHelper.multiContract, blockNumber)
-    )[0];
+  ): Promise<GenerateStateResult<PoolState>> {
+    const resultsWithBn = await getManyPoolStates(
+      [this],
+      this.dexHelper.multiContract,
+      blockNumber,
+    );
+
+    const state = resultsWithBn.states[0];
+
+    return {
+      blockNumber: resultsWithBn.blockNumber,
+      state,
+    };
   }
 
   handleNewParameters(event: any, state: PoolState, log: Log): PoolState {

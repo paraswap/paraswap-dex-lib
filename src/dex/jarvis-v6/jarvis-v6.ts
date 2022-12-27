@@ -145,10 +145,13 @@ export class JarvisV6
     blockNumber: number,
   ): Promise<PoolState> {
     const eventState = pool.getState(blockNumber);
-    if (eventState) return eventState;
-    const onChainState = await pool.generateState(blockNumber);
-    pool.setState(onChainState, blockNumber);
-    return onChainState;
+    if (eventState) {
+      return eventState;
+    }
+
+    const onChainStateWithBn = await pool.generateState(blockNumber);
+    pool.setState(onChainStateWithBn.state, onChainStateWithBn.blockNumber);
+    return onChainStateWithBn.state;
   }
 
   // Returns pool prices for amounts.

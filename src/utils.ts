@@ -5,6 +5,7 @@ import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger, TransferFeeParams } from './types';
 import _ from 'lodash';
+import { Contract } from 'web3-eth-contract';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -339,4 +340,24 @@ export const isDestTokenTransferFeeToBeExchanged = (
   transferFees: TransferFeeParams,
 ) => {
   return !!(transferFees.destFee || transferFees.destDexFee);
+};
+
+type MultiCallParams = {
+  target: any;
+  callData: any;
+};
+
+export const blockAndAggregate = async (
+  multi: Contract,
+  calls: MultiCallParams[],
+  blockNumber: number | 'latest',
+) => {
+  const results = await multi.methods
+    .blockAndAggregate(calls)
+    .call({}, blockNumber);
+
+  return {
+    blockNumber: Number(results.blockNumber),
+    results: results.returnData,
+  };
 };

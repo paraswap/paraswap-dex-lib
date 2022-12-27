@@ -11,7 +11,10 @@ import {
   OracleInitialData,
   ChainLinkData,
 } from './types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  GenerateStateResult,
+} from '../../stateful-event-subscriber';
 import { Log, MultiCallInput, MultiCallOutput } from '../../types';
 import PoolABI from '../../abi/swaap-v1/pool.json';
 import ProxyABI from '../../abi/chainlink.json';
@@ -887,7 +890,7 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
   //generate one from scratch.
   public async generateState(
     blockNumber?: number | 'latest',
-  ): Promise<DeepReadonly<SwaapV1PoolState>> {
+  ): Promise<GenerateStateResult<SwaapV1PoolState>> {
     if (blockNumber === 'latest' || blockNumber === undefined) {
       blockNumber = await this.dexHelper.provider.getBlockNumber();
     }
@@ -905,9 +908,12 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
     );
 
     return {
-      parameters: parameters,
-      liquidities: liquidities,
-      oracles: oracles,
+      blockNumber,
+      state: {
+        parameters: parameters,
+        liquidities: liquidities,
+        oracles: oracles,
+      },
     };
   }
 
