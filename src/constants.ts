@@ -38,7 +38,6 @@ export enum Network {
   ARBITRUM = 42161,
   OPTIMISM = 10,
 }
-
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 
 export enum LIMIT_ORDER_PROVIDERS {
