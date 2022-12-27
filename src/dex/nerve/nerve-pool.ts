@@ -160,21 +160,16 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     const data = results.results;
 
     const [swapStorage, lpToken_supply, paused, balances] = [
-      this.poolIface.decodeFunctionResult('swapStorage', data.returnData[0]),
+      this.poolIface.decodeFunctionResult('swapStorage', data[0]),
       bigIntify(
-        this.lpTokenIface.decodeFunctionResult(
-          'totalSupply',
-          data.returnData[1],
-        )[0]._hex,
+        this.lpTokenIface.decodeFunctionResult('totalSupply', data[1])[0]._hex,
       ),
-      this.poolIface.decodeFunctionResult('paused', data.returnData[2]),
+      this.poolIface.decodeFunctionResult('paused', data[2]),
       _.flatten(
         _.range(3, this.numTokens + 3).map(i =>
           bigIntify(
-            this.poolIface.decodeFunctionResult(
-              'getTokenBalance',
-              data.returnData[i],
-            )[0]._hex,
+            this.poolIface.decodeFunctionResult('getTokenBalance', data[i])[0]
+              ._hex,
           ),
         ),
       ),
