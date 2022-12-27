@@ -16,7 +16,10 @@ type StateCache<State> = {
 };
 
 export type InitializeStateOptions<State> = {
-  state?: DeepReadonly<State>;
+  state?: {
+    blockNumber: number;
+    state: DeepReadonly<State>;
+  };
   initCallback?: (state: DeepReadonly<State>) => void;
 };
 
@@ -88,12 +91,12 @@ export abstract class StatefulEventSubscriber<State>
   //      will also publish a message to cache to tell one master version of dex-lib that this slave
   //      instance subscribed to a pool from dex this.parentName and name this.name.
   async initialize(
-    blockNumber: number,
+    blockNumber: number | 'latest',
     options?: InitializeStateOptions<State>,
   ) {
     let masterBn: undefined | number = undefined;
     if (options && options.state) {
-      this.setState(options.state, blockNumber);
+      this.setState(options.state.state, options.state.blockNumber);
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(
@@ -113,35 +116,34 @@ export abstract class StatefulEventSubscriber<State>
 
             state.state = stateAndBn.state;
             state.bn = stateAndBn.blockNumber;
+            masterBn = state.bn;
+            this.setState(state.state, state.bn);
           } else {
-            this.logger.info(
+            this.logger.trace(
               `${this.parentName}: ${this.name}: found state from cache`,
             );
-            blockNumber = state.bn;
-
             const _masterBn = await this.dexHelper.cache.rawget(
               this.dexHelper.config.masterBlockNumberCacheKey,
             );
             if (_masterBn) {
               masterBn = parseInt(_masterBn, 10);
-              this.logger.info(
-                `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
+              this.logger.trace(
+                `${this.dexHelper.config.data.network} found master blockNumber ${masterBn}`,
               );
+              this.setState(state.state, state.bn);
             } else {
               this.logger.error(
                 `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
               );
             }
           }
-          // set state and the according blockNumber. state.bn can be smaller, greater or equal
-          // to blockNumber
-          this.setState(state.state, blockNumber);
         } else {
           // if no state found in cache generate new state using rpc
           this.logger.info(
             `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
           );
           const stateAndBn = await this.generateState(blockNumber);
+          masterBn = stateAndBn.blockNumber;
           this.setState(stateAndBn.state, stateAndBn.blockNumber);
 
           // we should publish only if generateState succeeded
@@ -153,6 +155,7 @@ export abstract class StatefulEventSubscriber<State>
           `${this.parentName}: ${this.name}: cache generating state`,
         );
         const stateAndBn = await this.generateState(blockNumber);
+        masterBn = stateAndBn.blockNumber;
         this.setState(stateAndBn.state, stateAndBn.blockNumber);
       }
     }
@@ -168,7 +171,7 @@ export abstract class StatefulEventSubscriber<State>
     this.dexHelper.blockManager.subscribeToLogs(
       this,
       this.addressesSubscribed,
-      masterBn || blockNumber,
+      masterBn!,
     );
     this.isInitialized = true;
   }

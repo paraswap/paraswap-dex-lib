@@ -192,7 +192,10 @@ export class BalancerV1
             );
 
             await newPool.initialize(blockNumber, {
-              state: poolState,
+              state: {
+                blockNumber,
+                state: poolState,
+              },
             });
             this.eventPools[poolInfo.id] = newPool;
           }

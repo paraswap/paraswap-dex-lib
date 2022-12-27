@@ -108,7 +108,10 @@ export class JarvisV6
       this.poolConfigs.map(async (pool, index) => {
         const eventPool = this.eventPools[pool.address.toLowerCase()];
         await eventPool.initialize(blockNumber, {
-          state: poolStates[index],
+          state: {
+            state: poolStates[index],
+            blockNumber,
+          },
         });
       }),
     );

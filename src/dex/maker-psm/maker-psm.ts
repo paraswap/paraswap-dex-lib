@@ -244,7 +244,10 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       this.poolConfigs.map(async (p, i) => {
         const eventPool = this.eventPools[p.gem.address.toLowerCase()];
         await eventPool.initialize(blockNumber, {
-          state: poolStates[i],
+          state: {
+            state: poolStates[i],
+            blockNumber,
+          },
         });
       }),
     );

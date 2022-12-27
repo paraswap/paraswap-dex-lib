@@ -284,7 +284,10 @@ export class UniswapV2
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
     await pair.pool.initialize(blockNumber, {
-      state: { reserves0, reserves1, feeCode },
+      state: {
+        blockNumber: blockNumber,
+        state: { reserves0, reserves1, feeCode },
+      },
     });
   }
 

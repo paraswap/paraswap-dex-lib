@@ -251,7 +251,10 @@ export class KyberDmm
       pair.pools[poolAddress] = pool;
       pool.addressesSubscribed.push(poolAddress);
       await pool.initialize(blockNumber, {
-        state: poolData,
+        state: {
+          state: poolData,
+          blockNumber,
+        },
       });
     }
   }
