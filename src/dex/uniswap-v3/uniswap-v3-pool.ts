@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { result } from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { Interface } from '@ethersproject/abi';
@@ -264,7 +264,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       blockNumber,
     );
 
-    const _state = _results.results;
+    const _state = this.stateMultiInterface.decodeFunctionResult(
+      callData.funcName,
+      _results.results[0],
+    )[0];
 
     const tickBitmap = {};
     const ticks = {};

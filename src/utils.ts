@@ -358,6 +358,6 @@ export const blockAndAggregate = async (
 
   return {
     blockNumber: Number(results.blockNumber),
-    results: results.returnData,
+    results: results.returnData.map((res: any) => res.returnData),
   };
 };
