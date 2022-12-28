@@ -161,10 +161,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
 
     const data = results.results;
 
-    const decodedData = coder.decode(
-      ['uint112', 'uint112', 'uint32'],
-      data.returnData[0],
-    );
+    const decodedData = coder.decode(['uint112', 'uint112', 'uint32'], data[0]);
 
     return {
       blockNumber: results.blockNumber,
@@ -172,7 +169,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
         reserves0: decodedData[0].toString(),
         reserves1: decodedData[1].toString(),
         feeCode: this.dynamicFees
-          ? this.feesMultiCallDecoder!(data.returnData[1])
+          ? this.feesMultiCallDecoder!(data[1])
           : this.feeCode,
       },
     };
