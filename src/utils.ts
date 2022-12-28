@@ -354,7 +354,7 @@ export const blockAndAggregate = async (
 ) => {
   const results = await multi.methods
     .blockAndAggregate(calls)
-    .call({}, blockNumber);
+    .call(undefined, blockNumber);
 
   return {
     blockNumber: Number(results.blockNumber),

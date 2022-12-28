@@ -122,18 +122,20 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   async initialize(
-    blockNumber: number,
+    blockNumber: number | 'latest',
     options?: InitializeStateOptions<PoolState>,
   ) {
     await super.initialize(blockNumber, options);
     // only if the super call succeed
 
     const initPromises = [];
+    const latestBlockNumber =
+      this.dexHelper.blockManager.getLatestBlockNumber();
     if (!this.token0sub.isInitialized && !this.dexHelper.config.isSlave) {
       initPromises.push(
         this.token0sub.initialize(blockNumber, {
           state: {
-            blockNumber,
+            blockNumber: latestBlockNumber,
             state: {},
           },
         }),
@@ -144,7 +146,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       initPromises.push(
         this.token1sub.initialize(blockNumber, {
           state: {
-            blockNumber,
+            blockNumber: latestBlockNumber,
             state: {},
           },
         }),
@@ -156,11 +158,11 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     await Promise.all([
       this.token0sub.subscribeToWalletBalanceChange(
         this.poolAddress,
-        blockNumber,
+        latestBlockNumber,
       ),
       this.token1sub.subscribeToWalletBalanceChange(
         this.poolAddress,
-        blockNumber,
+        latestBlockNumber,
       ),
     ]);
   }

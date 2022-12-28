@@ -159,7 +159,7 @@ export class UniswapV3
       );
 
       try {
-        await pool.initialize(blockNumber, {
+        await pool.initialize('latest', {
           initCallback: (state: DeepReadonly<PoolState>) => {
             //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
             pool!.addressesSubscribed[0] = state.pool;
@@ -167,7 +167,8 @@ export class UniswapV3
           },
         });
       } catch (e) {
-        if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+        // we are using a multicall to generateState with latest and blockNumber. We cannot retrieve the revert message so we can just check if multicall failed.
+        if (e instanceof Error && e.message.endsWith('call failed')) {
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
           pool = null;
