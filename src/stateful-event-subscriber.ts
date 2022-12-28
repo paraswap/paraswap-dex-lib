@@ -261,7 +261,7 @@ export abstract class StatefulEventSubscriber<State>
         ++indexBlockEnd;
       }
       if (!this.state) {
-        const freshStateAndBn = await this.generateState(blockNumber);
+        const freshStateAndBn = await this.generateState('latest');
         this.setState(freshStateAndBn.state, freshStateAndBn.blockNumber);
       }
       //Find the last state before the blockNumber of the logs
