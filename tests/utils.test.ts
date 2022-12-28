@@ -19,15 +19,25 @@ describe('MultiCall with blockNumber', () => {
   );
 
   it('MultiCall with blockNumber', async () => {
-    const res = await blockAndAggregate(multiContract, [
-      {
-        target: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-        callData: getBalanceERC20('0x05182e579fdfcf69e4390c3411d8fea1fb6467cf'),
-      },
-      {
-        target: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-        callData: getBalanceERC20('0x05182e579fdfcf69e4390c3411d8fea1fb6467cf'),
-      },
-    ]);
+    const res = await blockAndAggregate(
+      multiContract,
+      [
+        {
+          target: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          callData: getBalanceERC20(
+            '0x05182e579fdfcf69e4390c3411d8fea1fb6467cf',
+          ),
+        },
+        {
+          target: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          callData: getBalanceERC20(
+            '0x05182e579fdfcf69e4390c3411d8fea1fb6467cf',
+          ),
+        },
+      ],
+      'latest',
+    );
+
+    console.log(res);
   });
 });
