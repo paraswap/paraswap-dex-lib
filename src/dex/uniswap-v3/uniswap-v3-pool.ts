@@ -174,7 +174,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ): Promise<DeepReadonly<PoolState> | null> {
     const newState = await super.processBlockLogs(state, logs, blockHeader);
     if (newState && !newState.isValid) {
-      const newStateWithBn = await this.generateState(blockHeader.number);
+      const newStateWithBn = await this.generateState('latest');
       this.setState(newStateWithBn.state, newStateWithBn.blockNumber);
       return newStateWithBn.state;
     }
