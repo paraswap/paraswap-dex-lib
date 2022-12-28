@@ -72,29 +72,16 @@ async function _getManyPoolStates(
     states: pools.map((pool: CurvePool | CurveMetapool) => {
       const _state = {
         admin_fee: strbnify(
-          pool.poolIface.decodeFunctionResult(
-            'admin_fee',
-            data.returnData[p++],
-          )[0],
+          pool.poolIface.decodeFunctionResult('admin_fee', data[p++])[0],
         ),
-        fee: strbnify(
-          pool.poolIface.decodeFunctionResult('fee', data.returnData[p++])[0],
-        ),
-        A: strbnify(
-          pool.poolIface.decodeFunctionResult('A', data.returnData[p++])[0],
-        ),
+        fee: strbnify(pool.poolIface.decodeFunctionResult('fee', data[p++])[0]),
+        A: strbnify(pool.poolIface.decodeFunctionResult('A', data[p++])[0]),
         supply: strbnify(
-          erc20Iface.decodeFunctionResult(
-            'totalSupply',
-            data.returnData[p++],
-          )[0],
+          erc20Iface.decodeFunctionResult('totalSupply', data[p++])[0],
         ),
         balances: _.range(0, pool.N_COINS).map(i =>
           strbnify(
-            pool.poolIface.decodeFunctionResult(
-              'balances',
-              data.returnData[p++],
-            )[0],
+            pool.poolIface.decodeFunctionResult('balances', data[p++])[0],
           ),
         ),
       };
@@ -104,13 +91,13 @@ async function _getManyPoolStates(
             base_cache_updated: strbnify(
               pool.poolIface.decodeFunctionResult(
                 'base_cache_updated',
-                data.returnData[p++],
+                data[p++],
               )[0],
             ),
             base_virtual_price: strbnify(
               pool.poolIface.decodeFunctionResult(
                 'base_virtual_price',
-                data.returnData[p++],
+                data[p++],
               )[0],
             ),
           }
