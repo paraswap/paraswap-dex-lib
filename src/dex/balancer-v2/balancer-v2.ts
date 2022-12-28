@@ -467,7 +467,7 @@ export class BalancerV2
     );
   }
 
-  async setupEventPools(blockNumber: number) {
+  async setupEventPools(blockNumber: number | 'latest') {
     await this.eventPools.initialize(blockNumber);
   }
 
@@ -535,7 +535,7 @@ export class BalancerV2
         }
       }, POOL_EVENT_DISABLED_TTL * 1000);
     }
-    await this.setupEventPools(blockNumber);
+    await this.setupEventPools('latest');
   }
 
   releaseResources(): void {
