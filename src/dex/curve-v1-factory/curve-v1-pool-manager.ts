@@ -71,14 +71,15 @@ export class CurveV1FactoryPoolManager {
       filteredPoolsByLiquidity.sort((a, b) => +a.isMetaPool - +b.isMetaPool),
     );
 
-    if (limitPools !== undefined) {
-      pools.filter(p => limitPools.includes(p.poolIdentifier));
-    }
+    const limitedPools =
+      limitPools !== undefined
+        ? pools.filter(p => limitPools.includes(p.poolIdentifier))
+        : pools;
 
     await this.statePollingManager.updatePoolsInBatch(
       this.logger,
       this.dexHelper,
-      pools,
+      limitedPools,
       blockNumber,
       Date.now() - this.liquidityUpdatedAtMs > LIQUIDITY_UPDATE_PERIOD_MS
         ? this.fetchLiquiditiesFromApi.bind(this)
