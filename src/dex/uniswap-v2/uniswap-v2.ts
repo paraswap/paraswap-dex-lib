@@ -46,7 +46,7 @@ import {
   isETHAddress,
   prependWithOx,
   getBigIntPow,
-  blockAndAggregate,
+  blockAndTryAggregate,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
@@ -153,7 +153,8 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    const results = await blockAndAggregate(
+    const results = await blockAndTryAggregate(
+      true,
       this.dexHelper.multiContract,
       calldata,
       blockNumber,
@@ -161,7 +162,10 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
 
     const data = results.results;
 
-    const decodedData = coder.decode(['uint112', 'uint112', 'uint32'], data[0]);
+    const decodedData = coder.decode(
+      ['uint112', 'uint112', 'uint32'],
+      data[0].returnData,
+    );
 
     return {
       blockNumber: results.blockNumber,
@@ -169,7 +173,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
         reserves0: decodedData[0].toString(),
         reserves1: decodedData[1].toString(),
         feeCode: this.dynamicFees
-          ? this.feesMultiCallDecoder!(data[1])
+          ? this.feesMultiCallDecoder!(data[1].returnData)
           : this.feeCode,
       },
     };

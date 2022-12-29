@@ -6,8 +6,8 @@ import { AbiItem } from 'web3-utils';
 import MultiAbi from '../src/abi/multi-v2.json';
 import { generateConfig } from '../src/config';
 import { Network } from '../src/constants';
-import { blockAndAggregate } from '../src/utils';
 import { getBalanceERC20 } from '../src/lib/tokens/utils';
+import { blockAndTryAggregate } from '../src/utils';
 
 describe('MultiCall with blockNumber', () => {
   const config = generateConfig(Network.MAINNET);
@@ -19,7 +19,8 @@ describe('MultiCall with blockNumber', () => {
   );
 
   it('MultiCall with blockNumber', async () => {
-    const res = await blockAndAggregate(
+    const res = await blockAndTryAggregate(
+      true,
       multiContract,
       [
         {

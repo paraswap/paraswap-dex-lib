@@ -242,11 +242,16 @@ export const decodeBalanceAndAllowanceMultiResult = (
   return userBalance;
 };
 
+type getBalancesResult = {
+  blockNumber: number;
+  balances: UserBalance[];
+};
+
 export const getBalances = async (
   multiv2: MultiWrapper,
   reqs: BalanceRequest[],
   blockNumber: number | 'latest' = 'latest',
-): Promise<UserBalance[]> => {
+): Promise<getBalancesResult> => {
   const calls: MultiCallParams<MultiCallParamsType>[] = []; // TODO: compute the size on advance
 
   const decodingInfo: MultiCallResultDecodeInfo[] = [];
@@ -258,11 +263,13 @@ export const getBalances = async (
     params.length += balancesCalls.length;
     decodingInfo.push(params);
   }
-  const results = await multiv2.tryAggregate<MultiCallParamsType>(
+  const resultsAndBn = await multiv2.tryAggregate<MultiCallParamsType>(
     false,
     calls,
     blockNumber,
   );
+
+  const results = resultsAndBn.results;
 
   const chuncks = [];
   let j = 0;
@@ -274,11 +281,14 @@ export const getBalances = async (
     i += batchSize;
   }
 
-  return chuncks.map((chunck, index) =>
-    decodeBalanceAndAllowanceMultiResult(
-      reqs[index],
-      decodingInfo[index].spenders,
-      chunck,
+  return {
+    blockNumber: resultsAndBn.blockNumber,
+    balances: chuncks.map((chunck, index) =>
+      decodeBalanceAndAllowanceMultiResult(
+        reqs[index],
+        decodingInfo[index].spenders,
+        chunck,
+      ),
     ),
-  );
+  };
 };

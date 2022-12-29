@@ -275,7 +275,8 @@ export class UniswapV3
       [],
     );
 
-    const balances = await getBalances(this.dexHelper.multiWrapper, requests);
+    const balances = (await getBalances(this.dexHelper.multiWrapper, requests))
+      .balances;
 
     pools = pools.filter((pool, index) => {
       const balance = balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING];

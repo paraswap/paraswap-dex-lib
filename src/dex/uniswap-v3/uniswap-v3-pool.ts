@@ -18,7 +18,11 @@ import {
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
-import { bigIntify, blockAndAggregate, catchParseLogError } from '../../utils';
+import {
+  bigIntify,
+  blockAndTryAggregate,
+  catchParseLogError,
+} from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { NumberAsString } from '@paraswap/core';
 import {
@@ -263,7 +267,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       ),
     ];
 
-    const _results = await blockAndAggregate(
+    const _results = await blockAndTryAggregate(
+      true,
       this.dexHelper.multiContract,
       calls.map(call => ({
         target: this.stateMultiAddress,
@@ -274,7 +279,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     const _state = this.stateMultiInterface.decodeFunctionResult(
       callData.funcName,
-      _results.results[0],
+      _results.results[0].returnData,
     )[0];
 
     const tickBitmap = {};

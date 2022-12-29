@@ -114,7 +114,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
     const newState = await super.processBlockLogs(_state, logs, blockHeader);
     if (!newState) {
       this.logger.warn('received empty state generate new one');
-      const newStateWithBn = await this.generateState(blockHeader.number);
+      const newStateWithBn = await this.generateState('latest');
       this.setState(newStateWithBn.state, newStateWithBn.blockNumber);
       return newStateWithBn.state;
     }
@@ -158,7 +158,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       blockNumber,
     );
 
-    return balances[0];
+    return balances.balances[0];
   }
 
   async subscribeToWalletBalanceChange(
@@ -191,7 +191,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
   }
 
   async generateState(
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ): Promise<GenerateStateResult<ERC20StateMap>> {
     const request = Array.from(this.walletAddresses).reduce((acc, wallet) => {
       acc.push({
@@ -209,14 +209,15 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
       return acc;
     }, [] as BalanceRequest[]);
 
-    const balances = await getBalances(
+    const balancesAndBn = await getBalances(
       this.dexHelper.multiWrapper,
       request,
       blockNumber,
     );
     return {
-      blockNumber,
-      state: balances.reduce((acc, balance) => {
+      blockNumber: balancesAndBn.blockNumber,
+
+      state: balancesAndBn.balances.reduce((acc, balance) => {
         acc[balance.owner] = {
           balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
         };
@@ -259,7 +260,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
         );
         const balance = await this.getBalanceRPC(wallet, blockNumber);
 
-        // this is ok because we don't modify readonly data
+        // this is not ok because blockNumber might differ from subscriber blockNumber
         state[wallet] = {
           balance: balance.amounts[DEFAULT_ID_ERC20_AS_STRING],
         };

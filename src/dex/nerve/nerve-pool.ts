@@ -13,7 +13,7 @@ import { NerveConfig } from './config';
 import { BlockHeader } from 'web3-eth';
 import { bigIntify, typeCastPoolState } from './utils';
 import { NervePoolMath } from './nerve-math';
-import { blockAndAggregate } from '../../utils';
+import { blockAndTryAggregate } from '../../utils';
 
 export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
   readonly math: NervePoolMath;
@@ -151,7 +151,8 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
       })),
     ]);
 
-    const results = await blockAndAggregate(
+    const results = await blockAndTryAggregate(
+      true,
       this.dexHelper.multiContract,
       calldata,
       blockNumber,
@@ -160,16 +161,21 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
     const data = results.results;
 
     const [swapStorage, lpToken_supply, paused, balances] = [
-      this.poolIface.decodeFunctionResult('swapStorage', data[0]),
+      this.poolIface.decodeFunctionResult('swapStorage', data[0].returnData),
       bigIntify(
-        this.lpTokenIface.decodeFunctionResult('totalSupply', data[1])[0]._hex,
+        this.lpTokenIface.decodeFunctionResult(
+          'totalSupply',
+          data[1].returnData,
+        )[0]._hex,
       ),
-      this.poolIface.decodeFunctionResult('paused', data[2]),
+      this.poolIface.decodeFunctionResult('paused', data[2].returnData),
       _.flatten(
         _.range(3, this.numTokens + 3).map(i =>
           bigIntify(
-            this.poolIface.decodeFunctionResult('getTokenBalance', data[i])[0]
-              ._hex,
+            this.poolIface.decodeFunctionResult(
+              'getTokenBalance',
+              data[i].returnData,
+            )[0]._hex,
           ),
         ),
       ),

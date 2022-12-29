@@ -195,7 +195,7 @@ export class SynthetixState {
         await this.multiWrapper.tryAggregate<
           Record<0 | 1, bigint> | Slot0 | boolean[] | boolean | LatestRoundData
         >(true, slot0TickCumulativesSuspensionsLatestRoundCallData, blockNumber)
-      ).map(d => d.returnData) as (
+      ).results.map(d => d.returnData) as (
         | Record<0 | 1, bigint>
         | boolean
         | boolean[]
@@ -253,12 +253,15 @@ export class SynthetixState {
           latestRoundDatas,
         );
 
-      const [block, observationsRoundDataAndOverridden] = await Promise.all([
-        this.dexHelper.web3Provider.eth.getBlock(blockNumber || 'latest'),
-        this.multiWrapper.tryAggregate<
-          OracleObservation | LatestRoundData | string
-        >(true, observationsRoundAndOverriddenCallData, blockNumber),
-      ]);
+      const results = await this.multiWrapper.tryAggregate<
+        OracleObservation | LatestRoundData | string
+      >(true, observationsRoundAndOverriddenCallData, blockNumber);
+
+      const block = await this.dexHelper.web3Provider.eth.getBlock(
+        results.blockNumber,
+      );
+
+      const observationsRoundDataAndOverridden = results.results;
 
       addressesFromPKBoundary = addressesFromPK.length * _packCounter;
       const observations = observationsRoundDataAndOverridden
@@ -373,7 +376,7 @@ export class SynthetixState {
 
       this.fullState = {
         updatedAtInMs: Date.now(),
-        blockNumber: blockNumber || block.number,
+        blockNumber: results.blockNumber,
         values: newState,
       };
 
@@ -402,7 +405,7 @@ export class SynthetixState {
         this._buildInitialStateCallData(),
         blockNumber,
       )
-    ).map(d => d.returnData) as [
+    ).results.map(d => d.returnData) as [
       Address,
       Address,
       bigint,
@@ -429,7 +432,7 @@ export class SynthetixState {
         ),
         blockNumber,
       )
-    ).map(d => d.returnData) as [
+    ).results.map(d => d.returnData) as [
       Address,
       Address,
       Address,
@@ -465,7 +468,7 @@ export class SynthetixState {
       await this.multiWrapper.tryAggregate<
         bigint | boolean | string | number | bigint[]
       >(true, flexibleStorageCurrencyCallData, blockNumber)
-    ).map(d => d.returnData);
+    ).results.map(d => d.returnData);
 
     const exchangeDynamicFeeConfigResult = results.pop() as bigint[];
     const exchangeDynamicFeeConfig = {
@@ -539,7 +542,7 @@ export class SynthetixState {
         ),
         blockNumber,
       )
-    ).map(d => d.returnData);
+    ).results.map(d => d.returnData);
 
     const overriddenPools = overriddenPoolAndDecimals.slice(
       0,

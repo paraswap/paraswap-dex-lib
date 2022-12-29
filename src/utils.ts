@@ -6,6 +6,7 @@ import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger, TransferFeeParams } from './types';
 import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
+import { MultiResult } from './lib/multi-wrapper';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -347,17 +348,26 @@ type MultiCallParams = {
   callData: any;
 };
 
-export const blockAndAggregate = async (
+type BlockAndTryAggregateResult = {
+  blockNumber: number;
+  results: MultiResult<any>[];
+};
+
+export const blockAndTryAggregate = async (
+  mandatory: boolean,
   multi: Contract,
   calls: MultiCallParams[],
   blockNumber: number | 'latest',
-) => {
+): Promise<BlockAndTryAggregateResult> => {
   const results = await multi.methods
-    .blockAndAggregate(calls)
+    .tryBlockAndAggregate(mandatory, calls)
     .call(undefined, blockNumber);
 
   return {
     blockNumber: Number(results.blockNumber),
-    results: results.returnData.map((res: any) => res.returnData),
+    results: results.returnData.map((res: any) => ({
+      returnData: res.returnData,
+      success: res.success,
+    })),
   };
 };

@@ -2,7 +2,7 @@ import { CurveMetapool, MetapoolState } from './curve-metapool';
 import { CurvePool, PoolState } from './curve-pool';
 import _ from 'lodash';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bigNumberify, stringify, blockAndAggregate } from '../../../utils';
+import { bigNumberify, blockAndTryAggregate, stringify } from '../../../utils';
 import { MultiCallInput } from '../../../types';
 
 const strbnify = (val: any) => bigNumberify(stringify(val));
@@ -62,7 +62,12 @@ async function _getManyPoolStates(
     .filter(a => !!a)
     .value() as MultiCallInput[];
 
-  const results = await blockAndAggregate(multi, calldata, blockNumber);
+  const results = await blockAndTryAggregate(
+    true,
+    multi,
+    calldata,
+    blockNumber,
+  );
 
   const data = results.results;
 
@@ -72,16 +77,29 @@ async function _getManyPoolStates(
     states: pools.map((pool: CurvePool | CurveMetapool) => {
       const _state = {
         admin_fee: strbnify(
-          pool.poolIface.decodeFunctionResult('admin_fee', data[p++])[0],
+          pool.poolIface.decodeFunctionResult(
+            'admin_fee',
+            data[p++].returnData,
+          )[0],
         ),
-        fee: strbnify(pool.poolIface.decodeFunctionResult('fee', data[p++])[0]),
-        A: strbnify(pool.poolIface.decodeFunctionResult('A', data[p++])[0]),
+        fee: strbnify(
+          pool.poolIface.decodeFunctionResult('fee', data[p++].returnData)[0],
+        ),
+        A: strbnify(
+          pool.poolIface.decodeFunctionResult('A', data[p++].returnData)[0],
+        ),
         supply: strbnify(
-          erc20Iface.decodeFunctionResult('totalSupply', data[p++])[0],
+          erc20Iface.decodeFunctionResult(
+            'totalSupply',
+            data[p++].returnData,
+          )[0],
         ),
         balances: _.range(0, pool.N_COINS).map(i =>
           strbnify(
-            pool.poolIface.decodeFunctionResult('balances', data[p++])[0],
+            pool.poolIface.decodeFunctionResult(
+              'balances',
+              data[p++].returnData,
+            )[0],
           ),
         ),
       };
@@ -91,13 +109,13 @@ async function _getManyPoolStates(
             base_cache_updated: strbnify(
               pool.poolIface.decodeFunctionResult(
                 'base_cache_updated',
-                data[p++],
+                data[p++].returnData,
               )[0],
             ),
             base_virtual_price: strbnify(
               pool.poolIface.decodeFunctionResult(
                 'base_virtual_price',
-                data[p++],
+                data[p++].returnData,
               )[0],
             ),
           }

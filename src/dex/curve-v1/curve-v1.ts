@@ -972,10 +972,9 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         [],
       );
 
-      const results = await this.dexHelper.multiWrapper!.tryAggregate(
-        true,
-        calls,
-      );
+      const results = (
+        await this.dexHelper.multiWrapper!.tryAggregate(true, calls)
+      ).results;
 
       let index = 0;
       Object.values(this.pools).forEach(pool => {

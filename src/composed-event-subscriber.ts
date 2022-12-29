@@ -13,7 +13,7 @@ import {
 } from './types';
 import { Lens } from './lens';
 import { IDexHelper } from './dex-helper/idex-helper';
-import { blockAndAggregate } from './utils';
+import { blockAndTryAggregate } from './utils';
 
 export abstract class PartialEventSubscriber<State, SubState> {
   constructor(
@@ -108,12 +108,13 @@ export abstract class ComposedEventSubscriber<
     let returnData: MultiCallOutput[] = [];
     let realBlockNumber: number = 0;
     if (this.multiCallInputs.length) {
-      const results = await blockAndAggregate(
+      const results = await blockAndTryAggregate(
+        true,
         this.dexHelper.multiContract,
         this.multiCallInputs,
         blockNumber!,
       );
-      returnData = results.results;
+      returnData = results.results.map(res => res.returnData);
       realBlockNumber = results.blockNumber;
     }
 

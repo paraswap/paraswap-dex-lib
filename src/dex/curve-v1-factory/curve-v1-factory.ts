@@ -227,7 +227,7 @@ export class CurveV1Factory
               decodeFunction: uint8ToNumber,
             })),
           )
-        ).map(r => r.returnData);
+        ).results.map(r => r.returnData);
 
         const poolConstants: PoolConstants = {
           COINS,
@@ -325,9 +325,8 @@ export class CurveV1Factory
       return;
     }
 
-    const poolCountResult = await this.dexHelper.multiWrapper!.tryAggregate(
-      true,
-      [
+    const poolCountResult = (
+      await this.dexHelper.multiWrapper!.tryAggregate(true, [
         {
           target: factoryAddress,
           callData: this.ifaces.factory.encodeFunctionData('pool_count'),
@@ -339,8 +338,8 @@ export class CurveV1Factory
           callData: this.ifaces.factory.encodeFunctionData('base_pool_count'),
           decodeFunction: uint256DecodeToNumber,
         },
-      ],
-    );
+      ])
+    ).results;
 
     const poolCount = poolCountResult[0].returnData;
     const basePoolCount = poolCountResult[1].returnData;
@@ -362,7 +361,7 @@ export class CurveV1Factory
         true,
         calldataGetPoolAddresses.concat(calldataGetBasePoolAddresses),
       )
-    ).map(e => e.returnData);
+    ).results.map(e => e.returnData);
 
     const poolAddresses = allPoolAddresses.slice(0, poolCount);
     const basePoolAddresses = allPoolAddresses.slice(poolCount);
@@ -464,7 +463,7 @@ export class CurveV1Factory
       await this.dexHelper.multiWrapper.tryAggregate<
         string[] | number[] | string
       >(true, callDataFromFactoryPools)
-    ).map(r => r.returnData);
+    ).results.map(r => r.returnData);
 
     const resultsFromFactory = allResultsFromFactory.slice(
       0,

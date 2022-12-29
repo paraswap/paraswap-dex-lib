@@ -1,10 +1,16 @@
 import _ from 'lodash';
 import { Logger } from 'log4js';
 import { Contract } from 'web3-eth-contract';
+import { blockAndTryAggregate } from '../utils';
 
 export type MultiResult<T> = {
   success: boolean;
   returnData: T;
+};
+
+export type MultiWrapperResult<T> = {
+  blockNumber: number;
+  results: MultiResult<T>[];
 };
 
 export type MultiCallParams<T> = {
@@ -49,9 +55,15 @@ export class MultiWrapper {
   async tryAggregate<T>(
     mandatory: boolean,
     calls: MultiCallParams<T>[],
-    blockNumber?: number | string,
+    blockNumber: number | 'latest' = 'latest',
     batchSize: number = 500,
-  ): Promise<MultiResult<T>[]> {
+  ): Promise<MultiWrapperResult<T>> {
+    if (calls.length === 0) {
+      return {
+        blockNumber: 0,
+        results: [],
+      };
+    }
     const allCalls = new Array(Math.ceil(calls.length / batchSize));
     for (let i = 0; i < calls.length; i += batchSize) {
       const batch = calls.slice(i, i + batchSize);
@@ -60,16 +72,21 @@ export class MultiWrapper {
 
     const aggregatedResult = await Promise.all(
       allCalls.map(batch =>
-        this.multi.methods
-          .tryAggregate(mandatory, batch)
-          .call(undefined, blockNumber),
+        blockAndTryAggregate(mandatory, this.multi, batch, blockNumber),
       ),
     );
 
     let globalInd = 0;
     const resultsUndecoded: MultiResult<string>[] = new Array(calls.length);
+
+    let maxBlockNumber = aggregatedResult[0].blockNumber;
     for (const res of aggregatedResult) {
-      for (const element of res) {
+      if (maxBlockNumber < res.blockNumber) {
+        this.logger.error(
+          'race-condition: Blocks between batches are different',
+        );
+      }
+      for (const element of res.results) {
         resultsUndecoded[globalInd++] = element;
       }
     }
@@ -95,6 +112,9 @@ export class MultiWrapper {
       calls[i].cb?.(results[i].returnData);
     }
 
-    return results;
+    return {
+      blockNumber: maxBlockNumber,
+      results,
+    };
   }
 }
