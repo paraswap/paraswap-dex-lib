@@ -33,3 +33,5 @@ export {
 export { IDex } from './dex/idex';
 
 export { ConfigHelper } from './config';
+
+export { SlippageCheckError } from './dex/generic-rfq/types';

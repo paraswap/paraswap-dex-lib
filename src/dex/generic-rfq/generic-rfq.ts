@@ -14,7 +14,11 @@ import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { ParaSwapLimitOrdersData } from '../paraswap-limit-orders/types';
 import { ONE_ORDER_GASCOST } from '../paraswap-limit-orders/constant';
 import { RateFetcher } from './rate-fetcher';
-import { PriceAndAmountBigNumber, RFQConfig } from './types';
+import {
+  PriceAndAmountBigNumber,
+  RFQConfig,
+  SlippageCheckError,
+} from './types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
@@ -200,6 +204,50 @@ export class GenericRFQ extends ParaSwapLimitOrders {
 
     const expiryAsBigInt = BigInt(order.order.expiry);
     const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
+
+    const makerAssetAmount = BigInt(order.order.makerAmount);
+    const takerAssetAmount = BigInt(order.order.takerAmount);
+
+    const srcAmount = BigInt(optimalSwapExchange.srcAmount);
+    const destAmount = BigInt(optimalSwapExchange.destAmount);
+
+    const slippageFactor = options.slippageFactor;
+
+    if (side === SwapSide.SELL) {
+      const makerAssetAmountFilled =
+        takerAssetAmount > srcAmount
+          ? (makerAssetAmount * srcAmount) / takerAssetAmount
+          : makerAssetAmount;
+
+      if (
+        makerAssetAmountFilled <
+        BigInt(
+          new BigNumber(destAmount.toString()).times(slippageFactor).toFixed(0),
+        )
+      ) {
+        const message = `${this.dexKey}: too much slippage on quote ${side} makerAssetAmountFilled ${makerAssetAmountFilled} / destAmount ${destAmount} < ${slippageFactor}`;
+        this.logger.warn(message);
+        throw new SlippageCheckError(message);
+      }
+    } else {
+      if (makerAssetAmount < destAmount) {
+        // Won't receive enough assets
+        const message = `${this.dexKey}: too much slippage on quote ${side}  makerAssetAmount ${makerAssetAmount} < destAmount ${destAmount}`;
+        this.logger.warn(message);
+        throw new SlippageCheckError(message);
+      } else {
+        if (
+          takerAssetAmount >
+          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
+        ) {
+          const message = `${
+            this.dexKey
+          }: too much slippage on quote ${side} takerAssetAmount ${takerAssetAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        }
+      }
+    }
 
     return [
       {

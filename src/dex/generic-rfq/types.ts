@@ -94,3 +94,5 @@ export type RFQFirmRateResponse = {
   status: 'accepted' | 'rejected';
   order: AugustusOrderWithStringAndSignature;
 };
+
+export class SlippageCheckError extends Error {}
