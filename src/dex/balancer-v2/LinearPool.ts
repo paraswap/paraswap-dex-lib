@@ -3,8 +3,13 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as LinearMath from './LinearMath';
 import { BasePool } from './balancer-v2-pool';
-import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
-import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
+import {
+  callData,
+  SubgraphPoolBase,
+  PoolState,
+  TokenState,
+  PoolBase,
+} from './types';
 import { SwapSide } from '../../constants';
 
 export enum PairTypes {
@@ -29,6 +34,7 @@ type LinearPoolPairData = {
   mainIndex: number;
   lowerTarget: bigint;
   upperTarget: bigint;
+  gasCost: number;
 };
 
 /*
@@ -39,21 +45,26 @@ Provider joins/exits a pool, the pool mints/burns pool tokens as needed. This is
 In pools that use Phantom BPT, however, all pool tokens are minted at the time of pool creation and are held by the pool itself.
 With Phantom BPT, Liquidity Providers use a swap (or more likely a batchSwap) to trade to or from a pool token to join or exit, respectively.
 */
-export class LinearPool extends BasePool {
+export class LinearPool extends BasePool implements PoolBase {
   // This is the maximum token amount the Vault can hold. In regular operation, the total BPT supply remains constant
   // and equal to _INITIAL_BPT_SUPPLY, but most of it remains in the Pool, waiting to be exchanged for tokens. The
   // actual amount of BPT in circulation is the total supply minus the amount held by the Pool, and is known as the
   // 'virtual supply'.
   MAX_TOKEN_BALANCE = BigNumber.from('2').pow('112').sub('1');
+  gasCost = 100000;
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    poolInterface: Interface,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(LinearPoolABI);
+    this.poolInterface = poolInterface;
   }
 
   /*
@@ -287,10 +298,11 @@ export class LinearPool extends BasePool {
     */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolState: PoolState,
+    poolStates: { [address: string]: PoolState },
     tokenIn: string,
     tokenOut: string,
   ): LinearPoolPairData {
+    const poolState = poolStates[pool.address];
     let indexIn = 0,
       indexOut = 0,
       bptIndex = 0;
@@ -321,6 +333,7 @@ export class LinearPool extends BasePool {
       mainIndex: poolState.mainIndex || 0,
       lowerTarget: poolState.lowerTarget || 0n,
       upperTarget: poolState.upperTarget || 0n,
+      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -415,6 +428,7 @@ export class LinearPool extends BasePool {
         },
         {},
       ),
+      gasCost: this.gasCost,
     };
 
     pools[pool.address] = poolState;
@@ -426,19 +440,21 @@ export class LinearPool extends BasePool {
   Swapping to BPT allows for a very large amount as pre-minted.
   Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
+  swapLimit(balanceOut: bigint, scalingFactorOut: bigint): bigint {
+    const swapMax = (this._upscale(balanceOut, scalingFactorOut) * 99n) / 100n;
+    return swapMax;
+  }
+
   checkBalance(
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
     poolPairData: LinearPoolPairData,
   ): boolean {
-    const swapMax =
-      (this._upscale(
-        poolPairData.balances[poolPairData.indexOut],
-        poolPairData.scalingFactors[poolPairData.indexOut],
-      ) *
-        99n) /
-      100n;
+    const swapMax = this.swapLimit(
+      poolPairData.balances[poolPairData.indexOut],
+      poolPairData.scalingFactors[poolPairData.indexOut],
+    );
     const swapAmount =
       amounts[amounts.length - 1] > unitVolume
         ? amounts[amounts.length - 1]

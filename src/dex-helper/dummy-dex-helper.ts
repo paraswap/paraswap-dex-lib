@@ -11,6 +11,7 @@ import { Address, LoggerConstructor, Token } from '../types';
 import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
+import { getLogger } from '../lib/log4js';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';
@@ -18,6 +19,8 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
+
+const logger = getLogger('DummyDexHelper');
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
@@ -170,7 +173,7 @@ class DummyBlockManager implements IBlockManager {
     contractAddress: Address | Address[],
     afterBlockNumber: number,
   ): void {
-    console.log(
+    logger.info(
       `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
     );
     subscriber.isTracking = () => true;

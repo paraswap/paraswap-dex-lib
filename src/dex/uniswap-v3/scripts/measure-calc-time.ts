@@ -5,6 +5,7 @@ request worst case scenario.
 
 */
 import * as dotenv from 'dotenv';
+import { getLogger } from '../../../lib/log4js';
 import { DeepReadonly } from 'ts-essentials';
 dotenv.config();
 import { Network, SwapSide } from '../../../constants';
@@ -12,6 +13,8 @@ import { DummyDexHelper } from '../../../dex-helper';
 import { uniswapV3Math } from '../contract-math/uniswap-v3-math';
 import { PoolState } from '../types';
 import { UniswapV3 } from '../uniswap-v3';
+
+const logger = getLogger('UniswapV3MeasureScript');
 
 const runsNumber = 1000;
 const printFrequency = 100;
@@ -116,7 +119,7 @@ const executeOnlySyncOperations = async (states: DeepReadonly<PoolState>[]) => {
 
 const aggregateAndPrintMeasures = (measures: number[]) => {
   const sum = measures.reduce((a, b) => a + b);
-  console.log(
+  logger.info(
     `Measured ${measures.length}. Average = ${(sum / measures.length).toFixed(
       2,
     )} ms. Max = ${Math.max(...measures)} ms. Min = ${Math.min(
@@ -141,29 +144,29 @@ const runOneSuite = async (func: Function) => {
     }
     counter++;
   }
-  console.log('\n');
+  logger.info('\n');
   aggregateAndPrintMeasures(measures);
 };
 
 (async function main() {
-  console.log(`Started measurement script for ${runsNumber} runs...\n`);
+  logger.info(`Started measurement script for ${runsNumber} runs...\n`);
 
   const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
   // Fetch all states and calculation variables before measurement
   await executeGetPricesVolume(blockNumber);
 
-  console.log('\n');
+  logger.info('\n');
 
   const states = Object.values(uniV3.eventPools).map(
     ep => ep!.getState(blockNumber)!,
   );
 
-  console.log(`\nRun for full calculation cycles\n`);
+  logger.info(`\nRun for full calculation cycles\n`);
   await runOneSuite(executeGetPricesVolume.bind(undefined, blockNumber));
 
-  console.log(`\nRun for only sync cycles\n`);
+  logger.info(`\nRun for only sync cycles\n`);
   await runOneSuite(executeOnlySyncOperations.bind(undefined, states));
 
-  console.log(`Tests ended`);
+  logger.info(`Tests ended`);
 })();
