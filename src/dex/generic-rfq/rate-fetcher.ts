@@ -32,6 +32,8 @@ import {
 } from './validators';
 import { genericRFQAuthHttp } from './security';
 
+const GET_FIRM_RATE_TIMEOUT_MS = 2000;
+
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
   [
     BN_1.dividedBy(price[0]),
@@ -373,6 +375,7 @@ export class RateFetcher {
       let payload = {
         data: _payload,
         ...this.config.firmRateConfig,
+        timeout: GET_FIRM_RATE_TIMEOUT_MS,
       };
 
       if (this.firmRateAuth) {
