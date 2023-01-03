@@ -497,6 +497,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 20,
     },
   },
+  SkullSwap: {
+    [Network.FANTOM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/chimpydev/skullswap',
+      factoryAddress: '0x8362c94ea73D3E08A4b8525e5Dc209810B556E1f',
+      initCode:
+        '0x5ff334317f404502a86ecd557bb7b4912e76a92f7c6f8719af4c3fc70c0b5562',
+      feeCode: 20,
+    },
+  },
   SpiritSwap: {
     [Network.FANTOM]: {
       subgraphURL:
