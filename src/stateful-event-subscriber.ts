@@ -97,6 +97,7 @@ export abstract class StatefulEventSubscriber<State>
     let masterBn: undefined | number = undefined;
     if (options && options.state) {
       this.setState(options.state.state, options.state.blockNumber);
+      masterBn = options.state.blockNumber;
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(
@@ -132,7 +133,7 @@ export abstract class StatefulEventSubscriber<State>
               );
               this.setState(state.state, state.bn);
             } else {
-              this.logger.error(
+              throw new Error(
                 `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
               );
             }
@@ -171,7 +172,7 @@ export abstract class StatefulEventSubscriber<State>
     this.dexHelper.blockManager.subscribeToLogs(
       this,
       this.addressesSubscribed,
-      masterBn!,
+      masterBn,
     );
     this.isInitialized = true;
   }
