@@ -137,13 +137,12 @@ describe('AirSwap E2E', () => {
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
-
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'DUSD';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '1';
+    const tokenBAmount: string = '1';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

@@ -79,6 +79,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  AirSwap,
   CurveV1,
   CurveFork,
   Swerve,
