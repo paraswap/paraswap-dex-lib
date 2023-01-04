@@ -24,6 +24,7 @@ type BaseConfig = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
+  maxAllowedDelayedBlockRpcPolling: number;
 };
 
 const baseConfigs: { [network: number]: BaseConfig } = {
@@ -48,6 +49,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
+    maxAllowedDelayedBlockRpcPolling: 0,
     rfqConfigs: {
       DummyParaSwapPool: {
         maker: process.env.TEST_ADDRESS!,
@@ -123,6 +125,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
     rfqConfigs: {},
+    maxAllowedDelayedBlockRpcPolling: 5,
   },
   [Network.BSC]: {
     network: Network.BSC,
@@ -141,6 +144,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       BscAdapter02: '0xBaff776E0bD50c617167Ae360448E2Ae060B99B1',
       BscBuyAdapter: '0xF52523B9d788F4E2Dd256dc5077879Af0448c37A',
     },
+    maxAllowedDelayedBlockRpcPolling: 1,
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
     rfqConfigs: {},
@@ -166,6 +170,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
     rfqConfigs: {},
+    maxAllowedDelayedBlockRpcPolling: 2,
   },
   [Network.AVALANCHE]: {
     network: Network.AVALANCHE,
@@ -187,6 +192,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
     rfqConfigs: {},
+    maxAllowedDelayedBlockRpcPolling: 2,
   },
   [Network.FANTOM]: {
     network: Network.FANTOM,
@@ -208,6 +214,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
     rfqConfigs: {},
+    maxAllowedDelayedBlockRpcPolling: 2,
   },
   [Network.ARBITRUM]: {
     network: Network.ARBITRUM,
@@ -229,6 +236,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
     rfqConfigs: {},
+    maxAllowedDelayedBlockRpcPolling: 4,
   },
   [Network.OPTIMISM]: {
     network: Network.OPTIMISM,
@@ -250,6 +258,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
     rfqConfigs: {},
+    maxAllowedDelayedBlockRpcPolling: 5,
   },
 };
 
@@ -285,6 +294,8 @@ export function generateConfig(network: number): Config {
     adapterAddresses: { ...baseConfig.adapterAddresses },
     uniswapV2ExchangeRouterAddress: baseConfig.uniswapV2ExchangeRouterAddress,
     rfqConfigs: baseConfig.rfqConfigs,
+    maxAllowedDelayedBlockRpcPolling:
+      baseConfig.maxAllowedDelayedBlockRpcPolling,
   };
 }
 

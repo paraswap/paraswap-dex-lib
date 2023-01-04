@@ -4,6 +4,8 @@ import { IStatefulRpcPoller, StateWithUpdateInfo } from './types';
 import { MultiCallParams } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
+import { assert } from 'ts-essentials';
+import { getLogger } from '../log4js';
 
 export abstract class StatefulRpcPoller<State, M>
   implements IStatefulRpcPoller<State, M>
@@ -25,24 +27,35 @@ export abstract class StatefulRpcPoller<State, M>
   // Store here encoded calls for blockNumber, blockTimestamp etc.
   protected _cachedMultiCallData: MultiCallParams<M | number>[] = [];
 
-  constructor(
-    // It is allowed block delay before refetching the state
-    protected stateValidityBlockNumDelay: number,
+  protected aggregatedLogMessages: Record<string, number> = {};
 
+  protected logger: Logger;
+
+  constructor(
+    readonly dexKey: string,
+    readonly entityName: string,
     readonly poolIdentifier: string,
-    readonly network: number,
+    protected dexHelper: IDexHelper,
+
     protected liquidityThresholdForUpdate: number,
     protected liquidityUpdateAllowedDelayMs: number,
     protected isLiquidityTracked: boolean,
-    readonly dexKey: string,
-    readonly entityName: string,
-    protected dexHelper: IDexHelper,
-    protected logger: Logger,
+
+    // It is allowed block delay before refetching the state
+    protected maxAllowedDelayedBlockRpcPolling: number = dexHelper.config.data
+      .maxAllowedDelayedBlockRpcPolling,
   ) {
     this.cacheLiquidityMapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_liquidity_usd`.toLowerCase();
     this.cacheStateMapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
+    this.logger = getLogger(`${this.dexKey}-${this.entityName}`);
+
+    assert(
+      this.maxAllowedDelayedBlockRpcPolling <=
+        dexHelper.config.data.maxAllowedDelayedBlockRpcPolling,
+      `You can not exceed global maxAllowedDelayedBlockRpcPolling=${dexHelper.config.data.maxAllowedDelayedBlockRpcPolling}. Received ${this.maxAllowedDelayedBlockRpcPolling}`,
+    );
 
     this._cachedMultiCallData.push({
       target: this.dexHelper.multiContract.options.address,
@@ -51,6 +64,10 @@ export abstract class StatefulRpcPoller<State, M>
         .encodeABI(),
       decodeFunction: uint256DecodeToNumber,
     });
+  }
+
+  get network() {
+    return this.dexHelper.config.data.network;
   }
 
   get isMaster() {
@@ -71,7 +88,7 @@ export abstract class StatefulRpcPoller<State, M>
     return this._isStateOutdated(
       blockNumber,
       this.stateBlockNumber,
-      this.stateValidityBlockNumDelay,
+      this.maxAllowedDelayedBlockRpcPolling,
     );
   }
 
@@ -173,7 +190,7 @@ export abstract class StatefulRpcPoller<State, M>
     this.stateBlockNumber = blockNumber;
     this.stateLastUpdatedAtMs = lastUpdatedAtMs;
 
-    // Master version must keep Cache up to date
+    // Master version must keep cache version up to date
     if (this.isMaster) {
     }
   }

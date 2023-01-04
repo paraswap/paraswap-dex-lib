@@ -270,6 +270,7 @@ export type Config = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
+  maxAllowedDelayedBlockRpcPolling: number;
 };
 
 export type BigIntAsString = string;
@@ -291,3 +292,5 @@ export type TransferFeeParams = {
   srcDexFee: number;
   destDexFee: number;
 };
+
+export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';
