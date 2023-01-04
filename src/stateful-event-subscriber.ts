@@ -15,17 +15,14 @@ type StateCache<State> = {
   state: DeepReadonly<State>;
 };
 
-export type InitializeStateOptions<State> = {
-  state?: {
-    blockNumber: number;
-    state: DeepReadonly<State>;
-  };
-  initCallback?: (state: DeepReadonly<State>) => void;
-};
-
 export type GenerateStateResult<State> = {
   state: DeepReadonly<State>;
   blockNumber: number;
+};
+
+export type InitializeStateOptions<State> = {
+  stateWithBn?: GenerateStateResult<State>;
+  initCallback?: (state: DeepReadonly<State>) => void;
 };
 
 export abstract class StatefulEventSubscriber<State>
@@ -95,9 +92,9 @@ export abstract class StatefulEventSubscriber<State>
     options?: InitializeStateOptions<State>,
   ) {
     let masterBn: undefined | number = undefined;
-    if (options && options.state) {
-      this.setState(options.state.state, options.state.blockNumber);
-      masterBn = options.state.blockNumber;
+    if (options && options.stateWithBn) {
+      this.setState(options.stateWithBn.state, options.stateWithBn.blockNumber);
+      masterBn = options.stateWithBn.blockNumber;
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(

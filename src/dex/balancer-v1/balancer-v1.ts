@@ -192,7 +192,7 @@ export class BalancerV1
             );
 
             await newPool.initialize(blockNumber, {
-              state: {
+              stateWithBn: {
                 blockNumber,
                 state: poolState,
               },
