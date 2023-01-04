@@ -82,7 +82,7 @@ export class MultiWrapper {
     let maxBlockNumber = aggregatedResult[0].blockNumber;
     for (const res of aggregatedResult) {
       if (maxBlockNumber < res.blockNumber) {
-        this.logger.error(
+        this.logger.warn(
           'race-condition: Blocks between batches are different',
         );
       }

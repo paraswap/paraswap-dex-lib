@@ -587,6 +587,8 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
           ].generateState(blockNumber);
           state = newStateWithBn.state;
           blockNumber = newStateWithBn.blockNumber;
+
+          this.eventPools[poolAddress].setState(state, blockNumber);
         }
         let [unit, prices] = this.getPricesPool(
           from.address,
