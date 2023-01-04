@@ -269,13 +269,11 @@ export const getBalances = async (
     blockNumber,
   );
 
-  const results = resultsAndBn.results;
-
   const chuncks = [];
   let j = 0;
-  for (let i = 0; i < results.length; ) {
+  for (let i = 0; i < resultsAndBn.results.length; ) {
     const batchSize = decodingInfo[j].length;
-    const chunck = results.slice(i, i + batchSize);
+    const chunck = resultsAndBn.results.slice(i, i + batchSize);
     chuncks.push(chunck);
     j++;
     i += batchSize;
