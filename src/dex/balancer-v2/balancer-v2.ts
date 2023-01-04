@@ -39,7 +39,11 @@ import {
   StatefulEventSubscriber,
   GenerateStateResult,
 } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  blockAndTryAggregate,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -279,7 +283,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async generateState(
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ): Promise<GenerateStateResult<PoolStateMap>> {
     const subgraphPools = await this.fetchAllSubgraphPools();
     const virtualBoostedPools = VirtualBoostedPool.createPools(subgraphPools);
@@ -292,13 +296,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         this.eventSupportedPoolTypes.includes(pool.poolType) &&
         !this.eventRemovedPools.includes(pool.address.toLowerCase()),
     );
-    const allPoolsLatestState = await this.getOnChainState(
+    const allPoolsLatestStateWithBn = await this.getOnChainState(
       eventSupportedPools,
       blockNumber,
     );
+
     return {
-      blockNumber,
-      state: allPoolsLatestState,
+      blockNumber: allPoolsLatestStateWithBn.blockNumber,
+      state: allPoolsLatestStateWithBn.stateMap,
     };
   }
 
@@ -377,8 +382,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async getOnChainState(
     subgraphPoolBase: SubgraphPoolBase[],
-    blockNumber: number,
-  ): Promise<PoolStateMap> {
+    blockNumber: number | 'latest',
+  ) {
     const multiCallData = subgraphPoolBase
       .map(pool => {
         if (!this.isSupportedPool(pool.poolType)) return [];
@@ -393,15 +398,18 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // 500 is an arbitrary number chosen based on the blockGasLimit
     const slicedMultiCallData = _.chunk(multiCallData, 500);
 
-    const returnData = (
-      await Promise.all(
-        slicedMultiCallData.map(async _multiCallData =>
-          this.dexHelper.multiContract.methods
-            .tryAggregate(false, _multiCallData)
-            .call({}, blockNumber),
+    const results = await Promise.all(
+      slicedMultiCallData.map(async _multiCallData =>
+        blockAndTryAggregate(
+          false,
+          this.dexHelper.multiContract.methods,
+          multiCallData,
+          blockNumber,
         ),
-      )
-    ).flat();
+      ),
+    );
+
+    const returnData = results.map(res => res.results).flat();
 
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
@@ -418,7 +426,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       {},
     );
 
-    return onChainStateMap;
+    return {
+      blockNumber: results[0].blockNumber,
+      stateMap: onChainStateMap,
+    };
   }
 }
 
@@ -706,14 +717,12 @@ export class BalancerV2
 
       // Retrieve onchain state for any missing pools
       if (missingPools.length > 0) {
-        const missingPoolsStateMap = await this.eventPools.getOnChainState(
-          missingPools,
-          blockNumber,
-        );
+        const missingPoolsStateMapWithBlockNumber =
+          await this.eventPools.getOnChainState(missingPools, blockNumber);
         // Update non-event pool state cache with newly retrieved data so it can be reused in future
         nonEventPoolStates = this.updateNonEventPoolStateCache(
-          missingPoolsStateMap,
-          blockNumber,
+          missingPoolsStateMapWithBlockNumber.stateMap,
+          missingPoolsStateMapWithBlockNumber.blockNumber,
         );
       }
 
