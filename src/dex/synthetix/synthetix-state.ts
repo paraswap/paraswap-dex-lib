@@ -96,7 +96,7 @@ export class SynthetixState {
       // We can just create promise and don't wait while it is resolved. When it is resolved, the values will be updated automatically
       // There is no reason to wait it
       this._onchainConfigValues.isUpdating = true;
-      this.updateOnchainConfigValues()
+      this.updateOnchainConfigValues('latest')
         .then(() => {
           this.logger.info(`${this.dexKey}: _onchainConfigValues are updated`);
           this._onchainConfigValues.isUpdating = false;
@@ -120,7 +120,7 @@ export class SynthetixState {
     return this._onchainConfigValues.values;
   }
 
-  async updateOnchainConfigValues(blockNumber?: number) {
+  async updateOnchainConfigValues(blockNumber: number | 'latest') {
     this._onchainConfigValues.values = await this.getOnchainConfigValues(
       blockNumber,
     );
@@ -150,7 +150,7 @@ export class SynthetixState {
   }
 
   async updateOnchainState(
-    blockNumber?: number,
+    blockNumber: number | 'latest',
   ): Promise<PoolState | undefined> {
     if (this.onchainConfigValues === undefined)
       throw new Error(
@@ -387,7 +387,7 @@ export class SynthetixState {
   }
 
   async getOnchainConfigValues(
-    blockNumber?: number,
+    blockNumber: number | 'latest',
   ): Promise<OnchainConfigValues> {
     // There are four onchain calls for one state update
     // I deliberately don't split into meaningful functions to not add additional
@@ -410,7 +410,7 @@ export class SynthetixState {
       Address,
       bigint,
       bigint,
-      ...Address[]
+      ...Address[],
     ];
 
     const [
@@ -440,7 +440,7 @@ export class SynthetixState {
       Address,
       Address,
       bigint,
-      ...string[]
+      ...string[],
     ];
 
     _require(
