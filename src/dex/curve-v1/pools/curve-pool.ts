@@ -105,10 +105,13 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     return _state;
   }
 
-  async setup(blockNumber: number, poolState: PoolState | null = null) {
+  async setup(
+    blockNumber: number,
+    poolState: DeepReadonly<PoolState> | null = null,
+  ) {
     if (!poolState) {
       const poolStateWithBn = await this.generateState(blockNumber);
-      poolState = poolStateWithBn.state as PoolState;
+      poolState = poolStateWithBn.state;
       blockNumber = poolStateWithBn.blockNumber;
     }
     if (blockNumber) {

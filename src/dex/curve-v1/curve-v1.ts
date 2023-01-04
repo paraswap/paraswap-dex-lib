@@ -930,7 +930,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       [],
     );
 
-    return this.dexHelper.multiWrapper!.tryAggregate(true, calls);
+    return this.dexHelper.multiWrapper.tryAggregate(true, calls);
   }
 
   async fetchAllPools() {
