@@ -112,7 +112,7 @@ export abstract class ComposedEventSubscriber<
         true,
         this.dexHelper.multiContract,
         this.multiCallInputs,
-        blockNumber!,
+        blockNumber,
       );
       returnData = results.results.map(res => res.returnData);
       realBlockNumber = results.blockNumber;
