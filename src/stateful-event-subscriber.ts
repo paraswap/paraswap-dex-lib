@@ -367,8 +367,9 @@ export abstract class StatefulEventSubscriber<State>
       this.masterPoolNeeded &&
       state === null
     ) {
-      this.logger.info(
-        `${this.parentName}: ${this.name}: schedule a job to get state from cache`,
+      this._logBatchTypicalMessages(
+        `${this.parentName}: schedule a job to get state from cache`,
+        'info',
       );
 
       this.dexHelper.cache.addBatchHGet(
@@ -384,8 +385,9 @@ export abstract class StatefulEventSubscriber<State>
             return false;
           }
 
-          this.logger.info(
-            `${this.parentName}: ${this.name}: received state from a scheduled job`,
+          this._logBatchTypicalMessages(
+            `${this.parentName}: received state from a scheduled job`,
+            'info',
           );
           this.setState(state.state, state.bn);
           return true;
@@ -400,7 +402,11 @@ export abstract class StatefulEventSubscriber<State>
       return;
     }
 
-    this.logger.info(`${this.parentName}: ${this.name} saving state in cache`);
+    this._logBatchTypicalMessages(
+      `${this.parentName}: saving state in cache`,
+      'info',
+    );
+
     this.dexHelper.cache.hset(
       this.mapKey,
       this.name,
