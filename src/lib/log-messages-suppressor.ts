@@ -1,112 +1,161 @@
-// import { Logger, LogLevels } from '../types';
+import { assert } from 'console';
+import _, { now } from 'lodash';
+import { Logger, LogLevels } from '../types';
 
-// export const DEFAULT_LOG_PUBLISH_PERIOD_MS = 60_000;
+export const DEFAULT_LOG_PUBLISH_PERIOD_MS = 60_000;
 
-// export type StandardStringEnum = {
-//   [id: string]: string;
-// };
+// After this period previous logs, even if unpublished, would be discarded
+// Because most likely they are outdated
+export const DEFAULT_LOG_DISCARD_PERIOD_MS = 15 * 60 * 1000;
 
-// export type MessageInfo = {
-//   key: keyof StandardStringEnum;
-//   message: StandardStringEnum[keyof StandardStringEnum];
-//   logLevel: LogLevels;
-//   logger: Logger;
-// };
+// We may have hundreds of pools failing at the same time,
+// and we don't want to show them all
+export const DEFAULT_LOG_MAX_IDENTITIES_TO_SHOW = 10;
 
-// export type MessageData = {
-//   messageKey: keyof StandardStringEnum;
-//   counter: number;
-//   identificationInfos?: string[];
-// };
+export type StandardStringEnum = {
+  [id: string]: string;
+};
 
-// export type AggregatedLogForEntity = Record<
-//   keyof StandardStringEnum,
-//   MessageData
-// >;
+export type MessageInfo = {
+  key: keyof StandardStringEnum;
+  message: StandardStringEnum[keyof StandardStringEnum];
+  logLevel: LogLevels;
+  logger: Logger;
+};
 
-// export type AggregatedLogs = {
-//   [entityName in string]: AggregatedLogForEntity;
-// };
+export type MessageData = {
+  counter: number;
+  lastLoggedAtMs: number;
+  identificationInfos: string[];
+};
 
-// export class LogMessagesSuppressor {
-//   static instances: Record<string, LogMessagesSuppressor> = {};
+export type AggregatedLogForEntity = Record<
+  keyof StandardStringEnum,
+  MessageData
+>;
 
-//   private _aggregatedLogs: AggregatedLogs = {};
+export type AggregatedLogs = {
+  [entityName in string]: AggregatedLogForEntity;
+};
 
-//   private _intervalTimer?: NodeJS.Timer;
+/*
+ * This is helper module to reduce frequency of logging of spamming messages
+ *
+ * 1. You can only have predefined set of log messages to log
+ * First time log message is received, it is published with all arguments.
+ * Limitation - message can not include variables, but you can pass them as args
+ * If within cooldown period received another message of the same category, it
+ * is not published, but counter is increased with addition of some entity identifier
+ *
+ * 2. There is no background task running. In order to keep relevance of logs,
+ * if after certain amount of time we didn't receive logs, then we discarded accumulated ones
+ * on the next received ones and only publish relevant ones
+ */
 
-//   private _allMessages: Record<keyof StandardStringEnum, MessageInfo> = {};
+export class LogMessagesSuppressor {
+  static instances: Record<string, LogMessagesSuppressor> = {};
 
-//   constructor(readonly entityName: string, allMessagesInfo: MessageInfo[]) {
-//     for (const messageInfo of allMessagesInfo) {
-//       this._allMessages[messageInfo.key] = messageInfo;
-//     }
-//   }
+  private _aggregatedLogs: AggregatedLogs = {};
 
-//   getSuppressorInstance(entityName: string, allMessagesInfo: MessageInfo[]) {
-//     const instance = LogMessagesSuppressor.instances[entityName];
-//     if (instance === undefined) {
-//       LogMessagesSuppressor.instances[entityName] = new LogMessagesSuppressor(
-//         entityName,
-//         allMessagesInfo,
-//       );
-//     }
-//     return LogMessagesSuppressor.instances[entityName];
-//   }
+  private _allMessages: Record<keyof StandardStringEnum, MessageInfo> = {};
 
-//   logMessage(
-//     msgKey: keyof StandardStringEnum,
-//     identificationInfo: string = '',
-//     ...args: unknown[]
-//   ) {
-//     const entityMsgRepository = this._aggregatedLogs[this.entityName];
-//     if (entityMsgRepository[msgKey] === undefined) {
-//       const msgInfo = this._allMessages[msgKey];
-//     }
-//   }
+  constructor(readonly entityName: string, allMessagesInfo: MessageInfo[]) {
+    for (const messageInfo of allMessagesInfo) {
+      this._allMessages[messageInfo.key] = messageInfo;
+    }
+  }
 
-//   private _publishLogs() {
-//     for (const [entityName, logMessages] of Object.entries(
-//       this._aggregatedLogs,
-//     )) {
-//       for (const [messageKey, messageData] of Object.entries(logMessages)) {
-//         this.logger[messageData.logLevel](
-//           this._formatLogMessage(messageData, entityName),
-//         );
-//         delete logMessages[messageKey];
-//       }
-//     }
-//   }
+  getLogSuppressorInstance(entityName: string, allMessagesInfo: MessageInfo[]) {
+    const instance = LogMessagesSuppressor.instances[entityName];
+    if (instance === undefined) {
+      LogMessagesSuppressor.instances[entityName] = new LogMessagesSuppressor(
+        entityName,
+        allMessagesInfo,
+      );
+    } else {
+      assert(
+        _.isEqual(allMessagesInfo, instance._allMessages),
+        'getLogSuppressorInstance: try to get existing instance with different allMessagesInfo',
+      );
+    }
+    return LogMessagesSuppressor.instances[entityName];
+  }
 
-//   private _formatLogMessage(messageData: MessageData, entityName: string) {
-//     const { counter, message, identificationInfos } = messageData;
-//     const identities =
-//       identificationInfos === undefined
-//         ? ''
-//         : ` for entities: ${identificationInfos.join(',')}`;
-//     return `${entityName}: logged ${counter} occurrences of: "${message}"${identities}`;
-//   }
+  logMessage(
+    msgKey: keyof StandardStringEnum,
+    identificationInfo: string = '',
+    ...args: unknown[]
+  ) {
+    const entityMsgRepository = this._aggregatedLogs[this.entityName];
+    const msgInfo = this._allMessages[msgKey];
+    assert(
+      msgInfo !== undefined,
+      `Used unrecognized msgKey=${msgKey} to get msgInfo`,
+    );
 
-//   init(publishLogPeriodMs: number = DEFAULT_LOG_PUBLISH_PERIOD_MS) {
-//     if (this._intervalTimer === undefined) {
-//       this._intervalTimer = setInterval(
-//         this._publishLogs.bind(this),
-//         publishLogPeriodMs,
-//       );
-//     }
-//   }
+    if (entityMsgRepository[msgKey] === undefined) {
+      entityMsgRepository[msgKey] = {
+        counter: 0,
+        identificationInfos:
+          identificationInfo === '' ? [] : [identificationInfo],
+        lastLoggedAtMs: 0,
+      };
+    }
+    const msgData = entityMsgRepository[msgKey];
 
-//   releaseResources() {
-//     if (this._intervalTimer) {
-//       clearInterval(this._intervalTimer);
-//       this._intervalTimer = undefined;
-//     }
-//   }
+    const nowMs = Date.now();
+    const elapsedSinceLastPublish = nowMs - msgData.lastLoggedAtMs;
 
-//   private _clearMessageData(messageData: MessageData) {
-//     messageData.counter = 0;
-//     if (messageData.identificationInfos) {
-//       messageData.identificationInfos.length = 0;
-//     }
-//   }
-// }
+    if (elapsedSinceLastPublish > DEFAULT_LOG_PUBLISH_PERIOD_MS) {
+      // Accumulated logs are too old to have any relevance, so better to discard them
+      if (elapsedSinceLastPublish > DEFAULT_LOG_DISCARD_PERIOD_MS) {
+        this._clearMessageData(msgData);
+      }
+
+      // Make actual logging
+      // Logging is done using original logger of the entity to keep module info
+      // and not override it
+      msgInfo.logger[msgInfo.logLevel](
+        this._formatLogMessage(msgData, msgInfo.message),
+        ...args,
+      );
+      this._clearMessageData(msgData);
+    } else {
+      msgData.counter++;
+      if (identificationInfo !== '') {
+        msgData.identificationInfos.push(identificationInfo);
+      }
+    }
+  }
+
+  private _formatLogMessage(msgData: MessageData, message: string) {
+    const { counter, identificationInfos } = msgData;
+    let identities =
+      identificationInfos === undefined
+        ? ''
+        : ` for entities: ${
+            identificationInfos.length > DEFAULT_LOG_MAX_IDENTITIES_TO_SHOW
+              ? identificationInfos
+                  .slice(DEFAULT_LOG_MAX_IDENTITIES_TO_SHOW)
+                  .join(',')
+              : identificationInfos.join(',')
+          }`;
+
+    if (
+      identificationInfos &&
+      identificationInfos.length > DEFAULT_LOG_MAX_IDENTITIES_TO_SHOW
+    ) {
+      identities = `${identities}... ${identificationInfos.length} total`;
+    }
+
+    return `${this.entityName}: logged ${counter} occurrences of: "${message}"${identities}. `;
+  }
+
+  private _clearMessageData(messageData: MessageData) {
+    messageData.counter = 0;
+    if (messageData.identificationInfos) {
+      messageData.identificationInfos.length = 0;
+    }
+    messageData.lastLoggedAtMs = Date.now();
+  }
+}
