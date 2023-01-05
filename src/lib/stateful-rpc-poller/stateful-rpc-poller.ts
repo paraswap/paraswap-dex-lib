@@ -1,4 +1,4 @@
-import { Logger } from '../../types';
+import { Logger, LogLevels } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import { IStatefulRpcPoller, StateWithUpdateInfo } from './types';
 import { MultiCallParams } from '../multi-wrapper';
@@ -6,6 +6,10 @@ import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
 import { assert } from 'ts-essentials';
 import { getLogger } from '../log4js';
+
+enum AllMessages {
+  FALLBACK_TO_RPC = 'Failed to retrieve updated state from cache. Falling back to RPC',
+}
 
 export abstract class StatefulRpcPoller<State, M>
   implements IStatefulRpcPoller<State, M>
@@ -111,7 +115,7 @@ export abstract class StatefulRpcPoller<State, M>
           }, but requested for ${blockNumber}. Diff ${
             blockNumber - this.stateBlockNumber
           } blocks`,
-          'warn',
+          'trace',
         );
       }
     } else {
@@ -127,10 +131,7 @@ export abstract class StatefulRpcPoller<State, M>
         e,
       );
     }
-    this.logMessage(
-      `Failed to retrieve updated state from cache. Falling back to RPC`,
-      'warn',
-    );
+    this.logMessage(AllMessages.FALLBACK_TO_RPC, 'warn');
 
     // As the last step. If we failed everything above, try to fetch from RPC
     try {
@@ -146,11 +147,7 @@ export abstract class StatefulRpcPoller<State, M>
     return null;
   }
 
-  protected logMessage(
-    message: string,
-    level: 'info' | 'warn' | 'error',
-    arg?: unknown,
-  ) {
+  protected logMessage(message: string, level: LogLevels, arg?: unknown) {
     this.logger[level](`${this.dexKey}-${this.entityName}: ${message}`, arg);
   }
 

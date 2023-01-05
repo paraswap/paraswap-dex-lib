@@ -1,36 +1,69 @@
 import { Logger, LogLevels } from '../types';
-import { getLogger } from './log4js';
 
-export const DEFAULT_LOG_PUBLISH_PERIOD_MS = 5_000;
+export const DEFAULT_LOG_PUBLISH_PERIOD_MS = 60_000;
+
+export type StandardStringEnum = {
+  [id: string]: string;
+};
+
+export type MessageInfo = {
+  key: keyof StandardStringEnum;
+  message: StandardStringEnum[keyof StandardStringEnum];
+  logLevel: LogLevels;
+  logger: Logger;
+};
 
 export type MessageData = {
-  message: string;
-  logLevel: LogLevels;
+  messageKey: keyof StandardStringEnum;
   counter: number;
   identificationInfos?: string[];
 };
 
+export type AggregatedLogForEntity = Record<
+  keyof StandardStringEnum,
+  MessageData
+>;
+
 export type AggregatedLogs = {
-  [entityName in string]: Record<string, MessageData>;
+  [entityName in string]: AggregatedLogForEntity;
 };
 
-export class LogMessagesAggregator {
-  private logger: Logger;
+export class LogMessagesSuppressor {
+  static instances: Record<string, LogMessagesSuppressor> = {};
 
   private _aggregatedLogs: AggregatedLogs = {};
 
   private _intervalTimer?: NodeJS.Timer;
 
-  constructor() {
-    this.logger = getLogger('LogMessageAggregator');
+  private _allMessages: Record<keyof StandardStringEnum, MessageInfo> = {};
+
+  constructor(readonly entityName: string, allMessagesInfo: MessageInfo[]) {
+    for (const messageInfo of allMessagesInfo) {
+      this._allMessages[messageInfo.key] = messageInfo;
+    }
+  }
+
+  getSuppressorInstance(entityName: string, allMessagesInfo: MessageInfo[]) {
+    const instance = LogMessagesSuppressor.instances[entityName];
+    if (instance === undefined) {
+      LogMessagesSuppressor.instances[entityName] = new LogMessagesSuppressor(
+        entityName,
+        allMessagesInfo,
+      );
+    }
+    return LogMessagesSuppressor.instances[entityName];
   }
 
   logMessage(
-    entityName: string,
-    msg: string,
-    level: LogLevels,
-    identificationInfo?: string,
-  ) {}
+    msgKey: keyof StandardStringEnum,
+    identificationInfo: string = '',
+    ...args: unknown[]
+  ) {
+    const entityMsgRepository = this._aggregatedLogs[this.entityName];
+    if (entityMsgRepository[msgKey] === undefined) {
+      const msgInfo = this._allMessages[msgKey];
+    }
+  }
 
   private _publishLogs() {
     for (const [entityName, logMessages] of Object.entries(
@@ -77,5 +110,3 @@ export class LogMessagesAggregator {
     }
   }
 }
-
-export const logMessagesAggregator = new LogMessagesAggregator();
