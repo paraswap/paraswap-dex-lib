@@ -1,43 +1,99 @@
-import { Logger, LogLevels } from '../../types';
+import { Logger, LogLevels, MultiCallOutput } from '../../types';
 import { IDexHelper } from '../../dex-helper';
-import { IStatefulRpcPoller, StateWithUpdateInfo } from './types';
+import { IStatefulRpcPoller, ObjWithUpdateInfo } from './types';
 import { MultiCallParams } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
 import { assert } from 'ts-essentials';
 import { getLogger } from '../log4js';
+import { LogMessagesSuppressor, MessageInfo } from '../log-messages-suppressor';
+import { Utils } from '../../utils';
 
-enum AllMessages {
-  FALLBACK_TO_RPC = 'Failed to retrieve updated state from cache. Falling back to RPC',
-}
+const StatefulRPCPollerMessages = {
+  ERROR_FETCHING_STATE_FROM_CACHE: `Unexpected error while fetching state from Cache`,
+  ERROR_FETCHING_STATE_FROM_RPC: `Unexpected error while fetching state from RPC`,
+  ERROR_SAVING_LIQUIDITY_IN_CACHE: `Unexpected error while saving liquidity in Cache`,
+  ERROR_SAVING_STATE_IN_CACHE: `Unexpected error while saving state in Cache`,
+
+  FALLBACK_TO_RPC: `Failed to retrieve updated state from cache. Falling back to RPC`,
+
+  LIQUIDITY_INFO_IS_OUTDATED: `Liquidity info in USD is outdated`,
+} as const;
+
+const DEFAULT_LIQUIDITY_UPDATE_PERIOD_MS = 2 * 60 * 1000;
 
 export abstract class StatefulRpcPoller<State, M>
   implements IStatefulRpcPoller<State, M>
 {
+  static StatefulRPCPollerMessages: Record<
+    keyof typeof StatefulRPCPollerMessages,
+    MessageInfo<typeof StatefulRPCPollerMessages>
+  > = {
+    ERROR_FETCHING_STATE_FROM_CACHE: {
+      key: 'ERROR_FETCHING_STATE_FROM_CACHE',
+      message: StatefulRPCPollerMessages.ERROR_FETCHING_STATE_FROM_CACHE,
+      logLevel: 'error',
+    },
+    ERROR_FETCHING_STATE_FROM_RPC: {
+      key: 'ERROR_FETCHING_STATE_FROM_RPC',
+      message: StatefulRPCPollerMessages.ERROR_FETCHING_STATE_FROM_RPC,
+      logLevel: 'error',
+    },
+    ERROR_SAVING_LIQUIDITY_IN_CACHE: {
+      key: 'ERROR_SAVING_LIQUIDITY_IN_CACHE',
+      message: StatefulRPCPollerMessages.ERROR_SAVING_LIQUIDITY_IN_CACHE,
+      logLevel: 'error',
+    },
+    ERROR_SAVING_STATE_IN_CACHE: {
+      key: 'ERROR_SAVING_STATE_IN_CACHE',
+      message: StatefulRPCPollerMessages.ERROR_SAVING_STATE_IN_CACHE,
+      logLevel: 'error',
+    },
+    LIQUIDITY_INFO_IS_OUTDATED: {
+      key: 'LIQUIDITY_INFO_IS_OUTDATED',
+      message: StatefulRPCPollerMessages.LIQUIDITY_INFO_IS_OUTDATED,
+      logLevel: 'error',
+    },
+    FALLBACK_TO_RPC: {
+      key: 'FALLBACK_TO_RPC',
+      message: StatefulRPCPollerMessages.FALLBACK_TO_RPC,
+      logLevel: 'warn',
+    },
+  };
+
   // The current state and its block number
   // Derived classes should not set these directly, and instead use setState()
-  protected state?: State;
-  protected stateBlockNumber: number = 0;
-  protected stateLastUpdatedAtMs: number = 0;
+  protected _stateWithUpdateInfo?: ObjWithUpdateInfo<State>;
 
   // This values is used to determine if current pool will participate in update or not
   // We don't want to keep track of state od pools without liquidity
-  protected liquidityInUSD: number = 0;
-  protected liquidityLastUpdatedAtMs: number = 0;
+  protected _liquidityInUSDWithUpdateInfo: ObjWithUpdateInfo<number> = {
+    value: 0,
+    blockNumber: 0,
+    lastUpdatedAtMs: 0,
+  };
 
-  readonly cacheStateMapKey: string;
+  readonly cacheStateKey: string;
   readonly cacheLiquidityMapKey: string;
 
   // Store here encoded calls for blockNumber, blockTimestamp etc.
-  protected _cachedMultiCallData: MultiCallParams<M | number>[] = [];
+  protected _cachedMultiCallData?: [
+    MultiCallParams<number>,
+    ...MultiCallParams<M>[],
+  ];
 
-  protected aggregatedLogMessages: Record<string, number> = {};
+  protected _getBlockNumberMultiCall: MultiCallParams<number>;
+
+  readonly entityName: string;
+
+  protected logMessagesSuppressor: LogMessagesSuppressor<
+    typeof StatefulRPCPollerMessages
+  >;
 
   protected logger: Logger;
 
   constructor(
     readonly dexKey: string,
-    readonly entityName: string,
     readonly poolIdentifier: string,
     protected dexHelper: IDexHelper,
 
@@ -48,26 +104,41 @@ export abstract class StatefulRpcPoller<State, M>
     // It is allowed block delay before refetching the state
     protected maxAllowedDelayedBlockRpcPolling: number = dexHelper.config.data
       .maxAllowedDelayedBlockRpcPolling,
+    protected liquidityUpdatePeriodMs = DEFAULT_LIQUIDITY_UPDATE_PERIOD_MS,
   ) {
+    // Don't make it too custom, like adding poolIdentifier. It will break log suppressor
+    // If we are really need to do that, update log Suppressor to handle that case
+    this.entityName = `StatefulPoller-${this.dexKey}-${this.dexHelper.config.data.network}`;
+
     this.cacheLiquidityMapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_liquidity_usd`.toLowerCase();
-    this.cacheStateMapKey =
+    this.cacheStateKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
     this.logger = getLogger(`${this.dexKey}-${this.entityName}`);
 
     assert(
       this.maxAllowedDelayedBlockRpcPolling <=
         dexHelper.config.data.maxAllowedDelayedBlockRpcPolling,
-      `You can not exceed global maxAllowedDelayedBlockRpcPolling=${dexHelper.config.data.maxAllowedDelayedBlockRpcPolling}. Received ${this.maxAllowedDelayedBlockRpcPolling}`,
+      `You can not exceed global maxAllowedDelayedBlockRpcPolling=` +
+        `${dexHelper.config.data.maxAllowedDelayedBlockRpcPolling}. ` +
+        `Received ${this.maxAllowedDelayedBlockRpcPolling}`,
     );
 
-    this._cachedMultiCallData.push({
+    this._getBlockNumberMultiCall = {
       target: this.dexHelper.multiContract.options.address,
       callData: this.dexHelper.multiContract.methods
         .getBlockNumber()
         .encodeABI(),
       decodeFunction: uint256DecodeToNumber,
-    });
+    };
+
+    this.logMessagesSuppressor = LogMessagesSuppressor.getLogSuppressorInstance<
+      typeof StatefulRPCPollerMessages
+    >(
+      this.entityName,
+      StatefulRpcPoller.StatefulRPCPollerMessages,
+      this.logger,
+    );
   }
 
   get network() {
@@ -91,106 +162,232 @@ export abstract class StatefulRpcPoller<State, M>
   protected _isInMemoryStateOutdated(blockNumber: number): boolean {
     return this._isStateOutdated(
       blockNumber,
-      this.stateBlockNumber,
+      this._stateWithUpdateInfo?.blockNumber || 0,
       this.maxAllowedDelayedBlockRpcPolling,
     );
   }
 
   async getState(
     blockNumber: number,
-  ): Promise<StateWithUpdateInfo<State> | null> {
+  ): Promise<ObjWithUpdateInfo<State> | null> {
     // Try to get with least effort from local memory
-    const localState = this.state;
+    const localState = this._stateWithUpdateInfo;
     if (localState !== undefined) {
       if (!this._isInMemoryStateOutdated(blockNumber)) {
-        return {
-          state: localState,
-          blockNumber: this.stateBlockNumber,
-          lastUpdatedAtMs: this.stateLastUpdatedAtMs,
-        };
+        return localState;
       } else {
-        this.logMessage(
+        this.immediateLogMessage(
           `State is outdated. Valid for number ${
-            this.stateBlockNumber
+            localState.blockNumber
           }, but requested for ${blockNumber}. Diff ${
-            blockNumber - this.stateBlockNumber
+            blockNumber - localState.blockNumber
           } blocks`,
           'trace',
         );
       }
     } else {
-      this.logMessage(`State is not initialized in memory`, 'error');
+      this.immediateLogMessage(`State is not initialized in memory`, 'error');
     }
 
     // If we failed to get from memory. Try to fetch state from cache
     try {
     } catch (e) {
-      this.logMessage(
-        `Unexpected error while fetching state from Cache`,
-        'error',
-        e,
-      );
+      this.logMessageWithSuppression(`ERROR_FETCHING_STATE_FROM_CACHE`, e);
     }
-    this.logMessage(AllMessages.FALLBACK_TO_RPC, 'warn');
+
+    this.logMessageWithSuppression('FALLBACK_TO_RPC');
 
     // As the last step. If we failed everything above, try to fetch from RPC
     try {
     } catch (e) {
-      this.logMessage(
-        `Unexpected error while fetching state from RPC`,
-        'error',
-        e,
-      );
+      this.logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
     }
 
     // If nothing works, then we can not do anything here and skip this pool
     return null;
   }
 
-  protected logMessage(message: string, level: LogLevels, arg?: unknown) {
-    this.logger[level](`${this.dexKey}-${this.entityName}: ${message}`, arg);
+  protected logMessageWithSuppression(
+    msgKey: keyof typeof StatefulRPCPollerMessages,
+    ...args: unknown[]
+  ) {
+    this.logMessagesSuppressor.logMessage(msgKey, this.poolIdentifier, ...args);
+  }
+
+  protected immediateLogMessage(
+    message: string,
+    level: LogLevels,
+    ...args: unknown[]
+  ) {
+    this.logger[level](`${this.entityName}: ${message}`, ...args);
   }
 
   get isStateToBeUpdated(): boolean {
     if (
       this.isLiquidityTracked &&
-      Date.now() - this.liquidityLastUpdatedAtMs >
+      Date.now() - this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs >
         this.liquidityUpdateAllowedDelayMs
     ) {
-      this.logMessage(
-        `liquidity is outdated. Last updated at ${this.liquidityLastUpdatedAtMs}`,
-        'error',
+      this.logMessageWithSuppression(
+        'LIQUIDITY_INFO_IS_OUTDATED',
+        `Last updated at ${this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs}`,
       );
     }
 
-    return this.liquidityInUSD >= this.liquidityThresholdForUpdate;
+    return (
+      this._liquidityInUSDWithUpdateInfo.value >=
+      this.liquidityThresholdForUpdate
+    );
   }
 
-  abstract _getFetchStateMultiCalls(): MultiCallParams<M>[];
+  protected abstract _getFetchStateMultiCalls(): MultiCallParams<M>[];
 
-  getFetchStateWithBlockInfoMultiCalls(): MultiCallParams<M>[] {
-    return [];
+  getFetchStateWithBlockInfoMultiCalls(): [
+    MultiCallParams<number>,
+    ...MultiCallParams<M>[],
+  ] {
+    if (this._cachedMultiCallData === undefined) {
+      const stateMultiCalls = this._getFetchStateMultiCalls();
+      this._cachedMultiCallData = [
+        this._getBlockNumberMultiCall,
+        ...stateMultiCalls,
+      ];
+    }
+
+    return this._cachedMultiCallData;
   }
 
-  abstract parseStateFromMultiResults(multiOutputs: M[]): State;
+  protected abstract _parseStateFromMultiResults(multiOutputs: M[]): State;
 
-  async fetchLatestStateFromRpc(): Promise<StateWithUpdateInfo<State>> {
-    return {} as StateWithUpdateInfo<State>;
+  parseStateFromMultiResultsWithBlockInfo(
+    multiOutputs: [number, ...M[]],
+    lastUpdatedAtMs: number,
+  ): ObjWithUpdateInfo<State> {
+    // By abstract I mean for abstract method which must be implemented
+    const [blockNumber, ...outputsForAbstract] = multiOutputs;
+
+    return {
+      value: this._parseStateFromMultiResults(outputsForAbstract),
+      blockNumber,
+      lastUpdatedAtMs,
+    };
   }
 
-  async _setState(
+  async fetchLatestStateFromRpc(): Promise<ObjWithUpdateInfo<State> | null> {
+    const multiCalls = this.getFetchStateWithBlockInfoMultiCalls();
+    try {
+      const lastUpdatedAtMs = Date.now();
+      const aggregatedResults = (await this.dexHelper.multiWrapper.aggregate<
+        number | M
+      >(multiCalls as MultiCallParams<M | number>[])) as [number, ...M[]];
+
+      return this.parseStateFromMultiResultsWithBlockInfo(
+        aggregatedResults,
+        lastUpdatedAtMs,
+      );
+    } catch (e) {
+      this.logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
+    }
+
+    return null;
+  }
+
+  async setState(
     state: State,
     blockNumber: number,
     lastUpdatedAtMs: number,
   ): Promise<void> {
-    this.state = state;
-    this.stateBlockNumber = blockNumber;
-    this.stateLastUpdatedAtMs = lastUpdatedAtMs;
+    if (this._stateWithUpdateInfo === undefined) {
+      this._stateWithUpdateInfo = {
+        value: state,
+        blockNumber,
+        lastUpdatedAtMs,
+      };
+    } else {
+      this._stateWithUpdateInfo.value = state;
+      this._stateWithUpdateInfo.blockNumber = blockNumber;
+      this._stateWithUpdateInfo.lastUpdatedAtMs = lastUpdatedAtMs;
+    }
 
-    // Master version must keep cache version up to date
+    // Master version must keep cache up to date
     if (this.isMaster) {
+      await this.saveStateInCache();
     }
   }
 
-  abstract fetchStateFromCache(): Promise<StateWithUpdateInfo<State>>;
+  async saveStateInCache(): Promise<boolean> {
+    try {
+      await this.dexHelper.cache.hset(
+        this.cacheStateKey,
+        this.poolIdentifier,
+        Utils.Serialize(this._stateWithUpdateInfo),
+      );
+      return true;
+    } catch (e) {
+      this.logMessageWithSuppression('ERROR_SAVING_STATE_IN_CACHE', e);
+    }
+    return false;
+  }
+
+  async saveLiquidityInCache(): Promise<boolean> {
+    try {
+      await this.dexHelper.cache.setex(
+        this.dexKey,
+        this.network,
+        this.cacheLiquidityMapKey,
+        this._getExpiryTimeForCachedLiquidity(),
+        JSON.stringify(this._liquidityInUSDWithUpdateInfo),
+      );
+      return true;
+    } catch (e) {
+      this.logMessageWithSuppression('ERROR_SAVING_LIQUIDITY_IN_CACHE', e);
+    }
+    return false;
+  }
+
+  async fetchStateFromCache(): Promise<ObjWithUpdateInfo<State> | null> {
+    const resultUnparsed = await this.dexHelper.cache.hget(
+      this.cacheStateKey,
+      this.poolIdentifier,
+    );
+
+    if (resultUnparsed !== null) {
+      return Utils.Parse(resultUnparsed) as ObjWithUpdateInfo<State>;
+    }
+
+    return null;
+  }
+
+  async fetchLiquidityFromCache(): Promise<ObjWithUpdateInfo<number> | null> {
+    const resultUnparsed = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.cacheStateKey,
+    );
+
+    if (resultUnparsed !== null) {
+      return Utils.Parse(resultUnparsed) as ObjWithUpdateInfo<number>;
+    }
+
+    return null;
+  }
+
+  async setLiquidity(
+    newLiquidityInUSD: number,
+    lastUpdatedAtMs: number,
+    blockNumber?: number,
+  ): Promise<void> {
+    this._liquidityInUSDWithUpdateInfo.value = newLiquidityInUSD;
+    this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs = lastUpdatedAtMs;
+    this._liquidityInUSDWithUpdateInfo.blockNumber = blockNumber || 0;
+
+    if (this.isMaster) {
+      await this.saveLiquidityInCache();
+    }
+  }
+
+  protected _getExpiryTimeForCachedLiquidity() {
+    // Give it 10 minutes margin to recover
+    return Math.floor(this.liquidityUpdatePeriodMs / 1000) + 10 * 60 * 1000;
+  }
 }

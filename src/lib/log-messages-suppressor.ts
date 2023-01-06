@@ -1,5 +1,5 @@
 import { assert } from 'console';
-import _, { now } from 'lodash';
+import _ from 'lodash';
 import { Logger, LogLevels } from '../types';
 
 export const DEFAULT_LOG_PUBLISH_PERIOD_MS = 60_000;
@@ -12,15 +12,12 @@ export const DEFAULT_LOG_DISCARD_PERIOD_MS = 15 * 60 * 1000;
 // and we don't want to show them all
 export const DEFAULT_LOG_MAX_IDENTITIES_TO_SHOW = 10;
 
-export type StandardStringEnum = {
-  [id: string]: string;
-};
+export type StandardStringEnum = Readonly<Record<string, string>>;
 
-export type MessageInfo = {
-  key: keyof StandardStringEnum;
-  message: StandardStringEnum[keyof StandardStringEnum];
+export type MessageInfo<T extends StandardStringEnum> = {
+  key: keyof T;
+  message: T[keyof T];
   logLevel: LogLevels;
-  logger: Logger;
 };
 
 export type MessageData = {
@@ -29,13 +26,13 @@ export type MessageData = {
   identificationInfos: string[];
 };
 
-export type AggregatedLogForEntity = Record<
-  keyof StandardStringEnum,
+export type AggregatedLogForEntity<T extends StandardStringEnum> = Record<
+  keyof T,
   MessageData
 >;
 
-export type AggregatedLogs = {
-  [entityName in string]: AggregatedLogForEntity;
+export type AggregatedLogs<T extends StandardStringEnum> = {
+  [entityName in string]: AggregatedLogForEntity<T>;
 };
 
 /*
@@ -52,37 +49,43 @@ export type AggregatedLogs = {
  * on the next received ones and only publish relevant ones
  */
 
-export class LogMessagesSuppressor {
-  static instances: Record<string, LogMessagesSuppressor> = {};
+export class LogMessagesSuppressor<T extends StandardStringEnum> {
+  // I don't really like this any, but couldn't come up with better solution
+  // in reasonable time. So, in order to unblock myself, do this
+  static instances: Record<string, LogMessagesSuppressor<any>> = {};
 
-  private _aggregatedLogs: AggregatedLogs = {};
+  private _aggregatedLogs: AggregatedLogs<T> = {};
 
-  private _allMessages: Record<keyof StandardStringEnum, MessageInfo> = {};
+  constructor(
+    readonly entityName: string,
+    private _allMessages: Record<keyof T, MessageInfo<T>>,
+    protected logger: Logger,
+  ) {}
 
-  constructor(readonly entityName: string, allMessagesInfo: MessageInfo[]) {
-    for (const messageInfo of allMessagesInfo) {
-      this._allMessages[messageInfo.key] = messageInfo;
-    }
-  }
-
-  getLogSuppressorInstance(entityName: string, allMessagesInfo: MessageInfo[]) {
+  static getLogSuppressorInstance<T extends StandardStringEnum>(
+    entityName: string,
+    allMessages: Record<keyof T, MessageInfo<T>>,
+    logger: Logger,
+  ) {
     const instance = LogMessagesSuppressor.instances[entityName];
     if (instance === undefined) {
-      LogMessagesSuppressor.instances[entityName] = new LogMessagesSuppressor(
-        entityName,
-        allMessagesInfo,
-      );
+      LogMessagesSuppressor.instances[entityName] =
+        new LogMessagesSuppressor<T>(entityName, allMessages, logger);
     } else {
       assert(
-        _.isEqual(allMessagesInfo, instance._allMessages),
+        _.isEqual(allMessages, instance._allMessages),
         'getLogSuppressorInstance: try to get existing instance with different allMessagesInfo',
+      );
+      assert(
+        _.isEqual(logger, instance.logger),
+        'getLogSuppressorInstance: try to get existing instance with different logger',
       );
     }
     return LogMessagesSuppressor.instances[entityName];
   }
 
   logMessage(
-    msgKey: keyof StandardStringEnum,
+    msgKey: keyof T,
     identificationInfo: string = '',
     ...args: unknown[]
   ) {
@@ -90,7 +93,7 @@ export class LogMessagesSuppressor {
     const msgInfo = this._allMessages[msgKey];
     assert(
       msgInfo !== undefined,
-      `Used unrecognized msgKey=${msgKey} to get msgInfo`,
+      `Used unrecognized msgKey=${String(msgKey)} to get msgInfo`,
     );
 
     if (entityMsgRepository[msgKey] === undefined) {
@@ -115,7 +118,7 @@ export class LogMessagesSuppressor {
       // Make actual logging
       // Logging is done using original logger of the entity to keep module info
       // and not override it
-      msgInfo.logger[msgInfo.logLevel](
+      this.logger[msgInfo.logLevel](
         this._formatLogMessage(msgData, msgInfo.message),
         ...args,
       );

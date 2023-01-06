@@ -1,7 +1,7 @@
 import { MultiCallParams } from '../multi-wrapper';
 
-export type StateWithUpdateInfo<T> = {
-  state: T;
+export type ObjWithUpdateInfo<T> = {
+  value: T;
   blockNumber: number;
   lastUpdatedAtMs: number;
 };
@@ -11,17 +11,29 @@ export interface IStatefulRpcPoller<State, M> {
 
   isStateToBeUpdated: boolean;
 
-  getFetchStateWithBlockInfoMultiCalls(): MultiCallParams<M>[];
+  getFetchStateWithBlockInfoMultiCalls(): [
+    MultiCallParams<number>,
+    ...MultiCallParams<M>[],
+  ];
 
-  parseStateFromMultiResults(multiOutputs: M[]): State;
+  parseStateFromMultiResultsWithBlockInfo(
+    multiOutputs: [number, ...M[]],
+    lastUpdatedAtMs: number,
+  ): ObjWithUpdateInfo<State>;
 
-  _setState(
+  setState(
     state: State,
     blockNumber: number,
     lastUpdatedAtMs: number,
   ): Promise<void>;
 
-  fetchStateFromCache(): Promise<StateWithUpdateInfo<State>>;
+  fetchStateFromCache(): Promise<ObjWithUpdateInfo<State> | null>;
 
-  getState(blockNumber: number): Promise<StateWithUpdateInfo<State> | null>;
+  getState(blockNumber: number): Promise<ObjWithUpdateInfo<State> | null>;
+
+  setLiquidity(
+    newLiquidityInUSD: number,
+    lastUpdatedAtMs: number,
+    blockNumber?: number,
+  ): Promise<void>;
 }
