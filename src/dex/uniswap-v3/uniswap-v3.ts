@@ -12,7 +12,7 @@ import {
   NumberAsString,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -54,6 +54,7 @@ type PoolPairsInfo = {
   fee: string;
 };
 
+const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_S = 1000 * 60 * 60 * 24;
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
@@ -72,6 +73,9 @@ export class UniswapV3
   logger: Logger;
 
   private uniswapMulti: Contract;
+
+  private notExistingPoolSetKey: string;
+  private notExistingPoolSetTimestamp: string;
 
   constructor(
     protected network: Network,
@@ -94,6 +98,9 @@ export class UniswapV3
 
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
+
+    this.notExistingPoolSetKey = `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`;
+    this.notExistingPoolSetTimestamp = `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set_last_cleaned`;
   }
 
   get supportedFees() {
@@ -121,6 +128,38 @@ export class UniswapV3
         ),
       ),
     );
+
+    let expiratioDate = new Date();
+    expiratioDate.setDate(expiratioDate.getDate() + 1);
+
+    if (!this.dexHelper.config.isSlave) {
+      const cleanNotExistingPoolSet = async () => {
+        await this.dexHelper.cache.rawdel(this.notExistingPoolSetTimestamp);
+        let newDate = new Date();
+        newDate.setDate(newDate.getDate() + 1);
+
+        this.dexHelper.cache.rawset(
+          this.notExistingPoolSetTimestamp,
+          expiratioDate.toString(),
+          UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_S,
+        );
+
+        setTimeout(cleanNotExistingPoolSet.bind(this), diff);
+      };
+
+      const expirationDateAsString = await this.dexHelper.cache.rawget(
+        this.notExistingPoolSetTimestamp,
+      );
+      let diff = expiratioDate.getTime() - Date.now();
+      if (!expirationDateAsString) {
+        await cleanNotExistingPoolSet();
+      } else {
+        const _expiratioNDate = new Date(expirationDateAsString);
+        diff = _expiratioNDate.getTime() - Date.now();
+      }
+
+      setTimeout(cleanNotExistingPoolSet.bind(this, diff));
+    }
   }
 
   async getPool(
@@ -135,6 +174,15 @@ export class UniswapV3
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
       const key = `${token0}_${token1}_${fee}`.toLowerCase();
+
+      const poolDoesNotExist = await this.dexHelper.cache.sismember(
+        this.notExistingPoolSetKey,
+        key,
+      );
+      if (poolDoesNotExist) {
+        return null;
+      }
+
       await this.dexHelper.cache.hset(
         this.dexmapKey,
         key,
@@ -168,6 +216,8 @@ export class UniswapV3
         });
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+          // no need to await we want the set to have the pool key but it's not blocking
+          this.dexHelper.cache.sadd(this.notExistingPoolSetKey, key);
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
           pool = null;

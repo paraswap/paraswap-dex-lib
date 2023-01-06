@@ -44,6 +44,14 @@ class DummyCache implements ICache {
     return null;
   }
 
+  async rawset(
+    key: string,
+    value: string,
+    ttl: number,
+  ): Promise<string | null> {
+    return null;
+  }
+
   async rawdel(key: string): Promise<void> {
     return;
   }
