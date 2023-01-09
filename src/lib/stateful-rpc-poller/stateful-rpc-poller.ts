@@ -1,6 +1,10 @@
 import { Logger, LogLevels, MultiCallOutput } from '../../types';
 import { IDexHelper } from '../../dex-helper';
-import { IStatefulRpcPoller, ObjWithUpdateInfo } from './types';
+import {
+  IStatefulRpcPoller,
+  ObjWithUpdateInfo,
+  PollingManagerControllersCb,
+} from './types';
 import { MultiCallParams } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
@@ -8,6 +12,7 @@ import { assert } from 'ts-essentials';
 import { getLogger } from '../log4js';
 import { LogMessagesSuppressor, MessageInfo } from '../log-messages-suppressor';
 import { Utils } from '../../utils';
+import { getIdentifierKeyForRpcPoller } from './utils';
 
 const StatefulRPCPollerMessages = {
   ERROR_FETCHING_STATE_FROM_CACHE: `Unexpected error while fetching state from Cache`,
@@ -17,7 +22,9 @@ const StatefulRPCPollerMessages = {
 
   FALLBACK_TO_RPC: `Failed to retrieve updated state from cache. Falling back to RPC`,
 
-  LIQUIDITY_INFO_IS_OUTDATED: `Liquidity info in USD is outdated`,
+  LIQUIDITY_INFO_IS_OUTDATED:
+    `Liquidity info in USD is outdated. Wil be updating ` +
+    `every pool that is outdated to not degrade performance`,
 } as const;
 
 const DEFAULT_LIQUIDITY_UPDATE_PERIOD_MS = 2 * 60 * 1000;
@@ -90,16 +97,26 @@ export abstract class StatefulRpcPoller<State, M>
     typeof StatefulRPCPollerMessages
   >;
 
+  protected _isStateToBeUpdated: boolean = true;
+
+  readonly identifierKey: string;
+
   protected logger: Logger;
 
   constructor(
     readonly dexKey: string,
-    readonly poolIdentifier: string,
+    poolIdentifier: string,
     protected dexHelper: IDexHelper,
 
     protected liquidityThresholdForUpdate: number,
     protected liquidityUpdateAllowedDelayMs: number,
     protected isLiquidityTracked: boolean,
+
+    // Polling manager callbacks. They are useful when you want
+    // to give some change information in reverse way.
+    // For example, you changed liquidity state, notify manager to
+    // not poll that particular pools
+    protected managerCbControllers: PollingManagerControllersCb,
 
     // It is allowed block delay before refetching the state
     protected maxAllowedDelayedBlockRpcPolling: number = dexHelper.config.data
@@ -108,7 +125,16 @@ export abstract class StatefulRpcPoller<State, M>
   ) {
     // Don't make it too custom, like adding poolIdentifier. It will break log suppressor
     // If we are really need to do that, update log Suppressor to handle that case
+    // The idea is to have one entity name per Dex level, not pool level
     this.entityName = `StatefulPoller-${this.dexKey}-${this.dexHelper.config.data.network}`;
+
+    // I made it a little bit different from poolIdentifier, because usually
+    // pool identifier doesn't contain network information and it may occasionally
+    // collide across chains, though that scenario is very unlikely to happen
+    this.identifierKey = getIdentifierKeyForRpcPoller(
+      poolIdentifier,
+      this.network,
+    );
 
     this.cacheLiquidityMapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_liquidity_usd`.toLowerCase();
@@ -211,7 +237,7 @@ export abstract class StatefulRpcPoller<State, M>
     msgKey: keyof typeof StatefulRPCPollerMessages,
     ...args: unknown[]
   ) {
-    this.logMessagesSuppressor.logMessage(msgKey, this.poolIdentifier, ...args);
+    this.logMessagesSuppressor.logMessage(msgKey, this.identifierKey, ...args);
   }
 
   protected immediateLogMessage(
@@ -223,21 +249,16 @@ export abstract class StatefulRpcPoller<State, M>
   }
 
   get isStateToBeUpdated(): boolean {
-    if (
-      this.isLiquidityTracked &&
-      Date.now() - this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs >
-        this.liquidityUpdateAllowedDelayMs
-    ) {
-      this.logMessageWithSuppression(
-        'LIQUIDITY_INFO_IS_OUTDATED',
-        `Last updated at ${this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs}`,
-      );
-    }
+    return this._isStateToBeUpdated;
+  }
 
-    return (
-      this._liquidityInUSDWithUpdateInfo.value >=
-      this.liquidityThresholdForUpdate
-    );
+  set isStateToBeUpdated(value: boolean) {
+    // If we change state update status, we always keep relevant info in manager
+    value
+      ? this.managerCbControllers.enableStateTracking(this.identifierKey)
+      : this.managerCbControllers.disableStateTracking(this.identifierKey);
+
+    this._isStateToBeUpdated = value;
   }
 
   protected abstract _getFetchStateMultiCalls(): MultiCallParams<M>[];
@@ -319,7 +340,7 @@ export abstract class StatefulRpcPoller<State, M>
     try {
       await this.dexHelper.cache.hset(
         this.cacheStateKey,
-        this.poolIdentifier,
+        this.identifierKey,
         Utils.Serialize(this._stateWithUpdateInfo),
       );
       return true;
@@ -348,7 +369,7 @@ export abstract class StatefulRpcPoller<State, M>
   async fetchStateFromCache(): Promise<ObjWithUpdateInfo<State> | null> {
     const resultUnparsed = await this.dexHelper.cache.hget(
       this.cacheStateKey,
-      this.poolIdentifier,
+      this.identifierKey,
     );
 
     if (resultUnparsed !== null) {
@@ -381,11 +402,31 @@ export abstract class StatefulRpcPoller<State, M>
     this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs = lastUpdatedAtMs;
     this._liquidityInUSDWithUpdateInfo.blockNumber = blockNumber || 0;
 
+    this._adjustIsStateToBeUpdated();
+
     if (this.isMaster) {
       await this.saveLiquidityInCache();
     }
   }
 
+  protected _adjustIsStateToBeUpdated() {
+    if (this.isLiquidityTracked) {
+      if (
+        Date.now() - this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs >
+        this.liquidityUpdateAllowedDelayMs
+      ) {
+        this.logMessageWithSuppression(
+          'LIQUIDITY_INFO_IS_OUTDATED',
+          `Last updated at ${this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs}`,
+        );
+        this.isStateToBeUpdated = true;
+      } else {
+        this.isStateToBeUpdated =
+          this._liquidityInUSDWithUpdateInfo.value >=
+          this.liquidityThresholdForUpdate;
+      }
+    }
+  }
   protected _getExpiryTimeForCachedLiquidity() {
     // Give it 10 minutes margin to recover
     return Math.floor(this.liquidityUpdatePeriodMs / 1000) + 10 * 60 * 1000;

@@ -7,9 +7,11 @@ export type ObjWithUpdateInfo<T> = {
 };
 
 export interface IStatefulRpcPoller<State, M> {
-  poolIdentifier: string;
+  identifierKey: string;
 
   isStateToBeUpdated: boolean;
+
+  network: number;
 
   getFetchStateWithBlockInfoMultiCalls(): [
     MultiCallParams<number>,
@@ -37,3 +39,9 @@ export interface IStatefulRpcPoller<State, M> {
     blockNumber?: number,
   ): Promise<void>;
 }
+
+export type PollingManagerControllersCb = {
+  enableStateTracking: (identifierKey: string) => void;
+  disableStateTracking: (identifierKey: string) => void;
+  initializePool: <T, M>(statefulRpcPoller: IStatefulRpcPoller<T, M>) => void;
+};
