@@ -37,6 +37,7 @@ import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
+import { Wombat } from './wombat/wombat';
 import { GMX } from './gmx/gmx';
 import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
@@ -109,6 +110,7 @@ const Dexes = [
   CurveV1Factory,
   SwaapV1,
   WstETH,
+  Wombat,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
