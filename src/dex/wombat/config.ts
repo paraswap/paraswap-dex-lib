@@ -4,7 +4,15 @@ import { Network, SwapSide } from '../../constants';
 
 export const WombatConfig: DexConfigMap<DexParams> = {
   Wombat: {
-    // TODO: complete me!
+    [Network.BSC]: {
+      pools: [
+        {
+          address: '0x312Bc7eAAF93f1C60Dc5AfC115FcCDE161055fb0',
+          name: 'Wombat Main Pool',
+        },
+        /** @todo add Side and Dynamic pools */
+      ],
+    },
   },
 };
 

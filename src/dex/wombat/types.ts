@@ -16,7 +16,9 @@ export type WombatData = {
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  // DexParams is set of parameters that can be used to initiate a DEX fork.
+  pools: {
+    address: Address;
+    name: string;
+  }[];
 };
