@@ -11,13 +11,17 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AirSwapData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AirSwapConfig, Adapters } from './config';
 import { AirSwapEventPool } from './airswap-pool';
+import _ from 'lodash';
+import { Registry } from '@airswap/protocols';
+import { ethers } from 'ethers';
+import { chainNames } from '@airswap/constants';
 
 export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   protected eventPools: AirSwapEventPool;
@@ -73,8 +77,9 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const pairs = await this.getAvailableMakersForRFQ(srcToken, destToken);
+    pairs.map(({ swapContract }) => `${this.dexKey}_${swapContract}`);
+    return Promise.resolve(pairs);
   }
 
   // Returns pool prices for amounts.
@@ -89,8 +94,26 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AirSwapData>> {
-    // TODO: complete me!
-    return null;
+    return [
+      {
+        prices: amounts,
+        unit: getBigIntPow(
+          (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        ),
+        gasCost: 10,
+        exchange: this.dexKey,
+        data: {
+          data: {
+            maker: limitPools,
+            srcToken,
+            destToken,
+            amounts,
+          },
+          exchange: 'an_exchange',
+        },
+        poolAddresses: [srcToken ? srcToken.address : destToken.address],
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -174,5 +197,19 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
+  }
+
+  private async getAvailableMakersForRFQ(
+    from: Token,
+    to: Token,
+  ): Promise<any[]> {
+    const provider = ethers.getDefaultProvider(this.network);
+    //@ts-ignore
+    const servers = await new Registry(this.network, provider).getServers(
+      from.address,
+      to.address,
+    );
+    console.log(servers);
+    return Promise.resolve(servers);
   }
 }

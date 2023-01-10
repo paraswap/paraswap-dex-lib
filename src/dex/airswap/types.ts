@@ -12,6 +12,7 @@ export type AirSwapData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
+  data: any;
   exchange: Address;
 };
 
