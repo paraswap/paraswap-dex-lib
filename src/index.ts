@@ -10,6 +10,9 @@ export {
   ICache,
   IBlockManager,
   IRequestWrapper,
+  RequestConfig,
+  RequestHeaders,
+  Response,
   EventSubscriber,
 } from './dex-helper';
 
@@ -27,4 +30,8 @@ export {
   Config,
 } from './types';
 
+export { IDex } from './dex/idex';
+
 export { ConfigHelper } from './config';
+
+export { SlippageCheckError } from './dex/generic-rfq/types';

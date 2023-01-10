@@ -11,7 +11,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress, uuidToBytes16 } from '../utils';
 import { Weth } from '../dex/weth/weth';
-import { IWethDepositorWithdrawer, WethFunctions } from '../dex/weth/types';
+import { IWethDepositorWithdrawer } from '../dex/weth/types';
 
 import { DexAdapterService } from '../dex';
 import {

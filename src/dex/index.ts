@@ -1,4 +1,4 @@
-import { Address, UnoptimizedRate } from '../types';
+import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
@@ -52,6 +52,8 @@ import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
+import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
+import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
 import { AirSwap } from './airswap/airswap';
@@ -105,6 +107,7 @@ const Dexes = [
   Velodrome,
   Cone,
   Synthetix,
+  CurveV1Factory,
   SwaapV1,
   WstETH,
 ];
@@ -129,6 +132,7 @@ export class DexAdapterService {
   isLegacy: { [dexKey: string]: boolean } = {};
   // dexKeys only has keys for non legacy dexes
   dexKeys: string[] = [];
+  genericRFQDexKeys: Set<string> = new Set();
   uniswapV2Alias: string | null;
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
@@ -150,39 +154,50 @@ export class DexAdapterService {
       });
     });
 
+    const handleDex = (newDex: IDex<any, any, any>, key: string) => {
+      const _key = key.toLowerCase();
+      this.isLegacy[_key] = false;
+      this.dexKeys.push(key);
+      this.dexInstances[_key] = newDex;
+
+      const sellAdaptersDex = (
+        this.dexInstances[_key] as IDex<any, any, any>
+      ).getAdapters(SwapSide.SELL);
+      if (sellAdaptersDex)
+        this.sellAdapters[_key] = sellAdaptersDex.map(({ name, index }) => ({
+          adapter: this.dexHelper.config.data.adapterAddresses[name],
+          index,
+        }));
+
+      const buyAdaptersDex = (
+        this.dexInstances[_key] as IDex<any, any, any>
+      ).getAdapters(SwapSide.BUY);
+      if (buyAdaptersDex)
+        this.buyAdapters[_key] = buyAdaptersDex.map(({ name, index }) => ({
+          adapter: this.dexHelper.config.data.adapterAddresses[name],
+          index,
+        }));
+    };
+
     Dexes.forEach(DexAdapter => {
       DexAdapter.dexKeysWithNetwork.forEach(({ key, networks }) => {
         if (networks.includes(network)) {
-          const _key = key.toLowerCase();
-          this.isLegacy[_key] = false;
-          this.dexKeys.push(key);
-          this.dexInstances[_key] = new DexAdapter(
-            this.network,
-            key,
-            this.dexHelper,
-          );
-
-          const sellAdaptersDex = (
-            this.dexInstances[_key] as IDex<any, any, any>
-          ).getAdapters(SwapSide.SELL);
-          if (sellAdaptersDex)
-            this.sellAdapters[_key] = sellAdaptersDex.map(
-              ({ name, index }) => ({
-                adapter: this.dexHelper.config.data.adapterAddresses[name],
-                index,
-              }),
-            );
-
-          const buyAdaptersDex = (
-            this.dexInstances[_key] as IDex<any, any, any>
-          ).getAdapters(SwapSide.BUY);
-          if (buyAdaptersDex)
-            this.buyAdapters[_key] = buyAdaptersDex.map(({ name, index }) => ({
-              adapter: this.dexHelper.config.data.adapterAddresses[name],
-              index,
-            }));
+          const dex = new DexAdapter(network, key, dexHelper);
+          handleDex(dex, key);
         }
       });
+    });
+
+    const rfqConfigs = dexHelper.config.data.rfqConfigs;
+    Object.keys(dexHelper.config.data.rfqConfigs).forEach(rfqName => {
+      const dex = new GenericRFQ(
+        network,
+        rfqName,
+        dexHelper,
+        rfqConfigs[rfqName],
+      );
+      handleDex(dex, rfqName);
+      this.genericRFQDexKeys.add(rfqName.toLowerCase());
     });
 
     this.directFunctionsNames = [...LegacyDexes, ...Dexes]
@@ -241,6 +256,9 @@ export class DexAdapterService {
 
   getDexKeySpecial(dexKey: string, isAdapters: boolean = false) {
     dexKey = dexKey.toLowerCase();
+    if (this.genericRFQDexKeys.has(dexKey)) {
+      return dexKey;
+    }
     if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
     else if ('uniswapforkoptimized' === dexKey) {
       if (!this.uniswapV2Alias)

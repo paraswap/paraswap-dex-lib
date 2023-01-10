@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { SwapSide } from 'paraswap-core';
+import { getAddress } from 'ethers/lib/utils';
+import { SwapSide } from '@paraswap/core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger, TransferFeeParams } from './types';
@@ -12,6 +13,11 @@ export const prependWithOx = (str: string) =>
   str.startsWith('0x') ? str : '0x' + str;
 
 export const uuidToBytes16 = (uuid: string) => '0x' + uuid.replace(/-/g, '');
+
+export function toUnixTimestamp(date: Date | number): number {
+  const timestamp = date instanceof Date ? date.getTime() : date;
+  return Math.floor(timestamp / 1000);
+}
 
 // This function guarantees that the distribution adds up to exactly 100% by
 // applying rounding in the other direction for numbers with the most error.
@@ -317,6 +323,17 @@ export const isSrcTokenTransferFeeToBeExchanged = (
 ) => {
   return !!(transferFees.srcFee || transferFees.srcDexFee);
 };
+
+// This function is throwing error if address is not correct
+export const normalizeAddress = (address: string) => {
+  return getAddress(address).toLowerCase();
+};
+
+// In some case we need block timestamp, but instead of real one, we can use
+// just current time in BigInt
+export function currentBigIntTimestampInS() {
+  return BigInt(Math.floor(Date.now() / 1000));
+}
 
 export const isDestTokenTransferFeeToBeExchanged = (
   transferFees: TransferFeeParams,

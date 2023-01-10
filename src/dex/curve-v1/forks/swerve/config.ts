@@ -1,4 +1,4 @@
-import { SwapSide } from 'paraswap-core';
+import { SwapSide } from '@paraswap/core';
 import { Network } from '../../../../constants';
 import { AdapterMappings, DexConfigMap } from '../../../../types';
 import { DexParams } from '../../types';
@@ -13,7 +13,6 @@ export const SwerveConfig: DexConfigMap<DexParams> = {
           reasonableVolume: 100000000000000000000n,
         },
       },
-      factoryAddress: null,
       eventSupportedPools: ['0x329239599afb305da0a2ec69c58f8a6697f9f88d'],
       pools: {
         Swerve: {

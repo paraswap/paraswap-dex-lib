@@ -1,6 +1,4 @@
-import { SwapSide } from './constants';
-import { Address } from 'paraswap-core';
-import { BlockHeader } from 'web3-eth';
+import { Address } from '@paraswap/core';
 export { BlockHeader } from 'web3-eth';
 export {
   Address,
@@ -11,11 +9,12 @@ export {
   OptimalSwapExchange,
   OptionalRate,
   OptimalRate,
-} from 'paraswap-core';
+} from '@paraswap/core';
 import { Logger } from 'log4js';
 export { Logger } from 'log4js';
-import { OptimalRate } from 'paraswap-core';
+import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
+import { RFQConfig } from './dex/generic-rfq/types';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -175,6 +174,7 @@ export type Token = {
   address: string;
   decimals: number;
   symbol?: string;
+  type?: string;
 };
 
 export type aToken = {
@@ -235,6 +235,10 @@ export type TxObject = {
   maxPriorityFeePerGas?: string;
 };
 
+export type StateOverrideObject = {
+  storage: Record<string, Record<string, string>>;
+};
+
 export type UnoptimizedRate = Omit<
   OptimalRate,
   'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
@@ -259,11 +263,13 @@ export type Config = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
+  augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
   privateHttpProvider: string;
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
+  rfqConfigs: Record<string, RFQConfig>;
 };
 
 export type BigIntAsString = string;

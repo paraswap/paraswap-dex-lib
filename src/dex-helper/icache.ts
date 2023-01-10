@@ -32,6 +32,10 @@ export interface ICache {
     value: string,
   ): Promise<void>;
 
+  sadd(setKey: string, key: string): Promise<void>;
+
+  sismember(setKey: string, key: string): Promise<boolean>;
+
   hset(mapKey: string, key: string, value: string): Promise<void>;
 
   hget(mapKey: string, key: string): Promise<string | null>;
