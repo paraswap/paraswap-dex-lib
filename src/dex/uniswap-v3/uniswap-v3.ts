@@ -99,8 +99,10 @@ export class UniswapV3
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
-    this.notExistingPoolSetKey = `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`;
-    this.notExistingPoolSetTimestamp = `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set_last_cleaned`;
+    this.notExistingPoolSetKey =
+      `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
+    this.notExistingPoolSetTimestamp =
+      `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set_last_cleaned`.toLowerCase();
   }
 
   get supportedFees() {
