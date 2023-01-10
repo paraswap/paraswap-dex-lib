@@ -21,7 +21,7 @@ import { AirSwapEventPool } from './airswap-pool';
 import _ from 'lodash';
 import { Registry } from '@airswap/protocols';
 import { ethers } from 'ethers';
-import { chainNames } from '@airswap/constants';
+import { Maker } from '@airswap/libraries';
 
 export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   protected eventPools: AirSwapEventPool;
@@ -94,6 +94,23 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AirSwapData>> {
+    if (
+      srcToken.address == destToken.address ||
+      !limitPools ||
+      limitPools.length == 0
+    ) {
+      return Promise.resolve(null);
+    }
+    //@ts-ignore
+    const maker = await Maker.at(
+      `${limitPools[0].client.options.protocol}//${limitPools[0].client.options.hostname}`,
+    );
+    const blip = await maker.getSignerSideOrder(
+      amounts[1].toString(),
+      destToken.address,
+      srcToken.address,
+      '',
+    );
     return [
       {
         prices: amounts,
