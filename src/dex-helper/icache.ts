@@ -7,6 +7,8 @@ export interface ICache {
 
   rawget(key: string): Promise<string | null>;
 
+  rawset(key: string, value: string, ttl: number): Promise<string | null>;
+
   rawdel(key: string): Promise<void>;
 
   setex(
