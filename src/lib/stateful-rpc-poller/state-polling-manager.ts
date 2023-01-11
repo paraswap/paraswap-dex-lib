@@ -2,16 +2,20 @@ import { assert } from 'console';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from '../../types';
 import { getLogger } from '../log4js';
+import { TaskScheduler } from '../task-scheduler';
 import { IStatefulRpcPoller } from './types';
 
 export class StatePollingManager {
-  private static __instance?: StatePollingManager;
+  private static __instances: Record<string, StatePollingManager> = {};
 
   static getInstance(dexHelper: IDexHelper): StatePollingManager {
-    if (StatePollingManager.__instance === undefined) {
-      StatePollingManager.__instance = new StatePollingManager(dexHelper);
+    const network = dexHelper.config.data.network;
+    if (StatePollingManager.__instances[network] === undefined) {
+      StatePollingManager.__instances[network] = new StatePollingManager(
+        dexHelper,
+      );
     }
-    return StatePollingManager.__instance;
+    return StatePollingManager.__instances[network];
   }
 
   private logger: Logger;
@@ -24,6 +28,9 @@ export class StatePollingManager {
 
   private constructor(protected dexHelper: IDexHelper) {
     this.logger = getLogger(this.constructor.name);
+
+    if (this.isMaster) {
+    }
   }
 
   get isMaster() {
@@ -47,6 +54,8 @@ export class StatePollingManager {
     this._poolsToBeUpdated.delete(identifierKey);
     this._idlePools.add(identifierKey);
   }
+
+  async onBlockNumber(blockNumber: number): Promise<void> {}
 
   initializePool<T, M>(statefulRpcPoller: IStatefulRpcPoller<T, M>) {
     const { identifierKey } = statefulRpcPoller;

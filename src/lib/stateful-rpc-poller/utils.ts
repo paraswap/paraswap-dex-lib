@@ -9,7 +9,7 @@ export function getIdentifierKeyForRpcPoller(
 }
 
 // Helper function to extract relevant call backs for later use
-export function pollingManagerCbFactory(
+export function pollingManagerCbExtractor(
   statePollingManager: StatePollingManager,
 ): PollingManagerControllersCb {
   return {
