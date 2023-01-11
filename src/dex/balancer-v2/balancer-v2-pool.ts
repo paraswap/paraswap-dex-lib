@@ -2,13 +2,7 @@ import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 import { MathSol } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
-import {
-  callData,
-  SubgraphPoolBase,
-  PoolState,
-  TokenState,
-  PoolBase,
-} from './types';
+import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import { getTokenScalingFactor, decodeThrowError } from './utils';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
@@ -48,7 +42,6 @@ type WeightedPoolPairData = {
   tokenInWeight: bigint;
   tokenOutWeight: bigint;
   swapFee: bigint;
-  gasCost: number;
 };
 
 type StablePoolPairData = {
@@ -58,7 +51,6 @@ type StablePoolPairData = {
   scalingFactors: bigint[];
   swapFee: bigint;
   amp: bigint;
-  gasCost: number;
 };
 
 abstract class BaseGeneralPool extends BasePool {
@@ -367,22 +359,16 @@ class StableMath {
   }
 }
 
-export class StablePool extends BaseGeneralPool implements PoolBase {
+export class StablePool extends BaseGeneralPool {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
-  gasCost = 150000; // TO DO - Get accurate
   metaPoolInterface: Interface;
 
-  constructor(
-    vaultAddress: string,
-    vaultInterface: Interface,
-    poolInterface: Interface,
-  ) {
+  constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = poolInterface;
     this.poolInterface = new Interface(StablePoolABI);
     this.metaPoolInterface = new Interface(MetaStablePoolABI);
   }
@@ -408,11 +394,10 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
   */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolStates: { [address: string]: PoolState },
+    poolState: PoolState,
     tokenIn: string,
     tokenOut: string,
   ): StablePoolPairData {
-    const poolState = poolStates[pool.address];
     let indexIn = 0,
       indexOut = 0;
     const scalingFactors: bigint[] = [];
@@ -434,7 +419,6 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
       scalingFactors,
       swapFee: poolState.swapFee,
       amp: poolState.amp ? poolState.amp : 0n,
-      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -527,7 +511,6 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
         },
         {},
       ),
-      gasCost: this.gasCost,
     };
 
     if (amp) {
@@ -607,21 +590,16 @@ export class WeightedMath {
   }
 }
 
-export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
+export class WeightedPool extends BaseMinimalSwapInfoPool {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
-  gasCost = 150000; // TO DO
 
-  constructor(
-    vaultAddress: string,
-    vaultInterface: Interface,
-    poolInterface: Interface,
-  ) {
+  constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = poolInterface;
+    this.poolInterface = new Interface(WeightedPoolABI);
   }
 
   _onSwapGivenIn(
@@ -645,11 +623,10 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
   */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolStates: { [address: string]: PoolState },
+    poolState: PoolState,
     tokenIn: string,
     tokenOut: string,
   ): WeightedPoolPairData {
-    const poolState = poolStates[pool.address];
     const inAddress = tokenIn.toLowerCase();
     const outAddress = tokenOut.toLowerCase();
 
@@ -673,7 +650,6 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
       tokenInWeight,
       tokenOutWeight,
       swapFee: poolState.swapFee,
-      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -747,7 +723,6 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
         },
         {},
       ),
-      gasCost: this.gasCost,
     };
 
     pools[pool.address] = poolState;

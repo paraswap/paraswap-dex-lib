@@ -1,9 +1,5 @@
 import { Address } from '../../types';
 
-export interface PoolBase {
-  gasCost: number;
-}
-
 export type TokenState = {
   balance: bigint;
   scalingFactor?: bigint; // It includes the token priceRate
@@ -15,7 +11,6 @@ export type PoolState = {
     [address: string]: TokenState;
   };
   swapFee: bigint;
-  gasCost: number;
   amp?: bigint;
   // Linear Pools
   mainIndex?: number;
@@ -28,8 +23,6 @@ export type PoolState = {
 export type SubgraphToken = {
   address: string;
   decimals: number;
-  linearPoolAddr?: string;
-  linearPoolId?: string;
 };
 
 export interface SubgraphPoolBase {
@@ -39,7 +32,6 @@ export interface SubgraphPoolBase {
   tokens: SubgraphToken[];
   mainIndex: number;
   wrappedIndex: number;
-  totalLiquidity: string;
 }
 
 export type BalancerSwapV2 = {
