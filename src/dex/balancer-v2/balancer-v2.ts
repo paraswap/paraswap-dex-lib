@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import _ from 'lodash';
+import _, { keyBy, uniq, uniqBy } from 'lodash';
 import {
   Token,
   Address,
@@ -39,12 +39,20 @@ import {
   SwapTypes,
   PoolStateMap,
   PoolStateCache,
+  BalancerPoolTypes,
+  SubgraphPoolAddressDictionary,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
+import {
+  getAllPoolsUsedInPaths,
+  isSameAddress,
+  poolGetMainTokens,
+  poolGetPathForTokenInOut,
+} from './utils';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {totalShares_not_in: ["0", "0.000000000001"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable"]}) {
     id
     address
     poolType
@@ -67,18 +75,6 @@ const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestamp
     }
   }
 }`;
-
-// These should match the Balancer Pool types available on Subgraph
-enum BalancerPoolTypes {
-  Weighted = 'Weighted',
-  Stable = 'Stable',
-  MetaStable = 'MetaStable',
-  LiquidityBootstrapping = 'LiquidityBootstrapping',
-  Investment = 'Investment',
-  AaveLinear = 'AaveLinear',
-  StablePhantom = 'StablePhantom',
-  ERC4626Linear = 'ERC4626Linear',
-}
 
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
@@ -139,6 +135,17 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.vaultAddress,
       this.vaultInterface,
     );
+    /*
+    ComposableStable has same maths as StablePhantom.
+    The main difference is that ComposableStables have join/exit functions when StablePhantom did not.
+    The difference of note for swaps is ComposableStable must use 'actualSupply' instead of VirtualSupply.
+    VirtualSupply could be calculated easily whereas actualSupply cannot hence the use of onchain call.
+    */
+    const composableStable = new PhantomStablePool(
+      this.vaultAddress,
+      this.vaultInterface,
+      true,
+    );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
@@ -150,7 +157,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.AaveLinear] = linearPool;
     // ERC4626Linear has the same maths and ABI as AaveLinear (has different factory)
     this.pools[BalancerPoolTypes.ERC4626Linear] = linearPool;
+    // Beets uses "Linear" generically for all linear pool types
+    this.pools[BalancerPoolTypes.Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
+    this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -221,14 +231,22 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     if (!(data && data.pools))
       throw new Error('Unable to fetch pools from the subgraph');
 
+    const poolsMap = keyBy(data.pools, 'address');
+    const allPools: SubgraphPoolBase[] = data.pools.map(
+      (pool: Omit<SubgraphPoolBase, 'mainTokens'>) => ({
+        ...pool,
+        mainTokens: poolGetMainTokens(pool, poolsMap),
+      }),
+    );
+
     this.dexHelper.cache.setex(
       this.parentName,
       this.network,
       cacheKey,
       POOL_CACHE_TTL,
-      JSON.stringify(data.pools),
+      JSON.stringify(allPools),
     );
-    const allPools = data.pools;
+
     this.logger.info(
       `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
     );
@@ -486,17 +504,24 @@ export class BalancerV2
     }
   }
 
-  getPools(from: Token, to: Token): SubgraphPoolBase[] {
+  getPoolsWithTokenPair(from: Token, to: Token): SubgraphPoolBase[] {
     return this.eventPools.allPools
-      .filter(
-        p =>
-          p.tokens.some(
-            token => token.address.toLowerCase() === from.address.toLowerCase(),
-          ) &&
-          p.tokens.some(
-            token => token.address.toLowerCase() === to.address.toLowerCase(),
-          ),
-      )
+      .filter(p => {
+        const fromMain = p.mainTokens.find(
+          token => token.address.toLowerCase() === from.address.toLowerCase(),
+        );
+        const toMain = p.mainTokens.find(
+          token => token.address.toLowerCase() === to.address.toLowerCase(),
+        );
+
+        return (
+          fromMain &&
+          toMain &&
+          // filter instances similar to the following:
+          // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
+          !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
+        );
+      })
       .slice(0, 10);
   }
 
@@ -515,7 +540,7 @@ export class BalancerV2
     const _from = this.dexHelper.config.wrapETH(from);
     const _to = this.dexHelper.config.wrapETH(to);
 
-    const pools = this.getPools(_from, _to);
+    const pools = this.getPoolsWithTokenPair(_from, _to);
 
     return pools.map(
       ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
@@ -564,7 +589,7 @@ export class BalancerV2
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
 
-      const allPools = this.getPools(_from, _to);
+      const allPools = this.getPoolsWithTokenPair(_from, _to);
       const allowedPools = limitPools
         ? allPools.filter(({ address }) =>
             limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
@@ -572,10 +597,6 @@ export class BalancerV2
         : allPools;
 
       if (!allowedPools.length) return null;
-
-      const unitVolume = getBigIntPow(
-        (side === SwapSide.SELL ? _from : _to).decimals,
-      );
 
       const eventPoolStatesRO = await this.eventPools.getState(blockNumber);
       if (!eventPoolStatesRO) {
@@ -587,8 +608,16 @@ export class BalancerV2
       // Fetch previously cached non-event pool states
       let nonEventPoolStates = this.getNonEventPoolStateCache(blockNumber);
 
+      //get all pools that would be used in the paths, nested pools included
+      const poolsFlattened = getAllPoolsUsedInPaths(
+        _from.address,
+        _to.address,
+        allowedPools,
+        this.poolAddressMap,
+      );
+
       // Missing pools are pools that don't already exist in event or non-event
-      const missingPools = allowedPools.filter(
+      const missingPools = poolsFlattened.filter(
         pool =>
           !(
             pool.address.toLowerCase() in eventPoolStates ||
@@ -612,44 +641,69 @@ export class BalancerV2
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
           const poolAddress = pool.address.toLowerCase();
-          const poolState =
-            eventPoolStates[poolAddress] || nonEventPoolStates[poolAddress];
-          if (!poolState) {
-            this.logger.error(`Unable to find the poolState ${poolAddress}`);
-            return null;
-          }
-          // TODO: re-check what should be the current block time stamp
-          try {
+
+          const path = poolGetPathForTokenInOut(
+            _from.address,
+            _to.address,
+            pool,
+            this.poolAddressMap,
+          );
+
+          let pathAmounts = amounts;
+          let resOut: { unit: bigint; prices: bigint[] } | null = null;
+
+          for (let i = 0; i < path.length; i++) {
+            const poolAddress = path[i].pool.address.toLowerCase();
+            const poolState =
+              eventPoolStates[poolAddress] || nonEventPoolStates[poolAddress];
+            if (!poolState) {
+              this.logger.error(`Unable to find the poolState ${poolAddress}`);
+              return null;
+            }
+
+            const unitVolume = getBigIntPow(
+              (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
+                .decimals,
+            );
+
             const res = this.eventPools.getPricesPool(
-              _from,
-              _to,
-              pool,
+              path[i].tokenIn,
+              path[i].tokenOut,
+              path[i].pool,
               poolState,
-              amounts,
+              pathAmounts,
               unitVolume,
               side,
             );
-            if (!res) return;
-            return {
-              unit: res.unit,
-              prices: res.prices,
-              data: {
-                poolId: pool.id,
-              },
-              poolAddresses: [poolAddress],
-              exchange: this.dexKey,
-              gasCost: 150 * 1000,
-              poolIdentifier: `${this.dexKey}_${poolAddress}`,
-            };
-          } catch (e) {
-            this.logger.error(
-              `Error_getPrices ${from.symbol || from.address}, ${
-                to.symbol || to.address
-              }, ${side}, ${pool.address}:`,
-              e,
-            );
+
+            if (!res) {
+              return null;
+            }
+
+            pathAmounts = res.prices;
+
+            if (i === path.length - 1) {
+              resOut = res;
+            }
+          }
+
+          if (!resOut) {
             return null;
           }
+
+          return {
+            unit: resOut.unit,
+            prices: resOut.prices,
+            data: {
+              poolId: pool.id,
+            },
+            poolAddresses: [poolAddress],
+            exchange: this.dexKey,
+            gasCost: 150 * 1000,
+            poolIdentifier: `${this.dexKey}_${poolAddress}`,
+          };
+
+          // TODO: re-check what should be the current block time stamp
         })
         .filter(p => !!p);
       return poolPrices as ExchangePrices<BalancerV2Data>;
@@ -775,18 +829,42 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): BalancerParam {
-    // BalancerV2 Uses Address(0) as ETH
-    const assets = [srcToken, destToken].map(t =>
-      t.toLowerCase() === ETHER_ADDRESS.toLowerCase() ? NULL_ADDRESS : t,
+    //TODO: there is an assumption here that there will only ever be 1 swap.
+    const swapData = data.swaps[0];
+    const pool = this.poolIdMap[swapData.poolId];
+    const hasEth = [srcToken.toLowerCase(), destToken.toLowerCase()].includes(
+      ETHER_ADDRESS.toLowerCase(),
+    );
+    const _srcToken = this.dexHelper.config.wrapETH({
+      address: srcToken,
+      decimals: 18,
+    }).address;
+    const _destToken = this.dexHelper.config.wrapETH({
+      address: destToken,
+      decimals: 18,
+    }).address;
+
+    const path = poolGetPathForTokenInOut(
+      _srcToken,
+      _destToken,
+      pool,
+      this.poolAddressMap,
     );
 
-    const swaps = data.swaps.map(s => ({
-      poolId: s.poolId,
-      assetInIndex: 0,
-      assetOutIndex: 1,
-      amount: s.amount,
+    const swaps = path.map((hop, index) => ({
+      poolId: hop.pool.id,
+      assetInIndex: index,
+      assetOutIndex: index + 1,
+      amount: index === 0 ? swapData.amount : '0',
       userData: '0x',
     }));
+
+    // BalancerV2 Uses Address(0) as ETH
+    const assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
+      t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
+    );
+
+    const limits = assets.map(_ => MAX_INT);
 
     const funds = {
       sender: this.augustusAddress,
@@ -794,8 +872,6 @@ export class BalancerV2
       fromInternalBalance: false,
       toInternalBalance: false,
     };
-
-    const limits = [MAX_INT, MAX_INT];
 
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
@@ -845,14 +921,20 @@ export class BalancerV2
     tokenAddress: Address,
     count: number,
   ): Promise<PoolLiquidity[]> {
+    const poolsWithToken = this.eventPools.allPools.filter(pool =>
+      pool.mainTokens.some(mainToken =>
+        isSameAddress(mainToken.address, tokenAddress),
+      ),
+    );
+
     const variables = {
-      tokens: [tokenAddress],
+      poolIds: poolsWithToken.map(pool => pool.id),
       count,
     };
 
-    const query = `query ($tokens: [Bytes!], $count: Int) {
+    const query = `query ($poolIds: [String!]!, $count: Int) {
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
-           where: {tokensList_contains: $tokens,
+           where: {id_in: $poolIds,
                    swapEnabled: true,
                    totalLiquidity_gt: 0}) {
         address
@@ -863,7 +945,15 @@ export class BalancerV2
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.post<{
+      data: {
+        pools: {
+          address: string;
+          totalLiquidity: string;
+          tokens: { address: string; decimals: number }[];
+        }[];
+      };
+    }>(
       this.subgraphURL,
       {
         query,
@@ -877,23 +967,27 @@ export class BalancerV2
         `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
       );
 
-    const pools = _.map(data.pools, (pool: any) => ({
-      exchange: this.dexKey,
-      address: pool.address.toLowerCase(),
-      connectorTokens: pool.tokens.reduce(
-        (
-          acc: Token[],
-          { decimals, address }: { decimals: number; address: string },
-        ) => {
-          if (address.toLowerCase() != tokenAddress.toLowerCase())
-            acc.push({ decimals, address: address.toLowerCase() });
-          return acc;
-        },
-        [],
-      ),
-      liquidityUSD: parseFloat(pool.totalLiquidity),
-    }));
+    return _.map(data.pools, pool => {
+      const subgraphPool = poolsWithToken.find(poolWithToken =>
+        isSameAddress(poolWithToken.address, pool.address),
+      )!;
 
-    return pools;
+      return {
+        exchange: this.dexKey,
+        address: pool.address.toLowerCase(),
+        connectorTokens: subgraphPool.mainTokens.filter(
+          token => !isSameAddress(tokenAddress, token.address),
+        ),
+        liquidityUSD: parseFloat(pool.totalLiquidity),
+      };
+    });
+  }
+
+  private get poolAddressMap(): SubgraphPoolAddressDictionary {
+    return keyBy(this.eventPools.allPools, 'address');
+  }
+
+  private get poolIdMap(): { [poolId: string]: SubgraphPoolBase } {
+    return keyBy(this.eventPools.allPools, 'id');
   }
 }
