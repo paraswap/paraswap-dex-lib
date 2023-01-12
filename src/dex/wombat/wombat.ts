@@ -1,4 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
+import { Interface } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -8,19 +9,32 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  MultiCallInput,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { WombatData } from './types';
+import { WombatData, DexParams, WombatConfigInfo } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WombatConfig, Adapters } from './config';
 import { WombatEventPool } from './wombat-pool';
+import PoolABI from '../../abi/wombat/pool.json';
+import AssetABI from '../../abi/wombat/asset.json';
+import ERC20ABI from '../../abi/erc20.json';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
-  protected eventPools: WombatEventPool;
+  // contract interfaces
+  static readonly erc20Interface = new Interface(ERC20ABI);
+  static readonly poolInterface = new Interface(PoolABI);
+  static readonly assetInterface = new Interface(AssetABI);
+
+  protected config: DexParams;
+  protected cfgInfo?: WombatConfigInfo;
+  protected poolLiquidityUSD?: { [poolAddress: string]: number };
+
+  protected eventPools?: { [poolAddress: string]: WombatEventPool };
 
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
@@ -41,12 +55,101 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new WombatEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
+    this.config = WombatConfig[dexKey][network];
+  }
+
+  async generateConfigInfo(blockNumber: number): Promise<WombatConfigInfo> {
+    const cfgInfo: WombatConfigInfo = {
+      poolAddresses: [],
+      pools: {},
+    };
+    // Need to filter pools in case we are testing against an old block where the pool didn't exist!
+    for (const p of this.config.pools) {
+      // When there's no code, getCode should return '0x' but could return '0x0' instead
+      if (
+        (await this.dexHelper.web3Provider.eth.getCode(p.address, blockNumber))
+          .length > 3 // it's not '0x' or '0x0'
+      ) {
+        cfgInfo.poolAddresses.push(p.address.toLowerCase());
+      }
+    }
+    // 1. Get tokens in each pool
+    let inputs: MultiCallInput[] = [];
+    for (const poolAddress of cfgInfo.poolAddresses) {
+      inputs.push({
+        target: poolAddress,
+        callData: Wombat.poolInterface.encodeFunctionData('getTokens'),
+      });
+    }
+    let returnData = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(inputs)
+        .call({}, blockNumber)
+    ).returnData;
+
+    let i = 0;
+    for (const poolAddress of cfgInfo.poolAddresses) {
+      const tokenAddresses = Wombat.poolInterface
+        .decodeFunctionResult('getTokens', returnData[i++])[0]
+        .toLowerCase();
+      cfgInfo.pools[poolAddress] = {
+        tokenAddresses,
+        tokens: {},
+      };
+    }
+
+    // 2. For each pool, get tokens' symbol, decimals, asset (LP token) address
+    inputs = [];
+    for (const poolAddress of cfgInfo.poolAddresses) {
+      for (const tokenAddress of cfgInfo.pools[poolAddress].tokenAddresses) {
+        inputs.push({
+          target: tokenAddress,
+          callData: Wombat.erc20Interface.encodeFunctionData('symbol'),
+        });
+        inputs.push({
+          target: tokenAddress,
+          callData: Wombat.erc20Interface.encodeFunctionData('decimals'),
+        });
+        inputs.push({
+          target: poolAddress,
+          callData: Wombat.poolInterface.encodeFunctionData('addressOfAsset', [
+            tokenAddress,
+          ]),
+        });
+      }
+    }
+    returnData = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(inputs)
+        .call({}, blockNumber)
+    ).returnData;
+    i = 0;
+    for (const poolAddress of cfgInfo.poolAddresses) {
+      for (const tokenAddress of cfgInfo.pools[poolAddress].tokenAddresses) {
+        const tokenSymbol = Wombat.erc20Interface.decodeFunctionResult(
+          'symbol',
+          returnData[i++],
+        )[0];
+        const tokenDecimals = Wombat.erc20Interface.decodeFunctionResult(
+          'decimals',
+          returnData[i++],
+        )[0];
+        const assetAddress = Wombat.poolInterface
+          .decodeFunctionResult('addressOfAsset', returnData[i++])[0]
+          .toLowerCase();
+        cfgInfo.pools[poolAddress].tokens[tokenAddress] = {
+          tokenSymbol,
+          tokenDecimals,
+          assetAddress,
+        };
+      }
+    }
+    return cfgInfo;
+  }
+
+  async init(blockNumber: number) {
+    if (this.cfgInfo) return;
+    this.cfgInfo = await this.generateConfigInfo(blockNumber);
   }
 
   // Initialize pricing is called once in the start of
@@ -54,7 +157,32 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    await this.init(blockNumber);
+    if (!this.cfgInfo)
+      throw new Error('initializePricing: cfgInfo still null after init');
+
+    const eventPools: { [poolAddress: string]: WombatEventPool } = {};
+    for (const poolAddress of this.cfgInfo.poolAddresses) {
+      // const pool = new WombatEventPool(
+      //   this.dexKey,
+      //   this.network,
+      //   this.config.pools.find(
+      //     p => p.address.toLowerCase() === poolAddress,
+      //   )!.name,
+      //   poolAddress,
+      //   this.cfgInfo.pools[poolAddress],
+      //   this.dexHelper,
+      // );
+      // const state = await pool.generateState(blockNumber);
+      // pool.setState(state, blockNumber);
+      // this.dexHelper.blockManager.subscribeToLogs(
+      //   pool,
+      //   pool.addressesSubscribed,
+      //   blockNumber,
+      // );
+      // eventPools[poolAddress] = pool;
+    }
+    this.eventPools = eventPools;
   }
 
   // Returns the list of contract adapters (name and index)
@@ -73,8 +201,16 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    /** @todo implement logic for BUY side */
+    if (side === SwapSide.BUY) return [];
+    return this.findPools(
+      srcToken.address.toLowerCase(),
+      destToken.address.toLowerCase(),
+    ).map(p => this.getPoolIdentifier(p));
+  }
+
+  protected getPoolIdentifier(poolAddress: Address): string {
+    return `${this.dexKey}_${poolAddress}`;
   }
 
   // Returns pool prices for amounts.
@@ -91,6 +227,20 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   ): Promise<null | ExchangePrices<WombatData>> {
     // TODO: complete me!
     return null;
+  }
+
+  protected findPools(
+    srcTokenAddress: Address,
+    destTokenAddress: Address,
+  ): Address[] {
+    if (!this.cfgInfo) return [];
+    return Object.entries(this.cfgInfo.pools)
+      .filter(
+        ([poolAddress, poolConfig]) =>
+          poolConfig.tokenAddresses.includes(srcTokenAddress) &&
+          poolConfig.tokenAddresses.includes(destTokenAddress),
+      )
+      .map(([poolAddress, poolConfig]) => poolAddress);
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -114,7 +264,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     const { exchange } = data;
 
     // Encode here the payload for adapter
-    const payload = '';
+    const payload = '0x';
 
     return {
       targetExchange: exchange,
@@ -135,11 +285,17 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     data: WombatData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
     const { exchange } = data;
 
     // Encode here the transaction arguments
-    const swapData = '';
+    const swapData = Wombat.poolInterface.encodeFunctionData('swap', [
+      srcToken,
+      destToken,
+      srcAmount,
+      1 /** @todo assume slippage tolorence is 2% and set the minimum receive accordingly */,
+      this.augustusAddress,
+      this.getDeadline(),
+    ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -154,10 +310,65 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   // This is called once before getTopPoolsForToken is
   // called for multiple tokens. This can be helpful to
   // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
+  // getTopPoolsForToken. For example, poolLiquidityUSD.
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    await this.init(blockNumber);
+    if (!this.cfgInfo)
+      throw new Error('updatePoolState: Wombat cfgInfo still null after init');
+
+    // All tokens are USD stablecoins so to estimate liquidity can just add
+    // the cash balances of all the tokens
+    const poolLiquidityUSD: { [poolAddress: string]: number } = {};
+    let inputs: MultiCallInput[] = [];
+    for (const poolAddress of this.cfgInfo.poolAddresses) {
+      for (const tokenAddress of this.cfgInfo.pools[poolAddress]
+        .tokenAddresses) {
+        inputs.push({
+          target:
+            this.cfgInfo.pools[poolAddress].tokens[tokenAddress].assetAddress,
+          callData: Wombat.assetInterface.encodeFunctionData('cash'),
+        });
+      }
+    }
+    const returnData = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(inputs)
+        .call({}, blockNumber)
+    ).returnData;
+    const usdPromises = [];
+    let i = 0;
+    for (const poolAddress of this.cfgInfo.poolAddresses) {
+      for (const tokenAddress of this.cfgInfo.pools[poolAddress]
+        .tokenAddresses) {
+        usdPromises.push(
+          this.dexHelper.getTokenUSDPrice(
+            {
+              address: tokenAddress,
+              decimals:
+                this.cfgInfo.pools[poolAddress].tokens[tokenAddress]
+                  .tokenDecimals,
+            },
+            /** @todo wombat asset addresses always have 18 d.p. need to convert this amount to underlying tokens native d.p. */
+            BigInt(
+              Wombat.assetInterface
+                .decodeFunctionResult('cash', returnData[i++])[0]
+                .toString(),
+            ),
+          ),
+        );
+      }
+    }
+    const usdValues = await Promise.all(usdPromises);
+    i = 0;
+    for (const poolAddress of this.cfgInfo.poolAddresses) {
+      poolLiquidityUSD[poolAddress] = 0;
+      for (const tokenAddress of this.cfgInfo.pools[poolAddress]
+        .tokenAddresses) {
+        poolLiquidityUSD[poolAddress] += usdValues[i++];
+      }
+    }
+    this.poolLiquidityUSD = poolLiquidityUSD;
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -166,8 +377,25 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    if (!this.cfgInfo || !this.poolLiquidityUSD) await this.updatePoolState();
+    tokenAddress = tokenAddress.toLowerCase();
+    const pools = this.cfgInfo!.poolAddresses.filter(
+      poolAddress => !!this.cfgInfo!.pools[poolAddress].tokens[tokenAddress],
+    );
+    // sort by liquidity
+    pools.sort((a, b) => this.poolLiquidityUSD![b] - this.poolLiquidityUSD![a]);
+    return pools.slice(0, limit).map(poolAddress => ({
+      exchange: this.dexKey,
+      address: poolAddress,
+      // other tokens in the same pool
+      connectorTokens: this.cfgInfo!.pools[poolAddress].tokenAddresses.filter(
+        t => t !== tokenAddress,
+      ).map(t => ({
+        decimals: this.cfgInfo!.pools[poolAddress].tokens[t].tokenDecimals,
+        address: t,
+      })),
+      liquidityUSD: this.poolLiquidityUSD![poolAddress],
+    }));
   }
 
   // This is optional function in case if your implementation has acquired any resources

@@ -1,10 +1,50 @@
 import { Address } from '../../types';
+import { ChainLinkState } from '../../lib/chainlink';
+
+// State-related types
 
 export type PoolState = {
-  // TODO: poolState is the state of event
+  // poolState is the state of event
   // subscriber. This should be the minimum
   // set of parameters required to compute
-  // pool prices. Complete me!
+  // pool prices.
+  params: PoolParams;
+  chainlink: { [underlyingAddress: string]: ChainLinkState };
+  underlyingAddresses: Address[];
+  asset: { [underlyingAddress: string]: AssetState };
+};
+
+export type AssetState = {
+  cash: bigint;
+  liability: bigint;
+};
+
+export type PoolParams = {
+  slippageParamK: bigint;
+  slippageParamN: bigint;
+  c1: bigint;
+  xThreshold: bigint;
+  haircutRate: bigint;
+  retentionRatio: bigint;
+  maxPriceDeviation: bigint;
+};
+
+// Wombat Config types
+
+export type WombatConfigInfo = {
+  poolAddresses: Address[];
+  pools: { [poolAddress: string]: WombatPoolConfigInfo };
+};
+
+export type WombatPoolConfigInfo = {
+  tokenAddresses: Address[];
+  tokens: {
+    [tokenAddress: string]: {
+      tokenSymbol: string;
+      tokenDecimals: number;
+      assetAddress: Address;
+    };
+  };
 };
 
 export type WombatData = {

@@ -17,7 +17,13 @@ export const WombatConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BscAdapter01',
+        /** @todo check index number */
+        index: 12,
+      },
+    ],
+  },
 };
