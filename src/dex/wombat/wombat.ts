@@ -1,5 +1,7 @@
 import { AsyncOrSync } from 'ts-essentials';
 import { Interface } from '@ethersproject/abi';
+import { DeepReadonly } from 'ts-essentials';
+
 import {
   Token,
   Address,
@@ -13,13 +15,14 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { WombatData, DexParams, WombatConfigInfo } from './types';
+import { WombatData, DexParams, WombatConfigInfo, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WombatConfig, Adapters } from './config';
 import { WombatEventPool } from './wombat-pool';
+import { quoteFrom } from './utils';
 import PoolABI from '../../abi/wombat/pool.json';
 import AssetABI from '../../abi/wombat/asset.json';
 import ERC20ABI from '../../abi/erc20.json';
@@ -37,7 +40,6 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   protected eventPools?: { [poolAddress: string]: WombatEventPool };
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
@@ -163,24 +165,26 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
 
     const eventPools: { [poolAddress: string]: WombatEventPool } = {};
     for (const poolAddress of this.cfgInfo.poolAddresses) {
-      // const pool = new WombatEventPool(
-      //   this.dexKey,
-      //   this.network,
-      //   this.config.pools.find(
-      //     p => p.address.toLowerCase() === poolAddress,
-      //   )!.name,
-      //   poolAddress,
-      //   this.cfgInfo.pools[poolAddress],
-      //   this.dexHelper,
-      // );
-      // const state = await pool.generateState(blockNumber);
-      // pool.setState(state, blockNumber);
-      // this.dexHelper.blockManager.subscribeToLogs(
-      //   pool,
-      //   pool.addressesSubscribed,
-      //   blockNumber,
-      // );
-      // eventPools[poolAddress] = pool;
+      const pool = new WombatEventPool(
+        this.dexKey,
+        '' /** @todo pool name */,
+        // this.config.pools.find(
+        //   p => p.address.toLowerCase() === poolAddress,
+        // )!.name,
+        3 /** @todo network number */,
+        this.dexHelper,
+        this.logger,
+        poolAddress,
+        this.cfgInfo.pools[poolAddress],
+      );
+      const state = await pool.generateState(blockNumber);
+      pool.setState(state, blockNumber);
+      this.dexHelper.blockManager.subscribeToLogs(
+        pool,
+        pool.addressesSubscribed,
+        blockNumber,
+      );
+      eventPools[poolAddress] = pool;
     }
     this.eventPools = eventPools;
   }
@@ -225,8 +229,80 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<WombatData>> {
-    // TODO: complete me!
-    return null;
+    /** @todo implement logic for BUY side */
+    if (side === SwapSide.BUY) return null;
+    if (!this.eventPools) {
+      this.logger.error(
+        `Missing event pools for ${this.dexKey} in getPricesVolume`,
+      );
+      return null;
+    }
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+    if (srcTokenAddress === destTokenAddress) return null;
+    return await Promise.all(
+      this.findPools(srcTokenAddress, destTokenAddress)
+        .filter(
+          poolAddress =>
+            !limitPools ||
+            limitPools.includes(this.getPoolIdentifier(poolAddress)),
+        )
+        .map(poolAddress =>
+          (async () => {
+            let state = this.eventPools![poolAddress].getState(blockNumber);
+            if (!state) {
+              state = await this.eventPools![poolAddress].generateState(
+                blockNumber,
+              );
+              this.eventPools![poolAddress].setState(state, blockNumber);
+            }
+            const [unit, ...prices] = this.computePrices(
+              srcTokenAddress,
+              this.cfgInfo!.pools[poolAddress].tokens[srcTokenAddress]
+                .tokenDecimals,
+              destTokenAddress,
+              this.cfgInfo!.pools[poolAddress].tokens[destTokenAddress]
+                .tokenDecimals,
+              [getBigIntPow(srcToken.decimals), ...amounts],
+              state,
+            );
+            return {
+              prices,
+              unit,
+              data: {
+                exchange: poolAddress,
+              },
+              poolAddresses: [poolAddress],
+              exchange: this.dexKey,
+              /** @todo specify gas cost */
+              gasCost: 260 * 1000,
+              poolIdentifier: this.getPoolIdentifier(poolAddress),
+            };
+          })(),
+        ),
+    );
+  }
+
+  // take PoolState to compute price
+  protected computePrices(
+    srcTokenAddress: Address,
+    srcTokenDecimals: number,
+    destTokenAddress: Address,
+    destTokenDecimals: number,
+    amounts: bigint[],
+    state: DeepReadonly<PoolState>,
+  ): bigint[] {
+    return amounts.map(fromAmount => {
+      return quoteFrom(
+        state.asset[srcTokenAddress].cash,
+        state.asset[srcTokenAddress].cash,
+        state.asset[destTokenAddress].liability,
+        state.asset[destTokenAddress].liability,
+        fromAmount,
+        state.params.ampFactor,
+        state.params.haircutRate,
+      );
+    });
   }
 
   protected findPools(

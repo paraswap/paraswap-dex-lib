@@ -20,13 +20,8 @@ export type AssetState = {
 };
 
 export type PoolParams = {
-  slippageParamK: bigint;
-  slippageParamN: bigint;
-  c1: bigint;
-  xThreshold: bigint;
+  ampFactor: bigint;
   haircutRate: bigint;
-  retentionRatio: bigint;
-  maxPriceDeviation: bigint;
 };
 
 // Wombat Config types
