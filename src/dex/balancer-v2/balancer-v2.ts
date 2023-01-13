@@ -53,7 +53,24 @@ import {
 } from './utils';
 
 const fetchAllPools = `query ($count: Int) {
-  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {totalShares_not_in: ["0", "0.000000000001"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable"]}) {
+  pools: pools(first: $count, orderBy: totalLiquidity, orderDirection: desc, where: {
+    totalShares_not_in: ["0", "0.000000000001"],
+    id_not_id: [
+      "0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"
+    ]
+    swapEnabled: true, 
+    poolType_in: [
+      "MetaStable", 
+      "Stable", 
+      "Weighted", 
+      "LiquidityBootstrapping", 
+      "Investment", 
+      "StablePhantom", 
+      "AaveLinear", 
+      "ERC4626Linear", 
+      "Linear", 
+      "ComposableStable"]
+    }) {
     id
     address
     poolType
@@ -65,6 +82,7 @@ const fetchAllPools = `query ($count: Int) {
     wrappedIndex
   }
 }`;
+// skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Expirimental.
 
 const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestampFuture: Int) {
   gradualWeightUpdates(
@@ -114,7 +132,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       // This pool keeps changing weights and is causing pricing issue
       // But should now be handled by eventDisabledPools so don't need here!
       //'0x34809aEDF93066b49F638562c42A9751eDb36DF5',
-      '0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee', // low liquidity composableStablePool with oracle issues. Expirimental.
     ] as Address[]
   ).map(s => s.toLowerCase());
 
