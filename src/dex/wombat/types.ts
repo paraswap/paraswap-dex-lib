@@ -1,5 +1,4 @@
 import { Address } from '../../types';
-import { ChainLinkState } from '../../lib/chainlink';
 
 // State-related types
 
@@ -9,7 +8,6 @@ export type PoolState = {
   // set of parameters required to compute
   // pool prices.
   params: PoolParams;
-  chainlink: { [underlyingAddress: string]: ChainLinkState };
   underlyingAddresses: Address[];
   asset: { [underlyingAddress: string]: AssetState };
 };

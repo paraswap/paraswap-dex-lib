@@ -1,12 +1,23 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Log, Logger } from '../../types';
+import {
+  Address,
+  Log,
+  Logger,
+  MultiCallInput,
+  MultiCallOutput,
+} from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState } from './types';
+import { PoolState, WombatPoolConfigInfo } from './types';
+import PoolABI from '../../abi/wombat/pool.json';
+import AssetABI from '../../abi/wombat/asset.json';
 
 export class WombatEventPool extends StatefulEventSubscriber<PoolState> {
+  static readonly poolInterface = new Interface(PoolABI);
+  static readonly assetInterface = new Interface(AssetABI);
+
   handlers: {
     [event: string]: (
       event: any,
@@ -17,28 +28,45 @@ export class WombatEventPool extends StatefulEventSubscriber<PoolState> {
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
-
+  blankState: PoolState = {
+    asset: {},
+    underlyingAddresses: [],
+    params: {
+      ampFactor: 0n,
+      haircutRate: 0n,
+    },
+  };
   constructor(
-    parentName: string,
+    dexKey: string,
+    name: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected wombatIface = new Interface(
-      '' /* TODO: Import and put here Wombat ABI */,
-    ), // TODO: add any additional params required for event subscriber
+    protected poolAddress: Address,
+    protected poolCfg: WombatPoolConfigInfo,
   ) {
-    // TODO: fix arguments for super()
-    super(parentName, '', dexHelper, logger);
+    super(
+      `${dexKey} ${name}`,
+      `${dexKey}-${network} ${name}`,
+      dexHelper,
+      logger,
+    );
 
-    // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.wombatIface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
+    this.logDecoder = (log: Log) => WombatEventPool.poolInterface.parseLog(log);
 
-    // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    // users-actions handlers
+    this.handlers['Deposit'] = this.handleDeposit.bind(this);
+    this.handlers['Withdraw'] = this.handleWithdraw.bind(this);
+    this.handlers['Swap'] = this.handleSwap.bind(this);
+
+    // admin-actions handlers
+    /** @todo handle dynamically updating params */
+    // this.handlers['SetAmpFactor'] = this.handleDeposit.bind(this);
+    // this.handlers['SetHaircutRate'] = this.handleDeposit.bind(this);
+
+    /** @todo handle dynamically adding/removing assets */
+    // this.handlers['AssetAdded'] = this.handleAssetAdded.bind(this);
+    // this.handlers['AssetRemoved'] = this.handleAssetRemoved.bind(this);
   }
 
   /**
@@ -76,16 +104,144 @@ export class WombatEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // TODO: complete me!
-    return {};
+    // const multiCallInputs = this.getGenerateStateMultiCallInputs();
+
+    // 1. Generate multiCallInputs
+    const multiCallInputs: MultiCallInput[] = [];
+    // 1 A. pool params
+    // ampFactor
+    multiCallInputs.push({
+      target: this.poolAddress,
+      callData: WombatEventPool.poolInterface.encodeFunctionData('ampFactor'),
+    });
+    // haircutRate
+    multiCallInputs.push({
+      target: this.poolAddress,
+      callData: WombatEventPool.poolInterface.encodeFunctionData('haircutRate'),
+    });
+
+    // 1 B. asset state: cash and liability
+    for (const tokenInfo of Object.values(this.poolCfg.tokens)) {
+      multiCallInputs.push({
+        target: tokenInfo.assetAddress,
+        callData: WombatEventPool.assetInterface.encodeFunctionData('cash'),
+      });
+      multiCallInputs.push({
+        target: tokenInfo.assetAddress,
+        callData:
+          WombatEventPool.assetInterface.encodeFunctionData('liability'),
+      });
+    }
+
+    // 2. Decode MultiCallOutput
+    let returnData: MultiCallOutput[] = [];
+    if (multiCallInputs.length) {
+      returnData = (
+        await this.dexHelper.multiContract.methods
+          .aggregate(multiCallInputs)
+          .call({}, blockNumber)
+      ).returnData;
+    }
+
+    let i = 0;
+    // 2 A. decode pool params
+    const ampFactor = WombatEventPool.poolInterface.decodeFunctionResult(
+      'ampFactor',
+      returnData[i++],
+    )[0];
+    const haircutRate = WombatEventPool.poolInterface.decodeFunctionResult(
+      'haircutRate',
+      returnData[i++],
+    )[0];
+    const poolState: PoolState = {
+      params: {
+        ampFactor,
+        haircutRate,
+      },
+      underlyingAddresses: [],
+      asset: {},
+    };
+    // 2 B. decode asset state: cash and liability
+    for (const [tokenAddress, tokenInfo] of Object.entries(
+      this.poolCfg.tokens,
+    )) {
+      const cash = WombatEventPool.assetInterface.decodeFunctionResult(
+        'cash',
+        returnData[i++],
+      )[0];
+      const liability = WombatEventPool.assetInterface.decodeFunctionResult(
+        'liability',
+        returnData[i++],
+      )[0];
+      poolState.underlyingAddresses.push(tokenAddress);
+      poolState.asset[tokenAddress] = {
+        cash,
+        liability,
+      };
+    }
+    return poolState;
   }
 
-  // Its just a dummy example
-  handleMyEvent(
+  handleDeposit(
     event: any,
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    const amountAdded = BigInt(event.args.amount.toString());
+    const tokenAddress = event.args.token.toString();
+
+    return {
+      ...state,
+      asset: {
+        ...state.asset,
+        [tokenAddress]: {
+          cash: state.asset[tokenAddress].cash + amountAdded,
+          liability: state.asset[tokenAddress].liability + amountAdded,
+        },
+      },
+    };
+  }
+  handleWithdraw(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    const amountWithdrew = BigInt(event.args.amount.toString());
+    const tokenAddress = event.args.token.toString();
+
+    return {
+      ...state,
+      asset: {
+        ...state.asset,
+        [tokenAddress]: {
+          cash: state.asset[tokenAddress].cash - amountWithdrew,
+          liability: state.asset[tokenAddress].liability - amountWithdrew,
+        },
+      },
+    };
+  }
+
+  handleSwap(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    const fromTokenAddress = event.args.fromToken.toString();
+    const fromAmount = BigInt(event.args.fromAmount.toString());
+    const toTokenAddress = event.args.toToken.toString();
+    const toAmount = BigInt(event.args.toAmount.toString());
+
+    return {
+      ...state,
+      asset: {
+        ...state.asset,
+        [fromTokenAddress]: {
+          cash: state.asset[fromTokenAddress].cash + fromAmount,
+        },
+        [toTokenAddress]: {
+          cash: state.asset[toTokenAddress].cash - toAmount,
+        },
+      },
+    };
   }
 }
