@@ -35,6 +35,7 @@ import {
   SubgraphPoolBase,
   BalancerV2Data,
   BalancerParam,
+  BalancerSwap,
   OptimizedBalancerV2Data,
   SwapTypes,
   PoolStateMap,
@@ -113,6 +114,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       // This pool keeps changing weights and is causing pricing issue
       // But should now be handled by eventDisabledPools so don't need here!
       //'0x34809aEDF93066b49F638562c42A9751eDb36DF5',
+      '0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee', // low liquidity composableStablePool with oracle issues. Expirimental.
     ] as Address[]
   ).map(s => s.toLowerCase());
 
@@ -202,7 +204,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
-    const cacheKey = 'AllSubgraphPools';
+    const cacheKey = 'BalancerSubgraphPools';
     const cachedPools = await this.dexHelper.cache.get(
       this.parentName,
       this.network,
@@ -699,7 +701,7 @@ export class BalancerV2
             },
             poolAddresses: [poolAddress],
             exchange: this.dexKey,
-            gasCost: 150 * 1000,
+            gasCost: 150 * 1000 * (path.length - 1),
             poolIdentifier: `${this.dexKey}_${poolAddress}`,
           };
 
@@ -829,42 +831,53 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): BalancerParam {
-    //TODO: there is an assumption here that there will only ever be 1 swap.
-    const swapData = data.swaps[0];
-    const pool = this.poolIdMap[swapData.poolId];
-    const hasEth = [srcToken.toLowerCase(), destToken.toLowerCase()].includes(
-      ETHER_ADDRESS.toLowerCase(),
-    );
-    const _srcToken = this.dexHelper.config.wrapETH({
-      address: srcToken,
-      decimals: 18,
-    }).address;
-    const _destToken = this.dexHelper.config.wrapETH({
-      address: destToken,
-      decimals: 18,
-    }).address;
+    let swapOffset = 0;
+    let swaps: BalancerSwap[] = [];
+    let assets: string[] = [];
+    let limits: string[] = [];
 
-    const path = poolGetPathForTokenInOut(
-      _srcToken,
-      _destToken,
-      pool,
-      this.poolAddressMap,
-    );
+    for (const swapData of data.swaps) {
+      const pool = this.poolIdMap[swapData.poolId];
+      const hasEth = [srcToken.toLowerCase(), destToken.toLowerCase()].includes(
+        ETHER_ADDRESS.toLowerCase(),
+      );
+      const _srcToken = this.dexHelper.config.wrapETH({
+        address: srcToken,
+        decimals: 18,
+      }).address;
+      const _destToken = this.dexHelper.config.wrapETH({
+        address: destToken,
+        decimals: 18,
+      }).address;
 
-    const swaps = path.map((hop, index) => ({
-      poolId: hop.pool.id,
-      assetInIndex: index,
-      assetOutIndex: index + 1,
-      amount: index === 0 ? swapData.amount : '0',
-      userData: '0x',
-    }));
+      const path = poolGetPathForTokenInOut(
+        _srcToken,
+        _destToken,
+        pool,
+        this.poolAddressMap,
+      );
 
-    // BalancerV2 Uses Address(0) as ETH
-    const assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
-      t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
-    );
+      const _swaps = path.map((hop, index) => ({
+        poolId: hop.pool.id,
+        assetInIndex: swapOffset + index,
+        assetOutIndex: swapOffset + index + 1,
+        amount: index === 0 ? swapData.amount : '0',
+        userData: '0x',
+      }));
 
-    const limits = assets.map(_ => MAX_INT);
+      swapOffset += path.length + 1;
+
+      // BalancerV2 Uses Address(0) as ETH
+      const _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
+        t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
+      );
+
+      const _limits = _assets.map(_ => MAX_INT);
+
+      swaps = swaps.concat(_swaps);
+      assets = assets.concat(_assets);
+      limits = limits.concat(_limits);
+    }
 
     const funds = {
       sender: this.augustusAddress,
