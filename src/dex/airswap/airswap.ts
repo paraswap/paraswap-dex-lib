@@ -58,12 +58,15 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    // We should initalize a map of swap for each pair of famous tokens
+    // to speed retrivial then update it asynchonously
+    // final optim
   }
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
+    // Airswap is, we think, not intended to be used like that : it swaps, buy and sell are the same thing
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
@@ -78,7 +81,10 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
     blockNumber: number,
   ): Promise<string[]> {
     const pairs = await this.getAvailableMakersForRFQ(srcToken, destToken);
-    pairs.map(({ swapContract }) => `${this.dexKey}_${swapContract}`);
+    pairs.map(
+      ({ swapContract }) =>
+        `${this.dexKey}_${swapContract}_${srcToken.address}_${destToken.address}`,
+    );
     return Promise.resolve(pairs);
   }
 
@@ -86,6 +92,9 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
   // any pools can be used.
+  //
+  // We should ask market makers for the given volume and the one or one of the cheapest
+  // asynchnously updating the map to speed up
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -103,6 +112,7 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
     }
     //@ts-ignore
     const maker = await Maker.at(
+      //@ts-ignore
       `${limitPools[0].client.options.protocol}//${limitPools[0].client.options.hostname}`,
     );
     const blip = await maker.getSignerSideOrder(
@@ -117,18 +127,18 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
         unit: getBigIntPow(
           (side === SwapSide.SELL ? destToken : srcToken).decimals,
         ),
-        gasCost: 10,
-        exchange: this.dexKey,
+        gasCost: 10, // gasless ? Depend of the maker ?
         data: {
-          data: {
-            maker: limitPools,
+          airswapMetaData: {
+            // this random should be removed and have a plain object
+            maker: limitPools, // thos fields are needed for the transcation
             srcToken,
             destToken,
             amounts,
           },
-          exchange: 'an_exchange',
+          exchange: this.dexKey,
         },
-        poolAddresses: [srcToken ? srcToken.address : destToken.address],
+        exchange: this.dexKey,
       },
     ];
   }
@@ -136,7 +146,8 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<AirSwapData>): number | number[] {
     // TODO: update if there is any payload in getAdapterParam
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD; // what to do ?
+    // for each maker, get amount * 0.007
   }
 
   // Encode params required by the exchange adapter
@@ -150,6 +161,7 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
     data: AirSwapData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    // return that :
     // TODO: complete me!
     const { exchange } = data;
 
@@ -176,7 +188,7 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     // TODO: complete me!
-    const { exchange } = data;
+    const { airswapMetaData, exchange } = data;
 
     // Encode here the transaction arguments
     const swapData = '';

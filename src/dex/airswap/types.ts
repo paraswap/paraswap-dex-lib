@@ -12,7 +12,7 @@ export type AirSwapData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
-  data: any;
+  airswapMetaData: any;
   exchange: Address;
 };
 
@@ -20,4 +20,10 @@ export type DexParams = {
   // TODO: DexParams is set of parameters the can
   // be used to initiate a DEX fork.
   // Complete me!
+  swapERC20: string;
+  makerRegistry: string;
+  wrapper: string;
+  pool: string;
+  staking: string;
+  ast: string;
 };
