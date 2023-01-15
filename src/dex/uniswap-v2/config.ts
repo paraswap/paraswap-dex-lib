@@ -539,6 +539,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  Tombswap: {
+    [Network.FANTOM]: {
+      subgraphURL:
+        'https://graph-node.tomb.com/subgraphs/name/tombswap-subgraph',
+      factoryAddress: '0xe236f6890f1824fa0a7ffc39b1597a5a6077cfe9',
+      initCode:
+        '0x2dfbcf1b907f911bc66d083d103a1d7de0b8b21a6cb2a66a78d1f1559018fba4',
+      feeCode: 30,
+    },
+  },
   ZeroSwap: {
     [Network.AVALANCHE]: {
       subgraphURL:
