@@ -610,4 +610,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  BabyDogeSwap: {
+    [Network.BSC]: {
+      subgraphURL:
+        'https://graph-bsc-mainnet.babydoge.com/subgraphs/name/babydoge/exchange',
+      factoryAddress: '0x4693B62E5fc9c0a45F89D62e6300a03C85f43137',
+      initCode:
+        '0x5646bd1da4b93040d09d9a44666ac5ad7d4eb0711841defc40f00dce1aba0b06',
+      poolGasCost: 80 * 1000,
+      feeCode: 25,
+      router: '0xC9a0F685F39d05D835c369036251ee3aEaaF3c47',
+    },
+  },
 };
