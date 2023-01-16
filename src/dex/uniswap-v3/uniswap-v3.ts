@@ -14,7 +14,12 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isTruthy,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -410,24 +415,27 @@ export class UniswapV3
       if (_srcAddress === _destAddress) return null;
 
       let selectedPools: UniswapV3EventPool[] = [];
+
       if (!limitPools) {
-        for (const fee of this.supportedFees) {
-          let pool =
-            this.eventPools[
-              this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-            ];
-          if (!pool) {
-            pool = await this.getPool(
-              _srcAddress,
-              _destAddress,
-              fee,
-              blockNumber,
-            );
-          }
-          if (pool) {
-            selectedPools.push(pool);
-          }
-        }
+        selectedPools = (
+          await Promise.all(
+            this.supportedFees.map(async fee => {
+              const locallyFoundPool =
+                this.eventPools[
+                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
+                ];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const newlyFetchedPool = await this.getPool(
+                _srcAddress,
+                _destAddress,
+                fee,
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
       } else {
         const pairIdentifierWithoutFee = this.getPoolIdentifier(
           _srcAddress,
@@ -439,22 +447,24 @@ export class UniswapV3
         const poolIdentifiers = limitPools.filter(identifier =>
           identifier.startsWith(pairIdentifierWithoutFee),
         );
-        for (const identifier of poolIdentifiers) {
-          let pool = this.eventPools[identifier];
-          if (!pool) {
-            const [, srcAddress, destAddress, fee] = identifier.split('_');
-            pool = await this.getPool(
-              srcAddress,
-              destAddress,
-              BigInt(fee),
-              blockNumber,
-            );
-          }
 
-          if (pool) {
-            selectedPools.push(pool);
-          }
-        }
+        selectedPools = (
+          await Promise.all(
+            poolIdentifiers.map(async identifier => {
+              let locallyFoundPool = this.eventPools[identifier];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const newlyFetchedPool = await this.getPool(
+                srcAddress,
+                destAddress,
+                BigInt(fee),
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
       }
 
       if (selectedPools.length === 0) return null;

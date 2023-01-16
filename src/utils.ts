@@ -340,3 +340,5 @@ export const isDestTokenTransferFeeToBeExchanged = (
 ) => {
   return !!(transferFees.destFee || transferFees.destDexFee);
 };
+
+export const isTruthy = <T>(x: T | undefined | null): x is T => !!x;
