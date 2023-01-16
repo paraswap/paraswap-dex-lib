@@ -31,6 +31,7 @@ import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
+import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_FUNCTION_CALL_GAS_COST,
@@ -72,6 +73,7 @@ export class UniswapV3
   logger: Logger;
 
   private uniswapMulti: Contract;
+  private stateMultiContract: Contract;
 
   constructor(
     protected network: Network,
@@ -89,6 +91,11 @@ export class UniswapV3
       UniswapV3MultiABI as AbiItem[],
       this.config.uniswapMulticall,
     );
+    this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
+      UniswapV3StateMulticallABI as AbiItem[],
+      this.config.stateMulticall,
+    );
+
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
@@ -149,7 +156,7 @@ export class UniswapV3
       pool = new UniswapV3EventPool(
         this.dexHelper,
         this.dexKey,
-        this.config.stateMulticall,
+        this.stateMultiContract,
         this.config.factory,
         fee,
         token0,
