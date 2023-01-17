@@ -119,8 +119,13 @@ export abstract class StatefulRpcPoller<State, M>
     protected managerCbControllers: PollingManagerControllersCb,
 
     // It is allowed block delay before refetching the state
-    protected maxAllowedDelayedBlockRpcPolling: number = dexHelper.config.data
+    protected maxAllowedStateDelayToUpdate: number = dexHelper.config.data
       .maxAllowedDelayedBlockRpcPolling,
+    // The difference between previous parameter and this one is that if we reached
+    // this blockNumber, we will not serve state anymore since it is too late. But if we
+    // reached maxAllowedStateDelayToUpdate, we will just trigger state update
+    protected maxAllowedStateDelayToUse: number = maxAllowedStateDelayToUpdate *
+      2,
     protected liquidityUpdatePeriodMs = DEFAULT_LIQUIDITY_UPDATE_PERIOD_MS,
   ) {
     // Don't make it too custom, like adding poolIdentifier. It will break log suppressor
@@ -143,11 +148,18 @@ export abstract class StatefulRpcPoller<State, M>
     this.logger = getLogger(`${this.dexKey}-${this.entityName}`);
 
     assert(
-      this.maxAllowedDelayedBlockRpcPolling <=
+      this.maxAllowedStateDelayToUpdate <=
         dexHelper.config.data.maxAllowedDelayedBlockRpcPolling,
       `You can not exceed global maxAllowedDelayedBlockRpcPolling=` +
         `${dexHelper.config.data.maxAllowedDelayedBlockRpcPolling}. ` +
-        `Received ${this.maxAllowedDelayedBlockRpcPolling}`,
+        `Received ${this.maxAllowedStateDelayToUpdate}`,
+    );
+    // If this rule is violated, it doesn't make any sense. Since you want to update state
+    // before failing pricing request
+    assert(
+      this.maxAllowedStateDelayToUse > this.maxAllowedStateDelayToUpdate,
+      `Config is wrong. maxAllowedStateDelayToUse=${this.maxAllowedStateDelayToUse} ` +
+        `<= this.maxAllowedStateDelayToUpdate=${this.maxAllowedStateDelayToUpdate}`,
     );
 
     this._getBlockNumberMultiCall = {
@@ -189,7 +201,7 @@ export abstract class StatefulRpcPoller<State, M>
     return this._isStateOutdated(
       blockNumber,
       this._stateWithUpdateInfo?.blockNumber || 0,
-      this.maxAllowedDelayedBlockRpcPolling,
+      this.maxAllowedStateDelayToUse,
     );
   }
 
