@@ -93,7 +93,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     for (const poolAddress of cfgInfo.poolAddresses) {
       const tokenAddresses = Wombat.poolInterface
         .decodeFunctionResult('getTokens', returnData[i++])[0]
-        .toLowerCase();
+        .map((s: string): string => s.toLowerCase());
       cfgInfo.pools[poolAddress] = {
         tokenAddresses,
         tokens: {},
@@ -139,7 +139,9 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
         const assetAddress = Wombat.poolInterface
           .decodeFunctionResult('addressOfAsset', returnData[i++])[0]
           .toLowerCase();
-        cfgInfo.pools[poolAddress].tokens[tokenAddress] = {
+        cfgInfo.pools[poolAddress.toLowerCase()].tokens[
+          tokenAddress.toLowerCase()
+        ] = {
           tokenSymbol,
           tokenDecimals,
           assetAddress,

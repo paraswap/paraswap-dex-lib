@@ -1,13 +1,19 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { DeepReadonly } from 'ts-essentials';
 import { WombatEventPool } from './wombat-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
-import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolState } from './types';
-
+import {
+  testEventSubscriber,
+  getSavedConfig,
+  saveConfig,
+} from '../../../tests/utils-events';
+import { PoolState, WombatConfigInfo } from './types';
+import { WombatConfig } from './config';
+import { Wombat } from './wombat';
 /*
   README
   ======
@@ -41,65 +47,79 @@ import { PoolState } from './types';
   (This comment should be removed from the final implementation)
 */
 
-jest.setTimeout(50 * 1000);
+// npx jest src/dex/wombat/wombat-events.test.ts
+jest.setTimeout(100 * 1000);
 
 async function fetchPoolState(
-  wombatPools: WombatEventPool,
+  wombatPool: WombatEventPool,
   blockNumber: number,
-  poolAddress: string,
-): Promise<PoolState> {
-  // TODO: complete me!
-  return {};
+): Promise<DeepReadonly<PoolState>> {
+  return await wombatPool.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('Wombat EventPool Mainnet', function () {
+describe('Wombat EventPool BSC', function () {
   const dexKey = 'Wombat';
-  const network = Network.MAINNET;
+  const network = Network.BSC;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
   let wombatPool: WombatEventPool;
-
+  const mainPoolAddress = WombatConfig.Wombat[Network.BSC].pools[0].address;
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
+    // Main pool
+    [mainPoolAddress]: {
+      Deposit: [22764190],
+      // Deposit: [24764190],
+    },
   };
 
-  beforeEach(async () => {
-    wombatPool = new WombatEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      /* TODO: Put here additional constructor arguments if needed */
-    );
-  });
+  for (const [poolAddress, events] of Object.entries(eventsToTest)) {
+    describe(`Events for ${poolAddress}`, () => {
+      for (const [eventName, blockNumbers] of Object.entries(events)) {
+        describe(`${eventName}`, () => {
+          for (const blockNumber of blockNumbers) {
+            it(`State after ${blockNumber}`, async function () {
+              let cfgInfo = getSavedConfig<WombatConfigInfo>(
+                blockNumber,
+                dexKey,
+              );
 
-  Object.entries(eventsToTest).forEach(
-    ([poolAddress, events]: [string, EventMappings]) => {
-      describe(`Events for ${poolAddress}`, () => {
-        Object.entries(events).forEach(
-          ([eventName, blockNumbers]: [string, number[]]) => {
-            describe(`${eventName}`, () => {
-              blockNumbers.forEach((blockNumber: number) => {
-                it(`State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
-                    wombatPool,
-                    wombatPool.addressesSubscribed,
-                    (_blockNumber: number) =>
-                      fetchPoolState(wombatPool, _blockNumber, poolAddress),
-                    blockNumber,
-                    `${dexKey}_${poolAddress}`,
-                    dexHelper.provider,
-                  );
-                });
-              });
+              cfgInfo = undefined;
+              if (!cfgInfo) {
+                const dex = new Wombat(network, dexKey, dexHelper);
+                cfgInfo = await dex.generateConfigInfo(blockNumber);
+                saveConfig(blockNumber, dexKey, cfgInfo);
+              }
+
+              wombatPool = new WombatEventPool(
+                dexKey,
+                'Main Pool',
+                network,
+                dexHelper,
+                logger,
+                poolAddress.toLowerCase(),
+                cfgInfo.pools[poolAddress.toLowerCase()],
+              );
+
+              await testEventSubscriber(
+                wombatPool,
+                wombatPool.addressesSubscribed,
+                (_blockNumber: number) =>
+                  fetchPoolState(wombatPool, _blockNumber),
+                blockNumber,
+                `${dexKey}_${poolAddress}`,
+                dexHelper.provider,
+              );
             });
-          },
-        );
-      });
-    },
-  );
+            // });
+          }
+        });
+      }
+      // );
+    });
+  }
+  // );
 });
