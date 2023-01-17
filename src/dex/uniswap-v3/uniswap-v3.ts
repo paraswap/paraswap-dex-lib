@@ -197,6 +197,22 @@ export class UniswapV3
         }
       }
 
+      if (pool !== null) {
+        this.logger.info(
+          `${this.dexKey}-${
+            this.network
+          }: starting to listen to new non-null pool: ${key}. Already following ${Object.values(
+            this.eventPools,
+            // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
+          ).reduce(
+            (acc, curr) => (curr !== null ? ++acc : acc),
+            0,
+          )} non-null pools or ${
+            Object.values(this.eventPools).length
+          } total pools`,
+        );
+      }
+
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
         pool;
     }
