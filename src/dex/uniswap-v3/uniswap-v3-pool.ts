@@ -93,6 +93,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
     this.handlers['IncreaseObservationCardinalityNext'] =
       this.handleIncreaseObservationCardinalityNextEvent.bind(this);
+
+    // Wen need them to keep balance of the pool up to date
+    this.handlers['Collect'] = this.handleCollectEvent.bind(this);
+    // Almost the same as Collect, but for pool owners
+    this.handlers['CollectProtocol'] = this.handleCollectEvent.bind(this);
+
+    this.handlers['Flash'] = this.handleFlashEvent.bind(this);
   }
 
   get poolAddress() {
@@ -287,6 +294,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
           BigInt.asIntN(24, 255n)) *
         tickSpacing,
+
+      // !!! IMPLEMENT THIS !!!
+      balance0: 0n,
+      balance1: 0n,
     };
   }
 
@@ -320,6 +331,30 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         newLiquidity,
         zeroForOne,
       );
+
+      if (zeroForOne) {
+        if (amount1 < 0) {
+          pool.balance1 += amount1;
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
+          );
+          pool.isValid = false;
+        }
+        // This is not correct fully, because pool may get more tokens then it needs, but
+        // it is not accounted in internal state, it should be good enough
+        pool.balance0 += BigInt.asUintN(256, amount0);
+      } else {
+        if (amount0 < 0) {
+          pool.balance0 += amount0;
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
+          );
+          pool.isValid = false;
+        }
+        pool.balance1 += BigInt.asUintN(256, amount1);
+      }
 
       return pool;
     }
@@ -374,6 +409,36 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
     const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
     pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleCollectEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const amount0 = bigIntify(event.args.amount0);
+    const amount1 = bigIntify(event.args.amount1);
+    pool.balance0 -= amount0;
+    pool.balance1 -= amount1;
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleFlashEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const paid0 = bigIntify(event.args.paid0);
+    const paid1 = bigIntify(event.args.paid1);
+    pool.balance0 += paid0;
+    pool.balance1 += paid1;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;

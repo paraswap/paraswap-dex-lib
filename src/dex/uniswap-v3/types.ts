@@ -46,6 +46,8 @@ export type PoolState = {
   startTickBitmap: bigint;
   lowestKnownTick: bigint;
   highestKnownTick: bigint;
+  balance0: bigint;
+  balance1: bigint;
 };
 
 export type UniswapV3Data = {
