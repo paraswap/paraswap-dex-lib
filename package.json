@@ -50,6 +50,8 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@hashflow/sdk": "^1.2.4",
+    "@hashflow/taker-js": "^0.0.1",
     "@paraswap/core": "1.0.3",
     "async": "^3.2.4",
     "bignumber.js": "9.1.0",
