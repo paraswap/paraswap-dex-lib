@@ -198,18 +198,14 @@ export class UniswapV3
       }
 
       if (pool !== null) {
+        const allEventPools = Object.values(this.eventPools);
         this.logger.info(
-          `${this.dexKey}-${
-            this.network
-          }: starting to listen to new non-null pool: ${key}. Already following ${Object.values(
-            this.eventPools,
+          `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
             // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
-          ).reduce(
-            (acc, curr) => (curr !== null ? ++acc : acc),
-            0,
-          )} non-null pools or ${
-            Object.values(this.eventPools).length
-          } total pools`,
+            .reduce(
+              (acc, curr) => (curr !== null ? ++acc : acc),
+              0,
+            )} non-null pools or ${allEventPools.length} total pools`,
         );
       }
 
