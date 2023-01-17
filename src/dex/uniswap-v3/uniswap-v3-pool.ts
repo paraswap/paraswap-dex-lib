@@ -16,7 +16,6 @@ import {
   TickInfoMappings,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
-import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import { bigIntify, catchParseLogError } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { NumberAsString } from '@paraswap/core';
@@ -47,8 +46,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _poolAddress?: Address;
 
-  readonly stateMultiContract: Contract;
-
   private _stateRequestCallData?: {
     funcName: string;
     params: unknown[];
@@ -64,7 +61,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
-    stateMultiAddress: Address,
+    readonly stateMultiContract: Contract,
     protected readonly factoryAddress: Address,
     public readonly feeCode: bigint,
     token0: Address,
@@ -85,11 +82,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = new Array<Address>(1);
-
-    this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3StateMulticallABI as AbiItem[],
-      stateMultiAddress,
-    );
 
     this.token0sub = getERC20Subscriber(this.dexHelper, this.token0);
     this.token1sub = getERC20Subscriber(this.dexHelper, this.token1);
