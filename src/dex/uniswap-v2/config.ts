@@ -600,6 +600,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 10,
     },
   },
+  Verse: {
+    [Network.MAINNET]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/arnkthr/ethv1/graphql',
+      factoryAddress: '0xee3E9E46E34a27dC755a63e2849C9913Ee1A06E2',
+      initCode:
+        '0x34768b85d02b77066b16acc7f0875ed59566bb3c32ba4fb0438750e872fddf9e',
+      feeCode: 30,
+    },
+  },
   ZipSwap: {
     [Network.OPTIMISM]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/nonamefits/zipswap',
