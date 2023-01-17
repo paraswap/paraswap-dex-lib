@@ -21,16 +21,6 @@
     "type": "constructor"
   },
   {
-    "inputs": [],
-    "name": "ASSET_OVERFLOW",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "WOMBAT_FORBIDDEN",
-    "type": "error"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
