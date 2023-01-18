@@ -162,6 +162,7 @@ export class UniswapV3
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
+        this.erc20Interface,
         this.config.factory,
         fee,
         token0,

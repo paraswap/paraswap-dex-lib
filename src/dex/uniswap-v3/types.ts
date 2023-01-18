@@ -105,3 +105,15 @@ export type OutputResult = {
   outputs: bigint[];
   tickCounts: number[];
 };
+
+export type StateMultiCallResultWithRelativeBitmaps = {
+  pool: Address;
+  blockTimestamp: bigint;
+  slot0: Slot0;
+  liquidity: bigint;
+  tickSpacing: bigint;
+  maxLiquidityPerTick: bigint;
+  observation: OracleObservation;
+  tickBitmap: TickBitMapMappings[];
+  ticks: TickInfoMappings[];
+};
