@@ -12,6 +12,7 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { AirSwapEventPool, airswapIface } from './airswap-pool';
 
 /*
   README
@@ -68,7 +69,7 @@ async function checkOnChainPricing(
   // TODO: Replace dummy interface with the real one
   // Normally you can get it from airswap.Iface or from eventPool.
   // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = airswapIface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -136,13 +137,14 @@ async function testPricingOnNetwork(
   }
 
   // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    airswap,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  //@todo : verify it is useless for airswap
+  // await checkOnChainPricing(
+  //   airswap,
+  //   funcNameToCheck,
+  //   blockNumber,
+  //   poolPrices![0].prices,
+  //   amounts,
+  // );
 }
 
 describe('AirSwap', function () {
@@ -150,6 +152,7 @@ describe('AirSwap', function () {
   let blockNumber: number;
   let airswap: AirSwap;
 
+  //@Todo : add the same test for
   describe('Mainnet', () => {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);

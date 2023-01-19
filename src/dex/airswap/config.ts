@@ -48,24 +48,8 @@ export const AirSwapConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  // --> There is no adapters for airswap just makers
-  // [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
-  // [Network.MAINNET]: {
-  //   [SwapSide.SELL]: [{ name: 'Adapter01', index: 6 }],
-  //   [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 2 }],
-  // },
-  // [Network.POLYGON]: {
-  //   [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 13 }],
-  //   [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 2 }],
-  // },
-  // [Network.ARBITRUM]: {
-  //   [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 3 }],
-  //   [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 2 }],
-  // },
-  // [Network.OPTIMISM]: {
-  //   [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 3 }],
-  //   [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 2 }],
-  // },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Airswap', index: 0 }],
+    [SwapSide.BUY]: [{ name: 'Airswap', index: 0 }],
+  },
 };
