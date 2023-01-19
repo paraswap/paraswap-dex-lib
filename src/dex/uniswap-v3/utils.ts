@@ -1,9 +1,11 @@
-import { BigNumber, BytesLike, ethers } from 'ethers';
-import { extractSuccessAndValue, generalDecoder } from '../../lib/decoders';
+import { BytesLike, ethers } from 'ethers';
+import { extractSuccessAndValue } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { DexConfigMap } from '../../types';
-import { bigIntify } from '../../utils';
-import { DexParams, StateMultiCallResultWithRelativeBitmaps } from './types';
+import {
+  DexParams,
+  DecodedStateMultiCallResultWithRelativeBitmaps,
+} from './types';
 
 export function getUniswapV3DexKey(UniswapV3Config: DexConfigMap<DexParams>) {
   const UniswapV3Keys = Object.keys(UniswapV3Config);
@@ -19,17 +21,9 @@ export function getUniswapV3DexKey(UniswapV3Config: DexConfigMap<DexParams>) {
   return UniswapV3Keys[0].toLowerCase();
 }
 
-export function setImmediatePromise() {
-  return new Promise<void>(resolve => {
-    setImmediate(() => {
-      resolve();
-    });
-  });
-}
-
 export function decodeStateMultiCallResultWithRelativeBitmaps(
   result: MultiResult<BytesLike> | BytesLike,
-): StateMultiCallResultWithRelativeBitmaps {
+): DecodedStateMultiCallResultWithRelativeBitmaps {
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
   if (!isSuccess || toDecode === '0x') {
@@ -46,13 +40,13 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
         address pool,
         uint256 blockTimestamp,
         tuple(
-          uint160 sqrtPriceX96;
-          int24 tick;
-          uint16 observationIndex;
-          uint16 observationCardinality;
-          uint16 observationCardinalityNext;
-          uint8 feeProtocol;
-          bool unlocked;
+          uint160 sqrtPriceX96,
+          int24 tick,
+          uint16 observationIndex,
+          uint16 observationCardinality,
+          uint16 observationCardinalityNext,
+          uint8 feeProtocol,
+          bool unlocked,
         ) slot0,
         uint128 liquidity,
         int24 tickSpacing,
@@ -64,52 +58,26 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
           bool initialized,
         ) observation,
         tuple(
-          int16 index;
-          uint256 value;
+          int16 index,
+          uint256 value,
         )[] tickBitmap,
         tuple(
           int24 index,
-          TickInfo value
+          tuple(
+            uint128 liquidityGross,
+            int128 liquidityNet,
+            int56 tickCumulativeOutside,
+            uint160 secondsPerLiquidityOutsideX128,
+            uint32 secondsOutside,
+            bool initialized,
+          ) value,
         )[] ticks
       )
     `,
     ],
     toDecode,
   )[0];
-
-  return {
-    pool: decoded.pool,
-    blockTimestamp: bigIntify(decoded.blockTimestamp),
-    slot0: {
-      sqrtPriceX96: bigIntify(decoded.slot0.sqrtPriceX96),
-      tick: bigIntify(decoded.slot0.tick),
-      observationIndex: parseInt(decoded.slot0.observationIndex, 10),
-      observationCardinality: parseInt(decoded.slot0.sqrtPriceX96, 10),
-      observationCardinalityNext: parseInt(decoded.slot0.sqrtPriceX96, 10),
-      feeProtocol: bigIntify(decoded.slot0.feeProtocol),
-    },
-    liquidity: bigIntify(decoded.liquidity),
-    tickSpacing: bigIntify(decoded.tickSpacing),
-    maxLiquidityPerTick: bigIntify(decoded.maxLiquidityPerTick),
-    observation: {
-      blockTimestamp: bigIntify(decoded.observation.blockTimestamp),
-      tickCumulative: bigIntify(decoded.observation.tickCumulative),
-      secondsPerLiquidityCumulativeX128: bigIntify(
-        decoded.observation.secondsPerLiquidityCumulativeX128,
-      ),
-      initialized: !!decoded.observation.initialized,
-    },
-    tickBitmap: decoded.tickBitmap.map(
-      (_decoded: { index: number; value: BigNumber }) => ({
-        index: _decoded.index,
-        value: bigIntify(_decoded.value),
-      }),
-    ),
-    ticks: decoded.ticks.map(
-      (_decoded: { index: number; value: BigNumber }) => ({
-        index: _decoded,
-        value: bigIntify(_decoded.value),
-      }),
-    ),
-  };
+  // This conversion is not precise, because when we decode, we have more values
+  // But I typed only the ones that are used later
+  return decoded as DecodedStateMultiCallResultWithRelativeBitmaps;
 }

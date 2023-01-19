@@ -533,9 +533,7 @@ export class UniswapV3
           }
 
           const balanceDestToken =
-            _destAddress === pool.token0
-              ? await pool.getBalanceToken0(blockNumber)
-              : await pool.getBalanceToken1(blockNumber);
+            _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
           const unitResult = this._getOutputs(
             state,

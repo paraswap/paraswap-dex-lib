@@ -3,13 +3,7 @@ import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 import { DeepReadonly } from 'ts-essentials';
-import {
-  Log,
-  Logger,
-  BlockHeader,
-  Address,
-  MultiCallOutput,
-} from '../../types';
+import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
   InitializeStateOptions,
   StatefulEventSubscriber,
@@ -17,10 +11,10 @@ import {
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
-  StateMultiCallResultWithRelativeBitmaps,
-  TickBitMapMappings,
+  DecodedStateMultiCallResultWithRelativeBitmaps,
   TickInfo,
-  TickInfoMappings,
+  TickBitMapMappingsWithBigNumber,
+  TickInfoMappingsWithBigNumber,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import { bigIntify, catchParseLogError } from '../../utils';
@@ -33,10 +27,7 @@ import {
   TICK_BITMAP_TO_USE,
 } from './constants';
 import { TickBitMap } from './contract-math/TickBitMap';
-import { ERC20EventSubscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber';
-import { getERC20Subscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber-factory';
 import { uint256ToBigInt } from '../../lib/decoders';
-import { ppid } from 'process';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
@@ -58,15 +49,12 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   private _poolAddress?: Address;
 
   private _stateRequestCallData?: MultiCallParams<
-    bigint | StateMultiCallResultWithRelativeBitmaps
+    bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
 
   public readonly poolIface = new Interface(UniswapV3PoolABI);
 
   public readonly feeCodeAsString;
-
-  public token0sub: ERC20EventSubscriber;
-  public token1sub: ERC20EventSubscriber;
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -93,9 +81,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = new Array<Address>(1);
-
-    this.token0sub = getERC20Subscriber(this.dexHelper, this.token0);
-    this.token1sub = getERC20Subscriber(this.dexHelper, this.token1);
 
     // Add handlers
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
@@ -133,36 +118,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     await super.initialize(blockNumber, options);
     // only if the super call succeed
-
-    const initPromises = [];
-    if (!this.token0sub.isInitialized && !this.dexHelper.config.isSlave) {
-      initPromises.push(
-        this.token0sub.initialize(blockNumber, {
-          state: {},
-        }),
-      );
-    }
-
-    if (!this.token1sub.isInitialized && !this.dexHelper.config.isSlave) {
-      initPromises.push(
-        this.token1sub.initialize(blockNumber, {
-          state: {},
-        }),
-      );
-    }
-
-    await Promise.all(initPromises);
-
-    await Promise.all([
-      this.token0sub.subscribeToWalletBalanceChange(
-        this.poolAddress,
-        blockNumber,
-      ),
-      this.token1sub.subscribeToWalletBalanceChange(
-        this.poolAddress,
-        blockNumber,
-      ),
-    ]);
   }
 
   protected async processBlockLogs(
@@ -228,7 +183,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   private _getStateRequestCallData() {
     if (!this._stateRequestCallData) {
       const callData: MultiCallParams<
-        bigint | StateMultiCallResultWithRelativeBitmaps
+        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
       >[] = [
         {
           target: this.token0,
@@ -273,11 +228,11 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     const [balance0, balance1, _state] =
       (await this.dexHelper.multiWrapper.aggregate<
-        bigint | StateMultiCallResultWithRelativeBitmaps
+        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
       >(callData, blockNumber)) as [
         bigint,
         bigint,
-        StateMultiCallResultWithRelativeBitmaps,
+        DecodedStateMultiCallResultWithRelativeBitmaps,
       ];
 
     const tickBitmap = {};
@@ -506,7 +461,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _reduceTickBitmap(
     tickBitmap: Record<NumberAsString, bigint>,
-    tickBitmapToReduce: TickBitMapMappings[],
+    tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
   ) {
     return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
       (acc, curr) => {
@@ -520,7 +475,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _reduceTicks(
     ticks: Record<NumberAsString, TickInfo>,
-    ticksToReduce: TickInfoMappings[],
+    ticksToReduce: TickInfoMappingsWithBigNumber[],
   ) {
     return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
       const { index, value } = curr;
@@ -536,14 +491,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       };
       return acc;
     }, ticks);
-  }
-
-  public getBalanceToken0(blockNumber: number) {
-    return this.token0sub.getBalance(this.poolAddress, blockNumber);
-  }
-
-  public getBalanceToken1(blockNumber: number) {
-    return this.token1sub.getBalance(this.poolAddress, blockNumber);
   }
 
   private _computePoolAddress(

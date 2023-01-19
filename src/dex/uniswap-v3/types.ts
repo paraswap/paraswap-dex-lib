@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import { NumberAsString } from '../../types';
 import { Address } from '../../types';
 
@@ -106,14 +107,48 @@ export type OutputResult = {
   tickCounts: number[];
 };
 
-export type StateMultiCallResultWithRelativeBitmaps = {
+// Just rewrote every type with BigNumber basically
+
+export type TickBitMapMappingsWithBigNumber = {
+  index: number;
+  value: BigNumber;
+};
+
+export type TickInfoWithBigNumber = {
+  initialized: boolean;
+  liquidityGross: BigNumber;
+  liquidityNet: BigNumber;
+  secondsOutside: number;
+  secondsPerLiquidityOutsideX128: BigNumber;
+  tickCumulativeOutside: BigNumber;
+};
+
+export type TickInfoMappingsWithBigNumber = {
+  index: number;
+  value: TickInfoWithBigNumber;
+};
+
+export type DecodedStateMultiCallResultWithRelativeBitmaps = {
   pool: Address;
-  blockTimestamp: bigint;
-  slot0: Slot0;
-  liquidity: bigint;
-  tickSpacing: bigint;
-  maxLiquidityPerTick: bigint;
-  observation: OracleObservation;
-  tickBitmap: TickBitMapMappings[];
-  ticks: TickInfoMappings[];
+  blockTimestamp: BigNumber;
+  slot0: {
+    feeProtocol: number;
+    observationCardinality: number;
+    observationCardinalityNext: number;
+    observationIndex: number;
+    sqrtPriceX96: BigNumber;
+    tick: number;
+    unlocked: boolean;
+  };
+  liquidity: BigNumber;
+  tickSpacing: number;
+  maxLiquidityPerTick: BigNumber;
+  observation: {
+    blockTimestamp: number;
+    initialized: boolean;
+    secondsPerLiquidityCumulativeX128: BigNumber;
+    tickCumulative: BigNumber;
+  };
+  tickBitmap: TickBitMapMappingsWithBigNumber[];
+  ticks: TickInfoMappingsWithBigNumber[];
 };
