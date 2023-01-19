@@ -322,7 +322,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       );
 
       if (zeroForOne) {
-        if (amount1 < 0) {
+        if (amount1 < 0n) {
           pool.balance1 += amount1;
         } else {
           this.logger.error(
@@ -334,7 +334,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         // it is not accounted in internal state, it should be good enough
         pool.balance0 += BigInt.asUintN(256, amount0);
       } else {
-        if (amount0 < 0) {
+        if (amount0 < 0n) {
           pool.balance0 += amount0;
         } else {
           this.logger.error(
