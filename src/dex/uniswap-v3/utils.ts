@@ -28,7 +28,7 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
   assert(
-    !isSuccess || toDecode === '0x',
+    isSuccess && toDecode !== '0x',
     `decodeStateMultiCallResultWithRelativeBitmaps failed to get decodable result: ${result}`,
   );
 
