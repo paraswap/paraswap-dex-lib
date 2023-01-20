@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
-import { DeepReadonly } from 'ts-essentials';
+import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
   InitializeStateOptions,
@@ -228,14 +228,21 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
-    const [balance0, balance1, _state] =
-      (await this.dexHelper.multiWrapper.aggregate<
+    const [resBalance0, resBalance1, resState] =
+      await this.dexHelper.multiWrapper.tryAggregate<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-      >(callData, blockNumber)) as [
-        bigint,
-        bigint,
-        DecodedStateMultiCallResultWithRelativeBitmaps,
-      ];
+      >(false, callData, blockNumber);
+
+    // Quite ugly solution, but this is the one that fits to current flow.
+    // I think UniswapV3 callbacks subscriptions are complexified for no reason.
+    // Need to be revisited later
+    assert(resState.success, 'Pool does not exist');
+
+    const [balance0, balance1, _state] = [
+      resBalance0.returnData,
+      resBalance1.returnData,
+      resState.returnData,
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
 
     const tickBitmap = {};
     const ticks = {};

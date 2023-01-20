@@ -267,6 +267,10 @@ export const Tokens: {
       address: '0x0100546f2cd4c9d97f798ffc9755e47865ff7ee6',
       decimals: 18,
     },
+    SHIBA: {
+      address: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -756,6 +760,7 @@ export const Holders: {
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     alETH: '0x500a4f1280a0b63f47862d658b6c335cc939aaed',
+    SHIBA: '0x73af3bcf944a6559933396c1577b257e2054d935',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',

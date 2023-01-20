@@ -36,6 +36,19 @@ describe('UniswapV3 E2E', () => {
         provider,
       );
     });
+    it('SELL WETH -> SHIBA', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['SHIBA'],
+        holders['WETH'],
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
   });
 
   describe('UniswapV3 POLYGON', () => {
