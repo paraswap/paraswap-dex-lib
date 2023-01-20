@@ -1,4 +1,5 @@
 import { BytesLike, ethers } from 'ethers';
+import { assert } from 'ts-essentials';
 import { extractSuccessAndValue } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { DexConfigMap } from '../../types';
@@ -26,11 +27,10 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
 ): DecodedStateMultiCallResultWithRelativeBitmaps {
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
-  if (!isSuccess || toDecode === '0x') {
-    throw new Error(
-      `decodeStateMultiCallResultWithRelativeBitmaps failed to get decodable result: ${result}`,
-    );
-  }
+  assert(
+    !isSuccess || toDecode === '0x',
+    `decodeStateMultiCallResultWithRelativeBitmaps failed to get decodable result: ${result}`,
+  );
 
   const decoded = ethers.utils.defaultAbiCoder.decode(
     [
