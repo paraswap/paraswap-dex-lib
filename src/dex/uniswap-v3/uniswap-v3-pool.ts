@@ -325,7 +325,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
       if (zeroForOne) {
         if (amount1 < 0n) {
-          pool.balance1 += amount1;
+          pool.balance1 -= BigInt.asUintN(256, -amount1);
         } else {
           this.logger.error(
             `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
@@ -337,7 +337,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         pool.balance0 += BigInt.asUintN(256, amount0);
       } else {
         if (amount0 < 0n) {
-          pool.balance0 += amount0;
+          pool.balance0 -= BigInt.asUintN(256, -amount0);
         } else {
           this.logger.error(
             `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
