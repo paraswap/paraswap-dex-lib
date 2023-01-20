@@ -506,17 +506,14 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const encodedKey = ethers.utils.keccak256(
       ethers.utils.defaultAbiCoder.encode(
         ['address', 'address', 'uint24'],
-        [token0, token1, fee],
+        [token0, token1, BigInt.asUintN(24, fee)],
       ),
     );
 
-    const bytesCalc = ethers.utils.solidityKeccak256(
-      ['bytes', 'address', 'bytes32', 'bytes32'],
-      ['0xff', this.factoryAddress, encodedKey, this.poolInitCodeHash],
+    return ethers.utils.getCreate2Address(
+      this.factoryAddress,
+      encodedKey,
+      this.poolInitCodeHash,
     );
-
-    return (
-      '0x' + BigInt.asUintN(160, BigInt(bytesCalc)).toString(16)
-    ).toLowerCase();
   }
 }
