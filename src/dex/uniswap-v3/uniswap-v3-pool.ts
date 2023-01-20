@@ -22,6 +22,7 @@ import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
 import {
+  DEFAULT_POOL_INIT_CODE_HASH,
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
@@ -67,6 +68,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     token1: Address,
     logger: Logger,
     mapKey: string = '',
+    readonly poolInitCodeHash = DEFAULT_POOL_INIT_CODE_HASH,
   ) {
     super(
       parentName,
@@ -508,8 +510,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       ),
     );
 
+    const bytesCalc = ethers.utils.solidityKeccak256(
+      ['bytes', 'address', 'bytes32', 'bytes32'],
+      ['0xff', this.factoryAddress, encodedKey, this.poolInitCodeHash],
+    );
+
     return (
-      '0x' + BigInt.asUintN(160, BigInt(encodedKey)).toString(16)
+      '0x' + BigInt.asUintN(160, BigInt(bytesCalc)).toString(16)
     ).toLowerCase();
   }
 }
