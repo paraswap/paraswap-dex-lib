@@ -138,13 +138,13 @@ async function testPricingOnNetwork(
 
   // Check if onchain pricing equals to calculated ones
   //@todo : verify it is useless for airswap
-  // await checkOnChainPricing(
-  //   airswap,
-  //   funcNameToCheck,
-  //   blockNumber,
-  //   poolPrices![0].prices,
-  //   amounts,
-  // );
+  await checkOnChainPricing(
+    airswap,
+    funcNameToCheck,
+    blockNumber,
+    poolPrices![0].prices,
+    amounts,
+  );
 }
 
 describe('AirSwap', function () {
@@ -228,7 +228,7 @@ describe('AirSwap', function () {
       );
     });
 
-    it('getTopPoolsForToken', async function () {
+    it('getTopPoolsForToken should return nothing', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAirSwap = new AirSwap(network, dexKey, dexHelper);
