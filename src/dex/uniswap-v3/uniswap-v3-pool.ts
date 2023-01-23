@@ -119,7 +119,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     options?: InitializeStateOptions<PoolState>,
   ) {
     await super.initialize(blockNumber, options);
-    // only if the super call succeed
   }
 
   protected async processBlockLogs(
