@@ -21,7 +21,7 @@ import { AirSwapEventPool } from './airswap-pool';
 import _ from 'lodash';
 import { Registry } from '@airswap/protocols';
 import { ethers } from 'ethers';
-import { Maker } from '@airswap/libraries';
+import { MakerRegistry, Maker } from '@airswap/libraries';
 
 export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   protected eventPools: AirSwapEventPool;
@@ -85,8 +85,8 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   ): Promise<string[]> {
     const pairs = await this.getAvailableMakersForRFQ(srcToken, destToken);
     const keys = pairs.map(
-      maker =>
-        `${this.dexKey};${srcToken.address};${destToken.address};${maker.client.options.protocol}//${maker.client.options.hostname};${maker.swapContract}`,
+      ({ swapContract, locator }) =>
+        `${this.dexKey};${srcToken.address};${destToken.address};${locator};${swapContract}`,
     );
     return Promise.resolve(keys);
   }
@@ -117,8 +117,9 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
       limitPools[0].split(';');
     console.log('getPricesVolume', limitPools[0], host);
     const maker = await Maker.at(host, {
-      swapContract: '0x522d6f36c95a1b6509a14272c17747bbb582f2a6',
-    }); //@TODO: where to find this contract ?
+      swapContract, //: '0x522d6f36c95a1b6509a14272c17747bbb582f2a6',
+    });
+    //@TODO: where to find this contract ?
     const senderWallet = '0x841EB48aA8b02354A774912405bb29382a60A355'; //@TODO how to get the wallet ?
     const requests = amounts
       .filter(amount => amount > 0)
@@ -267,7 +268,7 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
   ): Promise<any[]> {
     const provider = ethers.getDefaultProvider(this.network);
     //@ts-ignore
-    const servers = await new Registry(this.network, provider).getServers(
+    const servers = await new MakerRegistry(this.network, provider).getMakers(
       from.address,
       to.address,
     );
