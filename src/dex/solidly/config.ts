@@ -72,6 +72,21 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0, // variable
     },
   },
+  Equalizer: {
+    [Network.FANTOM]: {
+      subgraphURL: '',//'https://api.thegraph.com/subgraphs/name/ftm1337/equalizer-subgraph-1',//inactive
+      factoryAddress: '0xc6366EFD0AF1d09171fe0EBF32c7943BB310832a',
+      router: '0x1A05EB736873485655F29a37DEf8a0AA87F5a447',
+      initCode:
+        '0x02ada2a0163cd4f7e0f0c9805f5230716a95b174140e4c84c14883de216cc6a3',
+      // updatable fees on the factory without event
+      //stableFee: 2,
+      //volatileFee: 20,
+      //feeCode: 2,
+      feeCode: 0, // variable
+      poolGasCost: 180 * 1000,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -79,7 +94,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
   },
   [Network.FANTOM]: {
-    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly + spiritSwapV2
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly + spiritSwapV2 + Equalizer
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
