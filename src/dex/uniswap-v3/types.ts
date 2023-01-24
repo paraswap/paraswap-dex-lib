@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import { NumberAsString } from '../../types';
 import { Address } from '../../types';
 
@@ -46,6 +47,8 @@ export type PoolState = {
   startTickBitmap: bigint;
   lowestKnownTick: bigint;
   highestKnownTick: bigint;
+  balance0: bigint;
+  balance1: bigint;
 };
 
 export type UniswapV3Data = {
@@ -102,4 +105,50 @@ export type TickBitMapMappings = {
 export type OutputResult = {
   outputs: bigint[];
   tickCounts: number[];
+};
+
+// Just rewrote every type with BigNumber basically
+
+export type TickBitMapMappingsWithBigNumber = {
+  index: number;
+  value: BigNumber;
+};
+
+export type TickInfoWithBigNumber = {
+  initialized: boolean;
+  liquidityGross: BigNumber;
+  liquidityNet: BigNumber;
+  secondsOutside: number;
+  secondsPerLiquidityOutsideX128: BigNumber;
+  tickCumulativeOutside: BigNumber;
+};
+
+export type TickInfoMappingsWithBigNumber = {
+  index: number;
+  value: TickInfoWithBigNumber;
+};
+
+export type DecodedStateMultiCallResultWithRelativeBitmaps = {
+  pool: Address;
+  blockTimestamp: BigNumber;
+  slot0: {
+    feeProtocol: number;
+    observationCardinality: number;
+    observationCardinalityNext: number;
+    observationIndex: number;
+    sqrtPriceX96: BigNumber;
+    tick: number;
+    unlocked: boolean;
+  };
+  liquidity: BigNumber;
+  tickSpacing: number;
+  maxLiquidityPerTick: BigNumber;
+  observation: {
+    blockTimestamp: number;
+    initialized: boolean;
+    secondsPerLiquidityCumulativeX128: BigNumber;
+    tickCumulative: BigNumber;
+  };
+  tickBitmap: TickBitMapMappingsWithBigNumber[];
+  ticks: TickInfoMappingsWithBigNumber[];
 };

@@ -189,14 +189,11 @@ class DexPriceAggregatorUniswapV3 {
       ),
     );
 
-    const bytesCalc = solidityKeccak256(
-      ['bytes', 'address', 'bytes32', 'bytes32'],
-      ['0xff', factory, encodedKey, POOL_INIT_CODE_HASH],
+    return ethers.utils.getCreate2Address(
+      factory,
+      encodedKey,
+      POOL_INIT_CODE_HASH,
     );
-
-    return (
-      '0x' + BigInt.asUintN(160, BigInt(bytesCalc)).toString(16)
-    ).toLowerCase();
   }
 
   private _fetchAmountFromSinglePool(
