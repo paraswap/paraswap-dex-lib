@@ -38,7 +38,7 @@ import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
-import { WooFi } from './woo-fi/woo-fi';
+// import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
@@ -99,7 +99,7 @@ const Dexes = [
   Platypus,
   GMX,
   JarvisV6,
-  WooFi,
+  // WooFi,
   ParaSwapLimitOrders,
   Solidly,
   SpiritSwapV2,
