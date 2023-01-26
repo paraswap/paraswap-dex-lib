@@ -65,7 +65,7 @@ describe('BalancerV2 E2E', () => {
           tokens['USDC'],
           tokens['USDT'],
           holders['USDC'],
-          '111222000000',
+          '10000001000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
