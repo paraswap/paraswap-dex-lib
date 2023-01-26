@@ -1,5 +1,5 @@
 import { Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import _, { keyBy, uniq, uniqBy } from 'lodash';
 import {
   Token,
@@ -941,6 +941,10 @@ export class BalancerV2
       swapData,
       this.vaultAddress,
     );
+  }
+
+  async updatePoolState(): Promise<void> {
+    this.eventPools.allPools = await this.eventPools.fetchAllSubgraphPools();
   }
 
   async getTopPoolsForToken(
