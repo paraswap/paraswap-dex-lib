@@ -60,6 +60,19 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+      it('USDC -> USDT ComposableStable', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['USDT'],
+          holders['USDC'],
+          '111222000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
       //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
       /*it('MAIN TOKEN -> BPT, LinearPool', async () => {
         // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
