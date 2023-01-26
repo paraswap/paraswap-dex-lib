@@ -341,7 +341,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       side,
     );
 
-    const checkedAmounts: bigint[] = new Array(amounts.length).fill(0n);
+    const checkedAmounts: bigint[] = new Array(amountWithoutZero.length).fill(
+      0n,
+    );
     const checkedUnitVolume = pool._nullifyIfMaxAmountExceeded(
       unitVolume,
       swapMaxAmount,
@@ -358,8 +360,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         break;
       }
       nonZeroAmountIndex = i + 1;
-      // Outputs shifted right to one to keep first entry as 0
-      checkedAmounts[i + 1] = checkedOutput;
+      checkedAmounts[i] = checkedOutput;
     }
 
     if (nonZeroAmountIndex === 0) {
@@ -373,7 +374,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     const prices: bigint[] = new Array(amounts.length).fill(0n);
     const outputs = pool.onSell(
-      amountWithoutZero.slice(nonZeroAmountIndex),
+      amountWithoutZero.slice(0, nonZeroAmountIndex),
       poolPairData as any,
     );
 
@@ -383,6 +384,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     );
 
     for (const [i, output] of outputs.entries()) {
+      // Outputs shifted right to one to keep first entry as 0
       prices[i + 1] = output;
     }
 
