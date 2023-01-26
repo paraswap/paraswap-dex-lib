@@ -1,0 +1,1 @@
+export const MIN_USD_LIQUIDITY_TO_FETCH = 1000n;

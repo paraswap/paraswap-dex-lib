@@ -51,13 +51,14 @@ import {
   poolGetMainTokens,
   poolGetPathForTokenInOut,
 } from './utils';
+import { MIN_USD_LIQUIDITY_TO_FETCH } from './constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
     first: $count
     orderBy: totalLiquidity
     orderDirection: desc
-    where: {totalShares_not_in: ["0", "0.000000000001"], id_not_in: ["0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable"]}
+    where: {totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}, totalShares_not_in: ["0", "0.000000000001"], id_not_in: ["0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable"]}
   ) {
     id
     address
@@ -70,7 +71,7 @@ const fetchAllPools = `query ($count: Int) {
     wrappedIndex
   }
 }`;
-// skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Expirimental.
+// skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.
 
 const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestampFuture: Int) {
   gradualWeightUpdates(
@@ -83,7 +84,6 @@ const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestamp
   }
 }`;
 
-const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
 const POOL_CACHE_TTL = 60 * 60; // 1 hr
 const POOL_EVENT_DISABLED_TTL = 5 * 60; // 5 min
@@ -112,6 +112,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     'Weighted',
     'LiquidityBootstrapping',
     'Investment',
+    'ComposableStable',
+    'Linear',
   ];
 
   eventRemovedPools = (
@@ -954,7 +956,7 @@ export class BalancerV2
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
            where: {id_in: $poolIds,
                    swapEnabled: true,
-                   totalLiquidity_gt: 0}) {
+                   totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
         address
         totalLiquidity
         tokens {

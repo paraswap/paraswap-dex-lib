@@ -149,7 +149,7 @@ describe('BalancerV2 E2E', () => {
 
       //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
       /*it('BPT -> TOKEN, PhantomStablePool', async () => {
-        // PhamtomStable allows swaps between BPT and tokens
+        // PhantomStable allows swaps between BPT and tokens
         await testE2E(
           tokens['BBAUSD'],
           tokens['BBADAI'],
@@ -262,7 +262,7 @@ describe('BalancerV2 E2E', () => {
         );
       });
       it('BPT -> TOKEN, PhantomStablePool', async () => {
-        // PhamtomStable allows swaps between BPT and tokens
+        // PhantomStable allows swaps between BPT and tokens
         await testE2E(
           tokens['BBAUSD'],
           tokens['BBAUSDT'],
