@@ -35,7 +35,7 @@ export class BasePool {
   }
 
   _nullifyIfMaxAmountExceeded(amountToTrade: bigint, swapMax: bigint): bigint {
-    return swapMax > amountToTrade ? 0n : amountToTrade;
+    return swapMax >= amountToTrade ? amountToTrade : 0n;
   }
 }
 

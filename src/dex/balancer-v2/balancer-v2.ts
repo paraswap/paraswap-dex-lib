@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi';
-import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
-import _, { keyBy, uniq, uniqBy } from 'lodash';
+import { assert, DeepReadonly } from 'ts-essentials';
+import _, { keyBy } from 'lodash';
 import {
   Token,
   Address,
@@ -325,7 +325,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       return null;
     }
 
-    const _amounts = [unitVolume, ...amounts.slice(1)];
+    const amountWithoutZero = amounts.slice(1);
     const pool = this.pools[subgraphPool.poolType];
 
     const poolPairData = pool.parsePoolPairData(
@@ -341,26 +341,52 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       side,
     );
 
-    const _prices = pool.onSell(_amounts, poolPairData as any);
+    const checkedAmounts: bigint[] = new Array(amounts.length).fill(0n);
+    const checkedUnitVolume = pool._nullifyIfMaxAmountExceeded(
+      unitVolume,
+      swapMaxAmount,
+    );
 
-    // Check if smallest amount is tradeable
-    if (_prices[1] === 0n) {
-      return null;
-    }
-    const prices: bigint[] = new Array(_prices.length - 1).fill(0n);
-    for (const [i, output] of prices.slice(1).entries()) {
+    let nonZeroAmountIndex = 0;
+    for (const [i, amountIn] of amountWithoutZero.entries()) {
       const checkedOutput = pool._nullifyIfMaxAmountExceeded(
-        output,
+        amountIn,
         swapMaxAmount,
       );
       if (checkedOutput === 0n) {
         // Stop earlier because other values are bigger and for sure wont' be tradable
         break;
       }
-      prices[i] = checkedOutput;
+      nonZeroAmountIndex = i + 1;
+      // Outputs shifted right to one to keep first entry as 0
+      checkedAmounts[i + 1] = checkedOutput;
     }
 
-    return { unit: _prices[0], prices };
+    if (nonZeroAmountIndex === 0) {
+      return null;
+    }
+
+    const unitResult =
+      checkedUnitVolume === 0n
+        ? 0n
+        : pool.onSell([checkedUnitVolume], poolPairData as any)[0];
+
+    const prices: bigint[] = new Array(amounts.length).fill(0n);
+    const outputs = pool.onSell(
+      amountWithoutZero.slice(nonZeroAmountIndex),
+      poolPairData as any,
+    );
+
+    assert(
+      outputs.length <= prices.length,
+      `Wrong length logic: outputs.length (${outputs.length}) <= prices.length (${prices.length})`,
+    );
+
+    for (const [i, output] of outputs.entries()) {
+      prices[i + 1] = output;
+    }
+
+    return { unit: unitResult, prices };
   }
 
   async getOnChainState(
