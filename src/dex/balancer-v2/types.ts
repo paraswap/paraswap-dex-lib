@@ -60,7 +60,7 @@ export type SubgraphPoolAddressDictionary = {
 export interface SubgraphPoolBase {
   id: string;
   address: string;
-  poolType: string;
+  poolType: BalancerPoolTypes;
   tokens: SubgraphToken[];
   mainIndex: number;
   wrappedIndex: number;

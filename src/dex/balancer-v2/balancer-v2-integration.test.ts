@@ -9,6 +9,7 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 import { BalancerConfig } from './config';
 import { Tokens } from '../../../tests/constants-e2e';
+import { BalancerPoolTypes } from './types';
 
 const WETH = {
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
@@ -157,7 +158,7 @@ describe('BalancerV2', function () {
           {
             id: BBAUSDT_PoolId,
             address: tokens.BBAUSDT.address,
-            poolType: 'AaveLinear',
+            poolType: BalancerPoolTypes.AaveLinear,
             mainIndex: 1,
             wrappedIndex: 0,
             tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
@@ -250,7 +251,7 @@ describe('BalancerV2', function () {
           {
             id: BBAUSD_PoolId,
             address: BBAUSD.address,
-            poolType: 'StablePhantom',
+            poolType: BalancerPoolTypes.StablePhantom,
             mainIndex: 0,
             wrappedIndex: 0,
             tokens: [

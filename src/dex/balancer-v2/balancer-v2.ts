@@ -107,13 +107,19 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
 
-  eventSupportedPoolTypes = [
-    'Stable',
-    'Weighted',
-    'LiquidityBootstrapping',
-    'Investment',
-    'ComposableStable',
-    'Linear',
+  eventSupportedPoolTypes: BalancerPoolTypes[] = [
+    BalancerPoolTypes.Stable,
+    BalancerPoolTypes.Weighted,
+    BalancerPoolTypes.LiquidityBootstrapping,
+    BalancerPoolTypes.Investment,
+    BalancerPoolTypes.ComposableStable,
+
+    // Added all these pools to event base since I believe all math is already implemented
+    BalancerPoolTypes.Linear,
+    BalancerPoolTypes.MetaStable,
+    BalancerPoolTypes.AaveLinear,
+    BalancerPoolTypes.StablePhantom,
+    BalancerPoolTypes.ERC4626Linear,
   ];
 
   eventRemovedPools = (
