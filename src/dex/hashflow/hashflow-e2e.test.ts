@@ -140,10 +140,10 @@ describe('Hashflow E2E', () => {
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = 'USDC';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '100000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -155,7 +155,5 @@ describe('Hashflow E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // TODO: Add any additional test cases required to test Hashflow
   });
 });
