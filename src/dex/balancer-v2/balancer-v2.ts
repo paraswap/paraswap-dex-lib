@@ -314,41 +314,53 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   getPricesPool(
     from: Token,
     to: Token,
-    pool: SubgraphPoolBase,
+    subgraphPool: SubgraphPoolBase,
     poolState: PoolState,
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
   ): { unit: bigint; prices: bigint[] } | null {
-    if (!this.isSupportedPool(pool.poolType)) {
-      this.logger.error(`Unsupported Pool Type: ${pool.poolType}`);
+    if (!this.isSupportedPool(subgraphPool.poolType)) {
+      this.logger.error(`Unsupported Pool Type: ${subgraphPool.poolType}`);
       return null;
     }
 
     const _amounts = [unitVolume, ...amounts.slice(1)];
+    const pool = this.pools[subgraphPool.poolType];
 
-    const poolPairData = this.pools[pool.poolType].parsePoolPairData(
-      pool,
+    const poolPairData = pool.parsePoolPairData(
+      subgraphPool,
       poolState,
       from.address,
       to.address,
     );
 
-    if (
-      !this.pools[pool.poolType].checkBalance(
-        amounts,
-        unitVolume,
-        side,
-        poolPairData as any,
-      )
-    )
-      return null;
-
-    const _prices = this.pools[pool.poolType].onSell(
-      _amounts,
+    const swapMaxAmount = pool.getSwapMaxAmount(
+      // Don't like this but don't have time to refactor it properly
       poolPairData as any,
+      side,
     );
-    return { unit: _prices[0], prices: [0n, ..._prices.slice(1)] };
+
+    const _prices = pool.onSell(_amounts, poolPairData as any);
+
+    // Check if smallest amount is tradeable
+    if (_prices[1] === 0n) {
+      return null;
+    }
+    const prices: bigint[] = new Array(_prices.length - 1).fill(0n);
+    for (const [i, output] of prices.slice(1).entries()) {
+      const checkedOutput = pool._nullifyIfMaxAmountExceeded(
+        output,
+        swapMaxAmount,
+      );
+      if (checkedOutput === 0n) {
+        // Stop earlier because other values are bigger and for sure wont' be tradable
+        break;
+      }
+      prices[i] = checkedOutput;
+    }
+
+    return { unit: _prices[0], prices };
   }
 
   async getOnChainState(

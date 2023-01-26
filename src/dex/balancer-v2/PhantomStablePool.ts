@@ -426,23 +426,17 @@ export class PhantomStablePool extends BasePool {
   /*
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
+  getSwapMaxAmount(
     poolPairData: PhantomStablePoolPairData,
-  ): boolean {
-    const swapMax =
+    side: SwapSide,
+  ): bigint {
+    return (
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
         99n) /
-      100n;
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
+      100n
+    );
   }
 }

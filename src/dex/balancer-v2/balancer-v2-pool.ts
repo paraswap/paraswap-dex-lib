@@ -8,6 +8,7 @@ import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 import { BI_POWS } from '../../bigint-constants';
+import { assert } from 'ts-essentials';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
@@ -31,6 +32,10 @@ export class BasePool {
 
   _downscaleDown(amount: bigint, scalingFactor: bigint): bigint {
     return MathSol.divDownFixed(amount, scalingFactor);
+  }
+
+  _nullifyIfMaxAmountExceeded(amountToTrade: bigint, swapMax: bigint): bigint {
+    return swapMax > amountToTrade ? 0n : amountToTrade;
   }
 }
 
@@ -525,24 +530,15 @@ export class StablePool extends BaseGeneralPool {
   /*
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
-    poolPairData: StablePoolPairData,
-  ): boolean {
-    const swapMax =
+  getSwapMaxAmount(poolPairData: StablePoolPairData, side: SwapSide): bigint {
+    return (
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
         99n) /
-      100n;
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
+      100n
+    );
   }
 }
 
@@ -733,22 +729,13 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
   /*
   For weighted pools there is a Swap limit of 30%: amounts swapped may not be larger than this percentage of total balance.
   */
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
-    poolPairData: WeightedPoolPairData,
-  ): boolean {
-    const swapMax =
+  getSwapMaxAmount(poolPairData: WeightedPoolPairData, side: SwapSide): bigint {
+    return (
       ((side === SwapSide.SELL
         ? poolPairData.tokenInBalance
         : poolPairData.tokenOutBalance) *
         3n) /
-      10n;
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
+      10n
+    );
   }
 }
