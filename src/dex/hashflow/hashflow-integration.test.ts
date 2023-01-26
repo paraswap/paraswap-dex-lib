@@ -29,67 +29,6 @@ import { Tokens } from '../../../tests/constants-e2e';
   (This comment should be removed from the final implementation)
 */
 
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
-  amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
-) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
-  }));
-}
-
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
-
-async function checkOnChainPricing(
-  hashflow: Hashflow,
-  funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-  amounts: bigint[],
-) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from hashflow.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await hashflow.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
-  );
-
-  expect(prices).toEqual(expectedPrices);
-}
-
 async function testPricingOnNetwork(
   hashflow: Hashflow,
   network: Network,
@@ -99,7 +38,6 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
-  funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
 
@@ -135,15 +73,6 @@ async function testPricingOnNetwork(
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
-
-  // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    hashflow,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
 }
 
 describe('Hashflow', function () {
@@ -159,8 +88,8 @@ describe('Hashflow', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDT';
+    const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
@@ -205,7 +134,6 @@ describe('Hashflow', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
       );
     });
 
@@ -219,7 +147,6 @@ describe('Hashflow', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
       );
     });
 

@@ -139,10 +139,10 @@ describe('Hashflow E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
+    const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'tokenBSymbol';
 
-    const tokenAAmount: string = 'tokenAAmount';
+    const tokenAAmount: string = 'USDC';
     const tokenBAmount: string = 'tokenBAmount';
     const nativeTokenAmount = '1000000000000000000';
 
