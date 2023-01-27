@@ -115,11 +115,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.ComposableStable,
 
     // Added all these pools to event base since I believe all math is already implemented
-    // BalancerPoolTypes.Linear,
-    // BalancerPoolTypes.MetaStable,
-    // BalancerPoolTypes.AaveLinear,
+    BalancerPoolTypes.Linear,
+    BalancerPoolTypes.MetaStable,
+    BalancerPoolTypes.AaveLinear,
+    BalancerPoolTypes.ERC4626Linear,
+    // If this pool is enabled, it is failing BeetsFi: can not decode getRate()
     // BalancerPoolTypes.StablePhantom,
-    // BalancerPoolTypes.ERC4626Linear,
   ];
 
   eventRemovedPools = (
