@@ -1,26 +1,8 @@
 [
   {
-    "aSymbol": "aOptAAVE",
-    "aAddress": "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375",
-    "address": "0x76fb31fb4af56892a25e32cfc43de717950c9278",
-    "decimals": 18
-  },
-  {
     "aSymbol": "aOptDAI",
     "aAddress": "0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE",
     "address": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-    "decimals": 18
-  },
-  {
-    "aSymbol": "aOptUSDT",
-    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
-    "address": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
-    "decimals": 6
-  },
-  {
-    "aSymbol": "aOptLINK",
-    "aAddress": "0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530",
-    "address": "0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6",
     "decimals": 18
   },
   {
@@ -34,6 +16,24 @@
     "aAddress": "0x625E7708f30cA75bfd92586e17077590C60eb4cD",
     "address": "0x7f5c764cbc14f9669b88837ca1490cca17c31607",
     "decimals": 6
+  },
+  {
+    "aSymbol": "aOptUSDT",
+    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
+    "address": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "aOptAAVE",
+    "aAddress": "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375",
+    "address": "0x76fb31fb4af56892a25e32cfc43de717950c9278",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aOptLINK",
+    "aAddress": "0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530",
+    "address": "0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6",
+    "decimals": 18
   },
   {
     "aSymbol": "aOptWBTC",
