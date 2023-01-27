@@ -487,9 +487,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
-      srcAmount,
+      quoteData.baseTokenAmount,
       destToken,
-      destAmount,
+      quoteData.quoteTokenAmount,
       swapData,
       this.routerAddress,
     );
