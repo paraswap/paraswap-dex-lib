@@ -115,11 +115,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.ComposableStable,
 
     // Added all these pools to event base since I believe all math is already implemented
-    BalancerPoolTypes.Linear,
-    BalancerPoolTypes.MetaStable,
-    BalancerPoolTypes.AaveLinear,
-    BalancerPoolTypes.StablePhantom,
-    BalancerPoolTypes.ERC4626Linear,
+    // BalancerPoolTypes.Linear,
+    // BalancerPoolTypes.MetaStable,
+    // BalancerPoolTypes.AaveLinear,
+    // BalancerPoolTypes.StablePhantom,
+    // BalancerPoolTypes.ERC4626Linear,
   ];
 
   eventRemovedPools = (
