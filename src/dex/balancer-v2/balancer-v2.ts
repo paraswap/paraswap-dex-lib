@@ -114,12 +114,17 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.Investment,
     BalancerPoolTypes.ComposableStable,
 
-    // Added all these pools to event base since I believe all math is already implemented
+    // Added all these pools to event base since all math is already implemented
     BalancerPoolTypes.Linear,
-    BalancerPoolTypes.MetaStable,
-    BalancerPoolTypes.AaveLinear,
-    BalancerPoolTypes.StablePhantom,
-    BalancerPoolTypes.ERC4626Linear,
+    // I turned off this pools as I don't understand if they have bad impact or not. Need to investigate one by one if events are
+    // working on them
+
+    // BalancerPoolTypes.MetaStable,
+    // BalancerPoolTypes.AaveLinear,
+    // BalancerPoolTypes.ERC4626Linear,
+
+    // If this pool is enabled as event supported, it is failing BeetsFi: can not decode getRate()
+    // BalancerPoolTypes.StablePhantom,
   ];
 
   eventRemovedPools = (

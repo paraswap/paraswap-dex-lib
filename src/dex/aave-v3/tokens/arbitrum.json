@@ -6,28 +6,16 @@
     "decimals": 18
   },
   {
-    "aSymbol": "aArbLINK",
-    "aAddress": "0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530",
-    "address": "0xf97f4df75117a78c1a5a0dbb814af92458539fb4",
-    "decimals": 18
+    "aSymbol": "aArbEURS",
+    "aAddress": "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97",
+    "address": "0xd22a58f79e9481d1a88e00c343885a588b34b68b",
+    "decimals": 2
   },
   {
     "aSymbol": "aArbUSDC",
     "aAddress": "0x625E7708f30cA75bfd92586e17077590C60eb4cD",
     "address": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
     "decimals": 6
-  },
-  {
-    "aSymbol": "aArbWBTC",
-    "aAddress": "0x078f358208685046a11C85e8ad32895DED33A249",
-    "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
-    "decimals": 8
-  },
-  {
-    "aSymbol": "aArbWETH",
-    "aAddress": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8",
-    "address": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-    "decimals": 18
   },
   {
     "aSymbol": "aArbUSDT",
@@ -42,9 +30,21 @@
     "decimals": 18
   },
   {
-    "aSymbol": "aArbEURS",
-    "aAddress": "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97",
-    "address": "0xd22a58f79e9481d1a88e00c343885a588b34b68b",
-    "decimals": 2
+    "aSymbol": "aArbLINK",
+    "aAddress": "0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530",
+    "address": "0xf97f4df75117a78c1a5a0dbb814af92458539fb4",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aArbWBTC",
+    "aAddress": "0x078f358208685046a11C85e8ad32895DED33A249",
+    "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+    "decimals": 8
+  },
+  {
+    "aSymbol": "aArbWETH",
+    "aAddress": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8",
+    "address": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "decimals": 18
   }
 ]

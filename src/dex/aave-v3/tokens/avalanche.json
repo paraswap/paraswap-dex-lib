@@ -1,50 +1,74 @@
 [
   {
-    "aSymbol": "aWETH",
-    "aAddress": "0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8",
-    "address": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
-    "decimals": 18
-  },
-  {
-    "aSymbol": "aDAI",
+    "aSymbol": "aAvaDAI",
     "aAddress": "0x82e64f49ed5ec1bc6e43dad4fc8af9bb3a2312ee",
     "address": "0xd586e7f844cea2f87f50152665bcbc2c279d8d70",
     "decimals": 18
   },
   {
-    "aSymbol": "aLINK",
-    "aAddress": "0x191c10aa4af7c30e871e70c95db0e4eb77237530",
-    "address": "0x5947bb275c521040051d82396192181b413227a3",
+    "aSymbol": "aAvaFRAX",
+    "aAddress": "0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA",
+    "address": "0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64",
     "decimals": 18
   },
   {
-    "aSymbol": "aUSDT",
-    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
-    "address": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
-    "decimals": 6
+    "aSymbol": "aAvaMAI",
+    "aAddress": "0x8Eb270e296023E9D92081fdF967dDd7878724424",
+    "address": "0x5c49b268c9841AFF1Cc3B0a418ff5c3442eE3F3b",
+    "decimals": 18
   },
   {
-    "aSymbol": "aUSDC",
+    "aSymbol": "aAvaUSDC",
     "aAddress": "0x625e7708f30ca75bfd92586e17077590c60eb4cd",
     "address": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
     "decimals": 6
   },
   {
-    "aSymbol": "aAAVE",
+    "aSymbol": "aAvaUSDT",
+    "aAddress": "0x6ab707aca953edaefbc4fd23ba73294241490620",
+    "address": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
+    "decimals": 6
+  },
+  {
+    "aSymbol": "aAvaAAVE",
     "aAddress": "0xf329e36c7bf6e5e86ce2150875a84ce77f477375",
     "address": "0x63a72806098bd3d9520cc43356dd78afe5d386d9",
     "decimals": 18
   },
   {
-    "aSymbol": "aWBTC",
+    "aSymbol": "aAvaBTC.b",
+    "aAddress": "0x8ffDf2DE812095b1D19CB146E4c004587C0A0692",
+    "address": "0x152b9d0FdC40C096757F570A51E494bd4b943E50",
+    "decimals": 8
+  },
+  {
+    "aSymbol": "aAvaLINK",
+    "aAddress": "0x191c10aa4af7c30e871e70c95db0e4eb77237530",
+    "address": "0x5947bb275c521040051d82396192181b413227a3",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aAvaSAVAX",
+    "aAddress": "0x513c7E3a9c69cA3e22550eF58AC1C0088e918FFf",
+    "address": "0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aAvaWAVAX",
+    "aAddress": "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97",
+    "address": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    "decimals": 18
+  },
+  {
+    "aSymbol": "aAvaWBTC",
     "aAddress": "0x078f358208685046a11c85e8ad32895ded33a249",
     "address": "0x50b7545627a5162f82a992c33b87adc75187b218",
     "decimals": 8
   },
   {
-    "aSymbol": "aWAVAX",
-    "aAddress": "0x6d80113e533a2c0fe82eabd35f1875dcea89ea97",
-    "address": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+    "aSymbol": "aAvaWETH",
+    "aAddress": "0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8",
+    "address": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
     "decimals": 18
   }
 ]
