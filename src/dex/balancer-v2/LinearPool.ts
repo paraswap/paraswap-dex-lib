@@ -3,14 +3,10 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { isSameAddress, decodeThrowError } from './utils';
 import * as LinearMath from './LinearMath';
 import { BasePool } from './balancer-v2-pool';
-import {
-  callData,
-  SubgraphPoolBase,
-  PoolState,
-  TokenState,
-  PoolBase,
-} from './types';
+import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
+import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { SwapSide } from '../../constants';
+import { keyBy } from 'lodash';
 
 export enum PairTypes {
   BptToMainToken,
@@ -34,7 +30,6 @@ type LinearPoolPairData = {
   mainIndex: number;
   lowerTarget: bigint;
   upperTarget: bigint;
-  gasCost: number;
 };
 
 /*
@@ -45,26 +40,21 @@ Provider joins/exits a pool, the pool mints/burns pool tokens as needed. This is
 In pools that use Phantom BPT, however, all pool tokens are minted at the time of pool creation and are held by the pool itself.
 With Phantom BPT, Liquidity Providers use a swap (or more likely a batchSwap) to trade to or from a pool token to join or exit, respectively.
 */
-export class LinearPool extends BasePool implements PoolBase {
+export class LinearPool extends BasePool {
   // This is the maximum token amount the Vault can hold. In regular operation, the total BPT supply remains constant
   // and equal to _INITIAL_BPT_SUPPLY, but most of it remains in the Pool, waiting to be exchanged for tokens. The
   // actual amount of BPT in circulation is the total supply minus the amount held by the Pool, and is known as the
   // 'virtual supply'.
   MAX_TOKEN_BALANCE = BigNumber.from('2').pow('112').sub('1');
-  gasCost = 100000;
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
 
-  constructor(
-    vaultAddress: string,
-    vaultInterface: Interface,
-    poolInterface: Interface,
-  ) {
+  constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = poolInterface;
+    this.poolInterface = new Interface(LinearPoolABI);
   }
 
   /*
@@ -298,11 +288,10 @@ export class LinearPool extends BasePool implements PoolBase {
     */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolStates: { [address: string]: PoolState },
+    poolState: PoolState,
     tokenIn: string,
     tokenOut: string,
   ): LinearPoolPairData {
-    const poolState = poolStates[pool.address];
     let indexIn = 0,
       indexOut = 0,
       bptIndex = 0;
@@ -333,7 +322,6 @@ export class LinearPool extends BasePool implements PoolBase {
       mainIndex: poolState.mainIndex || 0,
       lowerTarget: poolState.lowerTarget || 0n,
       upperTarget: poolState.upperTarget || 0n,
-      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -357,6 +345,11 @@ export class LinearPool extends BasePool implements PoolBase {
     poolCallData.push({
       target: pool.address,
       callData: this.poolInterface.encodeFunctionData('getScalingFactors'),
+    });
+    //getScalingFactors does not include the rate for the phantom bpt, need to fetch it separately
+    poolCallData.push({
+      target: pool.address,
+      callData: this.poolInterface.encodeFunctionData('getRate'),
     });
     // returns lowerTarget, upperTarget
     poolCallData.push({
@@ -396,6 +389,12 @@ export class LinearPool extends BasePool implements PoolBase {
       data[startIndex++],
       pool.address,
     )[0];
+    const rate = decodeThrowError(
+      this.poolInterface,
+      'getRate',
+      data[startIndex++],
+      pool.address,
+    )[0];
     const [lowerTarget, upperTarget] = decodeThrowError(
       this.poolInterface,
       'getTargets',
@@ -407,6 +406,15 @@ export class LinearPool extends BasePool implements PoolBase {
       t => t.address.toLowerCase() === pool.address.toLowerCase(),
     );
 
+    const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
+      address: address.toLowerCase(),
+      balance: BigInt(poolTokens.balances[idx].toString()),
+      scalingFactor:
+        idx === bptIndex
+          ? BigInt(rate.toString())
+          : BigInt(scalingFactors[idx].toString()),
+    }));
+
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
       mainIndex: Number(pool.mainIndex),
@@ -414,21 +422,7 @@ export class LinearPool extends BasePool implements PoolBase {
       bptIndex,
       lowerTarget: BigInt(lowerTarget.toString()),
       upperTarget: BigInt(upperTarget.toString()),
-      tokens: poolTokens.tokens.reduce(
-        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
-          const tokenState: TokenState = {
-            balance: BigInt(poolTokens.balances[j].toString()),
-          };
-
-          if (scalingFactors)
-            tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
-
-          ptAcc[pt.toLowerCase()] = tokenState;
-          return ptAcc;
-        },
-        {},
-      ),
-      gasCost: this.gasCost,
+      tokens: keyBy(tokens, 'address'),
     };
 
     pools[pool.address] = poolState;
@@ -440,25 +434,14 @@ export class LinearPool extends BasePool implements PoolBase {
   Swapping to BPT allows for a very large amount as pre-minted.
   Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
-  swapLimit(balanceOut: bigint, scalingFactorOut: bigint): bigint {
-    const swapMax = (this._upscale(balanceOut, scalingFactorOut) * 99n) / 100n;
-    return swapMax;
-  }
-
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
-    poolPairData: LinearPoolPairData,
-  ): boolean {
-    const swapMax = this.swapLimit(
-      poolPairData.balances[poolPairData.indexOut],
-      poolPairData.scalingFactors[poolPairData.indexOut],
+  getSwapMaxAmount(poolPairData: LinearPoolPairData, side: SwapSide): bigint {
+    return (
+      (this._upscale(
+        poolPairData.balances[poolPairData.indexOut],
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      ) *
+        99n) /
+      100n
     );
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
   }
 }

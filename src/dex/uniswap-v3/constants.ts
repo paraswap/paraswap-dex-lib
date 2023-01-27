@@ -12,7 +12,7 @@ export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 128;
 export const UNISWAPV3_SUBGRAPH_URL =
   'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
 
-export const UNISWAPV3_EFFICIENCY_FACTOR = 5;
+export const UNISWAPV3_EFFICIENCY_FACTOR = 3;
 
 export const ZERO_TICK_INFO = {
   liquidityGross: 0n,

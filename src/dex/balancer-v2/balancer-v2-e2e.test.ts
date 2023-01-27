@@ -60,7 +60,21 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
-      it('MAIN TOKEN -> BPT, LinearPool', async () => {
+      it('USDC -> USDT ComposableStable', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['USDT'],
+          holders['USDC'],
+          '10000001000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
+      /*it('MAIN TOKEN -> BPT, LinearPool', async () => {
         // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
         await testE2E(
           tokens['USDT'],
@@ -86,7 +100,7 @@ describe('BalancerV2 E2E', () => {
           network,
           provider,
         );
-      });
+      });*/
       // NO HOLDERS OF waUSDT (ONLY VAULT)
       // it('WRAPPED TOKEN -> BPT, LinearPool', async () => {
       //   // Linear Pools allow swaps between wrapped token (i.e. waUSDT) and pools BPT
@@ -145,8 +159,10 @@ describe('BalancerV2 E2E', () => {
       //     provider,
       //   );
       // });
-      it('BPT -> TOKEN, PhantomStablePool', async () => {
-        // PhamtomStable allows swaps between BPT and tokens
+
+      //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
+      /*it('BPT -> TOKEN, PhantomStablePool', async () => {
+        // PhantomStable allows swaps between BPT and tokens
         await testE2E(
           tokens['BBAUSD'],
           tokens['BBADAI'],
@@ -171,27 +187,7 @@ describe('BalancerV2 E2E', () => {
           network,
           provider,
         );
-      });
-      it('DAI -> USDC, Virtual Boosted Pool', async () => {
-        await testE2E(
-          tokens['DAI'],
-          tokens['USDC'],
-          holders['DAI'],
-          '200000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-          [
-            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
-            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
-            'BalancerV2_0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
-            'BalancerV2_0x804cdb9116a10bb78768d3252355a1b18067bf8f',
-            'BalancerV2_0x9210f1204b5a24742eba12f710636d76240df3d0',
-          ],
-        );
-      });
+      });*/
 
       it('wstETH -> ETH, MetaStable Pool', async () => {
         await testE2E(
@@ -248,6 +244,9 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+
+      //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
+      /*
       it('MAIN TOKEN -> BPT, LinearPool', async () => {
         // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
         await testE2E(
@@ -276,7 +275,7 @@ describe('BalancerV2 E2E', () => {
         );
       });
       it('BPT -> TOKEN, PhantomStablePool', async () => {
-        // PhamtomStable allows swaps between BPT and tokens
+        // PhantomStable allows swaps between BPT and tokens
         await testE2E(
           tokens['BBAUSD'],
           tokens['BBAUSDT'],
@@ -302,27 +301,7 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
-
-      it('DAI -> USDC, Virtual Boosted Pool', async () => {
-        await testE2E(
-          tokens['DAI'],
-          tokens['USDC'],
-          holders['DAI'],
-          '200000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-          [
-            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
-            'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
-            'BalancerV2_0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
-            'BalancerV2_0x804cdb9116a10bb78768d3252355a1b18067bf8f',
-            'BalancerV2_0x9210f1204b5a24742eba12f710636d76240df3d0',
-          ],
-        );
-      });
+      */
     });
 
     //BUY is not currently supported for BalancerV2
@@ -568,6 +547,10 @@ describe('BalancerV2 E2E', () => {
       generateConfig(network).privateHttpProvider,
       network,
     );
+    const BBAUSD_OP = '0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd';
+    const BBAUSDMAI_OP = '0x1f131ec1175f023ee1534b16fa8ab237c00e2381';
+    const LIDO_SHUFFLE = '0xde45f101250f2ca1c0f8adfc172576d10c12072d';
+    const YELLOW_SUBMARINE = '0x981fb05b738e981ac532a99e77170ecb4bc27aef';
 
     describe('Simpleswap', () => {
       it('ETH -> TOKEN', async () => {
@@ -607,6 +590,132 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
+        );
+      });
+      it('USDC -> DAI using bbaUSD', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['DAI'],
+          holders['USDC'],
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${BBAUSD_OP}`],
+        );
+      });
+      it('DAI -> USDT using bbaUSD', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['USDT'],
+          holders['DAI'],
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${BBAUSD_OP}`],
+        );
+      });
+      it('USDC -> MAI through bbaUSD-MAI', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['MAI'],
+          holders['USDC'],
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${BBAUSDMAI_OP}`],
+        );
+      });
+      it('wstETH -> WETH through composable stable', async () => {
+        await testE2E(
+          tokens['wstETH'],
+          tokens['WETH'],
+          holders['wstETH'],
+          '10000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${LIDO_SHUFFLE}`],
+        );
+      });
+      it('wstETH -> ETH through composable stable', async () => {
+        await testE2E(
+          tokens['wstETH'],
+          tokens['ETH'],
+          holders['wstETH'],
+          '10000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${LIDO_SHUFFLE}`],
+        );
+      });
+      it('ETH -> wstETH through composable stable', async () => {
+        await testE2E(
+          tokens['ETH'],
+          tokens['wstETH'],
+          holders['ETH'],
+          '10000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${LIDO_SHUFFLE}`],
+        );
+      });
+      it('wstETH -> WBTC through boosted weighted', async () => {
+        await testE2E(
+          tokens['wstETH'],
+          tokens['WBTC'],
+          holders['wstETH'],
+          '25000000000000000', //1e18
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${YELLOW_SUBMARINE}`],
+        );
+      });
+      it('USDC -> WBTC through boosted weighted', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['WBTC'],
+          holders['USDC'],
+          '1000000', //1e6
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${YELLOW_SUBMARINE}`],
+        );
+      });
+      it('wstETH -> USDC  through boosted weighted', async () => {
+        await testE2E(
+          tokens['wstETH'],
+          tokens['USDC'],
+          holders['wstETH'],
+          '1000000000000000000', //1e18
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+          [`${dexKey}_${YELLOW_SUBMARINE}`],
         );
       });
     });
@@ -649,6 +758,34 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.multiSwap,
           network,
           provider,
+        );
+      });
+      it('USDC -> DAI using bbaUSD', async () => {
+        await testE2E(
+          tokens['USDC'],
+          tokens['DAI'],
+          holders['USDC'],
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+          [`${dexKey}_${BBAUSD_OP}`],
+        );
+      });
+      it('wstETH -> USDC  through boosted weighted', async () => {
+        await testE2E(
+          tokens['wstETH'],
+          tokens['USDC'],
+          holders['wstETH'],
+          '1000000000000000000', //1e18
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+          [`${dexKey}_${YELLOW_SUBMARINE}`],
         );
       });
     });

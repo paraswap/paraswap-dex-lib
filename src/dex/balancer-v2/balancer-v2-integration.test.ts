@@ -1,24 +1,24 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { BalancerV2 } from './balancer-v2';
+import { BalancerV2, BalancerV2EventPool } from './balancer-v2';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
+import { BalancerConfig } from './config';
+import { Tokens } from '../../../tests/constants-e2e';
+import { BalancerPoolTypes } from './types';
 
 const WETH = {
-  address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-  decimals: 18,
-};
-const DAI = {
-  address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+  address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
   decimals: 18,
 };
 
-const USDC = {
-  address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-  decimals: 6,
+const DAI = {
+  address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+  decimals: 18,
 };
 
 const BBADAI = {
@@ -30,12 +30,14 @@ const BBAUSD = {
   address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
   decimals: 18,
 };
+const BBAUSD_PoolId =
+  '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe';
+const BBAUSDT_PoolId =
+  '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c0000000000000000000000fd';
 
 const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = 'BalancerV2';
-
-jest.setTimeout(50 * 1000);
 
 describe('BalancerV2', function () {
   describe('Weighted', () => {
@@ -65,9 +67,9 @@ describe('BalancerV2', function () {
         pools,
       );
       console.log('WETH <> DAI Pool Prices: ', poolPrices);
+
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-      expect(poolPrices?.[0].gasCost).toBe(150000); // TO DO
 
       await balancerV2.releaseResources();
     });
@@ -94,7 +96,9 @@ describe('BalancerV2', function () {
 
       await balancerV2.initializePricing(blocknumber);
 
-      const pools = await balancerV2.getPoolIdentifiers(
+      //daniel: pricing for BPT swaps has been removed for the time being
+      //focus on main tokens swaps
+      /*const pools = await balancerV2.getPoolIdentifiers(
         DAI,
         BBADAI,
         SwapSide.SELL,
@@ -115,8 +119,7 @@ describe('BalancerV2', function () {
       console.log('DAI <> BBADAI Pool Prices: ', poolPrices);
 
       expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-      expect(poolPrices?.[0].gasCost).toBe(100000); // TO DO
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);*/
 
       await balancerV2.releaseResources();
     });
@@ -133,6 +136,44 @@ describe('BalancerV2', function () {
 
       checkPoolsLiquidity(poolLiquidity, BBADAI.address, dexKey);
     });
+
+    it('applies getRate to phantom bpt scaling factor', async function () {
+      const config = BalancerConfig[dexKey][Network.MAINNET];
+      const dexHelper = new DummyDexHelper(Network.MAINNET);
+      const tokens = Tokens[Network.MAINNET];
+      const logger = dexHelper.getLogger(dexKey);
+      const blocknumber = 15731000;
+
+      const balancerPools = new BalancerV2EventPool(
+        dexKey,
+        Network.MAINNET,
+        config.vaultAddress,
+        config.subgraphURL,
+        dexHelper,
+        logger,
+      );
+
+      const state = await balancerPools.getOnChainState(
+        [
+          {
+            id: BBAUSDT_PoolId,
+            address: tokens.BBAUSDT.address,
+            poolType: BalancerPoolTypes.AaveLinear,
+            mainIndex: 1,
+            wrappedIndex: 0,
+            tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
+            mainTokens: [],
+          },
+        ],
+        blocknumber,
+      );
+
+      expect(
+        state[tokens.BBAUSDT.address].tokens[
+          tokens.BBAUSDT.address
+        ].scalingFactor!.toString(),
+      ).toBe('1015472217207213567');
+    });
   });
 
   describe('PhantomStable', () => {
@@ -147,7 +188,9 @@ describe('BalancerV2', function () {
     //   const dexHelper = new DummyDexHelper(Network.MAINNET);
     //   const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+
     //   await balancerV2.initializePricing(blocknumber);
+
     //   const pools = await balancerV2.getPoolIdentifiers(
     //     BBAUSD,
     //     BBADAI,
@@ -155,7 +198,9 @@ describe('BalancerV2', function () {
     //     blocknumber,
     //   );
     //   console.log('BBAUSD <> BBADAI Pool Identifiers: ', pools);
+
     //   expect(pools.length).toBeGreaterThan(0);
+
     //   const poolPrices = await balancerV2.getPricesVolume(
     //     BBAUSD,
     //     BBADAI,
@@ -165,103 +210,65 @@ describe('BalancerV2', function () {
     //     pools,
     //   );
     //   console.log('BBAUSD <> BBADAI Pool Prices: ', poolPrices);
+
     //   expect(poolPrices).not.toBeNull();
     //   checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
     //   await balancerV2.releaseResources();
     // });
-    // it('getTopPoolsForToken', async function () {
-    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
-    //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
-    //   const poolLiquidity = await balancerV2.getTopPoolsForToken(
-    //     BBAUSD.address,
-    //     10,
-    //   );
-    //   console.log('BBAUSD Top Pools:', poolLiquidity);
-    //   checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
-    // });
-  });
-
-  describe('VirtualBoosted Pools', () => {
-    it('getPoolIdentifiers and getPricesVolume', async function () {
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const blocknumber = await dexHelper.provider.getBlockNumber();
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
-
-      await balancerV2.initializePricing(blocknumber);
-
-      const pools = await balancerV2.getPoolIdentifiers(
-        DAI,
-        USDC,
-        SwapSide.SELL,
-        blocknumber,
-      );
-      console.log('DAI <> USDC Pool Ideintifiers: ', pools);
-
-      expect(pools.length).toBeGreaterThan(0);
-      // VirtualBoosted pool should return identifiers for all the internal pools
-      // for bbausd this is 3 Linear pools and the PhantomStable linking them
-      expect(pools).toContain(
-        'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2virtualboosted',
-      );
-      expect(pools).toContain(
-        'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2', // PhantomStable
-      );
-      expect(pools).toContain(
-        'BalancerV2_0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c', // bUSDT (Linear)
-      );
-      expect(pools).toContain(
-        'BalancerV2_0x804cdb9116a10bb78768d3252355a1b18067bf8f', // bDAI (Linear)
-      );
-      expect(pools).toContain(
-        'BalancerV2_0x9210f1204b5a24742eba12f710636d76240df3d0', // bUSDC (Linear)
-      );
-
-      const poolPrices = await balancerV2.getPricesVolume(
-        DAI,
-        USDC,
-        amounts,
-        SwapSide.SELL,
-        blocknumber,
-        pools,
-      );
-      console.log('DAI <> USDC Pool Prices: ', poolPrices);
-
-      expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-      const virtualPoolIdentifier = poolPrices?.find(
-        p =>
-          p.poolIdentifier!.toLowerCase() ===
-          'BalancerV2_0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted'.toLowerCase(),
-      );
-      expect(virtualPoolIdentifier).not.toBeUndefined();
-      expect(virtualPoolIdentifier?.poolAddresses).toEqual([
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
-        '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c',
-        '0x804cdb9116a10bb78768d3252355a1b18067bf8f',
-        '0x9210f1204b5a24742eba12f710636d76240df3d0',
-      ]);
-      expect(virtualPoolIdentifier?.data.poolId).toEqual(
-        '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fevirtualboosted',
-      );
-      expect(virtualPoolIdentifier?.gasCost).toBe(100000 * 2 + 130000); // TO DO 2 * Linear + 1 * Phantom
-    });
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
-        DAI.address,
+        BBAUSD.address,
         10,
       );
-      console.log('DAI Top Pools:', poolLiquidity);
+      console.log('BBAUSD Top Pools:', poolLiquidity);
 
-      const virtualPool = poolLiquidity?.find(
-        p => p.address === '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
+      checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
+    });
+
+    it('applies getRate to phantom bpt scaling factor', async function () {
+      const config = BalancerConfig[dexKey][Network.MAINNET];
+      const dexHelper = new DummyDexHelper(Network.MAINNET);
+      const tokens = Tokens[Network.MAINNET];
+      const logger = dexHelper.getLogger(dexKey);
+      const blocknumber = 15731000;
+
+      const balancerPools = new BalancerV2EventPool(
+        dexKey,
+        Network.MAINNET,
+        config.vaultAddress,
+        config.subgraphURL,
+        dexHelper,
+        logger,
       );
-      expect(virtualPool).not.toBeUndefined();
 
-      checkPoolsLiquidity(poolLiquidity, DAI.address, dexKey);
+      const state = await balancerPools.getOnChainState(
+        [
+          {
+            id: BBAUSD_PoolId,
+            address: BBAUSD.address,
+            poolType: BalancerPoolTypes.StablePhantom,
+            mainIndex: 0,
+            wrappedIndex: 0,
+            tokens: [
+              tokens.BBAUSDT,
+              tokens.BBAUSD,
+              tokens.BBADAI,
+              tokens.BBAUSDC,
+            ],
+            mainTokens: [],
+          },
+        ],
+        blocknumber,
+      );
+
+      expect(
+        state[BBAUSD.address].tokens[BBAUSD.address].scalingFactor!.toString(),
+      ).toBe('1015093119997891367');
     });
   });
 });

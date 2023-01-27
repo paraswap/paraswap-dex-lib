@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
 import {
