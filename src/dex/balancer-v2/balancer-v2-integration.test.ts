@@ -30,6 +30,16 @@ const BBAUSD = {
   address: '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb2',
   decimals: 18,
 };
+
+const MIMATIC = {
+  address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
+  decimals: 18,
+};
+const USDC = {
+  address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+  decimals: 6,
+};
+
 const BBAUSD_PoolId =
   '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe';
 const BBAUSDT_PoolId =
@@ -40,6 +50,40 @@ const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 const dexKey = 'BalancerV2';
 
 describe('BalancerV2', function () {
+  describe('ComposableStable', () => {
+    it('getPoolIdentifiers and getPricesVolume', async () => {
+      const dexHelper = new DummyDexHelper(Network.POLYGON);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const balancerV2 = new BalancerV2(Network.POLYGON, dexKey, dexHelper);
+
+      await balancerV2.initializePricing(blocknumber);
+
+      const pools = await balancerV2.getPoolIdentifiers(
+        MIMATIC,
+        USDC,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log('Pool Identifiers: ', pools);
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await balancerV2.getPricesVolume(
+        MIMATIC,
+        USDC,
+        amounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
+      console.log('Pool Prices: ', poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      await balancerV2.releaseResources();
+    });
+  });
   describe('Weighted', () => {
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);

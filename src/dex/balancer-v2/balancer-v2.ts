@@ -112,10 +112,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.Weighted,
     BalancerPoolTypes.LiquidityBootstrapping,
     BalancerPoolTypes.Investment,
-    BalancerPoolTypes.ComposableStable,
+
+    // BalancerPoolTypes.ComposableStable,
 
     // Added all these pools to event base since all math is already implemented
-    BalancerPoolTypes.Linear,
+    // BalancerPoolTypes.Linear,
     // I turned off this pools as I don't understand if they have bad impact or not. Need to investigate one by one if events are
     // working on them
 
