@@ -5,7 +5,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { AirSwap } from './airswap';
+import { AirSwap } from './airswap_old';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,

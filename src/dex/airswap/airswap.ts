@@ -132,20 +132,18 @@ export class AirSwap extends SimpleExchange implements IDex<AirSwapData> {
         ),
       );
     console.log('getPricesVolume', requests);
-    const responses = await Promise.all(requests);
-    console.log('getPricesVolume responses', responses);
-    const answer = responses.map(response =>
-      this.formatPayload(
-        srcToken,
-        destToken,
-        amounts,
-        side,
-        limitPools[0],
-        response,
-      ),
+    const response = await Promise.race(requests);
+    console.log('getPricesVolume response (only the fastest one)', response);
+    const answer = this.formatPayload(
+      srcToken,
+      destToken,
+      amounts,
+      side,
+      limitPools[0],
+      response,
     );
-    console.log('getPricesVolume answer', responses);
-    return Promise.resolve(answer);
+    console.log('getPricesVolume answer', answer);
+    return Promise.resolve([answer]);
   }
 
   private formatPayload(

@@ -31,6 +31,7 @@ export enum Network {
   MAINNET = 1,
   ROPSTEN = 3,
   RINKEBY = 4,
+  GOERLI = 5,
   BSC = 56,
   POLYGON = 137,
   AVALANCHE = 43114,
