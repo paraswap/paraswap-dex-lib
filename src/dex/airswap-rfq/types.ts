@@ -17,17 +17,16 @@ export type PairsResponse = {
   pairs: PairMap;
 };
 
-export type TokenWithInfo = Token & {
-  name: string;
-  description: string;
+export type PricingResponse = PairPriceResponse & {
+  baseToken: string;
+  quoteToken: string;
+  minimum: string;
 };
 
 export type TokensResponse = {
-  tokens: Record<string, TokenWithInfo>;
-};
-
-export type BlackListResponse = {
-  blacklist: string[];
+  wallet: string;
+  chainId: number;
+  pricing: PricingResponse[];
 };
 
 export type PriceAndAmount = [string, string];
@@ -35,18 +34,12 @@ export type PriceAndAmount = [string, string];
 export type PriceAndAmountBigNumber = [BigNumber, BigNumber];
 
 export type PairPriceResponse = {
-  bids?: PriceAndAmount[];
-  asks?: PriceAndAmount[];
+  bid?: PriceAndAmount[];
+  ask?: PriceAndAmount[];
 };
 
 export type RatesResponse = {
   prices: { [pair: string]: PairPriceResponse };
-};
-
-export type RFQSecret = {
-  domain: string;
-  accessKey: string;
-  secretKey: string;
 };
 
 export type FetcherParams = {
@@ -60,16 +53,14 @@ export type Rates = Array<[string, string]>;
 export type BigNumberRate = [BigNumber, BigNumber];
 export type BigNumberRates = Array<BigNumberRate>;
 
-type RequestConfigWithAuth = RequestConfig & {
-  secret?: RFQSecret;
-};
+type RequestConfigWithAuth = RequestConfig;
 
 export type RFQConfig = {
   tokensConfig: FetcherParams;
-  pairsConfig: FetcherParams;
-  rateConfig: FetcherParams;
-  firmRateConfig: RequestConfigWithAuth;
-  blacklistConfig?: FetcherParams;
+  // pairsConfig: FetcherParams;
+  // rateConfig: FetcherParams;
+  // firmRateConfig: RequestConfigWithAuth;
+  // blacklistConfig?: FetcherParams;
   maker: Address;
   pathToRemove?: string;
 };

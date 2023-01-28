@@ -17,29 +17,13 @@ export class ValidationError extends Error {
 }
 
 export const tokenValidator = joi.object({
-  symbol: joi.string().min(1).required(),
-  name: joi.string().min(1).required(),
-  address: joi.string().min(1).required(),
-  description: joi.string(),
-  decimals: joi.number().min(1).required(),
-  type: joi
-    .string()
-    .valid(...tokensType)
-    .required(),
+  wallet: joi.string().required(),
+  chainId: joi.number().required(),
+  pricing: joi.array().required(),
 });
 
 export const tokensResponseValidator = joi.object({
   tokens: joi.object().pattern(joi.string().min(1), tokenValidator),
-});
-
-export const pairValidator = joi.object({
-  base: joi.string().min(1).required(),
-  quote: joi.string().min(1).required(),
-  liquidityUSD: joi.number().min(0).required(),
-});
-
-export const pairsResponseValidator = joi.object({
-  pairs: joi.object().pattern(joi.string(), pairValidator),
 });
 
 const stringNumberValidator = (

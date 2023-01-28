@@ -8,7 +8,6 @@ import Fetcher from '../../lib/fetcher/fetcher';
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
 import {
-  BlackListResponse,
   PairMap,
   PairsResponse,
   PriceAndAmount,
@@ -17,17 +16,15 @@ import {
   RFQConfig,
   RFQFirmRateResponse,
   RFQPayload,
-  RFQSecret,
   TokensResponse,
-  TokenWithInfo,
 } from './types';
 import { checkOrder } from './utils';
 import {
   blacklistResponseValidator,
   firmRateResponseValidator,
-  pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
+  tokenValidator,
   validateAndCast,
 } from './validators';
 import { airswapRFQAuthHttp } from './security';
@@ -42,21 +39,12 @@ export const reversePrice = (price: PriceAndAmountBigNumber) =>
 
 export class RateFetcher {
   private tokensFetcher: Fetcher<TokensResponse>;
-  private pairsFetcher: Fetcher<PairsResponse>;
-  private rateFetcher: Fetcher<RatesResponse>;
-  private blackListFetcher?: Fetcher<BlackListResponse>;
 
-  private tokens: Record<string, TokenWithInfo> = {};
-  private addressToTokenMap: Record<string, TokenWithInfo> = {};
+  private tokens: Record<string, any> = {};
+  private addressToTokenMap: Record<string, any> = {};
   private pairs: PairMap = {};
 
   private firmRateAuth?: (options: RequestConfig) => void;
-
-  // public blackListCacheKey: string;
-
-  // private authHttp: (
-  //   secet: RFQSecret,
-  // ) => (options: RequestConfig) => RequestConfig;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -64,108 +52,53 @@ export class RateFetcher {
     private dexKey: string,
     private logger: Logger,
   ) {
-    // this.authHttp = airswapRFQAuthHttp(config.pathToRemove);
     this.tokensFetcher = new Fetcher<TokensResponse>(
       dexHelper.httpRequest,
       {
         info: {
           requestOptions: config.tokensConfig.reqParams,
           caster: (data: unknown) => {
-            return validateAndCast<TokensResponse>(
-              data,
-              tokensResponseValidator,
-            );
+            return validateAndCast<TokensResponse>(data, tokenValidator);
           },
-          // authenticate: this.authHttp(config.tokensConfig.secret),
         },
         handler: this.handleTokensResponse.bind(this),
       },
       config.tokensConfig.intervalMs,
       this.logger,
     );
-
-    this.pairsFetcher = new Fetcher<PairsResponse>(
-      dexHelper.httpRequest,
-      {
-        info: {
-          requestOptions: config.pairsConfig.reqParams,
-          caster: (data: unknown) => {
-            return validateAndCast<PairsResponse>(data, pairsResponseValidator);
-          },
-          // authenticate: this.authHttp(config.pairsConfig.secret),
-        },
-        handler: this.handlePairsResponse.bind(this),
-      },
-      config.pairsConfig.intervalMs,
-      this.logger,
-    );
-
-    this.rateFetcher = new Fetcher<RatesResponse>(
-      dexHelper.httpRequest,
-      {
-        info: {
-          requestOptions: config.rateConfig.reqParams,
-          caster: (data: unknown) => {
-            return validateAndCast<RatesResponse>(data, pricesResponse);
-          },
-          // authenticate: this.authHttp(config.rateConfig.secret),
-        },
-        handler: this.handleRatesResponse.bind(this),
-      },
-      config.rateConfig.intervalMs,
-      logger,
-    );
-
-    // if (config.blacklistConfig) {
-    //   this.blackListFetcher = new Fetcher<BlackListResponse>(
-    //     dexHelper.httpRequest,
-    //     {
-    //       info: {
-    //         requestOptions: config.blacklistConfig.reqParams,
-    //         caster: (data: unknown) => {
-    //           return validateAndCast<BlackListResponse>(
-    //             data,
-    //             blacklistResponseValidator,
-    //           );
-    //         },
-    //         // authenticate: this.authHttp(config.rateConfig.secret),
-    //       },
-    //       handler: this.handleBlackListResponse.bind(this),
-    //     },
-    //     config.blacklistConfig.intervalMs,
-    //     logger,
-    //   );
-    // }
-
-    // this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
-    // if (this.config.firmRateConfig.secret) {
-    //   this.firmRateAuth = this.authHttp(this.config.firmRateConfig.secret);
-    // }
   }
 
   start() {
     this.tokensFetcher.startPolling();
-    this.pairsFetcher.startPolling();
-    if (this.blackListFetcher) {
-      this.blackListFetcher.startPolling();
-    }
   }
 
   stop() {
     this.tokensFetcher.stopPolling();
-    this.pairsFetcher.stopPolling();
-    this.rateFetcher.stopPolling();
-
-    if (this.blackListFetcher) {
-      this.blackListFetcher.stopPolling();
-    }
   }
 
   private handleTokensResponse(data: TokensResponse) {
-    for (const tokenName of Object.keys(data.tokens)) {
-      const token = data.tokens[tokenName];
-      token.address = token.address.toLowerCase();
-      this.tokens[tokenName] = token;
+    for (const pricing of data.pricing) {
+      // token.address = token.address.toLowerCase();
+      this.tokens[pricing.baseToken] = pricing;
+      if (pricing.bid?.length) {
+        this.dexHelper.cache.setex(
+          this.dexKey,
+          this.dexHelper.config.data.network,
+          `${pricing.baseToken}_${pricing.quoteToken}_bids`,
+          200, //this.config.rateConfig.dataTTLS,
+          JSON.stringify(pricing.bid),
+        );
+      }
+
+      if (pricing.ask?.length) {
+        this.dexHelper.cache.setex(
+          this.dexKey,
+          this.dexHelper.config.data.network,
+          `${pricing.baseToken}_${pricing.quoteToken}_asks`,
+          200, //this.config.rateConfig.dataTTLS,
+          JSON.stringify(pricing.ask),
+        );
+      }
     }
 
     this.addressToTokenMap = Object.keys(this.tokens).reduce((acc, key) => {
@@ -173,118 +106,44 @@ export class RateFetcher {
       if (!obj) {
         return acc;
       }
-      acc[obj.address.toLowerCase()] = obj;
+      acc[obj.baseToken.toLowerCase()] = obj;
       return acc;
-    }, {} as Record<string, TokenWithInfo>);
-  }
-
-  private handlePairsResponse(resp: PairsResponse) {
-    this.pairs = {};
-
-    if (this.rateFetcher.isPolling()) {
-      this.rateFetcher.stopPolling();
-    }
-
-    const pairs: PairMap = {};
-    for (const pairName of Object.keys(resp.pairs)) {
-      pairs[pairName] = resp.pairs[pairName];
-    }
-
-    this.pairs = pairs;
-    this.rateFetcher.startPolling();
-  }
-
-  // private handleBlackListResponse(resp: BlackListResponse) {
-  //   for (const address of resp.blacklist) {
-  //     this.dexHelper.cache.sadd(this.blackListCacheKey, address.toLowerCase());
-  //   }
-  // }
-
-  // public isBlackListed(userAddress: string) {
-  //   return this.dexHelper.cache.sismember(
-  //     this.blackListCacheKey,
-  //     userAddress.toLowerCase(),
-  //   );
-  // }
-
-  private handleRatesResponse(resp: RatesResponse) {
-    const pairs = this.pairs;
-    Object.keys(resp.prices).forEach(pairName => {
-      const pair = pairs[pairName];
-      if (!pair) {
-        return;
-      }
-      const prices = resp.prices[pairName];
-
-      if (!prices.asks || !prices.bids) {
-        return;
-      }
-
-      const baseToken = this.tokens[pair.base];
-      const quoteToken = this.tokens[pair.quote];
-
-      if (!baseToken || !quoteToken) {
-        this.logger.warn(`missing base or quote token`);
-        return;
-      }
-
-      if (prices.bids.length) {
-        this.dexHelper.cache.setex(
-          this.dexKey,
-          this.dexHelper.config.data.network,
-          `${baseToken.address}_${quoteToken.address}_bids`,
-          this.config.rateConfig.dataTTLS,
-          JSON.stringify(prices.bids),
-        );
-      }
-
-      if (prices.asks.length) {
-        this.dexHelper.cache.setex(
-          this.dexKey,
-          this.dexHelper.config.data.network,
-          `${baseToken.address}_${quoteToken.address}_asks`,
-          this.config.rateConfig.dataTTLS,
-          JSON.stringify(prices.asks),
-        );
-      }
-    });
+    }, {} as Record<string, any>);
   }
 
   checkHealth(): boolean {
-    return [this.tokensFetcher, this.rateFetcher].some(
-      f => f.lastFetchSucceeded,
-    );
+    return [this.tokensFetcher, {} as any].some(f => f.lastFetchSucceeded);
   }
 
-  public getPairsLiquidity(tokenAddress: string) {
-    const token = this.addressToTokenMap[tokenAddress];
+  // public getPairsLiquidity(tokenAddress: string) {
+  //   const token = this.addressToTokenMap[tokenAddress];
 
-    const pairNames = Object.keys(this.pairs);
-    const pairs = Object.values(this.pairs);
+  //   const pairNames = Object.keys(this.pairs);
+  //   const pairs = Object.values(this.pairs);
 
-    return pairs
-      .filter((p, index) => pairNames[index].includes(token.symbol!))
-      .map(p => {
-        const baseToken = this.tokens[p.base];
-        const quoteToken = this.tokens[p.quote];
-        let connectorToken: Token | undefined;
-        if (baseToken.address !== tokenAddress) {
-          connectorToken = {
-            address: baseToken.address,
-            decimals: baseToken.decimals,
-          };
-        } else {
-          connectorToken = {
-            address: quoteToken.address,
-            decimals: quoteToken.decimals,
-          };
-        }
-        return {
-          connectorTokens: [connectorToken],
-          liquidityUSD: p.liquidityUSD,
-        };
-      });
-  }
+  //   return pairs
+  //     .filter((p, index) => pairNames[index].includes(token.symbol!))
+  //     .map(p => {
+  //       const baseToken = this.tokens[p.base];
+  //       const quoteToken = this.tokens[p.quote];
+  //       let connectorToken: Token | undefined;
+  //       if (baseToken.address !== tokenAddress) {
+  //         connectorToken = {
+  //           address: baseToken.address,
+  //           decimals: baseToken.decimals,
+  //         };
+  //       } else {
+  //         connectorToken = {
+  //           address: quoteToken.address,
+  //           decimals: quoteToken.decimals,
+  //         };
+  //       }
+  //       return {
+  //         connectorTokens: [connectorToken],
+  //         liquidityUSD: p.liquidityUSD,
+  //       };
+  //     });
+  // }
 
   public async getOrderPrice(
     srcToken: Token,
@@ -292,7 +151,7 @@ export class RateFetcher {
     side: SwapSide,
   ): Promise<PriceAndAmountBigNumber[] | null> {
     let reversed = false;
-
+    await this.tokensFetcher.fetch(true);
     let pricesAsString: string | null = null;
     if (side === SwapSide.SELL) {
       pricesAsString = await this.dexHelper.cache.get(
@@ -374,13 +233,11 @@ export class RateFetcher {
     try {
       let payload = {
         data: _payload,
-        ...this.config.firmRateConfig,
         timeout: GET_FIRM_RATE_TIMEOUT_MS,
       };
 
       if (this.firmRateAuth) {
         this.firmRateAuth(payload);
-        delete payload.secret;
       }
 
       const { data } = await this.dexHelper.httpRequest.request<unknown>(

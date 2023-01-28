@@ -13,7 +13,6 @@ import express from 'express';
 import {
   RFQPayload,
   PairPriceResponse,
-  TokenWithInfo,
   TokensResponse,
   PairsResponse,
   RatesResponse,

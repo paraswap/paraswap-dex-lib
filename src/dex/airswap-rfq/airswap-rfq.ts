@@ -262,21 +262,21 @@ export class AirswapRFQ extends ParaSwapLimitOrders {
     ];
   }
 
-  async getTopPoolsForToken(
-    tokenAddress: string,
-    limit: number,
-  ): Promise<PoolLiquidity[]> {
-    const pairs = this.rateFetcher.getPairsLiquidity(
-      tokenAddress.toLowerCase(),
-    );
+  // async getTopPoolsForToken(
+  //   tokenAddress: string,
+  //   limit: number,
+  // ): Promise<PoolLiquidity[]> {
+  //   const pairs = this.rateFetcher.getPairsLiquidity(
+  //     tokenAddress.toLowerCase(),
+  //   );
 
-    return pairs.map(pair => ({
-      exchange: this.dexKey,
-      address: this.config.maker,
-      connectorTokens: pair.connectorTokens,
-      liquidityUSD: pair.liquidityUSD,
-    }));
-  }
+  //   return pairs.map(pair => ({
+  //     exchange: this.dexKey,
+  //     address: this.config.maker,
+  //     connectorTokens: pair.connectorTokens,
+  //     liquidityUSD: pair.liquidityUSD,
+  //   }));
+  // }
 
   // async isBlacklisted(userAddress: string): Promise<boolean> {
   //   return this.rateFetcher.isBlackListed(userAddress);

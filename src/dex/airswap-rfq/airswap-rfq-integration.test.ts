@@ -51,61 +51,8 @@ const config: RFQConfig = {
       url: `http://localhost:${PORT_TEST_SERVER}`,
       method: 'GET',
     },
-    // secret: {
-    // domain: 'paraswap-test',
-    // accessKey: 'access',
-    // secretKey: 'secret',
-    // },
     intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
     dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
-  },
-  pairsConfig: {
-    reqParams: {
-      url: `http://localhost:${PORT_TEST_SERVER}`,
-      method: 'GET',
-    },
-    // secret: {
-    // domain: 'paraswap-test',
-    // accessKey: 'access',
-    // secretKey: 'secret',
-    // },
-    intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-    dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
-  },
-  rateConfig: {
-    reqParams: {
-      url: `http://localhost:${PORT_TEST_SERVER}`,
-      method: 'GET',
-    },
-    // secret: {
-    // domain: 'paraswap-test',
-    // accessKey: 'access',
-    // secretKey: 'secret',
-    // },
-    intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-    dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
-  },
-  firmRateConfig: {
-    url: `http://localhost:${PORT_TEST_SERVER}`,
-    method: 'GET',
-    secret: {
-      domain: 'paraswap-test',
-      accessKey: 'access',
-      secretKey: 'secret',
-    },
-  },
-  blacklistConfig: {
-    reqParams: {
-      url: `http://localhost:${PORT_TEST_SERVER}`,
-      method: 'GET',
-    },
-    // secret: {
-    // domain: 'paraswap-test',
-    // accessKey: 'access',
-    // secretKey: 'secret',
-    // },
-    intervalMs: 1000 * 60 * 60 * 10, // every 10 minute
-    dataTTLS: 1000 * 60 * 60 * 10, // ttl 10 minute
   },
 };
 
@@ -190,24 +137,6 @@ describe('AirswapRFQ', function () {
     console.log('WETH Top Pools:', poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
-  });
-
-  it('blacklist', async () => {
-    const dexHelper = new DummyDexHelper(network);
-    const airswapRfq = new AirswapRFQ(network, dexKey, dexHelper, config);
-
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    airswapRfq.initializePricing(blocknumber);
-    await sleep(5000);
-
-    let isBlacklisted = await airswapRfq.isBlacklisted(
-      '0x6dac5CAc7bbCCe4DB3c1Cc5c8FE39DcDdE52A36F',
-    );
-    expect(isBlacklisted).toBe(true);
-    isBlacklisted = await airswapRfq.isBlacklisted(
-      '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
-    );
-    expect(isBlacklisted).toBe(false);
   });
 
   afterAll(() => {
