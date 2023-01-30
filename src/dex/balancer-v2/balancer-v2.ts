@@ -25,6 +25,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
+import { Gyro2Pool } from './Gyro2Pool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
@@ -103,7 +104,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   pools: {
-    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
+    [type: string]:
+      | WeightedPool
+      | StablePool
+      | LinearPool
+      | PhantomStablePool
+      | Gyro2Pool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
@@ -170,6 +176,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       true,
     );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
+    const gyro2Pool = new Gyro2Pool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
@@ -184,6 +191,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
     this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
+    this.pools[BalancerPoolTypes.Gyro2] = gyro2Pool;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
