@@ -11,7 +11,7 @@ export enum BalancerPoolTypes {
   StablePhantom = 'StablePhantom',
   ERC4626Linear = 'ERC4626Linear',
   Linear = 'Linear',
-  ComposableStable = 'ComposableStable',
+  // ComposableStable = 'ComposableStable',
 }
 
 export type TokenState = {
