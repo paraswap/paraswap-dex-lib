@@ -454,6 +454,19 @@ describe('BalancerV2 E2E', () => {
     );
 
     describe('Simpleswap', () => {
+      it('FTM -> BOO', async () => {
+        await testE2E(
+          tokens['FTM'],
+          tokens['BOO'],
+          holders['FTM'],
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
       it('FTM -> TOKEN', async () => {
         await testE2E(
           tokens['FTM'],
