@@ -58,7 +58,7 @@ const fetchAllPools = `query ($count: Int) {
     first: $count
     orderBy: totalLiquidity
     orderDirection: desc
-    where: {totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}, totalShares_not_in: ["0", "0.000000000001"], id_not_in: ["0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable"]}
+    where: {totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}, totalShares_not_in: ["0", "0.000000000001"], id_not_in: ["0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable", "Gyro2"]}
   ) {
     id
     address
@@ -69,6 +69,8 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
+    sqrtAlpha
+    sqrtBeta
   }
 }`;
 // skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.
@@ -125,6 +127,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     // If this pool is enabled as event supported, it is failing BeetsFi: can not decode getRate()
     // BalancerPoolTypes.StablePhantom,
+    BalancerPoolTypes.Gyro2,
   ];
 
   eventRemovedPools = (
