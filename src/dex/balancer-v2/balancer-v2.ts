@@ -162,11 +162,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     The difference of note for swaps is ComposableStable must use 'actualSupply' instead of VirtualSupply.
     VirtualSupply could be calculated easily whereas actualSupply cannot hence the use of onchain call.
     */
-    const composableStable = new PhantomStablePool(
-      this.vaultAddress,
-      this.vaultInterface,
-      true,
-    );
+    // const composableStable = new PhantomStablePool(
+    //   this.vaultAddress,
+    //   this.vaultInterface,
+    //   true,
+    // );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
@@ -181,7 +181,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Beets uses "Linear" generically for all linear pool types
     this.pools[BalancerPoolTypes.Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
-    this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
+    // this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
