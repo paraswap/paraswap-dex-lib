@@ -61,6 +61,8 @@ export class Gyro2Pool extends BasePool {
         ),
       );
     });
+    const sqrtAlpha = safeParseFixed(pool.sqrtAlpha, 18);
+    const sqrtBeta = safeParseFixed(pool.sqrtBeta, 18);
 
     const poolPairData: Gyro2PoolPairData = {
       balances,
@@ -68,8 +70,18 @@ export class Gyro2Pool extends BasePool {
       indexOut,
       scalingFactors,
       swapFee: poolState.swapFee,
-      sqrtAlpha: safeParseFixed(pool.sqrtAlpha, 18),
-      sqrtBeta: safeParseFixed(pool.sqrtBeta, 18),
+      sqrtAlpha:
+        indexIn === 0
+          ? sqrtAlpha
+          : BigNumber.from(
+              MathSol.divDownFixed(MathSol.ONE, sqrtAlpha.toBigInt()),
+            ),
+      sqrtBeta:
+        indexIn === 0
+          ? sqrtBeta
+          : BigNumber.from(
+              MathSol.divDownFixed(MathSol.ONE, sqrtBeta.toBigInt()),
+            ),
     };
     return poolPairData;
   }

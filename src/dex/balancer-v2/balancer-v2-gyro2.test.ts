@@ -91,7 +91,7 @@ describe('BalancerV2', () => {
             .balance,
         ).toBe(BigInt('18724583701712070442033'));
       });
-      it('parsePoolPairData -  All values should be normalised to 18 decimals', async function () {
+      it('parsePoolPairData, indexIn === 0, return sqrtAlpha/sqrtBeta', async function () {
         const tokenIn = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'; // USDC
         const tokenOut = '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'; // DAI
         const pairData = gyro2Pool.parsePoolPairData(
@@ -105,6 +105,25 @@ describe('BalancerV2', () => {
         expect(pairData.swapFee).toBe(BigInt('200000000000000'));
         expect(pairData.sqrtAlpha.toString()).toBe('997496867163000167');
         expect(pairData.sqrtBeta.toString()).toBe('1002496882788171068');
+        expect(pairData.balances).toStrictEqual([
+          BigNumber.from('18681901532000000000000'),
+          BigNumber.from('18724583701712070442033'),
+        ]);
+      });
+      it('parsePoolPairData, indexIn !== 0, return 1/sqrtAlpha/sqrtBeta', async function () {
+        const tokenIn = '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'; // DAI
+        const tokenOut = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'; // USDC
+        const pairData = gyro2Pool.parsePoolPairData(
+          gyro2PoolSg,
+          gyro2PoolState,
+          tokenIn,
+          tokenOut,
+        );
+        expect(pairData.indexIn).toBe(1);
+        expect(pairData.indexOut).toBe(0);
+        expect(pairData.swapFee).toBe(BigInt('200000000000000'));
+        expect(pairData.sqrtAlpha.toString()).toBe('1002509414234171021');
+        expect(pairData.sqrtBeta.toString()).toBe('997509336107632902');
         expect(pairData.balances).toStrictEqual([
           BigNumber.from('18681901532000000000000'),
           BigNumber.from('18724583701712070442033'),
