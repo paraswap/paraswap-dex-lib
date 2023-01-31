@@ -825,7 +825,7 @@ export const Holders: {
     aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
     FRAX: '0x4423ac71f53ca92e2f2be5917a9c2468e7412f4a',
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
-    WETH: '0x2400bb4d7221ba530daee061d5afe219e9223eae',
+    WETH: '0x4ad64fd7ca6d6150614179b9bce4094bc18f29cb',
     SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
     wBOMB: '0x28aa4f9ffe21365473b64c161b566c3cdead0108',
     TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',

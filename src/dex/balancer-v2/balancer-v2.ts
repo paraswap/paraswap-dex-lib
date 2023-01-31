@@ -113,13 +113,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.LiquidityBootstrapping,
     BalancerPoolTypes.Investment,
 
+    // Need to check if we can support these pools with event base
     // BalancerPoolTypes.ComposableStable,
-
-    // Added all these pools to event base since all math is already implemented
     // BalancerPoolTypes.Linear,
-    // I turned off this pools as I don't understand if they have bad impact or not. Need to investigate one by one if events are
-    // working on them
-
     // BalancerPoolTypes.MetaStable,
     // BalancerPoolTypes.AaveLinear,
     // BalancerPoolTypes.ERC4626Linear,
@@ -649,6 +645,10 @@ export class BalancerV2
     try {
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
+
+      if (_from.address === _to.address) {
+        return null;
+      }
 
       const allPools = this.getPoolsWithTokenPair(_from, _to);
       const allowedPools = limitPools

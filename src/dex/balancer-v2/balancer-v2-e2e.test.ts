@@ -467,6 +467,19 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });
+      it('WETH -> FTM', async () => {
+        await testE2E(
+          tokens['WETH'],
+          tokens['FTM'],
+          holders['WETH'],
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
       it('FTM -> TOKEN', async () => {
         await testE2E(
           tokens['FTM'],
