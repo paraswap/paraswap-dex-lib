@@ -5,6 +5,7 @@ dotenv.config();
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 
+import { Tokens } from '../../../tests/constants-e2e';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BalancerV2EventPool } from './balancer-v2';
@@ -19,6 +20,7 @@ const network = Network.POLYGON;
 const config = BalancerConfig[dexKey][network];
 const vaultInterface = new Interface(VaultABI);
 const gyro2Pool = new Gyro2Pool(config.vaultAddress, vaultInterface);
+const tokens = Tokens[network];
 
 describe('BalancerV2', () => {
   describe('Gyro2 Pool', () => {
@@ -82,18 +84,16 @@ describe('BalancerV2', () => {
         );
         gyro2PoolState = state[gyro2PoolSg.address];
         expect(gyro2PoolState.swapFee).toBe(BigInt('200000000000000'));
+        expect(gyro2PoolState.tokens[tokens.USDC.address].balance).toBe(
+          BigInt('18681901532'),
+        );
         expect(
-          gyro2PoolState.tokens['0x2791bca1f2de4661ed88a30c99a7a9449aa84174']
-            .balance,
-        ).toBe(BigInt('18681901532'));
-        expect(
-          gyro2PoolState.tokens['0x8f3cf7ad23cd3cadbd9735aff958023239c6a063']
-            .balance,
+          gyro2PoolState.tokens[tokens.DAI.address.toLowerCase()].balance,
         ).toBe(BigInt('18724583701712070442033'));
       });
       it('parsePoolPairData, indexIn === 0, return sqrtAlpha/sqrtBeta', async function () {
-        const tokenIn = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'; // USDC
-        const tokenOut = '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'; // DAI
+        const tokenIn = tokens.USDC.address;
+        const tokenOut = tokens.DAI.address;
         const pairData = gyro2Pool.parsePoolPairData(
           gyro2PoolSg,
           gyro2PoolState,
@@ -111,8 +111,8 @@ describe('BalancerV2', () => {
         ]);
       });
       it('parsePoolPairData, indexIn !== 0, return 1/sqrtAlpha/sqrtBeta', async function () {
-        const tokenIn = '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'; // DAI
-        const tokenOut = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'; // USDC
+        const tokenIn = tokens.DAI.address;
+        const tokenOut = tokens.USDC.address;
         const pairData = gyro2Pool.parsePoolPairData(
           gyro2PoolSg,
           gyro2PoolState,
