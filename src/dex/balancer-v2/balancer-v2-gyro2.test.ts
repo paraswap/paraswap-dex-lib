@@ -5,7 +5,7 @@ dotenv.config();
 import { Interface } from '@ethersproject/abi';
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { BalancerV2EventPool } from './balancer-v2';
 import { BalancerConfig } from './config';
 import { Tokens } from '../../../tests/constants-e2e';
@@ -15,8 +15,9 @@ import {
   SubgraphMainToken,
   SubgraphPoolBase,
 } from './types';
-import { Gyro2Pool } from './Gyro2Pool';
+import { Gyro2Pool, Gyro2PoolPairData } from './Gyro2Pool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import { BigNumber } from 'ethers';
 
 const dexKey = 'BalancerV2';
 const network = Network.POLYGON;
@@ -26,6 +27,7 @@ const dexHelper = new DummyDexHelper(network);
 const tokens = Tokens[network];
 const logger = dexHelper.getLogger(dexKey);
 const blocknumber = 38708647;
+const vaultInterface = new Interface(VaultABI);
 
 const balancerPools = new BalancerV2EventPool(
   dexKey,
@@ -38,8 +40,8 @@ const balancerPools = new BalancerV2EventPool(
 
 const gyro2PoolId =
   '0xdac42eeb17758daa38caf9a3540c808247527ae3000200000000000000000a2b';
-const tokenIn = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174';
-const tokenOut = '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063';
+const tokenIn = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'; // USDC
+const tokenOut = '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'; // DAI
 let gyro2PoolSg: SubgraphPoolBase;
 let gyro2PoolState: PoolState;
 
@@ -64,6 +66,21 @@ describe('BalancerV2', function () {
       const sqrtBeta = parseFloat(gyro2PoolSg.sqrtBeta);
       expect(sqrtAlpha > 0).toBe(true);
       expect(sqrtBeta > 0).toBe(true);
+      /*
+        Setting to hard values as Subgraph will change over time
+        {
+        balances: [ 18681901532000000000000n, 18724583701712070442033n ],
+        indexIn: 0,
+        indexOut: 1,
+        scalingFactors: [ 1000000000000000000000000000000n, 1000000000000000000n ],
+        swapFee: 200000000000000n,
+        sqrtAlpha: 997496867163000167n,
+        sqrtBeta: 1002496882788171068n
+        }
+      */
+      gyro2PoolSg = { ...gyro2PoolSg };
+      gyro2PoolSg.sqrtAlpha = '0.997496867163000167';
+      gyro2PoolSg.sqrtBeta = '1.002496882788171068';
     });
     it('getOnChainState', async function () {
       const state = await balancerPools.getOnChainState(
@@ -80,11 +97,7 @@ describe('BalancerV2', function () {
       );
     });
     it('parsePoolPairData -  All values should be normalised to 18 decimals', async function () {
-      const vaultInterface = new Interface(VaultABI);
       const gyro2Pool = new Gyro2Pool(config.vaultAddress, vaultInterface);
-      // Setting to hard values as Subgraph will change over time
-      gyro2PoolSg.sqrtAlpha = '1';
-      gyro2PoolSg.sqrtBeta = '2';
       const pairData = gyro2Pool.parsePoolPairData(
         gyro2PoolSg,
         gyro2PoolState,
@@ -94,12 +107,39 @@ describe('BalancerV2', function () {
       expect(pairData.indexIn).toBe(0);
       expect(pairData.indexOut).toBe(1);
       expect(pairData.swapFee).toBe(BigInt('200000000000000'));
-      expect(pairData.sqrtAlpha).toBe(BigInt('1000000000000000000'));
-      expect(pairData.sqrtBeta).toBe(BigInt('2000000000000000000'));
+      expect(pairData.sqrtAlpha.toString()).toBe('997496867163000167');
+      expect(pairData.sqrtBeta.toString()).toBe('1002496882788171068');
       expect(pairData.balances).toStrictEqual([
-        BigInt('18681901532000000000000'),
-        BigInt('18724583701712070442033'),
+        BigNumber.from('18681901532000000000000'),
+        BigNumber.from('18724583701712070442033'),
       ]);
+    });
+    it('getSwapMaxAmount', async function () {
+      // Same as ExactIn
+      const gyro2Pool = new Gyro2Pool(config.vaultAddress, vaultInterface);
+      // Values taken from SOR tests
+      const pairData: Gyro2PoolPairData = {
+        balances: [
+          BigNumber.from('1000000000000000000000'),
+          BigNumber.from('1232000000000000000000'),
+        ],
+        indexIn: 0,
+        indexOut: 1,
+        swapFee: BigInt('9000000000000000'),
+        sqrtAlpha: BigNumber.from('999500374750171757'),
+        sqrtBeta: BigNumber.from('1000500375350272092'),
+        scalingFactors: [
+          BigInt('1000000000000000000000000000000'),
+          BigInt('1000000000000000000'),
+        ],
+      };
+      const swapMaxAmount = gyro2Pool.getSwapMaxAmount(pairData, SwapSide.SELL);
+      expect(swapMaxAmount).toBe(BigInt('1243743957825171017110'));
+      const swapMaxAmountSecond = gyro2Pool.getSwapMaxAmount(
+        pairData,
+        SwapSide.BUY,
+      );
+      expect(swapMaxAmountSecond).toBe(BigInt('1231998768'));
     });
   });
 });
