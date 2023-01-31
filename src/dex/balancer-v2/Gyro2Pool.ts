@@ -77,34 +77,6 @@ export class Gyro2Pool extends BasePool {
   getSwapMaxAmount(poolPairData: Gyro2PoolPairData, side: SwapSide): bigint {
     if (side === SwapSide.SELL) {
       // Same as ExactIn
-      const ONE = BigInt('1000000000000000000');
-      const invariant = Gyro2Maths._calculateInvariant(
-        poolPairData.balances,
-        poolPairData.sqrtAlpha,
-        poolPairData.sqrtBeta,
-      );
-      // x+ = L * (1/sqrtAlpha - 1/sqrtBeta)
-      const maxAmountInAssetInPool = MathSol.mulDownFixed(
-        invariant.toBigInt(),
-        MathSol.divDownFixed(ONE, poolPairData.sqrtAlpha.toBigInt()) -
-          MathSol.divDownFixed(ONE, poolPairData.sqrtBeta.toBigInt()),
-      );
-      const limitAmountIn =
-        maxAmountInAssetInPool -
-        poolPairData.balances[poolPairData.indexIn].toBigInt();
-      const limitAmountInPlusSwapFee = MathSol.divDownFixed(
-        limitAmountIn,
-        ONE - poolPairData.swapFee,
-      );
-      const withLimitFactor = MathSol.mulDownFixed(
-        limitAmountInPlusSwapFee,
-        SWAP_LIMIT_FACTOR,
-      );
-      return this._downscaleDown(
-        withLimitFactor,
-        poolPairData.scalingFactors[poolPairData.indexOut],
-      );
-    } else {
       return this._downscaleDown(
         MathSol.mulDownFixed(
           poolPairData.balances[poolPairData.indexOut].toBigInt(),
@@ -112,6 +84,9 @@ export class Gyro2Pool extends BasePool {
         ),
         poolPairData.scalingFactors[poolPairData.indexIn],
       );
+    } else {
+      // Not currently supported
+      return BigInt(0);
     }
   }
 
