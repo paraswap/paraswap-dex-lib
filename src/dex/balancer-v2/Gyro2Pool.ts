@@ -177,6 +177,48 @@ export class Gyro2Pool extends BasePool {
   }
 
   onSell(amounts: bigint[], poolPairData: Gyro2PoolPairData): bigint[] {
-    return [];
+    try {
+      const invariant = Gyro2Maths._calculateInvariant(
+        poolPairData.balances,
+        poolPairData.sqrtAlpha,
+        poolPairData.sqrtBeta,
+      );
+      const [virtualParamIn, virtualParamOut] = Gyro2Maths._findVirtualParams(
+        invariant,
+        poolPairData.sqrtAlpha,
+        poolPairData.sqrtBeta,
+      );
+
+      const tokenAmountsInScaled = amounts.map(a =>
+        this._upscale(a, poolPairData.scalingFactors[poolPairData.indexIn]),
+      );
+
+      // Fees are subtracted before scaling, to reduce the complexity of the rounding direction analysis.
+      const tokenAmountsInWithFee = tokenAmountsInScaled.map(a =>
+        this._subtractSwapFeeAmount(a, poolPairData.swapFee),
+      );
+
+      const amountsOut: bigint[] = tokenAmountsInWithFee.map(amount => {
+        try {
+          const amountOut = Gyro2Maths._calcOutGivenIn(
+            poolPairData.balances[poolPairData.indexIn],
+            poolPairData.balances[poolPairData.indexOut],
+            BigNumber.from(amount),
+            virtualParamIn,
+            virtualParamOut,
+          ).toBigInt();
+          return this._downscaleDown(
+            amountOut,
+            poolPairData.scalingFactors[poolPairData.indexOut],
+          );
+        } catch (error) {
+          return BigInt(0);
+        }
+      });
+
+      return amountsOut;
+    } catch (error) {
+      return [];
+    }
   }
 }

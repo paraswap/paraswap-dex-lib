@@ -141,5 +141,53 @@ describe('BalancerV2', function () {
       );
       expect(swapMaxAmountSecond).toBe(BigInt('1231998768'));
     });
+    it('swap - 6decimals>18decimals', async function () {
+      // Same as ExactIn
+      const amountIn = BigInt('13500000');
+      const gyro2Pool = new Gyro2Pool(config.vaultAddress, vaultInterface);
+      // Values taken from SOR tests
+      const pairData: Gyro2PoolPairData = {
+        balances: [
+          BigNumber.from('1000000000000000000000'),
+          BigNumber.from('1232000000000000000000'),
+        ],
+        indexIn: 0,
+        indexOut: 1,
+        swapFee: BigInt('9000000000000000'),
+        sqrtAlpha: BigNumber.from('999500374750171757'),
+        sqrtBeta: BigNumber.from('1000500375350272092'),
+        scalingFactors: [
+          BigInt('1000000000000000000000000000000'),
+          BigInt('1000000000000000000'),
+        ],
+      };
+      const amountOut = gyro2Pool.onSell([amountIn], pairData);
+      expect(amountOut.length).toBe(1);
+      expect(amountOut[0].toString()).toBe('13379816831223414577');
+    });
+    it('swap - 18decimals>6decimals', async function () {
+      // Same as ExactIn
+      const amountIn = BigInt('13500000000000000000');
+      const gyro2Pool = new Gyro2Pool(config.vaultAddress, vaultInterface);
+      // Values taken from SOR tests
+      const pairData: Gyro2PoolPairData = {
+        balances: [
+          BigNumber.from('1000000000000000000000'),
+          BigNumber.from('1232000000000000000000'),
+        ],
+        indexIn: 1,
+        indexOut: 0,
+        swapFee: BigInt('9000000000000000'),
+        sqrtAlpha: BigNumber.from('999499874900000000'),
+        sqrtBeta: BigNumber.from('1000499875000000000'),
+        scalingFactors: [
+          BigInt('1000000000000000000000000000000'),
+          BigInt('1000000000000000000'),
+        ],
+      };
+      const amountOut = gyro2Pool.onSell([amountIn], pairData);
+      expect(amountOut.length).toBe(1);
+      expect(amountOut[0].toString()).toBe('13377022');
+    });
   });
 });
