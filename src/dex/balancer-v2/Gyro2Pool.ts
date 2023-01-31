@@ -2,16 +2,22 @@ import { Interface } from '@ethersproject/abi';
 
 import { BasePool } from './balancer-v2-pool';
 import { SwapSide } from '../../constants';
-import { decodeThrowError } from './utils';
+import {
+  decodeThrowError,
+  getTokenScalingFactor,
+  safeParseFixed,
+} from './utils';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 
+// All values should be normalised to 18 decimals. e.g. 1USDC = 1e18 not 1e6
 type Gyro2PoolPairData = {
   balances: bigint[];
   indexIn: number;
   indexOut: number;
-  scalingFactors: bigint[];
   swapFee: bigint;
-  amp: bigint;
+  sqrtAlpha: bigint;
+  sqrtBeta: bigint;
+  scalingFactors: bigint[];
 };
 
 export class Gyro2Pool extends BasePool {
@@ -33,7 +39,31 @@ export class Gyro2Pool extends BasePool {
     tokenIn: string,
     tokenOut: string,
   ): Gyro2PoolPairData {
-    return {} as Gyro2PoolPairData;
+    // All values should be normalised to 18 decimals. e.g. 1USDC = 1e18 not 1e6
+    let indexIn = 0,
+      indexOut = 0;
+    const scalingFactors: bigint[] = [];
+    const balances = pool.tokens.map((t, i) => {
+      if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
+      if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
+      const scalingFactor = getTokenScalingFactor(t.decimals);
+      scalingFactors.push(scalingFactor);
+      return this._upscale(
+        BigInt(poolState.tokens[t.address.toLowerCase()].balance),
+        scalingFactor,
+      );
+    });
+
+    const poolPairData: Gyro2PoolPairData = {
+      balances,
+      indexIn,
+      indexOut,
+      scalingFactors,
+      swapFee: poolState.swapFee,
+      sqrtAlpha: safeParseFixed(pool.sqrtAlpha, 18).toBigInt(),
+      sqrtBeta: safeParseFixed(pool.sqrtBeta, 18).toBigInt(),
+    };
+    return poolPairData;
   }
 
   getSwapMaxAmount(poolPairData: Gyro2PoolPairData, side: SwapSide): bigint {
