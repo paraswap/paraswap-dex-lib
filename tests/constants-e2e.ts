@@ -117,6 +117,10 @@ export const Tokens: {
       address: '0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd',
       decimals: 18,
     },
+    STG: {
+      address: '0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6',
+      decimals: 18,
+    },
     ADAI: {
       address: '0x028171bca77440897b824ca71d1c56cac55b68a3',
       decimals: 18,
