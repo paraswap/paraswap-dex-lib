@@ -112,13 +112,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.Weighted,
     BalancerPoolTypes.LiquidityBootstrapping,
     BalancerPoolTypes.Investment,
-    BalancerPoolTypes.ComposableStable,
 
-    // Added all these pools to event base since all math is already implemented
-    BalancerPoolTypes.Linear,
-    // I turned off this pools as I don't understand if they have bad impact or not. Need to investigate one by one if events are
-    // working on them
-
+    // Need to check if we can support these pools with event base
+    // BalancerPoolTypes.ComposableStable,
+    // BalancerPoolTypes.Linear,
     // BalancerPoolTypes.MetaStable,
     // BalancerPoolTypes.AaveLinear,
     // BalancerPoolTypes.ERC4626Linear,
@@ -161,11 +158,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     The difference of note for swaps is ComposableStable must use 'actualSupply' instead of VirtualSupply.
     VirtualSupply could be calculated easily whereas actualSupply cannot hence the use of onchain call.
     */
-    const composableStable = new PhantomStablePool(
-      this.vaultAddress,
-      this.vaultInterface,
-      true,
-    );
+    // const composableStable = new PhantomStablePool(
+    //   this.vaultAddress,
+    //   this.vaultInterface,
+    //   true,
+    // );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
@@ -180,7 +177,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Beets uses "Linear" generically for all linear pool types
     this.pools[BalancerPoolTypes.Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
-    this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
+    // this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -648,6 +645,10 @@ export class BalancerV2
     try {
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
+
+      if (_from.address === _to.address) {
+        return null;
+      }
 
       const allPools = this.getPoolsWithTokenPair(_from, _to);
       const allowedPools = limitPools

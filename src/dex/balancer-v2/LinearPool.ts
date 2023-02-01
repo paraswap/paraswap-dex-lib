@@ -409,10 +409,7 @@ export class LinearPool extends BasePool {
     const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
       address: address.toLowerCase(),
       balance: BigInt(poolTokens.balances[idx].toString()),
-      scalingFactor:
-        idx === bptIndex
-          ? BigInt(rate.toString())
-          : BigInt(scalingFactors[idx].toString()),
+      scalingFactor: BigInt(scalingFactors[idx].toString()),
     }));
 
     const poolState: PoolState = {
