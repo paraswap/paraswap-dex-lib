@@ -51,7 +51,11 @@ import {
   poolGetMainTokens,
   poolGetPathForTokenInOut,
 } from './utils';
-import { MIN_USD_LIQUIDITY_TO_FETCH } from './constants';
+import {
+  MIN_USD_LIQUIDITY_TO_FETCH,
+  STABLE_GAS_COST,
+  VARIABLE_GAS_COST_PER_CYCLE,
+} from './constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -760,7 +764,8 @@ export class BalancerV2
             },
             poolAddresses: [poolAddress],
             exchange: this.dexKey,
-            gasCost: 150 * 1000 * (path.length - 1),
+            gasCost:
+              STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
             poolIdentifier: `${this.dexKey}_${poolAddress}`,
           };
 
