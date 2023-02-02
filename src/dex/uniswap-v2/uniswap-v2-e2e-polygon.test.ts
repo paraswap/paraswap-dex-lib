@@ -38,7 +38,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.DAI,
           tokens.MATIC,
           holders.DAI,
-          '700000000000000000000',
+          '100000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1258,6 +1258,7 @@ describe('UniswapV2 E2E Polygon', () => {
         );
       });
     });
+
     describe('multiSwap', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
@@ -1301,6 +1302,7 @@ describe('UniswapV2 E2E Polygon', () => {
         );
       });
     });
+
     describe('megaSwap', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
@@ -1350,10 +1352,10 @@ describe('UniswapV2 E2E Polygon', () => {
     const dexKey = 'Swapsicle';
 
     describe('Simpleswap', () => {
-      it('QuickSwap MATIC -> TOKEN', async () => {
+      it('QuickSwap MATIC -> USDC', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.WETH,
+          tokens.USDC,
           holders.MATIC,
           '100000000000000000',
           SwapSide.SELL,
@@ -1363,12 +1365,13 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('QuickSwap TOKEN -> MATIC', async () => {
+
+      it('QuickSwap USDC -> MATIC', async () => {
         await testE2E(
-          tokens.WETH,
+          tokens.USDC,
           tokens.MATIC,
-          holders.WETH,
-          '70000000000000',
+          holders.USDC,
+          '10000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1376,11 +1379,40 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('QuickSwap TOKEN -> TOKEN', async () => {
+
+      it('QuickSwap MATIC -> DAI', async () => {
         await testE2E(
-          tokens.WETH,
-          tokens.WMATIC,
-          holders.WETH,
+          tokens.MATIC,
+          tokens.DAI,
+          holders.MATIC,
+          '70000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('QuickSwap DAI > MATIC', async () => {
+        await testE2E(
+          tokens.DAI,
+          tokens.MATIC,
+          holders.DAI,
+          '50000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('QuickSwap MATIC -> USDT', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.USDT,
+          holders.MATIC,
           '70000000000000',
           SwapSide.SELL,
           dexKey,
@@ -1389,13 +1421,55 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
+
+      it('QuickSwap USDT -> MATIC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.MATIC,
+          holders.USDT,
+          '1000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('QuickSwap MATIC -> POPS', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.POPS,
+          holders.MATIC,
+          '70000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      // it('QuickSwap POPS -> MATIC', async () => {
+      //   await testE2E(
+      //     tokens.POPS,
+      //     tokens.WMATIC,
+      //     holders.POPS,
+      //     '8000000',
+      //     SwapSide.SELL,
+      //     dexKey,
+      //     ContractMethod.simpleSwap,
+      //     network,
+      //     provider,
+      //   );
+      // });
     });
 
     describe('Multiswap', () => {
-      it('Multiswap MATIC -> TOKEN', async () => {
+      it('Multiswap MATIC -> USDC', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.WETH,
+          tokens.USDC,
           holders.MATIC,
           '100000000000000000',
           SwapSide.SELL,
@@ -1405,11 +1479,26 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('Multiswap TOKEN -> MATIC', async () => {
+
+      it('Multiswap USDC -> MATIC', async () => {
         await testE2E(
-          tokens.WETH,
+          tokens.USDC,
           tokens.MATIC,
-          holders.WETH,
+          holders.USDC,
+          '200',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Multiswap MATIC -> DAI', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.DAI,
+          holders.MATIC,
           '70000000000000',
           SwapSide.SELL,
           dexKey,
@@ -1418,12 +1507,55 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('Multiswap TOKEN -> TOKEN', async () => {
+
+      it('Multiswap DAI -> MATIC', async () => {
         await testE2E(
-          tokens.WETH,
-          tokens.WMATIC,
-          holders.WETH,
+          tokens.DAI,
+          tokens.MATIC,
+          holders.DAI,
           '70000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Multiswap MATIC -> USDT', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.USDT,
+          holders.MATIC,
+          '70000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Multiswap USDT -> MATIC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.MATIC,
+          holders.USDT,
+          '500',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('Multiswap MATIC -> POPS', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.POPS,
+          holders.MATIC,
+          '70000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.multiSwap,
@@ -1434,12 +1566,12 @@ describe('UniswapV2 E2E Polygon', () => {
     });
 
     describe('BuyMethod', () => {
-      it('Multiswap MATIC -> TOKEN', async () => {
+      it('Buy MATIC -> USDC', async () => {
         await testE2E(
           tokens.MATIC,
-          tokens.WETH,
+          tokens.USDC,
           holders.MATIC,
-          '70000000000000',
+          '7000000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.buy,
@@ -1447,12 +1579,13 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('QuickSwap TOKEN -> MATIC', async () => {
+
+      it('Buy USDC -> MATIC', async () => {
         await testE2E(
-          tokens.WETH,
+          tokens.USDC,
           tokens.MATIC,
-          holders.WETH,
-          '100000000000000000',
+          holders.USDC,
+          '150',
           SwapSide.BUY,
           dexKey,
           ContractMethod.buy,
@@ -1460,12 +1593,69 @@ describe('UniswapV2 E2E Polygon', () => {
           provider,
         );
       });
-      it('QuickSwap TOKEN -> TOKEN', async () => {
+
+      it('Buy MATIC -> DAI', async () => {
         await testE2E(
-          tokens.WETH,
-          tokens.WMATIC,
-          holders.WETH,
-          '100000000000000000',
+          tokens.MATIC,
+          tokens.DAI,
+          holders.MATIC,
+          '650000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+
+      it('Buy DAI -> MATIC', async () => {
+        await testE2E(
+          tokens.DAI,
+          tokens.MATIC,
+          holders.DAI,
+          '150',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+
+      it('Buy MATIC -> USDT', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.USDT,
+          holders.MATIC,
+          '150000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+
+      it('Buy USDT -> MATIC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.MATIC,
+          holders.USDT,
+          '250',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+
+      it('Buy MATIC -> POPS', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.POPS,
+          holders.MATIC,
+          '70000',
           SwapSide.BUY,
           dexKey,
           ContractMethod.buy,
