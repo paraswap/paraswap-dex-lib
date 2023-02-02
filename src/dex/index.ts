@@ -38,6 +38,7 @@ import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
+import { Mummy } from './mummy/mummy';
 // import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
@@ -109,6 +110,7 @@ const Dexes = [
   CurveV1Factory,
   SwaapV1,
   WstETH,
+  Mummy
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
