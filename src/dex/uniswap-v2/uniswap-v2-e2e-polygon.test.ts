@@ -2,8 +2,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
@@ -1348,321 +1348,63 @@ describe('UniswapV2 E2E Polygon', () => {
     });
   });
 
-  describe('Swapsicle', () => {
+  describe(`Swapsicle`, () => {
     const dexKey = 'Swapsicle';
 
-    describe('Simpleswap', () => {
-      it('QuickSwap MATIC -> USDC', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.USDC,
-          holders.MATIC,
-          '100000000000000000',
-          SwapSide.SELL,
-          dexKey,
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
           ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('QuickSwap USDC -> MATIC', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.MATIC,
-          holders.USDC,
-          '10000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('QuickSwap MATIC -> DAI', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.DAI,
-          holders.MATIC,
-          '70000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('QuickSwap DAI > MATIC', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.MATIC,
-          holders.DAI,
-          '50000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('QuickSwap MATIC -> USDT', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.USDT,
-          holders.MATIC,
-          '70000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('QuickSwap USDT -> MATIC', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.MATIC,
-          holders.USDT,
-          '1000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('QuickSwap MATIC -> POPS', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.POPS,
-          holders.MATIC,
-          '70000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      // it('QuickSwap POPS -> MATIC', async () => {
-      //   await testE2E(
-      //     tokens.POPS,
-      //     tokens.WMATIC,
-      //     holders.POPS,
-      //     '8000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-    });
-
-    describe('Multiswap', () => {
-      it('Multiswap MATIC -> USDC', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.USDC,
-          holders.MATIC,
-          '100000000000000000',
-          SwapSide.SELL,
-          dexKey,
           ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    ]);
 
-      it('Multiswap USDC -> MATIC', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.MATIC,
-          holders.USDC,
-          '200',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [{ name: 'MATIC', sellAmount: '100000000000000000', buyAmount: '1000' }, { name: 'USDC', sellAmount: '10000000', buyAmount: '1000' }],
+      [{ name: 'MATIC', sellAmount: '1000000000', buyAmount: '1000' }, { name: 'DAI', sellAmount: '50000', buyAmount: '1000000000' }],
+      [{ name: 'MATIC', sellAmount: '100000000000000000', buyAmount: '1000' }, { name: 'USDT', sellAmount: '100000000', buyAmount: '1000' }],
+      [{ name: 'MATIC', sellAmount: '10000000', buyAmount: '1000' }, { name: 'POPS', sellAmount: '8000000', buyAmount: '1000' }],
+    ];
 
-      it('Multiswap MATIC -> DAI', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.DAI,
-          holders.MATIC,
-          '70000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('Multiswap DAI -> MATIC', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.MATIC,
-          holders.DAI,
-          '70000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('Multiswap MATIC -> USDT', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.USDT,
-          holders.MATIC,
-          '70000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('Multiswap USDT -> MATIC', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.MATIC,
-          holders.USDT,
-          '500',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('Multiswap MATIC -> POPS', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.POPS,
-          holders.MATIC,
-          '70000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('BuyMethod', () => {
-      it('Buy MATIC -> USDC', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.USDC,
-          holders.MATIC,
-          '7000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      it('Buy USDC -> MATIC', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.MATIC,
-          holders.USDC,
-          '150',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      it('Buy MATIC -> DAI', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.DAI,
-          holders.MATIC,
-          '650000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      it('Buy DAI -> MATIC', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.MATIC,
-          holders.DAI,
-          '150',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      it('Buy MATIC -> USDT', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.USDT,
-          holders.MATIC,
-          '150000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      it('Buy USDT -> MATIC', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.MATIC,
-          holders.USDT,
-          '250',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      it('Buy MATIC -> POPS', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.POPS,
-          holders.MATIC,
-          '70000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-    });
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach((pair) => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
   });
 });
