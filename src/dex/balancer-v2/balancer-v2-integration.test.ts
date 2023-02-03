@@ -163,6 +163,8 @@ describe('BalancerV2', function () {
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await balancerV2.initializePricing(blocknumber);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         WETH.address,
@@ -171,6 +173,7 @@ describe('BalancerV2', function () {
       console.log('WETH Top Pools:', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
+      await balancerV2.releaseResources();
     });
   });
 
@@ -213,6 +216,8 @@ describe('BalancerV2', function () {
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await balancerV2.initializePricing(blocknumber);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         BBADAI.address,
@@ -221,6 +226,7 @@ describe('BalancerV2', function () {
       console.log('BBADAI Top Pools:', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, BBADAI.address, dexKey);
+      await balancerV2.releaseResources();
     });
 
     it('applies getRate to phantom bpt scaling factor', async function () {
@@ -308,6 +314,8 @@ describe('BalancerV2', function () {
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await balancerV2.initializePricing(blocknumber);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         BBAUSD.address,
@@ -316,6 +324,7 @@ describe('BalancerV2', function () {
       console.log('BBAUSD Top Pools:', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
+      await balancerV2.releaseResources();
     });
 
     it('applies getRate to phantom bpt scaling factor', async function () {
