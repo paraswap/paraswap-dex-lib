@@ -472,6 +472,34 @@ describe('UniswapV2 E2E Avalanche', () => {
     const dexKey = 'Swapsicle';
 
     describe('simpleSwap', () => {
+      it('WAVAX -> USDC', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDC,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WAVAX', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WAVAX,
+          holders.USDC,
+          '5000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
       it('USDC -> MIM', async () => {
         await testE2E(
           tokens.USDC,
@@ -491,7 +519,7 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.MIM,
           tokens.USDC,
           holders.MIM,
-          '3000000000000000000000',
+          '300000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -504,6 +532,48 @@ describe('UniswapV2 E2E Avalanche', () => {
         await testE2E(
           tokens.WAVAX,
           tokens.USDCe,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDCe -> WAVAX', async () => {
+        await testE2E(
+          tokens.USDCe,
+          tokens.WAVAX,
+          holders.USDCe,
+          '5',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('POPS -> WAVAX', async () => {
+        await testE2E(
+          tokens.POPS,
+          tokens.WAVAX,
+          holders.POPS,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> POPS', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.POPS,
           holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
@@ -516,6 +586,34 @@ describe('UniswapV2 E2E Avalanche', () => {
     });
 
     describe('multiSwap', () => {
+      it('WAVAX -> USDC', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDC,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WAVAX', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WAVAX,
+          holders.USDC,
+          '5000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
       it('USDC -> MIM', async () => {
         await testE2E(
           tokens.USDC,
@@ -557,9 +655,79 @@ describe('UniswapV2 E2E Avalanche', () => {
           provider,
         );
       });
+
+      it('USDCe -> WAVAX', async () => {
+        await testE2E(
+          tokens.USDCe,
+          tokens.WAVAX,
+          holders.USDCe,
+          '5',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('POPS -> WAVAX', async () => {
+        await testE2E(
+          tokens.POPS,
+          tokens.WAVAX,
+          holders.POPS,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> POPS', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.POPS,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
     });
 
     describe('megaSwap', () => {
+      it('WAVAX -> USDC', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.USDC,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WAVAX', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WAVAX,
+          holders.USDC,
+          '5000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
       it('USDC -> MIM', async () => {
         await testE2E(
           tokens.USDC,
@@ -592,6 +760,48 @@ describe('UniswapV2 E2E Avalanche', () => {
         await testE2E(
           tokens.WAVAX,
           tokens.USDCe,
+          holders.WAVAX,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDCe -> WAVAX', async () => {
+        await testE2E(
+          tokens.USDCe,
+          tokens.WAVAX,
+          holders.USDCe,
+          '5',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('POPS -> WAVAX', async () => {
+        await testE2E(
+          tokens.POPS,
+          tokens.WAVAX,
+          holders.POPS,
+          '7000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WAVAX -> POPS', async () => {
+        await testE2E(
+          tokens.WAVAX,
+          tokens.POPS,
           holders.WAVAX,
           '7000000000000000000',
           SwapSide.SELL,
