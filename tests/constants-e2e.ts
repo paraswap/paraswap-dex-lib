@@ -442,6 +442,10 @@ export const Tokens: {
     },
   },
   [Network.BSC]: {
+    POPS: {
+      address: '0xa1051433EC7b5cc249c75Fdd5b96BF423f2f4A32',
+      decimals: 18,
+    },
     DAI: {
       address: '0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3',
       decimals: 18,
@@ -761,7 +765,7 @@ export const Holders: {
     DODO: '0x3e19d726ed435afd3a42967551426b3a47c0f5b7',
     ADAI: '0x826c3064d4f5b9507152f5cb440ca9326e1ec8fa',
     AWETH: '0xa433105e7396070a5e1fdd7e2b2338f1bfa0de68',
-    BUSD: '0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503',
+    BUSD: '0xf977814e90da44bfa03b6295a0616a897441acec',
     INCH: '0x4ee7c0f5480eb1edd8902a5e8b991ed52992d5f5',
     mUSD: '0x3aD1D5CFCF9169Da73C23D85d5f2Bf53bC9d39dF',
     mBTC: '0x15A295e9BCFcF93a8721DCb9A19330fc59771271',
@@ -844,10 +848,11 @@ export const Holders: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
     WBNB: '0x59d779bed4db1e734d3fda3172d45bc3063ecd69',
     BUSD: '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe',
+    POPS: '0x74966a14eb9c5f185a34b31032264815e84104d8',
     BNB: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
     USDT: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
-    USDC: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
+    USDC: '0x8894e0a0c962cb723c1976a4421c95949be2d4e3',
     RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
     bBTC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',

@@ -1406,4 +1406,241 @@ describe('UniswapV2 E2E BSC', () => {
       });
     });
   });
+
+  describe('Swapsicle', () => {
+    const dexKey = 'Swapsicle';
+
+    describe('simpleSwap', () => {
+      it('WBNB -> BUSD', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
+          '1',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WBNB -> POPS', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.POPS,
+          holders.WBNB,
+          '25',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('DAI -> WBNB', async () => {
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
+          '7000000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WBNB', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WBNB,
+          holders.USDC,
+          '1000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('multiSwap', () => {
+      it('WBNB -> BUSD', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
+          '1',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WBNB -> POPS', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.POPS,
+          holders.WBNB,
+          '25',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('DAI -> WBNB', async () => {
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
+          '7000000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WBNB', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WBNB,
+          holders.USDC,
+          '1000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+
+    describe('megaSwap', () => {
+      it('WBNB -> BUSD', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
+          '1',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('WBNB -> POPS', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.POPS,
+          holders.WBNB,
+          '25',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('DAI -> WBNB', async () => {
+        await testE2E(
+          tokens.DAI,
+          tokens.WBNB,
+          holders.DAI,
+          '7000000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('USDC -> WBNB', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WBNB,
+          holders.USDC,
+          '1000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('BuyMethod', () => {
+      it('WBNB -> BUSD', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.BUSD,
+          holders.WBNB,
+          '1',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+
+      it('WBNB -> POPS', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.POPS,
+          holders.WBNB,
+          '25',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+
+      // it('DAI -> WBNB', async () => {
+      //   await testE2E(
+      //     tokens.DAI,
+      //     tokens.WBNB,
+      //     holders.DAI,
+      //     '7000000000000000000',
+      //     SwapSide.BUY,
+      //     dexKey,
+      //     ContractMethod.buy,
+      //     network,
+      //     provider,
+      //   );
+      // });
+
+      it('USDC -> WBNB', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WBNB,
+          holders.USDC,
+          '1000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.buy,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });
