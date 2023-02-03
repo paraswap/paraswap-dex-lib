@@ -404,6 +404,10 @@ export const Tokens: {
       address: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
       decimals: 18,
     },
+    DAI: {
+      address: '0x8d11ec38a3eb5e956b052f67da8bdc9bef8abf3e',
+      decimals: 18,
+    },
     USDC: {
       address: '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75',
       decimals: 6,
@@ -411,6 +415,14 @@ export const Tokens: {
     FUSDT: {
       address: '0x049d68029688eabf473097a2fc38ef61633a3c7a',
       decimals: 6,
+    },
+    POPS: {
+      address: '0x9dE4b40bDcE50Ec6a1A668bF85997BbBD324069a',
+      decimals: 18,
+    },
+    MIM: {
+      address: '0x82f0b8b456c1a451378467398982d4834b6829c1',
+      decimals: 18,
     },
     FRAX: {
       address: '0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355',
@@ -830,12 +842,15 @@ export const Holders: {
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
   },
   [Network.FANTOM]: {
+    DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
     FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
     WFTM: '0x4901C740607E415685b4d09E4Aa960329cd183Ca',
     USDC: '0xd1e4a32679216f4a4dd38e45dab9bc4b8a45e592',
-    FUSDT: '0xca436e14855323927d6e6264470ded36455fc8bd',
+    FUSDT: '0x66b870ddf78c975af5cd8edc6de25eca81791de1',
+    POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     aFanUSDT: '0xb0c9c5b5211de3a75b61bb798887b76accd64193',
     aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
+    MIM: '0xbcab7d083cf6a01e0dda9ed7f8a02b47d125e682',
     FRAX: '0x4423ac71f53ca92e2f2be5917a9c2468e7412f4a',
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
     WETH: '0x4ad64fd7ca6d6150614179b9bce4094bc18f29cb',
