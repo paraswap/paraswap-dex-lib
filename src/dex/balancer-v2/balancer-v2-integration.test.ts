@@ -363,6 +363,8 @@ describe('BalancerV2', function () {
   });
 
   describe('Gyro2', () => {
+    const gyro2UsdcDaiAddr = '0xdac42eeb17758daa38caf9a3540c808247527ae3';
+
     it('getPoolIdentifiers and getPricesVolume', async function () {
       const network = Network.POLYGON;
       const dexHelper = new DummyDexHelper(network);
@@ -379,7 +381,6 @@ describe('BalancerV2', function () {
       );
       console.log('DAI <> USDC Pool Identifiers (Polygon): ', pools);
 
-      const gyro2UsdcDaiAddr = '0xdac42eeb17758daa38caf9a3540c808247527ae3';
       const isPool = pools.find(poolIdentifier =>
         poolIdentifier.includes(gyro2UsdcDaiAddr),
       );
@@ -409,7 +410,9 @@ describe('BalancerV2', function () {
     it('getTopPoolsForToken', async function () {
       const network = Network.POLYGON;
       const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
+      await balancerV2.initializePricing(blocknumber);
       const tokens = Tokens[network];
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
@@ -419,6 +422,11 @@ describe('BalancerV2', function () {
       console.log('DAI Top Pools (Polygon):', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, tokens.DAI.address, dexKey);
+      const isTopPool = poolLiquidity.find(
+        pool => pool.address === gyro2UsdcDaiAddr,
+      );
+      expect(isTopPool).toBeDefined();
+      await balancerV2.releaseResources();
     });
   });
 });
