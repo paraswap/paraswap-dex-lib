@@ -1407,240 +1407,63 @@ describe('UniswapV2 E2E BSC', () => {
     });
   });
 
-  describe('Swapsicle', () => {
+  describe(`Swapsicle`, () => {
     const dexKey = 'Swapsicle';
 
-    describe('simpleSwap', () => {
-      it('WBNB -> BUSD', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.BUSD,
-          holders.WBNB,
-          '1',
-          SwapSide.SELL,
-          dexKey,
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
           ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('WBNB -> POPS', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.POPS,
-          holders.WBNB,
-          '25',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('DAI -> WBNB', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.WBNB,
-          holders.DAI,
-          '7000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('USDC -> WBNB', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.WBNB,
-          holders.USDC,
-          '1000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('multiSwap', () => {
-      it('WBNB -> BUSD', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.BUSD,
-          holders.WBNB,
-          '1',
-          SwapSide.SELL,
-          dexKey,
           ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('WBNB -> POPS', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.POPS,
-          holders.WBNB,
-          '25',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('DAI -> WBNB', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.WBNB,
-          holders.DAI,
-          '7000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('USDC -> WBNB', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.WBNB,
-          holders.USDC,
-          '1000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-
-    describe('megaSwap', () => {
-      it('WBNB -> BUSD', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.BUSD,
-          holders.WBNB,
-          '1',
-          SwapSide.SELL,
-          dexKey,
           ContractMethod.megaSwap,
-          network,
-          provider,
-        );
-      });
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    ]);
 
-      it('WBNB -> POPS', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.POPS,
-          holders.WBNB,
-          '25',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.megaSwap,
-          network,
-          provider,
-        );
-      });
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [{ name: 'WBNB', sellAmount: '7000000000000000000', buyAmount: '1000' }, { name: 'BUSD', sellAmount: '5000', buyAmount: '10000000' }],
+      [{ name: 'WBNB', sellAmount: '3000000000', buyAmount: '1000' }, { name: 'POPS', sellAmount: '800000000000', buyAmount: '800000000000' }],
+      [{ name: 'WBNB', sellAmount: '7000000000000000000', buyAmount: '1000' }, { name: 'DAI', sellAmount: '1000', buyAmount: '1000' }],
+      [{ name: 'WBNB', sellAmount: '7000000000000000000', buyAmount: '1000' }, { name: 'USDC', sellAmount: '700', buyAmount: '1000' }],
+    ];
 
-      it('DAI -> WBNB', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.WBNB,
-          holders.DAI,
-          '7000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.megaSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('USDC -> WBNB', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.WBNB,
-          holders.USDC,
-          '1000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.megaSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('BuyMethod', () => {
-      it('WBNB -> BUSD', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.BUSD,
-          holders.WBNB,
-          '1',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      it('WBNB -> POPS', async () => {
-        await testE2E(
-          tokens.WBNB,
-          tokens.POPS,
-          holders.WBNB,
-          '25',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-
-      // it('DAI -> WBNB', async () => {
-      //   await testE2E(
-      //     tokens.DAI,
-      //     tokens.WBNB,
-      //     holders.DAI,
-      //     '7000000000000000000',
-      //     SwapSide.BUY,
-      //     dexKey,
-      //     ContractMethod.buy,
-      //     network,
-      //     provider,
-      //   );
-      // });
-
-      it('USDC -> WBNB', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.WBNB,
-          holders.USDC,
-          '1000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.buy,
-          network,
-          provider,
-        );
-      });
-    });
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach((pair) => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
   });
 });
