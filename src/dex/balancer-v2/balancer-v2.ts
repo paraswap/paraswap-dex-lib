@@ -52,7 +52,11 @@ import {
   poolGetMainTokens,
   poolGetPathForTokenInOut,
 } from './utils';
-import { MIN_USD_LIQUIDITY_TO_FETCH } from './constants';
+import {
+  MIN_USD_LIQUIDITY_TO_FETCH,
+  STABLE_GAS_COST,
+  VARIABLE_GAS_COST_PER_CYCLE,
+} from './constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -120,13 +124,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.Weighted,
     BalancerPoolTypes.LiquidityBootstrapping,
     BalancerPoolTypes.Investment,
-    BalancerPoolTypes.ComposableStable,
 
-    // Added all these pools to event base since all math is already implemented
-    BalancerPoolTypes.Linear,
-    // I turned off this pools as I don't understand if they have bad impact or not. Need to investigate one by one if events are
-    // working on them
-
+    // Need to check if we can support these pools with event base
+    // BalancerPoolTypes.ComposableStable,
+    // BalancerPoolTypes.Linear,
     // BalancerPoolTypes.MetaStable,
     // BalancerPoolTypes.AaveLinear,
     // BalancerPoolTypes.ERC4626Linear,
@@ -660,6 +661,10 @@ export class BalancerV2
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
 
+      if (_from.address === _to.address) {
+        return null;
+      }
+
       const allPools = this.getPoolsWithTokenPair(_from, _to);
       const allowedPools = limitPools
         ? allPools.filter(({ address }) =>
@@ -770,7 +775,8 @@ export class BalancerV2
             },
             poolAddresses: [poolAddress],
             exchange: this.dexKey,
-            gasCost: 150 * 1000 * (path.length - 1),
+            gasCost:
+              STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
             poolIdentifier: `${this.dexKey}_${poolAddress}`,
           };
 

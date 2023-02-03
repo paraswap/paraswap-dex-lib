@@ -346,11 +346,6 @@ export class LinearPool extends BasePool {
       target: pool.address,
       callData: this.poolInterface.encodeFunctionData('getScalingFactors'),
     });
-    //getScalingFactors does not include the rate for the phantom bpt, need to fetch it separately
-    poolCallData.push({
-      target: pool.address,
-      callData: this.poolInterface.encodeFunctionData('getRate'),
-    });
     // returns lowerTarget, upperTarget
     poolCallData.push({
       target: pool.address,
@@ -389,12 +384,6 @@ export class LinearPool extends BasePool {
       data[startIndex++],
       pool.address,
     )[0];
-    const rate = decodeThrowError(
-      this.poolInterface,
-      'getRate',
-      data[startIndex++],
-      pool.address,
-    )[0];
     const [lowerTarget, upperTarget] = decodeThrowError(
       this.poolInterface,
       'getTargets',
@@ -409,10 +398,7 @@ export class LinearPool extends BasePool {
     const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
       address: address.toLowerCase(),
       balance: BigInt(poolTokens.balances[idx].toString()),
-      scalingFactor:
-        idx === bptIndex
-          ? BigInt(rate.toString())
-          : BigInt(scalingFactors[idx].toString()),
+      scalingFactor: BigInt(scalingFactors[idx].toString()),
     }));
 
     const poolState: PoolState = {

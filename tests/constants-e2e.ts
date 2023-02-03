@@ -117,6 +117,10 @@ export const Tokens: {
       address: '0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd',
       decimals: 18,
     },
+    STG: {
+      address: '0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6',
+      decimals: 18,
+    },
     ADAI: {
       address: '0x028171bca77440897b824ca71d1c56cac55b68a3',
       decimals: 18,
@@ -430,6 +434,10 @@ export const Tokens: {
     },
     TOR: {
       address: '0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e',
+      decimals: 18,
+    },
+    BOO: {
+      address: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
       decimals: 18,
     },
   },
@@ -821,10 +829,11 @@ export const Holders: {
     aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
     FRAX: '0x4423ac71f53ca92e2f2be5917a9c2468e7412f4a',
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
-    WETH: '0x2400bb4d7221ba530daee061d5afe219e9223eae',
+    WETH: '0x4ad64fd7ca6d6150614179b9bce4094bc18f29cb',
     SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
     wBOMB: '0x28aa4f9ffe21365473b64c161b566c3cdead0108',
     TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',
+    BOO: '0xf778f4d7a14a8cb73d5261f9c61970ef4e7d7842',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
