@@ -55,6 +55,14 @@ export class RateFetcher {
     private dexKey: string,
     private logger: Logger,
   ) {
+    // get all satkers url for last look cahce, need to connect to any adresses below
+    const provider = new ethers.providers.InfuraWebSocketProvider(
+      this.dexHelper.config.data.network,
+      process.env.INFURA_KEY,
+    );
+
+    getStakersUrl(provider).then(console.log);
+
     this.tokensFetcher = new Fetcher<TokensResponse>(
       dexHelper.httpRequest,
       {
@@ -123,16 +131,6 @@ export class RateFetcher {
     destToken: Token,
     side: SwapSide,
   ): Promise<PriceAndAmountBigNumber[] | null> {
-    const provider = new ethers.providers.InfuraWebSocketProvider(
-      this.dexHelper.config.data.network,
-      process.env.INFURA_KEY,
-    );
-    const events = await getStakersUrl(provider);
-    console.log(
-      'airswap event',
-      events.map(event => event.data),
-    );
-
     let reversed = false;
     let pricesAsString: string | null = null;
     if (side === SwapSide.SELL) {
