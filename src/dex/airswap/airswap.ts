@@ -19,7 +19,6 @@ import { SimpleExchange } from '../simple-exchange';
 import { AirSwapConfig, Adapters } from './config';
 import { AirSwapEventPool } from './airswap-pool';
 import _ from 'lodash';
-import { Registry } from '@airswap/protocols';
 import { ethers } from 'ethers';
 import { MakerRegistry, Maker } from '@airswap/libraries';
 

@@ -5,8 +5,8 @@ import { ethers } from 'ethers';
 import { Network, ContractMethod, SwapSide, MAX_UINT } from '../../constants';
 import { generateConfig } from '../../config';
 import { newTestE2E, getEnv } from '../../../tests/utils-e2e';
-import { SmartTokens, AIRSWAP_ADDR1 } from '../../../tests/constants-e2e';
-import { startTestServer } from './example-api.test';
+import { SmartTokens, GENERIC_ADDR1 } from '../../../tests/constants-e2e';
+import { startTestServer } from './example-rfq-api.test';
 import { RFQConfig } from './types';
 
 const PK_KEY = process.env.TEST_PK_KEY;
@@ -57,7 +57,7 @@ describe('AirswapRFQ E2E Mainnet', () => {
           config,
           srcToken,
           destToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '1000000000000000000',
           swapSide: SwapSide.SELL,
@@ -72,7 +72,7 @@ describe('AirswapRFQ E2E Mainnet', () => {
           config,
           destToken,
           srcToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '1000000000000000000',
           swapSide: SwapSide.SELL,
@@ -87,7 +87,7 @@ describe('AirswapRFQ E2E Mainnet', () => {
           config,
           srcToken,
           destToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '1000000000000000000',
           swapSide: SwapSide.BUY,
@@ -102,7 +102,7 @@ describe('AirswapRFQ E2E Mainnet', () => {
           config,
           destToken,
           srcToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '1000000000000000000',
           swapSide: SwapSide.BUY,
@@ -125,18 +125,18 @@ const buildConfigForAirswapRFQ = (): RFQConfig => {
   const url = getEnv('AIRSWAP_RFQ_URL');
 
   const secret = {
-    secretKey: atob(getEnv('AIRSWAP_RFQ_SECRET_KEY')),
-    accessKey: getEnv('AIRSWAP_RFQ_ACCESS_KEY'),
+    secretKey: "getEnv('AIRSWAP_RFQ_SECRET_KEY')",
+    accessKey: "getEnv('AIRSWAP_RFQ_ACCESS_KEY')",
     domain: 'paraswap',
   };
 
-  const pathToRemove = getEnv('AIRSWAP_RFQ_PATH_TO_OVERRIDE');
+  // const pathToRemove = getEnv('AIRSWAP_RFQ_PATH_TO_OVERRIDE');
 
   return {
     maker: getEnv('AIRSWAP_RFQ_MAKER_ADDRESS'),
     tokensConfig: {
       reqParams: {
-        url: `${url}/tokens`,
+        url: `${url}`,
         method: 'GET',
       },
       secret,
@@ -154,7 +154,7 @@ const buildConfigForAirswapRFQ = (): RFQConfig => {
     },
     rateConfig: {
       reqParams: {
-        url: `${url}/prices`,
+        url: `${url}`,
         method: 'GET',
       },
       secret,
@@ -175,7 +175,7 @@ const buildConfigForAirswapRFQ = (): RFQConfig => {
       intervalMs: 1000 * 60 * 60 * 10,
       dataTTLS: 1000 * 60 * 60 * 11,
     },
-    pathToRemove,
+    // pathToRemove,
   };
 };
 
@@ -212,7 +212,7 @@ describe('AirswapRFQ YOUR_NAME E2E Mainnet', () => {
           config,
           srcToken,
           destToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '1000000',
           swapSide: SwapSide.BUY,
@@ -249,7 +249,7 @@ describe('AirswapRFQ YOUR_NAME E2E Mainnet', () => {
           config,
           srcToken,
           destToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '1000000',
           swapSide: SwapSide.BUY,
@@ -286,7 +286,7 @@ describe('AirswapRFQ YOUR_NAME E2E Mainnet', () => {
           config,
           srcToken,
           destToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '1000000',
           swapSide: SwapSide.SELL,
@@ -323,7 +323,7 @@ describe('AirswapRFQ YOUR_NAME E2E Mainnet', () => {
           config,
           srcToken,
           destToken,
-          senderAddress: AIRSWAP_ADDR1,
+          senderAddress: GENERIC_ADDR1,
           thirdPartyAddress: testAccount.address,
           _amount: '10000',
           swapSide: SwapSide.SELL,

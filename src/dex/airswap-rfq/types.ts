@@ -44,23 +44,26 @@ export type RatesResponse = {
 
 export type FetcherParams = {
   reqParams: RequestConfig;
-  // secret: RFQSecret;
   intervalMs: number;
   dataTTLS: number;
+};
+
+export type RFQSecret = {
+  domain: string;
+  accessKey: string;
+  secretKey: string;
 };
 
 export type Rates = Array<[string, string]>;
 export type BigNumberRate = [BigNumber, BigNumber];
 export type BigNumberRates = Array<BigNumberRate>;
 
-type RequestConfigWithAuth = RequestConfig;
+type RequestConfigWithAuth = RequestConfig & {
+  secret?: RFQSecret;
+};
 
 export type RFQConfig = {
   tokensConfig: FetcherParams;
-  // pairsConfig: FetcherParams;
-  // rateConfig: FetcherParams;
-  // firmRateConfig: RequestConfigWithAuth;
-  // blacklistConfig?: FetcherParams;
   maker: Address;
   pathToRemove?: string;
 };

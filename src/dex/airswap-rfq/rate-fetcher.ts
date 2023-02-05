@@ -28,6 +28,9 @@ import {
   validateAndCast,
 } from './validators';
 import { airswapRFQAuthHttp } from './security';
+import { ethers } from 'ethers';
+import { MakerRegistry, Maker } from '@airswap/libraries';
+import { getStakersUrl } from './airswap-tool';
 
 const GET_FIRM_RATE_TIMEOUT_MS = 2000;
 
@@ -115,43 +118,22 @@ export class RateFetcher {
     return [this.tokensFetcher, {} as any].some(f => f.lastFetchSucceeded);
   }
 
-  // public getPairsLiquidity(tokenAddress: string) {
-  //   const token = this.addressToTokenMap[tokenAddress];
-
-  //   const pairNames = Object.keys(this.pairs);
-  //   const pairs = Object.values(this.pairs);
-
-  //   return pairs
-  //     .filter((p, index) => pairNames[index].includes(token.symbol!))
-  //     .map(p => {
-  //       const baseToken = this.tokens[p.base];
-  //       const quoteToken = this.tokens[p.quote];
-  //       let connectorToken: Token | undefined;
-  //       if (baseToken.address !== tokenAddress) {
-  //         connectorToken = {
-  //           address: baseToken.address,
-  //           decimals: baseToken.decimals,
-  //         };
-  //       } else {
-  //         connectorToken = {
-  //           address: quoteToken.address,
-  //           decimals: quoteToken.decimals,
-  //         };
-  //       }
-  //       return {
-  //         connectorTokens: [connectorToken],
-  //         liquidityUSD: p.liquidityUSD,
-  //       };
-  //     });
-  // }
-
   public async getOrderPrice(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
   ): Promise<PriceAndAmountBigNumber[] | null> {
+    const provider = new ethers.providers.InfuraWebSocketProvider(
+      this.dexHelper.config.data.network,
+      process.env.INFURA_KEY,
+    );
+    const events = await getStakersUrl(provider);
+    console.log(
+      'airswap event',
+      events.map(event => event.data),
+    );
+
     let reversed = false;
-    await this.tokensFetcher.fetch(true);
     let pricesAsString: string | null = null;
     if (side === SwapSide.SELL) {
       pricesAsString = await this.dexHelper.cache.get(
@@ -208,6 +190,23 @@ export class RateFetcher {
     return orderPrices as PriceAndAmountBigNumber[];
   }
 
+  private async getAvailableMakersForRFQ(
+    from: Token,
+    to: Token,
+  ): Promise<any[]> {
+    const provider = new ethers.providers.InfuraWebSocketProvider(
+      this.dexHelper.config.data.network,
+      process.env.INFURA_KEY,
+    );
+
+    const servers = await new MakerRegistry(
+      this.dexHelper.config.data.network,
+      provider,
+    ).getMakers(from.address, to.address);
+    console.log('getAvailableMakersForRFQ', servers);
+    return Promise.resolve(servers);
+  }
+
   async getFirmRate(
     _srcToken: Token,
     _destToken: Token,
@@ -221,6 +220,20 @@ export class RateFetcher {
     if (BigInt(srcAmount) === 0n) {
       throw new Error('getFirmRate failed with srcAmount == 0');
     }
+
+    const makers = await this.getAvailableMakersForRFQ(srcToken, destToken);
+    const maker = await Maker.at(makers[0], {
+      swapContract: '0x522d6f36c95a1b6509a14272c17747bbb582f2a6',
+    });
+
+    const tx = await maker.getSignerSideOrder(
+      srcAmount.toString(),
+      destToken.address,
+      srcToken.address,
+      userAddress,
+    );
+
+    console.log('tx', tx);
 
     const _payload: RFQPayload = {
       makerAsset: destToken.address,
