@@ -673,6 +673,10 @@ export const Tokens: {
       address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
       decimals: 6,
     },
+    USDT: {
+      address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+      decimals: 6,
+    },
     FRAX: {
       address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
       decimals: 18,
@@ -719,6 +723,10 @@ export const Tokens: {
     USDT: {
       address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
       decimals: 6,
+    },
+    POPS: {
+      address: '0x3D51a9fB5dCc87F7B237B04975559b920a9a56Ff',
+      decimals: 18,
     },
     OP: {
       address: '0x4200000000000000000000000000000000000042',
@@ -914,6 +922,7 @@ export const Holders: {
     DAI: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WETH: '0xc2707568D31F3fB1Fc55B2F8b2ae5682eAa72041',
     USDC: '0xd6216fc19db775df9774a6e33526131da7d19a2c',
+    USDT: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',
     FRAX: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',
     nETH: '0xa067668661c84476afcdc6fa5d758c4c01c34352',
@@ -925,7 +934,8 @@ export const Holders: {
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
     DAI: '0x1337bedc9d22ecbe766df105c9623922a27963ec',
-    WETH: '0x68526A4295236D2f18cEda8A200CdDD5Aab9e2cC',
+    WETH: '0x85149247691df622eaf1a8bd0cafd40bc45154a9',
+    POPS: '0x3cbd9044aaabef08ce93a68448e093cff405ad76',
     USDC: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     USDT: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     OP: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
