@@ -546,6 +546,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  SwapFish: {
+    [Network.ARBITRUM]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/swapfish/swapfish',
+      factoryAddress: '0x71539D09D3890195dDa87A6198B98B75211b72F3',
+      initCode:
+        '0xfa92cf9f91596341d1d4b5e0903226886fea1aebab892d11d3c2c1d14ae97534',
+      feeCode: 30,
+    },
+  },
   ZeroSwap: {
     [Network.AVALANCHE]: {
       subgraphURL:
