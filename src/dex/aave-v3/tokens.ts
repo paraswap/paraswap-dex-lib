@@ -8,8 +8,6 @@ import tokensArbitrum from './tokens/arbitrum.json';
 import tokensOptimism from './tokens/optimism.json';
 import { AaveToken } from './types';
 
-export const Tokens: { [network: number]: { [symbol: string]: aToken } } = {};
-
 const TokensByAddress: { [network: number]: { [address: string]: aToken } } =
   {};
 
@@ -26,10 +24,8 @@ const tokensByNetwork: { [network: number]: any } = {
 
 for (const [key, tokens] of Object.entries(tokensByNetwork)) {
   const network = +key;
-  Tokens[network] = {};
   TokensByAddress[network] = {};
   for (const token of tokens) {
-    Tokens[network][token.aSymbol] = token;
     TokensByAddress[network][token.aAddress.toLowerCase()] = token;
   }
 }
@@ -55,21 +51,6 @@ export function getATokenIfAaveV3Pair(
   }
 
   return null;
-}
-
-export function getTokenFromASymbol(
-  network: number,
-  symbol: string,
-): Token | null {
-  const aToken = Tokens[network][symbol];
-
-  if (!aToken) return null;
-
-  return {
-    address: aToken.aAddress,
-    decimals: aToken.decimals,
-    symbol: aToken.aSymbol,
-  };
 }
 
 export function setTokensOnNetwork(network: Network, tokens: AaveToken[]) {

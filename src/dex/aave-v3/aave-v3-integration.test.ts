@@ -8,16 +8,21 @@ import {
   checkConstantPoolPrices,
   checkPoolsLiquidity,
 } from '../../../tests/utils';
-import { Tokens } from '../../../tests/constants-e2e';
-import { getTokenFromASymbol } from './tokens';
 import { BI_POWS } from '../../bigint-constants';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDT';
-const TokenA = Tokens[network][TokenASymbol];
+const TokenA = {
+  address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+  decimals: 6,
+};
 
-const TokenBSymbol = 'aUSDT';
-const TokenB = getTokenFromASymbol(network, TokenBSymbol);
+const TokenBSymbol = 'aPolUSDT';
+const TokenB = {
+  address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
+  decimals: 6,
+  symbol: 'aPolUSDT',
+};
 
 const amounts = [0n, BI_POWS[6], 2000000n];
 
@@ -30,6 +35,9 @@ describe('AaveV3', function () {
         const dexHelper = new DummyDexHelper(network);
         const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
         const aaveV3 = new AaveV3(network, dexKey, dexHelper);
+
+        // Invoke the "initializePricing" method manually in tests. Invoked by the SDK automatically otherwise.
+        await aaveV3.initializePricing(blocknumber);
 
         const pools = await aaveV3.getPoolIdentifiers(
           TokenA,
@@ -65,6 +73,9 @@ describe('AaveV3', function () {
         const dexHelper = new DummyDexHelper(network);
         const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
         const aaveV3 = new AaveV3(network, dexKey, dexHelper);
+
+        // Invoke the "initializePricing" method manually in tests. Invoked by the SDK automatically otherwise.
+        await aaveV3.initializePricing(blocknumber);
 
         const pools = await aaveV3.getPoolIdentifiers(
           TokenA,
