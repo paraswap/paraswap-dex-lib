@@ -8,12 +8,23 @@ import tokensArbitrum from './tokens/arbitrum.json';
 import tokensOptimism from './tokens/optimism.json';
 
 export const Tokens: { [network: number]: { [symbol: string]: aToken } } = {};
+
+type AaveToken = {
+  aSymbol: string;
+  aAddress: string;
+  address: string;
+  decimals: number;
+};
+
 const TokensByAddress: { [network: number]: { [address: string]: aToken } } =
   {};
 
+// TODO(skypper): Remove useless utility functions.
 const tokensByNetwork: { [network: number]: any } = {
   [Network.FANTOM]: tokensFantom,
-  [Network.POLYGON]: tokensPolygon,
+  [Network.POLYGON]: [],
+  // Disabled for testing.
+  // [Network.POLYGON]: tokensPolygon,
   [Network.AVALANCHE]: tokensAvalanche,
   [Network.ARBITRUM]: tokensArbitrum,
   [Network.OPTIMISM]: tokensOptimism,
@@ -67,4 +78,11 @@ export function getTokenFromASymbol(
     decimals: aToken.decimals,
     symbol: aToken.aSymbol,
   };
+}
+
+export function setTokensOnNetwork(network: Network, tokens: AaveToken[]) {
+  for (const token of tokens) {
+    TokensByAddress[network][token.aAddress.toLowerCase()] = token;
+    TokensByAddress[network][token.address.toLowerCase()] = token;
+  }
 }
