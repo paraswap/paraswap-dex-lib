@@ -1223,6 +1223,177 @@ describe('UniswapV2 E2E Mainnet', () => {
     });
   });
 
+  describe('PancakeSwapV2', () => {
+    const dexKey = 'PancakeSwapV2';
+
+    describe('Simpleswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '500000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '50000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('SimpleBuy', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '2000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '100000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multiswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '500000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '1000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('MegaPath', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '500000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '1000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
   describe(`Swapsicle`, () => {
     const dexKey = 'Swapsicle';
 

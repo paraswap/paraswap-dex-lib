@@ -51,7 +51,11 @@ import {
   poolGetMainTokens,
   poolGetPathForTokenInOut,
 } from './utils';
-import { MIN_USD_LIQUIDITY_TO_FETCH } from './constants';
+import {
+  MIN_USD_LIQUIDITY_TO_FETCH,
+  STABLE_GAS_COST,
+  VARIABLE_GAS_COST_PER_CYCLE,
+} from './constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -158,11 +162,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     The difference of note for swaps is ComposableStable must use 'actualSupply' instead of VirtualSupply.
     VirtualSupply could be calculated easily whereas actualSupply cannot hence the use of onchain call.
     */
-    // const composableStable = new PhantomStablePool(
-    //   this.vaultAddress,
-    //   this.vaultInterface,
-    //   true,
-    // );
+    const composableStable = new PhantomStablePool(
+      this.vaultAddress,
+      this.vaultInterface,
+      true,
+    );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
@@ -177,7 +181,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Beets uses "Linear" generically for all linear pool types
     this.pools[BalancerPoolTypes.Linear] = linearPool;
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
-    // this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
+    this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -760,7 +764,8 @@ export class BalancerV2
             },
             poolAddresses: [poolAddress],
             exchange: this.dexKey,
-            gasCost: 150 * 1000 * (path.length - 1),
+            gasCost:
+              STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
             poolIdentifier: `${this.dexKey}_${poolAddress}`,
           };
 
