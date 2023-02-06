@@ -6,15 +6,9 @@ import tokensPolygon from './tokens/polygon.json';
 import tokensAvalanche from './tokens/avalanche.json';
 import tokensArbitrum from './tokens/arbitrum.json';
 import tokensOptimism from './tokens/optimism.json';
+import { AaveToken } from './types';
 
 export const Tokens: { [network: number]: { [symbol: string]: aToken } } = {};
-
-type AaveToken = {
-  aSymbol: string;
-  aAddress: string;
-  address: string;
-  decimals: number;
-};
 
 const TokensByAddress: { [network: number]: { [address: string]: aToken } } =
   {};
@@ -52,13 +46,11 @@ export function getATokenIfAaveV3Pair(
   const _src = TokensByAddress[network][srcAddr];
   const _dst = TokensByAddress[network][dstAddr];
 
-  // supposing _src / _dst .address is lowercase
-
-  if (_src && _src.address == dstAddr) {
+  if (_src && _src.address.toLowerCase() == dstAddr) {
     return src;
   }
 
-  if (_dst && _dst.address == srcAddr) {
+  if (_dst && _dst.address.toLowerCase() == srcAddr) {
     return dst;
   }
 
@@ -81,8 +73,10 @@ export function getTokenFromASymbol(
 }
 
 export function setTokensOnNetwork(network: Network, tokens: AaveToken[]) {
-  for (const token of tokens) {
-    TokensByAddress[network][token.aAddress.toLowerCase()] = token;
-    TokensByAddress[network][token.address.toLowerCase()] = token;
+  for (let token of tokens) {
+    token.address = token.address.toLowerCase();
+    token.aAddress = token.aAddress.toLowerCase();
+    TokensByAddress[network][token.aAddress] = token;
+    TokensByAddress[network][token.address] = token;
   }
 }
