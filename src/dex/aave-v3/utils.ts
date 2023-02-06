@@ -1,7 +1,18 @@
 import { BytesLike } from 'ethers';
-import { defaultAbiCoder } from '@ethersproject/abi';
-import { extractSuccessAndValue } from '../../lib/decoders';
-import { MultiResult } from '../../lib/multi-wrapper';
+import { defaultAbiCoder, Interface } from '@ethersproject/abi';
+import {
+  extractSuccessAndValue,
+  stringDecode,
+  uint8ToNumber,
+} from '../../lib/decoders';
+import {
+  MultiCallParams,
+  MultiResult,
+  MultiWrapper,
+} from '../../lib/multi-wrapper';
+import Web3 from 'web3';
+import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
+import { AaveToken } from './types';
 
 export const decodeATokenFromReserveData = (
   result: MultiResult<BytesLike> | BytesLike,
@@ -34,4 +45,112 @@ export const decodeATokenFromReserveData = (
   );
 
   return decoded.aTokenAddress;
+};
+
+async function _getAllTokenMetadata(
+  blockNumber: number,
+  reservesList: string[],
+  poolAddress: string,
+  poolInterface: Interface,
+  erc20Interface: Interface,
+  multiWrapper: MultiWrapper,
+): Promise<
+  {
+    address: string;
+    aAddress: string;
+    decimals: number;
+  }[]
+> {
+  let calls: MultiCallParams<any>[] = [];
+
+  for (const tokenAddress of reservesList) {
+    calls.push({
+      target: poolAddress,
+      callData: poolInterface.encodeFunctionData('getReserveData', [
+        tokenAddress,
+      ]),
+      decodeFunction: decodeATokenFromReserveData,
+    });
+  }
+  for (const proxyAddress of reservesList) {
+    calls.push({
+      target: proxyAddress,
+      callData: erc20Interface.encodeFunctionData('decimals'),
+      decodeFunction: uint8ToNumber,
+    });
+  }
+
+  const results = await multiWrapper.tryAggregate<string | number>(
+    false,
+    calls,
+    blockNumber,
+  );
+
+  let tokenList = reservesList.map((tokenAddress: string, i: number) => ({
+    address: tokenAddress as string,
+    aAddress: results[i].returnData as string,
+    decimals: results[reservesList.length + i].returnData as number,
+  }));
+
+  return tokenList;
+}
+
+async function _getATokenSymbols(
+  blockNumber: number,
+  aTokens: string[],
+  erc20Interface: Interface,
+  multiWrapper: MultiWrapper,
+): Promise<{ aSymbol: string }[]> {
+  let calls: MultiCallParams<any>[] = [];
+
+  for (const proxyAddress of aTokens) {
+    calls.push({
+      target: proxyAddress,
+      callData: erc20Interface.encodeFunctionData('symbol', []),
+      decodeFunction: stringDecode,
+    });
+  }
+  const results = await multiWrapper.tryAggregate<string>(
+    false,
+    calls,
+    blockNumber,
+  );
+
+  return results.map(item => ({ aSymbol: item.returnData }));
+}
+
+export const fetchTokenList = async (
+  web3Provider: Web3,
+  blockNumber: number,
+  poolAddress: string,
+  poolInterface: Interface,
+  erc20Interface: Interface,
+  multiWrapper: MultiWrapper,
+): Promise<AaveToken[]> => {
+  let poolContract = new web3Provider.eth.Contract(
+    POOL_ABI as any,
+    poolAddress,
+  );
+  let reservesList = await poolContract.methods.getReservesList().call();
+
+  let tokenMetadataList = await _getAllTokenMetadata(
+    blockNumber,
+    reservesList,
+    poolAddress,
+    poolInterface,
+    erc20Interface,
+    multiWrapper,
+  );
+  let aTokenSymbolsList = await _getATokenSymbols(
+    blockNumber,
+    tokenMetadataList.map(metadata => metadata.aAddress),
+    erc20Interface,
+    multiWrapper,
+  );
+  let tokenList = tokenMetadataList.map((metadata, i: number) => ({
+    ...metadata,
+    ...aTokenSymbolsList[i],
+  }));
+
+  return tokenList;
 };

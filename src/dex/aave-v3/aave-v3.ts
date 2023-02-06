@@ -18,12 +18,10 @@ import { Data, Param, PoolAndWethFunctions } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, Config } from './config';
 import { getATokenIfAaveV3Pair, setTokensOnNetwork } from './tokens';
-import { MultiCallParams } from '../../lib/multi-wrapper';
 
 import WETH_GATEWAY_ABI from '../../abi/aave-v3-weth-gateway.json';
 import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
-import { stringDecode, uint8ToNumber } from '../../lib/decoders';
-import { decodeATokenFromReserveData } from './utils';
+import { fetchTokenList } from './utils';
 
 const REF_CODE = 1;
 const TOKEN_LIST_CACHE_KEY = 'token-list';
@@ -58,70 +56,6 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     return this.adapters[side];
   }
 
-  private async _getAllTokenMetadata(
-    blockNumber: number,
-    reservesList: string[],
-  ): Promise<
-    {
-      address: string;
-      aAddress: string;
-      decimals: number;
-    }[]
-  > {
-    let calls: MultiCallParams<any>[] = [];
-
-    for (const tokenAddress of reservesList) {
-      calls.push({
-        target: this.config.poolAddress,
-        callData: this.pool.encodeFunctionData('getReserveData', [
-          tokenAddress,
-        ]),
-        decodeFunction: decodeATokenFromReserveData,
-      });
-    }
-    for (const proxyAddress of reservesList) {
-      calls.push({
-        target: proxyAddress,
-        callData: this.erc20Interface.encodeFunctionData('decimals'),
-        decodeFunction: uint8ToNumber,
-      });
-    }
-
-    const results = await this.dexHelper.multiWrapper.tryAggregate<
-      string | number
-    >(false, calls, blockNumber);
-
-    let tokenList = reservesList.map((tokenAddress: string, i: number) => ({
-      address: tokenAddress as string,
-      aAddress: results[i].returnData as string,
-      decimals: results[reservesList.length + i].returnData as number,
-    }));
-
-    return tokenList;
-  }
-
-  private async _getATokenSymbols(
-    blockNumber: number,
-    aTokens: string[],
-  ): Promise<{ aSymbol: string }[]> {
-    let calls: MultiCallParams<any>[] = [];
-
-    for (const proxyAddress of aTokens) {
-      calls.push({
-        target: proxyAddress,
-        callData: this.erc20Interface.encodeFunctionData('symbol', []),
-        decodeFunction: stringDecode,
-      });
-    }
-    const results = await this.dexHelper.multiWrapper.tryAggregate<string>(
-      false,
-      calls,
-      blockNumber,
-    );
-
-    return results.map(item => ({ aSymbol: item.returnData }));
-  }
-
   async initializePricing(blockNumber: number): Promise<void> {
     let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
@@ -133,25 +67,15 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
       setTokensOnNetwork(this.network, JSON.parse(cachedTokenList));
       return;
     }
-    let poolContract = new this.dexHelper.web3Provider.eth.Contract(
-      POOL_ABI as any,
-      this.config.poolAddress,
-    );
-    let reservesList = await poolContract.methods.getReservesList().call();
 
-    let tokenMetadataList = await this._getAllTokenMetadata(
+    let tokenList = await fetchTokenList(
+      this.dexHelper.web3Provider,
       blockNumber,
-      reservesList,
+      this.config.poolAddress,
+      this.pool,
+      this.erc20Interface,
+      this.dexHelper.multiWrapper,
     );
-    let aTokenSymbolsList = await this._getATokenSymbols(
-      blockNumber,
-      tokenMetadataList.map(metadata => metadata.aAddress),
-    );
-    let tokenList = tokenMetadataList.map((metadata, i: number) => ({
-      ...metadata,
-      ...aTokenSymbolsList[i],
-    }));
-    console.log('tokenList = ', tokenList);
 
     await this.dexHelper.cache.setex(
       this.dexKey,
