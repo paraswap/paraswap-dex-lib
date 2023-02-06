@@ -57,60 +57,61 @@ import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
 import { AirSwap } from './airswap/airswap';
+import { AirswapRFQ } from './airswap-rfq/airswap-rfq';
 
 const LegacyDexes = [
   CurveV2,
-  StablePool,
-  Smoothy,
-  ZeroX,
-  Bancor,
-  BProtocol,
-  MStable,
-  Shell,
-  Onebit,
-  Compound,
-  OneInchLp,
-  DodoV1,
-  DodoV2,
-  QuickSwapV3,
-  Jarvis,
-  Lido,
-  AugustusRFQOrder,
+  // StablePool,
+  // Smoothy,
+  // ZeroX,
+  // Bancor,
+  // BProtocol,
+  // MStable,
+  // Shell,
+  // Onebit,
+  // Compound,
+  // OneInchLp,
+  // DodoV1,
+  // DodoV2,
+  // QuickSwapV3,
+  // Jarvis,
+  // Lido,
+  // AugustusRFQOrder,
 ];
 
 const Dexes = [
-  AirSwap,
+  AirswapRFQ,
   CurveV1,
-  CurveFork,
-  Swerve,
-  BalancerV1,
-  BalancerV2,
-  UniswapV2,
-  UniswapV3,
-  BiSwap,
-  MDEX,
-  Dfyn,
-  Excalibur,
-  AaveV1,
-  AaveV2,
-  AaveV3,
-  KyberDmm,
-  Weth,
-  MakerPsm,
-  Nerve,
-  Platypus,
-  GMX,
-  JarvisV6,
-  WooFi,
-  ParaSwapLimitOrders,
-  Solidly,
-  SpiritSwapV2,
-  Velodrome,
-  Cone,
-  Synthetix,
-  CurveV1Factory,
-  SwaapV1,
-  WstETH,
+  // CurveFork,
+  // Swerve,
+  // BalancerV1,
+  // BalancerV2,
+  // UniswapV2,
+  // UniswapV3,
+  // BiSwap,
+  // MDEX,
+  // Dfyn,
+  // Excalibur,
+  // AaveV1,
+  // AaveV2,
+  // AaveV3,
+  // KyberDmm,
+  // Weth,
+  // MakerPsm,
+  // Nerve,
+  // Platypus,
+  // GMX,
+  // JarvisV6,
+  // WooFi,
+  // ParaSwapLimitOrders,
+  // Solidly,
+  // SpiritSwapV2,
+  // Velodrome,
+  // Cone,
+  // Synthetix,
+  // CurveV1Factory,
+  // SwaapV1,
+  // WstETH,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
@@ -182,7 +183,9 @@ export class DexAdapterService {
 
     Dexes.forEach(DexAdapter => {
       DexAdapter.dexKeysWithNetwork.forEach(({ key, networks }) => {
+        // airswap has been added as dex bu i don't think this is a good idea
         if (networks.includes(network)) {
+          //@ts-ignore
           const dex = new DexAdapter(network, key, dexHelper);
           handleDex(dex, key);
         }
@@ -198,7 +201,7 @@ export class DexAdapterService {
         rfqConfigs[rfqName],
       );
       handleDex(dex, rfqName);
-      this.genericRFQDexKeys.add(rfqName.toLowerCase());
+      this.genericRFQDexKeys.add(rfqName.toLowerCase()); // airswap should be here, we NEED to conform to protocols, wtf, why ?
     });
 
     this.directFunctionsNames = [...LegacyDexes, ...Dexes]

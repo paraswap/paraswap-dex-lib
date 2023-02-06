@@ -139,53 +139,54 @@ const buildConfigForAirswapRFQ = (): RFQConfig => {
         url: `${url}`,
         method: 'GET',
       },
-      secret,
+      //secret,
       intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
       dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
     },
-    pairsConfig: {
-      reqParams: {
-        url: `${url}/pairs`,
-        method: 'GET',
-      },
-      secret,
-      intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-      dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
-    },
-    rateConfig: {
-      reqParams: {
-        url: `${url}`,
-        method: 'GET',
-      },
-      secret,
-      intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-      dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
-    },
-    firmRateConfig: {
-      url: `${url}/firm`,
-      method: 'POST',
-      secret,
-    },
-    blacklistConfig: {
-      reqParams: {
-        url: `${url}/blacklist`,
-        method: 'GET',
-      },
-      secret,
-      intervalMs: 1000 * 60 * 60 * 10,
-      dataTTLS: 1000 * 60 * 60 * 11,
-    },
+    // pairsConfig: {
+    //   reqParams: {
+    //     url: `${url}/pairs`,
+    //     method: 'GET',
+    //   },
+    //   secret,
+    //   intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+    //   dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+    // },
+    // rateConfig: {
+    //   reqParams: {
+    //     url: `${url}`,
+    //     method: 'GET',
+    //   },
+    //   secret,
+    //   intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
+    //   dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
+    // },
+    // firmRateConfig: {
+    //   url: `${url}/firm`,
+    //   method: 'POST',
+    //   secret,
+    // },
+    // blacklistConfig: {
+    //   reqParams: {
+    //     url: `${url}/blacklist`,
+    //     method: 'GET',
+    //   },
+    //   secret,
+    //   intervalMs: 1000 * 60 * 60 * 10,
+    //   dataTTLS: 1000 * 60 * 60 * 11,
+    // },
     // pathToRemove,
   };
 };
 
-describe('AirswapRFQ YOUR_NAME E2E Mainnet', () => {
-  const dexKey = 'YOUR_NAME';
+describe('AirswapRFQ E2E Mainnet', () => {
+  const dexKey = 'AirswapRFQ';
 
   const network = Network.MAINNET;
   const smartTokens = SmartTokens[network];
   const config = generateConfig(network);
 
+  //@ts-ignore
   config.rfqConfigs[dexKey] = buildConfigForAirswapRFQ();
 
   describe('AirswapRFQ B/Q BUY', () => {
