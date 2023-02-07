@@ -66,18 +66,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  getPairName = (pair: { baseToken: Token; quoteToken: Token }) =>
-    `${pair.baseToken.address}_${pair.quoteToken.address}`.toLowerCase();
-
-  normalizeToken(token: Token): Token {
-    return {
-      address:
-        token.address === ETHER_ADDRESS
-          ? ZERO_ADDRESS
-          : token.address.toLowerCase(),
-      decimals: token.decimals,
-    };
-  }
+  getPairName = (srcAddress: Address, destAddress: Address) =>
+    `${srcAddress}_${destAddress}`.toLowerCase();
 
   async getPoolIdentifiers(
     srcToken: Token,
@@ -85,24 +75,30 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    const _srcAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const _destAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     const chainId = this.network as ChainId;
-    const pair = {
-      baseToken: this.normalizeToken(srcToken),
-      quoteToken: this.normalizeToken(destToken),
-    };
-    const pairName = this.getPairName(pair);
+
+    if (_srcAddress === _destAddress) {
+      return [];
+    }
+
+    const pairName = this.getPairName(_srcAddress, _destAddress);
 
     const makers = await this.api.getMarketMakers(chainId);
     const levels = await this.api.getPriceLevels(chainId, makers);
+
     return makers
       .filter(m => {
         const pairs = levels[m]?.map(entry => entry.pair) ?? [];
         return pairs.some(
           p =>
-            pair.baseToken.address.toLowerCase() ===
-              p.baseToken.toLowerCase() &&
-            pair.quoteToken.address.toLowerCase() ===
-              p.quoteToken.toLowerCase(),
+            _srcAddress === p.baseToken.toLowerCase() &&
+            _destAddress === p.quoteToken.toLowerCase(),
         );
       })
       .map(m => `${this.dexKey}_${pairName}_${m}`);
@@ -111,7 +107,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   computePricesFromLevels(
     amounts: BigNumber[],
     levels: PriceLevel[],
-    pair: { baseToken: Token; quoteToken: Token },
+    srcToken: Token,
+    destToken: Token,
     side: SwapSide,
   ): bigint[] {
     if (levels.length > 0) {
@@ -142,9 +139,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     }
 
     const decimals =
-      side === SwapSide.SELL
-        ? pair.quoteToken.decimals
-        : pair.baseToken.decimals;
+      side === SwapSide.SELL ? destToken.decimals : srcToken.decimals;
 
     return outputs.map(o =>
       BigInt(o.multipliedBy(getBigNumberPow(decimals)).toFixed(0)),
@@ -211,6 +206,36 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return undefined;
   }
 
+  async getLevels(
+    pools: string[],
+    prefix: string,
+  ): Promise<PriceLevelsResponse['levels']> {
+    const cachedLevels = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network as ChainId,
+      `levels`,
+    );
+    if (cachedLevels) {
+      return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
+    }
+
+    const makers = pools.map(p => p.split(`${prefix}_`).pop()!);
+    const levels = await this.api.getPriceLevels(
+      this.network as ChainId,
+      makers,
+    );
+
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network as ChainId,
+      `levels`,
+      PRICE_LEVELS_TTL_SECONDS,
+      JSON.stringify(levels),
+    );
+
+    return levels;
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -219,49 +244,26 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<HashflowData>> {
-    const chainId = this.network as ChainId;
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+    _srcToken.address = _srcToken.address.toLowerCase();
+    _destToken.address = _destToken.address.toLowerCase();
 
-    const pair = {
-      baseToken: this.normalizeToken(srcToken),
-      quoteToken: this.normalizeToken(destToken),
-    };
+    if (_srcToken.address === _destToken.address) {
+      return null;
+    }
 
-    const prefix = `${this.dexKey}_${this.getPairName(pair)}`;
+    const prefix = `${this.dexKey}_${this.getPairName(
+      _srcToken.address,
+      _destToken.address,
+    )}`;
 
-    const getLevels = async (): Promise<PriceLevelsResponse['levels']> => {
-      const cachedLevels = await this.dexHelper.cache.get(
-        this.dexKey,
-        chainId,
-        `levels`,
-      );
-      if (cachedLevels) {
-        return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
-      }
+    const pools =
+      limitPools ??
+      (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
-      const pools =
-        limitPools ??
-        (await this.getPoolIdentifiers(
-          pair.baseToken,
-          pair.quoteToken,
-          side,
-          blockNumber,
-        ));
+    const levelsMap = await this.getLevels(pools, prefix);
 
-      const makers = pools.map(p => p.split(`${prefix}_`).pop()!);
-      const levels = await this.api.getPriceLevels(chainId, makers);
-
-      await this.dexHelper.cache.setex(
-        this.dexKey,
-        chainId,
-        `levels`,
-        PRICE_LEVELS_TTL_SECONDS,
-        JSON.stringify(levels),
-      );
-
-      return levels;
-    };
-
-    const levelsMap = await getLevels();
     const levelEntries: {
       mm: string;
       levels: PriceLevel[];
@@ -270,7 +272,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const entry = levelsMap[mm]?.find(
           e =>
             `${e.pair.baseToken}_${e.pair.quoteToken}` ===
-            this.getPairName(pair),
+            this.getPairName(_srcToken.address, _destToken.address),
         );
         if (entry === undefined) {
           return undefined;
@@ -287,9 +289,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const amountsRaw = amounts.map(a =>
         new BigNumber(a.toString()).dividedBy(
           getBigNumberPow(
-            side === SwapSide.SELL
-              ? pair.baseToken.decimals
-              : pair.quoteToken.decimals,
+            side === SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
           ),
         ),
       );
@@ -297,13 +297,15 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const unitPrice = this.computePricesFromLevels(
         [BN_1],
         levels,
-        pair,
+        _srcToken,
+        _destToken,
         side,
       )[0];
       const prices = this.computePricesFromLevels(
         amountsRaw,
         levels,
-        pair,
+        _srcToken,
+        _destToken,
         side,
       );
 
@@ -329,18 +331,18 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<[OptimalSwapExchange<HashflowData>, ExchangeTxInfo]> {
     const chainId = this.network as ChainId;
 
-    const pair = {
-      baseToken: this.normalizeToken(srcToken),
-      quoteToken: this.normalizeToken(destToken),
-    };
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+    _srcToken.address = _srcToken.address.toLowerCase();
+    _destToken.address = _destToken.address.toLowerCase();
 
     const baseTokenAmount = optimalSwapExchange.srcAmount;
     const quoteTokenAmount = optimalSwapExchange.destAmount;
 
     const rfq = await this.api.requestQuote({
       chainId,
-      baseToken: pair.baseToken.address,
-      quoteToken: pair.quoteToken.address,
+      baseToken: _srcToken.address,
+      quoteToken: _destToken.address,
       ...(side === SwapSide.SELL ? { baseTokenAmount } : { quoteTokenAmount }),
       wallet: this.augustusAddress.toLowerCase(),
       effectiveTrader: options.txOrigin.toLowerCase(),
@@ -349,33 +351,46 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     if (rfq.status !== 'success') {
       const message = `${
         this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(pair)}. Status: ${
-        rfq.status
-      }`;
+      }: Failed to fetch RFQ for ${this.getPairName(
+        _srcToken.address,
+        _destToken.address,
+      )}. Status: ${rfq.status}`;
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (!rfq.quoteData) {
       const message = `${
         this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(pair)}. Missing quote data`;
+      }: Failed to fetch RFQ for ${this.getPairName(
+        _srcToken.address,
+        _destToken.address,
+      )}. Missing quote data`;
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (!rfq.signature) {
       const message = `${
         this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(pair)}. Missing signature`;
+      }: Failed to fetch RFQ for ${this.getPairName(
+        _srcToken.address,
+        _destToken.address,
+      )}. Missing signature`;
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (!rfq.gasEstimate) {
       const message = `${
         this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(pair)}. No gas estimate.`;
+      }: Failed to fetch RFQ for ${this.getPairName(
+        _srcToken.address,
+        _destToken.address,
+      )}. No gas estimate.`;
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (rfq.quoteData.rfqType !== RFQType.RFQT) {
       const message = `${
         this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(pair)}. Invalid RFQ type.`;
+      }: Failed to fetch RFQ for ${this.getPairName(
+        _srcToken.address,
+        _destToken.address,
+      )}. Invalid RFQ type.`;
       this.logger.warn(message);
       throw new RfqError(message);
     }
@@ -483,22 +498,48 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     );
   }
 
+  extractQuoteToken = (pair: {
+    baseToken: string;
+    baseTokenName: string;
+    quoteToken: string;
+    quoteTokenName: string;
+    baseTokenDecimals: number;
+    quoteTokenDecimals: number;
+  }): Token => ({
+    address: pair.quoteToken,
+    symbol: pair.quoteTokenName,
+    decimals: pair.quoteTokenDecimals,
+  });
+
+  computeMaxLiquidity = (
+    levels: PriceLevel[],
+    baseTokenPriceUsd: number,
+  ): number => {
+    const maxLevel = new BigNumber(levels[levels.length - 1]?.level ?? '0');
+    return maxLevel.multipliedBy(baseTokenPriceUsd).toNumber();
+  };
+
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    const _tokenAddress = tokenAddress.toLowerCase();
+
     const chainId = this.network as ChainId;
     const makers = await this.api.getMarketMakers(chainId);
     const pLevels = await this.api.getPriceLevels(chainId, makers);
 
     let baseToken: Token | undefined = undefined;
+    // TODO: Improve efficiency of this part. Quite inefficient way to determine
+    // Token address and decimals. But since it is not called frequently, not worth
+    // optimizing now
     for (const maker of makers) {
       const baseTokenEntry = pLevels[maker]?.find(
-        entry => entry.pair.baseToken.toLowerCase() === tokenAddress,
+        entry => entry.pair.baseToken.toLowerCase() === _tokenAddress,
       );
       if (baseTokenEntry) {
         baseToken = {
-          address: tokenAddress,
+          address: _tokenAddress,
           decimals: baseTokenEntry.pair.baseTokenDecimals,
         };
         break;
@@ -514,38 +555,23 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       BigInt(getBigNumberPow(baseToken.decimals).toFixed(0)),
     );
 
-    const computeMaxLiquidity = (levels: PriceLevel[]): number => {
-      const maxLevel = new BigNumber(levels[levels.length - 1]?.level ?? '0');
-      return maxLevel.multipliedBy(baseTokenPriceUsd).toNumber();
-    };
-
-    const extractQuoteToken = (pair: {
-      baseToken: string;
-      baseTokenName: string;
-      quoteToken: string;
-      quoteTokenName: string;
-      baseTokenDecimals: number;
-      quoteTokenDecimals: number;
-    }): Token => ({
-      address: pair.quoteToken,
-      symbol: pair.quoteTokenName,
-      decimals: pair.quoteTokenDecimals,
-    });
-
     const pools = makers
       .map(
         m =>
           pLevels[m]
             ?.filter(
-              entry => entry.pair.baseToken.toLowerCase() === tokenAddress,
+              entry => entry.pair.baseToken.toLowerCase() === _tokenAddress,
             )
             .map(
               entry =>
                 ({
                   exchange: this.dexKey,
                   address: this.routerAddress,
-                  connectorTokens: [extractQuoteToken(entry.pair)],
-                  liquidityUSD: computeMaxLiquidity(entry.levels),
+                  connectorTokens: [this.extractQuoteToken(entry.pair)],
+                  liquidityUSD: this.computeMaxLiquidity(
+                    entry.levels,
+                    baseTokenPriceUsd,
+                  ),
                 } as PoolLiquidity),
             ) ?? [],
       )
