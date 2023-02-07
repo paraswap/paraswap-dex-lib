@@ -16,9 +16,9 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { HashflowData, PriceLevel, RfqError } from './types';
+import { HashflowData, PriceLevel, RfqError, RFQType } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { HashflowConfig } from './config';
+import { Adapters, HashflowConfig } from './config';
 import { HashflowApi } from '@hashflow/taker-js';
 import routerAbi from '../../abi/hashflow/HashflowRouter.abi.json';
 import BigNumber from 'bignumber.js';
@@ -26,20 +26,16 @@ import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { Interface } from 'ethers/lib/utils';
 import { ChainId, ZERO_ADDRESS } from '@hashflow/sdk';
 import { PriceLevelsResponse } from '@hashflow/taker-js/dist/types/rest';
-
-const HASHFLOW_AUTH_KEY = 'TODO';
-const PRICE_LEVELS_TTL_SECONDS = 1;
-
-enum RFQType {
-  RFQT = 0,
-  RFQM = 1,
-}
+import { assert } from 'ts-essentials';
+import { PRICE_LEVELS_TTL_SECONDS } from './constants';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
   private api: HashflowApi;
+
+  private hashFlowAuthToken: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(HashflowConfig);
@@ -50,17 +46,24 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
+    protected adapters = Adapters[network] || {},
     readonly routerAddress: string = HashflowConfig['Hashflow'][network]
       .routerAddress,
     protected routerInterface = new Interface(routerAbi),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.api = new HashflowApi('taker', 'paraswap', HASHFLOW_AUTH_KEY);
+    const token = dexHelper.config.data.hashFlowAuthToken;
+    assert(
+      token !== undefined,
+      'Hashflow auth token is not specified with env variable',
+    );
+    this.hashFlowAuthToken = token;
+    this.api = new HashflowApi('taker', 'paraswap', this.hashFlowAuthToken);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return null;
+    return this.adapters[side] ? this.adapters[side] : null;
   }
 
   getPairName = (pair: { baseToken: Token; quoteToken: Token }) =>
@@ -76,10 +79,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     };
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -108,6 +107,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       })
       .map(m => `${this.dexKey}_${pairName}_${m}`);
   }
+
   computePricesFromLevels(
     amounts: BigNumber[],
     levels: PriceLevel[],
@@ -211,10 +211,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return undefined;
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -397,7 +393,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     ];
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<HashflowData>): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
@@ -408,9 +403,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return { address, decimals: 0 };
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -452,10 +444,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -495,8 +483,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     );
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,

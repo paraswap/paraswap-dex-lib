@@ -16,3 +16,8 @@ export interface PriceLevel {
 }
 
 export class RfqError extends Error {}
+
+export enum RFQType {
+  RFQT = 0,
+  RFQM = 1,
+}

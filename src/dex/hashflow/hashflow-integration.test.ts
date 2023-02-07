@@ -2,7 +2,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
@@ -13,21 +12,6 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for Hashflow general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Hashflow specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
 
 async function testPricingOnNetwork(
   hashflow: Hashflow,
@@ -86,8 +70,6 @@ describe('Hashflow', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'USDT';
     const destTokenSymbol = 'USDC';
 

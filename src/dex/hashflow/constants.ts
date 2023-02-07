@@ -1,0 +1,1 @@
+export const PRICE_LEVELS_TTL_SECONDS = 1;
