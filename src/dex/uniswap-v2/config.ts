@@ -450,10 +450,58 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   Swapsicle: {
     [Network.AVALANCHE]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/billy93/exchange',
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-avalanche',
       factoryAddress: '0x9C60C867cE07a3c403E2598388673C10259EC768',
       initCode:
         '0x9e43ee37212e3296c7f6087d3e0a37b48a4e4e413538dac0fd18cfe2f80666c1',
+      feeCode: 30,
+    },
+    [Network.POLYGON]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-polygon',
+      factoryAddress: '0x735ab9808d792B5c8B54e31196c011c26C08b4ce',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.BSC]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-bnb',
+      factoryAddress: '0xEe673452BD981966d4799c865a96e0b92A8d0E45',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.FANTOM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-fantom',
+      factoryAddress: '0x98F23162E3a7FE610aC89C88E4217a599A15858F',
+      initCode:
+        '0xcb64282d14f9033fbb6a3a827bd515fff027bb6994a0d33ac0424e7e3037dad3',
+      feeCode: 30,
+    },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-arbitrum',
+      factoryAddress: '0x2f0c7c98462651bb2102f6cd05acdad333e031b0',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.MAINNET]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-ethereum',
+      factoryAddress: '0x2F0C7C98462651BB2102F6Cd05acDAd333E031b0',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.OPTIMISM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-optimism',
+      factoryAddress: '0x2f0c7c98462651bb2102f6cd05acdad333e031b0',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
       feeCode: 30,
     },
   },
