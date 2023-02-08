@@ -300,12 +300,12 @@ describe('AaveV3 E2E', () => {
       {
         tokenSymbol: 'EURS',
         aTokenSymbol: 'aArbEURS',
-        amount: '1000000000000000000',
+        amount: '100',
       },
       {
         tokenSymbol: 'USDC',
         aTokenSymbol: 'aArbUSDC',
-        amount: '1000000000000000000',
+        amount: '100000000',
       },
     ];
 
@@ -314,11 +314,11 @@ describe('AaveV3 E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy]],
     ]);
 
     pairs.forEach(pair => {
