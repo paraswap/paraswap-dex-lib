@@ -9,7 +9,7 @@ import * as SwapContract from '@airswap/swap-erc20/build/contracts/SwapERC20.sol
 // @ts-ignore
 import * as swapDeploys from '@airswap/swap-erc20/deploys.js';
 
-const start = function (config: any) {
+const start = function (config: any): () => Promise<void> {
   const wss = new WebSocket.Server({ server: config.server });
   const subscribers: WebSocket[] = [];
 
@@ -20,7 +20,7 @@ const start = function (config: any) {
     subscribers.splice(idx, 1);
   }
 
-  setInterval(() => {
+  let intervalId = setInterval(() => {
     for (let idx in subscribers) {
       subscribers[idx].send(
         JSON.stringify({
@@ -150,6 +150,17 @@ const start = function (config: any) {
     );
     console.log('Connection', req.socket.remoteAddress);
   });
+
+  return () => {
+    const promise = new Promise<void>((res, rej) => {
+      clearInterval(intervalId);
+      wss.close(() => {
+        console.log('WebSocket server stopped');
+        res();
+      });
+    });
+    return promise;
+  };
 };
 
 export default start;

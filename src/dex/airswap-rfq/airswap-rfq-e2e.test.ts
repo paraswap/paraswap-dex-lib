@@ -16,16 +16,18 @@ if (!PK_KEY) {
 }
 
 const testAccount = new ethers.Wallet(PK_KEY!);
+let stopServer: () => Promise<void>;
+beforeAll(() => {
+  stopServer = startTestServer(testAccount);
+});
+
+afterAll(done => {
+  stopServer().then(done);
+});
 
 jest.setTimeout(1000 * 60 * 3);
 
 describe('AirswapRFQ E2E Mainnet', () => {
-  let stopServer: undefined | Function = undefined;
-
-  beforeAll(() => {
-    stopServer = startTestServer(testAccount);
-  });
-
   const network = Network.MAINNET;
   const smartTokens = SmartTokens[network];
 
@@ -35,7 +37,7 @@ describe('AirswapRFQ E2E Mainnet', () => {
   const config = generateConfig(network);
 
   describe('AirswapRFQ', () => {
-    const dexKey = 'DummyParaSwapPool';
+    const dexKey = 'AirswapRFQ';
 
     srcToken.addBalance(testAccount.address, MAX_UINT);
     srcToken.addAllowance(
@@ -113,69 +115,63 @@ describe('AirswapRFQ E2E Mainnet', () => {
       });
     });
   });
-
-  afterAll(() => {
-    if (stopServer) {
-      stopServer();
-    }
-  });
 });
 
-const buildConfigForAirswapRFQ = (): RFQConfig => {
+export const buildConfigForAirswapRFQ = (): RFQConfig => {
   const url = getEnv('AIRSWAP_RFQ_URL');
 
   const secret = {
-    secretKey: "getEnv('AIRSWAP_RFQ_SECRET_KEY')",
-    accessKey: "getEnv('AIRSWAP_RFQ_ACCESS_KEY')",
-    domain: 'paraswap',
+    secretKey: 'no_secret_key',
+    accessKey: 'no_access_key',
+    domain: '',
   };
 
-  // const pathToRemove = getEnv('AIRSWAP_RFQ_PATH_TO_OVERRIDE');
+  const pathToRemove = '';
 
   return {
     maker: getEnv('AIRSWAP_RFQ_MAKER_ADDRESS'),
     tokensConfig: {
       reqParams: {
-        url: `${url}`,
+        url: `${url}/tokens`,
         method: 'GET',
       },
-      //secret,
+      secret,
       intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
       dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
     },
-    // pairsConfig: {
-    //   reqParams: {
-    //     url: `${url}/pairs`,
-    //     method: 'GET',
-    //   },
-    //   secret,
-    //   intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-    //   dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
-    // },
-    // rateConfig: {
-    //   reqParams: {
-    //     url: `${url}`,
-    //     method: 'GET',
-    //   },
-    //   secret,
-    //   intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-    //   dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
-    // },
-    // firmRateConfig: {
-    //   url: `${url}/firm`,
-    //   method: 'POST',
-    //   secret,
-    // },
-    // blacklistConfig: {
-    //   reqParams: {
-    //     url: `${url}/blacklist`,
-    //     method: 'GET',
-    //   },
-    //   secret,
-    //   intervalMs: 1000 * 60 * 60 * 10,
-    //   dataTTLS: 1000 * 60 * 60 * 11,
-    // },
-    // pathToRemove,
+    pairsConfig: {
+      reqParams: {
+        url: `${url}/pairs`,
+        method: 'GET',
+      },
+      secret,
+      intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+      dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+    },
+    rateConfig: {
+      reqParams: {
+        url: `${url}/prices`,
+        method: 'GET',
+      },
+      secret,
+      intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
+      dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
+    },
+    firmRateConfig: {
+      url: `${url}/firm`,
+      method: 'POST',
+      secret,
+    },
+    blacklistConfig: {
+      reqParams: {
+        url: `${url}/blacklist`,
+        method: 'GET',
+      },
+      secret,
+      intervalMs: 1000 * 60 * 60 * 10,
+      dataTTLS: 1000 * 60 * 60 * 11,
+    },
+    pathToRemove,
   };
 };
 
@@ -186,7 +182,6 @@ describe('AirswapRFQ E2E Mainnet', () => {
   const smartTokens = SmartTokens[network];
   const config = generateConfig(network);
 
-  //@ts-ignore
   config.rfqConfigs[dexKey] = buildConfigForAirswapRFQ();
 
   describe('AirswapRFQ B/Q BUY', () => {
@@ -196,7 +191,7 @@ describe('AirswapRFQ E2E Mainnet', () => {
     srcToken.addBalance(testAccount.address, MAX_UINT);
     srcToken.addAllowance(
       testAccount.address,
-      config.augustusRFQAddress,
+      config.augustusRFQAddress, // https://developers.paraswap.network/smart-contracts
       MAX_UINT,
     );
 

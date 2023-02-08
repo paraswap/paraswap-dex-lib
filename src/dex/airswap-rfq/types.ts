@@ -44,6 +44,7 @@ export type RatesResponse = {
 
 export type FetcherParams = {
   reqParams: RequestConfig;
+  secret: RFQSecret;
   intervalMs: number;
   dataTTLS: number;
 };
@@ -64,6 +65,10 @@ type RequestConfigWithAuth = RequestConfig & {
 
 export type RFQConfig = {
   tokensConfig: FetcherParams;
+  pairsConfig: FetcherParams;
+  rateConfig: FetcherParams;
+  firmRateConfig: RequestConfigWithAuth;
+  blacklistConfig?: FetcherParams;
   maker: Address;
   pathToRemove?: string;
 };

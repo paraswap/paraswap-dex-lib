@@ -14,6 +14,7 @@ import { parseInt } from 'lodash';
 import { startTestServer } from './example-rfq-api.test';
 import { ethers } from 'ethers';
 import { RFQConfig } from './types';
+import { buildConfigForAirswapRFQ } from './airswap-rfq-e2e.test';
 
 if (!process.env.TEST_PORT) {
   throw new Error(`Missing TEST_PORT variable`);
@@ -42,19 +43,14 @@ if (!PK_KEY) {
 }
 
 const account = new ethers.Wallet(PK_KEY!);
-const stopServer = startTestServer(account);
-
-const config: RFQConfig = {
-  maker: process.env.TEST_ADDRESS!,
-  tokensConfig: {
-    reqParams: {
-      url: `http://localhost:${PORT_TEST_SERVER}`,
-      method: 'GET',
-    },
-    intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
-    dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
-  },
-};
+let stopServer: () => Promise<void>;
+beforeAll(() => {
+  stopServer = startTestServer(account);
+});
+afterAll(done => {
+  stopServer().then(done);
+});
+const config = buildConfigForAirswapRFQ();
 
 describe('AirswapRFQ', function () {
   const network = Network.GOERLI;
@@ -137,9 +133,5 @@ describe('AirswapRFQ', function () {
     console.log('WETH Top Pools:', poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
-  });
-
-  afterAll(() => {
-    stopServer();
   });
 });

@@ -49,7 +49,7 @@ export const startTestServer = (wallet: ethers.Wallet) => {
   console.log(`Loaded account`, wallet.address);
   console.log(`Serving for chainID ${chainId}`); //${chainNames[chainId]}
 
-  LastLook(config);
+  const stopLastLook = LastLook(config);
   console.log(`Last-look protocol started`);
 
   RFQ(config);
@@ -58,6 +58,12 @@ export const startTestServer = (wallet: ethers.Wallet) => {
   console.log(`Listening on port ${port}`);
   server.listen(port);
   return () => {
-    server.close();
+    return new Promise<void>(async (res, rej) => {
+      await stopLastLook();
+      server.close(() => {
+        console.log('webserver stopped');
+        res();
+      });
+    });
   };
 };
