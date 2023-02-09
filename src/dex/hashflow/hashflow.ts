@@ -75,19 +75,18 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _srcAddress = this.dexHelper.config
-      .wrapETH(srcToken)
-      .address.toLowerCase();
-    const _destAddress = this.dexHelper.config
-      .wrapETH(destToken)
-      .address.toLowerCase();
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
     const chainId = this.network as ChainId;
 
-    if (_srcAddress === _destAddress) {
+    if (normalizedSrcToken.address === normalizedDestToken.address) {
       return [];
     }
 
-    const pairName = this.getPairName(_srcAddress, _destAddress);
+    const pairName = this.getPairName(
+      normalizedSrcToken.address,
+      normalizedDestToken.address,
+    );
 
     const makers = await this.api.getMarketMakers(chainId);
     const levels = await this.api.getPriceLevels(chainId, makers);
@@ -97,8 +96,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const pairs = levels[m]?.map(entry => entry.pair) ?? [];
         return pairs.some(
           p =>
-            _srcAddress === p.baseToken.toLowerCase() &&
-            _destAddress === p.quoteToken.toLowerCase(),
+            normalizedSrcToken.address === p.baseToken.toLowerCase() &&
+            normalizedDestToken.address === p.quoteToken.toLowerCase(),
         );
       })
       .map(m => `${this.dexKey}_${pairName}_${m}`);
@@ -236,6 +235,17 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return levels;
   }
 
+  // Hashflow protocol for native token expects 0x00000... instead of 0xeeeee...
+  normalizeToken(token: Token): Token {
+    return {
+      address:
+        token.address.toLowerCase() === ETHER_ADDRESS
+          ? ZERO_ADDRESS
+          : token.address.toLowerCase(),
+      decimals: token.decimals,
+    };
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -244,18 +254,16 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<HashflowData>> {
-    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
-    const _destToken = this.dexHelper.config.wrapETH(destToken);
-    _srcToken.address = _srcToken.address.toLowerCase();
-    _destToken.address = _destToken.address.toLowerCase();
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
 
-    if (_srcToken.address === _destToken.address) {
+    if (normalizedSrcToken.address === normalizedDestToken.address) {
       return null;
     }
 
     const prefix = `${this.dexKey}_${this.getPairName(
-      _srcToken.address,
-      _destToken.address,
+      normalizedSrcToken.address,
+      normalizedDestToken.address,
     )}`;
 
     const pools =
@@ -272,7 +280,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const entry = levelsMap[mm]?.find(
           e =>
             `${e.pair.baseToken}_${e.pair.quoteToken}` ===
-            this.getPairName(_srcToken.address, _destToken.address),
+            this.getPairName(
+              normalizedSrcToken.address,
+              normalizedDestToken.address,
+            ),
         );
         if (entry === undefined) {
           return undefined;
@@ -289,7 +300,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const amountsRaw = amounts.map(a =>
         new BigNumber(a.toString()).dividedBy(
           getBigNumberPow(
-            side === SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
+            side === SwapSide.SELL
+              ? normalizedSrcToken.decimals
+              : normalizedDestToken.decimals,
           ),
         ),
       );
@@ -297,15 +310,15 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const unitPrice = this.computePricesFromLevels(
         [BN_1],
         levels,
-        _srcToken,
-        _destToken,
+        normalizedSrcToken,
+        normalizedDestToken,
         side,
       )[0];
       const prices = this.computePricesFromLevels(
         amountsRaw,
         levels,
-        _srcToken,
-        _destToken,
+        normalizedSrcToken,
+        normalizedDestToken,
         side,
       );
 
@@ -331,18 +344,16 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<[OptimalSwapExchange<HashflowData>, ExchangeTxInfo]> {
     const chainId = this.network as ChainId;
 
-    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
-    const _destToken = this.dexHelper.config.wrapETH(destToken);
-    _srcToken.address = _srcToken.address.toLowerCase();
-    _destToken.address = _destToken.address.toLowerCase();
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
 
     const baseTokenAmount = optimalSwapExchange.srcAmount;
     const quoteTokenAmount = optimalSwapExchange.destAmount;
 
     const rfq = await this.api.requestQuote({
       chainId,
-      baseToken: _srcToken.address,
-      quoteToken: _destToken.address,
+      baseToken: normalizedSrcToken.address,
+      quoteToken: normalizedDestToken.address,
       ...(side === SwapSide.SELL ? { baseTokenAmount } : { quoteTokenAmount }),
       wallet: this.augustusAddress.toLowerCase(),
       effectiveTrader: options.txOrigin.toLowerCase(),
@@ -352,8 +363,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const message = `${
         this.dexKey
       }: Failed to fetch RFQ for ${this.getPairName(
-        _srcToken.address,
-        _destToken.address,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
       )}. Status: ${rfq.status}`;
       this.logger.warn(message);
       throw new RfqError(message);
@@ -361,8 +372,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const message = `${
         this.dexKey
       }: Failed to fetch RFQ for ${this.getPairName(
-        _srcToken.address,
-        _destToken.address,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
       )}. Missing quote data`;
       this.logger.warn(message);
       throw new RfqError(message);
@@ -370,8 +381,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const message = `${
         this.dexKey
       }: Failed to fetch RFQ for ${this.getPairName(
-        _srcToken.address,
-        _destToken.address,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
       )}. Missing signature`;
       this.logger.warn(message);
       throw new RfqError(message);
@@ -379,8 +390,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const message = `${
         this.dexKey
       }: Failed to fetch RFQ for ${this.getPairName(
-        _srcToken.address,
-        _destToken.address,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
       )}. No gas estimate.`;
       this.logger.warn(message);
       throw new RfqError(message);
@@ -388,12 +399,21 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const message = `${
         this.dexKey
       }: Failed to fetch RFQ for ${this.getPairName(
-        _srcToken.address,
-        _destToken.address,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
       )}. Invalid RFQ type.`;
       this.logger.warn(message);
       throw new RfqError(message);
     }
+
+    assert(
+      rfq.quoteData.baseToken === normalizedSrcToken.address,
+      `QuoteData baseToken=${rfq.quoteData.baseToken} is different from srcToken=${normalizedSrcToken.address}`,
+    );
+    assert(
+      rfq.quoteData.quoteToken === normalizedDestToken.address,
+      `QuoteData baseToken=${rfq.quoteData.quoteToken} is different from srcToken=${normalizedDestToken.address}`,
+    );
 
     return [
       {
