@@ -3,7 +3,7 @@ dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { AaveV3 } from './aave-v3';
+import { AaveV3, TOKEN_LIST_CACHE_KEY } from './aave-v3';
 import {
   checkConstantPoolPrices,
   checkPoolsLiquidity,
@@ -29,21 +29,45 @@ const amounts = [0n, BI_POWS[6], 2000000n];
 const dexKey = 'AaveV3';
 
 describe('AaveV3', function () {
+  it('The "initializePricing" method sets cache properly', async () => {
+    const dexHelper = new DummyDexHelper(network);
+    const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const aaveV3 = new AaveV3(network, dexKey, dexHelper);
+
+    await expect(
+      dexHelper.cache.getAndCacheLocally(
+        dexKey,
+        network,
+        TOKEN_LIST_CACHE_KEY,
+        0,
+      ),
+    ).resolves.toBeNull();
+    await aaveV3.initializePricing(blockNumber);
+    await expect(
+      dexHelper.cache.getAndCacheLocally(
+        dexKey,
+        network,
+        TOKEN_LIST_CACHE_KEY,
+        0,
+      ),
+    ).resolves.toMatch('aPol');
+  });
+
   if (TokenA) {
     if (TokenB) {
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         const dexHelper = new DummyDexHelper(network);
-        const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
         const aaveV3 = new AaveV3(network, dexKey, dexHelper);
 
         // Invoke the "initializePricing" method manually in tests. Invoked by the SDK automatically otherwise.
-        await aaveV3.initializePricing(blocknumber);
+        await aaveV3.initializePricing(blockNumber);
 
         const pools = await aaveV3.getPoolIdentifiers(
           TokenA,
           TokenB,
           SwapSide.SELL,
-          blocknumber,
+          blockNumber,
         );
         console.log(
           `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
@@ -57,7 +81,7 @@ describe('AaveV3', function () {
           TokenB,
           amounts,
           SwapSide.SELL,
-          blocknumber,
+          blockNumber,
           pools,
         );
         console.log(

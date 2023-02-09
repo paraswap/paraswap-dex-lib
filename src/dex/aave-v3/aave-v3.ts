@@ -24,7 +24,7 @@ import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
 import { fetchTokenList } from './utils';
 
 const REF_CODE = 1;
-const TOKEN_LIST_CACHE_KEY = 'token-list';
+export const TOKEN_LIST_CACHE_KEY = 'token-list';
 const TOKEN_LIST_TTL_SECONDS = 86400; // 1 day
 const TOKEN_LIST_LOCAL_TTL_SECONDS = 10800; // 3 hours
 
