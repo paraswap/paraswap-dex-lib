@@ -19,6 +19,7 @@ function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   nativeTokenAmount: string,
+  excludeNativeTokenTests: boolean = false,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -45,45 +46,87 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            if (excludeNativeTokenTests) {
+              it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[tokenBSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenBSymbol],
+                  tokens[tokenASymbol],
+                  holders[tokenBSymbol],
+                  side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            } else {
+              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[nativeTokenSymbol],
+                  tokens[tokenASymbol],
+                  holders[nativeTokenSymbol],
+                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[nativeTokenSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[tokenBSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenBSymbol],
+                  tokens[tokenASymbol],
+                  holders[tokenBSymbol],
+                  side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            }
           });
         });
       }),
@@ -137,8 +180,8 @@ describe('Hashflow E2E', () => {
   describe('BSC', () => {
     const network = Network.BSC;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
 
     const tokenAAmount: string = '100000000';
     const tokenBAmount: string = '100000000';
@@ -157,11 +200,11 @@ describe('Hashflow E2E', () => {
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
-    const tokenASymbol: string = 'DAI';
-    const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'WETH';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '100000000';
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '1000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -172,17 +215,17 @@ describe('Hashflow E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
+      true,
     );
   });
   describe('Optimism', () => {
     const network = Network.OPTIMISM;
 
-    const tokenASymbol: string = 'DAI';
-    const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '100000000';
-    const nativeTokenAmount = '1000000000000000000';
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,
@@ -191,14 +234,15 @@ describe('Hashflow E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      nativeTokenAmount,
+      '0',
+      true,
     );
   });
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
+    const tokenASymbol: string = 'USDCe';
 
     const tokenAAmount: string = '100000000';
     const tokenBAmount: string = '100000000';
