@@ -56,6 +56,7 @@ import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { OPX } from './opx/opx';
 
 const LegacyDexes = [
   CurveV2,
@@ -109,6 +110,7 @@ const Dexes = [
   CurveV1Factory,
   SwaapV1,
   WstETH,
+  OPX,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
