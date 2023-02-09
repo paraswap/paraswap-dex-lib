@@ -448,34 +448,27 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): AdapterExchangeParam {
     const { quoteData, signature, gasEstimate } = data;
 
-    // Encoding here the payload for adapter
     const payload = this.routerInterface._abiCoder.encode(
       [
-        'tuple(address, address, address, address, address, address, uint256, unit256, uint256, uint256, uint256, bytes32, bytes)',
+        'tuple(address externalAccount, uint256 baseTokenAmount, uint256 quoteTokenAmount, uint256 quoteExpiry, uint256 nonce, bytes32 txid, bytes signature)',
       ],
       [
-        [
-          quoteData.pool,
-          quoteData.eoa ?? ZERO_ADDRESS,
-          quoteData.trader,
-          quoteData.effectiveTrader ?? quoteData.trader,
-          quoteData.baseToken,
-          quoteData.quoteToken,
-          quoteData.baseTokenAmount,
-          quoteData.baseTokenAmount,
-          quoteData.quoteTokenAmount,
-          quoteData.quoteExpiry,
-          quoteData.nonce ?? 0,
-          quoteData.txid,
+        {
+          externalAccount: quoteData.eoa ?? ZERO_ADDRESS,
+          baseTokenAmount: quoteData.baseTokenAmount,
+          quoteTokenAmount: quoteData.quoteTokenAmount,
+          quoteExpiry: quoteData.quoteExpiry,
+          nonce: quoteData.nonce ?? 0,
+          txid: quoteData.txid,
           signature,
-        ],
+        },
       ],
     );
 
     return {
-      targetExchange: this.dexKey,
+      targetExchange: this.routerAddress,
       payload,
-      networkFee: gasEstimate.toFixed(),
+      networkFee: '0',
     };
   }
 

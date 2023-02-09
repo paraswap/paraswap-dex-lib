@@ -26,7 +26,28 @@ export const HashflowConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter03', index: 13 }],
+    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 7 }],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 2 }],
+    [SwapSide.BUY]: [{ name: 'BscBuyAdapter', index: 3 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 7 }],
+    [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 5 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 14 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 4 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 10 }],
+    [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 4 }],
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter01', index: 14 }],
+    [SwapSide.BUY]: [{ name: 'AvalancheBuyAdapter', index: 3 }],
+  },
 };
