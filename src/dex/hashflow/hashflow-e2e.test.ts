@@ -114,4 +114,104 @@ describe('Hashflow E2E', () => {
       nativeTokenAmount,
     );
   });
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '100000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+  describe('BSC', () => {
+    const network = Network.BSC;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '100000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'DAI';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '100000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const tokenASymbol: string = 'DAI';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '100000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '100000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
 });
