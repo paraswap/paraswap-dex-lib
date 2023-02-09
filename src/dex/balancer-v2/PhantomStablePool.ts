@@ -313,10 +313,6 @@ export class PhantomStablePool extends BasePool {
       },
       {
         target: pool.address,
-        callData: this.poolInterface.encodeFunctionData('getRate'),
-      },
-      {
-        target: pool.address,
         callData: this.poolInterface.encodeFunctionData(
           'getAmplificationParameter',
         ),
@@ -373,12 +369,6 @@ export class PhantomStablePool extends BasePool {
       data[startIndex++],
       pool.address,
     )[0];
-    const rate = decodeThrowError(
-      this.poolInterface,
-      'getRate',
-      data[startIndex++],
-      pool.address,
-    )[0];
     const amp = decodeThrowError(
       this.poolInterface,
       'getAmplificationParameter',
@@ -386,17 +376,10 @@ export class PhantomStablePool extends BasePool {
       pool.address,
     );
 
-    const bptIndex = pool.tokens.findIndex(
-      t => t.address.toLowerCase() === pool.address.toLowerCase(),
-    );
-
     const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
       address: address.toLowerCase(),
       balance: BigInt(poolTokens.balances[idx].toString()),
-      scalingFactor:
-        idx === bptIndex
-          ? BigInt(rate.toString())
-          : BigInt(scalingFactors[idx].toString()),
+      scalingFactor: BigInt(scalingFactors[idx].toString()),
     }));
 
     const poolState: PoolState = {

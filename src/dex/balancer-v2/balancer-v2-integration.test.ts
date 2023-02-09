@@ -50,88 +50,49 @@ const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 const dexKey = 'BalancerV2';
 
 describe('BalancerV2', function () {
-  describe('BeetsFi', () => {
-    it('FTM -> BOO: getPoolIdentifiers and getPricesVolume', async () => {
-      const dexKey = 'BeetsFi';
-      const network = Network.FANTOM;
-      const srcToken = Tokens[network]['FTM'];
-      const destToken = Tokens[network]['BOO'];
-      const amounts = [0n, BI_POWS[18]];
-
-      const dexHelper = new DummyDexHelper(network);
-      // const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      const blockNumber = 54734626;
-      const beetsFi = new BalancerV2(network, dexKey, dexHelper);
-
-      await beetsFi.initializePricing(blockNumber);
-
-      const pools = await beetsFi.getPoolIdentifiers(
-        srcToken,
-        destToken,
-        SwapSide.SELL,
-        blockNumber,
-      );
-      console.log('Pool Identifiers: ', pools);
-
-      expect(pools.length).toBeGreaterThan(0);
-
-      const poolPrices = await beetsFi.getPricesVolume(
-        srcToken,
-        destToken,
-        amounts,
-        SwapSide.SELL,
-        blockNumber,
-        pools,
-      );
-      console.log('Pool Prices: ', poolPrices);
-
-      expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-
-      await beetsFi.releaseResources();
-    });
-    it('WETH -> FTM: getPoolIdentifiers and getPricesVolume', async () => {
-      const dexKey = 'BeetsFi';
-      const network = Network.FANTOM;
-      const srcToken = Tokens[network]['WETH'];
-      const destToken = Tokens[network]['FTM'];
-      const amounts = [0n, BI_POWS[18]];
-
-      const dexHelper = new DummyDexHelper(network);
-      // const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      const blockNumber = 54782005;
-      const beetsFi = new BalancerV2(network, dexKey, dexHelper);
-
-      await beetsFi.initializePricing(blockNumber);
-
-      const pools = await beetsFi.getPoolIdentifiers(
-        srcToken,
-        destToken,
-        SwapSide.SELL,
-        blockNumber,
-      );
-      console.log('Pool Identifiers: ', pools);
-
-      expect(pools.length).toBeGreaterThan(0);
-
-      const poolPrices = await beetsFi.getPricesVolume(
-        srcToken,
-        destToken,
-        amounts,
-        SwapSide.SELL,
-        blockNumber,
-        pools,
-      );
-      console.log('Pool Prices: ', poolPrices);
-
-      expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-
-      await beetsFi.releaseResources();
-    });
-  });
-
   describe('ComposableStable', () => {
+    it('USDC -> USDT getPoolIdentifiers and getPricesVolume', async () => {
+      const network = Network.MAINNET;
+      const srcToken = Tokens[network]['USDC'];
+      const destToken = Tokens[network]['USDT'];
+      const amounts = [0n, 10000001000000n];
+
+      const dexHelper = new DummyDexHelper(network);
+      const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // You will need blockTimestamp to check onchain calculation, because
+      // it depends on timestamp. If you have different values, they are incomparable
+      // const block = await dexHelper.web3Provider.eth.getBlock(blockNumber);
+
+      const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
+
+      await balancerV2.initializePricing(blockNumber);
+
+      const pools = await balancerV2.getPoolIdentifiers(
+        srcToken,
+        destToken,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log('Pool Identifiers: ', pools);
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await balancerV2.getPricesVolume(
+        srcToken,
+        destToken,
+        amounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log('Pool Prices: ', poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      await balancerV2.releaseResources();
+    });
+
     it('getPoolIdentifiers and getPricesVolume', async () => {
       const dexHelper = new DummyDexHelper(Network.POLYGON);
       const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
@@ -395,5 +356,84 @@ describe('BalancerV2', function () {
         state[BBAUSD.address].tokens[BBAUSD.address].scalingFactor!.toString(),
       ).toBe('1015093119997891367');
     });
+  });
+});
+
+describe('BeetsFi', () => {
+  it('FTM -> BOO: getPoolIdentifiers and getPricesVolume', async () => {
+    const dexKey = 'BeetsFi';
+    const network = Network.FANTOM;
+    const srcToken = Tokens[network]['FTM'];
+    const destToken = Tokens[network]['BOO'];
+    const amounts = [0n, BI_POWS[18]];
+
+    const dexHelper = new DummyDexHelper(network);
+    const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const beetsFi = new BalancerV2(network, dexKey, dexHelper);
+
+    await beetsFi.initializePricing(blockNumber);
+
+    const pools = await beetsFi.getPoolIdentifiers(
+      srcToken,
+      destToken,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log('Pool Identifiers: ', pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await beetsFi.getPricesVolume(
+      srcToken,
+      destToken,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log('Pool Prices: ', poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    await beetsFi.releaseResources();
+  });
+  it('WETH -> FTM: getPoolIdentifiers and getPricesVolume', async () => {
+    const dexKey = 'BeetsFi';
+    const network = Network.FANTOM;
+    const srcToken = Tokens[network]['WETH'];
+    const destToken = Tokens[network]['FTM'];
+    const amounts = [0n, BI_POWS[18]];
+
+    const dexHelper = new DummyDexHelper(network);
+    const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const beetsFi = new BalancerV2(network, dexKey, dexHelper);
+
+    await beetsFi.initializePricing(blockNumber);
+
+    const pools = await beetsFi.getPoolIdentifiers(
+      srcToken,
+      destToken,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log('Pool Identifiers: ', pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await beetsFi.getPricesVolume(
+      srcToken,
+      destToken,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log('Pool Prices: ', poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    await beetsFi.releaseResources();
   });
 });
