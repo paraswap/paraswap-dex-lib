@@ -25,8 +25,8 @@ import { fetchTokenList } from './utils';
 
 const REF_CODE = 1;
 export const TOKEN_LIST_CACHE_KEY = 'token-list';
-const TOKEN_LIST_TTL_SECONDS = 86400; // 1 day
-const TOKEN_LIST_LOCAL_TTL_SECONDS = 10800; // 3 hours
+const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
+const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60;
 
 export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   readonly hasConstantPriceLargeAmounts = true;

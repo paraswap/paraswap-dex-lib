@@ -20,7 +20,9 @@ export const decodeATokenFromReserveData = (
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
   if (!isSuccess || toDecode === '0x') {
-    return 'error';
+    throw new Error(
+      'Could not extract value from struct DataTypes.ReserveData.',
+    );
   }
 
   const decoded = defaultAbiCoder.decode(
@@ -44,7 +46,7 @@ export const decodeATokenFromReserveData = (
     toDecode,
   );
 
-  return decoded.aTokenAddress;
+  return decoded.aTokenAddress.toLowerCase();
 };
 
 async function _getAllTokenMetadata(
@@ -80,16 +82,15 @@ async function _getAllTokenMetadata(
     });
   }
 
-  const results = await multiWrapper.tryAggregate<string | number>(
-    false,
+  const results = await multiWrapper.aggregate<string | number>(
     calls,
     blockNumber,
   );
 
   let tokenList = reservesList.map((tokenAddress: string, i: number) => ({
     address: tokenAddress as string,
-    aAddress: results[i].returnData as string,
-    decimals: results[reservesList.length + i].returnData as number,
+    aAddress: results[i] as string,
+    decimals: results[reservesList.length + i] as number,
   }));
 
   return tokenList;
@@ -110,13 +111,9 @@ async function _getATokenSymbols(
       decodeFunction: stringDecode,
     });
   }
-  const results = await multiWrapper.tryAggregate<string>(
-    false,
-    calls,
-    blockNumber,
-  );
+  const results = await multiWrapper.aggregate<string>(calls, blockNumber);
 
-  return results.map(item => ({ aSymbol: item.returnData }));
+  return results.map(item => ({ aSymbol: item }));
 }
 
 export const fetchTokenList = async (
