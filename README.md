@@ -1,4 +1,4 @@
-# ParaSwap DexLib
+# ParaSwap DexLib [![CI](https://github.com/paraswap/paraswap-dex-lib/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/paraswap/paraswap-dex-lib/actions/workflows/ci.yaml)
 
 **DexLib** is a library used by ParaSwap backend to integrate with decentralized exchanges. This library enables external DEX developers to integrate their DEX with ParaSwap by creating pull requests to this repository.
 

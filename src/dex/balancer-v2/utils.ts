@@ -162,8 +162,8 @@ function isLinearPool(poolType: string) {
 
 function isPhantomStablePool(poolType: string) {
   return (
-    poolType === BalancerPoolTypes.StablePhantom
-    // || poolType === BalancerPoolTypes.ComposableStable
+    poolType === BalancerPoolTypes.StablePhantom ||
+    poolType === BalancerPoolTypes.ComposableStable
   );
 }
 
