@@ -270,6 +270,7 @@ export type Config = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
+  uniswapV3EventLoggingSampleRate?: number;
 };
 
 export type BigIntAsString = string;
