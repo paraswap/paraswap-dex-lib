@@ -627,5 +627,143 @@ describe('Solidly integration tests', () => {
         });
       });
     });
-  });
-});
+      describe('Avalanche', () => {
+        const network = Network.AVALANCHE;
+        const dexHelper = new DummyDexHelper(network);
+        const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
+
+        describe('Printyfinance', function () {
+          const dexKey = 'Printyfinance';
+          const printyfinance = new Printyfinance (network, dexKey, dexHelper);
+
+          describe('UniswapV2 like pool', function () {
+            const TokenASymbol = 'AVAX';
+            const tokenA = Tokens[network][TokenASymbol];
+            const TokenBSymbol = 'USDT';
+            const tokenB = Tokens[network][TokenBSymbol];
+
+            const amounts = amounts18;
+
+            it('getPoolIdentifiers and getPricesVolume', async function () {
+              const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+              const pools = await printyfinance.getPoolIdentifiers(
+                tokenA,
+                tokenB,
+                SwapSide.SELL,
+                blocknumber,
+              );
+              console.log(
+                `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+                pools,
+              );
+
+              expect(pools.length).toBeGreaterThan(0);
+
+              const poolPrices = await printyfinance.getPricesVolume(
+                tokenA,
+                tokenB,
+                amounts,
+                SwapSide.SELL,
+                blocknumber,
+                pools,
+              );
+              console.log(
+                `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+                poolPrices,
+              );
+
+              expect(poolPrices).not.toBeNull();
+              checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+              // Check if onchain pricing equals to calculated ones
+
+              for (const i in poolPrices || []) {
+                await checkOnChainPricing(
+                  printyfinance,
+                  'getAmountOut',
+                  blocknumber,
+                  poolPrices![i].prices,
+                  poolPrices![i].poolAddresses![0],
+                  tokenA.address,
+                  amounts,
+                );
+              }
+            });
+
+            it('getTopPoolsForToken', async function () {
+              const poolLiquidity = await printyfinance.getTopPoolsForToken(
+                tokenA.address,
+                10,
+              );
+              console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+              checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+            });
+          });
+
+          describe('Curve like stable pool', function () {
+            const TokenASymbol = 'USDT';
+            const tokenA = Tokens[network][TokenASymbol];
+            const TokenBSymbol = 'USDC';
+            const tokenB = Tokens[network][TokenBSymbol];
+
+            const amounts = amounts18; // amounts6;
+
+            it('getPoolIdentifiers and getPricesVolume', async function () {
+              const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+              const pools = await printyfinance.getPoolIdentifiers(
+                tokenA,
+                tokenB,
+                SwapSide.SELL,
+                blocknumber,
+              );
+              console.log(
+                `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+                pools,
+              );
+
+              expect(pools.length).toBeGreaterThan(0);
+
+              const poolPrices = await printyfinance.getPricesVolume(
+                tokenA,
+                tokenB,
+                amounts,
+                SwapSide.SELL,
+                blocknumber,
+                pools,
+              );
+              console.log(
+                `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+                poolPrices,
+              );
+
+              expect(poolPrices).not.toBeNull();
+              checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+              // Check if onchain pricing equals to calculated ones
+              for (const i in poolPrices || []) {
+                await checkOnChainPricing(
+                  printyfinance,
+                  'getAmountOut',
+                  blocknumber,
+                  poolPrices![i].prices,
+                  poolPrices![i].poolAddresses![0],
+                  tokenA.address,
+                  amounts,
+                );
+              }
+            });
+
+            it('getTopPoolsForToken', async function () {
+              const poolLiquidity = await printyfinance.getTopPoolsForToken(
+                tokenA.address,
+                10,
+              );
+              console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+              checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+              });
+            });
+          });
+        });
+      });

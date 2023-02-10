@@ -808,6 +808,22 @@ describe('Solidly E2E', () => {
             );
           });
         });
+
+        describe('printyfinance', () => {
+          it('Token -> Token', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.USDT,
+              holders.USDC,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+            );
+          });
+        });
       });
     });
   });

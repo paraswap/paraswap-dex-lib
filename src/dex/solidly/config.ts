@@ -72,6 +72,18 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0, // variable
     },
   },
+  Printyfinance: {
+    [Network.AVALANCHE]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/printyfi/printyfinance',
+      factoryAddress: '0xc62Ca231Cd2b0c530C622269dA02374134511a36',
+      router: '0xfC7466f164c3BED39f2f218F1dccE26DF01A4035',
+      initCode:
+        '0x96262ba85d1e33f4c9f8368149e7211436bc78c7058d43e303e73ffdfb9c0d8e',
+      // Fixed Fees, same for volatile and stable pools
+      feeCode: 1,
+      poolGasCost: 180 * 1000,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -86,5 +98,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.BSC]: {
     [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // cone
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter001', index: 1 }], // printyfinance
   },
 };
