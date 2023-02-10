@@ -90,8 +90,8 @@ export const Adapters: {
   [Network.MAINNET]: {
     [SwapSide.SELL]: [
       {
-        name: 'MainnetAdapter03',
-        index: 5,
+        name: 'Adapter03',
+        index: 13,
       },
     ],
   },
