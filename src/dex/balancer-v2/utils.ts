@@ -1,8 +1,10 @@
 import { getAddress } from '@ethersproject/address';
 import { Interface, Result } from '@ethersproject/abi';
+import { parseFixed, BigNumber } from '@ethersproject/bignumber';
+import { reverse, uniqBy } from 'lodash';
+
 import { getBigIntPow } from '../../utils';
 import { BI_POWS } from '../../bigint-constants';
-
 import {
   BalancerPoolTypes,
   SubgraphMainToken,
@@ -10,12 +12,26 @@ import {
   SubgraphPoolBase,
   SubgraphToken,
 } from './types';
-import { reverse, uniqBy } from 'lodash';
 
 interface BalancerPathHop {
   pool: SubgraphPoolBase;
   tokenIn: SubgraphToken;
   tokenOut: SubgraphToken;
+}
+
+/**
+ * Parses a fixed-point decimal string into a BigNumber. If we do not have enough decimals to express the number, we truncate it.
+ * @param value
+ * @param decimals
+ * @returns BigNumber
+ */
+export function safeParseFixed(value: string, decimals = 0): BigNumber {
+  const [integer, fraction] = value.split('.');
+  if (!fraction) {
+    return parseFixed(value, decimals);
+  }
+  const safeValue = integer + '.' + fraction.slice(0, decimals);
+  return parseFixed(safeValue, decimals);
 }
 
 export const isSameAddress = (address1: string, address2: string): boolean =>

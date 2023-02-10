@@ -163,6 +163,8 @@ describe('BalancerV2', function () {
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await balancerV2.initializePricing(blocknumber);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         WETH.address,
@@ -171,6 +173,7 @@ describe('BalancerV2', function () {
       console.log('WETH Top Pools:', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
+      await balancerV2.releaseResources();
     });
   });
 
@@ -213,6 +216,8 @@ describe('BalancerV2', function () {
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await balancerV2.initializePricing(blocknumber);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         BBADAI.address,
@@ -221,6 +226,7 @@ describe('BalancerV2', function () {
       console.log('BBADAI Top Pools:', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, BBADAI.address, dexKey);
+      await balancerV2.releaseResources();
     });
 
     it('applies getRate to phantom bpt scaling factor', async function () {
@@ -249,6 +255,8 @@ describe('BalancerV2', function () {
             wrappedIndex: 0,
             tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
             mainTokens: [],
+            sqrtBeta: '',
+            sqrtAlpha: '',
           },
         ],
         blocknumber,
@@ -306,6 +314,8 @@ describe('BalancerV2', function () {
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await balancerV2.initializePricing(blocknumber);
 
       const poolLiquidity = await balancerV2.getTopPoolsForToken(
         BBAUSD.address,
@@ -314,6 +324,7 @@ describe('BalancerV2', function () {
       console.log('BBAUSD Top Pools:', poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
+      await balancerV2.releaseResources();
     });
 
     it('applies getRate to phantom bpt scaling factor', async function () {
@@ -347,6 +358,8 @@ describe('BalancerV2', function () {
               tokens.BBAUSDC,
             ],
             mainTokens: [],
+            sqrtAlpha: '',
+            sqrtBeta: '',
           },
         ],
         blocknumber,
@@ -355,6 +368,74 @@ describe('BalancerV2', function () {
       expect(
         state[BBAUSD.address].tokens[BBAUSD.address].scalingFactor!.toString(),
       ).toBe('1015093119997891367');
+    });
+  });
+
+  describe('Gyro2', () => {
+    const gyro2UsdcDaiAddr = '0xdac42eeb17758daa38caf9a3540c808247527ae3';
+
+    it('getPoolIdentifiers and getPricesVolume', async function () {
+      const network = Network.POLYGON;
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
+      const tokens = Tokens[network];
+      await balancerV2.initializePricing(blocknumber);
+
+      const pools = await balancerV2.getPoolIdentifiers(
+        tokens.DAI,
+        tokens.USDC,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log('DAI <> USDC Pool Identifiers (Polygon): ', pools);
+
+      const isPool = pools.find(poolIdentifier =>
+        poolIdentifier.includes(gyro2UsdcDaiAddr),
+      );
+
+      expect(isPool).toBeDefined();
+
+      const poolPrices = await balancerV2.getPricesVolume(
+        tokens.DAI,
+        tokens.USDC,
+        amounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
+      console.log('DAI <> USDC Pool Prices (Polygon): ', poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      const isPoolPrice = poolPrices!.find(price =>
+        price.data.poolId.includes(gyro2UsdcDaiAddr),
+      );
+      expect(isPoolPrice).toBeDefined();
+
+      await balancerV2.releaseResources();
+    });
+
+    it('getTopPoolsForToken', async function () {
+      const network = Network.POLYGON;
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
+      await balancerV2.initializePricing(blocknumber);
+      const tokens = Tokens[network];
+
+      const poolLiquidity = await balancerV2.getTopPoolsForToken(
+        tokens.DAI.address.toLowerCase(),
+        10,
+      );
+      console.log('DAI Top Pools (Polygon):', poolLiquidity);
+
+      checkPoolsLiquidity(poolLiquidity, tokens.DAI.address, dexKey);
+      const isTopPool = poolLiquidity.find(
+        pool => pool.address === gyro2UsdcDaiAddr,
+      );
+      expect(isTopPool).toBeDefined();
+      await balancerV2.releaseResources();
     });
   });
 });

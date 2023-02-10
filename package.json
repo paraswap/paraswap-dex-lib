@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@balancer-labs/sor": "/Users/jg/Documents/balancer-sor/balancer-labs-sor-v4.1.0-beta.1.tgz",
     "@paraswap/core": "1.0.3",
     "async": "^3.2.4",
     "bignumber.js": "9.1.0",
