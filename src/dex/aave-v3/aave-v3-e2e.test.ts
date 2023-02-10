@@ -433,4 +433,80 @@ describe('AaveV3 E2E', () => {
       );
     });
   });
+
+  describe('AaveV3 MAINNET', () => {
+    const network = Network.MAINNET;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const pairs = [
+      {
+        tokenSymbol: 'USDC',
+        aTokenSymbol: 'aEthUSDC',
+        amount: '10000',
+      },
+      {
+        tokenSymbol: 'ETH',
+        aTokenSymbol: 'aEthWETH',
+        amount: '100000000',
+      },
+      {
+        tokenSymbol: 'WETH',
+        aTokenSymbol: 'aEthWETH',
+        amount: '1000000000000000000',
+      },
+    ];
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    ]);
+
+    pairs.forEach(pair => {
+      sideToContractMethods.forEach((contractMethods, side) =>
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
+              await testE2E(
+                getTokenFromASymbol(network, pair.aTokenSymbol)!,
+                tokens[pair.tokenSymbol],
+                holders[pair.aTokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.tokenSymbol],
+                getTokenFromASymbol(network, pair.aTokenSymbol)!,
+                holders[pair.tokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }),
+      );
+    });
+  });
 });

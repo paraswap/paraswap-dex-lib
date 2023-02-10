@@ -35,6 +35,12 @@ export const Config: DexConfigMap<DexParam> = {
       poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
       wethGatewayAddress: '0x86b4D2636EC473AC4A5dD83Fc2BEDa98845249A7',
     },
+    [Network.MAINNET]: {
+      ethGasCost: 246 * 100,
+      lendingGasCost: 328 * 1000,
+      poolAddress: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2',
+      wethGatewayAddress: '0xD322A49006FC828F9B5B37Ab215F99B4E5caB19C',
+    },
   },
 };
 
@@ -78,6 +84,14 @@ export const Adapters: {
       {
         name: 'OptimismAdapter01',
         index: 6,
+      },
+    ],
+  },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'MainnetAdapter03',
+        index: 5,
       },
     ],
   },
