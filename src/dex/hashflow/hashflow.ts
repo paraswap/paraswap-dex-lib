@@ -450,10 +450,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     const payload = this.routerInterface._abiCoder.encode(
       [
-        'tuple(address externalAccount, uint256 baseTokenAmount, uint256 quoteTokenAmount, uint256 quoteExpiry, uint256 nonce, bytes32 txid, bytes signature)',
+        'tuple(address pool, address externalAccount, uint256 baseTokenAmount, uint256 quoteTokenAmount, uint256 quoteExpiry, uint256 nonce, bytes32 txid, bytes signature)',
       ],
       [
         {
+          pool: quoteData.pool,
           externalAccount: quoteData.eoa ?? ZERO_ADDRESS,
           baseTokenAmount: quoteData.baseTokenAmount,
           quoteTokenAmount: quoteData.quoteTokenAmount,

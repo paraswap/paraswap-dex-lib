@@ -164,7 +164,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.HASHFLOW_AUTH_TOKEN,
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0xD64d4CD829013438e1A158455801ae2f7543C75f',
+      PolygonAdapter02: '0x8854a0e30ed5e698b4484b4b59ad431ff8362d3f',
       PolygonBuyAdapter: '0x40e11AE88A9402A34208D05bFB7E88171d2f58a0',
     },
     uniswapV2ExchangeRouterAddress:
