@@ -27,7 +27,7 @@ export const HashflowConfig: DexConfigMap<DexParams> = {
 
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
-    [SwapSide.SELL]: [{ name: 'Adapter03', index: 13 }],
+    [SwapSide.SELL]: [{ name: 'Adapter03', index: 14 }],
     [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 7 }],
   },
   [Network.BSC]: {
