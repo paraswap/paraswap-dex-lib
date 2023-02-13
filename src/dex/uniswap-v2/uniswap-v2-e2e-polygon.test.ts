@@ -2,8 +2,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
@@ -38,7 +38,7 @@ describe('UniswapV2 E2E Polygon', () => {
           tokens.DAI,
           tokens.MATIC,
           holders.DAI,
-          '700000000000000000000',
+          '100000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -1258,6 +1258,7 @@ describe('UniswapV2 E2E Polygon', () => {
         );
       });
     });
+
     describe('multiSwap', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
@@ -1301,6 +1302,7 @@ describe('UniswapV2 E2E Polygon', () => {
         );
       });
     });
+
     describe('megaSwap', () => {
       it('MATIC -> TOKEN', async () => {
         await testE2E(
@@ -1344,5 +1346,65 @@ describe('UniswapV2 E2E Polygon', () => {
         );
       });
     });
+  });
+
+  describe(`Swapsicle`, () => {
+    const dexKey = 'Swapsicle';
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    ]);
+
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [{ name: 'MATIC', sellAmount: '100000000000000000', buyAmount: '1000' }, { name: 'USDC', sellAmount: '10000000', buyAmount: '1000' }],
+      [{ name: 'MATIC', sellAmount: '1000000000', buyAmount: '1000' }, { name: 'DAI', sellAmount: '50000', buyAmount: '1000000000' }],
+      [{ name: 'MATIC', sellAmount: '100000000000000000', buyAmount: '1000' }, { name: 'USDT', sellAmount: '100000000', buyAmount: '1000' }],
+      [{ name: 'MATIC', sellAmount: '10000000', buyAmount: '1000' }, { name: 'POPS', sellAmount: '8000000', buyAmount: '1000' }],
+    ];
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach((pair) => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
   });
 });
