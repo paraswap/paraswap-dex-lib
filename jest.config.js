@@ -7,4 +7,5 @@ module.exports = {
   ],
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   testTimeout: 30 * 1000,
+  transformIgnorePatterns: ['node_modules/(?!@airswap/.*)'],
 };

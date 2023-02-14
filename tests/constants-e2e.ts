@@ -7,7 +7,7 @@ import {
   allowedFn,
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
-import { ETHER_ADDRESS, Network } from '../src/constants';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../src/constants';
 
 export const GIFTER_ADDRESS = '0xb22fC4eC94D555A5049593ca4552c810Fb8a6d00';
 export const GENERIC_ADDR1 = '0xbe9317f6711e2da074fe1f168fd9c402bc0a9d1b';
@@ -18,7 +18,7 @@ export const Tokens: {
 } = {
   [Network.MAINNET]: {
     ETH: {
-      address: ETHER_ADDRESS,
+      address: NULL_ADDRESS,
       decimals: 18,
     },
     REQ: {
