@@ -160,11 +160,11 @@ describe('Hashflow E2E', () => {
   describe('Polygon', () => {
     const network = Network.POLYGON;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'DAI';
 
     const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000';
+    const tokenBAmount: string = '100000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
