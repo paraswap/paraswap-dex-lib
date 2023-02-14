@@ -1362,24 +1362,41 @@ describe('UniswapV2 E2E Fantom', () => {
     ]);
 
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
-      [{ name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' }, { name: 'USDC', sellAmount: '5000', buyAmount: '10000000' }],
-      [{ name: 'WFTM', sellAmount: '3000000000', buyAmount: '1000' }, { name: 'POPS', sellAmount: '800000000000', buyAmount: '800000000000' }],
-      [{ name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' }, { name: 'MIM', sellAmount: '1000', buyAmount: '1000' }],
-      [{ name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' }, { name: 'DAI', sellAmount: '1000', buyAmount: '1000' }],
-      [{ name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' }, { name: 'FUSDT', sellAmount: '1000', buyAmount: '1000' }],
+      [
+        { name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' },
+        { name: 'USDC', sellAmount: '5000', buyAmount: '10000000' },
+      ],
+      [
+        { name: 'WFTM', sellAmount: '3000000000', buyAmount: '1000' },
+        { name: 'POPS', sellAmount: '800000000000', buyAmount: '800000000000' },
+      ],
+      [
+        { name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' },
+        { name: 'MIM', sellAmount: '1000', buyAmount: '1000' },
+      ],
+      [
+        { name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' },
+        { name: 'DAI', sellAmount: '1000', buyAmount: '1000' },
+      ],
+      [
+        { name: 'WFTM', sellAmount: '7000000000000000000', buyAmount: '1000' },
+        { name: 'FUSDT', sellAmount: '1000', buyAmount: '1000' },
+      ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
-          pairs.forEach((pair) => {
+          pairs.forEach(pair => {
             describe(`${contractMethod}`, () => {
               it(`${pair[0].name} -> ${pair[1].name}`, async () => {
                 await testE2E(
                   tokens[pair[0].name],
                   tokens[pair[1].name],
                   holders[pair[0].name],
-                  side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
                   side,
                   dexKey,
                   contractMethod,
@@ -1392,7 +1409,9 @@ describe('UniswapV2 E2E Fantom', () => {
                   tokens[pair[1].name],
                   tokens[pair[0].name],
                   holders[pair[1].name],
-                  side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
                   side,
                   dexKey,
                   contractMethod,
