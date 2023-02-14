@@ -6,21 +6,27 @@ export const HashflowConfig: DexConfigMap<DexParams> = {
   Hashflow: {
     [Network.MAINNET]: {
       routerAddress: '0xf6a94dfd0e6ea9ddfdffe4762ad4236576136613',
+      disabledMMs: new Set<string>([]),
     },
     [Network.POLYGON]: {
       routerAddress: '0x72550597dc0b2e0bec24e116add353599eff2e35',
+      disabledMMs: new Set<string>([]),
     },
     [Network.BSC]: {
       routerAddress: '0x0acffb0fb2cddd9bd35d03d359f3d899e32facc9',
+      disabledMMs: new Set<string>([]),
     },
     [Network.ARBITRUM]: {
       routerAddress: '0x1f772fa3bc263160ea09bb16ce1a6b8fc0fab36a',
+      disabledMMs: new Set<string>([]),
     },
     [Network.AVALANCHE]: {
       routerAddress: '0x64d2f9f44fe26c157d552ae7eaa613ca6587b59e',
+      disabledMMs: new Set<string>([]),
     },
     [Network.OPTIMISM]: {
       routerAddress: '0xb3999f658c0391d94a37f7ff328f3fec942bcadc',
+      disabledMMs: new Set<string>([]),
     },
   },
 };

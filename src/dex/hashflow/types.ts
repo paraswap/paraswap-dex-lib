@@ -8,6 +8,7 @@ export type HashflowData = {
 
 export type DexParams = {
   routerAddress: string;
+  disabledMMs: Set<string>;
 };
 
 export interface PriceLevel {

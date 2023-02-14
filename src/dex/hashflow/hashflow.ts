@@ -49,6 +49,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     protected adapters = Adapters[network] || {},
     readonly routerAddress: string = HashflowConfig['Hashflow'][network]
       .routerAddress,
+    readonly disabledMMs = HashflowConfig['Hashflow'][network].disabledMMs,
     protected routerInterface = new Interface(routerAbi),
   ) {
     super(dexHelper, dexKey);
@@ -88,7 +89,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       normalizedDestToken.address,
     );
 
-    const makers = await this.api.getMarketMakers(chainId);
+    const makers = await this.getFilteredMarketMakers(chainId);
     const levels = await this.api.getPriceLevels(chainId, makers);
 
     return makers
@@ -101,6 +102,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
       })
       .map(m => `${this.dexKey}_${pairName}_${m}`);
+  }
+
+  private async getFilteredMarketMakers(chainId: ChainId): Promise<string[]> {
+    const makers = await this.api.getMarketMakers(chainId);
+    return makers.filter(mm => !this.disabledMMs.has(mm));
   }
 
   computePricesFromLevels(
@@ -450,11 +456,12 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     const payload = this.routerInterface._abiCoder.encode(
       [
-        'tuple(address pool, address externalAccount, uint256 baseTokenAmount, uint256 quoteTokenAmount, uint256 quoteExpiry, uint256 nonce, bytes32 txid, bytes signature)',
+        'tuple(address pool, address quoteToken, address externalAccount, uint256 baseTokenAmount, uint256 quoteTokenAmount, uint256 quoteExpiry, uint256 nonce, bytes32 txid, bytes signature)',
       ],
       [
         {
           pool: quoteData.pool,
+          quoteToken: quoteData.quoteToken,
           externalAccount: quoteData.eoa ?? ZERO_ADDRESS,
           baseTokenAmount: quoteData.baseTokenAmount,
           quoteTokenAmount: quoteData.quoteTokenAmount,
@@ -540,7 +547,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const _tokenAddress = tokenAddress.toLowerCase();
 
     const chainId = this.network as ChainId;
-    const makers = await this.api.getMarketMakers(chainId);
+
+    const makers = await this.getFilteredMarketMakers(chainId);
     const pLevels = await this.api.getPriceLevels(chainId, makers);
 
     let baseToken: Token | undefined = undefined;
