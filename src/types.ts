@@ -271,6 +271,7 @@ export type Config = {
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
   hashFlowAuthToken?: string;
+  hashFlowDisabledMMs: string[];
 };
 
 export type BigIntAsString = string;

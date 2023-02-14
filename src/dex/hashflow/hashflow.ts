@@ -36,6 +36,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   private api: HashflowApi;
 
   private hashFlowAuthToken: string;
+  private disabledMMs: Set<string>;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(HashflowConfig);
@@ -49,7 +50,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     protected adapters = Adapters[network] || {},
     readonly routerAddress: string = HashflowConfig['Hashflow'][network]
       .routerAddress,
-    readonly disabledMMs = HashflowConfig['Hashflow'][network].disabledMMs,
     protected routerInterface = new Interface(routerAbi),
   ) {
     super(dexHelper, dexKey);
@@ -61,6 +61,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     );
     this.hashFlowAuthToken = token;
     this.api = new HashflowApi('taker', 'paraswap', this.hashFlowAuthToken);
+    this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -69,6 +70,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   getPairName = (srcAddress: Address, destAddress: Address) =>
     `${srcAddress}_${destAddress}`.toLowerCase();
+
+  getPoolIdentifier(pairName: string, mm: string) {
+    return `${this.dexKey}_${pairName}_${mm}`;
+  }
 
   async getPoolIdentifiers(
     srcToken: Token,
@@ -101,7 +106,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             normalizedDestToken.address === p.quoteToken.toLowerCase(),
         );
       })
-      .map(m => `${this.dexKey}_${pairName}_${m}`);
+      .map(m => this.getPoolIdentifier(pairName, m));
   }
 
   private async getFilteredMarketMakers(chainId: ChainId): Promise<string[]> {
@@ -331,6 +336,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return {
         gasCost: 100_000,
         exchange: this.dexKey,
+        data: { mm },
         prices,
         unit: unitPrice,
         poolIdentifier: `${prefix}_${mm}`,
@@ -425,6 +431,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       {
         ...optimalSwapExchange,
         data: {
+          mm: optimalSwapExchange.data!.mm,
           quoteData: rfq.quoteData,
           signature: rfq.signature,
           gasEstimate: rfq.gasEstimate,
@@ -452,7 +459,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     data: HashflowData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { quoteData, signature, gasEstimate } = data;
+    const { quoteData, signature } = data;
+
+    assert(quoteData !== undefined, `${this.dexKey}: quoteData undefined`);
 
     const payload = this.routerInterface._abiCoder.encode(
       [
@@ -489,6 +498,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const { quoteData, signature } = data;
+
+    assert(quoteData !== undefined, `${this.dexKey}: quoteData undefined`);
 
     // Encode here the transaction arguments
     const swapData = this.routerInterface.encodeFunctionData('tradeSingleHop', [
