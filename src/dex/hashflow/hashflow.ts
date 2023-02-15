@@ -25,9 +25,15 @@ import BigNumber from 'bignumber.js';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { Interface } from 'ethers/lib/utils';
 import { ChainId, ZERO_ADDRESS } from '@hashflow/sdk';
-import { PriceLevelsResponse } from '@hashflow/taker-js/dist/types/rest';
+import {
+  PriceLevelsResponse,
+  RfqResponse,
+} from '@hashflow/taker-js/dist/types/rest';
 import { assert } from 'ts-essentials';
-import { PRICE_LEVELS_TTL_SECONDS } from './constants';
+import {
+  HASHFLOW_BLACKLIST_TTL_S,
+  PRICE_LEVELS_TTL_SECONDS,
+} from './constants';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -354,6 +360,14 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<HashflowData>, ExchangeTxInfo]> {
+    if (await this.isBlacklisted(options.txOrigin)) {
+      this.logger.warn(
+        `${this.dexKey}'s blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+      );
+      throw new Error(
+        `${this.dexKey}: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+      );
+    }
     const chainId = this.network as ChainId;
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
@@ -362,14 +376,31 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const baseTokenAmount = optimalSwapExchange.srcAmount;
     const quoteTokenAmount = optimalSwapExchange.destAmount;
 
-    const rfq = await this.api.requestQuote({
-      chainId,
-      baseToken: normalizedSrcToken.address,
-      quoteToken: normalizedDestToken.address,
-      ...(side === SwapSide.SELL ? { baseTokenAmount } : { quoteTokenAmount }),
-      wallet: this.augustusAddress.toLowerCase(),
-      effectiveTrader: options.txOrigin.toLowerCase(),
-    });
+    let rfq: RfqResponse;
+    try {
+      rfq = await this.api.requestQuote({
+        chainId,
+        baseToken: normalizedSrcToken.address,
+        quoteToken: normalizedDestToken.address,
+        ...(side === SwapSide.SELL
+          ? { baseTokenAmount }
+          : { quoteTokenAmount }),
+        wallet: this.augustusAddress.toLowerCase(),
+        effectiveTrader: options.txOrigin.toLowerCase(),
+      });
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message.endsWith('User is restricted from using Hashflow')
+      ) {
+        this.logger.warn(
+          `${this.dexKey}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
+        );
+        await this.setBlacklist(options.txOrigin);
+      }
+
+      throw e;
+    }
 
     if (rfq.status !== 'success') {
       const message = `${
@@ -487,6 +518,33 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       payload,
       networkFee: '0',
     };
+  }
+
+  getBlackListKey(address: Address) {
+    return `blacklist_${address}`.toLowerCase();
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+    );
+    return result === 'blacklisted';
+  }
+
+  async setBlacklist(
+    txOrigin: Address,
+    ttl: number = HASHFLOW_BLACKLIST_TTL_S,
+  ) {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+      ttl,
+      'blacklisted',
+    );
+    return true;
   }
 
   async getSimpleParam(
