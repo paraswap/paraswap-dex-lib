@@ -60,7 +60,7 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_S = 1000 * 60 * 60 * 24;
+const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_S = 60 * 60 * 24;
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
