@@ -204,24 +204,49 @@ describe('UniswapV2 E2E Arbitrum', () => {
     ]);
 
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
-      [{ name: 'WETH', sellAmount: '700000000000', buyAmount: '1000' }, { name: 'USDC', sellAmount: '100000', buyAmount: '4000' }],
-      [{ name: 'WETH', sellAmount: '700000000000', buyAmount: '10000' }, { name: 'USDT', sellAmount: '100000', buyAmount: '40000' }],
-      [{ name: 'WETH', sellAmount: '700000000000', buyAmount: '10000' }, { name: 'DAI', sellAmount: '1000000000000', buyAmount: '40000000' }],
-      [{ name: 'POPS', sellAmount: '1000000000000000000', buyAmount: '10000' }, { name: 'USDC', sellAmount: '10000', buyAmount: '40000' }],
-      [{ name: 'WETH', sellAmount: '1000000000000000000', buyAmount: '10000000' }, { name: 'POPS', sellAmount: '1000000000000000000', buyAmount: '1000000000000000000' }],
+      [
+        { name: 'WETH', sellAmount: '700000000000', buyAmount: '1000' },
+        { name: 'USDC', sellAmount: '100000', buyAmount: '4000' },
+      ],
+      [
+        { name: 'WETH', sellAmount: '700000000000', buyAmount: '10000' },
+        { name: 'USDT', sellAmount: '100000', buyAmount: '40000' },
+      ],
+      [
+        { name: 'WETH', sellAmount: '700000000000', buyAmount: '10000' },
+        { name: 'DAI', sellAmount: '1000000000000', buyAmount: '40000000' },
+      ],
+      [
+        { name: 'POPS', sellAmount: '1000000000000000000', buyAmount: '10000' },
+        { name: 'USDC', sellAmount: '10000', buyAmount: '40000' },
+      ],
+      [
+        {
+          name: 'WETH',
+          sellAmount: '1000000000000000000',
+          buyAmount: '10000000',
+        },
+        {
+          name: 'POPS',
+          sellAmount: '1000000000000000000',
+          buyAmount: '1000000000000000000',
+        },
+      ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
-          pairs.forEach((pair) => {
+          pairs.forEach(pair => {
             describe(`${contractMethod}`, () => {
               it(`${pair[0].name} -> ${pair[1].name}`, async () => {
                 await testE2E(
                   tokens[pair[0].name],
                   tokens[pair[1].name],
                   holders[pair[0].name],
-                  side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
                   side,
                   dexKey,
                   contractMethod,
@@ -234,7 +259,9 @@ describe('UniswapV2 E2E Arbitrum', () => {
                   tokens[pair[1].name],
                   tokens[pair[0].name],
                   holders[pair[1].name],
-                  side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
                   side,
                   dexKey,
                   contractMethod,
