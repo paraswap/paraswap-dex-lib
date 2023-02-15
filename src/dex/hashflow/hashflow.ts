@@ -328,14 +328,14 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const prices = levelEntries.map(lEntry => {
       const { mm, levels } = lEntry;
 
+      const divider = getBigNumberPow(
+        side === SwapSide.SELL
+          ? normalizedSrcToken.decimals
+          : normalizedDestToken.decimals,
+      );
+
       const amountsRaw = amounts.map(a =>
-        new BigNumber(a.toString()).dividedBy(
-          getBigNumberPow(
-            side === SwapSide.SELL
-              ? normalizedSrcToken.decimals
-              : normalizedDestToken.decimals,
-          ),
-        ),
+        new BigNumber(a.toString()).dividedBy(divider),
       );
 
       const unitPrice = this.computePricesFromLevels(
