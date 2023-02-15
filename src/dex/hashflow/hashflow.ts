@@ -100,8 +100,22 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       normalizedDestToken.address,
     );
 
-    const makers = await this.getFilteredMarketMakers(chainId);
-    const levels = await this.api.getPriceLevels(chainId, makers);
+    const cachedLevels = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network as ChainId,
+      `levels`,
+    );
+
+    let makers: string[];
+    let levels: PriceLevelsResponse['levels'];
+
+    if (cachedLevels) {
+      levels = JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
+      makers = Object.keys(levels);
+    } else {
+      makers = await this.getFilteredMarketMakers(chainId);
+      levels = await this.api.getPriceLevels(chainId, makers);
+    }
 
     return makers
       .filter(m => {
