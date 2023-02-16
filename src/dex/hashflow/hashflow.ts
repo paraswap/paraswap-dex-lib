@@ -486,8 +486,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const expiryAsBigInt = BigInt(rfq.quoteData.quoteExpiry);
     const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
 
-    const makerAssetAmount = BigInt(rfq.quoteData.baseTokenAmount);
-    const takerAssetAmount = BigInt(rfq.quoteData.quoteTokenAmount);
+    const baseTokenAmount = BigInt(rfq.quoteData.baseTokenAmount);
+    const quoteTokenAmount = BigInt(rfq.quoteData.quoteTokenAmount);
 
     const srcAmount = BigInt(optimalSwapExchange.srcAmount);
     const destAmount = BigInt(optimalSwapExchange.destAmount);
@@ -495,35 +495,30 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const slippageFactor = options.slippageFactor;
 
     if (side === SwapSide.SELL) {
-      const makerAssetAmountFilled =
-        takerAssetAmount > srcAmount
-          ? (makerAssetAmount * srcAmount) / takerAssetAmount
-          : makerAssetAmount;
-
       if (
-        makerAssetAmountFilled <
+        quoteTokenAmount <
         BigInt(
           new BigNumber(destAmount.toString()).times(slippageFactor).toFixed(0),
         )
       ) {
-        const message = `${this.dexKey}: too much slippage on quote ${side} makerAssetAmountFilled ${makerAssetAmountFilled} / destAmount ${destAmount} < ${slippageFactor}`;
+        const message = `${this.dexKey}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
         this.logger.warn(message);
         throw new SlippageCheckError(message);
       }
     } else {
-      if (makerAssetAmount < destAmount) {
+      if (quoteTokenAmount < destAmount) {
         // Won't receive enough assets
-        const message = `${this.dexKey}: too much slippage on quote ${side}  makerAssetAmount ${makerAssetAmount} < destAmount ${destAmount}`;
+        const message = `${this.dexKey}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
         this.logger.warn(message);
         throw new SlippageCheckError(message);
       } else {
         if (
-          takerAssetAmount >
+          baseTokenAmount >
           BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
         ) {
           const message = `${
             this.dexKey
-          }: too much slippage on quote ${side} takerAssetAmount ${takerAssetAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+          }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
           this.logger.warn(message);
           throw new SlippageCheckError(message);
         }
