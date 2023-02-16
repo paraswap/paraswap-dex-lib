@@ -16,7 +16,13 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { HashflowData, PriceLevel, RfqError, RFQType } from './types';
+import {
+  HashflowData,
+  PriceLevel,
+  RfqError,
+  RFQType,
+  SlippageCheckError,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, HashflowConfig } from './config';
 import { HashflowApi } from '@hashflow/taker-js';
@@ -34,6 +40,7 @@ import {
   HASHFLOW_BLACKLIST_TTL_S,
   PRICE_LEVELS_TTL_SECONDS,
 } from './constants';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -392,9 +399,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
 
-    const baseTokenAmount = optimalSwapExchange.srcAmount;
-    const quoteTokenAmount = optimalSwapExchange.destAmount;
-
     let rfq: RfqResponse;
     try {
       rfq = await this.api.requestQuote({
@@ -402,8 +406,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         baseToken: normalizedSrcToken.address,
         quoteToken: normalizedDestToken.address,
         ...(side === SwapSide.SELL
-          ? { baseTokenAmount }
-          : { quoteTokenAmount }),
+          ? {
+              baseTokenAmount: optimalSwapExchange.srcAmount,
+            }
+          : { quoteTokenAmount: optimalSwapExchange.destAmount }),
         wallet: this.augustusAddress.toLowerCase(),
         effectiveTrader: options.txOrigin.toLowerCase(),
       });
@@ -477,6 +483,53 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       `QuoteData baseToken=${rfq.quoteData.quoteToken} is different from srcToken=${normalizedDestToken.address}`,
     );
 
+    const expiryAsBigInt = BigInt(rfq.quoteData.quoteExpiry);
+    const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
+
+    const makerAssetAmount = BigInt(rfq.quoteData.baseTokenAmount);
+    const takerAssetAmount = BigInt(rfq.quoteData.quoteTokenAmount);
+
+    const srcAmount = BigInt(optimalSwapExchange.srcAmount);
+    const destAmount = BigInt(optimalSwapExchange.destAmount);
+
+    const slippageFactor = options.slippageFactor;
+
+    if (side === SwapSide.SELL) {
+      const makerAssetAmountFilled =
+        takerAssetAmount > srcAmount
+          ? (makerAssetAmount * srcAmount) / takerAssetAmount
+          : makerAssetAmount;
+
+      if (
+        makerAssetAmountFilled <
+        BigInt(
+          new BigNumber(destAmount.toString()).times(slippageFactor).toFixed(0),
+        )
+      ) {
+        const message = `${this.dexKey}: too much slippage on quote ${side} makerAssetAmountFilled ${makerAssetAmountFilled} / destAmount ${destAmount} < ${slippageFactor}`;
+        this.logger.warn(message);
+        throw new SlippageCheckError(message);
+      }
+    } else {
+      if (makerAssetAmount < destAmount) {
+        // Won't receive enough assets
+        const message = `${this.dexKey}: too much slippage on quote ${side}  makerAssetAmount ${makerAssetAmount} < destAmount ${destAmount}`;
+        this.logger.warn(message);
+        throw new SlippageCheckError(message);
+      } else {
+        if (
+          takerAssetAmount >
+          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
+        ) {
+          const message = `${
+            this.dexKey
+          }: too much slippage on quote ${side} takerAssetAmount ${takerAssetAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        }
+      }
+    }
+
     return [
       {
         ...optimalSwapExchange,
@@ -487,7 +540,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           gasEstimate: rfq.gasEstimate,
         },
       },
-      { deadline: BigInt(rfq.quoteData.quoteExpiry) },
+      { deadline: minDeadline },
     ];
   }
 

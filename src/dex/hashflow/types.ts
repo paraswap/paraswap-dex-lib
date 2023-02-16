@@ -22,3 +22,5 @@ export enum RFQType {
   RFQT = 0,
   RFQM = 1,
 }
+
+export class SlippageCheckError extends Error {}
