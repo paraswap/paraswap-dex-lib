@@ -271,8 +271,6 @@ export async function testE2E(
       );
     console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
     expect(swapTx!.success).toEqual(true);
-  } catch (e) {
-    console.log(e);
   } finally {
     if (paraswap.releaseResources) {
       await paraswap.releaseResources();
