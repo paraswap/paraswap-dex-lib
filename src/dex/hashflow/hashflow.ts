@@ -77,8 +77,18 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   getPairName = (srcAddress: Address, destAddress: Address) =>
     `${srcAddress}_${destAddress}`.toLowerCase();
 
-  getPoolIdentifier(pairName: string, mm: string) {
-    return `${this.dexKey}_${pairName}_${mm}`;
+  getIdentifierPrefix(srcAddress: Address, destAddress: Address) {
+    return `${this.dexKey}_${this.getPairName(
+      srcAddress,
+      destAddress,
+    )}`.toLowerCase();
+  }
+
+  getPoolIdentifier(srcAddress: Address, destAddress: Address, mm: string) {
+    return `${this.getIdentifierPrefix(
+      srcAddress,
+      destAddress,
+    )}_${mm}`.toLowerCase();
   }
 
   async getPoolIdentifiers(
@@ -89,33 +99,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<string[]> {
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
-    const chainId = this.network as ChainId;
 
     if (normalizedSrcToken.address === normalizedDestToken.address) {
       return [];
     }
 
-    const pairName = this.getPairName(
-      normalizedSrcToken.address,
-      normalizedDestToken.address,
-    );
-
-    const cachedLevels = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network as ChainId,
-      `levels`,
-    );
-
-    let makers: string[];
-    let levels: PriceLevelsResponse['levels'];
-
-    if (cachedLevels) {
-      levels = JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
-      makers = Object.keys(levels);
-    } else {
-      makers = await this.getFilteredMarketMakers(chainId);
-      levels = await this.api.getPriceLevels(chainId, makers);
-    }
+    const levels = await this.getLevelsWithCache();
+    const makers = Object.keys(levels);
 
     return makers
       .filter(m => {
@@ -126,7 +116,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             normalizedDestToken.address === p.quoteToken.toLowerCase(),
         );
       })
-      .map(m => this.getPoolIdentifier(pairName, m));
+      .map(m =>
+        this.getPoolIdentifier(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+          m,
+        ),
+      );
   }
 
   private async getFilteredMarketMakers(chainId: ChainId): Promise<string[]> {
@@ -236,10 +232,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return undefined;
   }
 
-  async getLevels(
-    pools: string[],
-    prefix: string,
-  ): Promise<PriceLevelsResponse['levels']> {
+  async getLevelsWithCache(): Promise<PriceLevelsResponse['levels']> {
     const cachedLevels = await this.dexHelper.cache.get(
       this.dexKey,
       this.network as ChainId,
@@ -249,7 +242,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
     }
 
-    const makers = pools.map(p => p.split(`${prefix}_`).pop()!);
+    const makers = await this.getFilteredMarketMakers(this.network as ChainId);
     const levels = await this.api.getPriceLevels(
       this.network as ChainId,
       makers,
@@ -292,16 +285,24 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return null;
     }
 
-    const prefix = `${this.dexKey}_${this.getPairName(
+    const prefix = this.getIdentifierPrefix(
       normalizedSrcToken.address,
       normalizedDestToken.address,
-    )}`;
+    );
 
     const pools =
       limitPools ??
       (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
-    const levelsMap = await this.getLevels(pools, prefix);
+    const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
+
+    const levelsMap = await this.getLevelsWithCache();
+
+    Object.keys(levelsMap).forEach(mmKey => {
+      if (!marketMakersToUse.includes(mmKey)) {
+        delete levelsMap[mmKey];
+      }
+    });
 
     const levelEntries: {
       mm: string;
@@ -359,7 +360,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         data: { mm },
         prices,
         unit: unitPrice,
-        poolIdentifier: `${prefix}_${mm}`,
+        poolIdentifier: this.getPoolIdentifier(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+          mm,
+        ),
         poolAddresses: [this.routerAddress],
       } as PoolPrices<HashflowData>;
     });
