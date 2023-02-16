@@ -60,7 +60,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_S = 60 * 60 * 24;
+const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
+const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
@@ -73,6 +74,8 @@ export class UniswapV3
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
+  intervalTask?: NodeJS.Timeout;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV3Config);
 
@@ -82,7 +85,6 @@ export class UniswapV3
   private stateMultiContract: Contract;
 
   private notExistingPoolSetKey: string;
-  private notExistingPoolSetTimestamp: string;
 
   constructor(
     protected network: Network,
@@ -113,8 +115,6 @@ export class UniswapV3
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
-    this.notExistingPoolSetTimestamp =
-      `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set_last_cleaned`.toLowerCase();
   }
 
   get supportedFees() {
@@ -143,36 +143,13 @@ export class UniswapV3
       ),
     );
 
-    let expiratioDate = new Date();
-    expiratioDate.setDate(expiratioDate.getDate() + 1);
-
     if (!this.dexHelper.config.isSlave) {
-      const cleanNotExistingPoolSet = async () => {
-        await this.dexHelper.cache.rawdel(this.notExistingPoolSetTimestamp);
-        let newDate = new Date();
-        newDate.setDate(newDate.getDate() + 1);
-
-        this.dexHelper.cache.rawset(
-          this.notExistingPoolSetTimestamp,
-          expiratioDate.toString(),
-          UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_S,
-        );
-
-        setTimeout(cleanNotExistingPoolSet.bind(this), diff);
-      };
-
-      const expirationDateAsString = await this.dexHelper.cache.rawget(
-        this.notExistingPoolSetTimestamp,
-      );
-      let diff = expiratioDate.getTime() - Date.now();
-      if (!expirationDateAsString) {
-        await cleanNotExistingPoolSet();
-      } else {
-        const _expiratioNDate = new Date(expirationDateAsString);
-        diff = _expiratioNDate.getTime() - Date.now();
+      const cleanExpiredNotExistingPoolsKeys = async () => {
+        const maxTimestamp = Date.now() - UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_MS;
+        await this.dexHelper.cache.zremrangebyscore(this.notExistingPoolSetKey, 0, maxTimestamp);
       }
 
-      setTimeout(cleanNotExistingPoolSet.bind(this, diff));
+      this.intervalTask = setInterval(cleanExpiredNotExistingPoolsKeys.bind(this), UNISWAPV3_CLEAN_NOT_EXISITING_POOL_INTERVAL_MS);
     }
   }
 
@@ -184,15 +161,19 @@ export class UniswapV3
   ): Promise<UniswapV3EventPool | null> {
     let pool =
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
+
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
       const key = `${token0}_${token1}_${fee}`.toLowerCase();
 
-      const poolDoesNotExist = await this.dexHelper.cache.sismember(
+      const notExistingPoolScore = await this.dexHelper.cache.zscore(
         this.notExistingPoolSetKey,
         key,
       );
+
+      const poolDoesNotExist = notExistingPoolScore !== null;
+
       if (poolDoesNotExist) {
         return null;
       }
@@ -232,7 +213,8 @@ export class UniswapV3
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
           // no need to await we want the set to have the pool key but it's not blocking
-          this.dexHelper.cache.sadd(this.notExistingPoolSetKey, key);
+          this.dexHelper.cache.zadd(this.notExistingPoolSetKey, [Date.now(), key], 'NX');
+
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
           pool = null;
@@ -995,5 +977,12 @@ export class UniswapV3
     return side === SwapSide.BUY
       ? pack(types.reverse(), _path.reverse())
       : pack(types, _path);
+  }
+
+  releaseResources() {
+    if (this.intervalTask !== undefined) {
+      clearInterval(this.intervalTask);
+      this.intervalTask = undefined;
+    }
   }
 }

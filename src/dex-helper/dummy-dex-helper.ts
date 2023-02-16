@@ -100,6 +100,18 @@ class DummyCache implements ICache {
     set.add(key);
   }
 
+  async zremrangebyscore(key: string, min: number, max: number) {
+    return 0;
+  }
+
+  async zadd(key: string, bulkItemsToAdd: (number | string)[], option?: 'NX') {
+    return 0;
+  }
+
+  async zscore() {
+    return null;
+  }
+
   async sismember(setKey: string, key: string): Promise<boolean> {
     let set = this.setMap[setKey];
     if (!set) {

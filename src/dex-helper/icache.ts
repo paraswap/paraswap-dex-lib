@@ -36,6 +36,12 @@ export interface ICache {
 
   sadd(setKey: string, key: string): Promise<void>;
 
+  zadd(key: string, bulkItemsToAdd: (number | string)[], option?: 'NX'): Promise<number>;
+
+  zremrangebyscore(key: string, min: number, max: number): Promise<number>;
+
+  zscore(setKey: string, key: string): Promise<string | null>;
+
   sismember(setKey: string, key: string): Promise<boolean>;
 
   hset(mapKey: string, key: string, value: string): Promise<void>;
