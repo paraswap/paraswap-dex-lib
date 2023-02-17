@@ -230,7 +230,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const [resBalance0, resBalance1, resState] =
       await this.dexHelper.multiWrapper.tryAggregate<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-      >(false, callData, blockNumber);
+      >(
+        false,
+        callData,
+        blockNumber,
+        this.dexHelper.multiWrapper.defaultBatchSize,
+        false,
+      );
 
     // Quite ugly solution, but this is the one that fits to current flow.
     // I think UniswapV3 callbacks subscriptions are complexified for no reason.
