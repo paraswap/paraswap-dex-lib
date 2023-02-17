@@ -86,6 +86,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       options: {
         includeDEXS: [this.dexKey],
         includeContractMethods: [contractMethod],
+        partner: 'any',
       },
       srcDecimals: from.decimals,
       destDecimals: to.decimals,
