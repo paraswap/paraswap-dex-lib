@@ -433,7 +433,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       }: Failed to fetch RFQ for ${this.getPairName(
         normalizedSrcToken.address,
         normalizedDestToken.address,
-      )}. Status: ${rfq.status}`;
+      )}: ${JSON.stringify(rfq)}`;
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (!rfq.quoteData) {
