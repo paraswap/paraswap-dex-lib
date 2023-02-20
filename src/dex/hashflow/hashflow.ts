@@ -157,35 +157,19 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   parseCacheRestrictionAndExpiryIfNeeded(
-    cachedValues: string | null,
+    cachedValues: Record<string, string>,
   ): Set<string> {
     const restrictedMMs = new Set<string>();
-    if (cachedValues === null) {
-      return restrictedMMs;
-    }
-
-    const parsed = JSON.parse(cachedValues) as (number | string)[];
-    if (parsed.length === 0) {
-      return restrictedMMs;
-    }
-
     const toDelete: string[] = [];
-
     const expirationThreshold = Date.now() - HASHFLOW_MM_RESTRICT_TTL_S;
-    assert(
-      parsed.length >= 2,
-      `${this.dexKey}-${this.network}: Received not enough parsed values: ${cachedValues}`,
-    );
 
-    (_.chunk(parsed, 2) as [string, number][]).forEach(
-      ([mm, createdAt]: [string, number]) => {
-        if (createdAt <= expirationThreshold) {
-          toDelete.push(mm);
-        } else {
-          restrictedMMs.add(mm);
-        }
-      },
-    );
+    Object.entries(cachedValues).forEach(([mm, createdAt]) => {
+      if (+createdAt <= expirationThreshold) {
+        toDelete.push(mm);
+      } else {
+        restrictedMMs.add(mm);
+      }
+    });
 
     if (toDelete.length > 0) {
       // No need to await since we don't care about when it executes
@@ -487,6 +471,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         effectiveTrader: options.txOrigin.toLowerCase(),
         marketMakers: [mm],
       });
+      // !!! Remove after testing
+      const a: unknown[] = [];
+      a[10];
+      // !!! Remove after testing
     } catch (e) {
       if (
         e instanceof Error &&

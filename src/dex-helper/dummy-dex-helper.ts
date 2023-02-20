@@ -109,12 +109,12 @@ class DummyCache implements ICache {
     return null;
   }
 
-  async hgetAll(mapKey: string): Promise<string | null> {
-    return '';
+  async hgetAll(mapKey: string): Promise<Record<string, string>> {
+    return {};
   }
 
-  async hdel(mapKey: string, keys: string[]): Promise<void> {
-    return undefined;
+  async hdel(mapKey: string, keys: string[]): Promise<number> {
+    return 0;
   }
 
   async publish(channel: string, msg: string): Promise<void> {
