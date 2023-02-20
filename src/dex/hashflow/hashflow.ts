@@ -625,7 +625,21 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<HashflowData>): number | number[] {
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    // I am not sure if that is correct. If anybody know how to fix it,
+    // please, go ahead :)
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      // addresses: pool, quoteToken, externalAccount
+      CALLDATA_GAS_COST.ADDRESS * 3 +
+      // uint256: baseTokenAmount, quoteTokenAmount, quoteExpiry, nonce
+      CALLDATA_GAS_COST.AMOUNT * 4 +
+      // bytes32 txid;
+      CALLDATA_GAS_COST.FULL_WORD +
+      // I don't know how big is it, but from google results, I see 65 bytes for signature
+      // bytes signature
+      CALLDATA_GAS_COST.FULL_WORD * 2 +
+      CALLDATA_GAS_COST.OFFSET_SMALL
+    );
   }
 
   getTokenFromAddress?(address: Address): Token {
