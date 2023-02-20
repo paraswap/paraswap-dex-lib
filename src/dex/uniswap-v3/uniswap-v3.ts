@@ -60,8 +60,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
-const UNISWAPV3_CLEAN_NOT_EXISITING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
@@ -145,11 +145,11 @@ export class UniswapV3
 
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp = Date.now() - UNISWAPV3_CLEAN_NOT_EXISITING_POOL_TTL_MS;
+        const maxTimestamp = Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
         await this.dexHelper.cache.zremrangebyscore(this.notExistingPoolSetKey, 0, maxTimestamp);
       }
 
-      this.intervalTask = setInterval(cleanExpiredNotExistingPoolsKeys.bind(this), UNISWAPV3_CLEAN_NOT_EXISITING_POOL_INTERVAL_MS);
+      this.intervalTask = setInterval(cleanExpiredNotExistingPoolsKeys.bind(this), UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS);
     }
   }
 
