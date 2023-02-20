@@ -175,7 +175,7 @@ export class UniswapV3
       const poolDoesNotExist = notExistingPoolScore !== null;
 
       if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] = pool;
+        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] = null;
         return null;
       }
 
