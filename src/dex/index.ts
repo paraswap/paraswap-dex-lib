@@ -38,7 +38,7 @@ import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
-import { WooFi } from './woo-fi/woo-fi';
+// import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
@@ -56,6 +56,7 @@ import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { Hashflow } from './hashflow/hashflow';
 
 const LegacyDexes = [
   CurveV2,
@@ -99,7 +100,7 @@ const Dexes = [
   Platypus,
   GMX,
   JarvisV6,
-  WooFi,
+  // WooFi,
   ParaSwapLimitOrders,
   Solidly,
   SpiritSwapV2,
@@ -109,6 +110,7 @@ const Dexes = [
   CurveV1Factory,
   SwaapV1,
   WstETH,
+  Hashflow,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

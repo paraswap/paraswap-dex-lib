@@ -14,7 +14,12 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isTruthy,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -31,6 +36,7 @@ import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
+import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_FUNCTION_CALL_GAS_COST,
@@ -72,6 +78,7 @@ export class UniswapV3
   logger: Logger;
 
   private uniswapMulti: Contract;
+  private stateMultiContract: Contract;
 
   constructor(
     protected network: Network,
@@ -89,6 +96,11 @@ export class UniswapV3
       UniswapV3MultiABI as AbiItem[],
       this.config.uniswapMulticall,
     );
+    this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
+      UniswapV3StateMulticallABI as AbiItem[],
+      this.config.stateMulticall,
+    );
+
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
@@ -149,7 +161,8 @@ export class UniswapV3
       pool = new UniswapV3EventPool(
         this.dexHelper,
         this.dexKey,
-        this.config.stateMulticall,
+        this.stateMultiContract,
+        this.erc20Interface,
         this.config.factory,
         fee,
         token0,
@@ -183,6 +196,18 @@ export class UniswapV3
           );
           throw new Error('Cannot generate pool state');
         }
+      }
+
+      if (pool !== null) {
+        const allEventPools = Object.values(this.eventPools);
+        this.logger.info(
+          `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
+            // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
+            .reduce(
+              (acc, curr) => (curr !== null ? ++acc : acc),
+              0,
+            )} non-null pools or ${allEventPools.length} total pools`,
+        );
       }
 
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
@@ -403,24 +428,27 @@ export class UniswapV3
       if (_srcAddress === _destAddress) return null;
 
       let selectedPools: UniswapV3EventPool[] = [];
+
       if (!limitPools) {
-        for (const fee of this.supportedFees) {
-          let pool =
-            this.eventPools[
-              this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-            ];
-          if (!pool) {
-            pool = await this.getPool(
-              _srcAddress,
-              _destAddress,
-              fee,
-              blockNumber,
-            );
-          }
-          if (pool) {
-            selectedPools.push(pool);
-          }
-        }
+        selectedPools = (
+          await Promise.all(
+            this.supportedFees.map(async fee => {
+              const locallyFoundPool =
+                this.eventPools[
+                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
+                ];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const newlyFetchedPool = await this.getPool(
+                _srcAddress,
+                _destAddress,
+                fee,
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
       } else {
         const pairIdentifierWithoutFee = this.getPoolIdentifier(
           _srcAddress,
@@ -432,22 +460,24 @@ export class UniswapV3
         const poolIdentifiers = limitPools.filter(identifier =>
           identifier.startsWith(pairIdentifierWithoutFee),
         );
-        for (const identifier of poolIdentifiers) {
-          let pool = this.eventPools[identifier];
-          if (!pool) {
-            const [, srcAddress, destAddress, fee] = identifier.split('_');
-            pool = await this.getPool(
-              srcAddress,
-              destAddress,
-              BigInt(fee),
-              blockNumber,
-            );
-          }
 
-          if (pool) {
-            selectedPools.push(pool);
-          }
-        }
+        selectedPools = (
+          await Promise.all(
+            poolIdentifiers.map(async identifier => {
+              let locallyFoundPool = this.eventPools[identifier];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const newlyFetchedPool = await this.getPool(
+                srcAddress,
+                destAddress,
+                BigInt(fee),
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
       }
 
       if (selectedPools.length === 0) return null;
@@ -503,9 +533,7 @@ export class UniswapV3
           }
 
           const balanceDestToken =
-            _destAddress === pool.token0
-              ? await pool.getBalanceToken0(blockNumber)
-              : await pool.getBalanceToken1(blockNumber);
+            _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
           const unitResult = this._getOutputs(
             state,

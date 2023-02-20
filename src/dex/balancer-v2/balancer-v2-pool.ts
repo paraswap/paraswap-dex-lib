@@ -2,18 +2,13 @@ import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 import { MathSol } from './balancer-v2-math';
 import { SwapSide } from '../../constants';
-import {
-  callData,
-  SubgraphPoolBase,
-  PoolState,
-  TokenState,
-  PoolBase,
-} from './types';
+import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import { getTokenScalingFactor, decodeThrowError } from './utils';
 import WeightedPoolABI from '../../abi/balancer-v2/weighted-pool.json';
 import StablePoolABI from '../../abi/balancer-v2/stable-pool.json';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
 import { BI_POWS } from '../../bigint-constants';
+import { assert } from 'ts-essentials';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);
@@ -38,6 +33,10 @@ export class BasePool {
   _downscaleDown(amount: bigint, scalingFactor: bigint): bigint {
     return MathSol.divDownFixed(amount, scalingFactor);
   }
+
+  _nullifyIfMaxAmountExceeded(amountToTrade: bigint, swapMax: bigint): bigint {
+    return swapMax >= amountToTrade ? amountToTrade : 0n;
+  }
 }
 
 type WeightedPoolPairData = {
@@ -48,7 +47,6 @@ type WeightedPoolPairData = {
   tokenInWeight: bigint;
   tokenOutWeight: bigint;
   swapFee: bigint;
-  gasCost: number;
 };
 
 type StablePoolPairData = {
@@ -58,7 +56,6 @@ type StablePoolPairData = {
   scalingFactors: bigint[];
   swapFee: bigint;
   amp: bigint;
-  gasCost: number;
 };
 
 abstract class BaseGeneralPool extends BasePool {
@@ -367,22 +364,16 @@ class StableMath {
   }
 }
 
-export class StablePool extends BaseGeneralPool implements PoolBase {
+export class StablePool extends BaseGeneralPool {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
-  gasCost = 150000; // TO DO - Get accurate
   metaPoolInterface: Interface;
 
-  constructor(
-    vaultAddress: string,
-    vaultInterface: Interface,
-    poolInterface: Interface,
-  ) {
+  constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = poolInterface;
     this.poolInterface = new Interface(StablePoolABI);
     this.metaPoolInterface = new Interface(MetaStablePoolABI);
   }
@@ -408,11 +399,10 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
   */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolStates: { [address: string]: PoolState },
+    poolState: PoolState,
     tokenIn: string,
     tokenOut: string,
   ): StablePoolPairData {
-    const poolState = poolStates[pool.address];
     let indexIn = 0,
       indexOut = 0;
     const scalingFactors: bigint[] = [];
@@ -434,7 +424,6 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
       scalingFactors,
       swapFee: poolState.swapFee,
       amp: poolState.amp ? poolState.amp : 0n,
-      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -527,7 +516,6 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
         },
         {},
       ),
-      gasCost: this.gasCost,
     };
 
     if (amp) {
@@ -542,24 +530,15 @@ export class StablePool extends BaseGeneralPool implements PoolBase {
   /*
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
-    poolPairData: StablePoolPairData,
-  ): boolean {
-    const swapMax =
+  getSwapMaxAmount(poolPairData: StablePoolPairData, side: SwapSide): bigint {
+    return (
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
         99n) /
-      100n;
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
+      100n
+    );
   }
 }
 
@@ -607,21 +586,16 @@ export class WeightedMath {
   }
 }
 
-export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
+export class WeightedPool extends BaseMinimalSwapInfoPool {
   vaultAddress: string;
   vaultInterface: Interface;
   poolInterface: Interface;
-  gasCost = 150000; // TO DO
 
-  constructor(
-    vaultAddress: string,
-    vaultInterface: Interface,
-    poolInterface: Interface,
-  ) {
+  constructor(vaultAddress: string, vaultInterface: Interface) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = poolInterface;
+    this.poolInterface = new Interface(WeightedPoolABI);
   }
 
   _onSwapGivenIn(
@@ -645,11 +619,10 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
   */
   parsePoolPairData(
     pool: SubgraphPoolBase,
-    poolStates: { [address: string]: PoolState },
+    poolState: PoolState,
     tokenIn: string,
     tokenOut: string,
   ): WeightedPoolPairData {
-    const poolState = poolStates[pool.address];
     const inAddress = tokenIn.toLowerCase();
     const outAddress = tokenOut.toLowerCase();
 
@@ -673,7 +646,6 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
       tokenInWeight,
       tokenOutWeight,
       swapFee: poolState.swapFee,
-      gasCost: poolState.gasCost,
     };
     return poolPairData;
   }
@@ -747,7 +719,6 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
         },
         {},
       ),
-      gasCost: this.gasCost,
     };
 
     pools[pool.address] = poolState;
@@ -758,22 +729,13 @@ export class WeightedPool extends BaseMinimalSwapInfoPool implements PoolBase {
   /*
   For weighted pools there is a Swap limit of 30%: amounts swapped may not be larger than this percentage of total balance.
   */
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
-    poolPairData: WeightedPoolPairData,
-  ): boolean {
-    const swapMax =
+  getSwapMaxAmount(poolPairData: WeightedPoolPairData, side: SwapSide): bigint {
+    return (
       ((side === SwapSide.SELL
         ? poolPairData.tokenInBalance
         : poolPairData.tokenOutBalance) *
         3n) /
-      10n;
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
+      10n
+    );
   }
 }

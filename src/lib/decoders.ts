@@ -136,6 +136,12 @@ export const addressDecode = (
   );
 };
 
+export const stringDecode = (
+  result: MultiResult<BytesLike> | BytesLike,
+): string => {
+  return generalDecoder(result, ['string'], '');
+};
+
 export const bytes32ToString = (
   result: MultiResult<BytesLike> | BytesLike,
 ): string => {

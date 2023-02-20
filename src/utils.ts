@@ -378,3 +378,6 @@ export const isContractAddress = async (web3: Web3, addr: string) => {
 
   return contractCode !== '0x';
 };
+
+export const isTruthy = <T>(x: T | undefined | null | '' | false | 0): x is T =>
+  !!x;

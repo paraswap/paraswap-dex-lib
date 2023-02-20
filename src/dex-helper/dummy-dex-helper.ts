@@ -63,8 +63,12 @@ class DummyCache implements ICache {
     dexKey: string,
     network: number,
     cacheKey: string,
-    ttlSeconds: number,
+    _ttlSeconds: number,
   ): Promise<string | null> {
+    const key = `${network}_${dexKey}_${cacheKey}`.toLowerCase();
+    if (this.storage[key]) {
+      return this.storage[key];
+    }
     return null;
   }
 
