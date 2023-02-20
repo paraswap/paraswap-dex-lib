@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -11,7 +12,12 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
 } from '../../types';
-import { SwapSide, Network, ETHER_ADDRESS } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  ETHER_ADDRESS,
+  CACHE_PREFIX,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -38,6 +44,7 @@ import {
 import { assert } from 'ts-essentials';
 import {
   HASHFLOW_BLACKLIST_TTL_S,
+  HASHFLOW_MM_RESTRICT_TTL_S,
   PRICE_LEVELS_TTL_SECONDS,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
@@ -50,6 +57,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   private hashFlowAuthToken: string;
   private disabledMMs: Set<string>;
+  private runtimeMMsRestrictHashMapKey: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(HashflowConfig);
@@ -75,6 +83,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     this.hashFlowAuthToken = token;
     this.api = new HashflowApi('taker', 'paraswap', this.hashFlowAuthToken);
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
+    this.runtimeMMsRestrictHashMapKey = `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`;
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -133,8 +142,65 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   private async getFilteredMarketMakers(chainId: ChainId): Promise<string[]> {
-    const makers = await this.api.getMarketMakers(chainId);
-    return makers.filter(mm => !this.disabledMMs.has(mm));
+    const [makers, cachedRestrictionUnparsed] = await Promise.all([
+      this.api.getMarketMakers(chainId),
+      this.dexHelper.cache.hgetAll(this.runtimeMMsRestrictHashMapKey),
+    ]);
+
+    const runtimeRestrictedMMs = this.parseCacheRestrictionAndExpiryIfNeeded(
+      cachedRestrictionUnparsed,
+    );
+
+    return makers.filter(
+      mm => !(this.disabledMMs.has(mm) || runtimeRestrictedMMs.has(mm)),
+    );
+  }
+
+  parseCacheRestrictionAndExpiryIfNeeded(
+    cachedValues: string | null,
+  ): Set<string> {
+    const restrictedMMs = new Set<string>();
+    if (cachedValues === null) {
+      return restrictedMMs;
+    }
+
+    const parsed = JSON.parse(cachedValues) as (number | string)[];
+    if (parsed.length === 0) {
+      return restrictedMMs;
+    }
+
+    const toDelete: string[] = [];
+
+    const expirationThreshold = Date.now() - HASHFLOW_MM_RESTRICT_TTL_S;
+    assert(
+      parsed.length >= 2,
+      `${this.dexKey}-${this.network}: Received not enough parsed values: ${cachedValues}`,
+    );
+
+    (_.chunk(parsed, 2) as [string, number][]).forEach(
+      ([mm, createdAt]: [string, number]) => {
+        if (createdAt <= expirationThreshold) {
+          toDelete.push(mm);
+        } else {
+          restrictedMMs.add(mm);
+        }
+      },
+    );
+
+    if (toDelete.length > 0) {
+      // No need to await since we don't care about when it executes
+      // And we don't want to stop pricing request because of this
+      this.dexHelper.cache
+        .hdel(this.runtimeMMsRestrictHashMapKey, toDelete)
+        .catch(e => {
+          this.logger.error(
+            `${this.dexKey}-${this.network}: Failed to delete expired keys: `,
+            e,
+          );
+        });
+    }
+
+    return restrictedMMs;
   }
 
   computePricesFromLevels(
@@ -388,12 +454,19 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<[OptimalSwapExchange<HashflowData>, ExchangeTxInfo]> {
     if (await this.isBlacklisted(options.txOrigin)) {
       this.logger.warn(
-        `${this.dexKey}'s blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+        `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
       );
       throw new Error(
-        `${this.dexKey}: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+        `${this.dexKey}-${
+          this.network
+        }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
       );
     }
+    const mm = optimalSwapExchange.data?.mm;
+    assert(
+      mm !== undefined,
+      `${this.dexKey}-${this.network}: MM was not provided in data`,
+    );
     const chainId = this.network as ChainId;
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
@@ -412,6 +485,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           : { quoteTokenAmount: optimalSwapExchange.destAmount }),
         wallet: this.augustusAddress.toLowerCase(),
         effectiveTrader: options.txOrigin.toLowerCase(),
+        marketMakers: [mm],
       });
     } catch (e) {
       if (
@@ -419,17 +493,28 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         e.message.endsWith('User is restricted from using Hashflow')
       ) {
         this.logger.warn(
-          `${this.dexKey}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
+          `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
         );
         await this.setBlacklist(options.txOrigin);
+      } else {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
+        );
+
+        // We use timestamp for creation date to later discern if it already expired or not
+        await this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapKey,
+          mm,
+          Date.now().toString(),
+        );
       }
 
       throw e;
     }
 
     if (rfq.status !== 'success') {
-      const message = `${
-        this.dexKey
+      const message = `${this.dexKey}-${
+        this.network
       }: Failed to fetch RFQ for ${this.getPairName(
         normalizedSrcToken.address,
         normalizedDestToken.address,
@@ -437,8 +522,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (!rfq.quoteData) {
-      const message = `${
-        this.dexKey
+      const message = `${this.dexKey}-${
+        this.network
       }: Failed to fetch RFQ for ${this.getPairName(
         normalizedSrcToken.address,
         normalizedDestToken.address,
@@ -446,8 +531,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (!rfq.signature) {
-      const message = `${
-        this.dexKey
+      const message = `${this.dexKey}-${
+        this.network
       }: Failed to fetch RFQ for ${this.getPairName(
         normalizedSrcToken.address,
         normalizedDestToken.address,
@@ -455,8 +540,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (!rfq.gasEstimate) {
-      const message = `${
-        this.dexKey
+      const message = `${this.dexKey}-${
+        this.network
       }: Failed to fetch RFQ for ${this.getPairName(
         normalizedSrcToken.address,
         normalizedDestToken.address,
@@ -464,8 +549,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       this.logger.warn(message);
       throw new RfqError(message);
     } else if (rfq.quoteData.rfqType !== RFQType.RFQT) {
-      const message = `${
-        this.dexKey
+      const message = `${this.dexKey}-${
+        this.network
       }: Failed to fetch RFQ for ${this.getPairName(
         normalizedSrcToken.address,
         normalizedDestToken.address,
@@ -501,14 +586,14 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           new BigNumber(destAmount.toString()).times(slippageFactor).toFixed(0),
         )
       ) {
-        const message = `${this.dexKey}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+        const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
         this.logger.warn(message);
         throw new SlippageCheckError(message);
       }
     } else {
       if (quoteTokenAmount < destAmount) {
         // Won't receive enough assets
-        const message = `${this.dexKey}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
+        const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
         this.logger.warn(message);
         throw new SlippageCheckError(message);
       } else {
@@ -516,8 +601,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           baseTokenAmount >
           BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
         ) {
-          const message = `${
-            this.dexKey
+          const message = `${this.dexKey}-${
+            this.network
           }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
           this.logger.warn(message);
           throw new SlippageCheckError(message);
@@ -529,7 +614,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       {
         ...optimalSwapExchange,
         data: {
-          mm: optimalSwapExchange.data!.mm,
+          mm,
           quoteData: rfq.quoteData,
           signature: rfq.signature,
           gasEstimate: rfq.gasEstimate,
@@ -559,7 +644,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): AdapterExchangeParam {
     const { quoteData, signature } = data;
 
-    assert(quoteData !== undefined, `${this.dexKey}: quoteData undefined`);
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
 
     const payload = this.routerInterface._abiCoder.encode(
       [
@@ -624,7 +712,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<SimpleExchangeParam> {
     const { quoteData, signature } = data;
 
-    assert(quoteData !== undefined, `${this.dexKey}: quoteData undefined`);
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
 
     // Encode here the transaction arguments
     const swapData = this.routerInterface.encodeFunctionData('tradeSingleHop', [
