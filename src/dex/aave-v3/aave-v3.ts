@@ -17,12 +17,16 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Data, Param, PoolAndWethFunctions } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, Config } from './config';
-import { getATokenIfAaveV3Pair } from './tokens';
+import { getATokenIfAaveV3Pair, setTokensOnNetwork } from './tokens';
 
 import WETH_GATEWAY_ABI from '../../abi/aave-v3-weth-gateway.json';
 import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
+import { fetchTokenList } from './utils';
 
 const REF_CODE = 1;
+export const TOKEN_LIST_CACHE_KEY = 'token-list';
+const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
+const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60;
 
 export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   readonly hasConstantPriceLargeAmounts = true;
@@ -50,6 +54,38 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side];
+  }
+
+  async initializePricing(blockNumber: number): Promise<void> {
+    let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.network,
+      TOKEN_LIST_CACHE_KEY,
+      TOKEN_LIST_LOCAL_TTL_SECONDS,
+    );
+    if (cachedTokenList !== null) {
+      setTokensOnNetwork(this.network, JSON.parse(cachedTokenList));
+      return;
+    }
+
+    let tokenList = await fetchTokenList(
+      this.dexHelper.web3Provider,
+      blockNumber,
+      this.config.poolAddress,
+      this.pool,
+      this.erc20Interface,
+      this.dexHelper.multiWrapper,
+    );
+
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      TOKEN_LIST_CACHE_KEY,
+      TOKEN_LIST_TTL_SECONDS,
+      JSON.stringify(tokenList),
+    );
+
+    setTokensOnNetwork(this.network, tokenList);
   }
 
   private _getPoolIdentifier(srcToken: Token, destToken: Token): string {

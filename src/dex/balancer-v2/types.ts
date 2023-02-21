@@ -1,7 +1,17 @@
 import { Address } from '../../types';
 
-export interface PoolBase {
-  gasCost: number;
+// These should match the Balancer Pool types available on Subgraph
+export enum BalancerPoolTypes {
+  Weighted = 'Weighted',
+  Stable = 'Stable',
+  MetaStable = 'MetaStable',
+  LiquidityBootstrapping = 'LiquidityBootstrapping',
+  Investment = 'Investment',
+  AaveLinear = 'AaveLinear',
+  StablePhantom = 'StablePhantom',
+  ERC4626Linear = 'ERC4626Linear',
+  Linear = 'Linear',
+  ComposableStable = 'ComposableStable',
 }
 
 export type TokenState = {
@@ -15,7 +25,6 @@ export type PoolState = {
     [address: string]: TokenState;
   };
   swapFee: bigint;
-  gasCost: number;
   amp?: bigint;
   // Linear Pools
   mainIndex?: number;
@@ -23,23 +32,40 @@ export type PoolState = {
   bptIndex?: number;
   lowerTarget?: bigint;
   upperTarget?: bigint;
+  actualSupply?: bigint;
 };
 
 export type SubgraphToken = {
   address: string;
   decimals: number;
-  linearPoolAddr?: string;
-  linearPoolId?: string;
+};
+
+export interface SubgraphMainToken extends SubgraphToken {
+  poolToken: SubgraphToken;
+  pathToToken: {
+    poolId: string;
+    poolAddress: string;
+    token: SubgraphToken;
+  }[];
+  //used to flag tokens that inside of a nested composable stable this way we can avoid paths
+  //through pools where the tokenIn and tokenOut are inside a nested pool
+  //ie MAI / bbaUSD, where tokenIn is DAI and tokenOut is USDC
+  isDeeplyNested: boolean;
+}
+
+export type SubgraphPoolAddressDictionary = {
+  [address: string]: SubgraphPoolBase;
 };
 
 export interface SubgraphPoolBase {
   id: string;
   address: string;
-  poolType: string;
+  poolType: BalancerPoolTypes;
   tokens: SubgraphToken[];
   mainIndex: number;
   wrappedIndex: number;
-  totalLiquidity: string;
+
+  mainTokens: SubgraphMainToken[];
 }
 
 export type BalancerSwapV2 = {
