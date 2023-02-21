@@ -56,6 +56,14 @@ class DummyCache implements ICache {
     return;
   }
 
+  async del(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<number> {
+    return 0;
+  }
+
   async setex(
     dexKey: string,
     network: number,

@@ -83,7 +83,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     this.hashFlowAuthToken = token;
     this.api = new HashflowApi('taker', 'paraswap', this.hashFlowAuthToken);
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
-    this.runtimeMMsRestrictHashMapKey = `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`;
+    this.runtimeMMsRestrictHashMapKey =
+      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -161,17 +162,37 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Set<string> {
     const restrictedMMs = new Set<string>();
     const toDelete: string[] = [];
-    const expirationThreshold = Date.now() - HASHFLOW_MM_RESTRICT_TTL_S;
+    const expirationThreshold = Date.now() - HASHFLOW_MM_RESTRICT_TTL_S * 1000;
+
+    // For log message
+    let stringifiedRestrictedMMs = '';
 
     Object.entries(cachedValues).forEach(([mm, createdAt]) => {
-      if (+createdAt <= expirationThreshold) {
+      if (+createdAt < expirationThreshold) {
         toDelete.push(mm);
       } else {
         restrictedMMs.add(mm);
+        stringifiedRestrictedMMs += `${mm}, `;
       }
     });
 
+    if (restrictedMMs.size > 0) {
+      this.logger.info(
+        `${this.dexKey}-${
+          this.network
+        }: pricing is skipped for ${stringifiedRestrictedMMs.slice(
+          0,
+          -2,
+        )} due to restriction`,
+      );
+    }
+
     if (toDelete.length > 0) {
+      this.logger.debug(
+        `${this.dexKey}-${this.network}: Deleting expired keys: `,
+        toDelete.join(`,`),
+      );
+
       // No need to await since we don't care about when it executes
       // And we don't want to stop pricing request because of this
       this.dexHelper.cache
@@ -491,6 +512,15 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           mm,
           Date.now().toString(),
         );
+
+        // Expiry cache because it has levels for blacklisted MM
+        this.dexHelper.cache
+          .del(this.dexKey, this.network, 'levels')
+          .catch(e => {
+            this.logger.error(
+              `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
+            );
+          });
       }
 
       throw e;
