@@ -471,10 +471,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         effectiveTrader: options.txOrigin.toLowerCase(),
         marketMakers: [mm],
       });
-      // !!! Remove after testing
-      const a: unknown[] = [];
-      a[10];
-      // !!! Remove after testing
     } catch (e) {
       if (
         e instanceof Error &&
