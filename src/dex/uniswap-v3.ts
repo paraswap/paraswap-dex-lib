@@ -6,7 +6,6 @@ import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
 import { NumberAsString } from '@paraswap/core';
-import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 
 const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {

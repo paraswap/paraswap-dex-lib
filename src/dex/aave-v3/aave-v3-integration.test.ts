@@ -3,39 +3,71 @@ dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { AaveV3 } from './aave-v3';
+import { AaveV3, TOKEN_LIST_CACHE_KEY } from './aave-v3';
 import {
   checkConstantPoolPrices,
   checkPoolsLiquidity,
 } from '../../../tests/utils';
-import { Tokens } from '../../../tests/constants-e2e';
-import { getTokenFromASymbol } from './tokens';
 import { BI_POWS } from '../../bigint-constants';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDT';
-const TokenA = Tokens[network][TokenASymbol];
+const TokenA = {
+  address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+  decimals: 6,
+};
 
-const TokenBSymbol = 'aUSDT';
-const TokenB = getTokenFromASymbol(network, TokenBSymbol);
+const TokenBSymbol = 'aPolUSDT';
+const TokenB = {
+  address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
+  decimals: 6,
+  symbol: 'aPolUSDT',
+};
 
 const amounts = [0n, BI_POWS[6], 2000000n];
 
 const dexKey = 'AaveV3';
 
 describe('AaveV3', function () {
+  it('The "initializePricing" method sets cache properly', async () => {
+    const dexHelper = new DummyDexHelper(network);
+    const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const aaveV3 = new AaveV3(network, dexKey, dexHelper);
+
+    await expect(
+      dexHelper.cache.getAndCacheLocally(
+        dexKey,
+        network,
+        TOKEN_LIST_CACHE_KEY,
+        0,
+      ),
+    ).resolves.toBeNull();
+    await aaveV3.initializePricing(blockNumber);
+    await expect(
+      dexHelper.cache.getAndCacheLocally(
+        dexKey,
+        network,
+        TOKEN_LIST_CACHE_KEY,
+        0,
+      ),
+    ).resolves.toMatch('aPol');
+  });
+
   if (TokenA) {
     if (TokenB) {
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         const dexHelper = new DummyDexHelper(network);
-        const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
         const aaveV3 = new AaveV3(network, dexKey, dexHelper);
+
+        // Invoke the "initializePricing" method manually in tests. Invoked by the SDK automatically otherwise.
+        await aaveV3.initializePricing(blockNumber);
 
         const pools = await aaveV3.getPoolIdentifiers(
           TokenA,
           TokenB,
           SwapSide.SELL,
-          blocknumber,
+          blockNumber,
         );
         console.log(
           `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
@@ -49,7 +81,7 @@ describe('AaveV3', function () {
           TokenB,
           amounts,
           SwapSide.SELL,
-          blocknumber,
+          blockNumber,
           pools,
         );
         console.log(
@@ -65,6 +97,9 @@ describe('AaveV3', function () {
         const dexHelper = new DummyDexHelper(network);
         const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
         const aaveV3 = new AaveV3(network, dexKey, dexHelper);
+
+        // Invoke the "initializePricing" method manually in tests. Invoked by the SDK automatically otherwise.
+        await aaveV3.initializePricing(blocknumber);
 
         const pools = await aaveV3.getPoolIdentifiers(
           TokenA,

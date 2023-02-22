@@ -7,6 +7,8 @@ export interface ICache {
 
   rawget(key: string): Promise<string | null>;
 
+  rawset(key: string, value: string, ttl: number): Promise<string | null>;
+
   rawdel(key: string): Promise<void>;
 
   setex(
@@ -33,6 +35,16 @@ export interface ICache {
   ): Promise<void>;
 
   sadd(setKey: string, key: string): Promise<void>;
+
+  zadd(
+    key: string,
+    bulkItemsToAdd: (number | string)[],
+    option?: 'NX',
+  ): Promise<number>;
+
+  zremrangebyscore(key: string, min: number, max: number): Promise<number>;
+
+  zscore(setKey: string, key: string): Promise<string | null>;
 
   sismember(setKey: string, key: string): Promise<boolean>;
 

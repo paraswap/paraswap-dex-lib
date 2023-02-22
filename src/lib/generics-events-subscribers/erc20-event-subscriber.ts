@@ -256,7 +256,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
 
       if (!(wallet in state)) {
         this.logger.warn(
-          `Missing wallet ${wallet} for ${this.token} fallinging back to rpc`,
+          `Missing wallet ${wallet} for ${this.token} falling back to rpc`,
         );
         const balance = await this.getBalanceRPC(wallet, blockNumber);
 

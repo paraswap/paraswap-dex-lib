@@ -1,8 +1,9 @@
-import _, { result } from 'lodash';
+import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { ethers } from 'ethers';
+import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
   GenerateStateResult,
@@ -12,9 +13,12 @@ import {
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
+  DecodedStateMultiCallResultWithRelativeBitmaps,
   TickBitMapMappings,
   TickInfo,
   TickInfoMappings,
+  TickBitMapMappingsWithBigNumber,
+  TickInfoMappingsWithBigNumber,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
@@ -22,10 +26,11 @@ import {
   bigIntify,
   blockAndTryAggregate,
   catchParseLogError,
-} from '../../utils';
-import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+} from '../../utils';import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
 import {
+  DEFAULT_POOL_INIT_CODE_HASH,
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
@@ -33,6 +38,8 @@ import {
 import { TickBitMap } from './contract-math/TickBitMap';
 import { ERC20EventSubscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber';
 import { getERC20Subscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber-factory';
+import { uint256ToBigInt } from '../../lib/decoders';
+import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -71,7 +78,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
-    private stateMultiAddress: Address,
+    stateMultiAddress: Address,
     protected readonly factoryAddress: Address,
     public readonly feeCode: bigint,
     token0: Address,
@@ -110,12 +117,20 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
     this.handlers['IncreaseObservationCardinalityNext'] =
       this.handleIncreaseObservationCardinalityNextEvent.bind(this);
+
+    // Wen need them to keep balance of the pool up to date
+    this.handlers['Collect'] = this.handleCollectEvent.bind(this);
+    // Almost the same as Collect, but for pool owners
+    this.handlers['CollectProtocol'] = this.handleCollectEvent.bind(this);
+    this.handlers['Flash'] = this.handleFlashEvent.bind(this);
   }
 
   get poolAddress() {
     if (this._poolAddress === undefined) {
-      throw new Error(
-        `${this.parentName}: First call generateState at least one time before requesting poolAddress`,
+      this._poolAddress = this._computePoolAddress(
+        this.token0,
+        this.token1,
+        this.feeCode,
       );
     }
     return this._poolAddress;
@@ -235,17 +250,38 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _getStateRequestCallData() {
     if (!this._stateRequestCallData) {
-      const callData = {
-        funcName: 'getFullStateWithRelativeBitmaps',
-        params: [
-          this.factoryAddress,
-          this.token0,
-          this.token1,
-          this.feeCode,
-          this.getBitmapRangeToRequest(),
-          this.getBitmapRangeToRequest(),
-        ],
-      };
+      const callData: MultiCallParams<
+        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      >[] = [
+        {
+          target: this.token0,
+          callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+            this.poolAddress,
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.token1,
+          callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+            this.poolAddress,
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.stateMultiContract.options.address,
+          callData: this.stateMultiContract.methods
+            .getFullStateWithRelativeBitmaps(
+              this.factoryAddress,
+              this.token0,
+              this.token1,
+              this.feeCode,
+              this.getBitmapRangeToRequest(),
+              this.getBitmapRangeToRequest(),
+            )
+            .encodeABI(),
+          decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+        },
+      ];
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;
@@ -260,27 +296,27 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ): Promise<GenerateStateResult<PoolState>> {
     const callData = this._getStateRequestCallData();
 
-    const calls = [
-      this.stateMultiInterface.encodeFunctionData(
-        callData.funcName,
-        callData.params,
-      ),
-    ];
+    const [resBalance0, resBalance1, resState] =
+      await this.dexHelper.multiWrapper.tryAggregate<
+        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      >(
+        false,
+        callData,
+        blockNumber,
+        this.dexHelper.multiWrapper.defaultBatchSize,
+        false,
+      );
 
-    const _results = await blockAndTryAggregate(
-      true,
-      this.dexHelper.multiContract,
-      calls.map(call => ({
-        target: this.stateMultiAddress,
-        callData: call,
-      })),
-      blockNumber,
-    );
+    // Quite ugly solution, but this is the one that fits to current flow.
+    // I think UniswapV3 callbacks subscriptions are complexified for no reason.
+    // Need to be revisited later
+    assert(resState.success, 'Pool does not exist');
 
-    const _state = this.stateMultiInterface.decodeFunctionResult(
-      callData.funcName,
-      _results.results[0].returnData,
-    )[0];
+    const [balance0, balance1, _state] = [
+      resBalance0.returnData,
+      resBalance1.returnData,
+      resState.returnData,
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
 
     const tickBitmap = {};
     const ticks = {};
@@ -307,34 +343,34 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     return {
       blockNumber: _results.blockNumber,
-      state: {
-        pool: _state.pool,
-        blockTimestamp: bigIntify(_state.blockTimestamp),
-        slot0: {
-          sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
-          tick: currentTick,
-          observationIndex: +_state.slot0.observationIndex,
-          observationCardinality: +_state.slot0.observationCardinality,
-          observationCardinalityNext: +_state.slot0.observationCardinalityNext,
-          feeProtocol: bigIntify(_state.slot0.feeProtocol),
-        },
-        liquidity: bigIntify(_state.liquidity),
-        fee: this.feeCode,
-        tickSpacing,
-        maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
-        tickBitmap,
-        ticks,
-        observations,
-        isValid: true,
-        startTickBitmap,
-        lowestKnownTick:
-          (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
-          tickSpacing,
-        highestKnownTick:
-          ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
-            BigInt.asIntN(24, 255n)) *
-          tickSpacing,
+      pool: _state.pool,
+      blockTimestamp: bigIntify(_state.blockTimestamp),
+      slot0: {
+        sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
+        tick: currentTick,
+        observationIndex: +_state.slot0.observationIndex,
+        observationCardinality: +_state.slot0.observationCardinality,
+        observationCardinalityNext: +_state.slot0.observationCardinalityNext,
+        feeProtocol: bigIntify(_state.slot0.feeProtocol),
       },
+      liquidity: bigIntify(_state.liquidity),
+      fee: this.feeCode,
+      tickSpacing,
+      maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
+      tickBitmap,
+      ticks,
+      observations,
+      isValid: true,
+      startTickBitmap,
+      lowestKnownTick:
+        (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
+        tickSpacing,
+      highestKnownTick:
+        ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
+          BigInt.asIntN(24, 255n)) *
+        tickSpacing,
+      balance0,
+      balance1,
     };
   }
 
@@ -369,6 +405,30 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         zeroForOne,
       );
 
+      if (zeroForOne) {
+        if (amount1 < 0n) {
+          pool.balance1 -= BigInt.asUintN(256, -amount1);
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
+          );
+          pool.isValid = false;
+        }
+        // This is not correct fully, because pool may get more tokens then it needs, but
+        // it is not accounted in internal state, it should be good enough
+        pool.balance0 += BigInt.asUintN(256, amount0);
+      } else {
+        if (amount0 < 0n) {
+          pool.balance0 -= BigInt.asUintN(256, -amount0);
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
+          );
+          pool.isValid = false;
+        }
+        pool.balance1 += BigInt.asUintN(256, amount1);
+      }
+
       return pool;
     }
   }
@@ -390,6 +450,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
     });
 
+    // From this transaction I conclude that there is no balance change from
+    // Burn event: https://dashboard.tenderly.co/tx/mainnet/0xfccf5341147ac3ad0e66452273d12dfc3219e81f8fb369a6cdecfb24b9b9d078/logs
+    // And it aligns with UniswapV3 doc:
+    // https://github.com/Uniswap/v3-core/blob/05c10bf6d547d6121622ac51c457f93775e1df09/contracts/interfaces/pool/IUniswapV3PoolActions.sol#L59
+    // It just updates positions and tokensOwed which may be requested calling collect
+    // So, we don't need to update pool.balances0 and pool.balances1 here
+
     return pool;
   }
 
@@ -402,6 +469,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount = bigIntify(event.args.amount);
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
+    const amount0 = bigIntify(event.args.amount0);
+    const amount1 = bigIntify(event.args.amount1);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     uniswapV3Math._modifyPosition(pool, {
@@ -409,6 +478,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       tickUpper,
       liquidityDelta: amount,
     });
+
+    pool.balance0 += amount0;
+    pool.balance1 += amount1;
 
     return pool;
   }
@@ -422,6 +494,36 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
     const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
     pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleCollectEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const amount0 = bigIntify(event.args.amount0);
+    const amount1 = bigIntify(event.args.amount1);
+    pool.balance0 -= amount0;
+    pool.balance1 -= amount1;
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleFlashEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const paid0 = bigIntify(event.args.paid0);
+    const paid1 = bigIntify(event.args.paid1);
+    pool.balance0 += paid0;
+    pool.balance1 += paid1;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
@@ -443,7 +545,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _reduceTickBitmap(
     tickBitmap: Record<NumberAsString, bigint>,
-    tickBitmapToReduce: TickBitMapMappings[],
+    tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
   ) {
     return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
       (acc, curr) => {
@@ -457,7 +559,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _reduceTicks(
     ticks: Record<NumberAsString, TickInfo>,
-    ticksToReduce: TickInfoMappings[],
+    ticksToReduce: TickInfoMappingsWithBigNumber[],
   ) {
     return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
       const { index, value } = curr;
@@ -473,6 +575,28 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       };
       return acc;
     }, ticks);
+  }
+
+  private _computePoolAddress(
+    token0: Address,
+    token1: Address,
+    fee: bigint,
+  ): Address {
+    // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/PoolAddress.sol
+    if (token0 > token1) [token0, token1] = [token1, token0];
+
+    const encodedKey = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ['address', 'address', 'uint24'],
+        [token0, token1, BigInt.asUintN(24, fee)],
+      ),
+    );
+
+    return ethers.utils.getCreate2Address(
+      this.factoryAddress,
+      encodedKey,
+      this.poolInitCodeHash,
+    );
   }
 
   public getBalanceToken0(blockNumber: number) {

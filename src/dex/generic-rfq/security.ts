@@ -10,11 +10,15 @@ function authByParams(
   method: string,
   body: any,
   secret: RFQSecret,
+  pathToRemove?: string,
 ): RequestHeaders {
   const headers: RequestHeaders = {};
   const timestamp = Date.now().toString();
 
   const _url = new URL(url);
+  if (pathToRemove && pathToRemove !== '') {
+    _url.pathname = _url.pathname.replace(`/${pathToRemove}`, '');
+  }
   const payload = `${timestamp}${method.toUpperCase()}${_url.pathname}${
     _url.search
   }${method === 'POST' ? JSON.stringify(body) : ''}`;
@@ -27,7 +31,8 @@ function authByParams(
   return headers;
 }
 
-export const authHttp =
+export const genericRFQAuthHttp =
+  (pathToRemove?: string) =>
   (secret: RFQSecret) =>
   (options: RequestConfig): RequestConfig => {
     let { data: body, method, url } = options;
@@ -39,7 +44,7 @@ export const authHttp =
       throw new Error('missing url');
     }
 
-    const headers = authByParams(url, method, body, secret);
+    const headers = authByParams(url, method, body, secret, pathToRemove);
     for (const [header, value] of Object.entries(headers)) {
       options.headers[header] = value;
     }
