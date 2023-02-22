@@ -257,6 +257,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       (pool: Omit<SubgraphPoolBase, 'mainTokens'>) => ({
         ...pool,
         mainTokens: poolGetMainTokens(pool, poolsMap),
+        tokensMap: pool.tokens.reduce(
+          (acc, token) => ({ ...acc, [token.address.toLowerCase()]: token }),
+          {},
+        ),
       }),
     );
 
@@ -719,8 +723,8 @@ export class BalancerV2
 
           for (let i = 0; i < path.length; i++) {
             const poolAddress = path[i].pool.address.toLowerCase();
-            const poolState =
-              eventPoolStates[poolAddress] || nonEventPoolStates[poolAddress];
+            const poolState = (eventPoolStates[poolAddress] ||
+              nonEventPoolStates[poolAddress]) as PoolState | undefined;
             if (!poolState) {
               this.logger.error(`Unable to find the poolState ${poolAddress}`);
               return null;
