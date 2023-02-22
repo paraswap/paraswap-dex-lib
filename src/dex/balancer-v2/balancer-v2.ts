@@ -49,6 +49,7 @@ import {
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
+  BalancerPoolTypes,
   PoolState,
   SubgraphPoolBase,
   BalancerV2Data,
@@ -104,19 +105,6 @@ const fetchWeightUpdating = `query ($count: Int, $timestampPast: Int, $timestamp
     }
   }
 }`;
-
-// These should match the Balancer Pool types available on Subgraph
-export enum BalancerPoolTypes {
-  Weighted = 'Weighted',
-  Stable = 'Stable',
-  MetaStable = 'MetaStable',
-  LiquidityBootstrapping = 'LiquidityBootstrapping',
-  Investment = 'Investment',
-  AaveLinear = 'AaveLinear',
-  StablePhantom = 'StablePhantom',
-  VirtualBoosted = 'VirtualBoosted',
-  ERC4626Linear = 'ERC4626Linear',
-}
 
 const BALANCER_V2_CHUNKS = 10;
 const MAX_POOL_CNT = 1000; // Taken from SOR
