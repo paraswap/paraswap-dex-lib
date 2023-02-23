@@ -223,7 +223,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
-    const cacheKey = 'BalancerV2SubgraphPools';
+    const cacheKey = 'BalancerV2SubgraphPools2';
     const cachedPools = await this.dexHelper.cache.get(
       this.parentName,
       this.network,
