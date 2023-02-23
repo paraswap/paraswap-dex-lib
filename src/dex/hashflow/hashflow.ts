@@ -177,7 +177,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     });
 
     if (restrictedMMs.size > 0) {
-      this.logger.info(
+      this.logger.debug(
         `${this.dexKey}-${
           this.network
         }: pricing is skipped for ${stringifiedRestrictedMMs.slice(
@@ -492,6 +492,53 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         effectiveTrader: options.txOrigin.toLowerCase(),
         marketMakers: [mm],
       });
+
+      if (rfq.status !== 'success') {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}: ${JSON.stringify(rfq)}`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (!rfq.quoteData) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Missing quote data`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (!rfq.signature) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Missing signature`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (!rfq.gasEstimate) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. No gas estimate.`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (rfq.quoteData.rfqType !== RFQType.RFQT) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Invalid RFQ type.`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      }
     } catch (e) {
       if (
         e instanceof Error &&
@@ -502,75 +549,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
         await this.setBlacklist(options.txOrigin);
       } else {
-        this.logger.warn(
-          `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
-        );
-
-        // We use timestamp for creation date to later discern if it already expired or not
-        await this.dexHelper.cache.hset(
-          this.runtimeMMsRestrictHashMapKey,
-          mm,
-          Date.now().toString(),
-        );
-
-        // Expiry cache because it has levels for blacklisted MM
-        this.dexHelper.cache
-          .del(this.dexKey, this.network, 'levels')
-          .catch(e => {
-            this.logger.error(
-              `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
-            );
-          });
+        await this.restrictMM(mm);
       }
 
       throw e;
-    }
-
-    if (rfq.status !== 'success') {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}: ${JSON.stringify(rfq)}`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (!rfq.quoteData) {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Missing quote data`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (!rfq.signature) {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Missing signature`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (!rfq.gasEstimate) {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. No gas estimate.`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (rfq.quoteData.rfqType !== RFQType.RFQT) {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Invalid RFQ type.`;
-      this.logger.warn(message);
-      throw new RfqError(message);
     }
 
     assert(
@@ -636,6 +618,26 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       },
       { deadline: minDeadline },
     ];
+  }
+
+  async restrictMM(mm: string): Promise<void> {
+    this.logger.warn(
+      `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
+    );
+
+    // We use timestamp for creation date to later discern if it already expired or not
+    await this.dexHelper.cache.hset(
+      this.runtimeMMsRestrictHashMapKey,
+      mm,
+      Date.now().toString(),
+    );
+
+    // Expiry cache because it has levels for blacklisted MM
+    this.dexHelper.cache.del(this.dexKey, this.network, 'levels').catch(e => {
+      this.logger.error(
+        `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
+      );
+    });
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<HashflowData>): number | number[] {
