@@ -84,6 +84,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
 }
 
 export interface IDexPricing<ExchangeData> {
+  readonly dexKey: string;
   // This is true if the the DEX is simply
   // wrapping/ unwrapping like weth, lending pools, etc
   // or has a pool where arbitrarily large amounts has
@@ -152,6 +153,9 @@ export interface IDexPricing<ExchangeData> {
   // return true if the userAddress is is blacklisted from the exchange
   // useful for RFQ system
   isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
+
+  // blacklist a specific userAddress from exchange
+  setBlacklist?(userAddress?: Address): AsyncOrSync<boolean>;
 }
 
 export interface IDexPooltracker {

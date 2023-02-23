@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
 import {
@@ -85,6 +86,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       options: {
         includeDEXS: [this.dexKey],
         includeContractMethods: [contractMethod],
+        partner: 'any',
       },
       srcDecimals: from.decimals,
       destDecimals: to.decimals,
@@ -182,6 +184,8 @@ export async function testE2E(
   poolIdentifiers?: string[],
   limitOrderProvider?: DummyLimitOrderProvider,
   transferFees?: TransferFeeParams,
+  // Specified in BPS: part of 10000
+  slippage?: number,
 ) {
   const amount = BigInt(_amount);
   const ts = new TenderlySimulation(network);
@@ -243,11 +247,12 @@ export async function testE2E(
     );
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
-    // Slippage to be 7%
+    // Calculate slippage. Default is 1%
+    const _slippage = slippage || 100;
     const minMaxAmount =
       (swapSide === SwapSide.SELL
-        ? BigInt(priceRoute.destAmount) * 93n
-        : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+        ? BigInt(priceRoute.destAmount) * (10000n - BigInt(_slippage))
+        : BigInt(priceRoute.srcAmount) * (10000n + BigInt(_slippage))) / 10000n;
     const swapParams = await paraswap.buildTransaction(
       priceRoute,
       minMaxAmount,
