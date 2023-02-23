@@ -539,6 +539,72 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         this.logger.warn(message);
         throw new RfqError(message);
       }
+
+      assert(
+        rfq.quoteData.baseToken === normalizedSrcToken.address,
+        `QuoteData baseToken=${rfq.quoteData.baseToken} is different from srcToken=${normalizedSrcToken.address}`,
+      );
+      assert(
+        rfq.quoteData.quoteToken === normalizedDestToken.address,
+        `QuoteData baseToken=${rfq.quoteData.quoteToken} is different from srcToken=${normalizedDestToken.address}`,
+      );
+
+      const expiryAsBigInt = BigInt(rfq.quoteData.quoteExpiry);
+      const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
+
+      const baseTokenAmount = BigInt(rfq.quoteData.baseTokenAmount);
+      const quoteTokenAmount = BigInt(rfq.quoteData.quoteTokenAmount);
+
+      const srcAmount = BigInt(optimalSwapExchange.srcAmount);
+      const destAmount = BigInt(optimalSwapExchange.destAmount);
+
+      const slippageFactor = options.slippageFactor;
+
+      if (side === SwapSide.SELL) {
+        if (
+          quoteTokenAmount <
+          BigInt(
+            new BigNumber(destAmount.toString())
+              .times(slippageFactor)
+              .toFixed(0),
+          )
+        ) {
+          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        }
+      } else {
+        if (quoteTokenAmount < destAmount) {
+          // Won't receive enough assets
+          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        } else {
+          if (
+            baseTokenAmount >
+            BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
+          ) {
+            const message = `${this.dexKey}-${
+              this.network
+            }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+            this.logger.warn(message);
+            throw new SlippageCheckError(message);
+          }
+        }
+      }
+
+      return [
+        {
+          ...optimalSwapExchange,
+          data: {
+            mm,
+            quoteData: rfq.quoteData,
+            signature: rfq.signature,
+            gasEstimate: rfq.gasEstimate,
+          },
+        },
+        { deadline: minDeadline },
+      ];
     } catch (e) {
       if (
         e instanceof Error &&
@@ -554,70 +620,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
       throw e;
     }
-
-    assert(
-      rfq.quoteData.baseToken === normalizedSrcToken.address,
-      `QuoteData baseToken=${rfq.quoteData.baseToken} is different from srcToken=${normalizedSrcToken.address}`,
-    );
-    assert(
-      rfq.quoteData.quoteToken === normalizedDestToken.address,
-      `QuoteData baseToken=${rfq.quoteData.quoteToken} is different from srcToken=${normalizedDestToken.address}`,
-    );
-
-    const expiryAsBigInt = BigInt(rfq.quoteData.quoteExpiry);
-    const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
-
-    const baseTokenAmount = BigInt(rfq.quoteData.baseTokenAmount);
-    const quoteTokenAmount = BigInt(rfq.quoteData.quoteTokenAmount);
-
-    const srcAmount = BigInt(optimalSwapExchange.srcAmount);
-    const destAmount = BigInt(optimalSwapExchange.destAmount);
-
-    const slippageFactor = options.slippageFactor;
-
-    if (side === SwapSide.SELL) {
-      if (
-        quoteTokenAmount <
-        BigInt(
-          new BigNumber(destAmount.toString()).times(slippageFactor).toFixed(0),
-        )
-      ) {
-        const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
-        this.logger.warn(message);
-        throw new SlippageCheckError(message);
-      }
-    } else {
-      if (quoteTokenAmount < destAmount) {
-        // Won't receive enough assets
-        const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
-        this.logger.warn(message);
-        throw new SlippageCheckError(message);
-      } else {
-        if (
-          baseTokenAmount >
-          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
-        ) {
-          const message = `${this.dexKey}-${
-            this.network
-          }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
-          this.logger.warn(message);
-          throw new SlippageCheckError(message);
-        }
-      }
-    }
-
-    return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          mm,
-          quoteData: rfq.quoteData,
-          signature: rfq.signature,
-          gasEstimate: rfq.gasEstimate,
-        },
-      },
-      { deadline: minDeadline },
-    ];
   }
 
   async restrictMM(mm: string): Promise<void> {
