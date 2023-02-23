@@ -56,6 +56,14 @@ class DummyCache implements ICache {
     return;
   }
 
+  async del(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<number> {
+    return 0;
+  }
+
   async setex(
     dexKey: string,
     network: number,
@@ -127,6 +135,14 @@ class DummyCache implements ICache {
 
   async hget(mapKey: string, key: string): Promise<string | null> {
     return null;
+  }
+
+  async hgetAll(mapKey: string): Promise<Record<string, string>> {
+    return {};
+  }
+
+  async hdel(mapKey: string, keys: string[]): Promise<number> {
+    return 0;
   }
 
   async publish(channel: string, msg: string): Promise<void> {

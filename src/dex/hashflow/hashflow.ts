@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -11,7 +12,12 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
 } from '../../types';
-import { SwapSide, Network, ETHER_ADDRESS } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  ETHER_ADDRESS,
+  CACHE_PREFIX,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -38,6 +44,7 @@ import {
 import { assert } from 'ts-essentials';
 import {
   HASHFLOW_BLACKLIST_TTL_S,
+  HASHFLOW_MM_RESTRICT_TTL_S,
   PRICE_LEVELS_TTL_SECONDS,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
@@ -50,6 +57,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   private hashFlowAuthToken: string;
   private disabledMMs: Set<string>;
+  private runtimeMMsRestrictHashMapKey: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(HashflowConfig);
@@ -75,6 +83,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     this.hashFlowAuthToken = token;
     this.api = new HashflowApi('taker', 'paraswap', this.hashFlowAuthToken);
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
+    this.runtimeMMsRestrictHashMapKey =
+      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -133,8 +143,69 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   private async getFilteredMarketMakers(chainId: ChainId): Promise<string[]> {
-    const makers = await this.api.getMarketMakers(chainId);
-    return makers.filter(mm => !this.disabledMMs.has(mm));
+    const [makers, cachedRestrictionUnparsed] = await Promise.all([
+      this.api.getMarketMakers(chainId),
+      this.dexHelper.cache.hgetAll(this.runtimeMMsRestrictHashMapKey),
+    ]);
+
+    const runtimeRestrictedMMs = this.parseCacheRestrictionAndExpiryIfNeeded(
+      cachedRestrictionUnparsed,
+    );
+
+    return makers.filter(
+      mm => !(this.disabledMMs.has(mm) || runtimeRestrictedMMs.has(mm)),
+    );
+  }
+
+  parseCacheRestrictionAndExpiryIfNeeded(
+    cachedValues: Record<string, string>,
+  ): Set<string> {
+    const restrictedMMs = new Set<string>();
+    const toDelete: string[] = [];
+    const expirationThreshold = Date.now() - HASHFLOW_MM_RESTRICT_TTL_S * 1000;
+
+    // For log message
+    let stringifiedRestrictedMMs = '';
+
+    Object.entries(cachedValues).forEach(([mm, createdAt]) => {
+      if (+createdAt < expirationThreshold) {
+        toDelete.push(mm);
+      } else {
+        restrictedMMs.add(mm);
+        stringifiedRestrictedMMs += `${mm}, `;
+      }
+    });
+
+    if (restrictedMMs.size > 0) {
+      this.logger.debug(
+        `${this.dexKey}-${
+          this.network
+        }: pricing is skipped for ${stringifiedRestrictedMMs.slice(
+          0,
+          -2,
+        )} due to restriction`,
+      );
+    }
+
+    if (toDelete.length > 0) {
+      this.logger.debug(
+        `${this.dexKey}-${this.network}: Deleting expired keys: `,
+        toDelete.join(`,`),
+      );
+
+      // No need to await since we don't care about when it executes
+      // And we don't want to stop pricing request because of this
+      this.dexHelper.cache
+        .hdel(this.runtimeMMsRestrictHashMapKey, toDelete)
+        .catch(e => {
+          this.logger.error(
+            `${this.dexKey}-${this.network}: Failed to delete expired keys: `,
+            e,
+          );
+        });
+    }
+
+    return restrictedMMs;
   }
 
   computePricesFromLevels(
@@ -388,12 +459,19 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<[OptimalSwapExchange<HashflowData>, ExchangeTxInfo]> {
     if (await this.isBlacklisted(options.txOrigin)) {
       this.logger.warn(
-        `${this.dexKey}'s blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+        `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
       );
       throw new Error(
-        `${this.dexKey}: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+        `${this.dexKey}-${
+          this.network
+        }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
       );
     }
+    const mm = optimalSwapExchange.data?.mm;
+    assert(
+      mm !== undefined,
+      `${this.dexKey}-${this.network}: MM was not provided in data`,
+    );
     const chainId = this.network as ChainId;
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
@@ -412,135 +490,174 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           : { quoteTokenAmount: optimalSwapExchange.destAmount }),
         wallet: this.augustusAddress.toLowerCase(),
         effectiveTrader: options.txOrigin.toLowerCase(),
+        marketMakers: [mm],
       });
+
+      if (rfq.status !== 'success') {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}: ${JSON.stringify(rfq)}`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (!rfq.quoteData) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Missing quote data`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (!rfq.signature) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Missing signature`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (!rfq.gasEstimate) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. No gas estimate.`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      } else if (rfq.quoteData.rfqType !== RFQType.RFQT) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${this.getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Invalid RFQ type.`;
+        this.logger.warn(message);
+        throw new RfqError(message);
+      }
+
+      assert(
+        rfq.quoteData.baseToken === normalizedSrcToken.address,
+        `QuoteData baseToken=${rfq.quoteData.baseToken} is different from srcToken=${normalizedSrcToken.address}`,
+      );
+      assert(
+        rfq.quoteData.quoteToken === normalizedDestToken.address,
+        `QuoteData baseToken=${rfq.quoteData.quoteToken} is different from srcToken=${normalizedDestToken.address}`,
+      );
+
+      const expiryAsBigInt = BigInt(rfq.quoteData.quoteExpiry);
+      const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
+
+      const baseTokenAmount = BigInt(rfq.quoteData.baseTokenAmount);
+      const quoteTokenAmount = BigInt(rfq.quoteData.quoteTokenAmount);
+
+      const srcAmount = BigInt(optimalSwapExchange.srcAmount);
+      const destAmount = BigInt(optimalSwapExchange.destAmount);
+
+      const slippageFactor = options.slippageFactor;
+
+      if (side === SwapSide.SELL) {
+        if (
+          quoteTokenAmount <
+          BigInt(
+            new BigNumber(destAmount.toString())
+              .times(slippageFactor)
+              .toFixed(0),
+          )
+        ) {
+          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        }
+      } else {
+        if (quoteTokenAmount < destAmount) {
+          // Won't receive enough assets
+          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        } else {
+          if (
+            baseTokenAmount >
+            BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
+          ) {
+            const message = `${this.dexKey}-${
+              this.network
+            }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+            this.logger.warn(message);
+            throw new SlippageCheckError(message);
+          }
+        }
+      }
+
+      return [
+        {
+          ...optimalSwapExchange,
+          data: {
+            mm,
+            quoteData: rfq.quoteData,
+            signature: rfq.signature,
+            gasEstimate: rfq.gasEstimate,
+          },
+        },
+        { deadline: minDeadline },
+      ];
     } catch (e) {
       if (
         e instanceof Error &&
         e.message.endsWith('User is restricted from using Hashflow')
       ) {
         this.logger.warn(
-          `${this.dexKey}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
+          `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
         );
         await this.setBlacklist(options.txOrigin);
+      } else {
+        await this.restrictMM(mm);
       }
 
       throw e;
     }
+  }
 
-    if (rfq.status !== 'success') {
-      const message = `${
-        this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}: ${JSON.stringify(rfq)}`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (!rfq.quoteData) {
-      const message = `${
-        this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Missing quote data`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (!rfq.signature) {
-      const message = `${
-        this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Missing signature`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (!rfq.gasEstimate) {
-      const message = `${
-        this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. No gas estimate.`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    } else if (rfq.quoteData.rfqType !== RFQType.RFQT) {
-      const message = `${
-        this.dexKey
-      }: Failed to fetch RFQ for ${this.getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Invalid RFQ type.`;
-      this.logger.warn(message);
-      throw new RfqError(message);
-    }
-
-    assert(
-      rfq.quoteData.baseToken === normalizedSrcToken.address,
-      `QuoteData baseToken=${rfq.quoteData.baseToken} is different from srcToken=${normalizedSrcToken.address}`,
-    );
-    assert(
-      rfq.quoteData.quoteToken === normalizedDestToken.address,
-      `QuoteData baseToken=${rfq.quoteData.quoteToken} is different from srcToken=${normalizedDestToken.address}`,
+  async restrictMM(mm: string): Promise<void> {
+    this.logger.warn(
+      `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
     );
 
-    const expiryAsBigInt = BigInt(rfq.quoteData.quoteExpiry);
-    const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
+    // We use timestamp for creation date to later discern if it already expired or not
+    await this.dexHelper.cache.hset(
+      this.runtimeMMsRestrictHashMapKey,
+      mm,
+      Date.now().toString(),
+    );
 
-    const baseTokenAmount = BigInt(rfq.quoteData.baseTokenAmount);
-    const quoteTokenAmount = BigInt(rfq.quoteData.quoteTokenAmount);
-
-    const srcAmount = BigInt(optimalSwapExchange.srcAmount);
-    const destAmount = BigInt(optimalSwapExchange.destAmount);
-
-    const slippageFactor = options.slippageFactor;
-
-    if (side === SwapSide.SELL) {
-      if (
-        quoteTokenAmount <
-        BigInt(
-          new BigNumber(destAmount.toString()).times(slippageFactor).toFixed(0),
-        )
-      ) {
-        const message = `${this.dexKey}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
-        this.logger.warn(message);
-        throw new SlippageCheckError(message);
-      }
-    } else {
-      if (quoteTokenAmount < destAmount) {
-        // Won't receive enough assets
-        const message = `${this.dexKey}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
-        this.logger.warn(message);
-        throw new SlippageCheckError(message);
-      } else {
-        if (
-          baseTokenAmount >
-          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
-        ) {
-          const message = `${
-            this.dexKey
-          }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
-          this.logger.warn(message);
-          throw new SlippageCheckError(message);
-        }
-      }
-    }
-
-    return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          mm: optimalSwapExchange.data!.mm,
-          quoteData: rfq.quoteData,
-          signature: rfq.signature,
-          gasEstimate: rfq.gasEstimate,
-        },
-      },
-      { deadline: minDeadline },
-    ];
+    // Expiry cache because it has levels for blacklisted MM
+    this.dexHelper.cache.del(this.dexKey, this.network, 'levels').catch(e => {
+      this.logger.error(
+        `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
+      );
+    });
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<HashflowData>): number | number[] {
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    // I am not sure if that is correct. If anybody know how to fix it,
+    // please, go ahead :)
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      // addresses: pool, quoteToken, externalAccount
+      CALLDATA_GAS_COST.ADDRESS * 3 +
+      // uint256: baseTokenAmount, quoteTokenAmount, quoteExpiry, nonce
+      CALLDATA_GAS_COST.AMOUNT * 4 +
+      // bytes32 txid;
+      CALLDATA_GAS_COST.FULL_WORD +
+      // I don't know how big is it, but from google results, I see 65 bytes for signature
+      // bytes signature
+      CALLDATA_GAS_COST.FULL_WORD * 2 +
+      CALLDATA_GAS_COST.OFFSET_SMALL
+    );
   }
 
   getTokenFromAddress?(address: Address): Token {
@@ -559,7 +676,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): AdapterExchangeParam {
     const { quoteData, signature } = data;
 
-    assert(quoteData !== undefined, `${this.dexKey}: quoteData undefined`);
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
 
     const payload = this.routerInterface._abiCoder.encode(
       [
@@ -624,7 +744,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<SimpleExchangeParam> {
     const { quoteData, signature } = data;
 
-    assert(quoteData !== undefined, `${this.dexKey}: quoteData undefined`);
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
 
     // Encode here the transaction arguments
     const swapData = this.routerInterface.encodeFunctionData('tradeSingleHop', [
