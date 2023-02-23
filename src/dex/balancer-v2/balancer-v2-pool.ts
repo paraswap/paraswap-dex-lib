@@ -406,7 +406,8 @@ export class StablePool extends BaseGeneralPool {
     let indexIn = 0,
       indexOut = 0;
     const scalingFactors: bigint[] = [];
-    const balances = pool.tokens.map((t, i) => {
+    const balances = poolState.orderedTokens.map((tokenAddress, i) => {
+      const t = pool.tokensMap[tokenAddress.toLowerCase()];
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
       if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
       if (pool.poolType === 'MetaStable')
@@ -516,6 +517,7 @@ export class StablePool extends BaseGeneralPool {
         },
         {},
       ),
+      orderedTokens: poolTokens.tokens,
     };
 
     if (amp) {
@@ -719,6 +721,7 @@ export class WeightedPool extends BaseMinimalSwapInfoPool {
         },
         {},
       ),
+      orderedTokens: poolTokens.tokens,
     };
 
     pools[pool.address] = poolState;

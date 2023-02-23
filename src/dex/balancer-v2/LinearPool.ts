@@ -298,7 +298,8 @@ export class LinearPool extends BasePool {
     const balances: bigint[] = [];
     const scalingFactors: bigint[] = [];
 
-    const tokens = pool.tokens.map((t, i) => {
+    const tokens = poolState.orderedTokens.map((tokenAddress, i) => {
+      const t = pool.tokensMap[tokenAddress.toLowerCase()];
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
       if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
       if (t.address.toLowerCase() === pool.address.toLowerCase()) bptIndex = i;
@@ -409,6 +410,7 @@ export class LinearPool extends BasePool {
       lowerTarget: BigInt(lowerTarget.toString()),
       upperTarget: BigInt(upperTarget.toString()),
       tokens: keyBy(tokens, 'address'),
+      orderedTokens: poolTokens.tokens,
     };
 
     pools[pool.address] = poolState;
