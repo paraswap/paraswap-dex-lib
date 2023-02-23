@@ -311,6 +311,86 @@ describe('Solidly E2E', () => {
     });
   });
 
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    describe(`Solidly`, () => {
+      const dexKey = 'Solidly';
+
+      describe(`simpleSwap`, () => {
+        describe(`Volatile`, () => {
+          it('ETH -> USDC', async () => {
+            await testE2E(
+              tokens.ETH,
+              tokens.USDC,
+              holders.ETH,
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.simpleSwap,
+              network,
+              provider,
+            );
+          });
+        });
+        describe(`Stable`, () => {
+          it('USDC -> USDT', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.USDT,
+              holders.USDC,
+              '10000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.simpleSwap,
+              network,
+              provider,
+            );
+          });
+        });
+      });
+
+      describe(`multiSwap`, () => {
+        describe(`Volatile`, () => {
+          it('ETH -> USDC', async () => {
+            await testE2E(
+              tokens.ETH,
+              tokens.USDC,
+              holders.ETH,
+              '1000000000000000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.multiSwap,
+              network,
+              provider,
+            );
+          });
+        });
+        describe(`Stable`, () => {
+          it('USDC -> USDT', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.USDT,
+              holders.USDC,
+              '10000000',
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.multiSwap,
+              network,
+              provider,
+            );
+          });
+        });
+      });
+    });
+  });
+
   describe('Polygon', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
