@@ -11,6 +11,8 @@ export interface ICache {
 
   rawdel(key: string): Promise<void>;
 
+  del(dexKey: string, network: number, cacheKey: string): Promise<number>;
+
   setex(
     dexKey: string,
     network: number,
@@ -50,7 +52,11 @@ export interface ICache {
 
   hset(mapKey: string, key: string, value: string): Promise<void>;
 
+  hdel(mapKey: string, keys: string[]): Promise<number>;
+
   hget(mapKey: string, key: string): Promise<string | null>;
+
+  hgetAll(mapKey: string): Promise<Record<string, string>>;
 
   publish(channel: string, msg: string): Promise<void>;
 
