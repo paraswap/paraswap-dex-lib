@@ -54,7 +54,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
-    uniswapV3EventLoggingSampleRate: 0.001 * 1e-2,
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {
       DummyParaSwapPool: {
         maker: process.env.TEST_ADDRESS!,
@@ -181,7 +181,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
-    uniswapV3EventLoggingSampleRate: 0.001 * 1e-2,
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
   [Network.AVALANCHE]: {
@@ -256,7 +256,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
-    uniswapV3EventLoggingSampleRate: 0.001 * 1e-2,
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
   [Network.OPTIMISM]: {
@@ -282,7 +282,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
-    uniswapV3EventLoggingSampleRate: 0.001 * 1e-2,
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
 };
