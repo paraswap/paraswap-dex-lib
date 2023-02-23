@@ -12,7 +12,7 @@ import {
   NumberAsString,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
@@ -60,6 +60,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
@@ -72,6 +74,8 @@ export class UniswapV3
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
+  intervalTask?: NodeJS.Timeout;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV3Config);
 
@@ -79,6 +83,8 @@ export class UniswapV3
 
   private uniswapMulti: Contract;
   private stateMultiContract: Contract;
+
+  private notExistingPoolSetKey: string;
 
   constructor(
     protected network: Network,
@@ -106,6 +112,9 @@ export class UniswapV3
 
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
+
+    this.notExistingPoolSetKey =
+      `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
   }
 
   get supportedFees() {
@@ -133,6 +142,15 @@ export class UniswapV3
         ),
       ),
     );
+
+    if (!this.dexHelper.config.isSlave) {
+      const cleanExpiredNotExistingPoolsKeys = async () => {
+        const maxTimestamp = Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+        await this.dexHelper.cache.zremrangebyscore(this.notExistingPoolSetKey, 0, maxTimestamp);
+      }
+
+      this.intervalTask = setInterval(cleanExpiredNotExistingPoolsKeys.bind(this), UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS);
+    }
   }
 
   async getPool(
@@ -143,10 +161,24 @@ export class UniswapV3
   ): Promise<UniswapV3EventPool | null> {
     let pool =
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
+
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
       const key = `${token0}_${token1}_${fee}`.toLowerCase();
+
+      const notExistingPoolScore = await this.dexHelper.cache.zscore(
+        this.notExistingPoolSetKey,
+        key,
+      );
+
+      const poolDoesNotExist = notExistingPoolScore !== null;
+
+      if (poolDoesNotExist) {
+        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] = null;
+        return null;
+      }
+
       await this.dexHelper.cache.hset(
         this.dexmapKey,
         key,
@@ -181,6 +213,9 @@ export class UniswapV3
         });
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+          // no need to await we want the set to have the pool key but it's not blocking
+          this.dexHelper.cache.zadd(this.notExistingPoolSetKey, [Date.now(), key], 'NX');
+
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
           pool = null;
@@ -943,5 +978,12 @@ export class UniswapV3
     return side === SwapSide.BUY
       ? pack(types.reverse(), _path.reverse())
       : pack(types, _path);
+  }
+
+  releaseResources() {
+    if (this.intervalTask !== undefined) {
+      clearInterval(this.intervalTask);
+      this.intervalTask = undefined;
+    }
   }
 }
