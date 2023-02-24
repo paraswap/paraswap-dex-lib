@@ -25,6 +25,7 @@ export type PoolState = {
     [address: string]: TokenState;
   };
   swapFee: bigint;
+  orderedTokens: string[];
   amp?: bigint;
   // Linear Pools
   mainIndex?: number;
@@ -62,6 +63,7 @@ export interface SubgraphPoolBase {
   address: string;
   poolType: BalancerPoolTypes;
   tokens: SubgraphToken[];
+  tokensMap: { [tokenAddress: string]: SubgraphToken };
   mainIndex: number;
   wrappedIndex: number;
 

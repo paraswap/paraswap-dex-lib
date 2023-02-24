@@ -18,7 +18,7 @@ import {
   TickInfoMappingsWithBigNumber,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
-import { bigIntify, catchParseLogError } from '../../utils';
+import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
@@ -143,6 +143,21 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ): DeepReadonly<PoolState> | null {
     try {
       const event = this.logDecoder(log);
+
+      const uniswapV3EventLoggingSampleRate =
+        this.dexHelper.config.data.uniswapV3EventLoggingSampleRate;
+      if (
+        !this.dexHelper.config.isSlave &&
+        uniswapV3EventLoggingSampleRate &&
+        isSampled(uniswapV3EventLoggingSampleRate)
+      ) {
+        this.logger.info(
+          `event=${event.name} - block=${
+            blockHeader.number
+          }. Log sampled at rate ${uniswapV3EventLoggingSampleRate * 100}%`,
+        );
+      }
+
       if (event.name in this.handlers) {
         // Because we have observations in array which is mutable by nature, there is a
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
@@ -243,9 +258,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         false,
       );
 
-
-    const [ resBalance0, resBalance1, resState ] = results;
-
+    const [resBalance0, resBalance1, resState] = results;
 
     // Quite ugly solution, but this is the one that fits to current flow.
     // I think UniswapV3 callbacks subscriptions are complexified for no reason.

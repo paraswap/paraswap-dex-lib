@@ -203,6 +203,11 @@ export const catchParseLogError = (e: any, logger: Logger) => {
   }
 };
 
+export const isSampled = (sampleRate?: number) => {
+  if (!sampleRate) return false;
+  return Math.random() < sampleRate;
+};
+
 const PREFIX_BIG_INT = 'bi@';
 const PREFIX_BIG_NUMBER = 'bn@';
 
