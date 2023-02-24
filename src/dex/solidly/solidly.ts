@@ -57,7 +57,6 @@ export class Solidly extends UniswapV2 {
   pairs: { [key: string]: SolidlyPair } = {};
   stableFee?: number;
   volatileFee?: number;
-  feeFactor = 1e6;
 
   readonly isFeeOnTransferSupported: boolean = true;
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
@@ -118,6 +117,8 @@ export class Solidly extends UniswapV2 {
       routerAddress !== undefined
         ? routerAddress
         : SolidlyConfig[dexKey][network].router || '';
+
+    this.feeFactor = SolidlyConfig[dexKey][network].feeFactor || this.feeFactor;
   }
 
   async findSolidlyPair(from: Token, to: Token, stable: boolean) {

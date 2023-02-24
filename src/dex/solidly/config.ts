@@ -25,6 +25,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       volatileFee: 2000,
       feeCode: 0,
       poolGasCost: 180 * 1000, // https://dashboard.tenderly.co/paraswap/paraswap/tx/mainnet/0x80f01d841ac01cfaedc93ceaadc88fc799ee1539841c2ac19cfccfdcfb605d70/gas-usage
+      feeFactor: 1e6,
     },
   },
   Dystopia: {

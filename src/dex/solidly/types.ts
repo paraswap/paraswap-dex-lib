@@ -27,6 +27,7 @@ export interface DexParams extends Omit<UniswapV2DexParams, 'feeCode'> {
   feeCode: number;
   stableFee?: number;
   volatileFee?: number;
+  feeFactor?: number;
 }
 
 export interface SolidlyPair extends UniswapV2Pair {
