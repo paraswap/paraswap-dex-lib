@@ -373,6 +373,70 @@ describe('IronV2', () => {
   });
 });
 
+describe('ZyberswapStable', () => {
+  const dexKey = 'ZyberswapStable';
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+    describe('simpleSwap', () => {
+      const contractMethod = ContractMethod.simpleSwap;
+      it('SELL USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('multiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+      it('SELL USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('megaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+      it('SELL USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '111000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+});
+
 describe('Saddle', () => {
   const dexKey = 'Saddle';
 

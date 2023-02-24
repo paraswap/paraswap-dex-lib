@@ -709,6 +709,10 @@ export const Tokens: {
       address: '0xa0b20DecBc557E3f68E140eD5a0c69bc865F865A',
       decimals: 18,
     },
+    ZYB: {
+      address: '0x3B475F6f2f41853706afc9Fa6a6b8C5dF1a2724c',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -940,6 +944,7 @@ export const Holders: {
     MIM: '0xf46bb6dda9709c49efb918201d97f6474eac5aea',
     VST: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     aArbUSDC: '0x048BF2F5908e95976CeAD0E47D805b3803E286e2',
+    ZYB: '0xf69223B75D9CF7c454Bb44e30a3772202bEE72CF',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
