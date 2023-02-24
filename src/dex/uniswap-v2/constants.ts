@@ -50,7 +50,6 @@ export const UniswapV2Alias: { [network: number]: string } = {
   [Network.ROPSTEN]: 'uniswapv2',
   [Network.BSC]: 'pancakeswap',
   [Network.POLYGON]: 'quickswap',
-  [Network.ARBITRUM]: 'zyberswap',
   [Network.AVALANCHE]: 'pangolinswap',
   [Network.FANTOM]: 'spookyswap',
   [Network.ARBITRUM]: 'sushiswap',
