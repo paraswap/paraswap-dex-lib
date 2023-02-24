@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
+  GenerateStateResult,
   InitializeStateOptions,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
@@ -115,7 +116,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   async initialize(
-    blockNumber: number,
+    blockNumber: number | 'latest',
     options?: InitializeStateOptions<PoolState>,
   ) {
     await super.initialize(blockNumber, options);
@@ -128,7 +129,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ): Promise<DeepReadonly<PoolState> | null> {
     const newState = await super.processBlockLogs(state, logs, blockHeader);
     if (newState && !newState.isValid) {
-      return await this.generateState(blockHeader.number);
+      const newStateWithBn = await this.generateState('latest');
+      this.setState(newStateWithBn.state, newStateWithBn.blockNumber);
+      return newStateWithBn.state;
     }
     return newState;
   }
@@ -224,10 +227,12 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<GenerateStateResult<PoolState>> {
     const callData = this._getStateRequestCallData();
 
-    const [resBalance0, resBalance1, resState] =
+    const { results, blockNumber: _blockNumber } =
       await this.dexHelper.multiWrapper.tryAggregate<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
       >(
@@ -237,6 +242,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         this.dexHelper.multiWrapper.defaultBatchSize,
         false,
       );
+
+
+    const [ resBalance0, resBalance1, resState ] = results;
+
 
     // Quite ugly solution, but this is the one that fits to current flow.
     // I think UniswapV3 callbacks subscriptions are complexified for no reason.
@@ -273,34 +282,37 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const requestedRange = this.getBitmapRangeToRequest();
 
     return {
-      pool: _state.pool,
-      blockTimestamp: bigIntify(_state.blockTimestamp),
-      slot0: {
-        sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
-        tick: currentTick,
-        observationIndex: +_state.slot0.observationIndex,
-        observationCardinality: +_state.slot0.observationCardinality,
-        observationCardinalityNext: +_state.slot0.observationCardinalityNext,
-        feeProtocol: bigIntify(_state.slot0.feeProtocol),
+      blockNumber: _blockNumber,
+      state: {
+        pool: _state.pool,
+        blockTimestamp: bigIntify(_state.blockTimestamp),
+        slot0: {
+          sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
+          tick: currentTick,
+          observationIndex: +_state.slot0.observationIndex,
+          observationCardinality: +_state.slot0.observationCardinality,
+          observationCardinalityNext: +_state.slot0.observationCardinalityNext,
+          feeProtocol: bigIntify(_state.slot0.feeProtocol),
+        },
+        liquidity: bigIntify(_state.liquidity),
+        fee: this.feeCode,
+        tickSpacing,
+        maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
+        tickBitmap,
+        ticks,
+        observations,
+        isValid: true,
+        startTickBitmap,
+        lowestKnownTick:
+          (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
+          tickSpacing,
+        highestKnownTick:
+          ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
+            BigInt.asIntN(24, 255n)) *
+          tickSpacing,
+        balance0,
+        balance1,
       },
-      liquidity: bigIntify(_state.liquidity),
-      fee: this.feeCode,
-      tickSpacing,
-      maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
-      tickBitmap,
-      ticks,
-      observations,
-      isValid: true,
-      startTickBitmap,
-      lowestKnownTick:
-        (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
-        tickSpacing,
-      highestKnownTick:
-        ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
-          BigInt.asIntN(24, 255n)) *
-        tickSpacing,
-      balance0,
-      balance1,
     };
   }
 
