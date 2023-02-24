@@ -57,6 +57,7 @@ import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
 import { Hashflow } from './hashflow/hashflow';
+import { SolidlyEthereum } from './solidly/solidly-ethereum';
 
 const LegacyDexes = [
   CurveV2,
@@ -103,6 +104,7 @@ const Dexes = [
   // WooFi,
   ParaSwapLimitOrders,
   Solidly,
+  SolidlyEthereum,
   SpiritSwapV2,
   Velodrome,
   Cone,
