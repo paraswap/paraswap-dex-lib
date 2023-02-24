@@ -343,6 +343,9 @@ export const isDestTokenTransferFeeToBeExchanged = (
   return !!(transferFees.destFee || transferFees.destDexFee);
 };
 
+export const isTruthy = <T>(x: T | undefined | null | '' | false | 0): x is T =>
+  !!x;
+
 type MultiCallParams = {
   target: any;
   callData: any;

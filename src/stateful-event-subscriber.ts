@@ -215,8 +215,9 @@ export abstract class StatefulEventSubscriber<State>
   ): AsyncOrSync<GenerateStateResult<State>>;
 
   restart(blockNumber: number): void {
-    for (const bn in this.stateHistory) {
-      if (+bn >= blockNumber) break;
+    for (const _bn of Object.keys(this.stateHistory)) {
+      const bn = +_bn;
+      if (bn >= blockNumber) break;
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
@@ -264,8 +265,9 @@ export abstract class StatefulEventSubscriber<State>
       }
       //Find the last state before the blockNumber of the logs
       let stateBeforeLog: DeepReadonly<State> | undefined;
-      for (const bn in this.stateHistory) {
-        if (+bn >= blockNumber) break;
+      for (const _bn of Object.keys(this.stateHistory)) {
+        const bn = +_bn;
+        if (bn >= blockNumber) break;
         stateBeforeLog = this.stateHistory[bn];
       }
       //Ignoring logs if there's no older state to play them onto
@@ -318,10 +320,10 @@ export abstract class StatefulEventSubscriber<State>
     if (this.invalid) {
       let lastBn = undefined;
       //loop in the ascending order of the blockNumber. V8 property when object keys are number.
-      for (const bn in this.stateHistory) {
+      for (const bn of Object.keys(this.stateHistory)) {
         const bnAsNumber = +bn;
         if (bnAsNumber > blockNumber) {
-          delete this.stateHistory[bn];
+          delete this.stateHistory[+bn];
         } else {
           lastBn = bnAsNumber;
         }
@@ -334,7 +336,8 @@ export abstract class StatefulEventSubscriber<State>
       }
     } else {
       //Keep the current state in this.state and in the history
-      for (const bn in this.stateHistory) {
+      for (const _bn of Object.keys(this.stateHistory)) {
+        const bn = +_bn;
         if (+bn > blockNumber && +bn !== this.stateBlockNumber) {
           delete this.stateHistory[bn];
         }
@@ -371,8 +374,9 @@ export abstract class StatefulEventSubscriber<State>
       this.masterPoolNeeded &&
       state === null
     ) {
-      this.logger.info(
-        `${this.parentName}: ${this.name}: schedule a job to get state from cache`,
+      this._logBatchTypicalMessages(
+        `${this.parentName}: schedule a job to get state from cache`,
+        'info',
       );
 
       this.dexHelper.cache.addBatchHGet(
@@ -388,8 +392,9 @@ export abstract class StatefulEventSubscriber<State>
             return false;
           }
 
-          this.logger.info(
-            `${this.parentName}: ${this.name}: received state from a scheduled job`,
+          this._logBatchTypicalMessages(
+            `${this.parentName}: received state from a scheduled job`,
+            'info',
           );
           this.setState(state.state, state.bn);
           return true;
@@ -404,7 +409,11 @@ export abstract class StatefulEventSubscriber<State>
       return;
     }
 
-    this.logger.info(`${this.parentName}: ${this.name} saving state in cache`);
+    this._logBatchTypicalMessages(
+      `${this.parentName}: saving state in cache`,
+      'info',
+    );
+
     this.dexHelper.cache.hset(
       this.mapKey,
       this.name,
@@ -462,7 +471,7 @@ export abstract class StatefulEventSubscriber<State>
     }
     const minBlockNumberToKeep = this.stateBlockNumber - MAX_BLOCKS_HISTORY;
     let lastBlockNumber: number | undefined;
-    for (const bn in this.stateHistory) {
+    for (const bn of Object.keys(this.stateHistory)) {
       if (+bn <= minBlockNumberToKeep) {
         if (lastBlockNumber) delete this.stateHistory[lastBlockNumber];
       }

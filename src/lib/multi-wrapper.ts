@@ -21,13 +21,17 @@ export type MultiCallParams<T> = {
 };
 
 export class MultiWrapper {
+  readonly defaultBatchSize: number;
+
   /* eslint-disable-next-line */
-  constructor(private multi: Contract, private logger: Logger) {}
+  constructor(private multi: Contract, private logger: Logger) {
+    this.defaultBatchSize = 500;
+  }
 
   async aggregate<T>(
     calls: MultiCallParams<T>[],
     blockNumber?: number | string,
-    batchSize: number = 500,
+    batchSize: number = this.defaultBatchSize,
   ): Promise<T[]> {
     const aggregatedResult = await Promise.all(
       _.chunk(calls, batchSize).map(async batch =>
@@ -56,14 +60,9 @@ export class MultiWrapper {
     mandatory: boolean,
     calls: MultiCallParams<T>[],
     blockNumber: number | 'latest' = 'latest',
-    batchSize: number = 500,
+    batchSize: number = this.defaultBatchSize,
+    reportFails: boolean = true,
   ): Promise<MultiWrapperResult<T>> {
-    if (calls.length === 0) {
-      return {
-        blockNumber: 0,
-        results: [],
-      };
-    }
     const allCalls = new Array(Math.ceil(calls.length / batchSize));
     for (let i = 0; i < calls.length; i += batchSize) {
       const batch = calls.slice(i, i + batchSize);
@@ -94,9 +93,11 @@ export class MultiWrapper {
     const results: MultiResult<T>[] = new Array(resultsUndecoded.length);
     for (const [i, undecodedElement] of resultsUndecoded.entries()) {
       if (!undecodedElement.success) {
-        this.logger.error(
-          `Multicall request number ${i} for ${calls[i].target} failed`,
-        );
+        if (reportFails) {
+          this.logger.error(
+            `Multicall request number ${i} for ${calls[i].target} failed`,
+          );
+        }
 
         results[i] = {
           success: false,

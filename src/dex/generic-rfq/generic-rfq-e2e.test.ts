@@ -130,6 +130,8 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
     domain: 'paraswap',
   };
 
+  const pathToRemove = getEnv('GENERIC_RFQ_PATH_TO_OVERRIDE');
+
   return {
     maker: getEnv('GENERIC_RFQ_MAKER_ADDRESS'),
     tokensConfig: {
@@ -173,6 +175,7 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
       intervalMs: 1000 * 60 * 60 * 10,
       dataTTLS: 1000 * 60 * 60 * 11,
     },
+    pathToRemove,
   };
 };
 
@@ -181,15 +184,14 @@ describe('GenericRFQ YOUR_NAME E2E Mainnet', () => {
 
   const network = Network.MAINNET;
   const smartTokens = SmartTokens[network];
-
-  const srcToken = smartTokens.USDC;
-  const destToken = smartTokens.WBTC;
-
   const config = generateConfig(network);
 
   config.rfqConfigs[dexKey] = buildConfigForGenericRFQ();
 
-  describe('GenericRFQ', () => {
+  describe('GenericRFQ B/Q BUY', () => {
+    const srcToken = smartTokens.USDC;
+    const destToken = smartTokens.WBTC;
+
     srcToken.addBalance(testAccount.address, MAX_UINT);
     srcToken.addAllowance(
       testAccount.address,
@@ -205,7 +207,7 @@ describe('GenericRFQ YOUR_NAME E2E Mainnet', () => {
     );
 
     describe('Simpleswap', () => {
-      it.only('BUY USDC -> WBTC', async () => {
+      it('BUY USDC -> WBTC', async () => {
         await newTestE2E({
           config,
           srcToken,
@@ -216,6 +218,117 @@ describe('GenericRFQ YOUR_NAME E2E Mainnet', () => {
           swapSide: SwapSide.BUY,
           dexKey: dexKey,
           contractMethod: ContractMethod.simpleBuy,
+          network: network,
+          sleepMs: 5000,
+        });
+      });
+    });
+  });
+
+  describe('GenericRFQ Q/B BUY', () => {
+    const srcToken = smartTokens.WBTC;
+    const destToken = smartTokens.USDC;
+
+    srcToken.addBalance(testAccount.address, MAX_UINT);
+    srcToken.addAllowance(
+      testAccount.address,
+      config.augustusRFQAddress,
+      MAX_UINT,
+    );
+
+    destToken.addBalance(testAccount.address, MAX_UINT);
+    destToken.addAllowance(
+      testAccount.address,
+      config.augustusRFQAddress,
+      MAX_UINT,
+    );
+
+    describe('Simpleswap', () => {
+      it('BUY WBTC -> USDC', async () => {
+        await newTestE2E({
+          config,
+          srcToken,
+          destToken,
+          senderAddress: GENERIC_ADDR1,
+          thirdPartyAddress: testAccount.address,
+          _amount: '1000000',
+          swapSide: SwapSide.BUY,
+          dexKey: dexKey,
+          contractMethod: ContractMethod.simpleBuy,
+          network: network,
+          sleepMs: 5000,
+        });
+      });
+    });
+  });
+
+  describe('GenericRFQ B/Q SELL', () => {
+    const srcToken = smartTokens.USDC;
+    const destToken = smartTokens.WBTC;
+
+    srcToken.addBalance(testAccount.address, MAX_UINT);
+    srcToken.addAllowance(
+      testAccount.address,
+      config.augustusRFQAddress,
+      MAX_UINT,
+    );
+
+    destToken.addBalance(testAccount.address, MAX_UINT);
+    destToken.addAllowance(
+      testAccount.address,
+      config.augustusRFQAddress,
+      MAX_UINT,
+    );
+
+    describe('Simpleswap', () => {
+      it('SELL USDC -> WBTC', async () => {
+        await newTestE2E({
+          config,
+          srcToken,
+          destToken,
+          senderAddress: GENERIC_ADDR1,
+          thirdPartyAddress: testAccount.address,
+          _amount: '1000000',
+          swapSide: SwapSide.SELL,
+          dexKey: dexKey,
+          contractMethod: ContractMethod.simpleSwap,
+          network: network,
+          sleepMs: 5000,
+        });
+      });
+    });
+  });
+
+  describe('GenericRFQ Q/B SELL', () => {
+    const srcToken = smartTokens.WBTC;
+    const destToken = smartTokens.USDC;
+
+    srcToken.addBalance(testAccount.address, MAX_UINT);
+    srcToken.addAllowance(
+      testAccount.address,
+      config.augustusRFQAddress,
+      MAX_UINT,
+    );
+
+    destToken.addBalance(testAccount.address, MAX_UINT);
+    destToken.addAllowance(
+      testAccount.address,
+      config.augustusRFQAddress,
+      MAX_UINT,
+    );
+
+    describe('Simpleswap', () => {
+      it('SELL WBTC -> USDC', async () => {
+        await newTestE2E({
+          config,
+          srcToken,
+          destToken,
+          senderAddress: GENERIC_ADDR1,
+          thirdPartyAddress: testAccount.address,
+          _amount: '10000',
+          swapSide: SwapSide.SELL,
+          dexKey: dexKey,
+          contractMethod: ContractMethod.simpleSwap,
           network: network,
           sleepMs: 5000,
         });
