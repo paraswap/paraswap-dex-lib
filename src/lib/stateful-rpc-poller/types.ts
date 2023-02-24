@@ -1,4 +1,4 @@
-import { MultiCallParams } from '../multi-wrapper';
+import { MultiCallParams, MultiResult } from '../multi-wrapper';
 
 export type ObjWithUpdateInfo<T> = {
   value: T;
@@ -8,8 +8,14 @@ export type ObjWithUpdateInfo<T> = {
 
 export interface IStatefulRpcPoller<State, M> {
   identifierKey: string;
+  dexKey: string;
 
-  isStateToBeUpdated: boolean;
+  // For example, if particular pool has enough liquidity, or maybe it is paused?
+  isPoolParticipateInUpdates: boolean;
+
+  isPoolInTheMiddleOfUpdate: boolean;
+
+  isTimeToTriggerUpdate(blockNumber: number): boolean;
 
   network: number;
 
@@ -19,7 +25,7 @@ export interface IStatefulRpcPoller<State, M> {
   ];
 
   parseStateFromMultiResultsWithBlockInfo(
-    multiOutputs: [number, ...M[]],
+    multiOutputs: [MultiResult<number>, ...MultiResult<M>[]],
     lastUpdatedAtMs: number,
   ): ObjWithUpdateInfo<State>;
 

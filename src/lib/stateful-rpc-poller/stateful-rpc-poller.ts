@@ -5,7 +5,7 @@ import {
   ObjWithUpdateInfo,
   PollingManagerControllersCb,
 } from './types';
-import { MultiCallParams } from '../multi-wrapper';
+import { MultiCallParams, MultiResult } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
 import { assert } from 'ts-essentials';
@@ -73,7 +73,7 @@ export abstract class StatefulRpcPoller<State, M>
   protected _stateWithUpdateInfo?: ObjWithUpdateInfo<State>;
 
   // This values is used to determine if current pool will participate in update or not
-  // We don't want to keep track of state od pools without liquidity
+  // We don't want to keep track of state for pools without liquidity
   protected _liquidityInUSDWithUpdateInfo: ObjWithUpdateInfo<number> = {
     value: 0,
     blockNumber: 0,
@@ -97,7 +97,11 @@ export abstract class StatefulRpcPoller<State, M>
     typeof StatefulRPCPollerMessages
   >;
 
-  protected _isStateToBeUpdated: boolean = true;
+  // This flag is changed only via isPoolParticipateInUpdates setter
+  // It is used to determine if we should update state or not
+  protected _isPoolParticipateInUpdates: boolean = true;
+
+  protected _isPoolInTheMiddleOfUpdate: boolean = false;
 
   readonly identifierKey: string;
 
@@ -108,8 +112,13 @@ export abstract class StatefulRpcPoller<State, M>
     poolIdentifier: string,
     protected dexHelper: IDexHelper,
 
+    // If liquidity is less than this value, we will not update state
     protected liquidityThresholdForUpdate: number,
+    // If for some reason liquidity update is broken, for this delay we will still
+    // continue to serve update state
     protected liquidityUpdateAllowedDelayMs: number,
+
+    // For some pools we don't worry about liquidity and want always to keep state updated
     protected isLiquidityTracked: boolean,
 
     // Polling manager callbacks. They are useful when you want
@@ -118,14 +127,17 @@ export abstract class StatefulRpcPoller<State, M>
     // not poll that particular pools
     protected managerCbControllers: PollingManagerControllersCb,
 
-    // It is allowed block delay before refetching the state
-    protected maxAllowedStateDelayToUpdate: number = dexHelper.config.data
-      .maxAllowedDelayedBlockRpcPolling,
-    // The difference between previous parameter and this one is that if we reached
-    // this blockNumber, we will not serve state anymore since it is too late. But if we
-    // reached maxAllowedStateDelayToUpdate, we will just trigger state update
-    protected maxAllowedStateDelayToUse: number = maxAllowedStateDelayToUpdate *
-      2,
+    // If the state is outdated more than this amount of blocks, we will not use this state anymore
+    protected maxAllowedStateDelayInBlocks: number = dexHelper.config.data
+      .rpcPollingMaxAllowedStateDelayInBlocks,
+
+    // When cross this threshold we will trigger update. The idea is this number is less than
+    // maxAllowedStateDelayToUpdate, so we trigger update before state become invalid.
+    // If blocksBackToTriggerUpdate = maxAllowedStateDelayInBlocks, we will do our best
+    // effort to keep up with a tip of chain: trigger update on every new block
+    protected blocksBackToTriggerUpdate: number = dexHelper.config.data
+      .rpcPollingBlocksBackToTriggerUpdate,
+
     protected liquidityUpdatePeriodMs = DEFAULT_LIQUIDITY_UPDATE_PERIOD_MS,
   ) {
     // Don't make it too custom, like adding poolIdentifier. It will break log suppressor
@@ -136,6 +148,8 @@ export abstract class StatefulRpcPoller<State, M>
     // I made it a little bit different from poolIdentifier, because usually
     // pool identifier doesn't contain network information and it may occasionally
     // collide across chains, though that scenario is very unlikely to happen
+    // For consumers they still can use poolIdentifier to get instance, but since
+    // we always give network information, it is better we can hide this implementation detail
     this.identifierKey = getIdentifierKeyForRpcPoller(
       poolIdentifier,
       this.network,
@@ -148,18 +162,23 @@ export abstract class StatefulRpcPoller<State, M>
     this.logger = getLogger(`${this.dexKey}-${this.entityName}`);
 
     assert(
-      this.maxAllowedStateDelayToUpdate <=
-        dexHelper.config.data.maxAllowedDelayedBlockRpcPolling,
-      `You can not exceed global maxAllowedDelayedBlockRpcPolling=` +
-        `${dexHelper.config.data.maxAllowedDelayedBlockRpcPolling}. ` +
-        `Received ${this.maxAllowedStateDelayToUpdate}`,
+      this.maxAllowedStateDelayInBlocks >= 0,
+      `${this.dexKey}-${this.network}-${this.identifierKey}: ` +
+        `Max allowed state delay must be >= 0. Received ${this.maxAllowedStateDelayInBlocks}`,
     );
-    // If this rule is violated, it doesn't make any sense. Since you want to update state
-    // before failing pricing request
+
     assert(
-      this.maxAllowedStateDelayToUse > this.maxAllowedStateDelayToUpdate,
-      `Config is wrong. maxAllowedStateDelayToUse=${this.maxAllowedStateDelayToUse} ` +
-        `<= this.maxAllowedStateDelayToUpdate=${this.maxAllowedStateDelayToUpdate}`,
+      this.blocksBackToTriggerUpdate >= 0,
+      `${this.dexKey}-${this.network}-${this.identifierKey}: ` +
+        `Blocks back to trigger update must be >= 0. Received ${this.blocksBackToTriggerUpdate}`,
+    );
+
+    // You can not go more blocks back than you allow to be delayed
+    assert(
+      this.blocksBackToTriggerUpdate <= this.maxAllowedStateDelayInBlocks,
+      `${this.dexKey}-${this.network}-${this.identifierKey}: ` +
+        `Blocks back to trigger update must be <= maxAllowedStateDelayInBlocks. ` +
+        `Received ${this.blocksBackToTriggerUpdate} > ${this.maxAllowedStateDelayInBlocks}`,
     );
 
     this._getBlockNumberMultiCall = {
@@ -183,7 +202,7 @@ export abstract class StatefulRpcPoller<State, M>
     return this.dexHelper.config.data.network;
   }
 
-  get isMaster() {
+  protected get isMaster() {
     return !this.dexHelper.config.isSlave;
   }
 
@@ -201,7 +220,15 @@ export abstract class StatefulRpcPoller<State, M>
     return this._isStateOutdated(
       blockNumber,
       this._stateWithUpdateInfo?.blockNumber || 0,
-      this.maxAllowedStateDelayToUse,
+      this.maxAllowedStateDelayInBlocks,
+    );
+  }
+
+  isTimeToTriggerUpdate(blocknumber: number): boolean {
+    return this._isStateOutdated(
+      blocknumber,
+      this._stateWithUpdateInfo?.blockNumber || 0,
+      this.blocksBackToTriggerUpdate,
     );
   }
 
@@ -260,19 +287,30 @@ export abstract class StatefulRpcPoller<State, M>
     this.logger[level](`${this.entityName}: ${message}`, ...args);
   }
 
-  get isStateToBeUpdated(): boolean {
-    return this._isStateToBeUpdated;
+  get isPoolParticipateInUpdates(): boolean {
+    return this._isPoolParticipateInUpdates;
   }
 
-  set isStateToBeUpdated(value: boolean) {
+  set isPoolParticipateInUpdates(value: boolean) {
     // If we change state update status, we always keep relevant info in manager
     value
       ? this.managerCbControllers.enableStateTracking(this.identifierKey)
       : this.managerCbControllers.disableStateTracking(this.identifierKey);
 
-    this._isStateToBeUpdated = value;
+    this._isPoolParticipateInUpdates = value;
   }
 
+  get isPoolInTheMiddleOfUpdate(): boolean {
+    return this._isPoolInTheMiddleOfUpdate;
+  }
+
+  set isPoolInTheMiddleOfUpdate(value: boolean) {
+    this._isPoolInTheMiddleOfUpdate = value;
+  }
+
+  // For the time of implementing this class, I don't need multi step state fetch,
+  // when we need to sequentially fetch data to get full state. This is true for CurveV1Factory and WooFi
+  // Later we may consider having more complicated generateState mechanism.
   protected abstract _getFetchStateMultiCalls(): MultiCallParams<M>[];
 
   getFetchStateWithBlockInfoMultiCalls(): [
@@ -293,11 +331,19 @@ export abstract class StatefulRpcPoller<State, M>
   protected abstract _parseStateFromMultiResults(multiOutputs: M[]): State;
 
   parseStateFromMultiResultsWithBlockInfo(
-    multiOutputs: [number, ...M[]],
+    multiOutputs: [MultiResult<number>, ...MultiResult<M>[]],
     lastUpdatedAtMs: number,
   ): ObjWithUpdateInfo<State> {
     // By abstract I mean for abstract method which must be implemented
-    const [blockNumber, ...outputsForAbstract] = multiOutputs;
+    const [blockNumber, ...outputsForAbstract] = multiOutputs.map((m, i) => {
+      if (!m.success) {
+        throw new Error(
+          `${this.entityName} failed to get multicall with index ${i}`,
+        );
+      }
+
+      return m.returnData;
+    }) as [number, ...M[]];
 
     return {
       value: this._parseStateFromMultiResults(outputsForAbstract),
@@ -310,9 +356,12 @@ export abstract class StatefulRpcPoller<State, M>
     const multiCalls = this.getFetchStateWithBlockInfoMultiCalls();
     try {
       const lastUpdatedAtMs = Date.now();
-      const aggregatedResults = (await this.dexHelper.multiWrapper.aggregate<
+      const aggregatedResults = (await this.dexHelper.multiWrapper.tryAggregate<
         number | M
-      >(multiCalls as MultiCallParams<M | number>[])) as [number, ...M[]];
+      >(true, multiCalls as MultiCallParams<M | number>[])) as [
+        MultiResult<number>,
+        ...MultiResult<M>[],
+      ];
 
       return this.parseStateFromMultiResultsWithBlockInfo(
         aggregatedResults,
@@ -431,9 +480,9 @@ export abstract class StatefulRpcPoller<State, M>
           'LIQUIDITY_INFO_IS_OUTDATED',
           `Last updated at ${this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs}`,
         );
-        this.isStateToBeUpdated = true;
+        this.isPoolParticipateInUpdates = true;
       } else {
-        this.isStateToBeUpdated =
+        this.isPoolParticipateInUpdates =
           this._liquidityInUSDWithUpdateInfo.value >=
           this.liquidityThresholdForUpdate;
       }

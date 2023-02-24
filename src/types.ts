@@ -270,7 +270,8 @@ export type Config = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
-  maxAllowedDelayedBlockRpcPolling: number;
+  rpcPollingMaxAllowedStateDelayInBlocks: number;
+  rpcPollingBlocksBackToTriggerUpdate: number;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
 };
