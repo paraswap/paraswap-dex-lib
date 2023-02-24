@@ -367,7 +367,7 @@ export const NerveConfig: DexConfigMap<DexParams> = {
       abi: ironV2PoolABI,
     },
   },
-  Zyberswap: {
+  ZyberswapStable: {
     [Network.ARBITRUM]: {
       poolConfigs: {
         Stablecoin: {

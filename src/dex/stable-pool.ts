@@ -41,7 +41,8 @@ export class StablePool
     'saddle',
     'ironv2',
     'snowball',
-    'axial, zyberswap',
+    'axial',
+    'zyberswapstable',
   ];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
