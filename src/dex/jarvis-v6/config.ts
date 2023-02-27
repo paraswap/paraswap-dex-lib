@@ -267,6 +267,48 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
         },
       ],
     },
+    [Network.OPTIMISM]: {
+      priceFeedAddress: '0xd8D32702c398528904e1367999f1563Eb4DF731a',
+      pools: [
+        {
+          address: '0xb145fB1ef8E3B0202af4012F6bebc00e6882a10D',
+          priceFeedPair: 'EURUSD',
+          syntheticToken: {
+            address: '0x79AF5dd14e855823FA3E9ECAcdF001D99647d043',
+            decimals: 18,
+            symbol: 'jEUR',
+          },
+          collateralToken: {
+            address: '0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
+            decimals: 6,
+            symbol: 'USDC',
+          },
+          chainLinkAggregatorAddress:
+            '0xAA75acE4575AbBE1D237D991a7461f497a56a8F0',
+        },
+      ],
+    },
+    [Network.ARBITRUM]: {
+      priceFeedAddress: '0x1505319B24538d05EC26794A602E316fA314876A',
+      pools: [
+        {
+          address: '0xDb97f7a816E91a94eF936145E1b9faee14b8c25c',
+          priceFeedPair: 'EURUSD',
+          syntheticToken: {
+            address: '0xAD435674417520aeeED6b504bBe654d4f556182F',
+            decimals: 18,
+            symbol: 'jEUR',
+          },
+          collateralToken: {
+            address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+            decimals: 6,
+            symbol: 'USDC',
+          },
+          chainLinkAggregatorAddress:
+            '0x7AAeE6aD40a947A162DEAb5aFD0A1e12BE6FF871',
+        },
+      ],
+    },
   },
 };
 
