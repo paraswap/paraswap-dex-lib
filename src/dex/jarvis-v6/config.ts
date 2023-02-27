@@ -249,6 +249,22 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
           chainLinkAggregatorAddress:
             '0x6DBd1be1a83005d26b582D61937b406300B05A8F',
         },
+        {
+          address: '0x7a75624f051041baA74aE4E47724216307c7401D',
+          priceFeedPair: 'XAUUSD',
+          syntheticToken: {
+            address: '0x192Ef3FFF1708456D3A1F21354FA8d6bFd86b45c',
+            decimals: 18,
+            symbol: 'jGOLD',
+          },
+          collateralToken: {
+            address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+            decimals: 6,
+            symbol: 'USDC',
+          },
+          chainLinkAggregatorAddress:
+            '0x704179beB09282EaEf98CA8aaa443C1E273eBBc2',
+        },
       ],
     },
   },
