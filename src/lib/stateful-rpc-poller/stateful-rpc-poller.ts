@@ -252,7 +252,7 @@ export abstract class StatefulRpcPoller<State, M>
       if (!this._isStateOutdatedForUse(blockNumber, state.blockNumber)) {
         return state;
       } else {
-        this.immediateLogMessage(
+        this._immediateLogMessage(
           `State from ${source} is outdated. Valid for number ${
             state.blockNumber
           }, but requested for ${blockNumber}. Diff ${
@@ -263,9 +263,12 @@ export abstract class StatefulRpcPoller<State, M>
       }
     } else {
       if (source === StateSources.LOCAL_MEMORY) {
-        this.immediateLogMessage(`State is not initialized in memory`, 'error');
+        this._immediateLogMessage(
+          `State is not initialized in memory`,
+          'error',
+        );
       } else {
-        this.immediateLogMessage(
+        this._immediateLogMessage(
           `State from ${source} is not available`,
           'trace',
         );
@@ -313,10 +316,10 @@ export abstract class StatefulRpcPoller<State, M>
         return cacheState;
       }
     } catch (e) {
-      this.logMessageWithSuppression(`ERROR_FETCHING_STATE_FROM_CACHE`, e);
+      this._logMessageWithSuppression(`ERROR_FETCHING_STATE_FROM_CACHE`, e);
     }
 
-    this.logMessageWithSuppression('FALLBACK_TO_RPC');
+    this._logMessageWithSuppression('FALLBACK_TO_RPC');
 
     // As a last step. If we failed everything above, try to fetch from RPC
     try {
@@ -338,21 +341,21 @@ export abstract class StatefulRpcPoller<State, M>
         }
       }
     } catch (e) {
-      this.logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
+      this._logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
     }
 
     // If nothing works, then we can not do anything here and skip this pool
     return null;
   }
 
-  protected logMessageWithSuppression(
+  protected _logMessageWithSuppression(
     msgKey: keyof typeof StatefulRPCPollerMessages,
     ...args: unknown[]
   ) {
     this.logMessagesSuppressor.logMessage(msgKey, this.identifierKey, ...args);
   }
 
-  protected immediateLogMessage(
+  protected _immediateLogMessage(
     message: string,
     level: LogLevels,
     ...args: unknown[]
@@ -441,7 +444,7 @@ export abstract class StatefulRpcPoller<State, M>
         lastUpdatedAtMs,
       );
     } catch (e) {
-      this.logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
+      this._logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
     }
 
     return null;
@@ -466,11 +469,11 @@ export abstract class StatefulRpcPoller<State, M>
 
     // Master version must keep cache up to date
     if (this.isMaster) {
-      await this.saveStateInCache();
+      await this._saveStateInCache();
     }
   }
 
-  async saveStateInCache(): Promise<boolean> {
+  protected async _saveStateInCache(): Promise<boolean> {
     try {
       await this.dexHelper.cache.hset(
         this.cacheStateKey,
@@ -479,12 +482,12 @@ export abstract class StatefulRpcPoller<State, M>
       );
       return true;
     } catch (e) {
-      this.logMessageWithSuppression('ERROR_SAVING_STATE_IN_CACHE', e);
+      this._logMessageWithSuppression('ERROR_SAVING_STATE_IN_CACHE', e);
     }
     return false;
   }
 
-  async saveLiquidityInCache(): Promise<boolean> {
+  protected async _saveLiquidityInCache(): Promise<boolean> {
     try {
       await this.dexHelper.cache.setex(
         this.dexKey,
@@ -495,7 +498,7 @@ export abstract class StatefulRpcPoller<State, M>
       );
       return true;
     } catch (e) {
-      this.logMessageWithSuppression('ERROR_SAVING_LIQUIDITY_IN_CACHE', e);
+      this._logMessageWithSuppression('ERROR_SAVING_LIQUIDITY_IN_CACHE', e);
     }
     return false;
   }
@@ -513,7 +516,7 @@ export abstract class StatefulRpcPoller<State, M>
     return null;
   }
 
-  async fetchLiquidityFromCache(): Promise<ObjWithUpdateInfo<number> | null> {
+  protected async _fetchLiquidityFromCache(): Promise<ObjWithUpdateInfo<number> | null> {
     const resultUnparsed = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
@@ -539,7 +542,7 @@ export abstract class StatefulRpcPoller<State, M>
     this._adjustIsStateToBeUpdated();
 
     if (this.isMaster) {
-      await this.saveLiquidityInCache();
+      await this._saveLiquidityInCache();
     }
   }
 
@@ -549,7 +552,7 @@ export abstract class StatefulRpcPoller<State, M>
         Date.now() - this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs >
         this.liquidityUpdateAllowedDelayMs
       ) {
-        this.logMessageWithSuppression(
+        this._logMessageWithSuppression(
           'LIQUIDITY_INFO_IS_OUTDATED',
           `Last updated at ${this._liquidityInUSDWithUpdateInfo.lastUpdatedAtMs}`,
         );

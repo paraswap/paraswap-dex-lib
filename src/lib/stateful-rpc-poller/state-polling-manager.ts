@@ -18,6 +18,8 @@ export class StatePollingManager {
     return StatePollingManager.__instances[network];
   }
 
+  private _lastProcessedBlockNumber = 0;
+
   private logger: Logger;
 
   // ALl registered instances from identifier to instance
@@ -64,6 +66,13 @@ export class StatePollingManager {
     if (!this.isMaster) {
       return;
     }
+
+    // Events-client calls several times for the same blockNumber sometimes
+    // I want to filter them. The only condition, that matters is that blockNumbers are the same
+    if (this._lastProcessedBlockNumber === blockNumber) {
+      return;
+    }
+    this._lastProcessedBlockNumber = blockNumber;
 
     const poolsToBeUpdated: IStatefulRpcPoller<any, any>[] = [];
 

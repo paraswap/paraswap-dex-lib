@@ -15,9 +15,9 @@ export interface IStatefulRpcPoller<State, M> {
 
   isPoolInTheMiddleOfUpdate: boolean;
 
-  isTimeToTriggerUpdate(blockNumber: number): boolean;
-
   network: number;
+
+  isTimeToTriggerUpdate(blockNumber: number): boolean;
 
   getFetchStateWithBlockInfoMultiCalls(): [
     MultiCallParams<number>,
