@@ -274,6 +274,7 @@ export type Config = {
   rpcPollingBlocksBackToTriggerUpdate: number;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
+  uniswapV3EventLoggingSampleRate?: number;
 };
 
 export type BigIntAsString = string;
