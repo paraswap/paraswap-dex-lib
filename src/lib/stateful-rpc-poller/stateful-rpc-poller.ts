@@ -1,9 +1,10 @@
-import { Logger, LogLevels, MultiCallOutput } from '../../types';
+import { Logger, LogLevels } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import {
   IStatefulRpcPoller,
   ObjWithUpdateInfo,
   PollingManagerControllersCb,
+  StateSources,
 } from './types';
 import { MultiCallParams, MultiResult } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
@@ -159,7 +160,8 @@ export abstract class StatefulRpcPoller<State, M>
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_liquidity_usd`.toLowerCase();
     this.cacheStateKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
-    this.logger = getLogger(`${this.dexKey}-${this.entityName}`);
+
+    this.logger = getLogger(`${this.entityName}`);
 
     assert(
       this.maxAllowedStateDelayInBlocks >= 0,
@@ -196,6 +198,10 @@ export abstract class StatefulRpcPoller<State, M>
       StatefulRpcPoller.StatefulRPCPollerMessages,
       this.logger,
     );
+
+    // This is done to not rely on manual initialize pool call.
+    // Any time new pool initialized, it is already automatically registered in polling manager
+    this.managerCbControllers.initializePool(this);
   }
 
   get network() {
@@ -216,10 +222,13 @@ export abstract class StatefulRpcPoller<State, M>
     );
   }
 
-  protected _isInMemoryStateOutdated(blockNumber: number): boolean {
+  protected _isStateOutdatedForUse(
+    checkForBlockNumber: number,
+    stateValidBlockNumber: number,
+  ): boolean {
     return this._isStateOutdated(
-      blockNumber,
-      this._stateWithUpdateInfo?.blockNumber || 0,
+      checkForBlockNumber,
+      stateValidBlockNumber,
       this.maxAllowedStateDelayInBlocks,
     );
   }
@@ -232,38 +241,102 @@ export abstract class StatefulRpcPoller<State, M>
     );
   }
 
-  async getState(
+  protected async _retrieveStateWithChecks(
+    retriever: () => Promise<ObjWithUpdateInfo<State> | null>,
     blockNumber: number,
-  ): Promise<ObjWithUpdateInfo<State> | null> {
-    // Try to get with least effort from local memory
-    const localState = this._stateWithUpdateInfo;
-    if (localState !== undefined) {
-      if (!this._isInMemoryStateOutdated(blockNumber)) {
-        return localState;
+    source: StateSources,
+  ) {
+    const state = await retriever();
+
+    if (state) {
+      if (!this._isStateOutdatedForUse(blockNumber, state.blockNumber)) {
+        return state;
       } else {
         this.immediateLogMessage(
-          `State is outdated. Valid for number ${
-            localState.blockNumber
+          `State from ${source} is outdated. Valid for number ${
+            state.blockNumber
           }, but requested for ${blockNumber}. Diff ${
-            blockNumber - localState.blockNumber
+            blockNumber - state.blockNumber
           } blocks`,
           'trace',
         );
       }
     } else {
-      this.immediateLogMessage(`State is not initialized in memory`, 'error');
+      if (source === StateSources.LOCAL_MEMORY) {
+        this.immediateLogMessage(`State is not initialized in memory`, 'error');
+      } else {
+        this.immediateLogMessage(
+          `State from ${source} is not available`,
+          'trace',
+        );
+      }
+    }
+    return null;
+  }
+
+  async getState(
+    blockNumber: number,
+    forInitialization: boolean = false,
+    // If we found that state in memory is outdated, then we save it for future use
+    saveInMemory: boolean = true,
+  ): Promise<ObjWithUpdateInfo<State> | null> {
+    // If it is for initialization purposes, we for sure doesn't have state in memory
+    if (!forInitialization) {
+      // Try to get with least effort from local memory
+      const localState = await this._retrieveStateWithChecks(
+        async () => this._stateWithUpdateInfo ?? null,
+        blockNumber,
+        StateSources.LOCAL_MEMORY,
+      );
+      if (localState !== null) {
+        return localState;
+      }
     }
 
     // If we failed to get from memory. Try to fetch state from cache
     try {
+      const cacheState = await this._retrieveStateWithChecks(
+        async () => (await this.fetchStateFromCache()) ?? null,
+        blockNumber,
+        StateSources.CACHE,
+      );
+      if (cacheState !== null) {
+        if (saveInMemory) {
+          // We want to save latest available state in memory for future use
+          // This await shouldn't slow down because if we are slave, we won't save state in cache
+          await this.setState(
+            cacheState.value,
+            cacheState.blockNumber,
+            cacheState.lastUpdatedAtMs,
+          );
+        }
+        return cacheState;
+      }
     } catch (e) {
       this.logMessageWithSuppression(`ERROR_FETCHING_STATE_FROM_CACHE`, e);
     }
 
     this.logMessageWithSuppression('FALLBACK_TO_RPC');
 
-    // As the last step. If we failed everything above, try to fetch from RPC
+    // As a last step. If we failed everything above, try to fetch from RPC
     try {
+      const rpcState = await this._retrieveStateWithChecks(
+        async () => (await this.fetchLatestStateFromRpc()) ?? null,
+        blockNumber,
+        StateSources.RPC,
+      );
+      if (rpcState !== null) {
+        if (saveInMemory) {
+          // We want to save latest available state in memory for future use
+          // This await shouldn't slow down because if we are slave, we won't save state in cache
+          await this.setState(
+            rpcState.value,
+            rpcState.blockNumber,
+            rpcState.lastUpdatedAtMs,
+          );
+          return rpcState;
+        }
+      }
     } catch (e) {
       this.logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
     }
@@ -488,6 +561,7 @@ export abstract class StatefulRpcPoller<State, M>
       }
     }
   }
+
   protected _getExpiryTimeForCachedLiquidity() {
     // Give it 10 minutes margin to recover
     return Math.floor(this.liquidityUpdatePeriodMs / 1000) + 10 * 60 * 1000;

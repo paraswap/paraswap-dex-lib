@@ -1,8 +1,8 @@
 import { assert } from 'console';
 import { IDexHelper } from '../../dex-helper';
-import { Logger, MultiCallOutput } from '../../types';
+import { Logger } from '../../types';
 import { getLogger } from '../log4js';
-import { MultiCallParams, MultiResult } from '../multi-wrapper';
+import { MultiResult } from '../multi-wrapper';
 import { IStatefulRpcPoller } from './types';
 
 export class StatePollingManager {
@@ -121,8 +121,17 @@ export class StatePollingManager {
     const indexDividers: number[] = [];
 
     const multiCalls = poolsToBeUpdated
-      .map(p => p.getFetchStateWithBlockInfoMultiCalls())
+      .map((p, i) => {
+        const callData = p.getFetchStateWithBlockInfoMultiCalls();
+        indexDividers.push(callData.length);
+        return callData;
+      })
       .flat();
+
+    assert(
+      indexDividers.length === poolsToBeUpdated.length,
+      'indexDividers.length === poolsToBeUpdated.length',
+    );
 
     const results = (await this.dexHelper.multiWrapper.tryAggregate(
       false,
@@ -134,15 +143,40 @@ export class StatePollingManager {
     let minBlockNumber = 0;
     const lastUpdatedAtMs = Date.now();
 
+    // Let's pack each result into relevant pools
+    const unFlattenedResults: [MultiResult<number>, ...MultiResult<any>[]][] =
+      [];
+
+    let accumulatedStart = 0;
+    indexDividers.forEach(divider => {
+      unFlattenedResults.push(
+        results.slice(accumulatedStart, accumulatedStart + divider) as [
+          MultiResult<number>,
+          ...MultiResult<any>[],
+        ],
+      );
+      accumulatedStart += divider;
+    });
+
+    assert(
+      unFlattenedResults.length === poolsToBeUpdated.length,
+      'unFlattenedResults.length === poolsToBeUpdated.length',
+    );
+
     await Promise.all(
-      results.map(async (result, index) => {
+      unFlattenedResults.map(async (result, index) => {
         const pool = poolsToBeUpdated[index];
         try {
           const parsedStateResult =
             pool.parseStateFromMultiResultsWithBlockInfo(
-              results,
+              result,
               lastUpdatedAtMs,
             );
+
+          minBlockNumber = Math.min(
+            parsedStateResult.blockNumber,
+            minBlockNumber,
+          );
 
           await pool.setState(
             parsedStateResult.value,
@@ -189,6 +223,31 @@ export class StatePollingManager {
       statefulRpcPoller.isPoolParticipateInUpdates
         ? this._poolsToBeUpdated.add(identifierKey)
         : this._idlePools.add(identifierKey);
+
+      const currentBlockNumber =
+        this.dexHelper.blockManager.getActiveChainHead()?.number;
+
+      assert(
+        currentBlockNumber !== undefined,
+        'currentBlockNumber !== undefined',
+      );
+
+      // All errors are caught inside fetchLatestStateFromRpc
+      statefulRpcPoller.fetchLatestStateFromRpc().then(state => {
+        if (state === null) {
+          // I don't expect this to happen. Only if RPC is not working. In that case state will be updated when first
+          // RPC request happens
+          this.logger.error(
+            `initializePool: pool=${identifierKey} from ${statefulRpcPoller.dexKey} state is not initialized`,
+          );
+        } else {
+          statefulRpcPoller.setState(
+            state.value,
+            state.blockNumber,
+            state.lastUpdatedAtMs,
+          );
+        }
+      });
     }
   }
 }
