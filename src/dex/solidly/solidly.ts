@@ -425,8 +425,13 @@ export class Solidly extends UniswapV2 {
   ): Promise<PoolLiquidity[]> {
     if (!this.subgraphURL) return [];
 
-    const stableFieldKey =
-      this.dexKey.toLowerCase() === 'solidly' ? 'stable' : 'isStable';
+    let stableFieldKey = '';
+
+    if (this.dexKey.toLowerCase() === 'solidly') {
+      stableFieldKey = 'stable';
+    } else if (this.dexKey.toLowerCase() !== 'solidlyethereum') {
+      stableFieldKey = 'isStable';
+    }
 
     const query = `query ($token: Bytes!, $count: Int) {
       pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
