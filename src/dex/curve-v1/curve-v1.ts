@@ -973,7 +973,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       );
 
       const results = (
-        await this.dexHelper.multiWrapper!.tryAggregate(true, calls)
+        await this.dexHelper.multiWrapper.tryAggregate(true, calls)
       ).results;
 
       let index = 0;
