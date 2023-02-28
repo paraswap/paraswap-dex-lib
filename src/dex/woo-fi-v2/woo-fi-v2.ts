@@ -19,6 +19,14 @@ import { SimpleExchange } from '../simple-exchange';
 import { WooFiV2Config, Adapters } from './config';
 import { WooFiV2EventPool } from './woo-fi-v2-pool';
 
+/*
+ * This one is from template. It might be populated from WooFi old implementation
+ * Almost everything is ready: getTopPoolsForToken, getSimpleParams, getAdapterParams
+ * Main difference will be on getPricesVolume. You should remove any logic related to state
+ * handling. It will be abstracted in pool. You just need to take state when you need
+ * using `getState` method on pool instance
+ */
+
 export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
   protected eventPools: WooFiV2EventPool;
 

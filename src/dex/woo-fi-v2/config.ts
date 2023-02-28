@@ -9,7 +9,16 @@ export const WooFiV2Config: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.BSC]: { [SwapSide.SELL]: [{ name: 'BscAdapter01', index: 13 }] },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter01', index: 12 }],
+  },
+  [Network.FANTOM]: {
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 8 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 4 }],
+  },
+
+  // TODO: Deploy new adapter for WooFiV2 on new chains and update this config
 };

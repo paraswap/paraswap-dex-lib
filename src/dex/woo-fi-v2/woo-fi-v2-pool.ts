@@ -7,6 +7,17 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 import { NULL_STATE } from './constants';
 
+/*
+ * This class comes from template and is ready for event base Dexes
+ * WooFiV2 should be integrated using new lib abstract class StatefulRpcPoller
+ * So, basically, just need to rename this class to WooFiV2PollingPool and
+ * inherit from StatefulRpcPoller. Fix any error that might during transition
+ * All state related things should be removed. Most likely you need to
+ * implement only abstract methods from StatefulRpcPoller. You can find there implementations
+ * on old WooFi integration. Need to verify this, but most likely we will need only
+ * one pool that will handle updates for all pairs
+ */
+
 export class WooFiV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
