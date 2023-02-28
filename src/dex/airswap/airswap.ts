@@ -24,13 +24,21 @@ import { Interface } from 'ethers/lib/utils';
 import ethers from 'ethers';
 import { AddressZero } from '@ethersproject/constants';
 
-
 import erc20ABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json' assert { type: `json` };
 import { getMakersLocatorForTX, getStakersUrl, getTx } from './airswap-tools';
+import { BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
 
-export class Airswap extends SimpleExchange implements IDex<AirswapData> {
+type temporaryMakerAnswer = {
+  pairs: [
+    {
+      baseToken: string;
+      quoteToken: string;
+    },
+  ];
+};
 
+export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   private makers: any;
 
   readonly hasConstantPriceLargeAmounts = false;
@@ -38,7 +46,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   readonly needWrapNative = true;
   readonly isFeeOnTransferSupported = false;
 
-  private localProvider: ethers.providers.InfuraWebSocketProvider
+  private localProvider: ethers.providers.InfuraWebSocketProvider;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AirSwapConfig);
@@ -68,8 +76,11 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   async initializePricing(blockNumber: number) {
     // @TODO Put in cache data to build a map of makers that we will poll
     // get all satkers url for last look cahce, need to connect to any adresses below
-    this.makers = await getStakersUrl(this.localProvider, AirSwapConfig.Airswap[this.network].makerRegistry);
-    console.log("[AIRSWAP]", "makers:", this.makers)
+    this.makers = await getStakersUrl(
+      this.localProvider,
+      AirSwapConfig.Airswap[this.network].makerRegistry,
+    );
+    console.log('[AIRSWAP]', 'makers:', this.makers);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -78,18 +89,63 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
+  forgePairTokenKey = (srcAddress: Address, destAddress: Address) =>
+    `${srcAddress}_${destAddress}`.toLowerCase();
+
+  getPoolIdentifier(
+    srcAddress: Address,
+    destAddress: Address,
+    makerName: string = '',
+  ) {
+    const pairTokenKey = this.forgePairTokenKey(srcAddress, destAddress);
+    return `${this.dexKey}_${pairTokenKey}_${makerName}`.toLowerCase();
+  }
+
+  getMakerUrlFromKey(key: string) {
+    return key.split(`_`).pop();
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+
+    if (normalizedSrcToken.address === normalizedDestToken.address) {
+      return [];
+    }
+
+    const makerAndPairs: Record<string, temporaryMakerAnswer> = {
+      'http://airswap-goerli-maker.mitsi.ovh': {
+        pairs: [
+          {
+            baseToken: '0x79c950c7446b234a6ad53b908fbf342b01c4d446',
+            quoteToken: '0x07865c6E87B9F70255377e024ace6630C1Eaa37F',
+          },
+        ],
+      },
+    };
+    const makers = Object.keys(makerAndPairs);
+
+    return makers
+      .filter((makerName: string) => {
+        const pairs = makerAndPairs[makerName].pairs ?? [];
+        return pairs.some(
+          pair =>
+            normalizedSrcToken.address === pair.baseToken.toLowerCase() &&
+            normalizedDestToken.address === pair.quoteToken.toLowerCase(),
+        );
+      })
+      .map(makerName =>
+        this.getPoolIdentifier(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+          makerName,
+        ),
+      );
   }
 
   // Returns pool prices for amounts.
@@ -104,7 +160,65 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AirswapData>> {
-    // TODO: complete me!
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+
+    if (normalizedSrcToken.address === normalizedDestToken.address) {
+      return null;
+    }
+
+    const pools =
+      limitPools ??
+      (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+
+    const marketMakersUris = pools.map(this.getMakerUrlFromKey);
+    // get pricing to corresponding pair token for each maker
+    const levelRequests = marketMakersUris.map(url => ({
+      maker: url,
+      level: airswapApi.getOptimisticLevel(maker, srcToken, destToken),
+    }));
+    const levels = await Promise.all(levelRequests);
+    const prices = levels.map(({ maker, level }) => {
+      const divider = getBigNumberPow(
+        side === SwapSide.SELL
+          ? normalizedSrcToken.decimals
+          : normalizedDestToken.decimals,
+      );
+
+      const amountsRaw = amounts.map(amount =>
+        new BigNumber(amount.toString()).dividedBy(divider),
+      );
+
+      const unitPrice = this.computePricesFromLevels(
+        [BN_1],
+        level,
+        normalizedSrcToken,
+        normalizedDestToken,
+        side,
+      )[0];
+      const prices = this.computePricesFromLevels(
+        amountsRaw,
+        level,
+        normalizedSrcToken,
+        normalizedDestToken,
+        side,
+      );
+
+      return {
+        gasCost: 100_000, // where does it comes from ?
+        exchange: this.dexKey,
+        data: { maker },
+        prices,
+        unit: unitPrice,
+        poolIdentifier: this.getPoolIdentifier(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+          maker,
+        ),
+        poolAddresses: [this.routerAddress],
+      }; // as PoolPrices<AirswapData>;
+    });
+
     return null;
   }
 
@@ -170,11 +284,11 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): Promise<void> {
-    return Promise.resolve()
+    return Promise.resolve();
   }
 
   isBlacklisted(userAddress?: string | undefined): Promise<boolean> {
-    return Promise.resolve(false)
+    return Promise.resolve(false);
   }
 
   // change 0xeee burn address to native 0x000
@@ -200,7 +314,8 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
       );
       throw new Error(
-        `${this.dexKey}-${this.network
+        `${this.dexKey}-${
+          this.network
         }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
       );
     }
@@ -208,23 +323,35 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
 
-    const amount = side === SwapSide.SELL
-      ? optimalSwapExchange.srcAmount
-      : optimalSwapExchange.destAmount
+    const amount =
+      side === SwapSide.SELL
+        ? optimalSwapExchange.srcAmount
+        : optimalSwapExchange.destAmount;
 
-    const makers = await getMakersLocatorForTX(this.localProvider, normalizedSrcToken, normalizedDestToken, this.network)
+    const makers = await getMakersLocatorForTX(
+      this.localProvider,
+      normalizedSrcToken,
+      normalizedDestToken,
+      this.network,
+    );
     const response = await Promise.race(
       makers.map(maker => {
-        return getTx(maker.url, maker.swapContract, this.augustusAddress.toLowerCase(), normalizedSrcToken, normalizedDestToken, amount);
-      })
+        return getTx(
+          maker.url,
+          maker.swapContract,
+          this.augustusAddress.toLowerCase(),
+          normalizedSrcToken,
+          normalizedDestToken,
+          amount,
+        );
+      }),
     );
-
 
     return [
       {
         ...optimalSwapExchange,
         data: {
-          exchange: "i do not know what to write",
+          exchange: 'i do not know what to write',
           ...response,
         },
       },

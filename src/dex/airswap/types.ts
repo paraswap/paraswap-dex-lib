@@ -14,9 +14,14 @@ export type AirswapData = {
   // tx building. The data structure should be minimal.
   // Complete me!
   exchange: Address;
-} & Order ;
+} & Order;
 
 export type DexParams = {
-  swapERC20: string
-  makerRegistry: string
+  swapERC20: string;
+  makerRegistry: string;
 };
+
+export interface PriceLevel {
+  level: string;
+  price: string;
+}
