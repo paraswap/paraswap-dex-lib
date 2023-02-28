@@ -6,7 +6,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 
-export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
+export class WooFiV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
@@ -24,15 +24,15 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected __DexNameCamel__Iface = new Interface(
-      '' /* TODO: Import and put here __DexName__ ABI */,
+    protected wooFiV2Iface = new Interface(
+      '' /* TODO: Import and put here WooFiV2 ABI */,
     ), // TODO: add any additional params required for event subscriber
   ) {
     // TODO: Add pool name
     super(parentName, 'POOL_NAME', dexHelper, logger);
 
     // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.__DexNameCamel__Iface.parseLog(log);
+    this.logDecoder = (log: Log) => this.wooFiV2Iface.parseLog(log);
     this.addressesSubscribed = [
       /* subscribed addresses */
     ];
