@@ -87,15 +87,15 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
     return this.synthetixState.onchainConfigValues;
   }
 
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest') {
     if (this.synthetixState.onchainConfigValuesWithUndefined === undefined) {
-      await this.synthetixState.updateOnchainConfigValues('latest');
+      await this.synthetixState.updateOnchainConfigValues(blockNumber);
     }
     if (!this.statePollingTimer) {
-      await this.synthetixState.updateOnchainState('latest');
+      await this.synthetixState.updateOnchainState(blockNumber);
       this.statePollingTimer = setInterval(async () => {
         try {
-          await this.synthetixState.updateOnchainState('latest');
+          await this.synthetixState.updateOnchainState(blockNumber);
           this.logger.info(
             `${this.dexKey}: onchain state was updated for network=${this.network}`,
           );

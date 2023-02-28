@@ -433,7 +433,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       slicedMultiCallData.map(async _multiCallData =>
         blockAndTryAggregate(
           false,
-          this.dexHelper.multiContract.methods,
+          this.dexHelper.multiContract,
           multiCallData,
           blockNumber,
         ),
