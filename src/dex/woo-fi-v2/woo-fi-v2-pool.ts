@@ -5,6 +5,7 @@ import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
+import { NULL_STATE } from './constants';
 
 export class WooFiV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -77,7 +78,7 @@ export class WooFiV2EventPool extends StatefulEventSubscriber<PoolState> {
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     // TODO: complete me!
-    return {};
+    return NULL_STATE;
   }
 
   // Its just a dummy example
