@@ -30,7 +30,7 @@ describe('Integral E2E', () => {
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const testData = [
-      ['USDC', 'WETH', 3500, 2.8, 2.8],
+      ['USDC', 'WETH', 180, 0.1, 0.1],
     ];
 
     const sideToContractMethods = new Map([

@@ -38,7 +38,7 @@ function initializeTokens() {
 }
 
 function initializeAmounts(token: Token, units: number[]) {
-  return units.map(unit => BigInt(unit) * BI_POWS[token.decimals - 1]);
+  return units.map(unit => BigInt(unit) * BI_POWS[token.decimals - 2]);
 }
 
 async function checkOnChainPricing(

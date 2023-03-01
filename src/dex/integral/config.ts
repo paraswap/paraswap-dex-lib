@@ -5,7 +5,7 @@ import { Network } from '../../constants';
 export const IntegralConfig: DexConfigMap<DexParams> = {
   Integral: {
     [Network.MAINNET]: {
-      relayerAddress: '0x568723F044B1e1e24F7058bCDEaA3CC1387FBb42',
+      relayerAddress: '0xd17b3c9784510E33cD5B87b490E79253BcD81e2E',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/integralhq/integral-size',
     },
