@@ -23,6 +23,7 @@ type BaseConfig = {
   privateHttpProvider?: string;
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
+  uniswapV3EventLoggingSampleRate?: number;
   rfqConfigs: Record<string, RFQConfig>;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
@@ -46,6 +47,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0x7c7f62e5ba00783f57b39df0530e32c195696a57',
+      Adapter04: '0x92Bc947dBFC0E38990abC61e8B5177Cc378CAA8b',
       BuyAdapter: '0xA7f4fBCEB76a1B1c05C106a4289C28B3b91C17ca',
     },
     uniswapV2ExchangeRouterAddress:
@@ -53,6 +55,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {
       DummyParaSwapPool: {
         maker: process.env.TEST_ADDRESS!,
@@ -179,6 +182,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
   [Network.AVALANCHE]: {
@@ -253,6 +257,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
   [Network.OPTIMISM]: {
@@ -278,6 +283,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
+    uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
 };
@@ -313,6 +319,7 @@ export function generateConfig(network: number): Config {
     privateHttpProvider: baseConfig.privateHttpProvider,
     adapterAddresses: { ...baseConfig.adapterAddresses },
     uniswapV2ExchangeRouterAddress: baseConfig.uniswapV2ExchangeRouterAddress,
+    uniswapV3EventLoggingSampleRate: baseConfig.uniswapV3EventLoggingSampleRate,
     rfqConfigs: baseConfig.rfqConfigs,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,

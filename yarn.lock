@@ -817,7 +817,7 @@
     "@openzeppelin/contracts" "^4.7.3"
     "@openzeppelin/contracts-upgradeable" "^4.7.3"
 
-"@hashflow/sdk@^1.0.1", "@hashflow/sdk@^1.2.4":
+"@hashflow/sdk@1.2.4", "@hashflow/sdk@^1.0.1":
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@hashflow/sdk/-/sdk-1.2.4.tgz#edf2d7208d04e6bee1bf69aeaa7df68156db30b1"
   integrity sha512-gEhRudo8e3x3lwzdsfZfhXQHE0C63sH8tcHIT2K/L6sEPUkIz7jbTkfQFaiDVcpGjvUDlCKCEjqGHWE8btnk7Q==
@@ -830,7 +830,7 @@
     "@hashflow/hashverse-contracts" "1.0.2"
     "@hashflow/protocol" "1.0.3"
 
-"@hashflow/taker-js@^0.0.2":
+"@hashflow/taker-js@0.0.2":
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.0.2.tgz#cadcd396ab29ce2fab1cb94f8a2b6f9bc8658c54"
   integrity sha512-3Yly8Eglvs06OpVbnBcNDBfPSmkEiJRSA8HsBwbPrfppagFOnzLCs6Z0U4A8Ztdnic4rbWVokb7r5YEJ0TxgWg==

@@ -272,6 +272,7 @@ export type Config = {
   rfqConfigs: Record<string, RFQConfig>;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
+  uniswapV3EventLoggingSampleRate?: number;
 };
 
 export type BigIntAsString = string;
