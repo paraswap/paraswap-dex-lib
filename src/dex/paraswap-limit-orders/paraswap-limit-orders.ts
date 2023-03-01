@@ -193,7 +193,7 @@ export class ParaSwapLimitOrders
   getCalldataGasCost(
     poolPrices: PoolPrices<ParaSwapLimitOrdersData>,
   ): number | number[] {
-    return (poolPrices.gasCost as number[]).map(g => {
+    const calculateCalldataGasCost = (g: number) => {
       if (!g) return 0;
       const numOrders = Number(BigInt(g) / ONE_ORDER_GASCOST);
       return (
@@ -237,7 +237,10 @@ export class ParaSwapLimitOrders
             // Struct -> orderInfos[i] -> permitMakerAsset
             CALLDATA_GAS_COST.ZERO)
       );
-    });
+    };
+    return typeof poolPrices.gasCost === 'number'
+      ? calculateCalldataGasCost(poolPrices.gasCost)
+      : poolPrices.gasCost.map(calculateCalldataGasCost);
   }
 
   async preProcessTransaction?(
