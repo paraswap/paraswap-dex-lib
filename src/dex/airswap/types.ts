@@ -9,12 +9,9 @@ export type PoolState = {
 };
 
 export type AirswapData = {
-  // TODO: AirswapData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
-  exchange: Address;
-} & Order;
+  maker: string;
+};
+//  & Order;
 
 export type DexParams = {
   swapERC20: string;

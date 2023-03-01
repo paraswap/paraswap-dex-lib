@@ -158,8 +158,8 @@ describe('Airswap', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDT';
+    const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
