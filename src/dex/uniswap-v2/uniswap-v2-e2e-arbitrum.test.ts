@@ -228,10 +228,6 @@ describe('UniswapV2 E2E Arbitrum', () => {
         { name: 'WETH', sellAmount: '700000000000', buyAmount: '1000' },
         { name: 'WBTC', sellAmount: '10', buyAmount: '400000' },
       ],
-      // [
-      //   { name: 'USDC', sellAmount: '100000', buyAmount: '1000' },
-      //   { name: 'ZYB', sellAmount: '1000', buyAmount: '100000' },
-      // ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
