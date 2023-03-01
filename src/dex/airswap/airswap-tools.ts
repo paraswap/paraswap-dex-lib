@@ -1,6 +1,7 @@
 import { providers, utils } from 'ethers';
 import { Token } from '../../types';
 import { MakerRegistry, Maker } from '@airswap/libraries';
+import { Order } from '@airswap/typescript';
 
 const makerRegistry = [
   {
@@ -261,7 +262,10 @@ export async function getTx(
   srcToken: Token,
   destToken: Token,
   amount: string,
-) {
+): Promise<{
+  maker: string;
+  signedOrder: Order;
+}> {
   const maker = await Maker.at(host, { swapContract });
   const response = await maker.getSignerSideOrder(
     amount.toString(),
@@ -270,5 +274,5 @@ export async function getTx(
     senderWallet,
   );
   console.log('[AIRSWAP]', 'getTx', response);
-  return Promise.resolve({ maker: host, signedOrder: response });
+  return Promise.resolve({ maker: host, signedOrder: response })
 }

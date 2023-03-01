@@ -46,11 +46,6 @@
   resolved "https://registry.yarnpkg.com/@airswap/constants/-/constants-3.0.1.tgz#cf5f99c99da4612dde2ca373af0f39e9da7e9374"
   integrity sha512-XJ0EhohJGW3g/jvEv2bUYU8aKL0XMDmVoAraqSdETlx1vamFvOd2rTqHT81Ch46wPTF7qDNzHRh6+HjvAmDOPw==
 
-"@airswap/constants@3.0.6":
-  version "3.0.6"
-  resolved "https://registry.yarnpkg.com/@airswap/constants/-/constants-3.0.6.tgz#26e516a7db617483647658208927df1bc5608692"
-  integrity sha512-4n/+X3FMwC1vt2HV+k/5mBWoiVGxg3WWYB0Xa48R3lqW5BfB/8QaWXbnO0OGa3PvzUUD53yqSItXhYO7rnFDYw==
-
 "@airswap/indexers@3.1.2":
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/@airswap/indexers/-/indexers-3.1.2.tgz#c07113d5e0092f86f2a41a0403c4da1ad3a9ce68"
@@ -65,7 +60,7 @@
   dependencies:
     get-parameter-names "^0.3.0"
 
-"@airswap/libraries@^3.5.0":
+"@airswap/libraries@3.5.0":
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/@airswap/libraries/-/libraries-3.5.0.tgz#cf6404b76c0161135b62bb368f39a71b04a6f47f"
   integrity sha512-qitsls7o0AwLschCpVkxLtELWcZtdjrqzbbsbIZJJC/6stSuZdVqHs2S21X7riTAs8wSw8HSEHCPLycB5n1F/w==
@@ -93,7 +88,7 @@
   dependencies:
     "@openzeppelin/contracts" "^4.3.1"
 
-"@airswap/swap-erc20@^3.0.2":
+"@airswap/swap-erc20@3.0.2":
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/@airswap/swap-erc20/-/swap-erc20-3.0.2.tgz#9571180d19ca98137780f5fd3905ad541e9ae4b3"
   integrity sha512-F9orcteYFp69a2pk1cMCBfI2cB3IFxBFmQDZVUejL3deRrO7lXDq86u7R1FtUlI07tdZ/Op8p77tKknelwgWMg==
@@ -113,14 +108,6 @@
   integrity sha512-kN6ScCiMMFNGegVSs+n+6X3UDis2YqX1lXriIQyDE8DVqI3l7oJU6/RIPOLdg8iRFU6Z0IUgSInyoiVxhvY5ig==
   dependencies:
     "@airswap/constants" "3.0.1"
-    "@uniswap/token-lists" "^1.0.0-beta.26"
-
-"@airswap/typescript@^3.0.3":
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/@airswap/typescript/-/typescript-3.0.3.tgz#3a52d4e436a23a4324340581f2a6c544e4f92387"
-  integrity sha512-nih426Y4HJYPw7ZFcXhJUdVH0EijU8rwnfqa+iElN1L2+87/FKxpt+DCdGDgKQz6ben8xIJ37G+3YyeGu/GzCA==
-  dependencies:
-    "@airswap/constants" "3.0.6"
     "@uniswap/token-lists" "^1.0.0-beta.26"
 
 "@airswap/utils@3.0.4":
