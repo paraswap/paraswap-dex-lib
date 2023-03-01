@@ -384,56 +384,60 @@ describe('ZyberswapStable', () => {
       generateConfig(network).privateHttpProvider,
       network,
     );
-    describe('simpleSwap', () => {
-      const contractMethod = ContractMethod.simpleSwap;
-      it('SELL USDC -> USDT', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          '111000000',
-          SwapSide.SELL,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
 
-    describe('multiSwap', () => {
-      const contractMethod = ContractMethod.multiSwap;
-      it('SELL USDC -> USDT', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          '111000000',
-          SwapSide.SELL,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+    ]);
 
-    describe('megaSwap', () => {
-      const contractMethod = ContractMethod.megaSwap;
-      it('SELL USDC -> USDT', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          '111000000',
-          SwapSide.SELL,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
+    const pairs: { name: string; sellAmount: string; }[][] = [
+      [{ name: 'USDC', sellAmount: '111000000' }, { name: 'USDT', sellAmount: '111000000' }],
+      [{ name: 'USDC', sellAmount: '111000000' }, { name: 'DAI', sellAmount: '111000000000000000' }],
+      [{ name: 'USDT', sellAmount: '111000000' }, { name: 'DAI', sellAmount: '111000000000000000' }],
+    ];
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach((pair) => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  pair[0].sellAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  pair[1].sellAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
   });
 });
 
