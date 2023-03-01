@@ -12,9 +12,14 @@ import {
   NumberAsString,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isTruthy,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -31,6 +36,7 @@ import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
+import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_FUNCTION_CALL_GAS_COST,
@@ -54,6 +60,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
@@ -66,12 +74,17 @@ export class UniswapV3
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
+  intervalTask?: NodeJS.Timeout;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV3Config);
 
   logger: Logger;
 
   private uniswapMulti: Contract;
+  private stateMultiContract: Contract;
+
+  private notExistingPoolSetKey: string;
 
   constructor(
     protected network: Network,
@@ -84,16 +97,24 @@ export class UniswapV3
     protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
+    this.logger = dexHelper.getLogger(dexKey + '-' + network);
     this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
       UniswapV3MultiABI as AbiItem[],
       this.config.uniswapMulticall,
     );
+    this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
+      UniswapV3StateMulticallABI as AbiItem[],
+      this.config.stateMulticall,
+    );
+
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
+
+    this.notExistingPoolSetKey =
+      `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
   }
 
   get supportedFees() {
@@ -121,6 +142,23 @@ export class UniswapV3
         ),
       ),
     );
+
+    if (!this.dexHelper.config.isSlave) {
+      const cleanExpiredNotExistingPoolsKeys = async () => {
+        const maxTimestamp =
+          Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+        await this.dexHelper.cache.zremrangebyscore(
+          this.notExistingPoolSetKey,
+          0,
+          maxTimestamp,
+        );
+      };
+
+      this.intervalTask = setInterval(
+        cleanExpiredNotExistingPoolsKeys.bind(this),
+        UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+      );
+    }
   }
 
   async getPool(
@@ -131,10 +169,25 @@ export class UniswapV3
   ): Promise<UniswapV3EventPool | null> {
     let pool =
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
+
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
       const key = `${token0}_${token1}_${fee}`.toLowerCase();
+
+      const notExistingPoolScore = await this.dexHelper.cache.zscore(
+        this.notExistingPoolSetKey,
+        key,
+      );
+
+      const poolDoesNotExist = notExistingPoolScore !== null;
+
+      if (poolDoesNotExist) {
+        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
+          null;
+        return null;
+      }
+
       await this.dexHelper.cache.hset(
         this.dexmapKey,
         key,
@@ -149,7 +202,8 @@ export class UniswapV3
       pool = new UniswapV3EventPool(
         this.dexHelper,
         this.dexKey,
-        this.config.stateMulticall,
+        this.stateMultiContract,
+        this.erc20Interface,
         this.config.factory,
         fee,
         token0,
@@ -168,6 +222,13 @@ export class UniswapV3
         });
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+          // no need to await we want the set to have the pool key but it's not blocking
+          this.dexHelper.cache.zadd(
+            this.notExistingPoolSetKey,
+            [Date.now(), key],
+            'NX',
+          );
+
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
           pool = null;
@@ -185,6 +246,18 @@ export class UniswapV3
         }
       }
 
+      if (pool !== null) {
+        const allEventPools = Object.values(this.eventPools);
+        this.logger.info(
+          `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
+            // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
+            .reduce(
+              (acc, curr) => (curr !== null ? ++acc : acc),
+              0,
+            )} non-null pools or ${allEventPools.length} total pools`,
+        );
+      }
+
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
         pool;
     }
@@ -195,7 +268,7 @@ export class UniswapV3
     const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolconfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
       );
       return false;
     }
@@ -403,24 +476,27 @@ export class UniswapV3
       if (_srcAddress === _destAddress) return null;
 
       let selectedPools: UniswapV3EventPool[] = [];
+
       if (!limitPools) {
-        for (const fee of this.supportedFees) {
-          let pool =
-            this.eventPools[
-              this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-            ];
-          if (!pool) {
-            pool = await this.getPool(
-              _srcAddress,
-              _destAddress,
-              fee,
-              blockNumber,
-            );
-          }
-          if (pool) {
-            selectedPools.push(pool);
-          }
-        }
+        selectedPools = (
+          await Promise.all(
+            this.supportedFees.map(async fee => {
+              const locallyFoundPool =
+                this.eventPools[
+                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
+                ];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const newlyFetchedPool = await this.getPool(
+                _srcAddress,
+                _destAddress,
+                fee,
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
       } else {
         const pairIdentifierWithoutFee = this.getPoolIdentifier(
           _srcAddress,
@@ -432,22 +508,24 @@ export class UniswapV3
         const poolIdentifiers = limitPools.filter(identifier =>
           identifier.startsWith(pairIdentifierWithoutFee),
         );
-        for (const identifier of poolIdentifiers) {
-          let pool = this.eventPools[identifier];
-          if (!pool) {
-            const [, srcAddress, destAddress, fee] = identifier.split('_');
-            pool = await this.getPool(
-              srcAddress,
-              destAddress,
-              BigInt(fee),
-              blockNumber,
-            );
-          }
 
-          if (pool) {
-            selectedPools.push(pool);
-          }
-        }
+        selectedPools = (
+          await Promise.all(
+            poolIdentifiers.map(async identifier => {
+              let locallyFoundPool = this.eventPools[identifier];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const newlyFetchedPool = await this.getPool(
+                srcAddress,
+                destAddress,
+                BigInt(fee),
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
       }
 
       if (selectedPools.length === 0) return null;
@@ -493,91 +571,75 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result = poolsToUse.poolWithState.map((pool, i) => {
-        const state = states[i];
+      const result = await Promise.all(
+        poolsToUse.poolWithState.map(async (pool, i) => {
+          const state = states[i];
 
-        let balance = 0n;
-        if (_srcAddress === pool.token0) {
-          if (side === SwapSide.SELL) {
-            balance = pool.getBalanceToken0(blockNumber);
-          } else {
-            balance = pool.getBalanceToken1(blockNumber);
+          if (state.liquidity <= 0n) {
+            this.logger.trace(`pool have 0 liquidity`);
+            return null;
           }
-        } else {
-          if (side === SwapSide.SELL) {
-            balance = pool.getBalanceToken1(blockNumber);
-          } else {
-            balance = pool.getBalanceToken0(blockNumber);
-          }
-        }
 
-        const requiredAmount = amounts[amounts.length - 1];
-        if (balance < requiredAmount) {
-          this.logger.warn(
-            `pool is missing liquidity (${pool.poolAddress}) (srcToken: ${_srcAddress}, side: ${side}) have ${balance} but we need ${requiredAmount} to use it`,
+          const balanceDestToken =
+            _destAddress === pool.token0 ? state.balance0 : state.balance1;
+
+          const unitResult = this._getOutputs(
+            state,
+            [unitAmount],
+            zeroForOne,
+            side,
+            balanceDestToken,
           );
-          return null;
-        }
+          const pricesResult = this._getOutputs(
+            state,
+            _amounts,
+            zeroForOne,
+            side,
+            balanceDestToken,
+          );
 
-        if (state.liquidity <= 0n) {
-          this.logger.warn(`pool have 0 liquidity`);
-          return null;
-        }
+          if (!unitResult || !pricesResult) {
+            this.logger.debug('Prices or unit is not calculated');
+            return null;
+          }
 
-        const unitResult = this._getOutputs(
-          state,
-          [unitAmount],
-          zeroForOne,
-          side,
-        );
-        const pricesResult = this._getOutputs(
-          state,
-          _amounts,
-          zeroForOne,
-          side,
-        );
-
-        if (!unitResult || !pricesResult) {
-          this.logger.debug('Prices or unit is not calculated');
-          return null;
-        }
-
-        const prices = [0n, ...pricesResult.outputs];
-        const gasCost = [
-          0,
-          ...pricesResult.outputs.map((p, index) => {
-            if (p == 0n) {
-              return 0;
-            } else {
-              return (
-                UNISWAPV3_FUNCTION_CALL_GAS_COST +
-                pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
-              );
-            }
-          }),
-        ];
-        return {
-          unit: unitResult.outputs[0],
-          prices,
-          data: {
-            path: [
-              {
-                tokenIn: _srcAddress,
-                tokenOut: _destAddress,
-                fee: pool.feeCode.toString(),
-              },
-            ],
-          },
-          poolIdentifier: this.getPoolIdentifier(
-            pool.token0,
-            pool.token1,
-            pool.feeCode,
-          ),
-          exchange: this.dexKey,
-          gasCost: gasCost,
-          poolAddresses: [pool.poolAddress],
-        };
-      });
+          const prices = [0n, ...pricesResult.outputs];
+          const gasCost = [
+            0,
+            ...pricesResult.outputs.map((p, index) => {
+              if (p == 0n) {
+                return 0;
+              } else {
+                return (
+                  UNISWAPV3_FUNCTION_CALL_GAS_COST +
+                  pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
+                );
+              }
+            }),
+          ];
+          return {
+            unit: unitResult.outputs[0],
+            prices,
+            data: {
+              path: [
+                {
+                  tokenIn: _srcAddress,
+                  tokenOut: _destAddress,
+                  fee: pool.feeCode.toString(),
+                },
+              ],
+            },
+            poolIdentifier: this.getPoolIdentifier(
+              pool.token0,
+              pool.token1,
+              pool.feeCode,
+            ),
+            exchange: this.dexKey,
+            gasCost: gasCost,
+            poolAddresses: [pool.poolAddress],
+          };
+        }),
+      );
       const rpcResults = await rpcResultsPromise;
 
       const notNullResult = result.filter(
@@ -824,9 +886,44 @@ export class UniswapV3
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
+    destTokenBalance: bigint,
   ): OutputResult | null {
     try {
-      return uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
+      const outputsResult = uniswapV3Math.queryOutputs(
+        state,
+        amounts,
+        zeroForOne,
+        side,
+      );
+
+      if (side === SwapSide.SELL) {
+        if (outputsResult.outputs[0] > destTokenBalance) {
+          return null;
+        }
+
+        for (let i = 0; i < outputsResult.outputs.length; i++) {
+          if (outputsResult.outputs[i] > destTokenBalance) {
+            outputsResult.outputs[i] = 0n;
+            outputsResult.tickCounts[i] = 0;
+          }
+        }
+      } else {
+        if (amounts[0] > destTokenBalance) {
+          return null;
+        }
+
+        // This may be improved by first checking outputs and requesting outputs
+        // only for amounts that makes more sense, but I don't think this is really
+        // important now
+        for (let i = 0; i < amounts.length; i++) {
+          if (amounts[i] > destTokenBalance) {
+            outputsResult.outputs[i] = 0n;
+            outputsResult.tickCounts[i] = 0;
+          }
+        }
+      }
+
+      return outputsResult;
     } catch (e) {
       this.logger.debug(
         `${this.dexKey}: received error in _getOutputs while calculating outputs`,
@@ -894,5 +991,12 @@ export class UniswapV3
     return side === SwapSide.BUY
       ? pack(types.reverse(), _path.reverse())
       : pack(types, _path);
+  }
+
+  releaseResources() {
+    if (this.intervalTask !== undefined) {
+      clearInterval(this.intervalTask);
+      this.intervalTask = undefined;
+    }
   }
 }

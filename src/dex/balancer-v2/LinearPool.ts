@@ -6,6 +6,7 @@ import { BasePool } from './balancer-v2-pool';
 import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
 import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
 import { SwapSide } from '../../constants';
+import { keyBy } from 'lodash';
 
 export enum PairTypes {
   BptToMainToken,
@@ -297,7 +298,8 @@ export class LinearPool extends BasePool {
     const balances: bigint[] = [];
     const scalingFactors: bigint[] = [];
 
-    const tokens = pool.tokens.map((t, i) => {
+    const tokens = poolState.orderedTokens.map((tokenAddress, i) => {
+      const t = pool.tokensMap[tokenAddress.toLowerCase()];
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
       if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
       if (t.address.toLowerCase() === pool.address.toLowerCase()) bptIndex = i;
@@ -394,6 +396,12 @@ export class LinearPool extends BasePool {
       t => t.address.toLowerCase() === pool.address.toLowerCase(),
     );
 
+    const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
+      address: address.toLowerCase(),
+      balance: BigInt(poolTokens.balances[idx].toString()),
+      scalingFactor: BigInt(scalingFactors[idx].toString()),
+    }));
+
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
       mainIndex: Number(pool.mainIndex),
@@ -401,20 +409,8 @@ export class LinearPool extends BasePool {
       bptIndex,
       lowerTarget: BigInt(lowerTarget.toString()),
       upperTarget: BigInt(upperTarget.toString()),
-      tokens: poolTokens.tokens.reduce(
-        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
-          const tokenState: TokenState = {
-            balance: BigInt(poolTokens.balances[j].toString()),
-          };
-
-          if (scalingFactors)
-            tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
-
-          ptAcc[pt.toLowerCase()] = tokenState;
-          return ptAcc;
-        },
-        {},
-      ),
+      tokens: keyBy(tokens, 'address'),
+      orderedTokens: poolTokens.tokens,
     };
 
     pools[pool.address] = poolState;
@@ -426,23 +422,14 @@ export class LinearPool extends BasePool {
   Swapping to BPT allows for a very large amount as pre-minted.
   Swapping to main token - you can use 99% of the balance of the main token (Dani)
   */
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
-    poolPairData: LinearPoolPairData,
-  ): boolean {
-    const swapMax =
+  getSwapMaxAmount(poolPairData: LinearPoolPairData, side: SwapSide): bigint {
+    return (
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
         99n) /
-      100n;
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
+      100n
+    );
   }
 }

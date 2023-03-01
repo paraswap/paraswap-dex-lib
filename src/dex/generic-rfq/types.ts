@@ -71,6 +71,7 @@ export type RFQConfig = {
   firmRateConfig: RequestConfigWithAuth;
   blacklistConfig?: FetcherParams;
   maker: Address;
+  pathToRemove?: string;
 };
 
 export type TokenWithAmount = Token & {
@@ -93,3 +94,5 @@ export type RFQFirmRateResponse = {
   status: 'accepted' | 'rejected';
   order: AugustusOrderWithStringAndSignature;
 };
+
+export class SlippageCheckError extends Error {}

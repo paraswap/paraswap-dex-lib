@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -23,7 +24,18 @@ const USDC = {
 
 // Example for checking metaStable Pool, i.e. WETH<>wstETH
 const wstETH = {
-  address: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+  address: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0'.toLowerCase(),
+  decimals: 18,
+};
+
+const MATIC = {
+  address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'.toLowerCase(),
+  decimals: 18,
+};
+
+// Example for checking metaStable Pool, i.e. WETH<>wstETH
+const stMATIC = {
+  address: '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase(),
   decimals: 18,
 };
 
@@ -48,15 +60,15 @@ const bbadai = {
 const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 async function main() {
-  const dexHelper = new DummyDexHelper(Network.MAINNET);
+  const dexHelper = new DummyDexHelper(Network.POLYGON);
   const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
-  const balancerV2 = new BalancerV2(Network.MAINNET, 'BalancerV2', dexHelper);
+  const balancerV2 = new BalancerV2(Network.POLYGON, 'BalancerV2', dexHelper);
 
   await balancerV2.setupEventPools(blocknumber);
 
-  const from = bbausd;
-  const to = bbadai;
+  const from = MATIC;
+  const to = stMATIC;
 
   const pools = await balancerV2.getPoolIdentifiers(
     from,

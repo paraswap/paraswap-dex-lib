@@ -24,6 +24,9 @@ export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 export const FETCH_POOL_IDENTIFIER_TIMEOUT = 1 * 1000; // 1s
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
+// How frequently logs wil be printed
+export const STATEFUL_EVENT_SUBSCRIBER_LOG_BATCH_PERIOD = 60 * 1000;
+
 export enum Network {
   MAINNET = 1,
   ROPSTEN = 3,
@@ -35,7 +38,6 @@ export enum Network {
   ARBITRUM = 42161,
   OPTIMISM = 10,
 }
-
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 
 export enum LIMIT_ORDER_PROVIDERS {

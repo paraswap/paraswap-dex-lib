@@ -7,7 +7,6 @@ import Fetcher from '../../lib/fetcher/fetcher';
 
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
-import { authHttp } from './security';
 import {
   BlackListResponse,
   PairMap,
@@ -18,6 +17,7 @@ import {
   RFQConfig,
   RFQFirmRateResponse,
   RFQPayload,
+  RFQSecret,
   TokensResponse,
   TokenWithInfo,
 } from './types';
@@ -30,6 +30,9 @@ import {
   tokensResponseValidator,
   validateAndCast,
 } from './validators';
+import { genericRFQAuthHttp } from './security';
+
+const GET_FIRM_RATE_TIMEOUT_MS = 2000;
 
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
   [
@@ -49,7 +52,11 @@ export class RateFetcher {
 
   private firmRateAuth?: (options: RequestConfig) => void;
 
-  private blackListCacheKey: string;
+  public blackListCacheKey: string;
+
+  private authHttp: (
+    secet: RFQSecret,
+  ) => (options: RequestConfig) => RequestConfig;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -57,6 +64,7 @@ export class RateFetcher {
     private dexKey: string,
     private logger: Logger,
   ) {
+    this.authHttp = genericRFQAuthHttp(config.pathToRemove);
     this.tokensFetcher = new Fetcher<TokensResponse>(
       dexHelper.httpRequest,
       {
@@ -68,7 +76,7 @@ export class RateFetcher {
               tokensResponseValidator,
             );
           },
-          authenticate: authHttp(config.tokensConfig.secret),
+          authenticate: this.authHttp(config.tokensConfig.secret),
         },
         handler: this.handleTokensResponse.bind(this),
       },
@@ -84,7 +92,7 @@ export class RateFetcher {
           caster: (data: unknown) => {
             return validateAndCast<PairsResponse>(data, pairsResponseValidator);
           },
-          authenticate: authHttp(config.pairsConfig.secret),
+          authenticate: this.authHttp(config.pairsConfig.secret),
         },
         handler: this.handlePairsResponse.bind(this),
       },
@@ -100,7 +108,7 @@ export class RateFetcher {
           caster: (data: unknown) => {
             return validateAndCast<RatesResponse>(data, pricesResponse);
           },
-          authenticate: authHttp(config.rateConfig.secret),
+          authenticate: this.authHttp(config.rateConfig.secret),
         },
         handler: this.handleRatesResponse.bind(this),
       },
@@ -120,7 +128,7 @@ export class RateFetcher {
                 blacklistResponseValidator,
               );
             },
-            authenticate: authHttp(config.rateConfig.secret),
+            authenticate: this.authHttp(config.rateConfig.secret),
           },
           handler: this.handleBlackListResponse.bind(this),
         },
@@ -131,7 +139,7 @@ export class RateFetcher {
 
     this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (this.config.firmRateConfig.secret) {
-      this.firmRateAuth = authHttp(this.config.firmRateConfig.secret);
+      this.firmRateAuth = this.authHttp(this.config.firmRateConfig.secret);
     }
   }
 
@@ -248,7 +256,7 @@ export class RateFetcher {
     );
   }
 
-  public getPairsLiqudity(tokenAddress: string) {
+  public getPairsLiquidity(tokenAddress: string) {
     const token = this.addressToTokenMap[tokenAddress];
 
     const pairNames = Object.keys(this.pairs);
@@ -367,6 +375,7 @@ export class RateFetcher {
       let payload = {
         data: _payload,
         ...this.config.firmRateConfig,
+        timeout: GET_FIRM_RATE_TIMEOUT_MS,
       };
 
       if (this.firmRateAuth) {

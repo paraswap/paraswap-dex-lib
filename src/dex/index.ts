@@ -1,4 +1,4 @@
-import { Address, UnoptimizedRate } from '../types';
+import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
@@ -38,7 +38,7 @@ import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
-import { WooFi } from './woo-fi/woo-fi';
+// import { WooFi } from './woo-fi/woo-fi';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
@@ -52,9 +52,12 @@ import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
+import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { Hashflow } from './hashflow/hashflow';
+import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { Integral } from './integral/integral';
 
 const LegacyDexes = [
@@ -99,15 +102,18 @@ const Dexes = [
   Platypus,
   GMX,
   JarvisV6,
-  WooFi,
+  // WooFi,
   ParaSwapLimitOrders,
   Solidly,
+  SolidlyEthereum,
   SpiritSwapV2,
   Velodrome,
   Cone,
   Synthetix,
+  CurveV1Factory,
   SwaapV1,
   WstETH,
+  Hashflow,
   Integral,
 ];
 
@@ -131,6 +137,7 @@ export class DexAdapterService {
   isLegacy: { [dexKey: string]: boolean } = {};
   // dexKeys only has keys for non legacy dexes
   dexKeys: string[] = [];
+  genericRFQDexKeys: Set<string> = new Set();
   uniswapV2Alias: string | null;
 
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
@@ -195,6 +202,7 @@ export class DexAdapterService {
         rfqConfigs[rfqName],
       );
       handleDex(dex, rfqName);
+      this.genericRFQDexKeys.add(rfqName.toLowerCase());
     });
 
     this.directFunctionsNames = [...LegacyDexes, ...Dexes]
@@ -253,6 +261,9 @@ export class DexAdapterService {
 
   getDexKeySpecial(dexKey: string, isAdapters: boolean = false) {
     dexKey = dexKey.toLowerCase();
+    if (this.genericRFQDexKeys.has(dexKey)) {
+      return dexKey;
+    }
     if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
     else if ('uniswapforkoptimized' === dexKey) {
       if (!this.uniswapV2Alias)
