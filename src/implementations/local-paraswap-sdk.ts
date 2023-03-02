@@ -38,6 +38,10 @@ export interface IParaSwapSDK {
   initializePricing?(): Promise<void>;
 
   releaseResources?(): Promise<void>;
+
+  dexHelper?: IDexHelper & {
+    replaceProviderWithRPC?: (rpcUrl: string) => void;
+  };
 }
 
 const chunks = 10;
@@ -51,9 +55,10 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   constructor(
     protected network: number,
     protected dexKey: string,
+    rpcUrl: string,
     limitOrderProvider?: DummyLimitOrderProvider,
   ) {
-    this.dexHelper = new DummyDexHelper(this.network);
+    this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
     this.dexAdapterService = new DexAdapterService(
       this.dexHelper,
       this.network,

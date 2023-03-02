@@ -26,7 +26,7 @@ import {
   OrderInfo,
   ParaSwapOrderBook,
 } from './types';
-import { ParaSwapLimitOrdersConfig, Adapters } from './config';
+import { Adapters, ParaSwapLimitOrdersConfig } from './config';
 import { LimitOrderExchange } from '../limit-order-exchange';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import augustusRFQABI from '../../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
@@ -52,17 +52,18 @@ export class ParaSwapLimitOrders
 
   logger: Logger;
 
+  protected augustusRFQAddress: Address;
+
   constructor(
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] ? Adapters[network] : {},
-    protected augustusRFQAddress = ParaSwapLimitOrdersConfig[dexKey][
-      network
-    ].rfqAddress.toLowerCase(),
     protected rfqIface = new Interface(augustusRFQABI),
   ) {
     super(dexHelper, dexKey);
+    this.augustusRFQAddress =
+      dexHelper.config.data.augustusRFQAddress.toLowerCase();
     this.logger = dexHelper.getLogger(dexKey);
   }
 
@@ -192,7 +193,7 @@ export class ParaSwapLimitOrders
   getCalldataGasCost(
     poolPrices: PoolPrices<ParaSwapLimitOrdersData>,
   ): number | number[] {
-    return (poolPrices.gasCost as number[]).map(g => {
+    const calculateCalldataGasCost = (g: number) => {
       if (!g) return 0;
       const numOrders = Number(BigInt(g) / ONE_ORDER_GASCOST);
       return (
@@ -236,7 +237,10 @@ export class ParaSwapLimitOrders
             // Struct -> orderInfos[i] -> permitMakerAsset
             CALLDATA_GAS_COST.ZERO)
       );
-    });
+    };
+    return typeof poolPrices.gasCost === 'number'
+      ? calculateCalldataGasCost(poolPrices.gasCost)
+      : poolPrices.gasCost.map(calculateCalldataGasCost);
   }
 
   async preProcessTransaction?(

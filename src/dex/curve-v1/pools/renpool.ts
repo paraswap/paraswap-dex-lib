@@ -1,6 +1,6 @@
 import { Address } from '../../../types';
 import { ThreePool } from './3pool';
-import StableSwapRen from '../../../abi/curve/StableSwapRen.json';
+import StableSwapRen from '../../../abi/curve-v1/StableSwapRen.json';
 import { IDexHelper } from '../../../dex-helper';
 import { bigNumberify } from '../../../utils';
 

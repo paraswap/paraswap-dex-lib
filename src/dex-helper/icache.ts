@@ -7,7 +7,11 @@ export interface ICache {
 
   rawget(key: string): Promise<string | null>;
 
+  rawset(key: string, value: string, ttl: number): Promise<string | null>;
+
   rawdel(key: string): Promise<void>;
+
+  del(dexKey: string, network: number, cacheKey: string): Promise<number>;
 
   setex(
     dexKey: string,
@@ -32,9 +36,27 @@ export interface ICache {
     value: string,
   ): Promise<void>;
 
+  sadd(setKey: string, key: string): Promise<void>;
+
+  zadd(
+    key: string,
+    bulkItemsToAdd: (number | string)[],
+    option?: 'NX',
+  ): Promise<number>;
+
+  zremrangebyscore(key: string, min: number, max: number): Promise<number>;
+
+  zscore(setKey: string, key: string): Promise<string | null>;
+
+  sismember(setKey: string, key: string): Promise<boolean>;
+
   hset(mapKey: string, key: string, value: string): Promise<void>;
 
+  hdel(mapKey: string, keys: string[]): Promise<number>;
+
   hget(mapKey: string, key: string): Promise<string | null>;
+
+  hgetAll(mapKey: string): Promise<Record<string, string>>;
 
   publish(channel: string, msg: string): Promise<void>;
 

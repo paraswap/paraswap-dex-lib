@@ -11,20 +11,32 @@ import { Address, LoggerConstructor, Token } from '../types';
 import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
+import { getLogger } from '../lib/log4js';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { generateConfig, ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
+import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
 
+const logger = getLogger('DummyDexHelper');
+
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
+  private storage: Record<string, string> = {};
+
+  private setMap: Record<string, Set<string>> = {};
+
   async get(
     dexKey: string,
     network: number,
     cacheKey: string,
   ): Promise<string | null> {
+    const key = `${network}_${dexKey}_${cacheKey}`.toLowerCase();
+    if (this.storage[key]) {
+      return this.storage[key];
+    }
     return null;
   }
 
@@ -32,8 +44,24 @@ class DummyCache implements ICache {
     return null;
   }
 
+  async rawset(
+    key: string,
+    value: string,
+    ttl: number,
+  ): Promise<string | null> {
+    return null;
+  }
+
   async rawdel(key: string): Promise<void> {
     return;
+  }
+
+  async del(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<number> {
+    return 0;
   }
 
   async setex(
@@ -43,6 +71,7 @@ class DummyCache implements ICache {
     ttlSeconds: number,
     value: string,
   ): Promise<void> {
+    this.storage[`${network}_${dexKey}_${cacheKey}`.toLowerCase()] = value;
     return;
   }
 
@@ -50,8 +79,12 @@ class DummyCache implements ICache {
     dexKey: string,
     network: number,
     cacheKey: string,
-    ttlSeconds: number,
+    _ttlSeconds: number,
   ): Promise<string | null> {
+    const key = `${network}_${dexKey}_${cacheKey}`.toLowerCase();
+    if (this.storage[key]) {
+      return this.storage[key];
+    }
     return null;
   }
 
@@ -65,12 +98,51 @@ class DummyCache implements ICache {
     return;
   }
 
+  async sadd(setKey: string, key: string): Promise<void> {
+    let set = this.setMap[setKey];
+    if (!set) {
+      this.setMap[setKey] = new Set();
+      set = this.setMap[setKey];
+    }
+
+    set.add(key);
+  }
+
+  async zremrangebyscore(key: string, min: number, max: number) {
+    return 0;
+  }
+
+  async zadd(key: string, bulkItemsToAdd: (number | string)[], option?: 'NX') {
+    return 0;
+  }
+
+  async zscore() {
+    return null;
+  }
+
+  async sismember(setKey: string, key: string): Promise<boolean> {
+    let set = this.setMap[setKey];
+    if (!set) {
+      return false;
+    }
+
+    return set.has(key);
+  }
+
   async hset(mapKey: string, key: string, value: string): Promise<void> {
     return;
   }
 
   async hget(mapKey: string, key: string): Promise<string | null> {
     return null;
+  }
+
+  async hgetAll(mapKey: string): Promise<Record<string, string>> {
+    return {};
+  }
+
+  async hdel(mapKey: string, keys: string[]): Promise<number> {
+    return 0;
   }
 
   async publish(channel: string, msg: string): Promise<void> {
@@ -91,7 +163,7 @@ class DummyCache implements ICache {
   ): void {}
 }
 
-class DummyRequestWrapper implements IRequestWrapper {
+export class DummyRequestWrapper implements IRequestWrapper {
   async get(
     url: string,
     timeout?: number,
@@ -127,27 +199,33 @@ class DummyRequestWrapper implements IRequestWrapper {
     });
     return axiosResult.data;
   }
+
+  request<T = any, R = Response<T>>(config: RequestConfig<any>): Promise<R> {
+    return axios.request(config);
+  }
 }
 
 class DummyBlockManager implements IBlockManager {
+  constructor(public _blockNumber: number = 42) {}
+
   subscribeToLogs(
     subscriber: EventSubscriber,
     contractAddress: Address | Address[],
     afterBlockNumber: number,
   ): void {
-    console.log(
+    logger.info(
       `Subscribed to logs ${subscriber.name} ${contractAddress} ${afterBlockNumber}`,
     );
     subscriber.isTracking = () => true;
   }
 
   getLatestBlockNumber(): number {
-    return 42;
+    return this._blockNumber;
   }
 
   getActiveChainHead(): Readonly<BlockHeader> {
     return {
-      number: 42,
+      number: this._blockNumber,
       hash: '0x42',
     } as BlockHeader;
   }
@@ -166,15 +244,17 @@ export class DummyDexHelper implements IDexHelper {
   web3Provider: Web3;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 
-  constructor(network: number) {
+  constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
     this.provider = new StaticJsonRpcProvider(
-      this.config.data.privateHttpProvider,
+      rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
       network,
     );
-    this.web3Provider = new Web3(this.config.data.privateHttpProvider);
+    this.web3Provider = new Web3(
+      rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
+    );
     this.multiContract = new this.web3Provider.eth.Contract(
       multiABIV2 as any,
       this.config.data.multicallV2Address,
@@ -198,5 +278,9 @@ export class DummyDexHelper implements IDexHelper {
       5,
       this.getLogger(`PromiseScheduler-${network}`),
     );
+  }
+
+  replaceProviderWithRPC(rpcUrl: string) {
+    this.provider = new StaticJsonRpcProvider(rpcUrl, this.config.data.network);
   }
 }

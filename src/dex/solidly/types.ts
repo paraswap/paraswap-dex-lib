@@ -2,6 +2,7 @@ import {
   UniswapV2Data,
   UniswapV2PoolOrderedParams,
   DexParams as UniswapV2DexParams,
+  UniswapPool,
 } from '../uniswap-v2/types';
 import { UniswapV2Pair } from '../uniswap-v2/uniswap-v2';
 
@@ -18,12 +19,15 @@ export interface SolidlyPoolOrderedParams extends UniswapV2PoolOrderedParams {
   stable: boolean;
 }
 
-export type SolidlyData = UniswapV2Data;
+export type SolidlyData = UniswapV2Data & { isFeeTokenInRoute: boolean };
+
+export type SolidlyPool = UniswapPool;
 
 export interface DexParams extends Omit<UniswapV2DexParams, 'feeCode'> {
   feeCode: number;
   stableFee?: number;
   volatileFee?: number;
+  feeFactor?: number;
 }
 
 export interface SolidlyPair extends UniswapV2Pair {

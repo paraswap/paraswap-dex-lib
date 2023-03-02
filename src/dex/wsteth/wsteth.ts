@@ -17,7 +17,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { WstETHData, PoolState, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WstETHConfig, Adapters } from './config';
-import { uintDecode } from '../../lib/decoders';
+import { uint256ToBigInt } from '../../lib/decoders';
 import { Utils } from '../../utils';
 import WSTETH_ABI from '../../abi/wstETH.json';
 import STETH_ABI from '../../abi/stETH.json';
@@ -137,12 +137,12 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
             callData: WstETH.stETHIface.encodeFunctionData(
               'getTotalPooledEther',
             ),
-            decodeFunction: uintDecode,
+            decodeFunction: uint256ToBigInt,
           },
           {
             target: this.config.stETHAddress,
             callData: WstETH.stETHIface.encodeFunctionData('getTotalShares'),
-            decodeFunction: uintDecode,
+            decodeFunction: uint256ToBigInt,
           },
         ];
         const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(

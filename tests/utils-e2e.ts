@@ -1,6 +1,6 @@
+/* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
-import { ParaSwap, NetworkID } from 'paraswap';
 import {
   IParaSwapSDK,
   LocalParaswapSDK,
@@ -19,11 +19,17 @@ import {
   Address,
   Token,
   TransferFeeParams,
+  Config,
 } from '../src/types';
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
 import { DummyLimitOrderProvider } from '../src/dex-helper';
+import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
+import axios from 'axios';
+import { SmartToken, StateOverrides } from './smart-tokens';
+import { GIFTER_ADDRESS } from './constants-e2e';
+import { sleep } from './utils';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -51,14 +57,14 @@ const MULTISIG: { [nid: number]: string } = {
 };
 
 class APIParaswapSDK implements IParaSwapSDK {
-  paraSwap: ParaSwap;
+  paraSwap: SimpleFetchSDK;
 
   constructor(protected network: number, protected dexKey: string) {
-    this.paraSwap = new ParaSwap(
-      network as NetworkID,
-      testingEndpoint,
-      generateConfig(network).privateHttpProvider,
-    );
+    this.paraSwap = constructSimpleSDK({
+      chainId: network,
+      axios,
+      apiURL: testingEndpoint,
+    });
   }
 
   async getPrices(
@@ -71,21 +77,20 @@ class APIParaswapSDK implements IParaSwapSDK {
   ): Promise<OptimalRate> {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
-    const priceRoute = (await this.paraSwap.getRate(
-      from.address,
-      to.address,
-      amount.toString(),
-      undefined,
+
+    const priceRoute = await this.paraSwap.swap.getRate({
+      srcToken: from.address,
+      destToken: to.address,
       side,
-      { includeDEXS: this.dexKey, includeContractMethods: [contractMethod] },
-      from.decimals,
-      to.decimals,
-    )) as any;
-    if (priceRoute.message) {
-      throw new Error(
-        `Failed Paraswap.getRate: ${JSON.stringify(priceRoute, null, 2)}`,
-      );
-    }
+      amount: amount.toString(),
+      options: {
+        includeDEXS: [this.dexKey],
+        includeContractMethods: [contractMethod],
+        partner: 'any',
+      },
+      srcDecimals: from.decimals,
+      destDecimals: to.decimals,
+    });
     return priceRoute as OptimalRate;
   }
 
@@ -95,22 +100,27 @@ class APIParaswapSDK implements IParaSwapSDK {
     userAddress: Address,
   ): Promise<TxObject> {
     const minMaxAmount = _minMaxAmount.toString();
-    const swapParams = await this.paraSwap.buildTx(
-      priceRoute.srcToken,
-      priceRoute.destToken,
-      priceRoute.side === SwapSide.SELL ? priceRoute.srcAmount : minMaxAmount,
-      priceRoute.side === SwapSide.SELL ? minMaxAmount : priceRoute.destAmount,
-      priceRoute,
-      userAddress,
-      'paraswap.io',
-      undefined,
-      undefined,
-      undefined,
+    const swapParams = await this.paraSwap.swap.buildTx(
       {
-        ignoreChecks: true, // need to ignore as allowance is only there in simulation!
+        srcToken: priceRoute.srcToken,
+        srcDecimals: priceRoute.srcDecimals,
+        destDecimals: priceRoute.destDecimals,
+        destToken: priceRoute.destToken,
+        srcAmount:
+          priceRoute.side === SwapSide.SELL
+            ? priceRoute.srcAmount
+            : minMaxAmount,
+        destAmount:
+          priceRoute.side === SwapSide.SELL
+            ? minMaxAmount
+            : priceRoute.destAmount,
+        priceRoute,
+        userAddress,
+        partner: 'paraswap.io',
       },
-      priceRoute.srcDecimals,
-      priceRoute.destDecimals,
+      {
+        ignoreChecks: true,
+      },
     );
     return swapParams as TxObject;
   }
@@ -174,6 +184,8 @@ export async function testE2E(
   poolIdentifiers?: string[],
   limitOrderProvider?: DummyLimitOrderProvider,
   transferFees?: TransferFeeParams,
+  // Specified in BPS: part of 10000
+  slippage?: number,
 ) {
   const amount = BigInt(_amount);
   const ts = new TenderlySimulation(network);
@@ -213,9 +225,15 @@ export async function testE2E(
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = useAPI
     ? new APIParaswapSDK(network, dexKey)
-    : new LocalParaswapSDK(network, dexKey, limitOrderProvider);
+    : new LocalParaswapSDK(network, dexKey, '', limitOrderProvider);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
+
+  if (paraswap.dexHelper?.replaceProviderWithRPC) {
+    paraswap.dexHelper?.replaceProviderWithRPC(
+      `https://rpc.tenderly.co/fork/${ts.forkId}`,
+    );
+  }
 
   try {
     const priceRoute = await paraswap.getPrices(
@@ -229,11 +247,12 @@ export async function testE2E(
     );
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
-    // Slippage to be 7%
+    // Calculate slippage. Default is 1%
+    const _slippage = slippage || 100;
     const minMaxAmount =
       (swapSide === SwapSide.SELL
-        ? BigInt(priceRoute.destAmount) * 93n
-        : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+        ? BigInt(priceRoute.destAmount) * (10000n - BigInt(_slippage))
+        : BigInt(priceRoute.srcAmount) * (10000n + BigInt(_slippage))) / 10000n;
     const swapParams = await paraswap.buildTransaction(
       priceRoute,
       minMaxAmount,
@@ -241,6 +260,194 @@ export async function testE2E(
     );
 
     const swapTx = await ts.simulate(swapParams);
+    // Only log gas estimate if testing against API
+    if (useAPI)
+      console.log(
+        `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
+          swapTx!.gasUsed
+        }, Difference: ${
+          parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
+        }`,
+      );
+    console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+    expect(swapTx!.success).toEqual(true);
+  } finally {
+    if (paraswap.releaseResources) {
+      await paraswap.releaseResources();
+    }
+  }
+}
+
+export type TestParamE2E = {
+  config: Config;
+  srcToken: SmartToken;
+  destToken: SmartToken;
+  senderAddress: Address;
+  thirdPartyAddress?: Address;
+  _amount: string;
+  swapSide: SwapSide;
+  dexKey: string;
+  contractMethod: ContractMethod;
+  network: Network;
+  poolIdentifiers?: string[];
+  limitOrderProvider?: DummyLimitOrderProvider;
+  transferFees?: TransferFeeParams;
+  srcTokenBalanceOverrides?: Record<Address, string>;
+  srcTokenAllowanceOverrides?: Record<Address, string>;
+  destTokenBalanceOverrides?: Record<Address, string>;
+  destTokenAllowanceOverrides?: Record<Address, string>;
+  sleepMs?: number;
+};
+
+const makeFakeTransferToSenderAddress = (
+  senderAddress: string,
+  token: Token,
+  amount: string,
+) => {
+  return {
+    from: GIFTER_ADDRESS,
+    to: token.address,
+    data: erc20Interface.encodeFunctionData('transfer', [
+      senderAddress,
+      amount,
+    ]),
+    value: '0',
+  };
+};
+
+export async function newTestE2E({
+  config,
+  srcToken,
+  destToken,
+  senderAddress,
+  thirdPartyAddress,
+  _amount,
+  swapSide,
+  dexKey,
+  contractMethod,
+  network,
+  poolIdentifiers,
+  limitOrderProvider,
+  transferFees,
+  sleepMs,
+}: TestParamE2E) {
+  const amount = BigInt(_amount);
+  const twiceAmount = BigInt(_amount) * 2n;
+  const ts = new TenderlySimulation(network);
+  await ts.setup();
+
+  if (adapterBytecode) {
+    const deployTx = await ts.simulate(
+      deployAdapterParams(adapterBytecode, network),
+    );
+
+    expect(deployTx.success).toEqual(true);
+    const adapterAddress =
+      deployTx.transaction.transaction_info.contract_address;
+    console.log(
+      'Deployed adapter to address',
+      adapterAddress,
+      'used',
+      deployTx.gasUsed,
+      'gas',
+    );
+
+    const whitelistTx = await ts.simulate(
+      whiteListAdapterParams(adapterAddress, network),
+    );
+    expect(whitelistTx.success).toEqual(true);
+  }
+
+  if (thirdPartyAddress) {
+    const stateOverrides: StateOverrides = {
+      networkID: `${network}`,
+      stateOverrides: {},
+    };
+
+    destToken.addBalance(GIFTER_ADDRESS, MAX_UINT);
+    destToken.applyOverrides(stateOverrides);
+
+    const giftTx = makeFakeTransferToSenderAddress(
+      thirdPartyAddress,
+      destToken.token,
+      swapSide === SwapSide.SELL
+        ? twiceAmount.toString()
+        : (BigInt(MAX_UINT) / 4n).toString(),
+    );
+
+    await ts.simulate(giftTx, stateOverrides);
+  }
+
+  const stateOverrides: StateOverrides = {
+    networkID: `${network}`,
+    stateOverrides: {},
+  };
+  srcToken.applyOverrides(stateOverrides);
+  destToken.applyOverrides(stateOverrides);
+
+  if (swapSide === SwapSide.SELL) {
+    srcToken
+      .addBalance(senderAddress, twiceAmount.toString())
+      .addAllowance(
+        senderAddress,
+        config.tokenTransferProxyAddress,
+        amount.toString(),
+      );
+  } else {
+    srcToken
+      .addBalance(senderAddress, MAX_UINT)
+      .addAllowance(
+        senderAddress,
+        config.tokenTransferProxyAddress,
+        (BigInt(MAX_UINT) / 8n).toString(),
+      );
+  }
+
+  srcToken.applyOverrides(stateOverrides);
+  destToken.applyOverrides(stateOverrides);
+
+  const useAPI = testingEndpoint && !poolIdentifiers;
+  // The API currently doesn't allow for specifying poolIdentifiers
+  const paraswap: IParaSwapSDK = new LocalParaswapSDK(
+    network,
+    dexKey,
+    `https://rpc.tenderly.co/fork/${ts.forkId}`,
+    limitOrderProvider,
+  );
+
+  if (paraswap.initializePricing) await paraswap.initializePricing();
+
+  if (sleepMs) {
+    await sleep(sleepMs);
+  }
+  try {
+    const priceRoute = await paraswap.getPrices(
+      srcToken.token,
+      destToken.token,
+      amount,
+      swapSide,
+      contractMethod,
+      poolIdentifiers,
+      transferFees,
+    );
+
+    console.log(JSON.stringify(priceRoute));
+
+    expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
+
+    // Slippage to be 7%
+    const minMaxAmount =
+      (swapSide === SwapSide.SELL
+        ? BigInt(priceRoute.destAmount) * 93n
+        : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+
+    const swapParams = await paraswap.buildTransaction(
+      priceRoute,
+      minMaxAmount,
+      senderAddress,
+    );
+
+    const swapTx = await ts.simulate(swapParams, stateOverrides);
     console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
     // Only log gas estimate if testing against API
     if (useAPI)
@@ -259,3 +466,11 @@ export async function testE2E(
     }
   }
 }
+
+export const getEnv = (envName: string): string => {
+  if (!process.env[envName]) {
+    throw new Error(`Missing ${envName}`);
+  }
+
+  return process.env[envName]!;
+};

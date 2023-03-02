@@ -13,6 +13,7 @@ import {
   ExchangeTxInfo,
   PreprocessTransactionOptions,
   TransferFeeParams,
+  Config,
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
@@ -83,6 +84,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
 }
 
 export interface IDexPricing<ExchangeData> {
+  readonly dexKey: string;
   // This is true if the the DEX is simply
   // wrapping/ unwrapping like weth, lending pools, etc
   // or has a pool where arbitrarily large amounts has
@@ -93,6 +95,11 @@ export interface IDexPricing<ExchangeData> {
   readonly isFeeOnTransferSupported: boolean;
 
   readonly cacheStateKey: string;
+
+  // Used to determine if current dex is state polling type or not
+  // Set to true if there are many pools polling state and there is no
+  // event base support for this Dex
+  readonly isStatePollingDex?: boolean;
 
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
@@ -141,11 +148,14 @@ export interface IDexPricing<ExchangeData> {
   releaseResources?(): AsyncOrSync<void>;
 
   // Build an event based pool with all the info to create inside
-  // a redis key name poolKey
+  // a cache key name poolKey
   addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<boolean>;
   // return true if the userAddress is is blacklisted from the exchange
   // useful for RFQ system
   isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
+
+  // blacklist a specific userAddress from exchange
+  setBlacklist?(userAddress?: Address): AsyncOrSync<boolean>;
 }
 
 export interface IDexPooltracker {
@@ -190,7 +200,9 @@ export interface DexContructor<
   // and networks they are supported. This is useful for using
   // same DEX implementation for multiple forks supported
   // in different set of networks.
-  dexKeysWithNetwork: { key: string; networks: Network[] }[];
+  dexKeysWithNetwork?: { key: string; networks: Network[] }[];
+
+  builderDexKeysWithNetwork?(dexHelper: Config): void;
 }
 
 export type IRouteOptimizer<T> = (formaterRate: T) => T;

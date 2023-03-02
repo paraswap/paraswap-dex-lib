@@ -1,4 +1,4 @@
-import { SwapSide } from 'paraswap-core';
+import { SwapSide } from '@paraswap/core';
 import { Network } from '../../../../constants';
 import { AdapterMappings, DexConfigMap } from '../../../../types';
 import { DexParams } from '../../types';
@@ -13,7 +13,6 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
           reasonableVolume: 1000000000000000000n,
         },
       },
-      factoryAddress: null,
       eventSupportedPools: ['0xb3F0C9ea1F05e312093Fdb031E789A756659B0AC'],
       pools: {
         ACS4USD: {
@@ -120,7 +119,6 @@ export const CurveForksConfig: DexConfigMap<DexParams> = {
           reasonableVolume: 1000000000000000000n,
         },
       },
-      factoryAddress: null,
       eventSupportedPools: ['0x160CAed03795365F3A589f10C379FfA7d75d4E76'],
       pools: {
         StableSwapEllipsis: {

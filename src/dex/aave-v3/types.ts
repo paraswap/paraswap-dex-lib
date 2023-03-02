@@ -1,4 +1,4 @@
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 
 export type Data = {
   fromAToken: boolean;
@@ -36,4 +36,11 @@ export type DexParam = {
   lendingGasCost: number;
   poolAddress: Address;
   wethGatewayAddress: Address;
+};
+
+export type AaveToken = {
+  aSymbol: string;
+  aAddress: string;
+  address: string;
+  decimals: number;
 };

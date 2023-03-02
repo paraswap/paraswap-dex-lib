@@ -373,6 +373,74 @@ describe('IronV2', () => {
   });
 });
 
+describe('ZyberswapStable', () => {
+  const dexKey = 'ZyberswapStable';
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+    ]);
+
+    const pairs: { name: string; sellAmount: string; }[][] = [
+      [{ name: 'USDC', sellAmount: '111000000' }, { name: 'USDT', sellAmount: '111000000' }],
+      [{ name: 'USDC', sellAmount: '111000000' }, { name: 'DAI', sellAmount: '111000000000000000' }],
+      [{ name: 'USDT', sellAmount: '111000000' }, { name: 'DAI', sellAmount: '111000000000000000' }],
+    ];
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach((pair) => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  pair[0].sellAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  pair[1].sellAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
+  });
+});
+
 describe('Saddle', () => {
   const dexKey = 'Saddle';
 

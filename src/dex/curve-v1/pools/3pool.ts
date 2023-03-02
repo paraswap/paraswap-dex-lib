@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Address, Log } from '../../../types';
 
-import StableSwap3Pool from '../../../abi/curve/StableSwap3Pool.json';
+import StableSwap3Pool from '../../../abi/curve-v1/StableSwap3Pool.json';
 import { CurvePool, PoolState } from './curve-pool';
 import { IDexHelper } from '../../../dex-helper';
 import { BN_0 } from '../../../bignumber-constants';

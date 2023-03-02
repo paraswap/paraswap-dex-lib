@@ -6,6 +6,8 @@ import * as StableMath from './StableMath';
 import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
 import { SwapSide } from '../../constants';
 import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
+import ComposableStablePoolABI from '../../abi/balancer-v2/ComposableStable.json';
+import { keyBy } from 'lodash';
 
 enum PairTypes {
   BptToToken,
@@ -22,6 +24,7 @@ type PhantomStablePoolPairData = {
   bptIndex: number;
   swapFee: bigint;
   amp: bigint;
+  actualSupply: bigint | undefined;
 };
 
 /*
@@ -46,11 +49,17 @@ export class PhantomStablePool extends BasePool {
   vaultInterface: Interface;
   poolInterface: Interface;
 
-  constructor(vaultAddress: string, vaultInterface: Interface) {
+  constructor(
+    vaultAddress: string,
+    vaultInterface: Interface,
+    private isComposable = false,
+  ) {
     super();
     this.vaultAddress = vaultAddress;
     this.vaultInterface = vaultInterface;
-    this.poolInterface = new Interface(MetaStablePoolABI);
+    if (isComposable)
+      this.poolInterface = new Interface(ComposableStablePoolABI);
+    else this.poolInterface = new Interface(MetaStablePoolABI);
   }
 
   /*
@@ -71,6 +80,7 @@ export class PhantomStablePool extends BasePool {
       poolPairData.scalingFactors,
       poolPairData.swapFee,
       poolPairData.amp,
+      poolPairData.actualSupply,
     );
   }
 
@@ -110,6 +120,7 @@ export class PhantomStablePool extends BasePool {
     scalingFactors: bigint[],
     swapFeePercentage: bigint,
     amplificationParameter: bigint,
+    actualSupply: bigint | undefined,
   ): bigint[] {
     // Phantom pools allow trading between token and pool BPT
     let pairType: PairTypes;
@@ -130,10 +141,10 @@ export class PhantomStablePool extends BasePool {
       this._upscale(a, scalingFactors[indexIn]),
     );
 
+    let bptSupply: bigint;
+    if (actualSupply) bptSupply = actualSupply;
     // VirtualBPTSupply must be used for the maths
-    const virtualBptSupply = this.MAX_TOKEN_BALANCE.sub(
-      balances[bptIndex],
-    ).toBigInt();
+    else bptSupply = this.MAX_TOKEN_BALANCE.sub(balances[bptIndex]).toBigInt();
 
     const droppedBpt = this.removeBPT(
       balancesUpscaled,
@@ -148,7 +159,7 @@ export class PhantomStablePool extends BasePool {
       droppedBpt.indexIn,
       droppedBpt.indexOut,
       amplificationParameter,
-      virtualBptSupply,
+      bptSupply,
       pairType,
     );
 
@@ -253,7 +264,8 @@ export class PhantomStablePool extends BasePool {
     const balances: bigint[] = [];
     const scalingFactors: bigint[] = [];
 
-    const tokens = pool.tokens.map((t, i) => {
+    const tokens = poolState.orderedTokens.map((tokenAddress, i) => {
+      const t = pool.tokensMap[tokenAddress.toLowerCase()];
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
       if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
       if (t.address.toLowerCase() === pool.address.toLowerCase()) bptIndex = i;
@@ -274,6 +286,7 @@ export class PhantomStablePool extends BasePool {
       bptIndex,
       swapFee: poolState.swapFee,
       amp: poolState.amp ? poolState.amp : 0n,
+      actualSupply: poolState.actualSupply,
     };
     return poolPairData;
   }
@@ -284,7 +297,7 @@ export class PhantomStablePool extends BasePool {
   This also applies to MetaStablePool.
   */
   getOnChainCalls(pool: SubgraphPoolBase): callData[] {
-    return [
+    const calls = [
       {
         target: this.vaultAddress,
         callData: this.vaultInterface.encodeFunctionData('getPoolTokens', [
@@ -306,6 +319,23 @@ export class PhantomStablePool extends BasePool {
         ),
       },
     ];
+    /**
+     * Returns the effective BPT supply.
+     * In other pools, this would be the same as `totalSupply`, but there are two key differences here:
+     *  - this pool pre-mints BPT and holds it in the Vault as a token, and as such we need to subtract the Vault's
+     *    balance to get the total "circulating supply". This is called the 'virtualSupply'.
+     *  - the Pool owes debt to the Protocol in the form of unminted BPT, which will be minted immediately before the
+     *    next join or exit. We need to take these into account since, even if they don't yet exist, they will
+     *    effectively be included in any Pool operation that involves BPT.
+     * In the vast majority of cases, this function should be used instead of `totalSupply()`.
+     */
+    if (this.isComposable)
+      calls.push({
+        target: pool.address,
+        callData: this.poolInterface.encodeFunctionData('getActualSupply'),
+      });
+
+    return calls;
   }
 
   /*
@@ -347,26 +377,30 @@ export class PhantomStablePool extends BasePool {
       pool.address,
     );
 
+    const tokens = poolTokens.tokens.map((address: string, idx: number) => ({
+      address: address.toLowerCase(),
+      balance: BigInt(poolTokens.balances[idx].toString()),
+      scalingFactor: BigInt(scalingFactors[idx].toString()),
+    }));
+
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
-      tokens: poolTokens.tokens.reduce(
-        (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
-          const tokenState: TokenState = {
-            balance: BigInt(poolTokens.balances[j].toString()),
-          };
-
-          if (scalingFactors)
-            tokenState.scalingFactor = BigInt(scalingFactors[j].toString());
-
-          ptAcc[pt.toLowerCase()] = tokenState;
-          return ptAcc;
-        },
-        {},
-      ),
+      tokens: keyBy(tokens, 'address'),
+      orderedTokens: poolTokens.tokens,
     };
 
     if (amp) {
       poolState.amp = BigInt(amp.value.toString());
+    }
+
+    if (this.isComposable) {
+      const totalSupply = decodeThrowError(
+        this.poolInterface,
+        'getActualSupply',
+        data[startIndex++],
+        pool.address,
+      );
+      poolState.actualSupply = BigInt(totalSupply.toString());
     }
 
     pools[pool.address] = poolState;
@@ -377,23 +411,17 @@ export class PhantomStablePool extends BasePool {
   /*
   For stable pools there is no Swap limit. As an approx - use almost the total balance of token out as we can add any amount of tokenIn and expect some back.
   */
-  checkBalance(
-    amounts: bigint[],
-    unitVolume: bigint,
-    side: SwapSide,
+  getSwapMaxAmount(
     poolPairData: PhantomStablePoolPairData,
-  ): boolean {
-    const swapMax =
+    side: SwapSide,
+  ): bigint {
+    return (
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
       ) *
         99n) /
-      100n;
-    const swapAmount =
-      amounts[amounts.length - 1] > unitVolume
-        ? amounts[amounts.length - 1]
-        : unitVolume;
-    return swapMax > swapAmount;
+      100n
+    );
   }
 }

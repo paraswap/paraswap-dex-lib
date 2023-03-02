@@ -142,7 +142,7 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
         const nameOrSignatureOrTopic: string = log.topics[0];
         if (isHexString(nameOrSignatureOrTopic)) {
           const topichash = nameOrSignatureOrTopic.toLowerCase();
-          for (const name in SwaapV1Pool.poolInterface.events) {
+          for (const name of Object.keys(SwaapV1Pool.poolInterface.events)) {
             if (topichash === SwaapV1Pool.poolInterface.getEventTopic(name)) {
               isAnonymousEvent = false;
               break;
