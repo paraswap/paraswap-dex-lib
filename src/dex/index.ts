@@ -78,7 +78,6 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
-  Camelot,
 ];
 
 const Dexes = [
@@ -115,6 +114,7 @@ const Dexes = [
   SwaapV1,
   WstETH,
   Hashflow,
+  Camelot,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
