@@ -54,6 +54,7 @@ export class TraderJoeV2
   static dexKeys = ['traderjoev2'];
   protected routerAddress: string;
   exchangeRouterInterface: Interface;
+  needWrapNative = true;
 
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'traderjoev2');
