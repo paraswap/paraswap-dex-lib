@@ -59,6 +59,7 @@ import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
+import { TraderJoeV2 } from './trader-joe-v2';
 
 const LegacyDexes = [
   CurveV2,
@@ -76,6 +77,7 @@ const LegacyDexes = [
   DodoV2,
   QuickSwapV3,
   ZyberSwapV3,
+  TraderJoeV2,
   Jarvis,
   Lido,
   AugustusRFQOrder,
