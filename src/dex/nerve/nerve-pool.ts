@@ -5,7 +5,7 @@ import erc20ABI from '../../abi/erc20.json';
 import { Log, Logger } from '../../types';
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { EventHandler, NervePoolConfig, PoolState } from './types';
@@ -129,7 +129,7 @@ export class NerveEventPool extends StatefulEventSubscriber<PoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<GenerateStateResult<PoolState>> {
+  ): Promise<StateWithBlock<PoolState>> {
     const calldata = _.flattenDeep([
       {
         target: this.address,

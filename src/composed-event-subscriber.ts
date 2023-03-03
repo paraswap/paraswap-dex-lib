@@ -1,6 +1,6 @@
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from './stateful-event-subscriber';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import {
@@ -104,7 +104,7 @@ export abstract class ComposedEventSubscriber<
 
   public async generateState(
     blockNumber: number | 'latest',
-  ): Promise<GenerateStateResult<State>> {
+  ): Promise<StateWithBlock<State>> {
     let returnData: MultiCallOutput[] = [];
     let realBlockNumber: number = 0;
     if (this.multiCallInputs.length) {

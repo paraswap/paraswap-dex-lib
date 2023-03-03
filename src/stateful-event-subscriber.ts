@@ -15,13 +15,13 @@ type StateCache<State> = {
   state: DeepReadonly<State>;
 };
 
-export type GenerateStateResult<State> = {
+export type StateWithBlock<State> = {
   state: DeepReadonly<State>;
   blockNumber: number;
 };
 
 export type InitializeStateOptions<State> = {
-  stateWithBn?: GenerateStateResult<State>;
+  stateWithBn?: StateWithBlock<State>;
   initCallback?: (state: DeepReadonly<State>) => void;
 };
 
@@ -212,7 +212,7 @@ export abstract class StatefulEventSubscriber<State>
   //generate one from scratch.
   abstract generateState(
     blockNumber?: number | 'latest',
-  ): AsyncOrSync<GenerateStateResult<State>>;
+  ): AsyncOrSync<StateWithBlock<State>>;
 
   restart(blockNumber: number): void {
     for (const _bn of Object.keys(this.stateHistory)) {

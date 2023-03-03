@@ -13,7 +13,7 @@ import {
 } from './types';
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from '../../stateful-event-subscriber';
 import { Log, MultiCallInput, MultiCallOutput } from '../../types';
 import PoolABI from '../../abi/swaap-v1/pool.json';
@@ -890,7 +890,7 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
   //generate one from scratch.
   public async generateState(
     blockNumber?: number | 'latest',
-  ): Promise<GenerateStateResult<SwaapV1PoolState>> {
+  ): Promise<StateWithBlock<SwaapV1PoolState>> {
     if (blockNumber === 'latest' || blockNumber === undefined) {
       blockNumber = await this.dexHelper.provider.getBlockNumber();
     }

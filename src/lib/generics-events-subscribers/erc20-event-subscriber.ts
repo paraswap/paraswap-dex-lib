@@ -4,7 +4,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { IDexHelper } from '../../dex-helper';
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from '../../stateful-event-subscriber';
 import { Log, BlockHeader, Address } from '../../types';
 import { erc20Iface } from '../utils-interfaces';
@@ -192,7 +192,7 @@ export class ERC20EventSubscriber extends StatefulEventSubscriber<ERC20StateMap>
 
   async generateState(
     blockNumber: number | 'latest',
-  ): Promise<GenerateStateResult<ERC20StateMap>> {
+  ): Promise<StateWithBlock<ERC20StateMap>> {
     const request = Array.from(this.walletAddresses).reduce((acc, wallet) => {
       acc.push({
         owner: wallet,

@@ -3,7 +3,7 @@ import _, { result } from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
 import {
-  GenerateStateResult,
+  StateWithBlock,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
 import {
@@ -141,7 +141,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<GenerateStateResult<UniswapV2PoolState>> {
+  ): Promise<StateWithBlock<UniswapV2PoolState>> {
     let calldata = [
       {
         target: this.poolAddress,

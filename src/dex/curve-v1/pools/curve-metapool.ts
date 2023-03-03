@@ -5,7 +5,7 @@ import { Logger } from 'log4js';
 import { Address, Log } from '../../../types';
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from '../../../stateful-event-subscriber';
 import { DeepReadonly } from 'ts-essentials';
 import { PoolState as BasepoolState } from './curve-pool';
@@ -216,7 +216,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<GenerateStateResult<MetapoolState>> {
+  ): Promise<StateWithBlock<MetapoolState>> {
     const results = await getManyPoolStates(
       [this],
       this.dexHelper.multiContract,

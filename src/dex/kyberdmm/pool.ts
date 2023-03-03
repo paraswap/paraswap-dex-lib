@@ -5,7 +5,7 @@ import { getFee, getRFactor } from './fee-formula';
 import { KyberDmmAbiEvents, TradeInfo } from './types';
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -124,7 +124,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<GenerateStateResult<KyberDmmPoolState>> {
+  ): Promise<StateWithBlock<KyberDmmPoolState>> {
     const data: { returnData: any[] } =
       await this.dexHelper.multiContract.methods
         .aggregate([

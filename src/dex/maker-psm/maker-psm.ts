@@ -16,7 +16,7 @@ import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -179,7 +179,7 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
    */
   async generateState(
     blockNumber: number,
-  ): Promise<GenerateStateResult<PoolState>> {
+  ): Promise<StateWithBlock<PoolState>> {
     const state = (
       await getOnChainState(
         this.dexHelper.multiContract,

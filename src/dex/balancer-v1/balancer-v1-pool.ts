@@ -7,7 +7,7 @@ import { SwapSide } from '../../constants';
 import { catchParseLogError } from '../../utils';
 import {
   StatefulEventSubscriber,
-  GenerateStateResult,
+  StateWithBlock,
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, PoolInfo, FractionAsString } from './types';
@@ -177,7 +177,7 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
    */
   async generateState(
     blockNumber: number,
-  ): Promise<GenerateStateResult<PoolState>> {
+  ): Promise<StateWithBlock<PoolState>> {
     const state = (
       await generatePoolStates(
         [this.poolInfo],

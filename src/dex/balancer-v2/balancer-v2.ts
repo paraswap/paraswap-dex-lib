@@ -27,7 +27,7 @@ import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import {
-  GenerateStateResult,
+  StateWithBlock,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
 import {
@@ -287,7 +287,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async generateState(
     blockNumber: number | 'latest',
-  ): Promise<GenerateStateResult<PoolStateMap>> {
+  ): Promise<StateWithBlock<PoolStateMap>> {
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
     const eventSupportedPools = allPools.filter(

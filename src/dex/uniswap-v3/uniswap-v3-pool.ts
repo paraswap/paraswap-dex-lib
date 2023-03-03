@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
-  GenerateStateResult,
+  StateWithBlock,
   InitializeStateOptions,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
@@ -244,7 +244,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   async generateState(
     blockNumber: number | 'latest',
-  ): Promise<GenerateStateResult<PoolState>> {
+  ): Promise<StateWithBlock<PoolState>> {
     const callData = this._getStateRequestCallData();
 
     const { results, blockNumber: _blockNumber } =
