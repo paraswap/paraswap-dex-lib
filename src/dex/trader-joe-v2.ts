@@ -129,7 +129,7 @@ export class TraderJoeV2
           ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,
-      [swapFunctionParams],
+      swapFunctionParams,
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
