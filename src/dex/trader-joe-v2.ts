@@ -115,7 +115,7 @@ export class TraderJoeV2
             srcAmount,
             destAmount,
             [data.binStep],
-            [srcToken, destAmount],
+            [srcToken, destToken],
             this.augustusAddress,
             data.deadline || this.getDeadline(),
           ]
