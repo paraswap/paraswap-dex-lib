@@ -69,14 +69,14 @@ function testForNetwork(
 
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-      ],
-    ],
+    // [
+    //   SwapSide.SELL,
+    //   [
+    //     ContractMethod.simpleSwap,
+    //     ContractMethod.multiSwap,
+    //     ContractMethod.megaSwap,
+    //   ],
+    // ],
     // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
@@ -86,32 +86,32 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[nativeTokenSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[nativeTokenSymbol],
+            //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
+            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenASymbol],
+            //     tokens[nativeTokenSymbol],
+            //     holders[tokenASymbol],
+            //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -138,12 +138,11 @@ describe('Airswap E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '100000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

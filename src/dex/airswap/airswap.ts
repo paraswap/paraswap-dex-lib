@@ -28,14 +28,13 @@ import erc20ABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC2
 import { getMakersLocatorForTX, getStakersUrl, getTx } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
+import { assert } from 'ts-essentials';
 
 type temporaryMakerAnswer = {
-  pairs: [
-    {
-      baseToken: string;
-      quoteToken: string;
-    },
-  ];
+  pairs: {
+    baseToken: string;
+    quoteToken: string;
+  }[];
 };
 
 export class Airswap extends SimpleExchange implements IDex<AirswapData> {
@@ -122,8 +121,20 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       'http://airswap-goerli-maker.mitsi.ovh': {
         pairs: [
           {
-            baseToken: '0x79c950c7446b234a6ad53b908fbf342b01c4d446',
-            quoteToken: '0x07865c6E87B9F70255377e024ace6630C1Eaa37F',
+            baseToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+            quoteToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+          },
+          {
+            baseToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+            quoteToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          },
+          {
+            baseToken: AddressZero,
+            quoteToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+          },
+          {
+            baseToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+            quoteToken: AddressZero,
           },
         ],
       },
@@ -365,19 +376,30 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     data: AirswapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { maker } = data;
+    const { maker, signedOrder } = data;
 
     // Encode here the transaction arguments
-    const swapData = '';
+    const swapData = this.routerInterface.encodeFunctionData('swap', [
+      AddressZero,
+      signedOrder.nonce,
+      signedOrder.expiry,
+      signedOrder.signerWallet,
+      signedOrder.signerToken,
+      signedOrder.signerAmount,
+      signedOrder.senderToken,
+      signedOrder.senderAmount,
+      signedOrder.v,
+      signedOrder.r,
+      signedOrder.s,
+    ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
-      srcAmount,
+      signedOrder.senderAmount,
       destToken,
-      destAmount,
+      signedOrder.signerAmount,
       swapData,
-      maker,
+      this.routerAddress,
     );
   }
 
@@ -434,28 +456,40 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       normalizedDestToken,
       this.network,
     );
-    const response = await Promise.race(
-      makers.map(maker => {
-        return getTx(
-          maker.url,
-          maker.swapContract,
-          this.augustusAddress.toLowerCase(),
-          normalizedSrcToken,
-          normalizedDestToken,
-          amount,
-        );
-      }),
-    );
+    let responses = {} as unknown as any;
+    try {
+      responses =
+        makers.length > 0
+          ? await Promise.allSettled(
+              makers.map(maker => {
+                return getTx(
+                  maker.url,
+                  maker.swapContract,
+                  this.augustusAddress.toLowerCase(),
+                  normalizedSrcToken,
+                  normalizedDestToken,
+                  amount,
+                );
+              }),
+            )
+          : ({} as unknown as any);
+    } catch (error) {
+      console.log(error);
+    }
 
+    // @ts-ignore
+    responses = responses
+      .filter(promise => promise.status === 'fulfilled')
+      .map(promise => promise.value)[0];
     return [
       {
         ...optimalSwapExchange,
         data: {
-          maker: response.maker,
-          ...response.signedOrder,
+          maker: responses.maker,
+          signedOrder: responses.signedOrder,
         },
       },
-      { deadline: BigInt(response.signedOrder.expiry) },
+      { deadline: BigInt(responses.signedOrder.expiry) },
     ];
   }
 
@@ -475,5 +509,11 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   ): Promise<PoolLiquidity[]> {
     // we do not have pool
     return [];
+  }
+
+  getTokenFromAddress?(address: Address): Token {
+    // We don't have predefined set of tokens with decimals
+    // Anyway we don't use decimals, so it is fine to do this
+    return { address, decimals: 0 };
   }
 }

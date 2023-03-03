@@ -10,8 +10,8 @@ export type PoolState = {
 
 export type AirswapData = {
   maker: string;
+  signedOrder: Order;
 };
-//  & Order;
 
 export type DexParams = {
   swapERC20: string;
