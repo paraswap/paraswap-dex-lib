@@ -37,8 +37,8 @@ type TraderJoeV2RouterParam =
 
 export type TraderJoeV2Data = {
   deadline?: number;
-  tokenIn: string;
-  tokenOut: string;
+  tokenIn: string; // redundant
+  tokenOut: string; // redundant
   binStep: string;
 };
 
@@ -85,7 +85,7 @@ export class TraderJoeV2
       },
       {
         _pairBinSteps: [data.binStep],
-        _tokenPath: [srcToken, destToken],
+        _tokenPath: [data.tokenIn, data.tokenOut], // FIXME: redundant, shoot & read from contract
         _deadline: data.deadline || this.getDeadline(),
       },
     );
