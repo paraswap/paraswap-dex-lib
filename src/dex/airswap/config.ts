@@ -5,7 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const AirSwapConfig: DexConfigMap<DexParams> = {
   AirSwap: {
     [Network.MAINNET]: {
-      swapERC20: '0xb1B586AfA8a2AaB42826Fb2Ab9896CD0c686d0F4',
+      swapERC20: '0x522d6f36c95a1b6509a14272c17747bbb582f2a6',
       makerRegistry: '0x8F9DA6d38939411340b19401E8c54Ea1f51B8f95',
     },
     [Network.BSC]: {
@@ -26,7 +26,6 @@ export const AirSwapConfig: DexConfigMap<DexParams> = {
     },
   },
 };
-
 
 export const Adapters: Record<number, AdapterMappings> = {
   // @TODO - PARASWAP

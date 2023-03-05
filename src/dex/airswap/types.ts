@@ -10,6 +10,7 @@ export type PoolState = {
 
 export type AirswapData = {
   maker: string;
+  senderWallet: string;
   signedOrder: Order;
 };
 

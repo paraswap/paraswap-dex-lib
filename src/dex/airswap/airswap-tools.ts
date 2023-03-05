@@ -2,6 +2,7 @@ import { providers, utils } from 'ethers';
 import { Token } from '../../types';
 import { MakerRegistry, Maker } from '@airswap/libraries';
 import { Order } from '@airswap/typescript';
+import { query } from 'express';
 
 const makerRegistry = [
   {
@@ -267,12 +268,23 @@ export async function getTx(
   signedOrder: Order;
 }> {
   const maker = await Maker.at(host, { swapContract });
+  console.log('[AIRSWAP]', 'getSignerSideOrder', [
+    amount.toString(),
+    destToken.address,
+    srcToken.address,
+    senderWallet,
+  ]);
   const response = await maker.getSignerSideOrder(
     amount.toString(),
     destToken.address,
     srcToken.address,
     senderWallet,
   );
-  console.log('[AIRSWAP]', 'getTx', response);
-  return Promise.resolve({ maker: host, signedOrder: response })
+  console.log('[AIRSWAP]', 'getTx', {
+    swapContract,
+    senderWallet,
+    maker: host,
+    signedOrder: response,
+  });
+  return Promise.resolve({ maker: host, signedOrder: response });
 }

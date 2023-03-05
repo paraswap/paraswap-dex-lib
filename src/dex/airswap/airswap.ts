@@ -28,7 +28,8 @@ import erc20ABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC2
 import { getMakersLocatorForTX, getStakersUrl, getTx } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
-import { assert } from 'ts-essentials';
+import { Swap } from '@airswap/libraries';
+import { json } from 'stream/consumers';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -217,7 +218,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       );
 
       return {
-        gasCost: 100_000, // where does it comes from ?
+        gasCost: 0, // where does it comes from ?
         exchange: this.dexKey,
         data: { maker } as AirswapData,
         prices,
@@ -376,11 +377,18 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     data: AirswapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const { maker, signedOrder } = data;
+    const { maker, senderWallet, signedOrder } = data;
 
-    // Encode here the transaction arguments
-    const swapData = this.routerInterface.encodeFunctionData('swap', [
-      AddressZero,
+    // const signer = this.localProvider.getSigner("0x522D6F36c95A1b6509A14272C17747BbB582F2A6");
+    // try {
+    //   const tx = await new Swap(this.network, signer).light(signedOrder)
+    //   console.log(tx)
+    // } catch (err) {
+    //   console.log(err)
+    // }
+
+    const values = [
+      senderWallet,
       signedOrder.nonce,
       signedOrder.expiry,
       signedOrder.signerWallet,
@@ -391,7 +399,12 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       signedOrder.v,
       signedOrder.r,
       signedOrder.s,
-    ]);
+    ];
+
+    console.log('encodeFunctionData swap', values);
+
+    // Encode here the transaction arguments
+    const swapData = this.routerInterface.encodeFunctionData('swap', values);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -465,7 +478,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
                 return getTx(
                   maker.url,
                   maker.swapContract,
-                  this.augustusAddress.toLowerCase(),
+                  this.augustusAddress.toLocaleLowerCase(),
                   normalizedSrcToken,
                   normalizedDestToken,
                   amount,
@@ -486,6 +499,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         ...optimalSwapExchange,
         data: {
           maker: responses.maker,
+          senderWallet: this.augustusAddress,
           signedOrder: responses.signedOrder,
         },
       },
