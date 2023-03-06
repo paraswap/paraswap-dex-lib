@@ -290,7 +290,8 @@ export class Camelot
     priceParams: CamelotPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
-    if (priceParams.stable) throw new Error(`Buy not supported`);
+    if (priceParams.stable) throw new Error('Buy not supported');
+
     return Uniswapv2ConstantProductPool.getBuyPrice(
       priceParams,
       srcAmount,
@@ -479,6 +480,8 @@ export class Camelot
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
     const from = this.dexHelper.config.wrapETH(_from);
     const to = this.dexHelper.config.wrapETH(_to);
 
@@ -729,6 +732,8 @@ export class Camelot
     data: UniswapData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    if (side === SwapSide.BUY) throw new Error('Buy not supported');
+
     const pools = encodePools(data.pools, this.feeFactor);
     const weth = this.getWETHAddress(srcToken, destToken, data.weth);
     const payload = this.abiCoder.encodeParameter(
@@ -755,6 +760,8 @@ export class Camelot
     data: CamelotData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    if (side === SwapSide.BUY) throw new Error('Buy not supported');
+
     const pools = encodePools(data.pools, this.feeFactor);
     const weth = this.getWETHAddress(src, dest, data.wethAddress);
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
