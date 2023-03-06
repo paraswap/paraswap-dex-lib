@@ -331,6 +331,13 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
+"@balancer-labs/sor@^4.1.1-beta.3":
+  version "4.1.1-beta.3"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.1-beta.3.tgz#8f716f0776b83bc78fb302eccb917b7abcaa6575"
+  integrity sha512-9lAQ9JYrmTjpY61RrfNtlFSlq37cK5DXcUNL0zRrVSLFCSQAyBbVIayZfXhft50kkHrpU1zPaPdaLn8zBTYwfw==
+  dependencies:
+    isomorphic-fetch "^2.2.1"
+
 "@bcoe/v8-coverage@^0.2.3":
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
@@ -4932,7 +4939,7 @@ isexe@^2.0.0:
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-2.0.0.tgz#e8fbf374dc556ff8947a10dcb0572d633f2cfa10"
   integrity sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==
 
-isomorphic-fetch@2.2.1:
+isomorphic-fetch@2.2.1, isomorphic-fetch@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/isomorphic-fetch/-/isomorphic-fetch-2.2.1.tgz#611ae1acf14f5e81f729507472819fe9733558a9"
   integrity sha512-9c4TNAKYXM5PRyVcwUZrF3W09nQ+sO7+jydgs4ZGW9dhsLG2VOlISJABombdQqQRXCwuYG3sYV/puGf5rp0qmA==
