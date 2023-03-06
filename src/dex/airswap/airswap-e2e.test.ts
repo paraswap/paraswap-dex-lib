@@ -141,8 +141,8 @@ describe('Airswap E2E', () => {
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '1001';
-    const tokenBAmount: string = '1000';
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '100000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

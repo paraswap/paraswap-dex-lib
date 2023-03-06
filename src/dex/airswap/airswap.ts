@@ -491,9 +491,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     }
 
     // @ts-ignore
-    responses = responses
-      .filter(promise => promise.status === 'fulfilled')
-      .map(promise => promise.value)[0];
+    responses = responses.filter(promise => promise.status === 'fulfilled').map(promise => promise.value)[0];
     return [
       {
         ...optimalSwapExchange,
