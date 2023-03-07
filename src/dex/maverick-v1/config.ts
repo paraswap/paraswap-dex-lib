@@ -16,5 +16,5 @@ export const MaverickV1Config: DexConfigMap<DexParams> = {
 export const Adapters: Record<number, AdapterMappings> = {
   // TODO: add adapters for each chain
   // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: 'Adapter04', index: 2 }] },
 };

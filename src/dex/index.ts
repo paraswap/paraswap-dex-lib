@@ -114,7 +114,7 @@ const Dexes = [
   SwaapV1,
   WstETH,
   Hashflow,
-  MaverickV1
+  MaverickV1,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

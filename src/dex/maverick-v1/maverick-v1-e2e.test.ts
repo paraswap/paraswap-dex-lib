@@ -23,7 +23,7 @@ describe('MaverickV1 E2E', () => {
       network,
     );
 
-    it('BUY USDT -> USDC', async () => {
+    it('simpleBuy USDT -> USDC', async () => {
       await testE2E(
         tokens['USDT'],
         tokens['USDC'],
@@ -37,7 +37,7 @@ describe('MaverickV1 E2E', () => {
       );
     });
 
-    it('BUY WETH -> USDC', async () => {
+    it('simpleBuy WETH -> USDC', async () => {
       await testE2E(
         tokens['WETH'],
         tokens['USDC'],
@@ -51,7 +51,7 @@ describe('MaverickV1 E2E', () => {
       );
     });
 
-    it('SELL USDC -> USDT', async () => {
+    it('simpleSwap USDC -> USDT', async () => {
       await testE2E(
         tokens['USDC'],
         tokens['USDT'],
@@ -65,7 +65,7 @@ describe('MaverickV1 E2E', () => {
       );
     });
 
-    it('SELL WETH -> USDC', async () => {
+    it('simpleSwap WETH -> USDC', async () => {
       await testE2E(
         tokens['WETH'],
         tokens['USDC'],
@@ -74,6 +74,34 @@ describe('MaverickV1 E2E', () => {
         SwapSide.SELL,
         dexKey,
         ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
+
+    it('multiSwap WETH -> USDC', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['USDC'],
+        holders['WETH'],
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.multiSwap,
+        network,
+        provider,
+      );
+    });
+
+    it('BUY WETH -> USDC', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['USDC'],
+        holders['WETH'],
+        '100000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.buy,
         network,
         provider,
       );
