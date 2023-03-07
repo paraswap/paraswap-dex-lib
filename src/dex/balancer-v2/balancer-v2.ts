@@ -26,6 +26,7 @@ import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import { Gyro3Pool } from './Gyro3Pool';
+import { GyroEPool } from './GyroEPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
@@ -63,7 +64,7 @@ const fetchAllPools = `query ($count: Int) {
     first: $count
     orderBy: totalLiquidity
     orderDirection: desc
-    where: {totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}, totalShares_not_in: ["0", "0.000000000001"], id_not_in: ["0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable", "Gyro3"]}
+    where: {totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}, totalShares_not_in: ["0", "0.000000000001"], id_not_in: ["0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"], swapEnabled: true, poolType_in: ["MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear", "ERC4626Linear", "Linear", "ComposableStable", "Gyro3", "GyroE"]}
   ) {
     id
     address
@@ -75,6 +76,20 @@ const fetchAllPools = `query ($count: Int) {
     mainIndex
     wrappedIndex
     root3Alpha
+    alpha
+    beta
+    c
+    s
+    lambda
+    tauAlphaX
+    tauAlphaY
+    tauBetaX
+    tauBetaY
+    u
+    v
+    w
+    z
+    dSq
   }
 }`;
 // skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.
@@ -112,7 +127,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       | StablePool
       | LinearPool
       | PhantomStablePool
-      | Gyro3Pool;
+      | Gyro3Pool
+      | GyroEPool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
@@ -124,6 +140,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.LiquidityBootstrapping,
     BalancerPoolTypes.Investment,
     BalancerPoolTypes.Gyro3,
+    BalancerPoolTypes.GyroE,
 
     // Need to check if we can support these pools with event base
     // BalancerPoolTypes.ComposableStable,
@@ -177,6 +194,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
     const gyro3Pool = new Gyro3Pool(this.vaultAddress, this.vaultInterface);
+    const gyroEPool = new GyroEPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
@@ -192,6 +210,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.StablePhantom] = stablePhantomPool;
     this.pools[BalancerPoolTypes.ComposableStable] = composableStable;
     this.pools[BalancerPoolTypes.Gyro3] = gyro3Pool;
+    this.pools[BalancerPoolTypes.GyroE] = gyroEPool;
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 

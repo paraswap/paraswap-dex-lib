@@ -405,6 +405,10 @@ export const Tokens: {
       address: '0x9C9e5fD8bbc25984B178FdCE6117Defa39d2db39',
       decimals: 18,
     },
+    TUSD: {
+      address: '0x2e1ad108ff1d8c782fcbbb89aad783ac49586756',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },

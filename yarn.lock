@@ -331,9 +331,15 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/sor@/Users/jg/Documents/sor-sergio/balancer-labs-sor-v4.1.1-beta.3.tgz":
+"@balancer-labs/sor@/Users/jg/Documents/sor-sergio/balancer-labs-sor-v4.1.1-beta.33.tgz":
+  version "4.1.1-beta.33"
+  resolved "/Users/jg/Documents/sor-sergio/balancer-labs-sor-v4.1.1-beta.33.tgz#df212a9127597045999edea6cc568aa3434adeb0"
+  dependencies:
+    isomorphic-fetch "^2.2.1"
+
+"@balancer-labs/sor@file:../sor-sergio/balancer-labs-sor-v4.1.1-beta.3.tgz":
   version "4.1.1-beta.3"
-  resolved "/Users/jg/Documents/sor-sergio/balancer-labs-sor-v4.1.1-beta.3.tgz#f64f18fa84b9168319a1f9f58d0140fe3b8c3f62"
+  resolved "file:../sor-sergio/balancer-labs-sor-v4.1.1-beta.3.tgz#738da0a033ad4ab19679c9bc78da7dea90607dde"
   dependencies:
     isomorphic-fetch "^2.2.1"
 
