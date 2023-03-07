@@ -1,0 +1,50 @@
+[
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_amountIn", "type": "uint256" },
+      { "internalType": "uint256", "name": "_amountOutMin", "type": "uint256" },
+      {
+        "internalType": "uint256[]",
+        "name": "_pairBinSteps",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "contract IERC20[]",
+        "name": "_tokenPath",
+        "type": "address[]"
+      },
+      { "internalType": "address", "name": "_to", "type": "address" },
+      { "internalType": "uint256", "name": "_deadline", "type": "uint256" }
+    ],
+    "name": "swapExactTokensForTokens",
+    "outputs": [
+      { "internalType": "uint256", "name": "amountOut", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_amountOut", "type": "uint256" },
+      { "internalType": "uint256", "name": "_amountInMax", "type": "uint256" },
+      {
+        "internalType": "uint256[]",
+        "name": "_pairBinSteps",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "contract IERC20[]",
+        "name": "_tokenPath",
+        "type": "address[]"
+      },
+      { "internalType": "address", "name": "_to", "type": "address" },
+      { "internalType": "uint256", "name": "_deadline", "type": "uint256" }
+    ],
+    "name": "swapTokensForExactTokens",
+    "outputs": [
+      { "internalType": "uint256[]", "name": "amountsIn", "type": "uint256[]" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
