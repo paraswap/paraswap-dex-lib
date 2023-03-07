@@ -23,11 +23,17 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { MaverickV1Config, Adapters } from './config';
 import { MaverickV1EventPool } from './maverick-v1-pool';
-import { fetchAllPools } from './subgraph-queries';
+import {
+  fetchAllPools,
+  fetchPoolsSortedByBalanceUsd,
+} from './subgraph-queries';
 import { SUBGRAPH_TIMEOUT } from '../../constants';
 import RouterABI from '../../abi/maverick-v1/router.json';
+import _ from 'lodash';
 
 const MAX_POOL_CNT = 1000;
+
+const EFFICIENCY_FACTOR = 3;
 export class MaverickV1
   extends SimpleExchange
   implements IDex<MaverickV1Data, MaverickV1Param>
@@ -319,22 +325,74 @@ export class MaverickV1
     );
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+  // shoot duplication
+  private async _querySubgraph(
+    query: string,
+    variables: Object,
+    timeout = 30000,
+  ) {
+    try {
+      const res = await this.dexHelper.httpRequest.post(
+        this.subgraphURL,
+        { query, variables },
+        undefined,
+        { timeout: timeout },
+      );
+      return res.data;
+    } catch (e) {
+      this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
+      return {};
+    }
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
+  // Fixme: duplicate of UniswapV3
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    const _tokenAddress = tokenAddress.toLowerCase();
+
+    const res = await this._querySubgraph(fetchPoolsSortedByBalanceUsd, {
+      token: _tokenAddress,
+      count: limit,
+    });
+
+    if (!(res && res.pools0 && res.pools1)) {
+      this.logger.error(
+        `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
+      );
+      return [];
+    }
+
+    const pools0 = _.map(res.pools0, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.tokenB.id.toLowerCase(),
+          decimals: parseInt(pool.tokenB.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.balanceUSD) * EFFICIENCY_FACTOR,
+    }));
+
+    const pools1 = _.map(res.pools1, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.tokenA.id.toLowerCase(),
+          decimals: parseInt(pool.tokenA.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.balanceUSD) * EFFICIENCY_FACTOR,
+    }));
+
+    const pools = _.slice(
+      _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
+      0,
+      limit,
+    );
+    return pools;
   }
 }
