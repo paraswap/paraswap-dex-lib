@@ -933,7 +933,7 @@ export const Holders: {
   },
   [Network.ARBITRUM]: {
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
-    DAI: '0x969f7699fbb9c79d8b61315630cdeed95977cfb8',
+    DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
     USDC: '0xb19fe973edd97e971534f6c46d96f2b109d3f1de',
     USDT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
