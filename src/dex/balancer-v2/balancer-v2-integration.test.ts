@@ -463,6 +463,71 @@ describe('BalancerV2', function () {
       await balancerV2.releaseResources();
     });
   });
+  describe.only('GyroE', () => {
+    const gyroEAddr = '0x97469e6236bd467cd147065f77752b00efadce8a';
+
+    it('getPoolIdentifiers and getPricesVolume', async function () {
+      const network = Network.POLYGON;
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
+      const tokens = Tokens[network];
+      await balancerV2.initializePricing(blocknumber);
+
+      const pools = await balancerV2.getPoolIdentifiers(
+        tokens.TUSD,
+        tokens.USDC,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log('TUSD <> USDC Pool Identifiers (Polygon): ', pools);
+
+      const isPool = pools.find(poolIdentifier =>
+        poolIdentifier.includes(gyroEAddr),
+      );
+
+      expect(isPool).toBeDefined();
+
+      const poolPrices = await balancerV2.getPricesVolume(
+        tokens.TUSD,
+        tokens.USDC,
+        amounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
+      console.log('TUSD <> USDC Pool Prices (Polygon): ', poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      const isPoolPrice = poolPrices!.find(price =>
+        price.data.poolId.includes(gyroEAddr),
+      );
+      expect(isPoolPrice).toBeDefined();
+
+      await balancerV2.releaseResources();
+    });
+
+    // it('getTopPoolsForToken', async function () {
+    //   const network = Network.POLYGON;
+    //   const dexHelper = new DummyDexHelper(network);
+    //   const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    //   const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
+    //   await balancerV2.initializePricing(blocknumber);
+    //   const tokens = Tokens[network];
+
+    //   const poolLiquidity = await balancerV2.getTopPoolsForToken(
+    //     tokens.TUSD.address.toLowerCase(),
+    //     10,
+    //   );
+    //   console.log('TUSD Top Pools (Polygon):', poolLiquidity);
+
+    //   checkPoolsLiquidity(poolLiquidity, tokens.TUSD.address, dexKey);
+    //   const isTopPool = poolLiquidity.find(pool => pool.address === gyroEAddr);
+    //   expect(isTopPool).toBeDefined();
+    //   await balancerV2.releaseResources();
+    // });
+  });
 });
 
 describe('BeetsFi', () => {
