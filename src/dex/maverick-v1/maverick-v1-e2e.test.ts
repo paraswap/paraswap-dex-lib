@@ -93,7 +93,7 @@ describe('MaverickV1 E2E', () => {
       );
     });
 
-    it('BUY WETH -> USDC', async () => {
+    it('Buy WETH -> USDC', async () => {
       await testE2E(
         tokens['WETH'],
         tokens['USDC'],
