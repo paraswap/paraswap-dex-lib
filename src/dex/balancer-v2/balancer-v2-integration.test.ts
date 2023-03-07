@@ -463,7 +463,7 @@ describe('BalancerV2', function () {
       await balancerV2.releaseResources();
     });
   });
-  describe.only('GyroE', () => {
+  describe('GyroE', () => {
     const gyroEAddr = '0x97469e6236bd467cd147065f77752b00efadce8a';
 
     it('getPoolIdentifiers and getPricesVolume', async function () {
@@ -508,25 +508,25 @@ describe('BalancerV2', function () {
       await balancerV2.releaseResources();
     });
 
-    // it('getTopPoolsForToken', async function () {
-    //   const network = Network.POLYGON;
-    //   const dexHelper = new DummyDexHelper(network);
-    //   const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    //   const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
-    //   await balancerV2.initializePricing(blocknumber);
-    //   const tokens = Tokens[network];
+    it('getTopPoolsForToken', async function () {
+      const network = Network.POLYGON;
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
+      await balancerV2.initializePricing(blocknumber);
+      const tokens = Tokens[network];
 
-    //   const poolLiquidity = await balancerV2.getTopPoolsForToken(
-    //     tokens.TUSD.address.toLowerCase(),
-    //     10,
-    //   );
-    //   console.log('TUSD Top Pools (Polygon):', poolLiquidity);
+      const poolLiquidity = await balancerV2.getTopPoolsForToken(
+        tokens.TUSD.address.toLowerCase(),
+        10,
+      );
+      console.log('TUSD Top Pools (Polygon):', poolLiquidity);
 
-    //   checkPoolsLiquidity(poolLiquidity, tokens.TUSD.address, dexKey);
-    //   const isTopPool = poolLiquidity.find(pool => pool.address === gyroEAddr);
-    //   expect(isTopPool).toBeDefined();
-    //   await balancerV2.releaseResources();
-    // });
+      checkPoolsLiquidity(poolLiquidity, tokens.TUSD.address, dexKey);
+      const isTopPool = poolLiquidity.find(pool => pool.address === gyroEAddr);
+      expect(isTopPool).toBeDefined();
+      await balancerV2.releaseResources();
+    });
   });
 });
 
