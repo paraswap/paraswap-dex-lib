@@ -43,6 +43,8 @@ export class MaverickV1
 
   logger: Logger;
 
+  routerAddress: string;
+
   constructor(
     protected network: Network,
     dexKey: string,
@@ -55,6 +57,8 @@ export class MaverickV1
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+    this.routerAddress =
+      MaverickV1Config[this.dexKey][this.network].routerAddress;
   }
 
   async setupEventPools(blockNumber: number) {
@@ -207,8 +211,7 @@ export class MaverickV1
             unit: BigInt(unit),
             data: {
               fee: pool.fee,
-              exchange:
-                MaverickV1Config[this.dexKey][this.network].routerAddress,
+              exchange: this.routerAddress,
               pool: pool.address,
               tokenA: pool.tokenA.address,
               tokenB: pool.tokenB.address,
@@ -245,14 +248,22 @@ export class MaverickV1
     data: MaverickV1Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
-
-    // Encode here the payload for adapter
-    const payload = '';
+    const { deadline, pool } = data;
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          pool: 'address',
+          deadline: 'uint256',
+        },
+      },
+      {
+        pool,
+        deadline: deadline || this.getDeadline(),
+      },
+    );
 
     return {
-      targetExchange: exchange,
+      targetExchange: this.routerAddress,
       payload,
       networkFee: '0',
     };

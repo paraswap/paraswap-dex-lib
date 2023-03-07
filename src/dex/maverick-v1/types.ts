@@ -45,6 +45,7 @@ export type MaverickV1Data = {
   tokenA: Address;
   tokenB: Address;
   exchange: Address;
+  deadline?: number;
 };
 
 export enum MaverickV1Functions {
