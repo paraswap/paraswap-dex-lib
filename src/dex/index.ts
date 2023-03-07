@@ -55,6 +55,7 @@ import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
@@ -117,6 +118,7 @@ const Dexes = [
   SwaapV1,
   WstETH,
   Hashflow,
+  Camelot,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
