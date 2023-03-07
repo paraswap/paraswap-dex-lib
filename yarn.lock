@@ -331,16 +331,10 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/sor@/Users/jg/Documents/balancer-sor/balancer-labs-sor-v4.1.0-beta.1.tgz":
-  version "4.1.0-beta.1"
-  resolved "/Users/jg/Documents/balancer-sor/balancer-labs-sor-v4.1.0-beta.1.tgz#65c9763b0ef82acf964bcb123362b883d85a581d"
-  dependencies:
-    isomorphic-fetch "^2.2.1"
-
-"@balancer-labs/sor@^4.1.0-beta.0":
-  version "4.1.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.0-beta.0.tgz#9d22921bd805381b9d78cff5e5e62331b48c4e5e"
-  integrity sha512-NwnaB307u+3NCwhV4ro/jiyWgsaJQ2F7mcjBnUYrtXjDzGCMCM+0+mW21hnSBprJYZ55T6LEFAQAK0ADDT/uLQ==
+"@balancer-labs/sor@^4.1.1-beta.4":
+  version "4.1.1-beta.4"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.1-beta.4.tgz#9369435f8bbc781e9048f33aa496a484631b56e9"
+  integrity sha512-jiejxteVwbdzz82zVJtO+Fmsd7XNDx0DHJYXIo+mQlOEdmYC/1BPVPKS7We10xbs6x/4IFQY2KzgjUhD0EVJew==
   dependencies:
     isomorphic-fetch "^2.2.1"
 
