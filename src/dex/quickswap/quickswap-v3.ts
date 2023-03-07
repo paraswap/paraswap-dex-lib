@@ -1,14 +1,13 @@
-import { Network, SwapSide } from '../constants';
-import { Address } from '../types';
-import { IDexTxBuilder } from './idex';
-import Web3 from 'web3';
-import { UniswapV3, UniswapV3Param } from './uniswap-v3';
+import { SwapSide } from '@paraswap/core';
+import { Address } from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { UniswapV3, UniswapV3Param } from '../uniswap-v3';
 import { pack } from '@ethersproject/solidity';
-import { IDexHelper } from '../dex-helper';
+import { IDexHelper } from '../../dex-helper';
+import _ from 'lodash';
+import { QuickSwapConfig } from './config';
 
-const QUICKSWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
-  [Network.POLYGON]: '0xf5b509bb0909a69b1c207e495f687a596c168e12',
-};
+const config = _.pick(QuickSwapConfig, ['QuickSwapV3']).QuickSwapV3;
 
 export type QuickSwapV3Data = {
   // ExactInputSingleParams
@@ -25,12 +24,12 @@ export class QuickSwapV3
 {
   static dexKeys = ['quickswapv3'];
 
-  constructor(dexHelper: IDexHelper) {
-    super(
-      dexHelper,
-      'quickswapv3',
-      QUICKSWAP_V3_ROUTER_ADDRESSES[dexHelper.config.data.network],
-    );
+  constructor(
+    dexHelper: IDexHelper,
+    dexKey = 'quickswapv3',
+    router = config[dexHelper.config.data.network].router,
+  ) {
+    super(dexHelper, dexKey, router);
   }
 
   // override parent as QuickSwapV3 handles fees dynamically.
