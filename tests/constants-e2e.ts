@@ -401,6 +401,10 @@ export const Tokens: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
       decimals: 18,
     },
+    BUSD: {
+      address: '0x9C9e5fD8bbc25984B178FdCE6117Defa39d2db39',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -716,7 +720,7 @@ export const Tokens: {
     WBTC: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
-    }
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {

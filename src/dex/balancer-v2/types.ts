@@ -12,6 +12,7 @@ export enum BalancerPoolTypes {
   ERC4626Linear = 'ERC4626Linear',
   Linear = 'Linear',
   ComposableStable = 'ComposableStable',
+  Gyro3 = 'Gyro3',
 }
 
 export type TokenState = {
@@ -68,6 +69,8 @@ export interface SubgraphPoolBase {
   wrappedIndex: number;
 
   mainTokens: SubgraphMainToken[];
+  // gyro3
+  root3Alpha: string;
 }
 
 export type BalancerSwapV2 = {

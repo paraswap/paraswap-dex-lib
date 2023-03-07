@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
-    "@balancer-labs/sor": "^4.1.1-beta.3",
+    "@balancer-labs/sor": "/Users/jg/Documents/sor-sergio/balancer-labs-sor-v4.1.1-beta.3.tgz",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.0.2",
     "@paraswap/core": "1.0.3",
