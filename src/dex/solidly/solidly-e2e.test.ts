@@ -320,8 +320,8 @@ describe('Solidly E2E', () => {
       network,
     );
 
-    describe(`SolidlyEthereum`, () => {
-      const dexKey = 'SolidlyEthereum';
+    describe(`SolidlyV2`, () => {
+      const dexKey = 'SolidlyV2';
 
       describe(`simpleSwap`, () => {
         describe(`Volatile`, () => {

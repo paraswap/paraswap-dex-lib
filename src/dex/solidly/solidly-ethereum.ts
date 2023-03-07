@@ -19,7 +19,7 @@ export class SolidlyEthereum extends Solidly {
   feeFactor = 1e6;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(SolidlyConfig, ['SolidlyEthereum']));
+    getDexKeysWithNetwork(_.pick(SolidlyConfig, ['SolidlyV2']));
   constructor(
     protected network: Network,
     dexKey: string,

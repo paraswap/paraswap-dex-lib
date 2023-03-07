@@ -16,7 +16,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000,
     },
   },
-  SolidlyEthereum: {
+  SolidlyV2: {
     [Network.MAINNET]: {
       factoryAddress: '0x777de5Fe8117cAAA7B44f396E93a401Cf5c9D4d6',
       router: '0x5b39e7A1C706464F5B3956b21CD22a43F0dB0eAC',
