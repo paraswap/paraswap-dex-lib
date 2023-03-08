@@ -396,16 +396,25 @@ describe('ZyberswapStable', () => {
       ],
     ]);
 
-    const pairs: { name: string; sellAmount: string; }[][] = [
-      [{ name: 'USDC', sellAmount: '111000000' }, { name: 'USDT', sellAmount: '111000000' }],
-      [{ name: 'USDC', sellAmount: '111000000' }, { name: 'DAI', sellAmount: '111000000000000000' }],
-      [{ name: 'USDT', sellAmount: '111000000' }, { name: 'DAI', sellAmount: '111000000000000000' }],
+    const pairs: { name: string; sellAmount: string }[][] = [
+      [
+        { name: 'USDC', sellAmount: '111000000' },
+        { name: 'USDT', sellAmount: '111000000' },
+      ],
+      [
+        { name: 'USDC', sellAmount: '111000000' },
+        { name: 'DAI', sellAmount: '111000000000000000' },
+      ],
+      [
+        { name: 'USDT', sellAmount: '111000000' },
+        { name: 'DAI', sellAmount: '111000000000000000' },
+      ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
-          pairs.forEach((pair) => {
+          pairs.forEach(pair => {
             describe(`${contractMethod}`, () => {
               it(`${pair[0].name} -> ${pair[1].name}`, async () => {
                 await testE2E(
