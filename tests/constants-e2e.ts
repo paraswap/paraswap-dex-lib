@@ -716,7 +716,7 @@ export const Tokens: {
     WBTC: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
-    }
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {

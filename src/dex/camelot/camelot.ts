@@ -39,7 +39,7 @@ import camelotFactoryABI from '../../abi/camelot/CamelotFactory.json';
 import camelotPairABI from '../../abi/camelot/CamelotPair.json';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
-import { NumberAsString, SwapSide } from 'paraswap-core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SolidlyStablePool } from '../solidly/solidly-stable-pool';
 import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';

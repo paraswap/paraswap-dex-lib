@@ -3,7 +3,7 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { IDexHelper } from '../dex-helper';
 import { SimpleExchange } from './simple-exchange';
-import { NumberAsString } from 'paraswap-core';
+import { NumberAsString } from '@paraswap/core';
 import { AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import TraderJoeV2RouterABI from '../abi/TraderJoeV2Router.json';

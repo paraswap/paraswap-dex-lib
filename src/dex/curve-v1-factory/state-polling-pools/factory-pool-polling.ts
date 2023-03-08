@@ -11,7 +11,7 @@ import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import FactoryCurveV1ABI from '../../../abi/curve-v1-factory/FactoryCurveV1.json';
 import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 import { BigNumber } from 'ethers';
 import { _require } from '../../../utils';
 

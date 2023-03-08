@@ -58,6 +58,7 @@ import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
+import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
@@ -118,6 +119,7 @@ const Dexes = [
   SwaapV1,
   WstETH,
   Hashflow,
+  MaverickV1,
   Camelot,
 ];
 
