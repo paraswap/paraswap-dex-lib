@@ -230,7 +230,7 @@ export class MaverickV1
                 },
                 exchange: this.dexKey,
                 poolIdentifier: pool.name,
-                gasCost: 200 * 1000,
+                gasCost: 113_000,
                 poolAddresses: [pool.address],
               };
             } catch (e) {
