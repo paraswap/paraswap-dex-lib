@@ -10,7 +10,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow, isTruthy } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -200,34 +200,45 @@ export class MaverickV1
         side == SwapSide.BUY ? to.decimals : from.decimals,
       );
 
-      return Promise.all(
-        allowedPools.map(async (pool: MaverickV1EventPool) => {
-          const unit = pool.swap(unitAmount, from, to, side == SwapSide.BUY);
-          const prices = await Promise.all(
-            amounts.map(amount =>
-              pool.swap(amount, from, to, side == SwapSide.BUY),
-            ),
-          );
-          return {
-            prices: prices,
-            unit: BigInt(unit),
-            data: {
-              fee: pool.fee,
-              exchange: this.routerAddress,
-              pool: pool.address,
-              tokenA: pool.tokenA.address,
-              tokenB: pool.tokenB.address,
-              tickSpacing: pool.tickSpacing,
-              protocolFeeRatio: pool.protocolFeeRatio,
-              lookback: pool.lookback,
-            },
-            exchange: this.dexKey,
-            poolIdentifier: pool.name,
-            gasCost: 200 * 1000,
-            poolAddresses: [pool.address],
-          };
-        }),
-      );
+      return (
+        await Promise.all(
+          allowedPools.map(async (pool: MaverickV1EventPool) => {
+            try {
+              const unit = pool.swap(
+                unitAmount,
+                from,
+                to,
+                side == SwapSide.BUY,
+              );
+              const prices = await Promise.all(
+                amounts.map(amount =>
+                  pool.swap(amount, from, to, side == SwapSide.BUY),
+                ),
+              );
+              return {
+                prices: prices,
+                unit: BigInt(unit),
+                data: {
+                  fee: pool.fee,
+                  exchange: this.routerAddress,
+                  pool: pool.address,
+                  tokenA: pool.tokenA.address,
+                  tokenB: pool.tokenB.address,
+                  tickSpacing: pool.tickSpacing,
+                  protocolFeeRatio: pool.protocolFeeRatio,
+                  lookback: pool.lookback,
+                },
+                exchange: this.dexKey,
+                poolIdentifier: pool.name,
+                gasCost: 200 * 1000,
+                poolAddresses: [pool.address],
+              };
+            } catch (e) {
+              return null;
+            }
+          }),
+        )
+      ).filter(isTruthy);
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
