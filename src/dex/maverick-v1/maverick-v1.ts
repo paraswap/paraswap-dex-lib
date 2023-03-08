@@ -190,12 +190,8 @@ export class MaverickV1
       const allPools = await this.getPools(from, to);
 
       const allowedPools = limitPools
-        ? allPools.filter(
-            pool =>
-              limitPools.includes(
-                `${this.dexKey}_${pool.address.toLowerCase()}`,
-              ) &&
-              Object.keys(pool.getState(blockNumber)?.bins || {}).length > 0,
+        ? allPools.filter(pool =>
+            limitPools.includes(`${this.dexKey}_${pool.address.toLowerCase()}`),
           )
         : allPools;
       if (!allowedPools.length) return null;

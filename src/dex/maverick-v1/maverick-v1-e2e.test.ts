@@ -93,6 +93,20 @@ describe('MaverickV1 E2E', () => {
       );
     });
 
+    it('multiSwap USDT -> ETH', async () => {
+      await testE2E(
+        tokens['USDT'],
+        tokens['USDC'],
+        holders['USDT'],
+        '100000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.multiSwap,
+        network,
+        provider,
+      );
+    });
+
     it('Buy WETH -> USDC', async () => {
       await testE2E(
         tokens['WETH'],
