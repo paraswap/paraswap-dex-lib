@@ -22,7 +22,7 @@ describe('Platypus E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAIE';
 
-    const tokenAAmount: string = '9999000000';
+    const tokenAAmount: string = '200000000';
     const tokenBAmount: string = '9999000000000000000000';
 
     const sideToContractMethods = new Map([
@@ -40,7 +40,7 @@ describe('Platypus E2E', () => {
       'newFRAX',
       'MIM',
       'YUSD',
-      'H2O',
+      // 'H2O', // pool is paused
       'MONEY',
       'TSD',
     ];
