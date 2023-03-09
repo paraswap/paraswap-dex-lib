@@ -44,8 +44,24 @@ class DummyCache implements ICache {
     return null;
   }
 
+  async rawset(
+    key: string,
+    value: string,
+    ttl: number,
+  ): Promise<string | null> {
+    return null;
+  }
+
   async rawdel(key: string): Promise<void> {
     return;
+  }
+
+  async del(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<number> {
+    return 0;
   }
 
   async setex(
@@ -92,6 +108,18 @@ class DummyCache implements ICache {
     set.add(key);
   }
 
+  async zremrangebyscore(key: string, min: number, max: number) {
+    return 0;
+  }
+
+  async zadd(key: string, bulkItemsToAdd: (number | string)[], option?: 'NX') {
+    return 0;
+  }
+
+  async zscore() {
+    return null;
+  }
+
   async sismember(setKey: string, key: string): Promise<boolean> {
     let set = this.setMap[setKey];
     if (!set) {
@@ -107,6 +135,14 @@ class DummyCache implements ICache {
 
   async hget(mapKey: string, key: string): Promise<string | null> {
     return null;
+  }
+
+  async hgetAll(mapKey: string): Promise<Record<string, string>> {
+    return {};
+  }
+
+  async hdel(mapKey: string, keys: string[]): Promise<number> {
+    return 0;
   }
 
   async publish(channel: string, msg: string): Promise<void> {

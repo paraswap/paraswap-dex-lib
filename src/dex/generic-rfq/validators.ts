@@ -171,26 +171,30 @@ const stringStartWithHex0x = (
   return value;
 };
 
-export const orderWithSignatureValidator = joi.object({
-  nonceAndMeta: joi.string().custom(stringPositiveBigIntValidator),
-  expiry: joi.number().min(0),
-  maker: addressSchema.required(),
-  taker: addressSchema.required(),
-  makerAsset: addressSchema.required(),
-  takerAsset: addressSchema.required(),
-  makerAmount: joi
-    .string()
-    .min(1)
-    .custom(stringPositiveBigIntValidator)
-    .required(),
-  takerAmount: joi
-    .string()
-    .min(1)
-    .custom(stringPositiveBigIntValidator)
-    .required(),
-  signature: joi.string().custom(stringStartWithHex0x),
-});
+export const orderWithSignatureValidator = joi
+  .object({
+    nonceAndMeta: joi.string().custom(stringPositiveBigIntValidator),
+    expiry: joi.number().min(0),
+    maker: addressSchema.required(),
+    taker: addressSchema.required(),
+    makerAsset: addressSchema.required(),
+    takerAsset: addressSchema.required(),
+    makerAmount: joi
+      .string()
+      .min(1)
+      .custom(stringPositiveBigIntValidator)
+      .required(),
+    takerAmount: joi
+      .string()
+      .min(1)
+      .custom(stringPositiveBigIntValidator)
+      .required(),
+    signature: joi.string().custom(stringStartWithHex0x),
+  })
+  .unknown(true);
 
-export const firmRateResponseValidator = joi.object({
-  order: orderWithSignatureValidator.required(),
-});
+export const firmRateResponseValidator = joi
+  .object({
+    order: orderWithSignatureValidator.required(),
+  })
+  .unknown(true);

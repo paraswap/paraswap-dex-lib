@@ -16,6 +16,20 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000,
     },
   },
+  SolidlyV2: {
+    [Network.MAINNET]: {
+      factoryAddress: '0x777de5Fe8117cAAA7B44f396E93a401Cf5c9D4d6',
+      router: '0x5b39e7A1C706464F5B3956b21CD22a43F0dB0eAC',
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/0xc30/solidly',
+      initCode:
+        '0x413d36e4ab9e83cf39b8064a3b5c98253a9e46a6cf02c8efd185314c866d656b',
+      stableFee: 200, // This is not fixed
+      volatileFee: 2000,
+      feeCode: 0,
+      poolGasCost: 220 * 1000, // https://dashboard.tenderly.co/paraswap/paraswap/tx/mainnet/0x80f01d841ac01cfaedc93ceaadc88fc799ee1539841c2ac19cfccfdcfb605d70/gas-usage
+      feeFactor: 1e6,
+    },
+  },
   Dystopia: {
     [Network.POLYGON]: {
       subgraphURL:
@@ -86,5 +100,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.BSC]: {
     [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // cone
+  },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
   },
 };

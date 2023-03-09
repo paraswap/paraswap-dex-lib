@@ -86,6 +86,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       options: {
         includeDEXS: [this.dexKey],
         includeContractMethods: [contractMethod],
+        partner: 'any',
       },
       srcDecimals: from.decimals,
       destDecimals: to.decimals,
@@ -466,8 +467,11 @@ export async function newTestE2E({
   }
 }
 
-export const getEnv = (envName: string): string => {
+export const getEnv = (envName: string, optional: boolean = false): string => {
   if (!process.env[envName]) {
+    if (optional) {
+      return '';
+    }
     throw new Error(`Missing ${envName}`);
   }
 
