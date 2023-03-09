@@ -5,6 +5,8 @@ import {
   SmartToken,
   balancesFn,
   allowedFn,
+  _balancesFn,
+  _allowancesFn,
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
@@ -299,6 +301,8 @@ export const Tokens: {
     USDC: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       decimals: 6,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
     },
     POPS: {
       address: '0xa92A1576D11dB45c53be71d59245ac97ce0d8147',
@@ -311,6 +315,8 @@ export const Tokens: {
     WMATIC: {
       address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
       decimals: 18,
+      addBalance: balanceOfFn,
+      addAllowance: allowanceFn,
     },
     AMWMATIC: {
       address: '0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4',
