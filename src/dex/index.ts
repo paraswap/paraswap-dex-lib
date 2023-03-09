@@ -62,6 +62,7 @@ import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
+import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -79,6 +80,7 @@ const LegacyDexes = [
   DodoV2,
   QuickSwapV3,
   ZyberSwapV3,
+  SpiritSwapV3,
   TraderJoeV2,
   Jarvis,
   Lido,
