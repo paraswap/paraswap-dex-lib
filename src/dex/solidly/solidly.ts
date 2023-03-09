@@ -64,12 +64,7 @@ export class Solidly extends UniswapV2 {
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.omit(SolidlyConfig, [
-        'Velodrome',
-        'SpiritSwapV2',
-        'Cone',
-        'SolidlyEthereum',
-      ]),
+      _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone', 'SolidlyV2']),
     );
 
   constructor(
@@ -429,7 +424,7 @@ export class Solidly extends UniswapV2 {
 
     if (this.dexKey.toLowerCase() === 'solidly') {
       stableFieldKey = 'stable';
-    } else if (this.dexKey.toLowerCase() !== 'solidlyethereum') {
+    } else if (this.dexKey.toLowerCase() !== 'solidlyv2') {
       stableFieldKey = 'isStable';
     }
 

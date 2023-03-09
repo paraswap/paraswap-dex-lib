@@ -10,7 +10,7 @@ import {
 import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import { uint256ToBigInt } from '../../../lib/decoders';
 import { _require } from '../../../utils';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 import { AbiItem } from 'web3-utils';
 import { NULL_ADDRESS } from '../../../constants';
 
