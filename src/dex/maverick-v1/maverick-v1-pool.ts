@@ -323,19 +323,31 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
-  swap(amount: bigint, from: Token, to: Token, side: boolean) {
+  swap(
+    amount: bigint,
+    from: Token,
+    to: Token,
+    side: boolean,
+  ): [bigint, number] {
     const scaledAmount = side
       ? this.scaleFromAmount(amount, to)
       : this.scaleFromAmount(amount, from);
+    const tempState = _.cloneDeep(this.state!);
+    const preActiveTick = tempState.activeTick;
     const output = this.poolMath.swap(
-      _.cloneDeep(this.state!),
+      tempState,
       scaledAmount,
       from.address.toLowerCase() == this.tokenA.address.toLowerCase(),
       side,
     );
-    return side
-      ? this.scaleToAmount(output[0], from)
-      : this.scaleToAmount(output[1], to);
+    const postActiveTick = tempState.activeTick;
+    const tickDiff = Math.abs(Number(postActiveTick) - Number(preActiveTick));
+    return [
+      side
+        ? this.scaleToAmount(output[0], from)
+        : this.scaleToAmount(output[1], to),
+      tickDiff,
+    ];
   }
 
   scaleFromAmount(amount: bigint, token: Token) {
