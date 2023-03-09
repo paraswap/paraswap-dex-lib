@@ -30,6 +30,7 @@ import {
   UniswapPool,
 } from '../uniswap-v2/types';
 import {
+  blockAndTryAggregate,
   getBigIntPow,
   getDexKeysWithNetwork,
   isETHAddress,
@@ -51,7 +52,7 @@ import {
 import { CamelotConfig, Adapters } from './config';
 import { Contract } from 'web3-eth-contract';
 import { IDex } from '../idex';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import { StatefulEventSubscriber, StateWithBlock } from '../../stateful-event-subscriber';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { SimpleExchange } from '../simple-exchange';
@@ -157,14 +158,26 @@ export class CamelotEventPool extends StatefulEventSubscriber<CamelotPoolState> 
   }
 
   async generateState(
-    blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<CamelotPoolState>> {
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.methods
-        .aggregate(this.callEntries)
-        .call({}, blockNumber);
+    blockNumber: number | 'latest',
+  ): Promise<StateWithBlock<CamelotPoolState>> {
+    // const data: { returnData: any[] } =
+    //   await this.dexHelper.multiContract.methods
+    //     .aggregate(this.callEntries)
+    //     .call({}, blockNumber);
 
-    return this.callDecoder(data.returnData);
+    const { results: data, blockNumber: blockNum } = await blockAndTryAggregate(
+      true,
+      this.dexHelper.multiContract,
+      this.callEntries,
+      blockNumber,
+    );
+
+    const state =  this.callDecoder(data[0].returnData);
+
+    return {
+      blockNumber: blockNum,
+      state,
+    };
   }
 }
 
@@ -281,8 +294,8 @@ export class Camelot
     );
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
-    await pair.pool.initialize(blockNumber, {
-      state: { reserve0, reserve1, token0FeeCode, token1FeeCode, stable },
+    await pair.pool.initialize('latest', {
+      stateWithBn: { blockNumber, state: { reserve0, reserve1, token0FeeCode, token1FeeCode, stable }},
     });
   }
 
