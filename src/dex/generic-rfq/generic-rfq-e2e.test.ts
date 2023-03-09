@@ -130,7 +130,7 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
     domain: 'paraswap',
   };
 
-  const pathToRemove = getEnv('GENERIC_RFQ_PATH_TO_OVERRIDE');
+  const pathToRemove = getEnv('GENERIC_RFQ_PATH_TO_OVERRIDE', true);
 
   return {
     maker: getEnv('GENERIC_RFQ_MAKER_ADDRESS'),
