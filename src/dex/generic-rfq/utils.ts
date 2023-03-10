@@ -24,7 +24,9 @@ export const checkOrder = async (
   if (verifierContract) {
     const isValid = await verifierContract.methods
       .isValidSignature(hash, order.signature)
-      .call();
+      .call({
+        from: augustusRFQAddress,
+      });
 
     if (!isValid) {
       throw new Error(`signature is invalid`);
