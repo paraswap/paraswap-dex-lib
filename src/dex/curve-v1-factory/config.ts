@@ -259,7 +259,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.FANTOM]: {
       factoryAddress: '0x686d67265703D1f124c45E33d47d794c566889Ba',
       stateUpdatePeriodMs: 2 * 1000,
-      disabledPools: new Set([]),
+      disabledPools: new Set(['0x0fa949783947Bf6c1b171DB13AEACBB488845B3f']),
       disabledImplementations: new Set([
         '0x210c806f6ae850279f7e298de749ec4b427d00dd',
         '0xf82162bb68ad5a168345bb7efb2faa0edcca5177',
