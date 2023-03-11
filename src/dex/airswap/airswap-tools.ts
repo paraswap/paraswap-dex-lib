@@ -227,51 +227,30 @@ function decodeDataLog(logs: providers.Log[]) {
   return mappedLog.filter(url => url !== null);
 }
 
-async function getAvailableMakersForRFQ(
+export async function getAvailableMakersForRFQ(
   provider: providers.Provider,
   from: Token,
   to: Token,
   network: number,
-): Promise<any[]> {
-  const servers = await new MakerRegistry(network, provider).getMakers(
-    from.address,
-    to.address,
-  );
-  // console.log('[AIRSWAP]', 'getMakers:', servers);
-  return Promise.resolve(servers);
+): Promise<Maker[]> {
+  try {
+    const servers = await new MakerRegistry(network, provider).getMakers(
+      from.address,
+      to.address,
+    );
+    return Promise.resolve(servers);
+  } catch (err) {
+    return Promise.resolve([]);
+  }
 }
 
-export async function getMakersLocatorForTX(
-  provider: providers.Provider,
-  from: Token,
-  to: Token,
-  network: number,
-) {
-  // console.log('[AIRSWAP]', 'getMakersLocatorForTX');
-  const pairs = await getAvailableMakersForRFQ(provider, from, to, network);
-  const keys = pairs.map(({ swapContract, locator }) => ({
-    swapContract,
-    url: locator,
-  }));
-  // console.log('[AIRSWAP]', 'getMakersLocatorForTX:', keys);
-  return Promise.resolve(keys);
-}
-
-export async function getTx(
-  host: string,
-  swapContract: string,
+export async function makeRFQ(
+  maker: Maker,
   senderWallet: string,
   srcToken: Token,
   destToken: Token,
   amount: string,
 ): Promise<QuoteResponse> {
-  const maker = await Maker.at(host, { swapContract });
-  // console.log('[AIRSWAP]', 'getSignerSideOrder', [
-  //   amount.toString(),
-  //   destToken.address,
-  //   srcToken.address,
-  //   senderWallet,
-  // ]);
   const response = await maker.getSignerSideOrder(
     amount.toString(),
     destToken.address,
@@ -284,5 +263,5 @@ export async function getTx(
   //   maker: host,
   //   signedOrder: response,
   // });
-  return Promise.resolve({ maker: host, signedOrder: response });
+  return Promise.resolve({ maker: maker.locator, signedOrder: response });
 }

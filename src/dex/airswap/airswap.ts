@@ -25,9 +25,14 @@ import { ethers } from 'ethers';
 import { AddressZero } from '@ethersproject/constants';
 
 import swapABI from '@airswap/swap/build/contracts/Swap.sol/Swap.json';
-import { getMakersLocatorForTX, getStakersUrl, getTx } from './airswap-tools';
+import {
+  getAvailableMakersForRFQ,
+  getStakersUrl,
+  makeRFQ,
+} from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
+import { Maker } from '@airswap/libraries';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -454,21 +459,24 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         ? optimalSwapExchange.srcAmount
         : optimalSwapExchange.destAmount;
 
-    const makers = await getMakersLocatorForTX(
-      this.localProvider,
-      normalizedSrcToken,
-      normalizedDestToken,
-      this.network,
-    );
+    let makersTmp = await Maker.at('https://aomcfsa7.altono.xyz', {
+      swapContract: '0x522D6F36c95A1b6509A14272C17747BbB582F2A6',
+    });
+    const makers = [makersTmp];
+    // await getAvailableMakersForRFQ(
+    //   this.localProvider,
+    //   normalizedSrcToken,
+    //   normalizedDestToken,
+    //   this.network,
+    // );
     let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
     try {
       responses =
         makers.length > 0
           ? await Promise.allSettled(
               makers.map(maker => {
-                return getTx(
-                  maker.url,
-                  maker.swapContract,
+                return makeRFQ(
+                  maker,
                   this.augustusAddress.toLocaleLowerCase(),
                   normalizedSrcToken,
                   normalizedDestToken,
