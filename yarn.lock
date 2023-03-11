@@ -95,7 +95,7 @@
   dependencies:
     "@openzeppelin/contracts" "^4.8.1"
 
-"@airswap/swap@3.2.3":
+"@airswap/swap@3.2.3", "@airswap/swap@^3.2.3":
   version "3.2.3"
   resolved "https://registry.yarnpkg.com/@airswap/swap/-/swap-3.2.3.tgz#b730abab3aa1eaf50192c065d4e9d6207d91c9fe"
   integrity sha512-LOAumYt48+e+vVOwYmAHxJngRIrQBLmDdQzSVSMHV8XEloqVKJt9mdiQXj+VK+/OFhDl2sQwE+4J/RfdpJ94bQ==

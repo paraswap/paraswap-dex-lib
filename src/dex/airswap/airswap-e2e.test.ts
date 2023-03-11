@@ -69,16 +69,16 @@ function testForNetwork(
 
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
-    // [
-    //   SwapSide.SELL,
-    //   [
-    //     ContractMethod.simpleSwap,
-    //     ContractMethod.multiSwap,
-    //     ContractMethod.megaSwap,
-    //   ],
-    // ],
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
+      ],
+    ],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -141,8 +141,8 @@ describe('Airswap E2E', () => {
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000';
+    const tokenAAmount: string = '200000';
+    const tokenBAmount: string = '200000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

@@ -1,8 +1,7 @@
 import { providers, utils } from 'ethers';
 import { Token } from '../../types';
 import { MakerRegistry, Maker } from '@airswap/libraries';
-import { Order } from '@airswap/typescript';
-import { query } from 'express';
+import { QuoteResponse } from './types';
 
 const makerRegistry = [
   {
@@ -238,7 +237,7 @@ async function getAvailableMakersForRFQ(
     from.address,
     to.address,
   );
-  console.log('[AIRSWAP]', 'getMakers:', servers);
+  // console.log('[AIRSWAP]', 'getMakers:', servers);
   return Promise.resolve(servers);
 }
 
@@ -248,11 +247,13 @@ export async function getMakersLocatorForTX(
   to: Token,
   network: number,
 ) {
+  // console.log('[AIRSWAP]', 'getMakersLocatorForTX');
   const pairs = await getAvailableMakersForRFQ(provider, from, to, network);
   const keys = pairs.map(({ swapContract, locator }) => ({
     swapContract,
     url: locator,
   }));
+  // console.log('[AIRSWAP]', 'getMakersLocatorForTX:', keys);
   return Promise.resolve(keys);
 }
 
@@ -263,28 +264,25 @@ export async function getTx(
   srcToken: Token,
   destToken: Token,
   amount: string,
-): Promise<{
-  maker: string;
-  signedOrder: Order;
-}> {
+): Promise<QuoteResponse> {
   const maker = await Maker.at(host, { swapContract });
-  console.log('[AIRSWAP]', 'getSignerSideOrder', [
-    amount.toString(),
-    destToken.address,
-    srcToken.address,
-    senderWallet,
-  ]);
+  // console.log('[AIRSWAP]', 'getSignerSideOrder', [
+  //   amount.toString(),
+  //   destToken.address,
+  //   srcToken.address,
+  //   senderWallet,
+  // ]);
   const response = await maker.getSignerSideOrder(
     amount.toString(),
     destToken.address,
     srcToken.address,
     senderWallet,
   );
-  console.log('[AIRSWAP]', 'getTx', {
-    swapContract,
-    senderWallet,
-    maker: host,
-    signedOrder: response,
-  });
+  // console.log('[AIRSWAP]', 'getTx', {
+  //   swapContract,
+  //   senderWallet,
+  //   maker: host,
+  //   signedOrder: response,
+  // });
   return Promise.resolve({ maker: host, signedOrder: response });
 }

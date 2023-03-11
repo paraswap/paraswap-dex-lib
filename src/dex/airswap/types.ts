@@ -15,7 +15,7 @@ export type AirswapData = {
 };
 
 export type DexParams = {
-  swapERC20: string;
+  swap: string;
   makerRegistry: string;
 };
 
@@ -23,3 +23,8 @@ export interface PriceLevel {
   level: string;
   price: string;
 }
+
+export type QuoteResponse = {
+  maker: string;
+  signedOrder: Order;
+};

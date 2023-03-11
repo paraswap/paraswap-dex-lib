@@ -17,19 +17,17 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AirswapData, PriceLevel } from './types';
+import { AirswapData, PriceLevel, QuoteResponse } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AirSwapConfig, Adapters } from './config';
 import { Interface } from 'ethers/lib/utils';
 import { ethers } from 'ethers';
 import { AddressZero } from '@ethersproject/constants';
 
-import erc20ABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
+import swapABI from '@airswap/swap/build/contracts/Swap.sol/Swap.json';
 import { getMakersLocatorForTX, getStakersUrl, getTx } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
-import { Swap } from '@airswap/libraries';
-import { json } from 'stream/consumers';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -58,8 +56,8 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
-    readonly routerAddress: string = AirSwapConfig.AirSwap[network].swapERC20,
-    protected routerInterface = new Interface(JSON.stringify(erc20ABI.abi)),
+    readonly routerAddress: string = AirSwapConfig.AirSwap[network].swap,
+    protected routerInterface = new Interface(JSON.stringify(swapABI.abi)),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -80,7 +78,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       this.localProvider,
       AirSwapConfig.AirSwap[this.network].makerRegistry,
     );
-    console.log('[AIRSWAP]', 'makers:', this.makers);
+    // console.log('[AIRSWAP]', 'makers:', this.makers);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -187,7 +185,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     // get pricing to corresponding pair token for each maker
     const levelRequests = marketMakersUris.map(url => ({
       maker: url,
-      levels: [{ level: '10', price: '13' }], //airswapApi.getOptimisticLevel(url, srcToken, destToken),
+      levels: [{ level: '1', price: '1' }], //airswapApi.getOptimisticLevel(url, srcToken, destToken),
     }));
     const levels = await Promise.all(levelRequests);
 
@@ -218,7 +216,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       );
 
       return {
-        gasCost: 0, // where does it comes from ?
+        gasCost: 100, // where does it comes from ?
         exchange: this.dexKey,
         data: { maker } as AirswapData,
         prices,
@@ -379,14 +377,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   ): Promise<SimpleExchangeParam> {
     const { maker, senderWallet, signedOrder } = data;
 
-    // const signer = this.localProvider.getSigner("0x522D6F36c95A1b6509A14272C17747BbB582F2A6");
-    // try {
-    //   const tx = await new Swap(this.network, signer).light(signedOrder)
-    //   console.log(tx)
-    // } catch (err) {
-    //   console.log(err)
-    // }
-
     const values = [
       senderWallet,
       signedOrder.nonce,
@@ -401,7 +391,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       signedOrder.s,
     ];
 
-    console.log('encodeFunctionData swap', values);
+    // console.log('encodeFunctionData swap', values);
 
     // Encode here the transaction arguments
     const swapData = this.routerInterface.encodeFunctionData('swap', values);
@@ -419,6 +409,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): Promise<void> {
+    this.localProvider.websocket.close();
     return Promise.resolve();
   }
 
@@ -469,7 +460,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       normalizedDestToken,
       this.network,
     );
-    let responses = {} as unknown as any;
+    let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
     try {
       responses =
         makers.length > 0
@@ -487,21 +478,24 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
             )
           : ({} as unknown as any);
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
 
-    // @ts-ignore
-    responses = responses.filter(promise => promise.status === 'fulfilled').map(promise => promise.value)[0];
+    const firstResponse = responses
+      .filter(promise => promise.status === 'fulfilled')
+      .map(
+        (promise: PromiseFulfilledResult<QuoteResponse>) => promise.value,
+      )[0];
     return [
       {
         ...optimalSwapExchange,
         data: {
-          maker: responses.maker,
+          maker: firstResponse.maker,
           senderWallet: this.augustusAddress,
-          signedOrder: responses.signedOrder,
+          signedOrder: firstResponse.signedOrder,
         },
       },
-      { deadline: BigInt(responses.signedOrder.expiry) },
+      { deadline: BigInt(firstResponse.signedOrder.expiry) },
     ];
   }
 
