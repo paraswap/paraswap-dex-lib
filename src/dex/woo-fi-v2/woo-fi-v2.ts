@@ -1,4 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
+import { Interface } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -14,81 +14,165 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { WooFiV2Data } from './types';
+import { WooFiV2Data, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WooFiV2Config, Adapters } from './config';
-import { WooFiV2EventPool } from './woo-fi-v2-pool';
-
-/*
- * This one is from template. It might be populated from WooFi old implementation
- * Almost everything is ready: getTopPoolsForToken, getSimpleParams, getAdapterParams
- * Main difference will be on getPricesVolume. You should remove any logic related to state
- * handling. It will be abstracted in pool. You just need to take state when you need
- * using `getState` method on pool instance
- */
+import { WooFiV2PollingPool } from './woo-fi-v2-pool';
+import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
+import { WooFiV2Math } from './woo-fi-v2-math';
+import wooPPV2ABI from '../../abi/woo-fi-v2/WooPPV2.abi.json';
+import wooOracleV2ABI from '../../abi/woo-fi-v2/WooOracleV2.abi.json';
+import { RefInfo } from '../woo-fi/types';
+import { MIN_CONVERSION_RATE } from './constants';
 
 export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
-  protected eventPools: WooFiV2EventPool;
+  readonly math: WooFiV2Math;
+
+  readonly statePollingManager: StatePollingManager;
+
+  protected pollingPool: WooFiV2PollingPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
+
+  readonly quoteTokenAddress: Address;
+
+  vaultUSDBalance: number = 0;
+
+  tokenByAddress: Record<Address, Token> = {};
+
+  private _refInfos: Record<Address, RefInfo> = {};
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WooFiV2Config);
 
   logger: Logger;
 
+  static readonly ifaces = {
+    PPV2: new Interface(wooPPV2ABI),
+    oracleV2: new Interface(wooOracleV2ABI),
+    chainlink: new Interface([
+      'function latestRoundData() view returns (tuple(uint80 roundId, ' +
+        'int256 answer, uint256 startedAt, uint256 updatedAt, ' +
+        'uint80 answeredInRound))',
+    ]),
+    erc20BalanceOf: new Interface([
+      'function balanceOf(address) view returns (uint256)',
+    ]),
+  };
+
   constructor(
-    readonly network: Network,
-    readonly dexKey: string,
-    readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected network: Network,
+    dexKey: string,
+    protected dexHelper: IDexHelper,
+    protected adapters = Adapters[network] || {},
+    readonly config = WooFiV2Config[dexKey][network],
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new WooFiV2EventPool(
+    const loggerName = `${dexKey}-${network}`;
+    this.logger = dexHelper.getLogger(loggerName);
+
+    // Normalise once all config addresses and use across all scenarios
+    this.config = this._toLowerForAllConfigAddresses();
+
+    this.statePollingManager = StatePollingManager.getInstance(dexHelper);
+    this.pollingPool = new WooFiV2PollingPool(
       dexKey,
-      network,
+      this.getIdentifier(),
       dexHelper,
-      this.logger,
+    );
+
+    this.quoteTokenAddress = this.config.quoteToken.address;
+
+    // Do not do it singleton, because different networks will have different
+    // states at the same time
+    this.math = new WooFiV2Math(
+      dexHelper.getLogger(`${loggerName}_math`),
+      this.quoteTokenAddress,
+    );
+
+    this.tokenByAddress = Object.values(this.baseTokens).reduce(
+      (acc, cur) => {
+        acc[cur.address] = cur;
+        return acc;
+      },
+      { [this.quoteTokenAddress]: this.config.quoteToken },
     );
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+  private _toLowerForAllConfigAddresses() {
+    // If new config property will be added, the TS will throw compile error
+    const newConfig: DexParams = {
+      wooPPV2Address: this.config.wooPPV2Address.toLowerCase(),
+      wooOracleV2Address: this.config.wooOracleV2Address.toLowerCase(),
+      rebateTo: this.config.rebateTo.toLowerCase(),
+      quoteToken: {
+        ...this.config.quoteToken,
+        address: this.config.quoteToken.address.toLowerCase(),
+      },
+      baseTokens: Object.keys(this.config.baseTokens).reduce<
+        Record<string, Token>
+      >((acc, cur) => {
+        const token = this.config.baseTokens[cur];
+        token.address = token.address.toLowerCase();
+        acc[cur] = token;
+        return acc;
+      }, {}),
+    };
+    return newConfig;
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
+  get baseTokens(): Token[] {
+    return Object.values(this.config.baseTokens);
+  }
+
+  async initializePricing(blockNumber: number) {
+    // await this.getState(blockNumber);
+  }
+
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    if (side === SwapSide.BUY) return [];
+
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+
+    const _srcAddress = _srcToken.address.toLowerCase();
+    const _destAddress = _destToken.address.toLowerCase();
+
+    if (_srcAddress === _destAddress) return [];
+
+    if (
+      !this.tokenByAddress[_srcAddress] ||
+      !this.tokenByAddress[_destAddress]
+    ) {
+      return [];
+    }
+
+    const { isSrcQuote, isDestQuote } = this._identifyQuote(
+      _srcAddress,
+      _destAddress,
+    );
+
+    if (!isSrcQuote && !isDestQuote) return [];
+
+    return [this.getIdentifier()];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
+  getIdentifier() {
+    return `${this.dexKey}_wooppv2`;
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -101,15 +185,10 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
     return null;
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<WooFiV2Data>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -118,23 +197,20 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
     data: WooFiV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    // Encode here the payload for adapter
-    const payload = '';
+    const payload = this.abiCoder.encodeParameter(
+      'address',
+      this.config.rebateTo,
+    );
 
     return {
-      targetExchange: exchange,
+      targetExchange: this.config.wooPPV2Address,
       payload,
       networkFee: '0',
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -143,11 +219,35 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
     data: WooFiV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    // Encode here the transaction arguments
-    const swapData = '';
+    const _srcToken = srcToken.toLowerCase();
+    const _destToken = destToken.toLowerCase();
+
+    let funcName: string;
+    let _amount: string;
+    let baseToken: string;
+    if (_srcToken === this.quoteTokenAddress) {
+      baseToken = _destToken;
+      funcName = 'sellQuote';
+      _amount = srcAmount;
+    } else if (_destToken === this.quoteTokenAddress) {
+      baseToken = _srcToken;
+      funcName = 'sellBase';
+      _amount = srcAmount;
+    } else {
+      throw new Error(
+        `srcToken ${srcToken} or destToken ${destToken} must be quoteToken`,
+      );
+    }
+
+    const swapData = WooFiV2.ifaces.PPV2.encodeFunctionData(funcName, [
+      baseToken, // baseToken
+      _amount, // amount
+      MIN_CONVERSION_RATE, // minAmount
+      this.augustusAddress, // to
+      this.config.rebateTo, // rebateTo
+    ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -155,32 +255,70 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       destToken,
       destAmount,
       swapData,
-      exchange,
+      this.config.wooPPV2Address,
     );
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    const state = await this.pollingPool.getState();
+
+    if (!state) {
+      this.logger.error(
+        `Failed to updatePoolState. State is null. VaultUSDBalance: ${this.vaultUSDBalance} was not updated`,
+      );
+      return;
+    }
+
+    const tokenBalancesUSD = await Promise.all(
+      Object.values(this.tokenByAddress).map(t =>
+        this.dexHelper.getTokenUSDPrice(
+          t,
+          state.value.tokenInfos[t.address].reserve,
+        ),
+      ),
+    );
+    this.vaultUSDBalance = tokenBalancesUSD.reduce(
+      (sum: number, curr: number) => sum + curr,
+    );
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    const wrappedTokenAddress = this.dexHelper.config
+      .wrapETH({ address: tokenAddress, decimals: 0 })
+      .address.toLowerCase();
+
+    if (!this.tokenByAddress[wrappedTokenAddress]) return [];
+
+    const latestState = await this.pollingPool.getState();
+    if (!latestState) return [];
+
+    if (latestState.value.isPaused) {
+      this.logger.warn(`Paused on ${this.network} in getTopPoolsForToken`);
+      return [];
+    }
+
+    const connectorTokens =
+      wrappedTokenAddress === this.quoteTokenAddress
+        ? this.baseTokens
+        : [this.tokenByAddress[this.quoteTokenAddress]];
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.config.wooPPV2Address,
+        connectorTokens,
+        liquidityUSD: this.vaultUSDBalance,
+      },
+    ];
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+  private _identifyQuote(srcAddress: Address, destAddress: Address) {
+    return {
+      isSrcQuote: srcAddress === this.quoteTokenAddress,
+      isDestQuote: destAddress === this.quoteTokenAddress,
+    };
   }
 }

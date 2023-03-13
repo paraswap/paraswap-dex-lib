@@ -16,21 +16,11 @@ export type PoolState = {
   isPaused: boolean;
 };
 
-export type WooFiV2Data = {
-  // TODO: WooFiV2Data is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
-  exchange: Address;
-};
+export type WooFiV2Data = {};
 
-// WooPP V2 for Arbitrum
-// WooPPV2:     https://arbiscan.io/address/0x8693F9701D6DB361Fe9CC15Bc455Ef4366E39AE0
-// WooracleV2:  https://arbiscan.io/address/0x962d37fb9d75fe1af9aab323727183e4eae1322d
-// quote & base token info: in file `config.ts`
 export type DexParams = {
   wooPPV2Address: Address;
-  wooOracleAddress: Address;
+  wooOracleV2Address: Address;
   quoteToken: Token;
   baseTokens: Record<string, Token>;
   rebateTo: Address;
@@ -56,3 +46,5 @@ export type Decimals = {
 export type LatestRoundData = {
   answer: bigint;
 };
+
+export type MulticallResultOutputs = number;

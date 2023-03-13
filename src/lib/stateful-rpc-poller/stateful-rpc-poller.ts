@@ -243,13 +243,16 @@ export abstract class StatefulRpcPoller<State, M>
 
   protected async _retrieveStateWithChecks(
     retriever: () => Promise<ObjWithUpdateInfo<State> | null>,
-    blockNumber: number,
+    blockNumber: number | 'latest',
     source: StateSources,
   ) {
     const state = await retriever();
 
     if (state) {
-      if (!this._isStateOutdatedForUse(blockNumber, state.blockNumber)) {
+      if (
+        blockNumber === 'latest' ||
+        !this._isStateOutdatedForUse(blockNumber, state.blockNumber)
+      ) {
         return state;
       } else {
         this._immediateLogMessage(
@@ -278,7 +281,7 @@ export abstract class StatefulRpcPoller<State, M>
   }
 
   async getState(
-    blockNumber: number,
+    blockNumber: number | 'latest' = 'latest',
     forInitialization: boolean = false,
     // If we found that state in memory is outdated, then we save it for future use
     saveInMemory: boolean = true,
