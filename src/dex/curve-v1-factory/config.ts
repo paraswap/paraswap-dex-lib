@@ -259,8 +259,11 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.FANTOM]: {
       factoryAddress: '0x686d67265703D1f124c45E33d47d794c566889Ba',
       stateUpdatePeriodMs: 2 * 1000,
-      disabledPools: new Set([]),
-      disabledImplementations: new Set([]),
+      disabledPools: new Set(['0x0fa949783947Bf6c1b171DB13AEACBB488845B3f']),
+      disabledImplementations: new Set([
+        '0x210c806f6ae850279f7e298de749ec4b427d00dd',
+        '0xf82162bb68ad5a168345bb7efb2faa0edcca5177',
+      ]),
       factoryPoolImplementations: {
         '0x61E10659fe3aa93d036d099405224E4Ac24996d0': {
           name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
@@ -358,14 +361,14 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           coinsInputType: 'uint256',
           balancesInputType: 'uint256',
         },
-        '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
-          name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
-          address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
-          lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
-          liquidityApiSlug: '/main',
-          coinsInputType: 'uint256',
-          balancesInputType: 'uint256',
-        },
+        // '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
+        //   name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
+        //   address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
+        //   lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
+        //   liquidityApiSlug: '/main',
+        //   coinsInputType: 'uint256',
+        //   balancesInputType: 'uint256',
+        // },
       },
     },
     [Network.AVALANCHE]: {

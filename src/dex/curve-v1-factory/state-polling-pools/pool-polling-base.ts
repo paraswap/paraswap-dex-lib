@@ -6,7 +6,7 @@ import {
   MIN_LIQUIDITY_IN_USD,
 } from '../constants';
 import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 
 export type MulticallReturnedTypes = bigint | bigint[];
 

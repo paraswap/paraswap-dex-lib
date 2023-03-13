@@ -46,7 +46,6 @@ import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
-import { QuickSwapV3 } from './quickswap-v3';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -56,7 +55,13 @@ import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
+import { SolidlyEthereum } from './solidly/solidly-ethereum';
+import { MaverickV1 } from './maverick-v1/maverick-v1';
+import { QuickSwapV3 } from './quickswap/quickswap-v3';
+import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
+import { TraderJoeV2 } from './trader-joe-v2';
 
 const LegacyDexes = [
   CurveV2,
@@ -73,6 +78,8 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   QuickSwapV3,
+  ZyberSwapV3,
+  TraderJoeV2,
   Jarvis,
   Lido,
   AugustusRFQOrder,
@@ -103,6 +110,7 @@ const Dexes = [
   // WooFi,
   ParaSwapLimitOrders,
   Solidly,
+  SolidlyEthereum,
   SpiritSwapV2,
   Velodrome,
   Cone,
@@ -111,6 +119,8 @@ const Dexes = [
   SwaapV1,
   WstETH,
   Hashflow,
+  MaverickV1,
+  Camelot,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

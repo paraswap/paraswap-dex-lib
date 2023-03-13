@@ -448,6 +448,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  Zyberswap: {
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/zyberswap-arbitrum/zyber-amm',
+      factoryAddress: '0xaC2ee06A14c52570Ef3B9812Ed240BCe359772e7',
+      initCode:
+        '0xfa2ad44b9e39d38a7d396bb44a41ea957ac7b622c5c6afdc285728c300b3382a',
+      feeCode: 25,
+    },
+  },
   Swapsicle: {
     [Network.AVALANCHE]: {
       subgraphURL:

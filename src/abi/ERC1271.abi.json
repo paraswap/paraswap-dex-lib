@@ -17,7 +17,8 @@
     ],
     "outputs": [
       {
-        "type": "bool"
+        "type": "bool",
+        "name": ""
       }
     ]
   }

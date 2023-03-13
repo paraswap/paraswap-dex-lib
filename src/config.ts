@@ -49,7 +49,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0x7c7f62e5ba00783f57b39df0530e32c195696a57',
-      BuyAdapter: '0xA7f4fBCEB76a1B1c05C106a4289C28B3b91C17ca',
+      Adapter04: '0x21ab8aeb35bfc0b3fd84ca810b0aa85938357be2',
+      BuyAdapter: '0x760870be538e7b4E2110e2890473CC17ADB1fdC1',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -266,6 +267,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
+      ArbitrumAdapter02: '0xCc0e85901f33D375FcdD9a888B05Df9616F68277',
       ArbitrumBuyAdapter: '0x7C7F62E5bA00783f57b39df0530e32c195696A57',
     },
     uniswapV2ExchangeRouterAddress:
