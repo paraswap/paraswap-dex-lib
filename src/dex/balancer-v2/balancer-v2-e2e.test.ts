@@ -21,8 +21,6 @@ describe('BalancerV2 E2E', () => {
     );
 
     describe('GearboxLinear pool', () => {
-      const gearboxLinearPoolId = `${dexKey}_0x4a82b580365cff9b146281ab72500957a849abdc`
-
       const sideToContractMethods = new Map([
         [
           SwapSide.SELL,
@@ -57,7 +55,6 @@ describe('BalancerV2 E2E', () => {
                     contractMethod,
                     network,
                     provider,
-                    [gearboxLinearPoolId],
                   );
                 });
                 it(`${pair[1].name} -> ${pair[0].name}`, async () => {
@@ -71,7 +68,6 @@ describe('BalancerV2 E2E', () => {
                     contractMethod,
                     network,
                     provider,
-                    [gearboxLinearPoolId],
                   );
                 });
               });
