@@ -1,4 +1,3 @@
-import { Interface } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -23,7 +22,7 @@ import { WooFiV2Math } from './woo-fi-v2-math';
 import { MIN_CONVERSION_RATE, WOO_FI_V2_GAS_COST } from './constants';
 import { assert } from 'ts-essentials';
 import { ethers } from 'ethers';
-import { addressDecode } from '../../lib/tokens/utils';
+import { addressDecode } from '../../lib/decoders';
 import { ifaces } from './utils';
 
 export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
@@ -412,7 +411,10 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       await this.dexHelper.multiWrapper.aggregate([
         {
           target: this.augustusAddress,
-          callData: this.augustusInterface.encodeFunctionData('getFeeWallet'),
+          callData: this.augustusInterface.encodeFunctionData(
+            'getFeeWallet',
+            [],
+          ),
           decodeFunction: addressDecode,
         },
         {

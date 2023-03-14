@@ -13,18 +13,22 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { Address } from '@paraswap/core';
+import { ifaces } from './utils';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  srcTokenAddress: Address,
+  destTokenAddress: Address,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      srcTokenAddress,
+      destTokenAddress,
       amount,
     ]),
   }));
@@ -35,7 +39,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -48,19 +51,20 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  srcTokenAddress: Address,
+  destTokenAddress: Address,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = wooFiV2.config.wooPPV2Address;
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from wooFiV2.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = ifaces.PPV2;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    srcTokenAddress,
+    destTokenAddress,
   );
   const readerResult = (
     await wooFiV2.dexHelper.multiContract.methods
@@ -85,6 +89,7 @@ async function testPricingOnNetwork(
   side: SwapSide,
   amounts: bigint[],
   funcNameToCheck: string,
+  expectNoLiquidity: boolean = false,
 ) {
   const networkTokens = Tokens[network];
 
@@ -98,6 +103,11 @@ async function testPricingOnNetwork(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
     pools,
   );
+
+  if (expectNoLiquidity) {
+    expect(pools.length).toEqual(0);
+    return;
+  }
 
   expect(pools.length).toBeGreaterThan(0);
 
@@ -128,6 +138,8 @@ async function testPricingOnNetwork(
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    networkTokens[srcTokenSymbol].address,
+    networkTokens[destTokenSymbol].address,
   );
 }
 
@@ -136,16 +148,17 @@ describe('WooFiV2', function () {
   let blockNumber: number;
   let wooFiV2: WooFiV2;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('BSC', () => {
+    const network = Network.BSC;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'WBNB';
+    const destTokenSymbol = 'BUSD';
+    const untradableSymbol = 'ETH';
+
+    const pricingCheckFuncName = 'trySwap';
 
     const amountsForSell = [
       0n,
@@ -161,20 +174,6 @@ describe('WooFiV2', function () {
       10n * BI_POWS[tokens[srcTokenSymbol].decimals],
     ];
 
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
-
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       wooFiV2 = new WooFiV2(network, dexKey, dexHelper);
@@ -183,7 +182,7 @@ describe('WooFiV2', function () {
       }
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL -> Base-Quote', async function () {
       await testPricingOnNetwork(
         wooFiV2,
         network,
@@ -193,21 +192,36 @@ describe('WooFiV2', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        pricingCheckFuncName,
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL -> Quote-Base', async function () {
       await testPricingOnNetwork(
         wooFiV2,
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbol,
         destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        srcTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        pricingCheckFuncName,
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL No Pool', async function () {
+      await testPricingOnNetwork(
+        wooFiV2,
+        network,
+        dexKey,
+        blockNumber,
+        untradableSymbol,
+        srcTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        pricingCheckFuncName,
+        true,
       );
     });
 

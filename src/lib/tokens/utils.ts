@@ -68,7 +68,7 @@ export const addressDecode = (
 ): string => {
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
-  if (isSuccess) {
+  if (!isSuccess) {
     return '';
   }
   return defaultAbiCoder.decode(['address'], toDecode)[0].toLowerCase();
