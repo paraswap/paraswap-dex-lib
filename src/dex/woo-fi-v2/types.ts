@@ -1,3 +1,4 @@
+import { Interface } from 'ethers/lib/utils';
 import { Address, Token } from '../../types';
 
 export type PoolState = {
@@ -11,7 +12,7 @@ export type PoolState = {
 
   // fetched from WooPPV2.decimalInfo(address baseToken)
   // https://arbiscan.io/address/0x8693F9701D6DB361Fe9CC15Bc455Ef4366E39AE0
-  decimals: Record<Address, Decimals>;
+  decimals: Record<Address, DecimalInfo>;
   oracleTimestamp: bigint;
   isPaused: boolean;
 };
@@ -21,9 +22,8 @@ export type WooFiV2Data = {};
 export type DexParams = {
   wooPPV2Address: Address;
   wooOracleV2Address: Address;
+  integrationHelperAddress: Address;
   quoteToken: Token;
-  baseTokens: Record<string, Token>;
-  rebateTo: Address;
 };
 
 export type TokenInfo = {
@@ -37,7 +37,7 @@ export type TokenState = {
   coeff: bigint;
 };
 
-export type Decimals = {
+export type DecimalInfo = {
   priceDec: bigint;
   quoteDec: bigint;
   baseDec: bigint;
@@ -47,4 +47,17 @@ export type LatestRoundData = {
   answer: bigint;
 };
 
-export type MulticallResultOutputs = number;
+export type MulticallResultOutputs =
+  | boolean
+  | bigint
+  | TokenInfo
+  | DecimalInfo
+  | TokenState;
+
+export type WooFiV2Interfaces = {
+  PPV2: Interface;
+  oracleV2: Interface;
+  integrationHelper: Interface;
+  chainlink: Interface;
+  erc20BalanceOf: Interface;
+};

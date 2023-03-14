@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,21 +13,6 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for WooFiV2 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover WooFiV2 specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
 
 function getReaderCalldata(
   exchangeAddress: string,

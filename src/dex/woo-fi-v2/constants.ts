@@ -1,6 +1,7 @@
 import { PoolState } from './types';
 
-export const WOO_FI_GAS_COST = 150 * 1000;
+// TODO: UPDATE GAS COST!
+export const WOO_FI_V2_GAS_COST = 150 * 1000;
 
 export const USD_PRECISION = 2;
 
