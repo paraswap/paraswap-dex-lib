@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.12.9-joev2-bsc-arbi.0",
+  "version": "2.12.9",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
