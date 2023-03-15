@@ -79,7 +79,7 @@ async function checkOnChainPricing(
   expect(prices).toEqual(expectedPrices);
 }
 
-async function testPricingOnNetwork(
+async function testPricingForPair(
   wooFiV2: WooFiV2,
   network: Network,
   dexKey: string,
@@ -143,24 +143,25 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('WooFiV2', function () {
-  const dexKey = 'WooFiV2';
-  let blockNumber: number;
-  let wooFiV2: WooFiV2;
+function runTestsForChain(
+  dexHelper: DummyDexHelper,
+  initProps: { dex: WooFiV2; blockNumber: number },
+  baseATokenSymbol: string,
+  quoteTokenSymbol: string,
+  baseBTokenSymbol: string,
+  untradableSymbol: string,
+  pricingCheckFuncName: string,
+) {
+  const network = dexHelper.config.data.network;
+  const tokens = Tokens[network];
 
-  describe('BSC', () => {
-    const network = Network.BSC;
-    const dexHelper = new DummyDexHelper(network);
+  it(`getPoolIdentifiers and getPricesVolume SELL: ${baseATokenSymbol} -> ${quoteTokenSymbol}`, async function () {
+    const { dex: wooFiV2, blockNumber } = initProps;
+    const dexKey = wooFiV2.dexKey;
+    const srcTokenSymbol = baseATokenSymbol;
+    const destTokenSymbol = quoteTokenSymbol;
 
-    const tokens = Tokens[network];
-
-    const srcTokenSymbol = 'WBNB';
-    const destTokenSymbol = 'BUSD';
-    const untradableSymbol = 'ETH';
-
-    const pricingCheckFuncName = 'tryQuery';
-
-    const amountsForSell = [
+    const amountsToTrade = [
       0n,
       1n * BI_POWS[tokens[srcTokenSymbol].decimals],
       2n * BI_POWS[tokens[srcTokenSymbol].decimals],
@@ -174,77 +175,175 @@ describe('WooFiV2', function () {
       10n * BI_POWS[tokens[srcTokenSymbol].decimals],
     ];
 
+    await testPricingForPair(
+      wooFiV2,
+      network,
+      dexKey,
+      blockNumber,
+      srcTokenSymbol,
+      destTokenSymbol,
+      SwapSide.SELL,
+      amountsToTrade,
+      pricingCheckFuncName,
+    );
+  });
+
+  it(`getPoolIdentifiers and getPricesVolume SELL: ${quoteTokenSymbol} -> ${baseATokenSymbol}`, async function () {
+    const { dex: wooFiV2, blockNumber } = initProps;
+    const dexKey = wooFiV2.dexKey;
+    const srcTokenSymbol = quoteTokenSymbol;
+    const destTokenSymbol = baseATokenSymbol;
+
+    const amountsToTrade = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    await testPricingForPair(
+      wooFiV2,
+      network,
+      dexKey,
+      blockNumber,
+      srcTokenSymbol,
+      destTokenSymbol,
+      SwapSide.SELL,
+      amountsToTrade,
+      pricingCheckFuncName,
+    );
+  });
+
+  it(`getPoolIdentifiers and getPricesVolume SELL: ${baseATokenSymbol} -> ${baseBTokenSymbol}`, async function () {
+    const { dex: wooFiV2, blockNumber } = initProps;
+    const dexKey = wooFiV2.dexKey;
+    const srcTokenSymbol = baseATokenSymbol;
+    const destTokenSymbol = baseBTokenSymbol;
+
+    const amountsToTrade = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    await testPricingForPair(
+      wooFiV2,
+      network,
+      dexKey,
+      blockNumber,
+      srcTokenSymbol,
+      destTokenSymbol,
+      SwapSide.SELL,
+      amountsToTrade,
+      pricingCheckFuncName,
+    );
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL: No Pool', async function () {
+    const { dex: wooFiV2, blockNumber } = initProps;
+    const dexKey = wooFiV2.dexKey;
+    const srcTokenSymbol = quoteTokenSymbol;
+    const destTokenSymbol = untradableSymbol;
+
+    const amountsToTrade = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+    await testPricingForPair(
+      wooFiV2,
+      network,
+      dexKey,
+      blockNumber,
+      srcTokenSymbol,
+      destTokenSymbol,
+      SwapSide.SELL,
+      amountsToTrade,
+      pricingCheckFuncName,
+      true,
+    );
+  });
+
+  it('getTopPoolsForToken', async function () {
+    const { dex: wooFiV2 } = initProps;
+    const dexKey = wooFiV2.dexKey;
+    // We have to check without calling initializePricing, because
+    // pool-tracker is not calling that function
+    const newWooFiV2 = new WooFiV2(network, dexKey, dexHelper);
+    if (newWooFiV2.updatePoolState) {
+      await newWooFiV2.updatePoolState();
+    }
+    const poolLiquidity = await newWooFiV2.getTopPoolsForToken(
+      tokens[quoteTokenSymbol].address,
+      10,
+    );
+    console.log(`${quoteTokenSymbol} Top Pools:`, poolLiquidity);
+
+    if (!newWooFiV2.hasConstantPriceLargeAmounts) {
+      checkPoolsLiquidity(
+        poolLiquidity,
+        Tokens[network][quoteTokenSymbol].address,
+        dexKey,
+      );
+    }
+  });
+}
+
+describe('WooFiV2', function () {
+  const dexKey = 'WooFiV2';
+  const pricingCheckFuncName = 'tryQuery';
+
+  describe('BSC', () => {
+    const network = Network.BSC;
+    const dexHelper = new DummyDexHelper(network);
+    const initProps: { dex: WooFiV2; blockNumber: number } = {
+      dex: new WooFiV2(network, dexKey, dexHelper),
+      blockNumber: 0,
+    };
+
     beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      wooFiV2 = new WooFiV2(network, dexKey, dexHelper);
-      if (wooFiV2.initializePricing) {
-        await wooFiV2.initializePricing(blockNumber);
-      }
+      initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL -> Base-Quote', async function () {
-      await testPricingOnNetwork(
-        wooFiV2,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        pricingCheckFuncName,
-      );
-    });
+    describe('Integration', () => {
+      const baseATokenSymbol = 'WBNB';
+      const quoteTokenSymbol = 'BUSD';
+      const baseBTokenSymbol = 'BTCB';
+      const untradableSymbol = 'POPS';
 
-    it('getPoolIdentifiers and getPricesVolume SELL -> Quote-Base', async function () {
-      await testPricingOnNetwork(
-        wooFiV2,
-        network,
-        dexKey,
-        blockNumber,
-        destTokenSymbol,
-        srcTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        pricingCheckFuncName,
-      );
-    });
-
-    it('getPoolIdentifiers and getPricesVolume SELL No Pool', async function () {
-      await testPricingOnNetwork(
-        wooFiV2,
-        network,
-        dexKey,
-        blockNumber,
+      runTestsForChain(
+        dexHelper,
+        initProps,
+        baseATokenSymbol,
+        quoteTokenSymbol,
+        baseBTokenSymbol,
         untradableSymbol,
-        srcTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
         pricingCheckFuncName,
-        true,
       );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newWooFiV2 = new WooFiV2(network, dexKey, dexHelper);
-      if (newWooFiV2.updatePoolState) {
-        await newWooFiV2.updatePoolState();
-      }
-      const poolLiquidity = await newWooFiV2.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newWooFiV2.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
     });
   });
 });

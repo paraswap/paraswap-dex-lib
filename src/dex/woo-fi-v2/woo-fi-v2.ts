@@ -139,13 +139,6 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       return [];
     }
 
-    const { isSrcQuote, isDestQuote } = this._identifyQuote(
-      _srcAddress,
-      _destAddress,
-    );
-
-    if (!isSrcQuote && !isDestQuote) return [];
-
     return [this.getIdentifier()];
   }
 
@@ -182,13 +175,6 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
         !this.tokenByAddress[_destAddress]
       )
         return null;
-
-      const { isSrcQuote, isDestQuote } = this._identifyQuote(
-        _srcAddress,
-        _destAddress,
-      );
-
-      if (!isSrcQuote && !isDestQuote) return null;
 
       const expectedIdentifier = this.getIdentifier();
 
@@ -405,13 +391,6 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
     );
   }
 
-  private _identifyQuote(srcAddress: Address, destAddress: Address) {
-    return {
-      isSrcQuote: srcAddress === this.quoteTokenAddress,
-      isDestQuote: destAddress === this.quoteTokenAddress,
-    };
-  }
-
   async _fetchBaseTokensAndFeeWallet(): Promise<Address[]> {
     return (
       await this.dexHelper.multiWrapper.aggregate([
@@ -459,7 +438,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       'Decimals length mismatch',
     );
 
-    const baseTokens = baseTokenAddresses.reduce<Token[]>((acc, curr, i) => {
+    this._baseTokens = baseTokenAddresses.reduce<Token[]>((acc, curr, i) => {
       acc.push({
         address: curr,
         decimals: decimals[i],
@@ -467,7 +446,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       return acc;
     }, []);
 
-    this._initializeTokenByAddress(baseTokens);
+    this._initializeTokenByAddress(this.baseTokens);
   }
 
   private _initializePollingPool() {
