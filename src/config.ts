@@ -152,8 +152,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
-      BscAdapter02: '0xB03e01342F403AEd02A916829c021adc9aCcB2eF',
-      BscBuyAdapter: '0x5259076B33Fd807027cC3D135fE1c959ea226ddF',
+      BscAdapter02: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
+      BscBuyAdapter: '0xfa072107a2CCfE5664794282EF36400735ABB70F',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -253,8 +253,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      ArbitrumAdapter02: '0xCc0e85901f33D375FcdD9a888B05Df9616F68277',
-      ArbitrumBuyAdapter: '0x7C7F62E5bA00783f57b39df0530e32c195696A57',
+      ArbitrumAdapter02: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
+      ArbitrumBuyAdapter: '0xfa072107a2CCfE5664794282EF36400735ABB70F',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
