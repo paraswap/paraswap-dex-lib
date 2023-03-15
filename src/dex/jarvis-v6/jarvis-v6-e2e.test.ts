@@ -49,7 +49,7 @@ import { generateConfig } from '../../config';
 describe('JarvisV6 E2E', () => {
   const dexKey = 'JarvisV6';
 
-  describe('JarvisV6 MAINNET', () => {
+  describe('JarvisV6 POLYGON', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
