@@ -22,6 +22,7 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
         KRWUSD: '0x24B820870F726dA9B0D83B0B28a93885061dbF50',
         BRLUSD: '0xB90DA3ff54C3ED09115abf6FbA0Ff4645586af2c',
         XAUUSD: '0x0C466540B2ee1a31b441671eac0ca886e051E410',
+        ETHUSD: '0xF9680D99D6C9589e2a93a78A04A279e509205945',
       },
       pools: [
         {
@@ -41,6 +42,34 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'EURUSD',
               isReversePrice: false,
+              proxy: '',
+              aggregator: '',
+            },
+          ],
+        },
+        {
+          pair: 'EURETH',
+          address: '0x162eD91cb79066B4fE7993c920E2e04f67Cf768E',
+          syntheticToken: {
+            symbol: 'jEUR',
+            decimals: 18,
+            address: '0x4e3Decbb3645551B8A19f0eA1678079FCB33fB4c',
+          },
+          collateralToken: {
+            symbol: 'WETH',
+            decimals: 18,
+            address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+          },
+          priceFeed: [
+            {
+              pair: 'EURUSD',
+              isReversePrice: false,
+              proxy: '',
+              aggregator: '',
+            },
+            {
+              pair: 'ETHUSD',
+              isReversePrice: true,
               proxy: '',
               aggregator: '',
             },

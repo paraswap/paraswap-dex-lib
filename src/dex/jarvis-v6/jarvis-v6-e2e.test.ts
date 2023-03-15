@@ -60,9 +60,11 @@ describe('JarvisV6 E2E', () => {
 
     const jEURSymbol: string = 'jEUR';
     const USDCSymbol: string = 'USDC';
+    const WETHSymbol: string = 'WETH';
 
     const jEURAmount: string = '1000000000000000000';
     const USDCAmount: string = '1000000';
+    const WETHAmount: string = '10000000000000000';
 
     const sideToContractMethods = new Map([
       [
@@ -78,32 +80,63 @@ describe('JarvisV6 E2E', () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it('jEUR -> USDC', async () => {
-            await testE2E(
-              tokens[jEURSymbol],
-              tokens[USDCSymbol],
-              holders[jEURSymbol],
-              side === SwapSide.SELL ? jEURAmount : USDCAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
+          describe('jEUR/USDC pool', () => {
+            it('jEUR -> USDC', async () => {
+              await testE2E(
+                tokens[jEURSymbol],
+                tokens[USDCSymbol],
+                holders[jEURSymbol],
+                side === SwapSide.SELL ? jEURAmount : USDCAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
 
-          it('USDC -> jEUR', async () => {
-            await testE2E(
-              tokens[USDCSymbol],
-              tokens[jEURSymbol],
-              holders[USDCSymbol],
-              side === SwapSide.SELL ? USDCAmount : jEURAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
+            it('USDC -> jEUR', async () => {
+              await testE2E(
+                tokens[USDCSymbol],
+                tokens[jEURSymbol],
+                holders[USDCSymbol],
+                side === SwapSide.SELL ? USDCAmount : jEURAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+          describe('jEUR/WETH pool', () => {
+            it('jEUR -> WETH', async () => {
+              await testE2E(
+                tokens[jEURSymbol],
+                tokens[WETHSymbol],
+                holders[jEURSymbol],
+                side === SwapSide.SELL ? jEURAmount : WETHAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it('WETH -> jEUR', async () => {
+              await testE2E(
+                tokens[WETHSymbol],
+                tokens[jEURSymbol],
+                holders[WETHSymbol],
+                side === SwapSide.SELL ? WETHAmount : jEURAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
