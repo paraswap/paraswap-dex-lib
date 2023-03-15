@@ -1,35 +1,40 @@
 import { Interface } from '@ethersproject/abi';
+import { ChainLinkState } from '../../lib/chainlink';
 import { Address, Token } from '../../types';
 
 export type PoolState = {
-  priceFeed: ChainLinkPriceFeedState;
+  chainlink: {
+    [pair: string]: ChainLinkState;
+  };
   pool: SynthereumPoolState;
-};
-
-export type ChainLinkPriceFeedState = {
-  usdcPrice: bigint;
 };
 
 export type SynthereumPoolState = {
   feesPercentage: bigint;
 };
 
-export type JarvisV6Data = {
-  poolAddress: string;
-  swapFunction: JarvisSwapFunctions;
+export type DexParams = {
+  chainLinkProxies: ChainLinkProxy;
+  pools: PoolConfig[];
 };
 
 export type PoolConfig = {
   address: Address;
-  priceFeedPair: string;
+  pair: string;
   syntheticToken: Token;
   collateralToken: Token;
-  chainLinkAggregatorAddress: Address;
+  priceFeed: PriceFeed[];
 };
 
-export type DexParams = {
-  priceFeedAddress: Address;
-  pools: PoolConfig[];
+export type PriceFeed = {
+  pair: string;
+  isReversePrice: boolean;
+  proxy: Address;
+  aggregator: Address;
+};
+
+export type ChainLinkProxy = {
+  [pair: string]: Address;
 };
 
 type JarvisV6MintParam = [
@@ -47,6 +52,11 @@ type JarvisV6RedeemParam = [
 ];
 
 export type JarvisV6Params = JarvisV6MintParam | JarvisV6RedeemParam;
+
+export type JarvisV6Data = {
+  poolAddress: string;
+  swapFunction: JarvisSwapFunctions;
+};
 
 export enum JarvisSwapFunctions {
   MINT = 'mint',
