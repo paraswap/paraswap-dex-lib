@@ -9,7 +9,7 @@ export function tokenInfoDecoder(
 ): TokenInfo {
   return generalDecoder(result, ['uint192', 'uint16'], undefined, value => ({
     reserve: value[0].toBigInt(),
-    feeRate: value[1].toBigInt(),
+    feeRate: BigInt(value[1].toString()),
   }));
 }
 
@@ -37,9 +37,9 @@ export function stateDecoder(
     ['tuple(uint128 price, uint64 spread, uint64 coeff, bool woFeasible)'],
     undefined,
     value => ({
-      price: value[0].toBigInt(),
-      spread: value[0].toBigInt(),
-      coeff: value[0].toBigInt(),
+      price: value[0].price.toBigInt(),
+      spread: value[0].spread.toBigInt(),
+      coeff: value[0].coeff.toBigInt(),
     }),
   );
 }

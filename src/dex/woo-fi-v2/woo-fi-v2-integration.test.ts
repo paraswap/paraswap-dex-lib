@@ -158,7 +158,7 @@ describe('WooFiV2', function () {
     const destTokenSymbol = 'BUSD';
     const untradableSymbol = 'ETH';
 
-    const pricingCheckFuncName = 'trySwap';
+    const pricingCheckFuncName = 'tryQuery';
 
     const amountsForSell = [
       0n,

@@ -39,6 +39,9 @@ export interface IStatefulRpcPoller<State, M> {
 
   fetchLatestStateFromRpc(): Promise<ObjWithUpdateInfo<State> | null>;
 
+  // This function must not throw any errors
+  initializeState(): Promise<void>;
+
   getState(blockNumber: number): Promise<ObjWithUpdateInfo<State> | null>;
 
   setLiquidity(
@@ -51,7 +54,9 @@ export interface IStatefulRpcPoller<State, M> {
 export type PollingManagerControllersCb = {
   enableStateTracking: (identifierKey: string) => void;
   disableStateTracking: (identifierKey: string) => void;
-  initializePool: <T, M>(statefulRpcPoller: IStatefulRpcPoller<T, M>) => void;
+  registerPendingPool: <T, M>(
+    statefulRpcPoller: IStatefulRpcPoller<T, M>,
+  ) => void;
 };
 
 export enum StateSources {

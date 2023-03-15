@@ -1,4 +1,4 @@
-import { assert } from 'console';
+import { assert } from 'ts-essentials';
 import _ from 'lodash';
 import { Logger, LogLevels } from '../types';
 
@@ -26,13 +26,8 @@ export type MessageData = {
   identificationInfos: string[];
 };
 
-export type AggregatedLogForEntity<T extends StandardStringEnum> = Record<
-  keyof T,
-  MessageData
->;
-
-export type AggregatedLogs<T extends StandardStringEnum> = {
-  [entityName in string]: AggregatedLogForEntity<T>;
+export type AggregatedLogForEntity<T extends StandardStringEnum> = {
+  [key in keyof T]?: MessageData;
 };
 
 /*
@@ -54,7 +49,7 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
   // in reasonable time. So, in order to unblock myself, do this
   static instances: Record<string, LogMessagesSuppressor<any>> = {};
 
-  private _aggregatedLogs: AggregatedLogs<T> = {};
+  private _aggregatedLogs: AggregatedLogForEntity<T> = {};
 
   constructor(
     readonly entityName: string,
@@ -89,24 +84,28 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
     identificationInfo: string = '',
     ...args: unknown[]
   ) {
-    const entityMsgRepository = this._aggregatedLogs[this.entityName];
     const msgInfo = this._allMessages[msgKey];
     assert(
       msgInfo !== undefined,
       `Used unrecognized msgKey=${String(msgKey)} to get msgInfo`,
     );
 
-    if (entityMsgRepository[msgKey] === undefined) {
-      entityMsgRepository[msgKey] = {
+    if (this._aggregatedLogs[msgKey] === undefined) {
+      this._aggregatedLogs[msgKey] = {
         counter: 0,
         identificationInfos:
           identificationInfo === '' ? [] : [identificationInfo],
         lastLoggedAtMs: 0,
       };
     }
-    const msgData = entityMsgRepository[msgKey];
+    const msgData = this._aggregatedLogs[msgKey];
+    assert(
+      msgData !== undefined,
+      `msgData is undefined for msgKey=${String(msgKey)}`,
+    );
 
     const nowMs = Date.now();
+
     const elapsedSinceLastPublish = nowMs - msgData.lastLoggedAtMs;
 
     if (elapsedSinceLastPublish > DEFAULT_LOG_PUBLISH_PERIOD_MS) {
@@ -134,7 +133,7 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
   private _formatLogMessage(msgData: MessageData, message: string) {
     const { counter, identificationInfos } = msgData;
     let identities =
-      identificationInfos === undefined
+      identificationInfos && identificationInfos.length === 0
         ? ''
         : ` for entities: ${
             identificationInfos.length > DEFAULT_LOG_MAX_IDENTITIES_TO_SHOW

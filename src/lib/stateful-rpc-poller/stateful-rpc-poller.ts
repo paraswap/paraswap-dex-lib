@@ -29,6 +29,7 @@ const StatefulRPCPollerMessages = {
 } as const;
 
 const DEFAULT_LIQUIDITY_UPDATE_PERIOD_MS = 2 * 60 * 1000;
+const DEFAULT_STATE_INIT_RETRY_MS = 1000;
 
 export abstract class StatefulRpcPoller<State, M>
   implements IStatefulRpcPoller<State, M>
@@ -201,7 +202,7 @@ export abstract class StatefulRpcPoller<State, M>
 
     // This is done to not rely on manual initialize pool call.
     // Any time new pool initialized, it is already automatically registered in polling manager
-    this.managerCbControllers.initializePool(this);
+    this.managerCbControllers.registerPendingPool(this);
   }
 
   get network() {
@@ -571,5 +572,27 @@ export abstract class StatefulRpcPoller<State, M>
   protected _getExpiryTimeForCachedLiquidity() {
     // Give it 10 minutes margin to recover
     return Math.floor(this.liquidityUpdatePeriodMs / 1000) + 10 * 60 * 1000;
+  }
+
+  async initializeState(): Promise<void> {
+    try {
+      const state = await this.fetchLatestStateFromRpc();
+
+      if (state === null) {
+        this.logger.error(
+          `initializePool: pool=${this.identifierKey} from ${this.dexKey} state is null. Retry in ${DEFAULT_STATE_INIT_RETRY_MS} ms`,
+        );
+      } else {
+        this.setState(state.value, state.blockNumber, state.lastUpdatedAtMs);
+        return;
+      }
+    } catch (e) {
+      this.logger.error(
+        `initializePool: pool=${this.identifierKey} from ${this.dexKey} failed to initialize state from RPC. Retry in ${DEFAULT_STATE_INIT_RETRY_MS} ms`,
+        e,
+      );
+    }
+
+    setTimeout(() => this.initializeState(), DEFAULT_STATE_INIT_RETRY_MS);
   }
 }

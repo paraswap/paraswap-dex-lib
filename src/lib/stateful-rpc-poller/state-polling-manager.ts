@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { assert } from 'console';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from '../../types';
@@ -21,6 +22,8 @@ export class StatePollingManager {
   private _lastProcessedBlockNumber = 0;
 
   private logger: Logger;
+
+  private _registeredPendingPools: IStatefulRpcPoller<any, any>[] = [];
 
   // ALl registered instances from identifier to instance
   private _poolsToInstances: Record<string, IStatefulRpcPoller<any, any>> = {};
@@ -215,6 +218,41 @@ export class StatePollingManager {
     return pool;
   }
 
+  // Once you instantiated all your pools, you should trigger at the end of initializing this method
+  // So all state will be initialized. It is not part of constructor, because and that time we don't have
+  // all classes built
+  initializeAllPendingPools() {
+    if (this._registeredPendingPools.length === 0) {
+      return;
+    }
+
+    this._registeredPendingPools.forEach(p => {
+      this.initializePool(p);
+    });
+
+    this._registeredPendingPools = [];
+  }
+
+  registerPendingPool<T, M>(statefulRpcPoller: IStatefulRpcPoller<T, M>) {
+    if (this._poolsToInstances[statefulRpcPoller.identifierKey]) {
+      this.logger.error(
+        `Attempt to register initialized pool=${statefulRpcPoller.identifierKey}`,
+      );
+      return;
+    }
+
+    const alreadyRegisteredAsPending = this._registeredPendingPools.some(
+      p => p.identifierKey === statefulRpcPoller.identifierKey,
+    );
+    if (alreadyRegisteredAsPending) {
+      this.logger.error(
+        `Attempt to register pool=${statefulRpcPoller.identifierKey} twice`,
+      );
+      return;
+    }
+    this._registeredPendingPools.push(statefulRpcPoller);
+  }
+
   initializePool<T, M>(statefulRpcPoller: IStatefulRpcPoller<T, M>) {
     const { identifierKey } = statefulRpcPoller;
 
@@ -241,22 +279,17 @@ export class StatePollingManager {
         'currentBlockNumber !== undefined',
       );
 
-      // All errors are caught inside fetchLatestStateFromRpc
-      statefulRpcPoller.fetchLatestStateFromRpc().then(state => {
-        if (state === null) {
-          // I don't expect this to happen. Only if RPC is not working. In that case state will be updated when first
-          // RPC request happens
+      statefulRpcPoller
+        .initializeState()
+        .then(() => {
+          this.logger.info(`Successfully initialized pool=${identifierKey}`);
+        })
+        .catch(e => {
+          // Must never happen
           this.logger.error(
-            `initializePool: pool=${identifierKey} from ${statefulRpcPoller.dexKey} state is not initialized`,
+            `initializePool: pool=${identifierKey} from ${statefulRpcPoller.dexKey} error while initializing state: ${e}`,
           );
-        } else {
-          statefulRpcPoller.setState(
-            state.value,
-            state.blockNumber,
-            state.lastUpdatedAtMs,
-          );
-        }
-      });
+        });
     }
   }
 }

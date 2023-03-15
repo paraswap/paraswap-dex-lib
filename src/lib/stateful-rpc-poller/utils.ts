@@ -17,7 +17,7 @@ export function pollingManagerCbExtractor(
       statePollingManager.enableStateTracking.bind(statePollingManager),
     disableStateTracking:
       statePollingManager.disableStateTracking.bind(statePollingManager),
-    initializePool:
-      statePollingManager.initializePool.bind(statePollingManager),
+    registerPendingPool:
+      statePollingManager.registerPendingPool.bind(statePollingManager),
   };
 }

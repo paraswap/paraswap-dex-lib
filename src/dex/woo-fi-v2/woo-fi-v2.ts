@@ -24,9 +24,12 @@ import { assert } from 'ts-essentials';
 import { ethers } from 'ethers';
 import { addressDecode } from '../../lib/decoders';
 import { ifaces } from './utils';
+import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
 
 export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
   readonly math: WooFiV2Math;
+
+  protected pollingManager: StatePollingManager;
 
   protected pollingPool?: WooFiV2PollingPool;
 
@@ -72,6 +75,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       dexHelper.getLogger(`${loggerName}_math`),
       this.quoteTokenAddress,
     );
+    this.pollingManager = StatePollingManager.getInstance(dexHelper);
   }
 
   private _toLowerForAllConfigAddresses() {
@@ -216,6 +220,8 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
         );
         return null;
       }
+
+      this.math.state = state.value;
 
       const _prices = this.math.query(_srcAddress, _destAddress, _amounts);
 
@@ -474,5 +480,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       this.config,
       Object.values(this.tokenByAddress),
     );
+
+    this.pollingManager.initializeAllPendingPools();
   }
 }

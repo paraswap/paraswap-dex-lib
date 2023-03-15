@@ -46,7 +46,7 @@ export class WooFiV2PollingPool extends StatefulRpcPoller<
         },
         {
           target: this.config.wooOracleV2Address,
-          callData: ifaces.PPV2.encodeFunctionData('timestamp', []),
+          callData: ifaces.oracleV2.encodeFunctionData('timestamp', []),
           decodeFunction: uint256ToBigInt,
         },
       ] as MultiCallParams<MulticallResultOutputs>[]
@@ -67,7 +67,7 @@ export class WooFiV2PollingPool extends StatefulRpcPoller<
           },
           {
             target: this.config.wooOracleV2Address,
-            callData: ifaces.PPV2.encodeFunctionData('state', [t.address]),
+            callData: ifaces.oracleV2.encodeFunctionData('state', [t.address]),
             decodeFunction: stateDecoder,
           },
         ])
