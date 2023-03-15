@@ -7,11 +7,18 @@ export enum BalancerPoolTypes {
   MetaStable = 'MetaStable',
   LiquidityBootstrapping = 'LiquidityBootstrapping',
   Investment = 'Investment',
-  AaveLinear = 'AaveLinear',
   StablePhantom = 'StablePhantom',
-  ERC4626Linear = 'ERC4626Linear',
-  Linear = 'Linear',
   ComposableStable = 'ComposableStable',
+  Linear = 'Linear',
+  AaveLinear = 'AaveLinear',
+  ERC4626Linear = 'ERC4626Linear',
+  BeefyLinear = 'BeefyLinear',
+  GearboxLinear = 'GearboxLinear',
+  MidasLinear = 'MidasLinear',
+  ReaperLinear = 'ReaperLinear',
+  SiloLinear = 'SiloLinear',
+  TetuLinear = 'TetuLinear',
+  YearnLinear = 'YearnLinear',
 }
 
 export type TokenState = {
