@@ -157,7 +157,6 @@ function isLinearPool(poolType: string) {
     poolType === BalancerPoolTypes.Linear ||
     poolType === BalancerPoolTypes.AaveLinear ||
     poolType === BalancerPoolTypes.ERC4626Linear ||
-    poolType === BalancerPoolTypes.EulerLinear ||
     poolType === BalancerPoolTypes.BeefyLinear ||
     poolType === BalancerPoolTypes.GearboxLinear ||
     poolType === BalancerPoolTypes.MidasLinear ||

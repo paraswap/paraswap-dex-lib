@@ -12,7 +12,6 @@ export enum BalancerPoolTypes {
   Linear = 'Linear',
   AaveLinear = 'AaveLinear',
   ERC4626Linear = 'ERC4626Linear',
-  EulerLinear = 'EulerLinear',
   BeefyLinear = 'BeefyLinear',
   GearboxLinear = 'GearboxLinear',
   MidasLinear = 'MidasLinear',

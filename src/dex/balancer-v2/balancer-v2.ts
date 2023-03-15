@@ -79,7 +79,7 @@ const fetchAllPools = `query ($count: Int) {
       swapEnabled: true,
       poolType_in: [
         "MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear",
-        "ERC4626Linear", "Linear", "ComposableStable", "EulerLinear", "BeefyLinear", "GearboxLinear", "MidasLinear",
+        "ERC4626Linear", "Linear", "ComposableStable", "BeefyLinear", "GearboxLinear", "MidasLinear",
         "ReaperLinear", "SiloLinear", "TetuLinear", "YearnLinear"
       ]
     }
@@ -200,7 +200,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // All these Linear pool have same maths and ABI as AaveLinear but have different factories
     this.pools[BalancerPoolTypes.AaveLinear] = linearPool;
     this.pools[BalancerPoolTypes.ERC4626Linear] = linearPool;
-    this.pools[BalancerPoolTypes.EulerLinear] = linearPool;
     this.pools[BalancerPoolTypes.GearboxLinear] = linearPool;
     this.pools[BalancerPoolTypes.MidasLinear] = linearPool;
     this.pools[BalancerPoolTypes.ReaperLinear] = linearPool;
