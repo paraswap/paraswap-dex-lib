@@ -1,85 +1,9 @@
-import { ethers } from 'ethers';
-import { IDexHelper } from '../../dex-helper';
 import { Token } from '../../types';
 import { bigIntify } from '../nerve/utils';
 import { getBigIntPow } from '../../utils';
-import { JarvisSwapFunctions, PoolConfig, PoolState } from './types';
-import { Interface } from '@ethersproject/abi';
-import { Contract } from 'web3-eth-contract';
+import { JarvisSwapFunctions, PoolConfig } from './types';
 
 export const THIRTY_MINUTES = 60 * 30;
-
-// Note: PriceFeed contract can only be called directly or from Jarvis's whitelisted contract hence why we can't group in same init multicall call
-export async function getOnChainState(
-  dexHelper: IDexHelper,
-  poolConfigs: PoolConfig[],
-  blockNumber: number | 'latest',
-  {
-    priceFeedContract,
-    poolInterface,
-  }: { priceFeedContract: Contract; poolInterface: Interface },
-): Promise<PoolState[]> {
-  const [pricesFeedValues, poolFeePercentages] = await Promise.all([
-    _getPricesFeedValues(
-      dexHelper,
-      poolConfigs,
-      blockNumber,
-      priceFeedContract,
-    ),
-    _getPoolFeePercentages(dexHelper, poolConfigs, blockNumber, poolInterface),
-  ]);
-
-  return poolConfigs.map((_, index) => ({
-    priceFeed: pricesFeedValues[index],
-    pool: poolFeePercentages[index],
-  }));
-}
-
-async function _getPoolFeePercentages(
-  dexHelper: IDexHelper,
-  poolConfigs: PoolConfig[],
-  blockNumber: number | 'latest',
-  poolInterface: Interface,
-) {
-  const multiContract = dexHelper.multiContract;
-  const PoolCallData = poolConfigs
-    .map(pool => [
-      {
-        target: pool.address,
-        callData: poolInterface.encodeFunctionData('feePercentage', []),
-      },
-    ])
-    .flat();
-
-  const poolDataCalled = (await multiContract.methods
-    .aggregate(PoolCallData)
-    .call({}, blockNumber)) as { returnData: string[] };
-
-  return poolDataCalled.returnData.map(d => ({
-    feesPercentage: bigIntify(
-      poolInterface.decodeFunctionResult('feePercentage', d)[0],
-    ),
-  }));
-}
-
-async function _getPricesFeedValues(
-  dexHelper: IDexHelper,
-  poolConfigs: PoolConfig[],
-  blockNumber: number | 'latest',
-  priceFeedContract: Contract,
-) {
-  const pairList = poolConfigs.map(pool =>
-    ethers.utils.formatBytes32String(pool.priceFeedPair),
-  );
-
-  const pricesFeedValues = (await priceFeedContract.methods
-    .getLatestPrices(pairList)
-    .call({}, blockNumber)) as string[];
-
-  return pricesFeedValues.map(d => ({
-    usdcPrice: bigIntify(d),
-  }));
-}
 
 export function getJarvisPoolFromTokens(
   srcToken: Token,
@@ -101,11 +25,12 @@ export function getJarvisPoolFromTokens(
 }
 
 export function convertToNewDecimals(
-  amount: bigint,
+  amount: string | bigint,
   currentDecimal: number,
   desireDecimal: number,
 ): bigint {
-  if (currentDecimal === desireDecimal) return amount;
+  const value = typeof amount === 'string' ? bigIntify(amount) : amount;
+  if (currentDecimal === desireDecimal) return value;
   const isDecimalIncrease = currentDecimal < desireDecimal;
   const bigIntPow = getBigIntPow(
     isDecimalIncrease
@@ -113,7 +38,7 @@ export function convertToNewDecimals(
       : currentDecimal - desireDecimal,
   );
 
-  return isDecimalIncrease ? amount * bigIntPow : amount / bigIntPow;
+  return isDecimalIncrease ? value * bigIntPow : value / bigIntPow;
 }
 
 export function getJarvisSwapFunction(
@@ -124,4 +49,16 @@ export function getJarvisSwapFunction(
   if (srcAddress === pool.collateralToken.address.toLowerCase())
     return JarvisSwapFunctions.MINT;
   return JarvisSwapFunctions.REDEEM;
+}
+
+export function calculateConvertedPrice(
+  amount: string | bigint,
+  isReversePrice: boolean,
+): bigint {
+  const valueInWei: bigint = convertToNewDecimals(
+    typeof amount === 'string' ? bigIntify(amount) : amount,
+    8,
+    18,
+  );
+  return isReversePrice ? bigIntify(1) / valueInWei : valueInWei;
 }

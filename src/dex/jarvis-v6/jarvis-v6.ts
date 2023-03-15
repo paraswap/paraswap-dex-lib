@@ -13,6 +13,7 @@ import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
+  ChainLinkProxy,
   JarvisSwapFunctions,
   JarvisV6Data,
   JarvisV6Params,
@@ -27,15 +28,12 @@ import { JarvisV6EventPool } from './jarvis-v6-events';
 import {
   getJarvisPoolFromTokens,
   getJarvisSwapFunction,
-  getOnChainState,
   THIRTY_MINUTES,
   convertToNewDecimals,
 } from './utils';
 import { Interface } from '@ethersproject/abi';
 import { BI_POWS } from '../../bigint-constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { Contract } from 'web3-eth-contract';
-import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 
 const POOL_CACHE_REFRESH_INTERVAL = 60 * 5; // 5 minutes
 
@@ -43,7 +41,7 @@ export class JarvisV6
   extends SimpleExchange
   implements IDex<JarvisV6Data, JarvisV6Params>
 {
-  protected eventPools: { [poolAddress: string]: JarvisV6EventPool };
+  protected eventPools: { [poolAddress: string]: JarvisV6EventPool } = {};
 
   // opt out of pool allocation as dex allows for constant price swaps
   readonly hasConstantPriceLargeAmounts = true;
@@ -53,7 +51,6 @@ export class JarvisV6
     getDexKeysWithNetwork(JarvisV6Config);
 
   protected poolInterface: Interface = new Interface(JarvisV6PoolABI);
-  protected priceFeedContract: Contract;
 
   logger: Logger;
   constructor(
@@ -62,31 +59,11 @@ export class JarvisV6
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
     protected poolConfigs: PoolConfig[] = JarvisV6Config[dexKey][network].pools,
-    protected priceFeedAddress: Address = JarvisV6Config[dexKey][network]
-      .priceFeedAddress,
+    protected chainLinkProxies: ChainLinkProxy = JarvisV6Config[dexKey][network]
+      .chainLinkProxies,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = {};
-
-    this.priceFeedContract = new dexHelper.web3Provider.eth.Contract(
-      SynthereumPriceFeedABI as any,
-      priceFeedAddress,
-    );
-
-    poolConfigs.forEach(
-      pool =>
-        (this.eventPools[pool.address.toLowerCase()] = new JarvisV6EventPool(
-          dexKey,
-          network,
-          dexHelper,
-          this.logger,
-          pool,
-          this.priceFeedAddress,
-          this.poolInterface,
-          this.priceFeedContract,
-        )),
-    );
   }
 
   // Initialize pricing is called once in the start of
@@ -94,22 +71,27 @@ export class JarvisV6
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    const poolStates = await getOnChainState(
-      this.dexHelper,
+    this.poolConfigs = await JarvisV6EventPool.getConfig(
       this.poolConfigs,
+      this.chainLinkProxies,
       blockNumber,
-      {
-        poolInterface: this.poolInterface,
-        priceFeedContract: this.priceFeedContract,
-      },
+      this.dexHelper.multiContract,
     );
 
     await Promise.all(
-      this.poolConfigs.map(async (pool, index) => {
-        const eventPool = this.eventPools[pool.address.toLowerCase()];
-        await eventPool.initialize(blockNumber, {
-          state: poolStates[index],
-        });
+      this.poolConfigs.map(async pool => {
+        this.eventPools[pool.address.toLowerCase()] = new JarvisV6EventPool(
+          this.dexKey,
+          this.network,
+          this.dexHelper,
+          this.logger,
+          pool,
+          this.poolInterface,
+        );
+
+        await this.eventPools[pool.address.toLowerCase()].initialize(
+          blockNumber,
+        );
       }),
     );
   }
@@ -145,7 +127,7 @@ export class JarvisV6
     blockNumber: number,
   ): Promise<PoolState> {
     const eventState = pool.getState(blockNumber);
-    if (eventState) return eventState;
+    if (eventState) return eventState as PoolState;
     const onChainState = await pool.generateState(blockNumber);
     pool.setState(onChainState, blockNumber);
     return onChainState;
@@ -178,6 +160,7 @@ export class JarvisV6
 
     const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
     const systemMaxVars = await this.getSystemMaxVars(poolAddress, blockNumber);
+    const pairPrice = await eventPool.getPairPrice(blockNumber);
 
     const [unit, ...prices] = this.computePrices(
       [unitVolume, ...amounts],
@@ -185,6 +168,7 @@ export class JarvisV6
       systemMaxVars,
       eventPool.poolConfig,
       poolState,
+      pairPrice,
     );
 
     return [
@@ -279,7 +263,8 @@ export class JarvisV6
     { maxTokensCapacity, totalSyntheticTokens }: JarvisV6SystemMaxVars,
     pool: PoolConfig,
     poolState: PoolState,
-  ): bigint[] {
+    pairPrice: bigint,
+  ) {
     return amounts.map(amount => {
       if (swapFunction === JarvisSwapFunctions.MINT) {
         return this.computePriceForMint(
@@ -287,6 +272,7 @@ export class JarvisV6
           maxTokensCapacity,
           poolState,
           pool.collateralToken.decimals,
+          pairPrice,
         );
       }
       if (swapFunction === JarvisSwapFunctions.REDEEM) {
@@ -296,6 +282,7 @@ export class JarvisV6
           amount,
           poolState,
           pool.collateralToken.decimals,
+          pairPrice,
         );
       }
       return 0n;
@@ -307,13 +294,13 @@ export class JarvisV6
     maxTokensCapacity: bigint,
     poolState: PoolState,
     collateralDecimalsNumber: number,
+    pairPrice: bigint,
   ) {
     const feePercentage = poolState.pool.feesPercentage;
-    const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
     const syntheticAmount = this.getSyntheticAmountToReceive(
       amount,
       collateralDecimalsNumber,
-      UsdcPriceFeed,
+      pairPrice,
       feePercentage,
     );
     return syntheticAmount <= maxTokensCapacity ? syntheticAmount : 0n;
@@ -323,13 +310,13 @@ export class JarvisV6
     amount: bigint,
     poolState: PoolState,
     collateralDecimalsNumber: number,
+    pairPrice: bigint,
   ) {
     const feePercentage = poolState.pool.feesPercentage;
-    const UsdcPriceFeed = poolState.priceFeed.usdcPrice;
     return this.getCollateralAmountToReceive(
       amount,
       collateralDecimalsNumber,
-      UsdcPriceFeed,
+      pairPrice,
       feePercentage,
     );
   }
