@@ -2,8 +2,10 @@ import { Token } from '../../types';
 import { bigIntify } from '../nerve/utils';
 import { getBigIntPow } from '../../utils';
 import { JarvisSwapFunctions, PoolConfig } from './types';
+import { BI_POWS } from '../../bigint-constants';
 
 export const THIRTY_MINUTES = 60 * 30;
+export const PRICE_UNIT = BI_POWS[18];
 
 export function getJarvisPoolFromTokens(
   srcToken: Token,
@@ -60,5 +62,6 @@ export function calculateConvertedPrice(
     8,
     18,
   );
-  return isReversePrice ? bigIntify(1) / valueInWei : valueInWei;
+
+  return isReversePrice ? BI_POWS[36] / valueInWei : valueInWei;
 }

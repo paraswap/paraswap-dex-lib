@@ -10,7 +10,7 @@ import { SynthereumPoolEvent } from './syntheteumPool-event';
 import { Contract } from 'web3-eth-contract';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { Address } from '@paraswap/core';
-import { calculateConvertedPrice } from './utils';
+import { calculateConvertedPrice, PRICE_UNIT } from './utils';
 export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
   constructor(
     parentName: string,
@@ -99,13 +99,14 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     const state = await this.getStateOrGenerate(blockNumber);
     return this.poolConfig.priceFeed.reduce((acc: bigint, cur) => {
       return (
-        acc *
-        calculateConvertedPrice(
-          state.chainlink[cur.pair].answer,
-          cur.isReversePrice,
-        )
+        (acc *
+          calculateConvertedPrice(
+            state.chainlink[cur.pair].answer,
+            cur.isReversePrice,
+          )) /
+        PRICE_UNIT
       );
-    }, 1n);
+    }, PRICE_UNIT);
   }
 
   /**
