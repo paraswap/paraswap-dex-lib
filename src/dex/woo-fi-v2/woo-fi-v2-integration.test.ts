@@ -316,6 +316,37 @@ describe('WooFiV2', function () {
   const dexKey = 'WooFiV2';
   const pricingCheckFuncName = 'tryQuery';
 
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+    const dexHelper = new DummyDexHelper(network);
+    const initProps: { dex: WooFiV2; blockNumber: number } = {
+      dex: new WooFiV2(network, dexKey, dexHelper),
+      blockNumber: 0,
+    };
+
+    beforeAll(async () => {
+      initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await initProps.dex.initializePricing(initProps.blockNumber);
+    });
+
+    describe('Integration', () => {
+      const baseATokenSymbol = 'WETH';
+      const quoteTokenSymbol = 'USDC';
+      const baseBTokenSymbol = 'WBTC';
+      const untradableSymbol = 'POPS';
+
+      runTestsForChain(
+        dexHelper,
+        initProps,
+        baseATokenSymbol,
+        quoteTokenSymbol,
+        baseBTokenSymbol,
+        untradableSymbol,
+        pricingCheckFuncName,
+      );
+    });
+  });
+
   describe('BSC', () => {
     const network = Network.BSC;
     const dexHelper = new DummyDexHelper(network);
@@ -332,7 +363,131 @@ describe('WooFiV2', function () {
     describe('Integration', () => {
       const baseATokenSymbol = 'WBNB';
       const quoteTokenSymbol = 'BUSD';
-      const baseBTokenSymbol = 'BTCB';
+      const baseBTokenSymbol = 'bBTC';
+      const untradableSymbol = 'POPS';
+
+      runTestsForChain(
+        dexHelper,
+        initProps,
+        baseATokenSymbol,
+        quoteTokenSymbol,
+        baseBTokenSymbol,
+        untradableSymbol,
+        pricingCheckFuncName,
+      );
+    });
+  });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+    const dexHelper = new DummyDexHelper(network);
+    const initProps: { dex: WooFiV2; blockNumber: number } = {
+      dex: new WooFiV2(network, dexKey, dexHelper),
+      blockNumber: 0,
+    };
+
+    beforeAll(async () => {
+      initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await initProps.dex.initializePricing(initProps.blockNumber);
+    });
+
+    describe('Integration', () => {
+      const baseATokenSymbol = 'WMATIC';
+      const quoteTokenSymbol = 'USDC';
+      const baseBTokenSymbol = 'WETH';
+      const untradableSymbol = 'POPS';
+
+      runTestsForChain(
+        dexHelper,
+        initProps,
+        baseATokenSymbol,
+        quoteTokenSymbol,
+        baseBTokenSymbol,
+        untradableSymbol,
+        pricingCheckFuncName,
+      );
+    });
+  });
+
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+    const dexHelper = new DummyDexHelper(network);
+    const initProps: { dex: WooFiV2; blockNumber: number } = {
+      dex: new WooFiV2(network, dexKey, dexHelper),
+      blockNumber: 0,
+    };
+
+    beforeAll(async () => {
+      initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await initProps.dex.initializePricing(initProps.blockNumber);
+    });
+
+    describe('Integration', () => {
+      const baseATokenSymbol = 'WFTM';
+      const quoteTokenSymbol = 'USDC';
+      const baseBTokenSymbol = 'ETH';
+      const untradableSymbol = 'POPS';
+
+      runTestsForChain(
+        dexHelper,
+        initProps,
+        baseATokenSymbol,
+        quoteTokenSymbol,
+        baseBTokenSymbol,
+        untradableSymbol,
+        pricingCheckFuncName,
+      );
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+    const initProps: { dex: WooFiV2; blockNumber: number } = {
+      dex: new WooFiV2(network, dexKey, dexHelper),
+      blockNumber: 0,
+    };
+
+    beforeAll(async () => {
+      initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await initProps.dex.initializePricing(initProps.blockNumber);
+    });
+
+    describe('Integration', () => {
+      const baseATokenSymbol = 'WETH';
+      const quoteTokenSymbol = 'USDC';
+      const baseBTokenSymbol = 'WBTC';
+      const untradableSymbol = 'POPS';
+
+      runTestsForChain(
+        dexHelper,
+        initProps,
+        baseATokenSymbol,
+        quoteTokenSymbol,
+        baseBTokenSymbol,
+        untradableSymbol,
+        pricingCheckFuncName,
+      );
+    });
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+    const dexHelper = new DummyDexHelper(network);
+    const initProps: { dex: WooFiV2; blockNumber: number } = {
+      dex: new WooFiV2(network, dexKey, dexHelper),
+      blockNumber: 0,
+    };
+
+    beforeAll(async () => {
+      initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      await initProps.dex.initializePricing(initProps.blockNumber);
+    });
+
+    describe('Integration', () => {
+      const baseATokenSymbol = 'WAVAX';
+      const quoteTokenSymbol = 'USDC';
+      const baseBTokenSymbol = 'WETHe';
       const untradableSymbol = 'POPS';
 
       runTestsForChain(
