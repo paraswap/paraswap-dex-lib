@@ -17,6 +17,10 @@ export function getATokenIfAaveV3Pair(
   const srcAddr = src.address.toLowerCase();
   const dstAddr = dst.address.toLowerCase();
 
+  if (srcAddr === dstAddr) {
+    return null;
+  }
+
   const _src = TokensByAddress[network][srcAddr];
   const _dst = TokensByAddress[network][dstAddr];
 
