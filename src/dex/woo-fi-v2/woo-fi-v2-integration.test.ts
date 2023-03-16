@@ -478,7 +478,7 @@ describe('WooFiV2', function () {
 
     const baseATokenSymbol = 'WAVAX';
     const quoteTokenSymbol = 'USDC';
-    const baseBTokenSymbol = 'WETHe';
+    const baseBTokenSymbol = 'BTCb';
     const untradableSymbol = 'POPS';
 
     runTestsForChain(

@@ -294,14 +294,17 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       rebateTo,
     ]);
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
+    const transferParams = this.erc20Interface.encodeFunctionData('transfer', [
       this.config.wooPPV2Address,
-    );
+      srcAmount,
+    ]);
+
+    return {
+      callees: [srcToken, this.config.wooPPV2Address],
+      calldata: [transferParams, swapData],
+      values: ['0', '0'],
+      networkFee: '0',
+    };
   }
 
   async updatePoolState(): Promise<void> {

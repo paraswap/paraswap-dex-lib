@@ -2,11 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -201,7 +197,7 @@ describe('WooFiV2 E2E', () => {
     const network = Network.AVALANCHE;
 
     const baseATokenSymbol = 'WAVAX';
-    const baseBTokenSymbol = 'WETHe';
+    const baseBTokenSymbol = 'BTCb';
     const quoteTokenSymbol = 'USDC';
 
     const tokenBaseAAmount = '1000000000000000000';
