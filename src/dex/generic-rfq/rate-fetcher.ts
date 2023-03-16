@@ -28,17 +28,16 @@ import {
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
-  validateAndCast,
 } from './validators';
 import { genericRFQAuthHttp } from './security';
-
-const GET_FIRM_RATE_TIMEOUT_MS = 2000;
+import { validateAndCast } from '../../lib/validators';
 import {
   createERC1271Contract,
   ERC1271Contract,
 } from '../../lib/erc1271-utils';
 import { isContractAddress } from '../../utils';
 
+const GET_FIRM_RATE_TIMEOUT_MS = 2000;
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
   [
     BN_1.dividedBy(price[0]),
@@ -60,7 +59,7 @@ export class RateFetcher {
   public blackListCacheKey: string;
 
   private authHttp: (
-    secet: RFQSecret,
+    secret: RFQSecret,
   ) => (options: RequestConfig) => RequestConfig;
 
   private verifierContract?: ERC1271Contract;

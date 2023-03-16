@@ -4,18 +4,6 @@ import * as ethers from 'ethers';
 
 const tokensType = ['ERC20'];
 
-export class ValidationError extends Error {
-  readonly rawMessage: string;
-
-  readonly key?: string;
-
-  constructor(message: string, key?: string) {
-    super(key !== undefined ? `'${key}': ${message}` : message);
-    this.rawMessage = message;
-    this.key = key;
-  }
-}
-
 export const tokenValidator = joi.object({
   symbol: joi.string().min(1).required(),
   name: joi.string().min(1).required(),
@@ -108,27 +96,6 @@ export const priceValidator = joi.object({
 export const pricesResponse = joi.object({
   prices: joi.object().pattern(joi.string().min(1), priceValidator),
 });
-
-export const validateAndCast = <T>(
-  value: unknown,
-  schema: joi.Schema,
-  name?: string,
-): T => {
-  const { error, value: parsed } = schema.validate(value);
-
-  if (error !== undefined) {
-    let message;
-    if (name) {
-      message = `"${name}" ${error.message.slice(
-        error.message.indexOf('must'),
-      )}`;
-    } else {
-      message = error.message;
-    }
-    throw new ValidationError(message);
-  }
-  return parsed as T;
-};
 
 export const addressSchema = joi.string().custom((value, helpers) => {
   if (ethers.utils.isAddress(value)) {

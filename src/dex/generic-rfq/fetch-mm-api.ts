@@ -23,11 +23,11 @@ import {
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
-  validateAndCast,
 } from './validators';
 import MultiV2Abi from '../../abi/multi-v2.json';
 import { AbiItem } from 'web3-utils';
 import { checkOrder } from './utils';
+import { validateAndCast } from '../../lib/validators';
 
 const network = 1;
 

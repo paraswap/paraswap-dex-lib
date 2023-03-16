@@ -24,3 +24,9 @@ export enum RFQType {
 }
 
 export class SlippageCheckError extends Error {}
+
+export type HashflowRatesResponse = {};
+
+export type HashflowRateFetcherConfig = {
+  rateConfig: { reqParams: {}; intervalMs: number };
+};
