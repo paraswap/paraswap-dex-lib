@@ -12,7 +12,7 @@ const TENDERLY_FORK_LAST_TX_ID = process.env.TENDERLY_FORK_LAST_TX_ID;
 export class TenderlySimulation {
   lastTx: string = '';
   forkId: string = '';
-  maxGasLimit = 8000000;
+  maxGasLimit = 80000000;
 
   constructor(private network: Number = 1) {}
 
