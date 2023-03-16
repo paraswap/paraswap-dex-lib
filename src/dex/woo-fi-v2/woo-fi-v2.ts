@@ -238,7 +238,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<WooFiV2Data>): number | number[] {
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    return CALLDATA_GAS_COST.DEX_OVERHEAD + CALLDATA_GAS_COST.ADDRESS;
   }
 
   getAdapterParam(
