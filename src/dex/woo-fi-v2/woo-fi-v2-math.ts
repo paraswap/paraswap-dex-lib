@@ -80,7 +80,7 @@ export class WooFiV2Math {
 
       const baseReserve = this.state.tokenInfos[baseToken].reserve;
       return toAmounts.map(amount => {
-        return amount >= baseReserve ? amount : 0n;
+        return amount <= baseReserve ? amount : 0n;
       });
     } catch (e) {
       handleMathError(e, this.logger);
@@ -95,7 +95,7 @@ export class WooFiV2Math {
   ): bigint[] | null {
     try {
       let state1: TokenState = this.state.tokenStates[baseToken1];
-      let state2: TokenState = this.state.tokenStates[baseToken1];
+      let state2: TokenState = this.state.tokenStates[baseToken2];
 
       const feeRate1 = this.state.tokenInfos[baseToken1].feeRate;
       const feeRate2 = this.state.tokenInfos[baseToken2].feeRate;

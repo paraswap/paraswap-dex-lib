@@ -151,6 +151,7 @@ function runTestsForChain(
   baseBTokenSymbol: string,
   untradableSymbol: string,
   pricingCheckFuncName: string,
+  amountDecimalsDiff: number = 0,
 ) {
   const network = dexHelper.config.data.network;
   const tokens = Tokens[network];
@@ -163,16 +164,16 @@ function runTestsForChain(
 
     const amountsToTrade = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
     ];
 
     await testPricingForPair(
@@ -196,16 +197,16 @@ function runTestsForChain(
 
     const amountsToTrade = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
     ];
 
     await testPricingForPair(
@@ -229,16 +230,16 @@ function runTestsForChain(
 
     const amountsToTrade = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
     ];
 
     await testPricingForPair(
@@ -262,16 +263,16 @@ function runTestsForChain(
 
     const amountsToTrade = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals - amountDecimalsDiff],
     ];
     await testPricingForPair(
       wooFiV2,
@@ -329,22 +330,20 @@ describe('WooFiV2', function () {
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
-    describe('Integration', () => {
-      const baseATokenSymbol = 'WETH';
-      const quoteTokenSymbol = 'USDC';
-      const baseBTokenSymbol = 'WBTC';
-      const untradableSymbol = 'POPS';
+    const baseATokenSymbol = 'WETH';
+    const quoteTokenSymbol = 'USDC';
+    const baseBTokenSymbol = 'WBTC';
+    const untradableSymbol = 'POPS';
 
-      runTestsForChain(
-        dexHelper,
-        initProps,
-        baseATokenSymbol,
-        quoteTokenSymbol,
-        baseBTokenSymbol,
-        untradableSymbol,
-        pricingCheckFuncName,
-      );
-    });
+    runTestsForChain(
+      dexHelper,
+      initProps,
+      baseATokenSymbol,
+      quoteTokenSymbol,
+      baseBTokenSymbol,
+      untradableSymbol,
+      pricingCheckFuncName,
+    );
   });
 
   describe('BSC', () => {
@@ -360,22 +359,21 @@ describe('WooFiV2', function () {
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
-    describe('Integration', () => {
-      const baseATokenSymbol = 'WBNB';
-      const quoteTokenSymbol = 'BUSD';
-      const baseBTokenSymbol = 'bBTC';
-      const untradableSymbol = 'POPS';
+    const baseATokenSymbol = 'WBNB';
+    const quoteTokenSymbol = 'BUSD';
+    const baseBTokenSymbol = 'bBTC';
+    const untradableSymbol = 'POPS';
 
-      runTestsForChain(
-        dexHelper,
-        initProps,
-        baseATokenSymbol,
-        quoteTokenSymbol,
-        baseBTokenSymbol,
-        untradableSymbol,
-        pricingCheckFuncName,
-      );
-    });
+    runTestsForChain(
+      dexHelper,
+      initProps,
+      baseATokenSymbol,
+      quoteTokenSymbol,
+      baseBTokenSymbol,
+      untradableSymbol,
+      pricingCheckFuncName,
+      2,
+    );
   });
 
   describe('Polygon', () => {
@@ -391,22 +389,20 @@ describe('WooFiV2', function () {
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
-    describe('Integration', () => {
-      const baseATokenSymbol = 'WMATIC';
-      const quoteTokenSymbol = 'USDC';
-      const baseBTokenSymbol = 'WETH';
-      const untradableSymbol = 'POPS';
+    const baseATokenSymbol = 'WMATIC';
+    const quoteTokenSymbol = 'USDC';
+    const baseBTokenSymbol = 'WETH';
+    const untradableSymbol = 'POPS';
 
-      runTestsForChain(
-        dexHelper,
-        initProps,
-        baseATokenSymbol,
-        quoteTokenSymbol,
-        baseBTokenSymbol,
-        untradableSymbol,
-        pricingCheckFuncName,
-      );
-    });
+    runTestsForChain(
+      dexHelper,
+      initProps,
+      baseATokenSymbol,
+      quoteTokenSymbol,
+      baseBTokenSymbol,
+      untradableSymbol,
+      pricingCheckFuncName,
+    );
   });
 
   describe('Fantom', () => {
@@ -422,22 +418,20 @@ describe('WooFiV2', function () {
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
-    describe('Integration', () => {
-      const baseATokenSymbol = 'WFTM';
-      const quoteTokenSymbol = 'USDC';
-      const baseBTokenSymbol = 'ETH';
-      const untradableSymbol = 'POPS';
+    const baseATokenSymbol = 'WFTM';
+    const quoteTokenSymbol = 'USDC';
+    const baseBTokenSymbol = 'ETH';
+    const untradableSymbol = 'POPS';
 
-      runTestsForChain(
-        dexHelper,
-        initProps,
-        baseATokenSymbol,
-        quoteTokenSymbol,
-        baseBTokenSymbol,
-        untradableSymbol,
-        pricingCheckFuncName,
-      );
-    });
+    runTestsForChain(
+      dexHelper,
+      initProps,
+      baseATokenSymbol,
+      quoteTokenSymbol,
+      baseBTokenSymbol,
+      untradableSymbol,
+      pricingCheckFuncName,
+    );
   });
 
   describe('Arbitrum', () => {
@@ -453,22 +447,20 @@ describe('WooFiV2', function () {
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
-    describe('Integration', () => {
-      const baseATokenSymbol = 'WETH';
-      const quoteTokenSymbol = 'USDC';
-      const baseBTokenSymbol = 'WBTC';
-      const untradableSymbol = 'POPS';
+    const baseATokenSymbol = 'WETH';
+    const quoteTokenSymbol = 'USDC';
+    const baseBTokenSymbol = 'WBTC';
+    const untradableSymbol = 'POPS';
 
-      runTestsForChain(
-        dexHelper,
-        initProps,
-        baseATokenSymbol,
-        quoteTokenSymbol,
-        baseBTokenSymbol,
-        untradableSymbol,
-        pricingCheckFuncName,
-      );
-    });
+    runTestsForChain(
+      dexHelper,
+      initProps,
+      baseATokenSymbol,
+      quoteTokenSymbol,
+      baseBTokenSymbol,
+      untradableSymbol,
+      pricingCheckFuncName,
+    );
   });
 
   describe('Avalanche', () => {
@@ -484,21 +476,20 @@ describe('WooFiV2', function () {
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
-    describe('Integration', () => {
-      const baseATokenSymbol = 'WAVAX';
-      const quoteTokenSymbol = 'USDC';
-      const baseBTokenSymbol = 'WETHe';
-      const untradableSymbol = 'POPS';
+    const baseATokenSymbol = 'WAVAX';
+    const quoteTokenSymbol = 'USDC';
+    const baseBTokenSymbol = 'WETHe';
+    const untradableSymbol = 'POPS';
 
-      runTestsForChain(
-        dexHelper,
-        initProps,
-        baseATokenSymbol,
-        quoteTokenSymbol,
-        baseBTokenSymbol,
-        untradableSymbol,
-        pricingCheckFuncName,
-      );
-    });
+    runTestsForChain(
+      dexHelper,
+      initProps,
+      baseATokenSymbol,
+      quoteTokenSymbol,
+      baseBTokenSymbol,
+      untradableSymbol,
+      pricingCheckFuncName,
+      3,
+    );
   });
 });

@@ -462,6 +462,10 @@ export const Tokens: {
       address: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
       decimals: 18,
     },
+    ETH: {
+      address: '0x74b23882a30290451A17c44f4F05243b6b58C76d',
+      decimals: 18,
+    },
   },
   [Network.BSC]: {
     POPS: {
@@ -890,6 +894,7 @@ export const Holders: {
     wBOMB: '0x28aa4f9ffe21365473b64c161b566c3cdead0108',
     TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',
     BOO: '0xf778f4d7a14a8cb73d5261f9c61970ef4e7d7842',
+    ETH: '0xf48883940b4056801de30f12b934dcea90133ee6',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
