@@ -8,7 +8,6 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import { Interface } from '@ethersproject/abi';
-import SynthereumPriceFeedABI from '../../abi/jarvis/SynthereumPriceFeed.json';
 import _ from 'lodash';
 
 jest.setTimeout(50 * 1000);
@@ -23,20 +22,18 @@ async function fetchPoolState(
   return jarvisV6Pools.generateState(blockNumber);
 }
 
-function getBaseDataFiltered(
+function getFilteredDexParams(
   dexKey: string,
   network: number,
-  pairToSkip: string[],
+  pairToKeep: string[],
 ) {
-  const baseConfig = JarvisV6Config[dexKey][network].pools.filter(
-    pool => !pairToSkip.includes(pool.pair),
+  const baseConfig = JarvisV6Config[dexKey][network].pools.filter(pool =>
+    pairToKeep.includes(pool.pair),
   );
-  const chainLinkProxies = _.cloneDeep(
+  const chainLinkProxies = _.pick(
     JarvisV6Config[dexKey][network].chainLinkProxies,
+    pairToKeep,
   );
-  for (let pair of pairToSkip) {
-    delete chainLinkProxies[pair];
-  }
   return { baseConfig, chainLinkProxies };
 }
 
@@ -47,10 +44,10 @@ describe('JarvisV6 Event', function () {
   };
 
   describe('JarvisV6EventPool', function () {
-    const { baseConfig, chainLinkProxies } = getBaseDataFiltered(
+    const { baseConfig, chainLinkProxies } = getFilteredDexParams(
       dexKey,
       network,
-      ['BRLUSD'],
+      ['EURUSD'],
     );
 
     Object.keys(blockNumbers).forEach((event: string) => {
