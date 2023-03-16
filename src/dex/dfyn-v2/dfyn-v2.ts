@@ -125,9 +125,9 @@ export class DfynV2
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  getPoolIdentifier(srcAddress: Address, destAddress: Address) {
+  getPoolIdentifier(srcAddress: Address, destAddress: Address, fee: bigint) {
     const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
-    return `${this.dexKey}_${tokenAddresses}`;
+    return `${this.dexKey}_${tokenAddresses}_${fee}`;
   }
 
   async initializePricing(blockNumber: number) {
@@ -167,12 +167,13 @@ export class DfynV2
     fee: bigint,
     blockNumber: number,
   ): Promise<DfynV2EventPool | null> {
-    let pool = this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)];
+    let pool =
+      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
 
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
-      const key = `${token0}_${token1}`.toLowerCase();
+      const key = `${token0}_${token1}_${fee}`.toLowerCase();
 
       const notExistingPoolScore = await this.dexHelper.cache.zscore(
         this.notExistingPoolSetKey,
@@ -182,7 +183,8 @@ export class DfynV2
       const poolDoesNotExist = notExistingPoolScore !== null;
 
       if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
+        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
+          null;
         return null;
       }
 
@@ -192,6 +194,7 @@ export class DfynV2
         JSON.stringify({
           token0,
           token1,
+          fee: fee.toString(),
         }),
       );
 
@@ -202,6 +205,7 @@ export class DfynV2
         this.stateMultiContract,
         this.erc20Interface,
         this.config.factory,
+        fee,
         token0,
         token1,
         this.logger,
@@ -254,7 +258,8 @@ export class DfynV2
         );
       }
 
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = pool;
+      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
+        pool;
     }
     return pool;
   }
@@ -285,7 +290,9 @@ export class DfynV2
 
     if (pools.length === 0) return [];
 
-    return pools.map(pool => this.getPoolIdentifier(_srcAddress, _destAddress));
+    return pools.map(pool =>
+      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
+    );
   }
 
   async getPricingFromRpc(
@@ -406,7 +413,11 @@ export class DfynV2
             },
           ],
         },
-        poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
+        poolIdentifier: this.getPoolIdentifier(
+          pool.token0,
+          pool.token1,
+          pool.feeCode,
+        ),
         exchange: this.dexKey,
         gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
         poolAddresses: [pool.poolAddress],
@@ -443,7 +454,7 @@ export class DfynV2
             this.supportedFees.map(async fee => {
               const locallyFoundPool =
                 this.eventPools[
-                  this.getPoolIdentifier(_srcAddress, _destAddress)
+                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
                 ];
               if (locallyFoundPool) return locallyFoundPool;
 
@@ -461,7 +472,8 @@ export class DfynV2
         const pairIdentifierWithoutFee = this.getPoolIdentifier(
           _srcAddress,
           _destAddress,
-        );
+          0n,
+        ).slice(0, -1);
 
         const poolIdentifiers = limitPools.filter(identifier =>
           identifier.startsWith(pairIdentifierWithoutFee),
@@ -586,7 +598,11 @@ export class DfynV2
                 },
               ],
             },
-            poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
+            poolIdentifier: this.getPoolIdentifier(
+              pool.token0,
+              pool.token1,
+              pool.feeCode,
+            ),
             exchange: this.dexKey,
             gasCost: gasCost,
             poolAddresses: [pool.poolAddress],

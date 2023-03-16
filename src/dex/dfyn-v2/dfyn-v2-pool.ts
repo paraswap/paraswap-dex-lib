@@ -17,6 +17,7 @@ import {
   TickInfoMappingsWithBigNumber,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
+import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { MultiCallParams } from '../../lib/multi-wrapper';
@@ -53,7 +54,9 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
 
-  public readonly poolIface = new Interface(UniswapV3PoolABI);
+  public readonly poolIface = new Interface(DfynV2PoolABI);
+
+  public readonly feeCodeAsString;
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -61,13 +64,22 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     readonly stateMultiContract: Contract,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
+    public readonly feeCode: bigint,
     token0: Address,
     token1: Address,
     logger: Logger,
     mapKey: string = '',
     readonly poolInitCodeHash = DEFAULT_POOL_INIT_CODE_HASH,
   ) {
-    super(parentName, `${token0}_${token1}`, dexHelper, logger, true, mapKey);
+    super(
+      parentName,
+      `${token0}_${token1}_${feeCode}`,
+      dexHelper,
+      logger,
+      true,
+      mapKey,
+    );
+    this.feeCodeAsString = feeCode.toString();
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
@@ -207,6 +219,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
               this.factoryAddress,
               this.token0,
               this.token1,
+              this.feeCode,
               this.getBitmapRangeToRequest(),
               this.getBitmapRangeToRequest(),
             )
@@ -283,6 +296,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
         feeProtocol: bigIntify(_state.slot0.feeProtocol),
       },
       liquidity: bigIntify(_state.liquidity),
+      //fee: this.feeCode,
       tickSpacing,
       maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,

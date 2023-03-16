@@ -57,6 +57,7 @@ import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
 import { Hashflow } from './hashflow/hashflow';
+import { DfynV2 } from './dfyn-v2/dfyn-v2';
 
 const LegacyDexes = [
   CurveV2,
@@ -111,6 +112,7 @@ const Dexes = [
   SwaapV1,
   WstETH,
   Hashflow,
+  DfynV2,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

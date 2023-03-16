@@ -21,7 +21,7 @@ const printFrequency = 100;
 const network = Network.MAINNET;
 const dexHelper = new DummyDexHelper(network);
 
-const uniV3 = new DfynV2(network, 'UniswapV3', dexHelper);
+const dfynV2 = new DfynV2(network, 'DfynV2', dexHelper);
 
 // USDC
 const srcToken = {
@@ -106,7 +106,7 @@ const [token0] = sortTokens(
 const zeroForOne = token0 === srcToken.address.toLowerCase() ? true : false;
 
 const executeGetPricesVolume = async (blockNumber: number) => {
-  await uniV3.getPricesVolume(srcToken, destToken, amounts, side, blockNumber);
+  await dfynV2.getPricesVolume(srcToken, destToken, amounts, side, blockNumber);
 };
 
 const executeOnlySyncOperations = async (states: DeepReadonly<PoolState>[]) => {
@@ -158,7 +158,7 @@ const runOneSuite = async (func: Function) => {
 
   logger.info('\n');
 
-  const states = Object.values(uniV3.eventPools).map(
+  const states = Object.values(dfynV2.eventPools).map(
     ep => ep!.getState(blockNumber)!,
   );
 

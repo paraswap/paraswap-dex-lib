@@ -10,7 +10,7 @@ export const TICK_BITMAP_BUFFER = 8n;
 export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 128;
 
 export const UNISWAPV3_SUBGRAPH_URL =
-  'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
+  'https://subgraph.satsuma-prod.com/57a2c796086f/dfyn/dfyn-concentrated-2/api';
 
 export const UNISWAPV3_EFFICIENCY_FACTOR = 3;
 

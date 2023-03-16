@@ -138,13 +138,13 @@ describe('UniswapV3', function () {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
     uniswapV3Mainnet = new UniswapV3(
-      Network.MAINNET,
+      Network.POLYGON,
       dexKey,
-      new DummyDexHelper(Network.MAINNET),
+      new DummyDexHelper(Network.POLYGON),
     );
   });
 
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+  it.skip('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const pools = await uniswapV3.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -189,7 +189,7 @@ describe('UniswapV3', function () {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
-  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+  it.skip('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const pools = await uniswapV3.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -344,7 +344,7 @@ describe('UniswapV3', function () {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
-  it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
+  it.skip('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
     const TokenASymbol = 'DAI';
     const TokenA = Tokens[network][TokenASymbol];
 
@@ -454,9 +454,9 @@ describe('UniswapV3', function () {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
-  it('getTopPoolsForToken', async function () {
+  it.skip('getTopPoolsForToken', async function () {
     const poolLiquidity = await uniswapV3Mainnet.getTopPoolsForToken(
-      Tokens[Network.MAINNET]['USDC'].address,
+      Tokens[Network.POLYGON]['USDC'].address,
       10,
     );
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);

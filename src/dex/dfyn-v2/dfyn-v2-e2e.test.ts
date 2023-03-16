@@ -12,46 +12,46 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
 describe('UniswapV3 E2E', () => {
-  const dexKey = 'UniswapV3';
+  const dexKey = 'DfynV2';
 
-  describe('UniswapV3 MAINNET', () => {
-    const network = Network.MAINNET;
-    const tokens = Tokens[network];
-    const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+  // describe('UniswapV3 MAINNET', () => {
+  //   const network = Network.MAINNET;
+  //   const tokens = Tokens[network];
+  //   const holders = Holders[network];
+  //   const provider = new StaticJsonRpcProvider(
+  //     generateConfig(network).privateHttpProvider,
+  //     network,
+  //   );
 
-    it('BUY DAI -> USDC', async () => {
-      await testE2E(
-        tokens['DAI'],
-        tokens['USDC'],
-        holders['DAI'],
-        '100000000000',
-        SwapSide.BUY,
-        dexKey,
-        ContractMethod.simpleBuy,
-        network,
-        provider,
-      );
-    });
-    it('SELL WETH -> SHIBA', async () => {
-      await testE2E(
-        tokens['WETH'],
-        tokens['SHIBA'],
-        holders['WETH'],
-        '1000000000000000000',
-        SwapSide.SELL,
-        dexKey,
-        ContractMethod.simpleSwap,
-        network,
-        provider,
-      );
-    });
-  });
+  //   it('BUY DAI -> USDC', async () => {
+  //     await testE2E(
+  //       tokens['DAI'],
+  //       tokens['USDC'],
+  //       holders['DAI'],
+  //       '100000000000',
+  //       SwapSide.BUY,
+  //       dexKey,
+  //       ContractMethod.simpleBuy,
+  //       network,
+  //       provider,
+  //     );
+  //   });
+  //   it('SELL WETH -> SHIBA', async () => {
+  //     await testE2E(
+  //       tokens['WETH'],
+  //       tokens['SHIBA'],
+  //       holders['WETH'],
+  //       '1000000000000000000',
+  //       SwapSide.SELL,
+  //       dexKey,
+  //       ContractMethod.simpleSwap,
+  //       network,
+  //       provider,
+  //     );
+  //   });
+  // });
 
-  describe('UniswapV3 POLYGON', () => {
+  describe('DfynV2 POLYGON', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
