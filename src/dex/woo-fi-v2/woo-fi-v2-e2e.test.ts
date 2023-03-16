@@ -14,11 +14,11 @@ import { generateConfig } from '../../config';
 function testForNetwork(
   network: Network,
   dexKey: string,
-  tokenASymbol: string,
-  tokenBSymbol: string,
-  tokenAAmount: string,
-  tokenBAmount: string,
-  nativeTokenAmount: string,
+  tokenBaseA: string,
+  tokenBaseB: string,
+  tokenQuote: string,
+  tokenBaseAAmount: string,
+  tokenQuoteAmount: string,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -26,20 +26,16 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -47,12 +43,12 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            it(`${tokenBaseA} -> ${tokenQuote}`, async () => {
               await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                tokens[tokenBaseA],
+                tokens[tokenQuote],
+                holders[tokenBaseA],
+                tokenBaseAAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -60,12 +56,12 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+            it(`${tokenQuote} -> ${tokenBaseA}`, async () => {
               await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                tokens[tokenQuote],
+                tokens[tokenBaseA],
+                holders[tokenQuote],
+                tokenQuoteAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -73,12 +69,12 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            it(`${tokenBaseA} -> ${tokenBaseB}`, async () => {
               await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                tokens[tokenBaseA],
+                tokens[tokenBaseB],
+                holders[tokenBaseA],
+                tokenBaseAAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -96,27 +92,129 @@ function testForNetwork(
 describe('WooFiV2 E2E', () => {
   const dexKey = 'WooFiV2';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const baseATokenSymbol = 'WETH';
+    const baseBTokenSymbol = 'WBTC';
+    const quoteTokenSymbol = 'USDC';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
-    const nativeTokenAmount = '1000000000000000000';
+    const tokenBaseAAmount = '1000000000000000000';
+    const tokenQuoteAmount = '1000000';
 
     testForNetwork(
       network,
       dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
+      baseATokenSymbol,
+      baseBTokenSymbol,
+      quoteTokenSymbol,
+      tokenBaseAAmount,
+      tokenQuoteAmount,
     );
+  });
 
-    // TODO: Add any additional test cases required to test WooFiV2
+  describe('BSC', () => {
+    const network = Network.BSC;
+
+    const baseATokenSymbol = 'WBNB';
+    const baseBTokenSymbol = 'bBTC';
+    const quoteTokenSymbol = 'BUSD';
+
+    const tokenBaseAAmount = '1000000000000000000';
+    const tokenQuoteAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      baseATokenSymbol,
+      baseBTokenSymbol,
+      quoteTokenSymbol,
+      tokenBaseAAmount,
+      tokenQuoteAmount,
+    );
+  });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    const baseATokenSymbol = 'WMATIC';
+    const baseBTokenSymbol = 'WETH';
+    const quoteTokenSymbol = 'USDC';
+
+    const tokenBaseAAmount = '1000000000000000000';
+    const tokenQuoteAmount = '1000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      baseATokenSymbol,
+      baseBTokenSymbol,
+      quoteTokenSymbol,
+      tokenBaseAAmount,
+      tokenQuoteAmount,
+    );
+  });
+
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+
+    const baseATokenSymbol = 'WFTM';
+    const quoteTokenSymbol = 'USDC';
+    const baseBTokenSymbol = 'ETH';
+
+    const tokenBaseAAmount = '1000000000000000000';
+    const tokenQuoteAmount = '1000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      baseATokenSymbol,
+      baseBTokenSymbol,
+      quoteTokenSymbol,
+      tokenBaseAAmount,
+      tokenQuoteAmount,
+    );
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const baseATokenSymbol = 'WETH';
+    const baseBTokenSymbol = 'WBTC';
+    const quoteTokenSymbol = 'USDC';
+
+    const tokenBaseAAmount = '1000000000000000000';
+    const tokenQuoteAmount = '1000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      baseATokenSymbol,
+      baseBTokenSymbol,
+      quoteTokenSymbol,
+      tokenBaseAAmount,
+      tokenQuoteAmount,
+    );
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+
+    const baseATokenSymbol = 'WAVAX';
+    const baseBTokenSymbol = 'WETHe';
+    const quoteTokenSymbol = 'USDC';
+
+    const tokenBaseAAmount = '1000000000000000000';
+    const tokenQuoteAmount = '1000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      baseATokenSymbol,
+      baseBTokenSymbol,
+      quoteTokenSymbol,
+      tokenBaseAAmount,
+      tokenQuoteAmount,
+    );
   });
 });
