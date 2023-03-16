@@ -53,6 +53,9 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
+import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
+import { Contract as Contract2, ethers } from 'ethers';
+import { JsonRpcProvider } from '@ethersproject/providers';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -63,6 +66,10 @@ type PoolPairsInfo = {
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
+const provider = new JsonRpcProvider(
+  'https://matic.getblock.io/4edbfbad-6502-47e0-b996-e3a329b33e81/mainnet/',
+  Network.POLYGON,
+);
 
 export class DfynV2
   extends SimpleExchange
@@ -323,6 +330,14 @@ export class DfynV2
     );
     // fetches balances from the chain
     const balances = await getBalances(this.dexHelper.multiWrapper, requests);
+
+    const concentratedPool = new Contract2(
+      '0xb2541d2e2492ee6421e648d354531b179c032077',
+      DfynV2PoolABI,
+      provider,
+    );
+
+    const { reserves0, reserves1 } = await concentratedPool.getReserves();
 
     pools = pools.filter((pool, index) => {
       const balance = balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
