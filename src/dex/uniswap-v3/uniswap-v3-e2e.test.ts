@@ -136,12 +136,12 @@ describe('UniswapV3 E2E', () => {
       network,
     );
 
-    it('BUY DAI -> USDC', async () => {
+    it('BUY WBNB -> BUSD', async () => {
       await testE2E(
-        tokens['DAI'],
-        tokens['USDC'],
-        holders['DAI'],
-        '100000000000',
+        tokens['WBNB'],
+        tokens['BUSD'],
+        holders['WBNB'],
+        '100000000000000000000',
         SwapSide.BUY,
         dexKey,
         ContractMethod.simpleBuy,
@@ -150,10 +150,10 @@ describe('UniswapV3 E2E', () => {
       );
     });
 
-    it('SELL ETH -> BUSD', async () => {
+    it('SELL ETH -> BNB', async () => {
       await testE2E(
         tokens['ETH'],
-        tokens['BUSD'],
+        tokens['BNB'],
         holders['ETH'],
         '1000000000000000000',
         SwapSide.SELL,
