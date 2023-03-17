@@ -5,7 +5,7 @@ import { JarvisSwapFunctions, PoolConfig } from './types';
 import { BI_POWS } from '../../bigint-constants';
 
 export const THIRTY_MINUTES = 60 * 30;
-export const PRICE_UNIT = BI_POWS[18];
+export const PRICE_UNIT = getBigIntPow(18);
 
 export function getJarvisPoolFromTokens(
   srcToken: Token,
@@ -17,8 +17,15 @@ export function getJarvisPoolFromTokens(
   return (
     poolConfigs.find(pool => {
       const collateralAddress = pool.collateralToken.address.toLowerCase();
-      const syntheticToken = pool.syntheticToken.address.toLowerCase();
+      const syntheticAddress = pool.syntheticToken.address.toLowerCase();
       return (
+        (srcAddress === collateralAddress &&
+          destAddress === syntheticAddress) ||
+        (srcAddress === syntheticAddress && destAddress === collateralAddress)
+      );
+    }) ?? null
+  );
+}
         (srcAddress === collateralAddress && destAddress === syntheticToken) ||
         (srcAddress === syntheticToken && destAddress === collateralAddress)
       );
@@ -55,7 +62,7 @@ export function getJarvisSwapFunction(
 
 export function calculateConvertedPrice(
   amount: string | bigint,
-  isReversePrice: boolean,
+  isReversePrice = false,
 ): bigint {
   const valueInWei: bigint = convertToNewDecimals(
     typeof amount === 'string' ? bigIntify(amount) : amount,
@@ -63,5 +70,11 @@ export function calculateConvertedPrice(
     18,
   );
 
-  return isReversePrice ? BI_POWS[36] / valueInWei : valueInWei;
+  return isReversePrice ? getBigIntPow(36) / valueInWei : valueInWei;
+}
+
+export function inverseOf(number: string | bigint): bigint {
+  return (
+    getBigIntPow(36) / (typeof number === 'string' ? bigIntify(number) : number)
+  );
 }

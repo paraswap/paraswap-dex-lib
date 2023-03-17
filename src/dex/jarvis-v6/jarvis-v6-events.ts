@@ -3,14 +3,18 @@ import { Logger, MultiCallInput } from '../../types';
 import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { lens } from '../../lens';
-import { ChainLinkProxy, PoolConfig, PoolState, PriceFeed } from './types';
+import { ChainLink, PoolConfig, PoolState } from './types';
 
 import { Interface } from '@ethersproject/abi';
 import { SynthereumPoolEvent } from './syntheteumPool-event';
 import { Contract } from 'web3-eth-contract';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { Address } from '@paraswap/core';
-import { calculateConvertedPrice, PRICE_UNIT } from './utils';
+import {
+  calculateConvertedPrice,
+  convertToNewDecimals,
+  PRICE_UNIT,
+} from './utils';
 export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
   constructor(
     parentName: string,
@@ -18,6 +22,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
+    public chainLinkEvents: { [pair: string]: ChainLinkSubscriber<PoolState> },
     public poolInterface: Interface,
   ) {
     const poolEvent = new SynthereumPoolEvent(
@@ -27,25 +32,12 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
       logger,
     );
 
-    const chainLinksEvents = poolConfig.priceFeed
-      .map(p => {
-        return new ChainLinkSubscriber<PoolState>(
-          p.proxy,
-          p.aggregator,
-          lens<DeepReadonly<PoolState>>().chainlink[p.pair],
-          dexHelper.getLogger(
-            `${p.pair} ChainLink for ${parentName}-${network} at address: ${p.aggregator}`,
-          ),
-        );
-      })
-      .flat();
-
     super(
       parentName,
       'pool',
       logger,
       dexHelper,
-      [poolEvent, ...chainLinksEvents],
+      [poolEvent, ...Object.values(chainLinkEvents)],
       {
         chainlink: {},
         pool: { feesPercentage: 0n },
@@ -53,15 +45,44 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     );
   }
 
-  static async getConfig(
-    poolConfigs: PoolConfig[],
-    chainLinkProxies: ChainLinkProxy,
+  static async getChainLinkSubscriberMap(
+    chainLinkConfigs: ChainLink,
+    dexKey: string,
+    dexHelper: IDexHelper,
+    network: number,
+    blockNumber: number | 'latest',
+  ): Promise<{ [pair: string]: ChainLinkSubscriber<PoolState> }> {
+    const chainLink = await JarvisV6EventPool.getChainLinkConfig(
+      chainLinkConfigs,
+      blockNumber,
+      dexHelper.multiContract,
+    );
+    return Object.entries(chainLink).reduce(
+      (
+        acc: { [pair: string]: ChainLinkSubscriber<PoolState> },
+        [key, value],
+      ) => {
+        acc[key] = new ChainLinkSubscriber<PoolState>(
+          value.proxy,
+          value.aggregator,
+          lens<DeepReadonly<PoolState>>().chainlink[key],
+          dexHelper.getLogger(
+            `${key} ChainLink for ${dexKey}-${network} at address: ${value.aggregator}`,
+          ),
+        );
+        return acc;
+      },
+      {},
+    );
+  }
+
+  static async getChainLinkConfig(
+    chainLink: ChainLink,
     blockNumber: number | 'latest',
     multiContract: Contract,
-  ): Promise<PoolConfig[]> {
-    let multiCallData: MultiCallInput[] = Object.values(chainLinkProxies).map(
-      proxyAddress =>
-        ChainLinkSubscriber.getReadAggregatorMultiCallInput(proxyAddress),
+  ): Promise<ChainLink> {
+    let multiCallData: MultiCallInput[] = Object.values(chainLink).map(
+      ({ proxy }) => ChainLinkSubscriber.getReadAggregatorMultiCallInput(proxy),
     );
 
     const callData = (
@@ -71,24 +92,14 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     const chainlink: {
       [pair: string]: { proxy: Address; aggregator: Address };
     } = {};
-    Object.entries(chainLinkProxies).forEach(([key, value], index) => {
+    Object.entries(chainLink).forEach(([pair, value], index) => {
       const aggregator = ChainLinkSubscriber.readAggregator(callData[index]);
-
-      chainlink[key] = {
-        proxy: value,
+      chainlink[pair] = {
+        proxy: value.proxy,
         aggregator,
       };
     });
-    return poolConfigs.map(config => {
-      const priceFeed = config.priceFeed.map(p => {
-        return {
-          ...p,
-          aggregator: chainlink[p.pair].aggregator,
-          proxy: chainlink[p.pair].proxy,
-        };
-      });
-      return { ...config, priceFeed };
-    });
+    return chainlink;
   }
 
   getIdentifier(): string {
@@ -108,6 +119,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
       );
     }, PRICE_UNIT);
   }
+
 
   /**
    * The function generates state using on-chain calls. This

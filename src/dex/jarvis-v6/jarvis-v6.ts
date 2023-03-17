@@ -59,8 +59,8 @@ export class JarvisV6
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
     protected poolConfigs: PoolConfig[] = JarvisV6Config[dexKey][network].pools,
-    protected chainLinkProxies: ChainLinkProxy = JarvisV6Config[dexKey][network]
-      .chainLinkProxies,
+    protected chainLinkConfigs: ChainLink = JarvisV6Config[dexKey][network]
+      .chainLink,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -71,21 +71,25 @@ export class JarvisV6
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    this.poolConfigs = await JarvisV6EventPool.getConfig(
-      this.poolConfigs,
-      this.chainLinkProxies,
+    const chainLinksEventsMap =
+      await JarvisV6EventPool.getChainLinkSubscriberMap(
+        this.chainLinkConfigs,
+        this.dexKey,
+        this.dexHelper,
+        this.network,
       blockNumber,
-      this.dexHelper.multiContract,
     );
 
     await Promise.all(
       this.poolConfigs.map(async pool => {
+        const poolPriceFeedPair = pool.priceFeed.map(p => p.pair);
         this.eventPools[pool.address.toLowerCase()] = new JarvisV6EventPool(
           this.dexKey,
           this.network,
           this.dexHelper,
           this.logger,
           pool,
+          _.pick(chainLinksEventsMap, poolPriceFeedPair),
           this.poolInterface,
         );
 

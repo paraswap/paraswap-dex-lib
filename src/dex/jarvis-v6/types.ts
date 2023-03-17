@@ -14,7 +14,7 @@ export type SynthereumPoolState = {
 };
 
 export type DexParams = {
-  chainLinkProxies: ChainLinkProxy;
+  chainLink: ChainLink;
   pools: PoolConfig[];
 };
 
@@ -33,8 +33,8 @@ export type PriceFeed = {
   aggregator: Address;
 };
 
-export type ChainLinkProxy = {
-  [pair: string]: Address;
+export type ChainLink = {
+  [pair: string]: { proxy: Address; aggregator: Address };
 };
 
 type JarvisV6MintParam = [

@@ -1,6 +1,6 @@
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { Network, SwapSide, NULL_ADDRESS } from '../../constants';
 
 export const JarvisV6Config: DexConfigMap<DexParams> = {
   JarvisV6: {
@@ -23,6 +23,75 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
         BRLUSD: '0xB90DA3ff54C3ED09115abf6FbA0Ff4645586af2c',
         XAUUSD: '0x0C466540B2ee1a31b441671eac0ca886e051E410',
         ETHUSD: '0xF9680D99D6C9589e2a93a78A04A279e509205945',
+      chainLink: {
+        EURUSD: {
+          proxy: '0x73366Fe0AA0Ded304479862808e02506FE556a98',
+          aggregator: '',
+        },
+        CHFUSD: {
+          proxy: '0xc76f762CedF0F78a439727861628E0fdfE1e70c2',
+          aggregator: '',
+        },
+        GBPUSD: {
+          proxy: '0x099a2540848573e94fb1Ca0Fa420b00acbBc845a',
+          aggregator: '',
+        },
+        PHPUSD: {
+          proxy: '0x218231089Bebb2A31970c3b77E96eCfb3BA006D1',
+          aggregator: '',
+        },
+        SGDUSD: {
+          proxy: '0x8CE3cAc0E6635ce04783709ca3CC4F5fc5304299',
+          aggregator: '',
+        },
+        CADUSD: {
+          proxy: '0xACA44ABb8B04D07D883202F99FA5E3c53ed57Fb5',
+          aggregator: '',
+        },
+        JPYUSD: {
+          proxy: '0xD647a6fC9BC6402301583C91decC5989d8Bc382D',
+          aggregator: '',
+        },
+        SEKUSD: {
+          proxy: '0xbd92B4919ae82be8473859295dEF0e778A626302',
+          aggregator: '',
+        },
+        AUDUSD: {
+          proxy: '0x062Df9C4efd2030e243ffCc398b652e8b8F95C6f',
+          aggregator: '',
+        },
+        CNYUSD: {
+          proxy: '0x04bB437Aa63E098236FA47365f0268547f6EAB32',
+          aggregator: '',
+        },
+        NZDUSD: {
+          proxy: '0xa302a0B8a499fD0f00449df0a490DedE21105955',
+          aggregator: '',
+        },
+        PLNUSD: {
+          proxy: '0xB34BCE11040702f71c11529D00179B2959BcE6C0',
+          aggregator: '',
+        },
+        MXNUSD: {
+          proxy: '0x171b16562EA3476F5C61d1b8dad031DbA0768545',
+          aggregator: '',
+        },
+        KRWUSD: {
+          proxy: '0x24B820870F726dA9B0D83B0B28a93885061dbF50',
+          aggregator: '',
+        },
+        BRLUSD: {
+          proxy: '0xB90DA3ff54C3ED09115abf6FbA0Ff4645586af2c',
+          aggregator: '',
+        },
+        XAUUSD: {
+          proxy: '0x0C466540B2ee1a31b441671eac0ca886e051E410',
+          aggregator: '',
+        },
+        ETHUSD: {
+          proxy: '0xF9680D99D6C9589e2a93a78A04A279e509205945',
+          aggregator: '',
+        },
       },
       pools: [
         {
@@ -42,8 +111,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'EURUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -64,14 +131,10 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'EURUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
             {
               pair: 'ETHUSD',
               isReversePrice: true,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -92,8 +155,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'CHFUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -114,8 +175,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'GBPUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -136,8 +195,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'PHPUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -158,8 +215,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'SGDUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -180,8 +235,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'CADUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -202,8 +255,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'JPYUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -224,8 +275,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'SEKUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -246,8 +295,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'AUDUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -268,8 +315,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'CNYUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -290,8 +335,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'NZDUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -312,8 +355,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'PLNUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -334,8 +375,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'MXNUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -356,8 +395,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'KRWUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -378,8 +415,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'BRLUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -400,8 +435,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'XAUUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -411,6 +444,11 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
     [Network.OPTIMISM]: {
       chainLinkProxies: {
         EURUSD: '0x3626369857A10CcC6cc3A6e4f5C2f5984a519F20',
+      chainLink: {
+        EURUSD: {
+          proxy: '0x3626369857A10CcC6cc3A6e4f5C2f5984a519F20',
+          aggregator: '',
+        },
       },
       pools: [
         {
@@ -430,8 +468,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'EURUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },
@@ -441,6 +477,11 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
     [Network.ARBITRUM]: {
       chainLinkProxies: {
         EURUSD: '0xA14d53bC1F1c0F31B4aA3BD109344E5009051a84',
+      chainLink: {
+        EURUSD: {
+          proxy: '0xA14d53bC1F1c0F31B4aA3BD109344E5009051a84',
+          aggregator: '',
+        },
       },
       pools: [
         {
@@ -460,8 +501,6 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
             {
               pair: 'EURUSD',
               isReversePrice: false,
-              proxy: '',
-              aggregator: '',
             },
           ],
         },

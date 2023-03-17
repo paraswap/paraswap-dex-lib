@@ -27,14 +27,14 @@ function getFilteredDexParams(
   network: number,
   pairToKeep: string[],
 ) {
-  const baseConfig = JarvisV6Config[dexKey][network].pools.filter(pool =>
+  const poolConfig = JarvisV6Config[dexKey][network].pools.filter(pool =>
     pairToKeep.includes(pool.pair),
   );
-  const chainLinkProxies = _.pick(
-    JarvisV6Config[dexKey][network].chainLinkProxies,
+  const chainLinkConfigs = _.pick(
+    JarvisV6Config[dexKey][network].chainLink,
     pairToKeep,
   );
-  return { baseConfig, chainLinkProxies };
+  return { poolConfig, chainLinkConfigs };
 }
 
 describe('JarvisV6 Event', function () {
@@ -44,7 +44,7 @@ describe('JarvisV6 Event', function () {
   };
 
   describe('JarvisV6EventPool', function () {
-    const { baseConfig, chainLinkProxies } = getFilteredDexParams(
+    const { poolConfig, chainLinkConfigs } = getFilteredDexParams(
       dexKey,
       network,
       ['EURUSD'],
@@ -55,18 +55,22 @@ describe('JarvisV6 Event', function () {
         it(`Should return the correct state after the ${blockNumber}: ${event}`, async function () {
           const dexHelper = new DummyDexHelper(network);
           const logger = dexHelper.getLogger(dexKey);
-          const pool = await JarvisV6EventPool.getConfig(
-            baseConfig,
-            chainLinkProxies,
-            blockNumber,
-            dexHelper.multiContract,
-          );
+
+          const chainLinksEventsMap =
+            await JarvisV6EventPool.getChainLinkSubscriberMap(
+              chainLinkConfigs,
+              dexKey,
+              dexHelper,
+              network,
+              blockNumber,
+            );
           const jarvisV6Pools = new JarvisV6EventPool(
             dexKey,
             network,
             dexHelper,
             logger,
-            pool[0],
+            poolConfig[0],
+            _.pick(chainLinksEventsMap, ['EURUSD']),
             poolInterface,
           );
 
@@ -76,7 +80,7 @@ describe('JarvisV6 Event', function () {
             (_blockNumber: number) =>
               fetchPoolState(jarvisV6Pools, _blockNumber),
             blockNumber,
-            `${dexKey}_${pool[0].address}`,
+            `${dexKey}_${poolConfig[0].address}`,
             dexHelper.provider,
           );
         });
