@@ -26,10 +26,38 @@ export function getJarvisPoolFromTokens(
     }) ?? null
   );
 }
-        (srcAddress === collateralAddress && destAddress === syntheticToken) ||
-        (srcAddress === syntheticToken && destAddress === collateralAddress)
+export function getJarvisPoolFromSyntheticTokens(
+  srcToken: Token,
+  poolConfigs: PoolConfig[],
+): PoolConfig | null {
+  return (
+    poolConfigs.find(pool => {
+      return (
+        srcToken.address.toLowerCase() ===
+        pool.syntheticToken.address.toLowerCase()
       );
     }) ?? null
+  );
+}
+
+export function isSyntheticExchange(
+  srcToken: Token,
+  destToken: Token,
+  poolConfigs: PoolConfig[],
+): boolean {
+  return (
+    isSyntheticToken(srcToken, poolConfigs) &&
+    isSyntheticToken(destToken, poolConfigs)
+  );
+}
+
+export function isSyntheticToken(
+  token: Token,
+  poolConfigs: PoolConfig[],
+): boolean {
+  return poolConfigs.some(
+    pool =>
+      pool.syntheticToken.address.toLowerCase() === token.address.toLowerCase(),
   );
 }
 

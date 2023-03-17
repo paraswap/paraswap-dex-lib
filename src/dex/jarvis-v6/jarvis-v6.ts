@@ -8,12 +8,12 @@ import {
   Logger,
   PoolPrices,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  ChainLinkProxy,
+  ChainLink,
   JarvisSwapFunctions,
   JarvisV6Data,
   JarvisV6Params,
@@ -22,6 +22,7 @@ import {
   PoolState,
 } from './types';
 import JarvisV6PoolABI from '../../abi/jarvis/jarvis-v6-pool.json';
+import AtomicSwapABI from '../../abi/jarvis/atomicSwap.json';
 import { SimpleExchange } from '../simple-exchange';
 import { JarvisV6Config, Adapters } from './config';
 import { JarvisV6EventPool } from './jarvis-v6-events';
@@ -30,10 +31,14 @@ import {
   getJarvisSwapFunction,
   THIRTY_MINUTES,
   convertToNewDecimals,
+  isSyntheticExchange,
+  getJarvisPoolFromSyntheticTokens,
+  inverseOf,
 } from './utils';
 import { Interface } from '@ethersproject/abi';
-import { BI_POWS } from '../../bigint-constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import _ from 'lodash';
+import { ethers } from 'ethers';
 
 const POOL_CACHE_REFRESH_INTERVAL = 60 * 5; // 5 minutes
 
@@ -51,6 +56,7 @@ export class JarvisV6
     getDexKeysWithNetwork(JarvisV6Config);
 
   protected poolInterface: Interface = new Interface(JarvisV6PoolABI);
+  protected atomicSwapInterface: Interface = new Interface(AtomicSwapABI);
 
   logger: Logger;
   constructor(
@@ -58,6 +64,8 @@ export class JarvisV6
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
+    protected atomicSwapAddress: string = JarvisV6Config[dexKey][network]
+      .atomicSwapAddress,
     protected poolConfigs: PoolConfig[] = JarvisV6Config[dexKey][network].pools,
     protected chainLinkConfigs: ChainLink = JarvisV6Config[dexKey][network]
       .chainLink,
@@ -77,8 +85,8 @@ export class JarvisV6
         this.dexKey,
         this.dexHelper,
         this.network,
-      blockNumber,
-    );
+        blockNumber,
+      );
 
     await Promise.all(
       this.poolConfigs.map(async pool => {
@@ -111,6 +119,14 @@ export class JarvisV6
     return this.eventPools[pool?.address.toLowerCase()!];
   }
 
+  getEventPoolFromSynthetic(syntheticToken: Token): JarvisV6EventPool | null {
+    const pool = getJarvisPoolFromSyntheticTokens(
+      syntheticToken,
+      this.poolConfigs,
+    );
+    return this.eventPools[pool?.address.toLowerCase()!];
+  }
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
@@ -121,6 +137,13 @@ export class JarvisV6
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (isSyntheticExchange(srcToken, destToken, this.poolConfigs)) {
+      const srcEventPool = this.getEventPoolFromSynthetic(srcToken);
+      const destEventPool = this.getEventPoolFromSynthetic(destToken);
+      if (!srcEventPool || !destEventPool) return [];
+
+      return [srcEventPool.getIdentifier(), destEventPool.getIdentifier()];
+    }
     const eventPool = this.getEventPool(srcToken, destToken);
     if (!eventPool) return [];
     return [eventPool.getIdentifier()];
@@ -151,39 +174,58 @@ export class JarvisV6
     limitPools?: string[], // unusued since DEX is constant price, safe to reuse pools
   ): Promise<null | ExchangePrices<JarvisV6Data>> {
     if (side !== SwapSide.SELL) return null;
-
-    const eventPool = this.getEventPool(srcToken, destToken);
-    if (!eventPool) return null;
-
-    const poolAddress = eventPool.poolConfig.address.toLowerCase();
-    const poolIdentifier = eventPool.getIdentifier();
-
-    const poolState = await this.getPoolState(eventPool, blockNumber);
-
+    let unit: bigint;
+    let prices: bigint[];
+    let poolAddresses: string[];
+    let swapFunction = JarvisSwapFunctions.EXCHANGE;
+    let poolIdentifier: string;
+    let swapCallee: string;
     const unitVolume = getBigIntPow(srcToken.decimals);
+    if (isSyntheticExchange(srcToken, destToken, this.poolConfigs)) {
+      if (this.atomicSwapAddress === NULL_ADDRESS) return null;
+      const srcEventPool = this.getEventPoolFromSynthetic(srcToken);
+      const destEventPool = this.getEventPoolFromSynthetic(destToken);
+      if (!srcEventPool || !destEventPool) return null;
 
-    const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
-    const systemMaxVars = await this.getSystemMaxVars(poolAddress, blockNumber);
-    const pairPrice = await eventPool.getPairPrice(blockNumber);
+      poolAddresses = [
+        srcEventPool.poolConfig.address.toLowerCase(),
+        destEventPool.poolConfig.address.toLowerCase(),
+      ];
+      swapCallee = this.atomicSwapAddress;
+      poolIdentifier = `${srcEventPool.getIdentifier()}_${poolAddresses[1]}`;
 
-    const [unit, ...prices] = this.computePrices(
-      [unitVolume, ...amounts],
-      swapFunction,
-      systemMaxVars,
-      eventPool.poolConfig,
-      poolState,
-      pairPrice,
-    );
+      [unit, ...prices] = await this.computeExchangePoolsPrices(
+        [unitVolume, ...amounts],
+        poolAddresses,
+        [srcEventPool, destEventPool],
+        blockNumber,
+      );
+    } else {
+      const eventPool = this.getEventPool(srcToken, destToken);
+      if (!eventPool) return null;
+      poolAddresses = [eventPool.poolConfig.address.toLowerCase()];
+      poolIdentifier = eventPool.getIdentifier();
+      swapCallee = poolAddresses[0];
+      swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
 
+      [unit, ...prices] = await this.computeSinglePoolPrices(
+        [unitVolume, ...amounts],
+        poolAddresses[0],
+        swapFunction,
+        eventPool,
+        blockNumber,
+      );
+    }
     return [
       {
         prices,
         unit,
         data: {
           swapFunction,
-          poolAddress,
+          poolAddresses,
+          swapCallee,
         },
-        poolAddresses: [poolAddress],
+        poolAddresses,
         exchange: this.dexKey,
         gasCost: 475 * 1000, //between 450-500k gas
         poolIdentifier,
@@ -204,12 +246,12 @@ export class JarvisV6
     );
 
     if (cachedSystemMaxVars) {
-      const { maxTokensCapacity, totalSyntheticTokens } =
+      const { maxSyntheticAvailable, maxCollateralAvailable } =
         JSON.parse(cachedSystemMaxVars);
 
       return {
-        maxTokensCapacity: BigInt(maxTokensCapacity),
-        totalSyntheticTokens: BigInt(totalSyntheticTokens),
+        maxSyntheticAvailable: BigInt(maxSyntheticAvailable),
+        maxCollateralAvailable: BigInt(maxCollateralAvailable),
       };
     }
 
@@ -233,10 +275,10 @@ export class JarvisV6
       ])
       .call({}, blockNumber)) as { returnData: [string, string] };
 
-    const maxTokensCapacity = this.poolInterface
+    const maxSyntheticAvailable = this.poolInterface
       .decodeFunctionResult('maxTokensCapacity', encodedResp.returnData[0])[0]
       .toString();
-    const totalSyntheticTokens = this.poolInterface
+    const maxCollateralAvailable = this.poolInterface
       .decodeFunctionResult(
         'totalSyntheticTokens',
         encodedResp.returnData[1],
@@ -244,8 +286,8 @@ export class JarvisV6
       .toString();
 
     const systemMaxVarStr = JSON.stringify({
-      maxTokensCapacity,
-      totalSyntheticTokens,
+      maxSyntheticAvailable,
+      maxCollateralAvailable,
     });
     this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
@@ -256,46 +298,108 @@ export class JarvisV6
     );
 
     return {
-      maxTokensCapacity: BigInt(maxTokensCapacity),
-      totalSyntheticTokens: BigInt(totalSyntheticTokens),
+      maxSyntheticAvailable: BigInt(maxSyntheticAvailable),
+      maxCollateralAvailable: BigInt(maxCollateralAvailable),
     };
   }
 
-  computePrices(
+  async computeSinglePoolPrices(
     amounts: bigint[],
+    poolAddress: string,
     swapFunction: JarvisSwapFunctions,
-    { maxTokensCapacity, totalSyntheticTokens }: JarvisV6SystemMaxVars,
-    pool: PoolConfig,
-    poolState: PoolState,
-    pairPrice: bigint,
+    eventPool: JarvisV6EventPool,
+    blockNumber: number,
   ) {
+    const {
+      poolState,
+      maxSyntheticAvailable,
+      maxCollateralAvailable,
+      poolPrice,
+    } = await this.getPoolDataForComputePrice(
+      poolAddress,
+      eventPool,
+      blockNumber,
+    );
+
     return amounts.map(amount => {
       if (swapFunction === JarvisSwapFunctions.MINT) {
         return this.computePriceForMint(
           amount,
-          maxTokensCapacity,
+          maxSyntheticAvailable,
           poolState,
-          pool.collateralToken.decimals,
-          pairPrice,
+          eventPool.poolConfig.collateralToken.decimals,
+          poolPrice,
         );
       }
-      if (swapFunction === JarvisSwapFunctions.REDEEM) {
-        if (amount > totalSyntheticTokens) return 0n;
 
-        return this.computePriceForRedeem(
-          amount,
-          poolState,
-          pool.collateralToken.decimals,
-          pairPrice,
-        );
-      }
-      return 0n;
+      if (amount > maxCollateralAvailable) return 0n;
+
+      return this.computePriceForRedeem(
+        amount,
+        poolState,
+        eventPool.poolConfig.collateralToken.decimals,
+        poolPrice,
+      );
     });
+  }
+
+  async computeExchangePoolsPrices(
+    amounts: bigint[],
+    poolAddresses: string[],
+    eventPools: JarvisV6EventPool[],
+    blockNumber: number,
+  ) {
+    const srcData = await this.getPoolDataForComputePrice(
+      poolAddresses[0],
+      eventPools[0],
+      blockNumber,
+    );
+    const destData = await this.getPoolDataForComputePrice(
+      poolAddresses[1],
+      eventPools[1],
+      blockNumber,
+    );
+
+    return amounts.map(amount => {
+      if (amount > srcData.maxCollateralAvailable) return 0n;
+      const srcAmountReemable = this.computePriceForRedeem(
+        amount,
+        srcData.poolState,
+        srcData.eventPool.poolConfig.collateralToken.decimals,
+        srcData.poolPrice,
+      );
+
+      return this.computePriceForMint(
+        srcAmountReemable,
+        destData.maxSyntheticAvailable,
+        destData.poolState,
+        destData.eventPool.poolConfig.collateralToken.decimals,
+        destData.poolPrice,
+      );
+    });
+  }
+
+  async getPoolDataForComputePrice(
+    poolAddress: string,
+    eventPool: JarvisV6EventPool,
+    blockNumber: number,
+  ) {
+    const poolState = await this.getPoolState(eventPool, blockNumber);
+    const { maxSyntheticAvailable, maxCollateralAvailable } =
+      await this.getSystemMaxVars(poolAddress, blockNumber);
+    const poolPrice = await eventPool.getPoolPrice(blockNumber);
+    return {
+      eventPool,
+      poolState,
+      maxSyntheticAvailable,
+      maxCollateralAvailable,
+      poolPrice,
+    };
   }
 
   computePriceForMint(
     amount: bigint,
-    maxTokensCapacity: bigint,
+    maxSyntheticAvailable: bigint,
     poolState: PoolState,
     collateralDecimalsNumber: number,
     pairPrice: bigint,
@@ -307,7 +411,7 @@ export class JarvisV6
       pairPrice,
       feePercentage,
     );
-    return syntheticAmount <= maxTokensCapacity ? syntheticAmount : 0n;
+    return syntheticAmount <= maxSyntheticAvailable ? syntheticAmount : 0n;
   }
 
   computePriceForRedeem(
@@ -328,7 +432,7 @@ export class JarvisV6
   getSyntheticAmountToReceive(
     collateralAmount: bigint,
     collateralDecimals: number,
-    UsdcPriceFeed: bigint,
+    pairPrice: bigint,
     feePercentage: bigint,
   ) {
     let collateralAmountIn18Decimals = convertToNewDecimals(
@@ -338,22 +442,22 @@ export class JarvisV6
     );
     return (
       ((collateralAmountIn18Decimals -
-        (collateralAmountIn18Decimals * feePercentage) / BI_POWS[18]) *
-        BI_POWS[18]) /
-      UsdcPriceFeed
+        (collateralAmountIn18Decimals * feePercentage) / getBigIntPow(18)) *
+        inverseOf(pairPrice)) /
+      getBigIntPow(18)
     );
   }
 
   getCollateralAmountToReceive(
     syntheticAmount: bigint,
     collateralDecimals: number,
-    UsdcPriceFeed: bigint,
+    pairPrice: bigint,
     feePercentage: bigint,
   ) {
     const result =
-      (syntheticAmount * UsdcPriceFeed) / BI_POWS[18] -
-      (((syntheticAmount * UsdcPriceFeed) / BI_POWS[18]) * feePercentage) /
-        BI_POWS[18];
+      (syntheticAmount * pairPrice) / getBigIntPow(18) -
+      (((syntheticAmount * pairPrice) / getBigIntPow(18)) * feePercentage) /
+        getBigIntPow(18);
     if (collateralDecimals === 18) return result;
     return convertToNewDecimals(result, 18, collateralDecimals);
   }
@@ -369,14 +473,16 @@ export class JarvisV6
     data: JarvisV6Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { swapFunction } = data;
-    const type = [JarvisSwapFunctions.MINT, JarvisSwapFunctions.REDEEM].indexOf(
-      swapFunction,
-    );
+    const { swapFunction, swapCallee } = data;
+    const type = [
+      JarvisSwapFunctions.MINT,
+      JarvisSwapFunctions.REDEEM,
+      JarvisSwapFunctions.EXCHANGE,
+    ].indexOf(swapFunction);
 
     if (type === undefined) {
       throw new Error(
-        `Jarvis: Invalid OpType ${swapFunction}, Should be one of ['mint', 'redeem']`,
+        `Jarvis: Invalid OpType ${swapFunction}, Should be one of ['mint', 'redeem', 'exchangeSynthTokens']`,
       );
     }
 
@@ -394,7 +500,7 @@ export class JarvisV6
     );
 
     return {
-      targetExchange: data.poolAddress.toLowerCase(),
+      targetExchange: swapCallee.toLowerCase(),
       payload,
       networkFee: '0',
     };
@@ -412,23 +518,54 @@ export class JarvisV6
     data: JarvisV6Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const { swapFunction } = data;
+    const { swapFunction, swapCallee, poolAddresses } = data;
     const timestamp = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
 
-    let swapFunctionParams: JarvisV6Params;
+    let swapData: string;
+
     switch (swapFunction) {
       case JarvisSwapFunctions.MINT:
-        swapFunctionParams = ['1', srcAmount, timestamp, this.augustusAddress];
+        swapData = this.poolInterface.encodeFunctionData(swapFunction, [
+          ['1', srcAmount, timestamp, this.augustusAddress],
+        ]);
+
         break;
       case JarvisSwapFunctions.REDEEM:
-        swapFunctionParams = [srcAmount, '1', timestamp, this.augustusAddress];
+        swapData = this.poolInterface.encodeFunctionData(swapFunction, [
+          [srcAmount, '1', timestamp, this.augustusAddress],
+        ]);
+
+        break;
+      case JarvisSwapFunctions.EXCHANGE:
+        const redeemEncodedData = ethers.utils.defaultAbiCoder.encode(
+          ['uint8', 'address', 'tuple(uint256, uint256, uint256, address)'],
+          [
+            '0',
+            poolAddresses[0].toLowerCase(),
+            [srcAmount, '1', timestamp, this.atomicSwapAddress],
+          ],
+        );
+        const mintEncodedData = ethers.utils.defaultAbiCoder.encode(
+          ['uint8', 'address', 'tuple(uint256, uint256, uint256, address)'],
+          [
+            '1',
+            poolAddresses[1].toLowerCase(),
+            ['1', '1', timestamp, this.augustusAddress],
+          ],
+        );
+        swapData = this.atomicSwapInterface.encodeFunctionData(
+          'multiOperations',
+          [
+            [
+              ['2', redeemEncodedData],
+              ['1', mintEncodedData],
+            ],
+          ],
+        );
         break;
       default:
         throw new Error(`Unknown function ${swapFunction}`);
     }
-    const swapData = this.poolInterface.encodeFunctionData(swapFunction, [
-      swapFunctionParams,
-    ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -436,14 +573,14 @@ export class JarvisV6
       destToken,
       destAmount,
       swapData,
-      data.poolAddress.toLowerCase(),
+      swapCallee,
     );
   }
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
-    tokenAddress: Address,
+    tokenAddress: Address, //srcToken jEUR
     limit: number,
   ): Promise<PoolLiquidity[]> {
     return [];

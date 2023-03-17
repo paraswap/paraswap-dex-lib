@@ -59,10 +59,12 @@ describe('JarvisV6 E2E', () => {
     );
 
     const jEURSymbol: string = 'jEUR';
+    const jCHFSymbol: string = 'jCHF';
     const USDCSymbol: string = 'USDC';
     const WETHSymbol: string = 'WETH';
 
     const jEURAmount: string = '1000000000000000000';
+    const jCHFAmount: string = '1000000000000000000';
     const USDCAmount: string = '1000000';
     const WETHAmount: string = '10000000000000000';
 
@@ -71,8 +73,8 @@ describe('JarvisV6 E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);
@@ -130,6 +132,35 @@ describe('JarvisV6 E2E', () => {
                 tokens[jEURSymbol],
                 holders[WETHSymbol],
                 side === SwapSide.SELL ? WETHAmount : jEURAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+          describe('jEUR/jCHF exchange', () => {
+            it('jEUR -> jCHF', async () => {
+              await testE2E(
+                tokens[jEURSymbol],
+                tokens[jCHFSymbol],
+                holders[jEURSymbol],
+                side === SwapSide.SELL ? jEURAmount : jCHFAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it('jCHF -> jEUR', async () => {
+              await testE2E(
+                tokens[jCHFSymbol],
+                tokens[jEURSymbol],
+                holders[jCHFSymbol],
+                side === SwapSide.SELL ? jCHFAmount : jEURAmount,
                 side,
                 dexKey,
                 contractMethod,

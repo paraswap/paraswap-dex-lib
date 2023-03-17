@@ -32,6 +32,10 @@ const TokenBSymbol = 'USDC';
 const TokenB = Tokens[network][TokenBSymbol];
 const TokenBAmounts = [0n, BI_POWS[6], 2000000n];
 
+const TokenCSymbol = 'jCHF';
+const TokenC = Tokens[network][TokenCSymbol];
+const TokenCAmounts = [0n, BI_POWS[18], 2000000000000000000n];
+
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'JarvisV6';
 
@@ -106,6 +110,72 @@ describe('JarvisV6', function () {
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, TokenBAmounts, SwapSide.SELL, dexKey);
+    });
+  });
+  describe('Exchange() Swap Function', () => {
+    describe(`${TokenASymbol} -> ${TokenCSymbol} swap`, function () {
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        const pools = await jarvisV6.getPoolIdentifiers(
+          TokenA,
+          TokenC,
+          SwapSide.SELL,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenCSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await jarvisV6.getPricesVolume(
+          TokenA,
+          TokenC,
+          TokenAAmounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenCSymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, TokenAAmounts, SwapSide.SELL, dexKey);
+      });
+    });
+    describe(`${TokenCSymbol} -> ${TokenASymbol} swap`, function () {
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        const pools = await jarvisV6.getPoolIdentifiers(
+          TokenC,
+          TokenA,
+          SwapSide.SELL,
+          blockNumber,
+        );
+        console.log(
+          `${TokenCSymbol} <> ${TokenASymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await jarvisV6.getPricesVolume(
+          TokenC,
+          TokenA,
+          TokenCAmounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+        console.log(
+          `${TokenCSymbol} <> ${TokenASymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, TokenCAmounts, SwapSide.SELL, dexKey);
+      });
     });
   });
 });

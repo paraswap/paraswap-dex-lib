@@ -106,7 +106,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     return `${this.parentName}_${this.poolConfig.address}`.toLowerCase();
   }
 
-  async getPairPrice(blockNumber: number) {
+  async getPoolPrice(blockNumber: number) {
     const state = await this.getStateOrGenerate(blockNumber);
     return this.poolConfig.priceFeed.reduce((acc: bigint, cur) => {
       return (
@@ -120,6 +120,20 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     }, PRICE_UNIT);
   }
 
+  async getPairPrices(blockNumber: number) {
+    const state = await this.getStateOrGenerate(blockNumber);
+    return this.poolConfig.priceFeed.reduce(
+      (acc: { [pair: string]: bigint }, cur) => {
+        acc[cur.pair] = convertToNewDecimals(
+          state.chainlink[cur.pair].answer,
+          8,
+          18,
+        );
+        return acc;
+      },
+      {},
+    );
+  }
 
   /**
    * The function generates state using on-chain calls. This

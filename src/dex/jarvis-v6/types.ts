@@ -14,6 +14,7 @@ export type SynthereumPoolState = {
 };
 
 export type DexParams = {
+  atomicSwapAddress: Address;
   chainLink: ChainLink;
   pools: PoolConfig[];
 };
@@ -29,8 +30,6 @@ export type PoolConfig = {
 export type PriceFeed = {
   pair: string;
   isReversePrice: boolean;
-  proxy: Address;
-  aggregator: Address;
 };
 
 export type ChainLink = {
@@ -54,16 +53,18 @@ type JarvisV6RedeemParam = [
 export type JarvisV6Params = JarvisV6MintParam | JarvisV6RedeemParam;
 
 export type JarvisV6Data = {
-  poolAddress: string;
+  poolAddresses: string[];
   swapFunction: JarvisSwapFunctions;
+  swapCallee: string;
 };
 
 export enum JarvisSwapFunctions {
   MINT = 'mint',
   REDEEM = 'redeem',
+  EXCHANGE = 'exchangeSynthTokens',
 }
 
 export type JarvisV6SystemMaxVars = {
-  maxTokensCapacity: bigint;
-  totalSyntheticTokens: bigint;
+  maxSyntheticAvailable: bigint;
+  maxCollateralAvailable: bigint;
 };

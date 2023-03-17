@@ -5,24 +5,7 @@ import { Network, SwapSide, NULL_ADDRESS } from '../../constants';
 export const JarvisV6Config: DexConfigMap<DexParams> = {
   JarvisV6: {
     [Network.POLYGON]: {
-      chainLinkProxies: {
-        EURUSD: '0x73366Fe0AA0Ded304479862808e02506FE556a98',
-        CHFUSD: '0xc76f762CedF0F78a439727861628E0fdfE1e70c2',
-        GBPUSD: '0x099a2540848573e94fb1Ca0Fa420b00acbBc845a',
-        PHPUSD: '0x218231089Bebb2A31970c3b77E96eCfb3BA006D1',
-        SGDUSD: '0x8CE3cAc0E6635ce04783709ca3CC4F5fc5304299',
-        CADUSD: '0xACA44ABb8B04D07D883202F99FA5E3c53ed57Fb5',
-        JPYUSD: '0xD647a6fC9BC6402301583C91decC5989d8Bc382D',
-        SEKUSD: '0xbd92B4919ae82be8473859295dEF0e778A626302',
-        AUDUSD: '0x062Df9C4efd2030e243ffCc398b652e8b8F95C6f',
-        CNYUSD: '0x04bB437Aa63E098236FA47365f0268547f6EAB32',
-        NZDUSD: '0xa302a0B8a499fD0f00449df0a490DedE21105955',
-        PLNUSD: '0xB34BCE11040702f71c11529D00179B2959BcE6C0',
-        MXNUSD: '0x171b16562EA3476F5C61d1b8dad031DbA0768545',
-        KRWUSD: '0x24B820870F726dA9B0D83B0B28a93885061dbF50',
-        BRLUSD: '0xB90DA3ff54C3ED09115abf6FbA0Ff4645586af2c',
-        XAUUSD: '0x0C466540B2ee1a31b441671eac0ca886e051E410',
-        ETHUSD: '0xF9680D99D6C9589e2a93a78A04A279e509205945',
+      atomicSwapAddress: '0x3b05B902Fe763AD87Aa755Fab70F86c76Bf331F4',
       chainLink: {
         EURUSD: {
           proxy: '0x73366Fe0AA0Ded304479862808e02506FE556a98',
@@ -442,8 +425,7 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
     },
 
     [Network.OPTIMISM]: {
-      chainLinkProxies: {
-        EURUSD: '0x3626369857A10CcC6cc3A6e4f5C2f5984a519F20',
+      atomicSwapAddress: NULL_ADDRESS,
       chainLink: {
         EURUSD: {
           proxy: '0x3626369857A10CcC6cc3A6e4f5C2f5984a519F20',
@@ -475,8 +457,7 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
     },
 
     [Network.ARBITRUM]: {
-      chainLinkProxies: {
-        EURUSD: '0xA14d53bC1F1c0F31B4aA3BD109344E5009051a84',
+      atomicSwapAddress: NULL_ADDRESS,
       chainLink: {
         EURUSD: {
           proxy: '0xA14d53bC1F1c0F31B4aA3BD109344E5009051a84',
