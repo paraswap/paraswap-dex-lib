@@ -126,4 +126,42 @@ describe('UniswapV3 E2E', () => {
       }),
     );
   });
+
+  describe('UniswapV3 BSC', () => {
+    const network = Network.BSC;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    it('BUY DAI -> USDC', async () => {
+      await testE2E(
+        tokens['DAI'],
+        tokens['USDC'],
+        holders['DAI'],
+        '100000000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.simpleBuy,
+        network,
+        provider,
+      );
+    });
+
+    it('SELL ETH -> BUSD', async () => {
+      await testE2E(
+        tokens['ETH'],
+        tokens['BUSD'],
+        holders['ETH'],
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
+  });
 });
