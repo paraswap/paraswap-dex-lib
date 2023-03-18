@@ -145,11 +145,19 @@ export class UniswapV3
 
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp = Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
-        await this.dexHelper.cache.zremrangebyscore(this.notExistingPoolSetKey, 0, maxTimestamp);
-      }
+        const maxTimestamp =
+          Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+        await this.dexHelper.cache.zremrangebyscore(
+          this.notExistingPoolSetKey,
+          0,
+          maxTimestamp,
+        );
+      };
 
-      this.intervalTask = setInterval(cleanExpiredNotExistingPoolsKeys.bind(this), UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS);
+      this.intervalTask = setInterval(
+        cleanExpiredNotExistingPoolsKeys.bind(this),
+        UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+      );
     }
   }
 
@@ -175,7 +183,8 @@ export class UniswapV3
       const poolDoesNotExist = notExistingPoolScore !== null;
 
       if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] = null;
+        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
+          null;
         return null;
       }
 
@@ -214,7 +223,11 @@ export class UniswapV3
       } catch (e) {
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
           // no need to await we want the set to have the pool key but it's not blocking
-          this.dexHelper.cache.zadd(this.notExistingPoolSetKey, [Date.now(), key], 'NX');
+          this.dexHelper.cache.zadd(
+            this.notExistingPoolSetKey,
+            [Date.now(), key],
+            'NX',
+          );
 
           // Pool does not exist for this feeCode, so we can set it to null
           // to prevent more requests for this pool
@@ -299,7 +312,7 @@ export class UniswapV3
         ),
       )
     ).filter(pool => pool);
-
+    debugger;
     if (pools.length === 0) return [];
 
     return pools.map(pool =>
@@ -318,7 +331,7 @@ export class UniswapV3
       return null;
     }
     this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
-
+    debugger;
     const requests = pools.map<BalanceRequest>(
       pool => ({
         owner: pool.poolAddress,
@@ -451,6 +464,7 @@ export class UniswapV3
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UniswapV3Data>> {
+    debugger;
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
       const _destToken = this.dexHelper.config.wrapETH(destToken);
