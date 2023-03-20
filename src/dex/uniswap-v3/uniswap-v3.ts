@@ -406,7 +406,7 @@ export class UniswapV3
     const data = await this.uniswapMulti.methods
       .multicall(calldata.flat())
       .call();
-
+    
     const decode = (j: number): bigint => {
       if (!data.returnData[j].success) {
         return 0n;

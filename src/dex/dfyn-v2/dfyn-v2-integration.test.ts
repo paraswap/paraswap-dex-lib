@@ -21,12 +21,30 @@ const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
   0n,
-  10_000n * BI_POWS[6],
-  20_000n * BI_POWS[6],
-  30_000n * BI_POWS[6],
+  10n * BI_POWS[4],
+  20n * BI_POWS[4],
+  30n * BI_POWS[4],
+];
+const amountsBuy = [
+  0n,
+  1n * BI_POWS[18],
+  2n * BI_POWS[18],
+  3n * BI_POWS[18]
 ];
 
-const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
+// const amounts = [
+//   0n,
+//   10_000n * BI_POWS[6],
+//   20_000n * BI_POWS[6],
+//   30_000n * BI_POWS[6],
+// ];
+
+// const amountsBuy = [
+//   0n,
+//   1n * BI_POWS[18],
+//   2n * BI_POWS[18],
+//   3n * BI_POWS[18]
+// ];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'DfynV2';
@@ -45,11 +63,8 @@ function getReaderCalldata(
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      tokenIn,
-      tokenOut,
-      // fee,
-      amount,
-      0n,
+      tokenIn.concat((tokenOut).slice(2)),
+      amount.toString()
     ]),
   }));
 }
@@ -59,6 +74,7 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
+  debugger
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -97,7 +113,7 @@ async function checkOnChainPricing(
     tokenOut,
     // fee,
   );
-
+  debugger
   let readerResult;
   try {
     readerResult = (
@@ -145,7 +161,7 @@ describe('DfynV2', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    debugger;
+
     const pools = await dfynV2.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -153,11 +169,10 @@ describe('DfynV2', function () {
       blockNumber,
     );
 
-    // const pools = ['']
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
-    //expect(pools.length).toBeGreaterThan(0);
-
+    expect(pools.length).toBeGreaterThan(0);
+    
     const poolPrices = await dfynV2.getPricesVolume(
       TokenA,
       TokenB,
@@ -174,10 +189,10 @@ describe('DfynV2', function () {
     let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
-        //const fee = dfynV2.eventPools[price.poolIdentifier!]!.feeCode;
+
         const res = await checkOnChainPricing(
           dfynV2,
-          'quoteExactInputSingle',
+          'quoteExactInput',
           blockNumber,
           price.prices,
           TokenA.address,
@@ -191,7 +206,8 @@ describe('DfynV2', function () {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
-  it.skip('getPoolIdentifiers and getPricesVolume BUY', async function () {
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+
     const pools = await dfynV2.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -213,21 +229,21 @@ describe('DfynV2', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
+    
     checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
-
+    
     // Check if onchain pricing equals to calculated ones
     let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
-        // const fee = dfynV2.eventPools[price.poolIdentifier!]!.feeCode;
+
         const res = await checkOnChainPricing(
           dfynV2,
-          'quoteExactOutputSingle',
+          'quoteExactInput',
           blockNumber,
           price.prices,
           TokenA.address,
           TokenB.address,
-          // fee,
           amountsBuy,
         );
         if (res === false) falseChecksCounter++;
@@ -237,6 +253,7 @@ describe('DfynV2', function () {
   });
 
   it.skip('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
+    debugger
     const TokenASymbol = 'USDT';
     const TokenA = Tokens[network][TokenASymbol];
 
@@ -332,7 +349,7 @@ describe('DfynV2', function () {
         //const fee = dfynV2.eventPools[price.poolIdentifier!]!.feeCode;
         const res = await checkOnChainPricing(
           dfynV2,
-          'quoteExactInputSingle',
+          'quoteExactInput',
           blockNumber,
           price.prices,
           TokenA.address,

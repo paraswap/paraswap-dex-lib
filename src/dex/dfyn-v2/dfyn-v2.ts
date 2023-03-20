@@ -66,7 +66,7 @@ type PoolPairsInfo = {
 
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
-const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
+const UNISWAPV3_QUOTE_GASLIMIT = 200_0000;
 const provider = new JsonRpcProvider(
   process.env.HTTP_PROVIDER_137,
   Network.POLYGON,
@@ -337,18 +337,18 @@ export class DfynV2
       provider,
     );
 
-    const reserves = await concentratedPool.getReserves();
-
-    for (const reserve of reserves) {
-      const balance = reserves[reserve].amounts[DEFAULT_ID_ERC20_AS_STRING];
-      if (balance >= amounts[amounts.length - 1]) {
-        continue;
-      } else {
-        this.logger.warn(
-          `[${this.network}] have no balance ${poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-        );
-      }
-    }
+    // const reserves = await concentratedPool.getReserves();
+    // debugger
+    // for (const reserve of reserves) {
+    //   const balance = reserves[reserve].amounts[DEFAULT_ID_ERC20_AS_STRING];
+    //   if (balance >= amounts[amounts.length - 1]) {
+    //     continue;
+    //   } else {
+    //     this.logger.warn(
+    //       `[${this.network}] have no balance ${poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
+    //     );
+    //   }
+    // }
 
     // pools = pools.filter((pool, index) => {
     //   const balance = reserves[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
@@ -366,7 +366,7 @@ export class DfynV2
     //     `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
     //   );
     // });
-
+    
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
     );
@@ -380,23 +380,20 @@ export class DfynV2
         i => amounts[(i + 1) * _width],
       ),
     );
-
-    const calldata = _amounts.map(_amount => ({
+    
+    const calldata = _amounts.map(_amount =>  ({
       target: this.config.quoter,
       gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
-      callData:
+      callData: 
         side === SwapSide.SELL
-          ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
-              from.address,
-              to.address,
-              _amount.toString(),
-              0, //sqrtPriceLimitX96
-            ])
-          : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
-              from.address,
-              to.address,
-              _amount.toString(),
-              0, //sqrtPriceLimitX96
+          ? this.quoterIface.encodeFunctionData('quoteExactInput',[
+              from.address.concat((to.address).slice(2)),
+              _amount.toString()
+              ]
+            )
+          : this.quoterIface.encodeFunctionData('quoteExactOutput', [
+            to.address.concat((from.address).slice(2)),
+            _amount
             ]),
     }));
 
@@ -417,10 +414,10 @@ export class DfynV2
     // prepare results for pool response
     const _rates = _amounts.map(() => decode(i++));
     const unit: bigint = _rates[0];
-
+    debugger
     const prices = interpolate(
-      _amounts.slice(1),
-      _rates.slice(1),
+      _amounts,
+      _rates,
       amounts,
       side,
     );
@@ -439,7 +436,7 @@ export class DfynV2
       poolIdentifier: this.getPoolIdentifier(from.address, to.address),
       exchange: this.dexKey,
       gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
-      poolAddresses: [],
+      poolAddresses: [concentratedPool.address]
     };
 
     return [result];
@@ -559,85 +556,85 @@ export class DfynV2
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result = await Promise.all(
-        poolsToUse.poolWithState.map(async (pool, i) => {
-          const state = states[i];
+      // const result = await Promise.all(
+      //   poolsToUse.poolWithState.map(async (pool, i) => {
+      //     const state = states[i];
 
-          if (state.liquidity <= 0n) {
-            this.logger.trace(`pool have 0 liquidity`);
-            return null;
-          }
+      //     if (state.liquidity <= 0n) {
+      //       this.logger.trace(`pool have 0 liquidity`);
+      //       return null;
+      //     }
 
-          const balanceDestToken =
-            _destAddress === pool.token0 ? state.balance0 : state.balance1;
+      //     const balanceDestToken =
+      //       _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
-          const unitResult = this._getOutputs(
-            state,
-            [unitAmount],
-            zeroForOne,
-            side,
-            balanceDestToken,
-          );
-          const pricesResult = this._getOutputs(
-            state,
-            _amounts,
-            zeroForOne,
-            side,
-            balanceDestToken,
-          );
+      //     const unitResult = this._getOutputs(
+      //       state,
+      //       [unitAmount],
+      //       zeroForOne,
+      //       side,
+      //       balanceDestToken,
+      //     );
+      //     const pricesResult = this._getOutputs(
+      //       state,
+      //       _amounts,
+      //       zeroForOne,
+      //       side,
+      //       balanceDestToken,
+      //     );
 
-          if (!unitResult || !pricesResult) {
-            this.logger.debug('Prices or unit is not calculated');
-            return null;
-          }
+      //     if (!unitResult || !pricesResult) {
+      //       this.logger.debug('Prices or unit is not calculated');
+      //       return null;
+      //     }
 
-          const prices = [0n, ...pricesResult.outputs];
-          const gasCost = [
-            0,
-            ...pricesResult.outputs.map((p, index) => {
-              if (p == 0n) {
-                return 0;
-              } else {
-                return (
-                  UNISWAPV3_FUNCTION_CALL_GAS_COST +
-                  pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
-                );
-              }
-            }),
-          ];
-          return {
-            unit: unitResult.outputs[0],
-            prices,
-            data: {
-              path: [
-                {
-                  tokenIn: _srcAddress,
-                  tokenOut: _destAddress,
-                },
-              ],
-            },
-            poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
-            exchange: this.dexKey,
-            gasCost: gasCost,
-            poolAddresses: [pool.poolAddress],
-          };
-        }),
-      );
+      //     const prices = [0n, ...pricesResult.outputs];
+      //     const gasCost = [
+      //       0,
+      //       ...pricesResult.outputs.map((p, index) => {
+      //         if (p == 0n) {
+      //           return 0;
+      //         } else {
+      //           return (
+      //             UNISWAPV3_FUNCTION_CALL_GAS_COST +
+      //             pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
+      //           );
+      //         }
+      //       }),
+      //     ];
+      //     return {
+      //       unit: unitResult.outputs[0],
+      //       prices,
+      //       data: {
+      //         path: [
+      //           {
+      //             tokenIn: _srcAddress,
+      //             tokenOut: _destAddress,
+      //           },
+      //         ],
+      //       },
+      //       poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
+      //       exchange: this.dexKey,
+      //       gasCost: gasCost,
+      //       poolAddresses: [pool.poolAddress],
+      //     };
+      //   }),
+      // );
       const rpcResults = await rpcResultsPromise;
 
-      const notNullResult = result.filter(
-        res => res !== null,
-      ) as ExchangePrices<DfynV2Data>;
+      // const notNullResult = result.filter(
+      //   res => res !== null,
+      // ) as ExchangePrices<DfynV2Data>;
 
-      if (rpcResults) {
-        rpcResults.forEach(r => {
-          if (r) {
-            notNullResult.push(r);
-          }
-        });
-      }
+      // if (rpcResults) {
+      //   rpcResults.forEach(r => {
+      //     if (r) {
+      //       notNullResult.push(r);
+      //     }
+      //   });
+      // }
 
-      return notNullResult;
+      return rpcResults;
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
