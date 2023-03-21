@@ -73,8 +73,8 @@ describe('JarvisV6 E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap,
-          // ContractMethod.megaSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
         ],
       ],
     ]);
@@ -140,6 +140,7 @@ describe('JarvisV6 E2E', () => {
               );
             });
           });
+          //Only working with ContractMethod.simpleSwap due to Adapter not set up
           describe('jEUR/jCHF exchange', () => {
             it('jEUR -> jCHF', async () => {
               await testE2E(

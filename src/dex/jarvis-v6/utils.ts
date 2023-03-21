@@ -1,12 +1,114 @@
-import { Token } from '../../types';
+import { Address, Token } from '../../types';
 import { bigIntify } from '../nerve/utils';
 import { getBigIntPow } from '../../utils';
-import { JarvisSwapFunctions, PoolConfig } from './types';
-import { BI_POWS } from '../../bigint-constants';
-
+import {
+  ChainLink,
+  JarvisSwapFunctions,
+  JarvisV6SystemMaxVars,
+  PoolConfig,
+} from './types';
+import JarvisV6PoolABI from '../../abi/jarvis/jarvis-v6-pool.json';
+import chainlinkABI from '../../abi/chainlink.json';
+import { Contract } from 'web3-eth-contract';
+import { Interface } from '@ethersproject/abi';
 export const THIRTY_MINUTES = 60 * 30;
 export const PRICE_UNIT = getBigIntPow(18);
 
+const poolInterface = new Interface(JarvisV6PoolABI);
+const chainlinkInterface = new Interface(chainlinkABI);
+
+export async function getOnChainState(
+  multiContract: Contract,
+  chainlinkProxies: ChainLink,
+  poolConfigs: PoolConfig[],
+  blockNumber: number | 'latest',
+) {
+  const maxPoolsLiquidity = await _getMaxPoolsLiquidity(
+    multiContract,
+    poolConfigs,
+    blockNumber,
+  );
+  const chainlinkPriceFeeds = await _getChainLinkPricesFeed(
+    multiContract,
+    chainlinkProxies,
+    blockNumber,
+  );
+
+  return { maxPoolsLiquidity, chainlinkPriceFeeds };
+}
+
+async function _getChainLinkPricesFeed(
+  multiContract: Contract,
+  chainlinkProxies: ChainLink,
+  blockNumber: number | 'latest',
+) {
+  const callData = Object.values(chainlinkProxies).map(c => [
+    {
+      target: c.proxy,
+      callData: chainlinkInterface.encodeFunctionData('lastestAnswer', []),
+    },
+  ]);
+  const res = await multiContract.methods
+    .aggregate(callData)
+    .call({}, blockNumber);
+
+  let i = 0;
+  return Object.entries(chainlinkProxies).reduce(
+    (acc: { [pair: string]: bigint }, [key, value]) => {
+      const lastestAnswer = convertToNewDecimals(
+        chainlinkInterface.decodeFunctionResult(
+          'lastestAnswer',
+          res.returnData[i++],
+        )[0],
+        8,
+        18,
+      );
+
+      acc[key] = lastestAnswer;
+      return acc;
+    },
+    {},
+  );
+}
+async function _getMaxPoolsLiquidity(
+  multiContract: Contract,
+  poolConfigs: PoolConfig[],
+  blockNumber: number | 'latest',
+) {
+  const callData = poolConfigs.map(p => [
+    {
+      target: p.address,
+      callData: poolInterface.encodeFunctionData('maxTokensCapacity', []),
+    },
+    {
+      target: p.address,
+      callData: poolInterface.encodeFunctionData('totalSyntheticTokens', []),
+    },
+  ]);
+  const res = await multiContract.methods
+    .aggregate(callData)
+    .call({}, blockNumber);
+  let i = 0;
+  return poolConfigs.reduce(
+    (acc: { [poolAddress: string]: JarvisV6SystemMaxVars }, pool) => {
+      const maxSyntheticAvailable = bigIntify(
+        poolInterface.decodeFunctionResult(
+          'maxTokensCapacity',
+          res.returnData[i++],
+        )[0],
+      );
+      const maxCollateralAvailable = bigIntify(
+        poolInterface.decodeFunctionResult(
+          'totalSyntheticTokens',
+          res.returnData[i++],
+        )[0],
+      );
+      acc[pool.address] = { maxCollateralAvailable, maxSyntheticAvailable };
+      return acc;
+    },
+    {},
+  );
+}
 export function getJarvisPoolFromTokens(
   srcToken: Token,
   destToken: Token,
@@ -79,11 +181,10 @@ export function convertToNewDecimals(
 }
 
 export function getJarvisSwapFunction(
-  srcToken: Token,
+  srcAddress: Address,
   pool: PoolConfig,
 ): JarvisSwapFunctions {
-  const srcAddress = srcToken.address.toLowerCase();
-  if (srcAddress === pool.collateralToken.address.toLowerCase())
+  if (srcAddress.toLowerCase() === pool.collateralToken.address.toLowerCase())
     return JarvisSwapFunctions.MINT;
   return JarvisSwapFunctions.REDEEM;
 }
@@ -104,5 +205,27 @@ export function calculateConvertedPrice(
 export function inverseOf(number: string | bigint): bigint {
   return (
     getBigIntPow(36) / (typeof number === 'string' ? bigIntify(number) : number)
+  );
+}
+
+export function calculateTokenLiquidityInUSD(
+  pool: PoolConfig,
+  maxPoolsLiquidity: JarvisV6SystemMaxVars,
+  chainlinkPriceFeeds: {
+    [pair: string]: bigint;
+  },
+  isSynthetic: boolean,
+): bigint {
+  return (
+    (isSynthetic
+      ? maxPoolsLiquidity.maxSyntheticAvailable *
+        (pool.priceFeed[0].isReversePrice
+          ? inverseOf(chainlinkPriceFeeds[pool.priceFeed[0].pair])
+          : chainlinkPriceFeeds[pool.priceFeed[0].pair])
+      : pool.collateralToken.symbol === 'USDC'
+      ? maxPoolsLiquidity.maxCollateralAvailable
+      : maxPoolsLiquidity.maxCollateralAvailable *
+        chainlinkPriceFeeds[pool.priceFeed[pool.priceFeed.length - 1].pair]) /
+    getBigIntPow(18)
   );
 }
