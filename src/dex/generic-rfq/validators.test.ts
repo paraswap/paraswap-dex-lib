@@ -236,11 +236,10 @@ describe('GenericRFQ Validator test', () => {
       },
     };
 
-    it('Blacklist test', () => {
+    it('Order test', () => {
       expect(() =>
         validateAndCast(order, firmRateResponseValidator),
       ).not.toThrowError();
-      // expect(() => validateAndCast(invalidBlacklist, blacklistResponseValidator)).toThrowError();
     });
   });
 });
