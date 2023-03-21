@@ -182,12 +182,26 @@ const stringStartWithHex0x = (
   return value;
 };
 
+const mustBeAugustusSwapper = (
+  value: string,
+  helpers: CustomHelpers,
+): string | ErrorReport => {
+  const allowedTakers = [
+    '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57'.toLowerCase(),
+  ];
+  return allowedTakers.includes(value.toLowerCase())
+    ? value
+    : helpers.message({
+        custom: `"order.taker" must be any of ${JSON.stringify(allowedTakers)}`,
+      });
+};
+
 export const orderWithSignatureValidator = joi
   .object({
     nonceAndMeta: joi.string().custom(stringPositiveBigIntValidator),
     expiry: joi.number().min(0),
     maker: addressSchema.required(),
-    taker: addressSchema.required(),
+    taker: addressSchema.required().custom(mustBeAugustusSwapper),
     makerAsset: addressSchema.required(),
     takerAsset: addressSchema.required(),
     makerAmount: joi
