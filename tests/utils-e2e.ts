@@ -413,19 +413,19 @@ export async function newTestE2E({
 
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
+    // Slippage to be 7%
+    const minMaxAmount =
+      (swapSide === SwapSide.SELL
+        ? BigInt(priceRoute.destAmount) * 93n
+        : BigInt(priceRoute.srcAmount) * 107n) / 100n;
+
+    const swapParams = await paraswap.buildTransaction(
+      priceRoute,
+      minMaxAmount,
+      senderAddress,
+    );
+
     if (useTenderly) {
-      // Slippage to be 7%
-      const minMaxAmount =
-        (swapSide === SwapSide.SELL
-          ? BigInt(priceRoute.destAmount) * 93n
-          : BigInt(priceRoute.srcAmount) * 107n) / 100n;
-
-      const swapParams = await paraswap.buildTransaction(
-        priceRoute,
-        minMaxAmount,
-        senderAddress,
-      );
-
       const stateOverrides: StateOverrides = {
         networkID: `${network}`,
         stateOverrides: {},
