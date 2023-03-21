@@ -151,9 +151,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
-      BscAdapter01: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
-      BscAdapter02: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
-      BscBuyAdapter: '0xfa072107a2CCfE5664794282EF36400735ABB70F',
+      BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
+      BscAdapter02: '0xe102429Ef7CAaBaAA3bc2C017aC784c5F665EE82',
+      BscBuyAdapter: '0xA7f4fBCEB76a1B1c05C106a4289C28B3b91C17ca',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',

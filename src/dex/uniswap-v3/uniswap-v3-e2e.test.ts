@@ -137,7 +137,7 @@ describe('UniswapV3 E2E', () => {
     );
 
     const tokenASymbol: string = 'BUSD';
-    const tokenBSymbol: string = 'ETH';
+    const tokenBSymbol: string = 'WBNB';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const tokenAAmount: string = '100000000000000000000';
