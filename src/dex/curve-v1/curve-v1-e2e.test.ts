@@ -23,11 +23,11 @@ describe('CurveV1 E2E', () => {
       network,
     );
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'DAI';
+    const tokenASymbol: string = 'CUSDC';
+    const tokenBSymbol: string = 'CDAI';
 
-    const tokenAAmount: string = (1 * 10 ** 8).toString();
-    const tokenBAmount: string = (1 * 10 ** 8).toString();
+    const tokenAAmount: string = (10 ** 8).toString();
+    const tokenBAmount: string = (10 ** 8).toString();
 
     const sideToContractMethods = new Map([
       [
@@ -43,7 +43,7 @@ describe('CurveV1 E2E', () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it('TOKEN -> TOKEN', async () => {
+          it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
             await testE2E(
               tokens[tokenASymbol],
               tokens[tokenBSymbol],
