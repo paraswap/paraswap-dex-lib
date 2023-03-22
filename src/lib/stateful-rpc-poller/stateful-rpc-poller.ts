@@ -364,7 +364,11 @@ export abstract class StatefulRpcPoller<State, M>
     level: LogLevels,
     ...args: unknown[]
   ) {
-    this.logger[level](`${this.entityName}: ${message}`, ...args);
+    this.logger[level](
+      `${this.entityName}: ${message}. ${args
+        .map(a => Utils.Serialize(a))
+        .join('.')}`,
+    );
   }
 
   get isPoolParticipateInUpdates(): boolean {

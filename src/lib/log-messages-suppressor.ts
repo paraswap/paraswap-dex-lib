@@ -1,6 +1,7 @@
 import { assert } from 'ts-essentials';
 import _ from 'lodash';
 import { Logger, LogLevels } from '../types';
+import { Utils } from '../utils';
 
 export const DEFAULT_LOG_PUBLISH_PERIOD_MS = 60_000;
 
@@ -118,8 +119,7 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
       // Logging is done using original logger of the entity to keep module info
       // and not override it
       this.logger[msgInfo.logLevel](
-        this._formatLogMessage(msgData, msgInfo.message),
-        ...args,
+        this._formatLogMessage(msgData, msgInfo.message, args),
       );
       this._clearMessageData(msgData);
     } else {
@@ -130,7 +130,11 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
     }
   }
 
-  private _formatLogMessage(msgData: MessageData, message: string) {
+  private _formatLogMessage(
+    msgData: MessageData,
+    message: string,
+    args: unknown[],
+  ) {
     const { counter, identificationInfos } = msgData;
     let identities =
       identificationInfos && identificationInfos.length === 0
@@ -149,8 +153,11 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
     ) {
       identities = `${identities}... ${identificationInfos.length} total`;
     }
-
-    return `Logged ${counter} occurrences of: "${message}"${identities}. `;
+    const argsFormatted =
+      args.length > 0
+        ? ` with args: ${args.map(a => Utils.Serialize(a)).join('.')}`
+        : '';
+    return `Logged ${counter} occurrences of: "${message}"${identities}${argsFormatted}`;
   }
 
   private _clearMessageData(messageData: MessageData) {
