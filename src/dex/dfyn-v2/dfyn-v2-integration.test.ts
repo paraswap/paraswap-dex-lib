@@ -16,21 +16,11 @@ const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'WMATIC';
+const TokenBSymbol = 'DFYN';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [
-  0n,
-  10n * BI_POWS[4],
-  20n * BI_POWS[4],
-  30n * BI_POWS[4],
-];
-const amountsBuy = [
-  0n,
-  1n * BI_POWS[18],
-  2n * BI_POWS[18],
-  3n * BI_POWS[18]
-];
+const amounts = [0n, 10n * BI_POWS[4], 20n * BI_POWS[4], 30n * BI_POWS[4]];
+const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 
 // const amounts = [
 //   0n,
@@ -63,8 +53,8 @@ function getReaderCalldata(
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      tokenIn.concat((tokenOut).slice(2)),
-      amount.toString()
+      tokenIn.concat(tokenOut.slice(2)),
+      amount.toString(),
     ]),
   }));
 }
@@ -74,7 +64,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  debugger
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -92,7 +81,7 @@ async function checkOnChainPricing(
   _amounts: bigint[],
 ) {
   // Quoter address
-  const exchangeAddress = '0xF256047C239788304e350Bf2b5Dd14129b87720A';
+  const exchangeAddress = '0x20928030b08E498445B66Bdf35aB6bD72d9598f2';
   const readerIface = quoterIface;
 
   const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
@@ -113,7 +102,7 @@ async function checkOnChainPricing(
     tokenOut,
     // fee,
   );
-  debugger
+
   let readerResult;
   try {
     readerResult = (
@@ -161,7 +150,6 @@ describe('DfynV2', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-
     const pools = await dfynV2.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -172,7 +160,7 @@ describe('DfynV2', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
-    
+
     const poolPrices = await dfynV2.getPricesVolume(
       TokenA,
       TokenB,
@@ -189,7 +177,6 @@ describe('DfynV2', function () {
     let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
-
         const res = await checkOnChainPricing(
           dfynV2,
           'quoteExactInput',
@@ -207,7 +194,6 @@ describe('DfynV2', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-
     const pools = await dfynV2.getPoolIdentifiers(
       TokenA,
       TokenB,
@@ -229,14 +215,13 @@ describe('DfynV2', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    
+
     checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
-    
+
     // Check if onchain pricing equals to calculated ones
     let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
-
         const res = await checkOnChainPricing(
           dfynV2,
           'quoteExactInput',
@@ -253,7 +238,6 @@ describe('DfynV2', function () {
   });
 
   it.skip('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
-    debugger
     const TokenASymbol = 'USDT';
     const TokenA = Tokens[network][TokenASymbol];
 
@@ -474,7 +458,6 @@ describe('DfynV2', function () {
   });
 
   it.skip('getTopPoolsForToken', async function () {
-    debugger;
     const poolLiquidity = await dfynV2Mainnet.getTopPoolsForToken(
       Tokens[Network.POLYGON]['USDC'].address,
       10,

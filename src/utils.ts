@@ -135,6 +135,7 @@ export function interpolate(
   newVolume: bigint[],
   side: SwapSide,
 ): bigint[] {
+  debugger;
   let maxPrice = oldPrices[0];
   let isValid = [true];
   for (let p of oldPrices.slice(1)) {

@@ -366,7 +366,7 @@ export class DfynV2
     //     `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
     //   );
     // });
-    
+
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
     );
@@ -380,20 +380,19 @@ export class DfynV2
         i => amounts[(i + 1) * _width],
       ),
     );
-    
-    const calldata = _amounts.map(_amount =>  ({
+
+    const calldata = _amounts.map(_amount => ({
       target: this.config.quoter,
       gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
-      callData: 
+      callData:
         side === SwapSide.SELL
-          ? this.quoterIface.encodeFunctionData('quoteExactInput',[
-              from.address.concat((to.address).slice(2)),
-              _amount.toString()
-              ]
-            )
+          ? this.quoterIface.encodeFunctionData('quoteExactInput', [
+              from.address.concat(to.address.slice(2)),
+              _amount.toString(),
+            ])
           : this.quoterIface.encodeFunctionData('quoteExactOutput', [
-            to.address.concat((from.address).slice(2)),
-            _amount
+              to.address.concat(from.address.slice(2)),
+              _amount,
             ]),
     }));
 
@@ -414,13 +413,8 @@ export class DfynV2
     // prepare results for pool response
     const _rates = _amounts.map(() => decode(i++));
     const unit: bigint = _rates[0];
-    debugger
-    const prices = interpolate(
-      _amounts,
-      _rates,
-      amounts,
-      side,
-    );
+
+    const prices = interpolate(_amounts, _rates, amounts, side);
 
     const result = {
       prices,
@@ -436,7 +430,7 @@ export class DfynV2
       poolIdentifier: this.getPoolIdentifier(from.address, to.address),
       exchange: this.dexKey,
       gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
-      poolAddresses: [concentratedPool.address]
+      poolAddresses: [concentratedPool.address],
     };
 
     return [result];
@@ -546,15 +540,15 @@ export class DfynV2
       // );
 
       //const states:any[] = []
-      const unitAmount = getBigIntPow(
-        side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
-      );
+      // const unitAmount = getBigIntPow(
+      //   side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
+      // );
 
-      const _amounts = [...amounts.slice(1)];
+      // const _amounts = [...amounts.slice(1)];
 
-      const [token0] = this._sortTokens(_srcAddress, _destAddress);
+      // const [token0] = this._sortTokens(_srcAddress, _destAddress);
 
-      const zeroForOne = token0 === _srcAddress ? true : false;
+      // const zeroForOne = token0 === _srcAddress ? true : false;
 
       // const result = await Promise.all(
       //   poolsToUse.poolWithState.map(async (pool, i) => {

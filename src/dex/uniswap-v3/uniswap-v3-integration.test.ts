@@ -294,7 +294,7 @@ describe('UniswapV3', function () {
       294000000n,
       300000000n,
     ];
-    debugger;
+
     const pools = await uniswapV3.getPoolIdentifiers(
       TokenA,
       TokenB,

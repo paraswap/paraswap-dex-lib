@@ -292,6 +292,14 @@ export const Tokens: {
     },
   },
   [Network.POLYGON]: {
+    DFYN: {
+      address: '0xC168E40227E4ebD8C1caE80F7a55a4F0e6D66C97',
+      decimals: 18,
+    },
+    ROUTE: {
+      address: '0x16ECCfDbb4eE1A85A33f3A9B21175Cd7Ae753dB4',
+      decimals: 18,
+    },
     DAI: {
       address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
       decimals: 18,
@@ -831,6 +839,8 @@ export const Holders: {
     USDC: '0xb2dafb6fc7f66526e72027ade0f044beda0ba11e',
   },
   [Network.POLYGON]: {
+    DFYN: '0xC168E40227E4ebD8C1caE80F7a55a4F0e6D66C97',
+    ROUTE: '0x16ECCfDbb4eE1A85A33f3A9B21175Cd7Ae753dB4',
     MATIC: '0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245',
     DAI: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
     WETH: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',

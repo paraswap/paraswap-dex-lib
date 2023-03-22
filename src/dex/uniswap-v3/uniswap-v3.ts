@@ -312,7 +312,7 @@ export class UniswapV3
         ),
       )
     ).filter(pool => pool);
-    debugger;
+
     if (pools.length === 0) return [];
 
     return pools.map(pool =>
@@ -331,7 +331,7 @@ export class UniswapV3
       return null;
     }
     this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
-    debugger;
+
     const requests = pools.map<BalanceRequest>(
       pool => ({
         owner: pool.poolAddress,
@@ -406,7 +406,7 @@ export class UniswapV3
     const data = await this.uniswapMulti.methods
       .multicall(calldata.flat())
       .call();
-    
+
     const decode = (j: number): bigint => {
       if (!data.returnData[j].success) {
         return 0n;
@@ -464,7 +464,6 @@ export class UniswapV3
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UniswapV3Data>> {
-    debugger;
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
       const _destToken = this.dexHelper.config.wrapETH(destToken);
