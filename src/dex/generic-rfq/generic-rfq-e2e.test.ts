@@ -8,6 +8,7 @@ import { newTestE2E, getEnv } from '../../../tests/utils-e2e';
 import { SmartTokens, GENERIC_ADDR1 } from '../../../tests/constants-e2e';
 import { startTestServer } from './example-api.test';
 import { RFQConfig } from './types';
+import { testConfig } from './e2e-test-config';
 
 const PK_KEY = process.env.TEST_PK_KEY;
 
@@ -125,7 +126,9 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
   const url = getEnv('GENERIC_RFQ_URL');
 
   const secret = {
-    secretKey: Buffer.from(getEnv('GENERIC_RFQ_SECRET_KEY'), 'base64').toString('binary'),
+    secretKey: Buffer.from(getEnv('GENERIC_RFQ_SECRET_KEY'), 'base64').toString(
+      'binary',
+    ),
     accessKey: getEnv('GENERIC_RFQ_ACCESS_KEY'),
     domain: 'paraswap',
   };
@@ -180,173 +183,58 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
 };
 
 const SKIP_TENDERLY = !!getEnv('GENERIC_RFQ_SKIP_TENDERLY', true);
+const dexKey = 'YOUR_NAME';
 
-describe('GenericRFQ YOUR_NAME E2E Mainnet', () => {
-  const dexKey = 'YOUR_NAME';
+describe(`GenericRFQ ${dexKey} E2E`, () => {
+  for (const [_network, testCases] of Object.entries(testConfig)) {
+    const network = parseInt(_network, 10);
+    const smartTokens = SmartTokens[network];
+    const config = generateConfig(network);
 
-  const network = Network.MAINNET;
-  const smartTokens = SmartTokens[network];
-  const config = generateConfig(network);
+    config.rfqConfigs[dexKey] = buildConfigForGenericRFQ();
+    describe(`${Network[network]}`, () => {
+      for (const testCase of testCases) {
+        const srcToken = smartTokens[testCase.srcToken];
+        const destToken = smartTokens[testCase.destToken];
 
-  config.rfqConfigs[dexKey] = buildConfigForGenericRFQ();
+        if (!SKIP_TENDERLY) {
+          srcToken.addBalance(testAccount.address, MAX_UINT);
+          srcToken.addAllowance(
+            testAccount.address,
+            config.augustusRFQAddress,
+            MAX_UINT,
+          );
 
-  describe('GenericRFQ B/Q BUY', () => {
-    const srcToken = smartTokens.USDT;
-    const destToken = smartTokens.WETH;
-
-    if (!SKIP_TENDERLY) {
-      srcToken.addBalance(testAccount.address, MAX_UINT);
-      srcToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-
-      destToken.addBalance(testAccount.address, MAX_UINT);
-      destToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-    }
-
-    describe('Simpleswap', () => {
-      it('BUY USDT -> WETH', async () => {
-        await newTestE2E({
-          config,
-          srcToken,
-          destToken,
-          senderAddress: GENERIC_ADDR1,
-          thirdPartyAddress: testAccount.address,
-          _amount: '10000000000000000',
-          swapSide: SwapSide.BUY,
-          dexKey: dexKey,
-          contractMethod: ContractMethod.simpleBuy,
-          network: network,
-          sleepMs: 5000,
-          skipTenderly: SKIP_TENDERLY,
+          destToken.addBalance(testAccount.address, MAX_UINT);
+          destToken.addAllowance(
+            testAccount.address,
+            config.augustusRFQAddress,
+            MAX_UINT,
+          );
+        }
+        const contractMethod =
+          testCase.swapSide === SwapSide.BUY
+            ? ContractMethod.simpleBuy
+            : ContractMethod.simpleSwap;
+        describe(`${contractMethod}`, () => {
+          it(`${testCase.swapSide} ${testCase.srcToken} -> ${testCase.destToken}`, async () => {
+            await newTestE2E({
+              config,
+              srcToken,
+              destToken,
+              senderAddress: GENERIC_ADDR1,
+              thirdPartyAddress: testAccount.address,
+              _amount: testCase.amount,
+              swapSide: testCase.swapSide as SwapSide,
+              dexKey: dexKey,
+              contractMethod,
+              network,
+              sleepMs: 5000,
+              skipTenderly: SKIP_TENDERLY,
+            });
+          });
         });
-      });
+      }
     });
-  });
-
-  describe('GenericRFQ Q/B BUY', () => {
-    const srcToken = smartTokens.WETH;
-    const destToken = smartTokens.USDT;
-
-    if (!SKIP_TENDERLY) {
-      srcToken.addBalance(testAccount.address, MAX_UINT);
-      srcToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-
-      destToken.addBalance(testAccount.address, MAX_UINT);
-      destToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-    }
-
-    describe('Simpleswap', () => {
-      it('BUY WETH -> USDT', async () => {
-        await newTestE2E({
-          config,
-          srcToken,
-          destToken,
-          senderAddress: GENERIC_ADDR1,
-          thirdPartyAddress: testAccount.address,
-          _amount: '1000000',
-          swapSide: SwapSide.BUY,
-          dexKey: dexKey,
-          contractMethod: ContractMethod.simpleBuy,
-          network: network,
-          sleepMs: 5000,
-          skipTenderly: SKIP_TENDERLY,
-        });
-      });
-    });
-  });
-
-  describe('GenericRFQ B/Q SELL', () => {
-    const srcToken = smartTokens.USDT;
-    const destToken = smartTokens.WETH;
-
-    if (!SKIP_TENDERLY) {
-      srcToken.addBalance(testAccount.address, MAX_UINT);
-      srcToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-
-      destToken.addBalance(testAccount.address, MAX_UINT);
-      destToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-    }
-
-    describe('Simpleswap', () => {
-      it('SELL USDT -> WETH', async () => {
-        await newTestE2E({
-          config,
-          srcToken,
-          destToken,
-          senderAddress: GENERIC_ADDR1,
-          thirdPartyAddress: testAccount.address,
-          _amount: '1000000',
-          swapSide: SwapSide.SELL,
-          dexKey: dexKey,
-          contractMethod: ContractMethod.simpleSwap,
-          network: network,
-          sleepMs: 5000,
-          skipTenderly: SKIP_TENDERLY,
-        });
-      });
-    });
-  });
-
-  describe('GenericRFQ Q/B SELL', () => {
-    const srcToken = smartTokens.WETH;
-    const destToken = smartTokens.USDT;
-
-    if (!SKIP_TENDERLY) {
-      srcToken.addBalance(testAccount.address, MAX_UINT);
-      srcToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-
-      destToken.addBalance(testAccount.address, MAX_UINT);
-      destToken.addAllowance(
-        testAccount.address,
-        config.augustusRFQAddress,
-        MAX_UINT,
-      );
-    }
-
-    describe('Simpleswap', () => {
-      it('SELL WETH -> USDT', async () => {
-        await newTestE2E({
-          config,
-          srcToken,
-          destToken,
-          senderAddress: GENERIC_ADDR1,
-          thirdPartyAddress: testAccount.address,
-          _amount: '10000000000000000',
-          swapSide: SwapSide.SELL,
-          dexKey: dexKey,
-          contractMethod: ContractMethod.simpleSwap,
-          network: network,
-          sleepMs: 5000,
-          skipTenderly: SKIP_TENDERLY,
-        });
-      });
-    });
-  });
+  }
 });
