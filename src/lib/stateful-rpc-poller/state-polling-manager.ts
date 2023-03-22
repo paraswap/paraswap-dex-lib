@@ -112,6 +112,14 @@ export class StatePollingManager {
             `onBlockNumber=${blockNumber} at least for some pools receivedBlockNumber=${receivedBlockNumber} is lower than expected`,
           );
         }
+        this.logger.debug(
+          `onBlockNumber=${blockNumber} updated ${
+            poolsToBeUpdated.length
+          } pools: ${poolsToBeUpdated
+            .map(p => p.identifierKey)
+            .slice(0, 10)
+            .join(',')} (sample)`,
+        );
       })
       .catch(e =>
         this.logger.error(
@@ -185,10 +193,10 @@ export class StatePollingManager {
               lastUpdatedAtMs,
             );
 
-          minBlockNumber = Math.min(
-            parsedStateResult.blockNumber,
-            minBlockNumber,
-          );
+          minBlockNumber =
+            minBlockNumber === 0
+              ? parsedStateResult.blockNumber
+              : Math.min(parsedStateResult.blockNumber, minBlockNumber);
 
           await pool.setState(
             parsedStateResult.value,

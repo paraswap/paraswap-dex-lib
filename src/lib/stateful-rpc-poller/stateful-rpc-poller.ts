@@ -484,6 +484,10 @@ export abstract class StatefulRpcPoller<State, M>
         this.identifierKey,
         Utils.Serialize(this._stateWithUpdateInfo),
       );
+      this._immediateLogMessage(
+        `State successfully saved in cache hashmap: ${this.cacheStateKey}, key=${this.identifierKey}`,
+        'debug',
+      );
       return true;
     } catch (e) {
       this._logMessageWithSuppression('ERROR_SAVING_STATE_IN_CACHE', e);
@@ -579,17 +583,18 @@ export abstract class StatefulRpcPoller<State, M>
       const state = await this.fetchLatestStateFromRpc();
 
       if (state === null) {
-        this.logger.error(
+        this._immediateLogMessage(
           `initializePool: pool=${this.identifierKey} from ${this.dexKey} state is null. Retry in ${DEFAULT_STATE_INIT_RETRY_MS} ms`,
+          'error',
         );
       } else {
         this.setState(state.value, state.blockNumber, state.lastUpdatedAtMs);
         return;
       }
     } catch (e) {
-      this.logger.error(
+      this._immediateLogMessage(
         `initializePool: pool=${this.identifierKey} from ${this.dexKey} failed to initialize state from RPC. Retry in ${DEFAULT_STATE_INIT_RETRY_MS} ms`,
-        e,
+        'error',
       );
     }
 
