@@ -118,9 +118,12 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
       // Make actual logging
       // Logging is done using original logger of the entity to keep module info
       // and not override it
-      this.logger[msgInfo.logLevel](
-        this._formatLogMessage(msgData, msgInfo.message, args),
+      const formattedMessage = this._formatLogMessage(
+        msgData,
+        msgInfo.message,
+        args,
       );
+      this.logger[msgInfo.logLevel](formattedMessage);
       this._clearMessageData(msgData);
     } else {
       msgData.counter++;

@@ -10,7 +10,6 @@ import { MultiCallParams, MultiResult } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
 import { assert } from 'ts-essentials';
-import { getLogger } from '../log4js';
 import { LogMessagesSuppressor, MessageInfo } from '../log-messages-suppressor';
 import { Utils } from '../../utils';
 import { getIdentifierKeyForRpcPoller } from './utils';
@@ -162,7 +161,7 @@ export abstract class StatefulRpcPoller<State, M>
     this.cacheStateKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
 
-    this.logger = getLogger(`${this.entityName}`);
+    this.logger = this.dexHelper.getLogger(`${this.entityName}`);
 
     assert(
       this.maxAllowedStateDelayInBlocks >= 0,
@@ -365,9 +364,7 @@ export abstract class StatefulRpcPoller<State, M>
     ...args: unknown[]
   ) {
     this.logger[level](
-      `${this.entityName}: ${message}. ${args
-        .map(a => Utils.Serialize(a))
-        .join('.')}`,
+      `${message}. ${args.map(a => Utils.Serialize(a)).join('.')}`,
     );
   }
 

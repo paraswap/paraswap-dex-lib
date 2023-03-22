@@ -2,7 +2,6 @@ import _ from 'lodash';
 import { assert } from 'console';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from '../../types';
-import { getLogger } from '../log4js';
 import { MultiResult } from '../multi-wrapper';
 import { IStatefulRpcPoller } from './types';
 
@@ -35,7 +34,7 @@ export class StatePollingManager {
   private _idlePools: Set<string> = new Set();
 
   private constructor(protected dexHelper: IDexHelper) {
-    this.logger = getLogger(
+    this.logger = this.dexHelper.getLogger(
       `${this.constructor.name}-${dexHelper.config.data.network}`,
     );
   }
