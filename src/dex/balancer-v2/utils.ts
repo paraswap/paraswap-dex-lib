@@ -156,7 +156,14 @@ function isLinearPool(poolType: string) {
   return (
     poolType === BalancerPoolTypes.Linear ||
     poolType === BalancerPoolTypes.AaveLinear ||
-    poolType === BalancerPoolTypes.ERC4626Linear
+    poolType === BalancerPoolTypes.ERC4626Linear ||
+    poolType === BalancerPoolTypes.BeefyLinear ||
+    poolType === BalancerPoolTypes.GearboxLinear ||
+    poolType === BalancerPoolTypes.MidasLinear ||
+    poolType === BalancerPoolTypes.ReaperLinear ||
+    poolType === BalancerPoolTypes.SiloLinear ||
+    poolType === BalancerPoolTypes.TetuLinear ||
+    poolType === BalancerPoolTypes.YearnLinear
   );
 }
 
