@@ -150,7 +150,7 @@ export class LogMessagesSuppressor<T extends StandardStringEnum> {
       identities = `${identities}... ${identificationInfos.length} total`;
     }
 
-    return `${this.entityName}: logged ${counter} occurrences of: "${message}"${identities}. `;
+    return `Logged ${counter} occurrences of: "${message}"${identities}. `;
   }
 
   private _clearMessageData(messageData: MessageData) {

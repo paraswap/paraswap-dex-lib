@@ -38,9 +38,6 @@ export class StatePollingManager {
     this.logger = getLogger(
       `${this.constructor.name}-${dexHelper.config.data.network}`,
     );
-
-    if (this.isMaster) {
-    }
   }
 
   get isMaster() {
@@ -261,7 +258,7 @@ export class StatePollingManager {
     this._registeredPendingPools.push(statefulRpcPoller);
   }
 
-  initializePool<T, M>(statefulRpcPoller: IStatefulRpcPoller<T, M>) {
+  async initializePool<T, M>(statefulRpcPoller: IStatefulRpcPoller<T, M>) {
     const { identifierKey } = statefulRpcPoller;
 
     if (
@@ -279,8 +276,21 @@ export class StatePollingManager {
         ? this._poolsToBeUpdated.add(identifierKey)
         : this._idlePools.add(identifierKey);
 
-      const currentBlockNumber =
-        this.dexHelper.blockManager.getActiveChainHead()?.number;
+      let currentBlockNumber: number | undefined;
+      // This complication is only for pool tracker. We don't have block manager there and
+      // this is workaround to get current block number
+      if (
+        this.dexHelper.blockManager &&
+        this.dexHelper.blockManager.getActiveChainHead
+      ) {
+        currentBlockNumber =
+          this.dexHelper.blockManager.getActiveChainHead()?.number;
+      }
+
+      if (currentBlockNumber === undefined) {
+        currentBlockNumber =
+          await this.dexHelper.web3Provider.eth.getBlockNumber();
+      }
 
       assert(
         currentBlockNumber !== undefined,

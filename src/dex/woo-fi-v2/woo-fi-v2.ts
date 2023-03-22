@@ -371,10 +371,9 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       return [];
     }
 
-    const connectorTokens =
-      wrappedTokenAddress === this.quoteTokenAddress
-        ? this.baseTokens
-        : [this.tokenByAddress[this.quoteTokenAddress]];
+    const connectorTokens = Object.values(this.tokenByAddress).filter(
+      t => t.address !== wrappedTokenAddress,
+    );
 
     return [
       {
