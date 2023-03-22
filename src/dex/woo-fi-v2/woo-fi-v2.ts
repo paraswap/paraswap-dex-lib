@@ -38,6 +38,8 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
 
   readonly isFeeOnTransferSupported = false;
 
+  readonly isStatePollingDex = true;
+
   readonly quoteTokenAddress: Address;
 
   protected _baseTokens?: Token[];
