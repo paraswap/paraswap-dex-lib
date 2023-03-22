@@ -35,6 +35,15 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
     },
+    [Network.BSC]: {
+      factory: '0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7',
+      quoter: '0x78D78E420Da98ad378D7799bE8f4AF69033EB077',
+      router: '0x83c346ba3d4bf36b308705e24fad80999401854b',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x593F39A4Ba26A9c8ed2128ac95D109E8e403C485',
+      uniswapMulticall: '0x963Df249eD09c358A4819E39d9Cd5736c3087184',
+      chunksCount: 10,
+    },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       quoter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
@@ -69,6 +78,10 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter01', index: 6 }],
     [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 2 }],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'BscBuyAdapter', index: 5 }],
   },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 13 }],
