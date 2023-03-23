@@ -312,8 +312,12 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
   }
 
   async updatePoolState(): Promise<void> {
-    await this.initializeTokensAndAddresses();
-    this._initializePollingPool();
+    if (this._baseTokens === undefined || this.tokenByAddress === undefined) {
+      await this.initializeTokensAndAddresses();
+    }
+    if (this.pollingPool === undefined) {
+      this._initializePollingPool();
+    }
 
     if (this.tokenByAddress === undefined) {
       this.logger.error(`tokenByAddress is undefined in updatePoolState`);
