@@ -6,6 +6,11 @@ import { MultiResult } from '../multi-wrapper';
 import { IStatefulRpcPoller } from './types';
 
 export class StatePollingManager {
+  // This is for update pool states function. If we see state for new block and
+  // the diff is bigger than this number, than something might be wrong and
+  // we warn about this
+  static readonly DEFAULT_BLOCK_NUMBER_DIFFERENCE_TO_ALERT = 10;
+
   private static __instances: Record<string, StatePollingManager> = {};
 
   static getInstance(dexHelper: IDexHelper): StatePollingManager {
@@ -103,12 +108,15 @@ export class StatePollingManager {
     this._updatePoolStates(poolsToBeUpdated)
       .then(receivedBlockNumber => {
         // There is no guarantee that we receive latest state. This is our best effort
-        if (receivedBlockNumber < blockNumber) {
+        if (
+          Math.abs(blockNumber - receivedBlockNumber) >
+          StatePollingManager.DEFAULT_BLOCK_NUMBER_DIFFERENCE_TO_ALERT
+        ) {
           this.logger.warn(
             `onBlockNumber=${blockNumber} at least for some pools receivedBlockNumber=${receivedBlockNumber} is lower than expected`,
           );
         }
-        this.logger.debug(
+        this.logger.info(
           `onBlockNumber=${blockNumber} updated ${
             poolsToBeUpdated.length
           } pools: ${poolsToBeUpdated
