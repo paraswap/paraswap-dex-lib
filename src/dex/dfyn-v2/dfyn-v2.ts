@@ -38,10 +38,10 @@ import DfynV2QuoterABI from '../../abi/dfyn-v2/DfynV2Quoter.abi.json';
 import DfynV2MultiABI from '../../abi/dfyn-v2/DfynMulti.abi.json';
 import DfynV2StateMulticallABI from '../../abi/dfyn-v2/DfynV2StateMulticall.abi.json';
 import {
-  UNISWAPV3_EFFICIENCY_FACTOR,
-  UNISWAPV3_FUNCTION_CALL_GAS_COST,
-  UNISWAPV3_SUBGRAPH_URL,
-  UNISWAPV3_TICK_GAS_COST,
+  DFYNV2_EFFICIENCY_FACTOR,
+  DFYNV2_FUNCTION_CALL_GAS_COST,
+  DFYNV2_SUBGRAPH_URL,
+  DFYNV2_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
@@ -64,9 +64,9 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
-const UNISWAPV3_QUOTE_GASLIMIT = 200_0000;
+const DFYNV2_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
+const DFYNV2_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const DFYNV2_QUOTE_GASLIMIT = 200_0000;
 const provider = new JsonRpcProvider(
   process.env.HTTP_PROVIDER_137,
   Network.POLYGON,
@@ -153,8 +153,7 @@ export class DfynV2
 
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp =
-          Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+        const maxTimestamp = Date.now() - DFYNV2_CLEAN_NOT_EXISTING_POOL_TTL_MS;
         await this.dexHelper.cache.zremrangebyscore(
           this.notExistingPoolSetKey,
           0,
@@ -164,7 +163,7 @@ export class DfynV2
 
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
-        UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+        DFYNV2_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
       );
     }
   }
@@ -338,7 +337,6 @@ export class DfynV2
     );
 
     // const reserves = await concentratedPool.getReserves();
-    // debugger
     // for (const reserve of reserves) {
     //   const balance = reserves[reserve].amounts[DEFAULT_ID_ERC20_AS_STRING];
     //   if (balance >= amounts[amounts.length - 1]) {
@@ -383,7 +381,7 @@ export class DfynV2
 
     const calldata = _amounts.map(_amount => ({
       target: this.config.quoter,
-      gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
+      gasLimit: DFYNV2_QUOTE_GASLIMIT,
       callData:
         side === SwapSide.SELL
           ? this.quoterIface.encodeFunctionData('quoteExactInput', [
@@ -429,7 +427,7 @@ export class DfynV2
       },
       poolIdentifier: this.getPoolIdentifier(from.address, to.address),
       exchange: this.dexKey,
-      gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
+      gasCost: prices.map(p => (p === 0n ? 0 : DFYNV2_QUOTE_GASLIMIT)),
       poolAddresses: [concentratedPool.address],
     };
 
@@ -590,8 +588,8 @@ export class DfynV2
       //           return 0;
       //         } else {
       //           return (
-      //             UNISWAPV3_FUNCTION_CALL_GAS_COST +
-      //             pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
+      //             DFYNV2_FUNCTION_CALL_GAS_COST +
+      //             pricesResult.tickCounts[index] * DFYNV2_TICK_GAS_COST
       //           );
       //         }
       //       }),
@@ -796,7 +794,7 @@ export class DfynV2
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.totalValueLockedUSD) * DFYNV2_EFFICIENCY_FACTOR,
     }));
 
     const pools1 = _.map(res.pools1, pool => ({
@@ -809,7 +807,7 @@ export class DfynV2
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.totalValueLockedUSD) * DFYNV2_EFFICIENCY_FACTOR,
     }));
 
     const pools = _.slice(
@@ -855,7 +853,6 @@ export class DfynV2
     return newConfig;
   }
   private _computePoolAddress(token0: Address, token1: Address): Address {
-    // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/PoolAddress.sol
     if (token0 > token1) [token0, token1] = [token1, token0];
 
     const encodedKey = ethers.utils.keccak256(
@@ -931,7 +928,7 @@ export class DfynV2
   ) {
     try {
       const res = await this.dexHelper.httpRequest.post(
-        UNISWAPV3_SUBGRAPH_URL,
+        DFYNV2_SUBGRAPH_URL,
         { query, variables },
         undefined,
         { timeout: timeout },

@@ -16,7 +16,6 @@ import {
   TickBitMapMappingsWithBigNumber,
   TickInfoMappingsWithBigNumber,
 } from './types';
-import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';

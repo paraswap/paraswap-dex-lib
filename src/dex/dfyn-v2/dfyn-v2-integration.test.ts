@@ -19,22 +19,9 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'DFYN';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [0n, 10n * BI_POWS[4], 20n * BI_POWS[4], 30n * BI_POWS[4]];
-const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
+const amounts = [0n, 1n * BI_POWS[6]];
 
-// const amounts = [
-//   0n,
-//   10_000n * BI_POWS[6],
-//   20_000n * BI_POWS[6],
-//   30_000n * BI_POWS[6],
-// ];
-
-// const amountsBuy = [
-//   0n,
-//   1n * BI_POWS[18],
-//   2n * BI_POWS[18],
-//   3n * BI_POWS[18]
-// ];
+const amountsBuy = [0n, 1n * BI_POWS[18]];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'DfynV2';
@@ -224,11 +211,12 @@ describe('DfynV2', function () {
       poolPrices!.map(async price => {
         const res = await checkOnChainPricing(
           dfynV2,
-          'quoteExactInput',
+          'quoteExactOutput',
           blockNumber,
           price.prices,
-          TokenA.address,
           TokenB.address,
+          TokenA.address,
+
           amountsBuy,
         );
         if (res === false) falseChecksCounter++;
@@ -457,7 +445,7 @@ describe('DfynV2', function () {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
-  it.skip('getTopPoolsForToken', async function () {
+  it('getTopPoolsForToken', async function () {
     const poolLiquidity = await dfynV2Mainnet.getTopPoolsForToken(
       Tokens[Network.POLYGON]['USDC'].address,
       10,

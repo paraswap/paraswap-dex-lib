@@ -1,5 +1,5 @@
-export const UNISWAPV3_FUNCTION_CALL_GAS_COST = 21_000; // Ceiled
-export const UNISWAPV3_TICK_GAS_COST = 24_000; // Ceiled
+export const DFYNV2_FUNCTION_CALL_GAS_COST = 21_000; // Ceiled
+export const DFYNV2_TICK_GAS_COST = 24_000; // Ceiled
 
 // This is used for price calculation. If out of scope, return 0n
 export const TICK_BITMAP_TO_USE = 4n;
@@ -9,10 +9,10 @@ export const TICK_BITMAP_BUFFER = 8n;
 
 export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 128;
 
-export const UNISWAPV3_SUBGRAPH_URL =
-  'https://subgraph.satsuma-prod.com/57a2c796086f/dfyn/dfyn-concentrated-2/api';
+export const DFYNV2_SUBGRAPH_URL =
+  'https://api.thegraph.com/subgraphs/name/jdrouterp/dfyn-concentrated-pools';
 
-export const UNISWAPV3_EFFICIENCY_FACTOR = 3;
+export const DFYNV2_EFFICIENCY_FACTOR = 3;
 
 export const ZERO_TICK_INFO = {
   liquidityGross: 0n,

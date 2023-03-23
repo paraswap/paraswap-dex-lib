@@ -15,7 +15,7 @@ export function checkPoolPrices(
 
     poolPrice.prices.forEach(p => expect(p).toBeGreaterThanOrEqual(0));
     expect(poolPrice.unit).toBeGreaterThanOrEqual(0);
-    debugger;
+
     if (expectIncreasingValues) {
       for (let i = 2; i < poolPrice.prices.length; ++i) {
         const prevMarginalPrice =
