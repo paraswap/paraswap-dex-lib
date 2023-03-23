@@ -44,6 +44,8 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
 
   protected _baseTokens?: Token[];
 
+  // Since exchange anyways takes fee, we provide our fee wallet
+  // to take part of that fee and move to DAO
   protected rebateTo?: Address;
 
   tokenByAddress?: Record<Address, Token>;
