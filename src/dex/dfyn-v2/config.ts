@@ -3,7 +3,7 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { Address } from '../../types';
 
-const SUPPORTED_FEES = [500n];
+const SUPPORTED_FEES = [1500n];
 
 // Pools that will be initialized on app startup
 // They are added for testing
@@ -27,9 +27,9 @@ export const PoolsToPreload: DexConfigMap<
 export const DfynV2Config: DexConfigMap<DexParams> = {
   DfynV2: {
     [Network.POLYGON]: {
-      factory: '0x20F200c65bDD173Df64a528e28F77F06ebDE61D9',
-      quoter: '0xF256047C239788304e350Bf2b5Dd14129b87720A',
-      router: '0x5e3F49d3010FAc405Ce7f3fD0bd1Ea7e4cfa28E6',
+      factory: '0xf79a83E3f8E853D9658e8b97a83942Af80d45b85',
+      quoter: '0x20928030b08E498445B66Bdf35aB6bD72d9598f2',
+      router: '0x65AC726680E958Ae6872569C08c264Fe04D65C80',
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x6Dc993Fe1e945A640576B4Dca81281d8e998DF71',
       dfynMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',

@@ -8,18 +8,18 @@ import {
   DecodedStateMultiCallResultWithRelativeBitmaps,
 } from './types';
 
-export function getUniswapV3DexKey(UniswapV3Config: DexConfigMap<DexParams>) {
-  const UniswapV3Keys = Object.keys(UniswapV3Config);
-  if (UniswapV3Keys.length !== 1) {
+export function getDfynV2DexKey(DfynV2Config: DexConfigMap<DexParams>) {
+  const DfynV2Keys = Object.keys(DfynV2Config);
+  if (DfynV2Keys.length !== 1) {
     throw new Error(
-      `UniswapV3 key in UniswapV3Config is not unique. Update relevant places (optimizer) or fix config issue. Received: ${JSON.stringify(
-        UniswapV3Config,
+      `DfynV2 key in DfynV2Config is not unique. Update relevant places (optimizer) or fix config issue. Received: ${JSON.stringify(
+        DfynV2Config,
         (_0, value) => (typeof value === 'bigint' ? value.toString() : value),
       )}`,
     );
   }
 
-  return UniswapV3Keys[0].toLowerCase();
+  return DfynV2Keys[0].toLowerCase();
 }
 
 export function decodeStateMultiCallResultWithRelativeBitmaps(
