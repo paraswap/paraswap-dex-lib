@@ -406,7 +406,6 @@ export class RateFetcher {
       const { data } = await this.dexHelper.httpRequest.request<unknown>(
         payload,
       );
-      this.logger.info(`Firm quote response for payload ${payload} is ${data}`);
 
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
