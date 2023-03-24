@@ -219,6 +219,18 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
 
       const unit = _prices[0];
 
+      let gasCost = WOO_FI_V2_GAS_COST.baseToBase;
+      if (_srcAddress === this.config.quoteToken.address) {
+        gasCost = WOO_FI_V2_GAS_COST.sellQuote;
+      } else if (_destAddress === this.config.quoteToken.address) {
+        gasCost = WOO_FI_V2_GAS_COST.sellBase;
+      } else {
+        this.logger.error(
+          `Can not estimate gas cost in getPricesVolume. Check the logic: ` +
+            `${_srcAddress}, ${_destAddress}, ${this.config.quoteToken.address}`,
+        );
+      }
+
       return [
         {
           unit,
@@ -226,7 +238,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
           data: {},
           poolIdentifier: expectedIdentifier,
           exchange: this.dexKey,
-          gasCost: WOO_FI_V2_GAS_COST,
+          gasCost,
           poolAddresses: [this.config.wooPPV2Address],
         },
       ];
