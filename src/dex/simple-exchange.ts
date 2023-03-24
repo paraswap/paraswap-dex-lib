@@ -124,6 +124,6 @@ export class SimpleExchange {
   }
 
   getDeadline() {
-    return Math.floor(new Date().getTime() / 1000) + 60 * 60;
+    return Math.floor(new Date().getTime() / 1000) + 6 * 60 * 60;
   }
 }
