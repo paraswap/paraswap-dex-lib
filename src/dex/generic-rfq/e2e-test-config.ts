@@ -1,4 +1,4 @@
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 
 export const testConfig: {
   [network: number]: Array<{
