@@ -1,5 +1,10 @@
 import { Network, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  CommonExchangeData,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { IDexHelper } from '../dex-helper';
 import { SimpleExchange } from './simple-exchange';
@@ -37,7 +42,6 @@ type TraderJoeV2RouterParam =
   | TraderJoeV2RouterBuyParams;
 
 export type TraderJoeV2Data = {
-  deadline?: number;
   tokenIn: string; // redundant
   tokenOut: string; // redundant
   binStep: string;
@@ -73,7 +77,7 @@ export class TraderJoeV2
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: TraderJoeV2Data,
+    data: CommonExchangeData<TraderJoeV2Data>,
     side: SwapSide,
   ): AdapterExchangeParam {
     const payload = this.abiCoder.encodeParameter(
@@ -103,7 +107,7 @@ export class TraderJoeV2
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: TraderJoeV2Data,
+    data: CommonExchangeData<TraderJoeV2Data>,
     side: SwapSide,
   ): AsyncOrSync<SimpleExchangeParam> {
     const swapFunction =

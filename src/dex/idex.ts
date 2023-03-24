@@ -14,11 +14,15 @@ import {
   PreprocessTransactionOptions,
   TransferFeeParams,
   Config,
+  CommonExchangeData,
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
 
-export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
+export interface IDexTxBuilder<
+  ExchangeData extends Record<string, unknown>,
+  DirectParam = null,
+> {
   needWrapNative: boolean;
 
   // Returns the ETH fee required to swap
@@ -29,18 +33,20 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: ExchangeData,
+    data: CommonExchangeData<ExchangeData>,
     side: SwapSide,
   ): NumberAsString;
 
   // If exists, called before getAdapterParam to use async calls and receive data if needed
   preProcessTransaction?(
-    optimalSwapExchange: OptimalSwapExchange<ExchangeData>,
+    optimalSwapExchange: OptimalSwapExchange<CommonExchangeData<ExchangeData>>,
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     options: PreprocessTransactionOptions,
-  ): AsyncOrSync<[OptimalSwapExchange<ExchangeData>, ExchangeTxInfo]>;
+  ): AsyncOrSync<
+    [OptimalSwapExchange<CommonExchangeData<ExchangeData>>, ExchangeTxInfo]
+  >;
 
   // This is helper a function to support testing if preProcessTransaction is implemented
   getTokenFromAddress?(address: Address): Token;
@@ -52,7 +58,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString, // required for buy case
-    data: ExchangeData,
+    data: CommonExchangeData<ExchangeData>,
     side: SwapSide,
   ): AdapterExchangeParam;
 
@@ -63,7 +69,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: ExchangeData,
+    data: CommonExchangeData<ExchangeData>,
     side: SwapSide,
   ): AsyncOrSync<SimpleExchangeParam>;
 
@@ -76,7 +82,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: ExchangeData,
+    data: CommonExchangeData<ExchangeData>,
     side: SwapSide,
     permit: string,
     contractMethod?: string,
@@ -177,23 +183,23 @@ export interface IDexPooltracker {
 // Combine IDexTxBuilder, IDexPricing & IDexPooltracker in
 // a single interface
 export interface IDex<
-  ExchangeData,
+  ExchangeData extends Record<string, unknown>,
   DirectParam = null,
-  OptimizedExchangeData = ExchangeData,
-> extends IDexTxBuilder<OptimizedExchangeData, DirectParam>,
-    IDexPricing<ExchangeData>,
+  OptimizedExchangeData extends Record<string, unknown> = ExchangeData,
+> extends IDexTxBuilder<CommonExchangeData<OptimizedExchangeData>, DirectParam>,
+    IDexPricing<CommonExchangeData<ExchangeData>>,
     IDexPooltracker {}
 
 // Defines the static objects of the IDex class
 export interface DexContructor<
-  ExchangeData,
+  ExchangeData extends Record<string, unknown>,
   DirectParam = null,
-  OptimizedExchangeData = ExchangeData,
+  OptimizedExchangeData extends Record<string, unknown> = ExchangeData,
 > {
   new (network: Network, dexKey: string, dexHelper: IDexHelper): IDex<
-    ExchangeData,
+    CommonExchangeData<ExchangeData>,
     DirectParam,
-    OptimizedExchangeData
+    CommonExchangeData<OptimizedExchangeData>
   >;
 
   // static dexKeysWithNetwork has the list of dex keys

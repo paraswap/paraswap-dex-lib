@@ -62,7 +62,7 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
     positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
-    deadline: string,
+    deadline: number,
     uuid: string,
   ): Promise<TxInfo<SimpleBuyNFTParam>> {
     if (!this.validateBestRoute(priceRoute))
@@ -71,6 +71,7 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
     const { partialContractSimpleData, networkFee } = await this.buildCalls(
       priceRoute,
       minMaxAmount,
+      deadline,
     );
 
     const getTokenDetails = (data: AugustusRFQOrderData) => {

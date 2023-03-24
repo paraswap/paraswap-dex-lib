@@ -99,7 +99,7 @@ export class Weth
         gasCost: this.poolGasCost,
         exchange: this.dexKey,
         poolAddresses: [this.address],
-        data: null,
+        data: {},
       },
     ];
   }

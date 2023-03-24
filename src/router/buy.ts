@@ -44,7 +44,7 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
     positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
-    deadline: string,
+    deadline: number,
     uuid: string,
   ): TxInfo<BuyParam> {
     if (
@@ -60,6 +60,7 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       swap.swapExchanges,
       minMaxAmount,
       priceRoute.srcAmount,
+      deadline,
     );
     const buyData: ContractBuyData = {
       adapter,

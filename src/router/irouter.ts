@@ -12,7 +12,7 @@ export interface IRouter<RouterParam> {
     positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
-    deadline: string,
+    deadline: number,
     uuid: string,
   ): AsyncOrSync<TxInfo<RouterParam>>;
 

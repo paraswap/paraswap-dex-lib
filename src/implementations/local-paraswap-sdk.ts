@@ -254,7 +254,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       userAddress,
       partnerAddress: NULL_ADDRESS,
       partnerFeePercent: '0',
-      deadline: deadline.toString(),
+      deadline,
       uuid: '00000000-0000-0000-0000-000000000000',
     });
   }

@@ -1,6 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  CommonExchangeData,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import ShellABI from '../abi/Shell.json';
@@ -54,7 +59,7 @@ export class Shell
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: ShellData,
+    data: CommonExchangeData<ShellData>,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const swapFunction = ShellFunctions.originSwap;

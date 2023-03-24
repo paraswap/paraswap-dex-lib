@@ -1,7 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { pack } from '@ethersproject/solidity';
 import { Network, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  CommonExchangeData,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
@@ -17,7 +22,6 @@ const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
 
 export type UniswapV3Data = {
   // ExactInputSingleParams
-  deadline?: number;
   path: {
     tokenIn: Address;
     tokenOut: Address;
@@ -109,7 +113,7 @@ export class UniswapV3
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: UniswapV3Data,
+    data: CommonExchangeData<UniswapV3Data>,
     side: SwapSide,
   ): AdapterExchangeParam {
     const { deadline, path: rawPath } = data;
@@ -139,7 +143,7 @@ export class UniswapV3
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: UniswapV3Data,
+    data: CommonExchangeData<UniswapV3Data>,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const swapFunction =

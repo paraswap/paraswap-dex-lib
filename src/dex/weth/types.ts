@@ -1,7 +1,7 @@
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Address } from '../../types';
 
-export type WethData = null;
+export type WethData = {};
 
 export type DexParams = {
   poolGasCost: number;

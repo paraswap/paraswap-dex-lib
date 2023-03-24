@@ -27,7 +27,6 @@ export type DodoV1Data = {
   dodoPairs: Address[];
   directions: string;
   isIncentive: boolean;
-  deadLine: string;
 };
 
 type DodoV1Param = [

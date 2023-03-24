@@ -33,7 +33,6 @@ export type NerveData = {
   exchange: string;
   i: string;
   j: string;
-  deadline: string;
 };
 
 export type OptimizedNerveData = NerveData;
@@ -43,7 +42,7 @@ export type NervePoolSwapParams = [
   j: string,
   dx: string,
   min_dy: string,
-  deadline?: string,
+  deadline?: number,
 ];
 
 export type DexParams = {

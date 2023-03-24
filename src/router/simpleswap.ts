@@ -81,6 +81,7 @@ export abstract class SimpleRouterBase<RouterParam>
   protected async buildCalls(
     priceRoute: OptimalRate,
     minMaxAmount: string,
+    deadline: number,
   ): Promise<{
     partialContractSimpleData: PartialContractSimpleData;
     networkFee: string;
@@ -132,6 +133,8 @@ export abstract class SimpleRouterBase<RouterParam>
               wethWithdraw = BigInt(_destAmount);
             }
           }
+
+          se.data.deadline = deadline;
 
           const simpleParams = await dex.getSimpleParam(
             _src,
@@ -225,7 +228,7 @@ export abstract class SimpleRouterBase<RouterParam>
     positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
-    deadline: string,
+    deadline: number,
     uuid: string,
   ): Promise<TxInfo<RouterParam>>;
 
@@ -274,7 +277,7 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
     positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
-    deadline: string,
+    deadline: number,
     uuid: string,
   ): Promise<TxInfo<SimpleSwapParam>> {
     if (!this.validateBestRoute(priceRoute))
@@ -283,6 +286,7 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
     const { partialContractSimpleData, networkFee } = await this.buildCalls(
       priceRoute,
       minMaxAmount,
+      deadline,
     );
 
     const sellData: ConstractSimpleData = {

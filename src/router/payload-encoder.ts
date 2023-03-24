@@ -57,7 +57,10 @@ export function encodeFeePercentForReferrer(side: SwapSide) {
 export class PayloadEncoder {
   constructor(protected dexAdapterService: DexAdapterService) {}
   // Should have function for optimally choosing the Adapters
-  getContractPathsWithNetworkFee(swaps: OptimalSwap[]): {
+  getContractPathsWithNetworkFee(
+    swaps: OptimalSwap[],
+    deadline: number,
+  ): {
     paths: ContractPath[];
     networkFee: bigint;
   } {
@@ -67,6 +70,7 @@ export class PayloadEncoder {
         s.srcToken,
         s.destToken,
         s.swapExchanges,
+        deadline,
       );
       const totalPathNetworkFee = adapters.reduce(
         (sum: bigint, a: ContractAdapter) => sum + BigInt(a.networkFee),
@@ -82,7 +86,10 @@ export class PayloadEncoder {
     return { paths, networkFee: totalNetworkFee };
   }
 
-  getMegaSwapPathsWithNetworkFee(routes: OptimalRoute[]): {
+  getMegaSwapPathsWithNetworkFee(
+    routes: OptimalRoute[],
+    deadline: number,
+  ): {
     megaSwapPaths: ContractMegaSwapPath[];
     networkFee: bigint;
   } {
@@ -90,6 +97,7 @@ export class PayloadEncoder {
     const megaSwapPaths = routes.map(r => {
       const { paths, networkFee } = this.getContractPathsWithNetworkFee(
         r.swaps,
+        deadline,
       );
       totalNetworkFee += networkFee;
       return {
@@ -106,6 +114,7 @@ export class PayloadEncoder {
     swapExchanges: OptimalSwapExchange<any>[],
     maxAmount: string,
     totalSrcAmount: string,
+    deadline: number,
   ): { adapter: Address; route: ContractRoute[]; networkFee: bigint } {
     const exchangeAdapterMap = this.getOptimalExchangeAdapterMap(
       swapExchanges,
@@ -118,6 +127,9 @@ export class PayloadEncoder {
       const [adapterAddress, index] =
         exchangeAdapterMap[se.exchange.toLowerCase()];
       adapter = adapterAddress; //Will be the same for all exchanges for BUY
+
+      se.data.deadline = deadline;
+
       const adapterParam = this.dexAdapterService
         .getTxBuilderDexByKey(se.exchange)
         .getAdapterParam(
@@ -145,6 +157,7 @@ export class PayloadEncoder {
     srcToken: Address,
     destToken: Address,
     swapExchanges: OptimalSwapExchange<any>[],
+    deadline: number,
   ): ContractAdapter[] {
     const exchangeAdapterMap = this.getOptimalExchangeAdapterMap(swapExchanges);
     let adaptersMap: { [adapter: string]: ContractAdapter } = {};
@@ -159,6 +172,9 @@ export class PayloadEncoder {
           route: [],
         };
       }
+
+      se.data.deadline = deadline;
+
       const adapterParam = this.dexAdapterService
         .getTxBuilderDexByKey(se.exchange)
         .getAdapterParam(

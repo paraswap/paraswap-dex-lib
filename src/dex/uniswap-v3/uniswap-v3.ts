@@ -11,6 +11,7 @@ import {
   Logger,
   NumberAsString,
   PoolPrices,
+  CommonExchangeData,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -671,7 +672,7 @@ export class UniswapV3
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: UniswapV3Data,
+    data: CommonExchangeData<UniswapV3Data>,
     side: SwapSide,
   ): AdapterExchangeParam {
     const { path: rawPath } = data;
@@ -686,7 +687,7 @@ export class UniswapV3
       },
       {
         path,
-        deadline: this.getDeadline(),
+        deadline: data.deadline || this.getDeadline(),
       },
     );
 
@@ -727,7 +728,7 @@ export class UniswapV3
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: UniswapV3Data,
+    data: CommonExchangeData<UniswapV3Data>,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const swapFunction =
@@ -740,14 +741,14 @@ export class UniswapV3
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: data.deadline || this.getDeadline(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             path,
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: data.deadline || this.getDeadline(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             path,

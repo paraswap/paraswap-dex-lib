@@ -38,7 +38,7 @@ export class TransactionBuilder {
     maxFeePerGas?: string;
     maxPriorityFeePerGas?: string;
     permit?: string;
-    deadline: string;
+    deadline: number;
     uuid: string;
     beneficiary?: Address;
     onlyParams?: boolean;

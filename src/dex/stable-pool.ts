@@ -4,6 +4,7 @@ import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
   Address,
+  CommonExchangeData,
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
@@ -17,7 +18,6 @@ type StablePoolData = {
   exchange: string;
   i: string;
   j: string;
-  deadline: string;
 };
 
 type StablePoolParam = [
@@ -25,7 +25,7 @@ type StablePoolParam = [
   j: NumberAsString,
   dx: NumberAsString,
   min_dy: NumberAsString,
-  deadline?: string,
+  deadline?: number,
 ];
 
 enum StabePoolFunctions {
@@ -57,7 +57,7 @@ export class StablePool
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: StablePoolData,
+    data: CommonExchangeData<StablePoolData>,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
@@ -85,7 +85,7 @@ export class StablePool
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: StablePoolData,
+    data: CommonExchangeData<StablePoolData>,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);

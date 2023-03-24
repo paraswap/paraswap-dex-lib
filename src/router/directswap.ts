@@ -26,7 +26,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
-    deadline: string,
+    deadline: number,
     uuid: string,
   ): TxInfo<DexDirectReturn> {
     // TODO: add checks for src and dest amounts
@@ -57,6 +57,8 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.side === SwapSide.SELL
         ? minMaxAmount
         : swapExchange.destAmount;
+
+    swapExchange.data = deadline;
 
     return dex.getDirectParam!(
       priceRoute.srcToken,

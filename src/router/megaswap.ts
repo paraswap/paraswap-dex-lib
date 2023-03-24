@@ -44,11 +44,12 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     positiveSlippageToUser: boolean,
     beneficiary: Address,
     permit: string,
-    deadline: string,
+    deadline: number,
     uuid: string,
   ): TxInfo<MegaSwapParam> {
     const { megaSwapPaths, networkFee } = this.getMegaSwapPathsWithNetworkFee(
       priceRoute.bestRoute,
+      deadline,
     );
     const sellData: ContractMegaSwapSellData = {
       fromToken: priceRoute.srcToken,

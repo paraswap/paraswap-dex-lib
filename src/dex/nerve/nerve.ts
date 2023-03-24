@@ -9,6 +9,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  CommonExchangeData,
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
@@ -256,7 +257,6 @@ export class Nerve
             i: srcIndex.toString(),
             j: destIndex.toString(),
             exchange: pool.address,
-            deadline: (Math.floor(Date.now() / 1000) + 10 * 60).toString(),
           },
           poolIdentifier: Nerve.getIdentifier(this.dexKey, pool.address),
           exchange: this.dexKey,
@@ -291,7 +291,7 @@ export class Nerve
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: OptimizedNerveData,
+    data: CommonExchangeData<OptimizedNerveData>,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
@@ -319,7 +319,7 @@ export class Nerve
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: OptimizedNerveData,
+    data: CommonExchangeData<OptimizedNerveData>,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);

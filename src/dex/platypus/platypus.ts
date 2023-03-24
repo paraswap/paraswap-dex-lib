@@ -9,6 +9,7 @@ import {
   PoolLiquidity,
   Logger,
   MultiCallInput,
+  CommonExchangeData,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -429,7 +430,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: PlatypusData,
+    data: CommonExchangeData<PlatypusData>,
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
@@ -448,7 +449,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: PlatypusData,
+    data: CommonExchangeData<PlatypusData>,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     return this.buildSimpleParamWithoutWETHConversion(
@@ -461,7 +462,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             destToken,
             1,
             this.augustusAddress,
-            this.getDeadline(),
+            data.deadline || this.getDeadline(),
           ])
         : isETHAddress(destToken)
         ? Platypus.avaxPoolInterface.encodeFunctionData('swapToETH', [
@@ -469,7 +470,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             srcAmount,
             1,
             this.augustusAddress,
-            this.getDeadline(),
+            data.deadline || this.getDeadline(),
           ])
         : Platypus.poolInterface.encodeFunctionData('swap', [
             srcToken,
@@ -477,7 +478,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             srcAmount,
             1,
             this.augustusAddress,
-            this.getDeadline(),
+            data.deadline || this.getDeadline(),
           ]),
       data.pool,
     );

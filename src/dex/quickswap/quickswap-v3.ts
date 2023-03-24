@@ -11,7 +11,6 @@ const config = _.pick(QuickSwapConfig, ['QuickSwapV3']).QuickSwapV3;
 
 export type QuickSwapV3Data = {
   // ExactInputSingleParams
-  deadline?: number;
   path: {
     tokenIn: Address;
     tokenOut: Address;

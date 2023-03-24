@@ -29,7 +29,7 @@ export type ContractSellData = {
   partner: string;
   feePercent: string;
   permit: string;
-  deadline: string;
+  deadline: number;
   uuid: string;
 };
 
@@ -43,7 +43,7 @@ export type ContractMegaSwapSellData = {
   partner: string;
   feePercent: string;
   permit: string;
-  deadline: string;
+  deadline: number;
   uuid: string;
 };
 
@@ -59,7 +59,7 @@ export type ContractBuyData = {
   partner: string;
   feePercent: string;
   permit: string;
-  deadline: string;
+  deadline: number;
   uuid: string;
 };
 
@@ -77,7 +77,7 @@ export type ConstractSimpleData = {
   partner: string;
   feePercent: string;
   permit: string;
-  deadline: string;
+  deadline: number;
   uuid: string;
 };
 
@@ -98,7 +98,7 @@ export type ContractSimpleBuyNFTData = {
   partner: string;
   feePercent: string;
   permit: string;
-  deadline: string;
+  deadline: number;
   uuid: string;
 };
 
@@ -224,6 +224,10 @@ export type DexConfigMap<DexParams> = {
     [network: number]: DexParams;
   };
 };
+
+export type CommonExchangeData<D extends Record<string, unknown>> = {
+  deadline?: number;
+} & D;
 
 export type TxObject = {
   from: Address;

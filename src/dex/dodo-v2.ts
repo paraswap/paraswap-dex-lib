@@ -19,7 +19,6 @@ const DODOAproveAddress: { [network: number]: Address } = {
 export type DodoV2Data = {
   dodoPairs: Address[];
   directions: string;
-  deadLine: string;
   dodoProxy: Address;
 };
 type DodoSwapV2ETHToTokenParams = [

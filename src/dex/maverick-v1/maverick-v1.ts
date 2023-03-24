@@ -8,6 +8,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  CommonExchangeData,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow, isTruthy } from '../../utils';
@@ -288,7 +289,7 @@ export class MaverickV1
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: MaverickV1Data,
+    data: CommonExchangeData<MaverickV1Data>,
     side: SwapSide,
   ): AdapterExchangeParam {
     const { deadline, pool } = data;
@@ -317,7 +318,7 @@ export class MaverickV1
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: MaverickV1Data,
+    data: CommonExchangeData<MaverickV1Data>,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const swapFunction =
@@ -329,7 +330,7 @@ export class MaverickV1
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: data.deadline || this.getDeadline(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             tokenIn: srcToken,
@@ -339,7 +340,7 @@ export class MaverickV1
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: data.deadline || this.getDeadline(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             tokenIn: srcToken,
