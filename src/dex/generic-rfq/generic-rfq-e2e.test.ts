@@ -91,6 +91,12 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
     config.rfqConfigs[dexKey] = buildConfigForGenericRFQ();
     describe(`${Network[network]}`, () => {
       for (const testCase of testCases) {
+        if (!smartTokens.hasOwnProperty(testCase.srcToken)) {
+          throw new Error(`Please add "addBalance" and "addAllowance" functions for ${testCase.srcToken} on ${Network[network]} (in constants-e2e.ts).`);
+        }
+        if (!smartTokens.hasOwnProperty(testCase.destToken)){ 
+          throw new Error(`Please add "addBalance" and "addAllowance" functions for ${testCase.destToken} on ${Network[network]} (in constants-e2e.ts).`);
+        }
         const srcToken = smartTokens[testCase.srcToken];
         const destToken = smartTokens[testCase.destToken];
 
