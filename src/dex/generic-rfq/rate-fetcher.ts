@@ -403,9 +403,11 @@ export class RateFetcher {
         delete payload.secret;
       }
 
+      this.logger.debug('FirmRate Request:', payload);
       const { data } = await this.dexHelper.httpRequest.request<unknown>(
         payload,
       );
+      this.logger.debug('FirmRate Response: ', data);
 
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
