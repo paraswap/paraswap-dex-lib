@@ -282,19 +282,6 @@ export class DfynV2
 
     if (_srcAddress === _destAddress) return [];
 
-    // const pools = (
-    //   await Promise.all(
-    //     this.supportedFees.map(async fee =>
-    //       this.getPool(_srcAddress, _destAddress, fee, blockNumber),
-    //     ),
-    //   )
-    // ).filter(pool => pool);
-
-    // if (pools.length === 0) return [];
-
-    // return pools.map(pool =>
-    //   this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
-    // );
     const pools = [await this.getPoolIdentifier(_srcAddress, _destAddress)];
     return pools;
   }
@@ -306,28 +293,6 @@ export class DfynV2
     side: SwapSide,
     // pools: DfynV2EventPool[],
   ): Promise<ExchangePrices<DfynV2Data> | null> {
-    // if (pools.length === 0) {
-    //   return null;
-    // }
-    //this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
-    // get balances of erc20 in a pool in our case we will fetch reserves0 or reserves1 or maybe vault balance of the pool
-    // const requests = pools.map<BalanceRequest>(
-    //   pool => ({
-    //     owner: pool.poolAddress,
-    //     asset: side == SwapSide.SELL ? from.address : to.address,
-    //     assetType: AssetType.ERC20,
-    //     ids: [
-    //       {
-    //         id: DEFAULT_ID_ERC20,
-    //         spenders: [],
-    //       },
-    //     ],
-    //   }),
-    //   [],
-    // );
-    // // fetches balances from the chain
-    // const balances = await getBalances(this.dexHelper.multiWrapper, requests);
-
     const poolAddress = this._computePoolAddress(from.address, to.address);
 
     const concentratedPool = new Contract2(
@@ -335,35 +300,6 @@ export class DfynV2
       DfynV2PoolABI,
       provider,
     );
-
-    // const reserves = await concentratedPool.getReserves();
-    // for (const reserve of reserves) {
-    //   const balance = reserves[reserve].amounts[DEFAULT_ID_ERC20_AS_STRING];
-    //   if (balance >= amounts[amounts.length - 1]) {
-    //     continue;
-    //   } else {
-    //     this.logger.warn(
-    //       `[${this.network}] have no balance ${poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-    //     );
-    //   }
-    // }
-
-    // pools = pools.filter((pool, index) => {
-    //   const balance = reserves[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
-    //   if (balance >= amounts[amounts.length - 1]) {
-    //     return true;
-    //   }
-    //   this.logger.warn(
-    //     `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-    //   );
-    //   return false;
-    // });
-    // // fetching pools with balances
-    // pools.forEach(pool => {
-    //   this.logger.warn(
-    //     `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
-    //   );
-    // });
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
@@ -453,178 +389,14 @@ export class DfynV2
 
       if (_srcAddress === _destAddress) return null;
 
-      //let selectedPools: DfynV2EventPool[] = [];
-
-      // if (!limitPools) {
-      //   selectedPools = (
-      //     await Promise.all(
-      //       this.supportedFees.map(async fee => {
-      //         const locallyFoundPool =
-      //           this.eventPools[
-      //             this.getPoolIdentifier(_srcAddress, _destAddress)
-      //           ];
-      //         if (locallyFoundPool) return locallyFoundPool;
-
-      //         const newlyFetchedPool = await this.getPool(
-      //           _srcAddress,
-      //           _destAddress,
-      //           //fee,
-      //           blockNumber,
-      //         );
-      //         return newlyFetchedPool;
-      //       }),
-      //     )
-      //   ).filter(isTruthy);
-      // } else {
-      //   const pairIdentifierWithoutFee = this.getPoolIdentifier(
-      //     _srcAddress,
-      //     _destAddress
-      //   );
-
-      //   const poolIdentifiers = limitPools.filter(identifier =>
-      //     identifier.startsWith(pairIdentifierWithoutFee),
-      //   );
-
-      //   selectedPools = (
-      //     await Promise.all(
-      //       poolIdentifiers.map(async identifier => {
-      //         let locallyFoundPool = this.eventPools[identifier];
-      //         if (locallyFoundPool) return locallyFoundPool;
-
-      //         const [,srcAddress, destAddress] = identifier.split('_');
-      //         const newlyFetchedPool = await this.getPool(
-      //           srcAddress,
-      //           destAddress,
-      //           //BigInt(fee),
-      //           blockNumber,
-      //         );
-      //         return newlyFetchedPool;
-      //       }),
-      //     )
-      //   ).filter(isTruthy);
-      // }
-
-      // if (selectedPools.length === 0) return null;
-
-      // const poolsToUse = selectedPools.reduce(
-      //   (acc, pool) => {
-      //     let state = pool.getState(blockNumber);
-      //     if (state === null) {
-      //       this.logger.trace(
-      //         `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
-      //       );
-      //       acc.poolWithoutState.push(pool);
-      //     } else {
-      //       acc.poolWithState.push(pool);
-      //     }
-      //     return acc;
-      //   },
-      //   {
-      //     poolWithState: [] as DfynV2EventPool[],
-      //     poolWithoutState: [] as DfynV2EventPool[],
-      //   },
-      // );
-
       const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
         side,
-        // poolsToUse.poolWithoutState,
       );
 
-      // const states = poolsToUse.poolWithState.map(
-      //   p => p.getState(blockNumber)!,
-      // );
-
-      //const states:any[] = []
-      // const unitAmount = getBigIntPow(
-      //   side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
-      // );
-
-      // const _amounts = [...amounts.slice(1)];
-
-      // const [token0] = this._sortTokens(_srcAddress, _destAddress);
-
-      // const zeroForOne = token0 === _srcAddress ? true : false;
-
-      // const result = await Promise.all(
-      //   poolsToUse.poolWithState.map(async (pool, i) => {
-      //     const state = states[i];
-
-      //     if (state.liquidity <= 0n) {
-      //       this.logger.trace(`pool have 0 liquidity`);
-      //       return null;
-      //     }
-
-      //     const balanceDestToken =
-      //       _destAddress === pool.token0 ? state.balance0 : state.balance1;
-
-      //     const unitResult = this._getOutputs(
-      //       state,
-      //       [unitAmount],
-      //       zeroForOne,
-      //       side,
-      //       balanceDestToken,
-      //     );
-      //     const pricesResult = this._getOutputs(
-      //       state,
-      //       _amounts,
-      //       zeroForOne,
-      //       side,
-      //       balanceDestToken,
-      //     );
-
-      //     if (!unitResult || !pricesResult) {
-      //       this.logger.debug('Prices or unit is not calculated');
-      //       return null;
-      //     }
-
-      //     const prices = [0n, ...pricesResult.outputs];
-      //     const gasCost = [
-      //       0,
-      //       ...pricesResult.outputs.map((p, index) => {
-      //         if (p == 0n) {
-      //           return 0;
-      //         } else {
-      //           return (
-      //             DFYNV2_FUNCTION_CALL_GAS_COST +
-      //             pricesResult.tickCounts[index] * DFYNV2_TICK_GAS_COST
-      //           );
-      //         }
-      //       }),
-      //     ];
-      //     return {
-      //       unit: unitResult.outputs[0],
-      //       prices,
-      //       data: {
-      //         path: [
-      //           {
-      //             tokenIn: _srcAddress,
-      //             tokenOut: _destAddress,
-      //           },
-      //         ],
-      //       },
-      //       poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
-      //       exchange: this.dexKey,
-      //       gasCost: gasCost,
-      //       poolAddresses: [pool.poolAddress],
-      //     };
-      //   }),
-      // );
       const rpcResults = await rpcResultsPromise;
-
-      // const notNullResult = result.filter(
-      //   res => res !== null,
-      // ) as ExchangePrices<DfynV2Data>;
-
-      // if (rpcResults) {
-      //   rpcResults.forEach(r => {
-      //     if (r) {
-      //       notNullResult.push(r);
-      //     }
-      //   });
-      // }
 
       return rpcResults;
     } catch (e) {
