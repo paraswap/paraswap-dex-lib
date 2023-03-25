@@ -66,5 +66,5 @@ export enum JarvisSwapFunctions {
 
 export type JarvisV6SystemMaxVars = {
   maxSyntheticAvailable: bigint;
-  maxCollateralAvailable: bigint;
+  totalSyntheticTokensMinted: bigint;
 };

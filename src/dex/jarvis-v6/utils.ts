@@ -1,4 +1,4 @@
-import { Address, Token } from '../../types';
+import { Address, PoolLiquidity, Token } from '../../types';
 import { bigIntify } from '../nerve/utils';
 import { getBigIntPow } from '../../utils';
 import {
@@ -23,7 +23,7 @@ export async function getOnChainState(
   poolConfigs: PoolConfig[],
   blockNumber: number | 'latest',
 ) {
-  const maxPoolsLiquidity = await _getMaxPoolsLiquidity(
+  const poolsLiquidity = await _getPoolsLiquidity(
     multiContract,
     poolConfigs,
     blockNumber,
@@ -34,7 +34,7 @@ export async function getOnChainState(
     blockNumber,
   );
 
-  return { maxPoolsLiquidity, chainlinkPriceFeeds };
+  return { poolsLiquidity, chainlinkPriceFeeds };
 }
 
 async function _getChainLinkPricesFeed(
@@ -42,68 +42,67 @@ async function _getChainLinkPricesFeed(
   chainlinkProxies: ChainLink,
   blockNumber: number | 'latest',
 ) {
-  const callData = Object.values(chainlinkProxies).map(c => [
-    {
-      target: c.proxy,
-      callData: chainlinkInterface.encodeFunctionData('lastestAnswer', []),
-    },
-  ]);
-  const res = await multiContract.methods
-    .aggregate(callData)
-    .call({}, blockNumber);
+  const callData = Object.values(chainlinkProxies)
+    .map(c => [
+      {
+        target: c.proxy,
+        callData: chainlinkInterface.encodeFunctionData('latestAnswer'),
+      },
+    ])
+    .flat();
+
+  const res = (
+    await multiContract.methods.aggregate(callData).call({}, blockNumber)
+  ).returnData;
 
   let i = 0;
   return Object.entries(chainlinkProxies).reduce(
     (acc: { [pair: string]: bigint }, [key, value]) => {
       const lastestAnswer = convertToNewDecimals(
-        chainlinkInterface.decodeFunctionResult(
-          'lastestAnswer',
-          res.returnData[i++],
-        )[0],
+        chainlinkInterface
+          .decodeFunctionResult('latestAnswer', res[i++])[0]
+          .toString(),
         8,
         18,
       );
-
       acc[key] = lastestAnswer;
       return acc;
     },
     {},
   );
 }
-async function _getMaxPoolsLiquidity(
+async function _getPoolsLiquidity(
   multiContract: Contract,
   poolConfigs: PoolConfig[],
   blockNumber: number | 'latest',
 ) {
-  const callData = poolConfigs.map(p => [
-    {
-      target: p.address,
-      callData: poolInterface.encodeFunctionData('maxTokensCapacity', []),
-    },
-    {
-      target: p.address,
-      callData: poolInterface.encodeFunctionData('totalSyntheticTokens', []),
-    },
-  ]);
-  const res = await multiContract.methods
-    .aggregate(callData)
-    .call({}, blockNumber);
+  const callData = poolConfigs
+    .map(p => [
+      {
+        target: p.address,
+        callData: poolInterface.encodeFunctionData('maxTokensCapacity'),
+      },
+      {
+        target: p.address,
+        callData: poolInterface.encodeFunctionData('totalSyntheticTokens'),
+      },
+    ])
+    .flat();
+
+  const res = (
+    await multiContract.methods.aggregate(callData).call({}, blockNumber)
+  ).returnData;
+
   let i = 0;
   return poolConfigs.reduce(
     (acc: { [poolAddress: string]: JarvisV6SystemMaxVars }, pool) => {
       const maxSyntheticAvailable = bigIntify(
-        poolInterface.decodeFunctionResult(
-          'maxTokensCapacity',
-          res.returnData[i++],
-        )[0],
+        poolInterface.decodeFunctionResult('maxTokensCapacity', res[i++])[0],
       );
-      const maxCollateralAvailable = bigIntify(
-        poolInterface.decodeFunctionResult(
-          'totalSyntheticTokens',
-          res.returnData[i++],
-        )[0],
+      const totalSyntheticTokensMinted = bigIntify(
+        poolInterface.decodeFunctionResult('totalSyntheticTokens', res[i++])[0],
       );
-      acc[pool.address] = { maxCollateralAvailable, maxSyntheticAvailable };
+      acc[pool.address] = { maxSyntheticAvailable, totalSyntheticTokensMinted };
       return acc;
     },
     {},
@@ -214,18 +213,130 @@ export function calculateTokenLiquidityInUSD(
   chainlinkPriceFeeds: {
     [pair: string]: bigint;
   },
-  isSynthetic: boolean,
+  isSyntheticOutput: boolean,
 ): bigint {
+  const price = pool.priceFeed[0].isReversePrice
+    ? inverseOf(chainlinkPriceFeeds[pool.priceFeed[0].pair])
+    : chainlinkPriceFeeds[pool.priceFeed[0].pair];
+
   return (
-    (isSynthetic
-      ? maxPoolsLiquidity.maxSyntheticAvailable *
-        (pool.priceFeed[0].isReversePrice
-          ? inverseOf(chainlinkPriceFeeds[pool.priceFeed[0].pair])
-          : chainlinkPriceFeeds[pool.priceFeed[0].pair])
-      : pool.collateralToken.symbol === 'USDC'
-      ? maxPoolsLiquidity.maxCollateralAvailable
-      : maxPoolsLiquidity.maxCollateralAvailable *
-        chainlinkPriceFeeds[pool.priceFeed[pool.priceFeed.length - 1].pair]) /
-    getBigIntPow(18)
+    (isSyntheticOutput
+      ? maxPoolsLiquidity.maxSyntheticAvailable * price
+      : pool.collateralToken.symbol === 'USDC' ||
+        pool.collateralToken.symbol === 'BUSD'
+      ? maxPoolsLiquidity.totalSyntheticTokensMinted * getBigIntPow(18)
+      : maxPoolsLiquidity.totalSyntheticTokensMinted * price) / getBigIntPow(18)
   );
+}
+
+export function calculateExchangeTokenLiquidityInUSD(
+  amountIn: bigint,
+  pool: PoolConfig,
+  maxPoolsLiquidity: JarvisV6SystemMaxVars,
+  chainlinkPriceFeeds: {
+    [pair: string]: bigint;
+  },
+  isSyntheticOutput: boolean,
+): bigint {
+  const price = pool.priceFeed[0].isReversePrice
+    ? inverseOf(chainlinkPriceFeeds[pool.priceFeed[0].pair])
+    : chainlinkPriceFeeds[pool.priceFeed[0].pair];
+  const maxOutPutLiquidity = isSyntheticOutput
+    ? amountIn > maxPoolsLiquidity.maxSyntheticAvailable
+      ? maxPoolsLiquidity.maxSyntheticAvailable
+      : amountIn
+    : amountIn > maxPoolsLiquidity.totalSyntheticTokensMinted
+    ? maxPoolsLiquidity.totalSyntheticTokensMinted
+    : amountIn;
+  return (
+    (isSyntheticOutput
+      ? maxOutPutLiquidity * price
+      : pool.collateralToken.symbol === 'USDC' ||
+        pool.collateralToken.symbol === 'BUSD'
+      ? maxOutPutLiquidity * getBigIntPow(18)
+      : maxOutPutLiquidity * price) / getBigIntPow(18)
+  );
+}
+
+export function getDirectPoolLiquidity(
+  dexKey: string,
+  pool: PoolConfig,
+  maxPoolsLiquidity: {
+    [poolAddress: string]: JarvisV6SystemMaxVars;
+  },
+  chainlinkPriceFeeds: {
+    [pair: string]: bigint;
+  },
+  isSyntheticOutput: boolean,
+): PoolLiquidity {
+  const liquidityUSD = parseInt(
+    (
+      calculateTokenLiquidityInUSD(
+        pool,
+        maxPoolsLiquidity[pool.address],
+        chainlinkPriceFeeds,
+        isSyntheticOutput,
+      ) / getBigIntPow(18)
+    ).toString(),
+  );
+  return {
+    exchange: dexKey,
+    address: pool.address,
+    connectorTokens: [
+      isSyntheticOutput ? pool.syntheticToken : pool.collateralToken,
+    ],
+    liquidityUSD,
+  };
+}
+export function getExchangePoolLiquidity(
+  dexKey: string,
+  inputTokenAddress: string,
+  directPool: PoolConfig,
+  pools: PoolConfig[],
+  amountIn: bigint,
+  maxPoolsLiquidity: {
+    [poolAddress: string]: JarvisV6SystemMaxVars;
+  },
+  chainlinkPriceFeeds: {
+    [pair: string]: bigint;
+  },
+): PoolLiquidity[] {
+  return pools
+    .filter(
+      p =>
+        p.address.toLowerCase() !== directPool.address.toLowerCase() &&
+        (p.collateralToken.address.toLowerCase() === inputTokenAddress ||
+          p.syntheticToken.address.toLowerCase() === inputTokenAddress),
+    )
+    .map(p => {
+      const isSyntheticOutput =
+        p.collateralToken.address.toLowerCase() ===
+        inputTokenAddress.toLowerCase();
+      const liquidityUSD = parseInt(
+        (
+          calculateExchangeTokenLiquidityInUSD(
+            amountIn,
+            p,
+            maxPoolsLiquidity[p.address],
+            chainlinkPriceFeeds,
+            isSyntheticOutput,
+          ) / getBigIntPow(18)
+        ).toString(),
+      );
+      return {
+        exchange: dexKey,
+        address: p.address,
+        connectorTokens: [
+          isSyntheticOutput ? p.syntheticToken : p.collateralToken,
+        ],
+        liquidityUSD,
+      };
+    });
+}
+
+export function calculateMaxCollateralAvailable(
+  poolPrice: bigint,
+  totalSyntheticTokensMinted: bigint,
+) {
+  return (totalSyntheticTokensMinted * poolPrice) / getBigIntPow(18);
 }

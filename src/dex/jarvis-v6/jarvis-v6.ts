@@ -35,7 +35,9 @@ import {
   getJarvisPoolFromSyntheticTokens,
   inverseOf,
   getOnChainState,
-  calculateTokenLiquidityInUSD,
+  getDirectPoolLiquidity,
+  getExchangePoolLiquidity,
+  calculateMaxCollateralAvailable,
 } from './utils';
 import { Interface } from '@ethersproject/abi';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -250,12 +252,12 @@ export class JarvisV6
     );
 
     if (cachedSystemMaxVars) {
-      const { maxSyntheticAvailable, maxCollateralAvailable } =
+      const { maxSyntheticAvailable, totalSyntheticTokensMinted } =
         JSON.parse(cachedSystemMaxVars);
 
       return {
         maxSyntheticAvailable: BigInt(maxSyntheticAvailable),
-        maxCollateralAvailable: BigInt(maxCollateralAvailable),
+        totalSyntheticTokensMinted: BigInt(totalSyntheticTokensMinted),
       };
     }
 
@@ -279,7 +281,7 @@ export class JarvisV6
     const maxSyntheticAvailable = poolInterface
       .decodeFunctionResult('maxTokensCapacity', encodedResp.returnData[0])[0]
       .toString();
-    const maxCollateralAvailable = poolInterface
+    const totalSyntheticTokensMinted = poolInterface
       .decodeFunctionResult(
         'totalSyntheticTokens',
         encodedResp.returnData[1],
@@ -288,7 +290,7 @@ export class JarvisV6
 
     const systemMaxVarStr = JSON.stringify({
       maxSyntheticAvailable,
-      maxCollateralAvailable,
+      totalSyntheticTokensMinted,
     });
     this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
@@ -300,7 +302,7 @@ export class JarvisV6
 
     return {
       maxSyntheticAvailable: BigInt(maxSyntheticAvailable),
-      maxCollateralAvailable: BigInt(maxCollateralAvailable),
+      totalSyntheticTokensMinted: BigInt(totalSyntheticTokensMinted),
     };
   }
 
@@ -314,14 +316,13 @@ export class JarvisV6
     const {
       poolState,
       maxSyntheticAvailable,
-      maxCollateralAvailable,
+      totalSyntheticTokensMinted,
       poolPrice,
     } = await this.getPoolDataForComputePrice(
       poolAddress,
       eventPool,
       blockNumber,
     );
-
     return amounts.map(amount => {
       if (swapFunction === JarvisSwapFunctions.MINT) {
         return this.computePriceForMint(
@@ -332,9 +333,7 @@ export class JarvisV6
           poolPrice,
         );
       }
-
-      if (amount > maxCollateralAvailable) return 0n;
-
+      if (amount > totalSyntheticTokensMinted) return 0n;
       return this.computePriceForRedeem(
         amount,
         poolState,
@@ -385,14 +384,23 @@ export class JarvisV6
     blockNumber: number,
   ) {
     const poolState = await this.getPoolState(eventPool, blockNumber);
-    const { maxSyntheticAvailable, maxCollateralAvailable } =
+
+    const { maxSyntheticAvailable, totalSyntheticTokensMinted } =
       await this.getSystemMaxVars(poolAddress, blockNumber);
+
     const poolPrice = await eventPool.getPoolPrice(blockNumber);
+
+    const maxCollateralAvailable = calculateMaxCollateralAvailable(
+      poolPrice,
+      totalSyntheticTokensMinted,
+    );
+
     return {
       eventPool,
       poolState,
       maxSyntheticAvailable,
       maxCollateralAvailable,
+      totalSyntheticTokensMinted,
       poolPrice,
     };
   }
@@ -587,34 +595,39 @@ export class JarvisV6
         pool.collateralToken.address.toLowerCase() === tokenAddress ||
         pool.syntheticToken.address.toLowerCase() === tokenAddress,
     );
-    const { maxPoolsLiquidity, chainlinkPriceFeeds } = await getOnChainState(
+    const { poolsLiquidity, chainlinkPriceFeeds } = await getOnChainState(
       this.dexHelper.multiContract,
       this.chainLinkConfigs,
-      possiblePools,
+      this.poolConfigs,
       'latest',
     );
-
     return possiblePools
       .map(p => {
-        const isSynthetic =
+        const isSyntheticOutput =
           p.collateralToken.address.toLowerCase() === tokenAddress;
-        const liquidityUSD = parseInt(
-          (
-            calculateTokenLiquidityInUSD(
-              p,
-              maxPoolsLiquidity[p.address],
-              chainlinkPriceFeeds,
-              isSynthetic,
-            ) / getBigIntPow(18)
-          ).toString(),
+        const directPool = getDirectPoolLiquidity(
+          this.dexKey,
+          p,
+          poolsLiquidity,
+          chainlinkPriceFeeds,
+          isSyntheticOutput,
         );
-        return {
-          exchange: this.dexKey,
-          address: p.address,
-          connectorTokens: [isSynthetic ? p.collateralToken : p.syntheticToken],
-          liquidityUSD,
-        };
+
+        const maxAmountInExchange = isSyntheticOutput
+          ? poolsLiquidity[p.address].maxSyntheticAvailable
+          : poolsLiquidity[p.address].totalSyntheticTokensMinted;
+        const exchangePool = getExchangePoolLiquidity(
+          this.dexKey,
+          directPool.connectorTokens[0].address,
+          p,
+          this.poolConfigs,
+          maxAmountInExchange,
+          poolsLiquidity,
+          chainlinkPriceFeeds,
+        );
+        return [directPool, ...exchangePool];
       })
+      .flat()
       .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
       .slice(0, limit);
   }

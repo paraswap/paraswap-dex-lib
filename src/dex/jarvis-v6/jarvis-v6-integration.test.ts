@@ -5,7 +5,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { JarvisV6 } from './jarvis-v6';
-import { checkPoolPrices } from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
 /*
@@ -175,6 +175,20 @@ describe('JarvisV6', function () {
 
         expect(poolPrices).not.toBeNull();
         checkPoolPrices(poolPrices!, TokenCAmounts, SwapSide.SELL, dexKey);
+      });
+    });
+    describe('getTopPoolsForToken()', function () {
+      it(`${TokenASymbol}`, async function () {
+        const poolLiquidity = await jarvisV6.getTopPoolsForToken(
+          TokenA.address,
+          10,
+        );
+        console.log(
+          `${TokenASymbol} Top Pools:`,
+          JSON.stringify(poolLiquidity, null, 2),
+        );
+
+        checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
       });
     });
   });

@@ -140,8 +140,8 @@ describe('JarvisV6 E2E', () => {
               );
             });
           });
-          //Only working with ContractMethod.simpleSwap due to Adapter not set up
-          describe('jEUR/jCHF exchange', () => {
+          //Skiped due to adapter not setup
+          describe.skip('jEUR/jCHF exchange', () => {
             it('jEUR -> jCHF', async () => {
               await testE2E(
                 tokens[jEURSymbol],
