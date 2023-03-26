@@ -686,7 +686,7 @@ export class UniswapV3
       },
       {
         path,
-        deadline: this.getDeadline(),
+        deadline: this.getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -740,14 +740,14 @@ export class UniswapV3
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             path,
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             path,

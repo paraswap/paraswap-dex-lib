@@ -29,7 +29,7 @@ type TraderJoeV2RouterBuyParams = [
   _pairBinSteps: NumberAsString[],
   _tokenPath: Address[],
   to: Address,
-  _deadline: number,
+  _deadline: string,
 ];
 
 type TraderJoeV2RouterParam =
@@ -37,7 +37,6 @@ type TraderJoeV2RouterParam =
   | TraderJoeV2RouterBuyParams;
 
 export type TraderJoeV2Data = {
-  deadline?: number;
   tokenIn: string; // redundant
   tokenOut: string; // redundant
   binStep: string;
@@ -87,7 +86,7 @@ export class TraderJoeV2
       {
         _pairBinSteps: [data.binStep],
         _tokenPath: [data.tokenIn, data.tokenOut], // FIXME: redundant, shoot & read from contract
-        _deadline: data.deadline || this.getDeadline(),
+        _deadline: this.getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -119,7 +118,7 @@ export class TraderJoeV2
             [data.binStep],
             [srcToken, destToken],
             this.augustusAddress,
-            data.deadline || this.getDeadline(),
+            this.getLocalDeadlineAsFriendlyPlaceholder(),
           ]
         : [
             destAmount,
@@ -127,7 +126,7 @@ export class TraderJoeV2
             [data.binStep],
             [srcToken, destToken],
             this.augustusAddress,
-            data.deadline || this.getDeadline(),
+            this.getLocalDeadlineAsFriendlyPlaceholder(),
           ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,

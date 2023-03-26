@@ -4,7 +4,6 @@ import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import ShellABI from '../abi/Shell.json';
-import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 
 export type ShellData = {
@@ -16,7 +15,7 @@ type ShellParam = [
   _target: string,
   _originAmount: string,
   _minTargetAmount: string,
-  _deadline?: number,
+  _deadline: string,
 ];
 enum ShellFunctions {
   originSwap = 'originSwap',
@@ -63,7 +62,7 @@ export class Shell
       destToken,
       srcAmount,
       destAmount,
-      data.deadline || this.getDeadline(),
+      this.getLocalDeadlineAsFriendlyPlaceholder(),
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,

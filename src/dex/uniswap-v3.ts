@@ -17,7 +17,6 @@ const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
 
 export type UniswapV3Data = {
   // ExactInputSingleParams
-  deadline?: number;
   path: {
     tokenIn: Address;
     tokenOut: Address;
@@ -28,7 +27,7 @@ export type UniswapV3Data = {
 type UniswapV3SellParam = {
   path: string;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountIn: NumberAsString;
   amountOutMinimum: NumberAsString;
 };
@@ -36,7 +35,7 @@ type UniswapV3SellParam = {
 type UniswapV3BuyParam = {
   path: string;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountOut: NumberAsString;
   amountInMaximum: NumberAsString;
 };
@@ -112,7 +111,7 @@ export class UniswapV3
     data: UniswapV3Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { deadline, path: rawPath } = data;
+    const { path: rawPath } = data;
     const path = this.encodePath(rawPath, side);
     const payload = this.abiCoder.encodeParameter(
       {
@@ -123,14 +122,14 @@ export class UniswapV3
       },
       {
         path,
-        deadline: deadline || this.getDeadline(),
+        deadline: this.getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
     return {
       targetExchange: this.routerAddress,
       payload,
-      networkFee: '0', // warning
+      networkFee: '0',
     };
   }
 
@@ -151,14 +150,14 @@ export class UniswapV3
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: data.deadline || this.getDeadline(),
+            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             path,
           }
         : {
             recipient: this.augustusAddress,
-            deadline: data.deadline || this.getDeadline(),
+            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             path,
