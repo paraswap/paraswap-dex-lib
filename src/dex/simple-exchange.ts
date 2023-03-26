@@ -18,8 +18,9 @@ import { IDexHelper } from '../dex-helper';
  * One can naively pick type(uint).max but that would impose a higher gas cost on the calldata.
  * Here we decide to go with a high enough default so that the local deadline rarely supersedes the global router deadline.
  */
+export const FRIENDLY_LOCAL_DEADLINE = 7 * 24 * 60 * 60;
 export const getLocalDeadlineAsFriendlyPlaceholder = () =>
-  String(Math.floor(new Date().getTime() / 1000) + 7 * 24 * 60 * 60);
+  String(Math.floor(new Date().getTime() / 1000) + FRIENDLY_LOCAL_DEADLINE);
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;

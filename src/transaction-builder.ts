@@ -2,6 +2,10 @@ import { OptimalRate, Address, Adapters } from './types';
 import { ETHER_ADDRESS, SwapSide } from './constants';
 import { RouterService } from './router';
 import { DexAdapterService } from './dex';
+import {
+  FRIENDLY_LOCAL_DEADLINE,
+  getLocalDeadlineAsFriendlyPlaceholder,
+} from './dex/simple-exchange';
 
 export class TransactionBuilder {
   routerService: RouterService;
@@ -43,6 +47,17 @@ export class TransactionBuilder {
     beneficiary?: Address;
     onlyParams?: boolean;
   }) {
+    if (deadline) {
+      const globalDeadline = +deadline;
+      if (!isNaN(globalDeadline)) {
+        const localDeadline = +getLocalDeadlineAsFriendlyPlaceholder();
+        if (globalDeadline > localDeadline)
+          throw new Error(
+            `Deadline is too high. Maximum allowed is ${FRIENDLY_LOCAL_DEADLINE} seconds`,
+          );
+      }
+    }
+
     const _beneficiary = beneficiary || userAddress;
     const { encoder, params, networkFee } = await this.routerService
       .getRouterByContractMethod(priceRoute.contractMethod)
