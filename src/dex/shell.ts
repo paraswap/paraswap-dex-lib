@@ -2,7 +2,10 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from './simple-exchange';
 import ShellABI from '../abi/Shell.json';
 import { IDexHelper } from '../dex-helper';
 
@@ -62,7 +65,7 @@ export class Shell
       destToken,
       srcAmount,
       destAmount,
-      this.getLocalDeadlineAsFriendlyPlaceholder(),
+      getLocalDeadlineAsFriendlyPlaceholder(),
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,

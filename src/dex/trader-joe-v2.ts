@@ -2,7 +2,10 @@ import { Network, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { IDexHelper } from '../dex-helper';
-import { SimpleExchange } from './simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from './simple-exchange';
 import { NumberAsString } from '@paraswap/core';
 import { AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
@@ -86,7 +89,7 @@ export class TraderJoeV2
       {
         _pairBinSteps: [data.binStep],
         _tokenPath: [data.tokenIn, data.tokenOut], // FIXME: redundant, shoot & read from contract
-        _deadline: this.getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+        _deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -118,7 +121,7 @@ export class TraderJoeV2
             [data.binStep],
             [srcToken, destToken],
             this.augustusAddress,
-            this.getLocalDeadlineAsFriendlyPlaceholder(),
+            getLocalDeadlineAsFriendlyPlaceholder(),
           ]
         : [
             destAmount,
@@ -126,7 +129,7 @@ export class TraderJoeV2
             [data.binStep],
             [srcToken, destToken],
             this.augustusAddress,
-            this.getLocalDeadlineAsFriendlyPlaceholder(),
+            getLocalDeadlineAsFriendlyPlaceholder(),
           ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,

@@ -3,7 +3,10 @@ import { pack } from '@ethersproject/solidity';
 import { Network, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from './simple-exchange';
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
 import { NumberAsString } from '@paraswap/core';
 import { IDexHelper } from '../dex-helper';
@@ -122,7 +125,7 @@ export class UniswapV3
       },
       {
         path,
-        deadline: this.getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -150,14 +153,14 @@ export class UniswapV3
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             path,
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             path,

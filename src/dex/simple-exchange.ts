@@ -10,6 +10,17 @@ import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 
+/*
+ * Context: Augustus routers have all a deadline protection logic implemented globally.
+ * But some integrations (router, pools,...) require passing a deadline generally as uint256.
+ * While this problem can be solved in adapters easily by passing block.timestamp (or block.timestamp +1 for some marginal cases),
+ * In the context of direct calls like simpleSwap we have to generate this value offchain.
+ * One can naively pick type(uint).max but that would impose a higher gas cost on the calldata.
+ * Here we decide to go with a high enough default so that the local deadline rarely supersedes the global router deadline.
+ */
+export const getLocalDeadlineAsFriendlyPlaceholder = () =>
+  String(Math.floor(new Date().getTime() / 1000) + 7 * 24 * 60 * 60);
+
 export class SimpleExchange {
   simpleSwapHelper: Interface;
   protected abiCoder: AbiCoder;
@@ -122,15 +133,4 @@ export class SimpleExchange {
       networkFee,
     };
   }
-
-  /*
-   * Context: Augustus routers have all a deadline protection logic implemented globally.
-   * But some integrations (router, pools,...) require passing a deadline generally as uint256.
-   * While this problem can be solved in adapters easily by passing block.timestamp (or block.timestamp +1 for some marginal cases),
-   * In the context of direct calls like simpleSwap we have to generate this value offchain.
-   * One can naively pick type(uint).max but that would impose a higher gas cost on the calldata.
-   * Here we decide to go with a high enough default so that the local deadline rarely supersedes the global router deadline.
-   */
-  getLocalDeadlineAsFriendlyPlaceholder = () =>
-    String(Math.floor(new Date().getTime() / 1000) + 7 * 24 * 60 * 60);
 }

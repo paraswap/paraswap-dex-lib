@@ -20,7 +20,10 @@ import {
   MaverickV1Param,
   SubgraphPoolBase,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import {
   MaverickV1Config,
   Adapters,
@@ -301,7 +304,7 @@ export class MaverickV1
       },
       {
         pool,
-        deadline: this.getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -329,7 +332,7 @@ export class MaverickV1
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             tokenIn: srcToken,
@@ -339,7 +342,7 @@ export class MaverickV1
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getLocalDeadlineAsFriendlyPlaceholder(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             tokenIn: srcToken,
