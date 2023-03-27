@@ -78,7 +78,6 @@ describe('BalancerV2 E2E', () => {
     });
 
     describe('Simpleswap', () => {
-
       it('ETH -> TOKEN', async () => {
         await testE2E(
           tokens['ETH'],

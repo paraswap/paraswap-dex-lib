@@ -104,7 +104,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
       ],
       pools: {
         Compound: {
-          isPaused: true,
           underlying: [
             '0x6b175474e89094c44da98b954eedeac495271d0f',
             '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
@@ -122,7 +121,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           baseToken: '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643',
         },
         USDT: {
-          isPaused: true,
           underlying: [
             '0x6b175474e89094c44da98b954eedeac495271d0f',
             '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',

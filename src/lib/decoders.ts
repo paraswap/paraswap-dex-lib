@@ -28,12 +28,15 @@ export const extractSuccessAndValue = (
 export function generalDecoder<T>(
   result: MultiResult<BytesLike> | BytesLike,
   types: string[],
-  defaultValue: T,
+  defaultValue: T | undefined,
   parser?: (v: Result) => T,
 ): T {
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
   if (!isSuccess || toDecode === '0x') {
+    if (defaultValue === undefined) {
+      throw new Error(`Failed to decode result: ${result}`);
+    }
     return defaultValue;
   }
 
@@ -133,6 +136,14 @@ export const addressDecode = (
 ): string => {
   return generalDecoder(result, ['address'], NULL_ADDRESS, v =>
     v[0].toLowerCase(),
+  );
+};
+
+export const addressArrayDecode = (
+  result: MultiResult<BytesLike> | BytesLike,
+): string => {
+  return generalDecoder(result, ['address[]'], [], v =>
+    v[0].map((a: string) => a.toLowerCase()),
   );
 };
 

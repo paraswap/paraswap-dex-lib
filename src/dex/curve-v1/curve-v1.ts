@@ -122,8 +122,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     >((acc, key) => {
       const poolConf = dexConfig.pools[key];
 
-      if (poolConf.isPaused) return acc;
-
       acc[key] = {
         underlying: poolConf.underlying.map(t => t.toLowerCase()),
         coins: poolConf.coins.map(t => t.toLowerCase()),
