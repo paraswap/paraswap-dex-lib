@@ -77,7 +77,10 @@ export default class Fetcher<T> {
       .filter(i => results[i] instanceof Error);
 
     results.map(result => {
-      this.logger.info('Results Data:', (result as any).data.substring(0, 500));
+      this.logger.info(
+        'Results Data:',
+        (result as any).data.replace(/(?:\r\n|\r|\n)/g, ' ').substring(0, 500),
+      );
     });
     failures.forEach(i => {
       this.logger.warn(
