@@ -23,11 +23,28 @@ describe('CurveV1 E2E', () => {
       network,
     );
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'DAI';
-
-    const tokenAAmount: string = (1 * 10 ** 8).toString();
-    const tokenBAmount: string = (1 * 10 ** 8).toString();
+    const tokensToTest = [
+      [
+        {
+          symbol: 'USDT',
+          amount: (10 ** 8).toString(),
+        },
+        {
+          symbol: 'DAI',
+          amount: (10 ** 8).toString(),
+        },
+      ],
+      [
+        {
+          symbol: 'CUSDC',
+          amount: (10 ** 8).toString(),
+        },
+        {
+          symbol: 'CDAI',
+          amount: (10 ** 8).toString(),
+        },
+      ],
+    ];
 
     const sideToContractMethods = new Map([
       [
@@ -42,19 +59,21 @@ describe('CurveV1 E2E', () => {
 
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
-        describe(`${contractMethod}`, () => {
-          it('TOKEN -> TOKEN', async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[tokenBSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
+        tokensToTest.forEach(pair => {
+          describe(`${contractMethod}`, () => {
+            it(`${pair[0].symbol} -> ${pair[1].symbol}`, async () => {
+              await testE2E(
+                tokens[pair[0].symbol],
+                tokens[pair[1].symbol],
+                holders[pair[0].symbol],
+                side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),

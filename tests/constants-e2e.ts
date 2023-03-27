@@ -33,6 +33,10 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
+    CUSDC: {
+      address: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
+      decimals: 8,
+    },
     WBTC: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
       decimals: 8,
@@ -805,7 +809,7 @@ export const Holders: {
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
     AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
-    DAI: '0x4943b0c9959dcf58871a799dfb71bece0d97c9f4',
+    DAI: '0x60FaAe176336dAb62e284Fe19B885B095d29fB7F',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
@@ -827,6 +831,7 @@ export const Holders: {
     ADAIv1: '0x3021026e4ff227571a5a563ad19ea657c7027e59',
     CETH: '0x712d0f306956a6a4b4f9319ad9b9de48c5345996',
     CDAI: '0xab4ce310054a11328685ece1043211b68ba5d082',
+    CUSDC: '0xC2F61a6eEEC48d686901D325CDE9233b81c793F3',
     EURS: '0xC1056Adeb61a01964Ea265cA95EffB7016f9Ed78',
     EURT: '0x6914FC70fAC4caB20a8922E900C4BA57fEECf8E1',
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
