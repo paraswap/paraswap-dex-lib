@@ -53,7 +53,7 @@ export const uint256ArrayDecode = (
 };
 
 export const booleanDecode = (
-  result: MultiResult<string> | string,
+  result: MultiResult<BytesLike> | BytesLike,
 ): boolean => {
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
@@ -63,10 +63,12 @@ export const booleanDecode = (
   return defaultAbiCoder.decode(['bool'], toDecode)[0];
 };
 
-export const addressDecode = (result: MultiResult<string> | string): string => {
+export const addressDecode = (
+  result: MultiResult<BytesLike> | BytesLike,
+): string => {
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
-  if (isSuccess) {
+  if (!isSuccess) {
     return '';
   }
   return defaultAbiCoder.decode(['address'], toDecode)[0].toLowerCase();

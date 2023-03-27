@@ -57,6 +57,8 @@ export function checkPoolsLiquidity(
   tokenAddress: Address,
   dexKey: string,
 ) {
+  expect(poolsLiquidity.length).toBeGreaterThan(0);
+
   poolsLiquidity.forEach(p => {
     expect(p.exchange).toEqual(dexKey);
     expect(p.liquidityUSD).toBeGreaterThanOrEqual(0);
