@@ -1,5 +1,5 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, Address } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -19,6 +19,7 @@ import { MMath } from './maverick-math/maverick-basic-math';
 import * as _ from 'lodash';
 import { BI_POWS } from '../../bigint-constants';
 import { getBigIntPow } from '../../utils';
+import { MAX_SWAP_ITERATION_CALCULATION } from './constants';
 
 const coder = new AbiCoder();
 (BigInt.prototype as any).toJSON = function () {
@@ -340,9 +341,23 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
         scaledAmount,
         from.address.toLowerCase() == this.tokenA.address.toLowerCase(),
         side,
+        true,
       );
+
+      if (output[0] == 0n && output[1] == 0n) {
+        this.logger.trace(
+          `Reached max swap iteration calculation for amount=${amount}, from=${from}, to=${to}, side=${side}`,
+        );
+        return [0n, 0];
+      }
+
       const postActiveTick = tempState.activeTick;
       const tickDiff = Math.abs(Number(postActiveTick) - Number(preActiveTick));
+      // I assume since we set cap on number of while iterations, we should never receive more tickDiff that we allow by iteration
+      assert(
+        tickDiff <= MAX_SWAP_ITERATION_CALCULATION,
+        `tickDiff=${tickDiff} > ${MAX_SWAP_ITERATION_CALCULATION}`,
+      );
       return [
         side
           ? this.scaleToAmount(output[0], from)
@@ -350,7 +365,9 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
         tickDiff,
       ];
     } catch (e) {
-      this.logger.debug(`Failed to calculate math: ${e}`);
+      this.logger.debug(
+        `Failed to calculate swap for amount=${amount}, from=${from}, to=${to}, side=${side} math: ${e}`,
+      );
       return [0n, 0];
     }
   }

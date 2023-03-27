@@ -155,7 +155,6 @@ export class MaverickV1
     return pools.map(
       (pool: any) => `${this.dexKey}_${pool.address.toLowerCase()}`,
     );
-    return [];
   }
 
   async getPools(srcToken: Token, destToken: Token) {
