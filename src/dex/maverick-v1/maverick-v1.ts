@@ -209,63 +209,59 @@ export class MaverickV1
       return (
         await Promise.all(
           allowedPools.map(async (pool: MaverickV1EventPool) => {
-            try {
-              const [unit, _tickDiff] = pool.swap(
-                unitAmount,
-                from,
-                to,
-                side == SwapSide.BUY,
-              );
-              let dataList = await Promise.all(
-                amounts.map(amount =>
-                  pool.swap(amount, from, to, side == SwapSide.BUY),
-                ),
-              );
-              let prices = dataList.map(d => d[0]);
-              let gasCosts: number[] = dataList.map(
-                ([d, t]: [BigInt, number]) => {
-                  if (d == 0n) return 0;
-                  let gasCost = MAV_V1_BASE_GAS_COST;
-                  for (let i = 0; i <= t; i++) {
-                    let state = pool.getState(blockNumber);
-                    let activeTick = state!.activeTick + BigInt(i!);
-                    let kindCount = 0;
-                    for (let k = 0; k < 4; k++) {
-                      if (
-                        state!.binPositions[activeTick.toString()][
-                          k.toString()
-                        ] === undefined
-                      )
-                        continue;
-                      kindCount++;
-                    }
-                    gasCost += MAV_V1_TICK_GAS_COST;
-                    gasCost += MAV_V1_KIND_GAS_COST * (kindCount - 1);
+            const [unit, _tickDiff] = pool.swap(
+              unitAmount,
+              from,
+              to,
+              side == SwapSide.BUY,
+            );
+            let dataList = await Promise.all(
+              amounts.map(amount =>
+                pool.swap(amount, from, to, side == SwapSide.BUY),
+              ),
+            );
+            let prices = dataList.map(d => d[0]);
+            let gasCosts: number[] = dataList.map(
+              ([d, t]: [BigInt, number]) => {
+                if (d == 0n) return 0;
+                let gasCost = MAV_V1_BASE_GAS_COST;
+                for (let i = 0; i <= t; i++) {
+                  let state = pool.getState(blockNumber);
+                  let activeTick = state!.activeTick + BigInt(i!);
+                  let kindCount = 0;
+                  for (let k = 0; k < 4; k++) {
+                    if (
+                      state!.binPositions[activeTick.toString()][
+                        k.toString()
+                      ] === undefined
+                    )
+                      continue;
+                    kindCount++;
                   }
-                  return gasCost;
-                },
-              );
-              return {
-                prices: prices,
-                unit: BigInt(unit),
-                data: {
-                  fee: pool.fee,
-                  exchange: this.routerAddress,
-                  pool: pool.address,
-                  tokenA: pool.tokenA.address,
-                  tokenB: pool.tokenB.address,
-                  tickSpacing: pool.tickSpacing,
-                  protocolFeeRatio: pool.protocolFeeRatio,
-                  lookback: pool.lookback,
-                },
-                exchange: this.dexKey,
-                poolIdentifier: pool.name,
-                gasCost: gasCosts,
-                poolAddresses: [pool.address],
-              };
-            } catch (e) {
-              return null;
-            }
+                  gasCost += MAV_V1_TICK_GAS_COST;
+                  gasCost += MAV_V1_KIND_GAS_COST * (kindCount - 1);
+                }
+                return gasCost;
+              },
+            );
+            return {
+              prices: prices,
+              unit: BigInt(unit),
+              data: {
+                fee: pool.fee,
+                exchange: this.routerAddress,
+                pool: pool.address,
+                tokenA: pool.tokenA.address,
+                tokenB: pool.tokenB.address,
+                tickSpacing: pool.tickSpacing,
+                protocolFeeRatio: pool.protocolFeeRatio,
+                lookback: pool.lookback,
+              },
+              exchange: this.dexKey,
+              poolIdentifier: pool.name,
+              gasCost: gasCosts,
+              poolAddresses: [pool.address],
+            };
           }),
         )
       ).filter(isTruthy);
