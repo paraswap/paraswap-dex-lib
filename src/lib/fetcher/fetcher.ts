@@ -76,12 +76,17 @@ export default class Fetcher<T> {
       .map((_, i) => i)
       .filter(i => results[i] instanceof Error);
 
-    results.map(result => {
-      this.logger.info(
-        'Results Data:',
-        (result as any).data.replace(/(?:\r\n|\r|\n)/g, ' ').substring(0, 500),
-      );
-    });
+    results
+      .filter(result => !(result instanceof Error))
+      .map(result => {
+        debugger;
+        this.logger.info(
+          'Results Data:',
+          JSON.stringify((result as any).data)
+            .replace(/(?:\r\n|\r|\n)/g, ' ')
+            .substring(0, 1000),
+        );
+      });
     failures.forEach(i => {
       this.logger.warn(
         `failed polling ${this.requests[i].info.requestOptions.url} ${results[i]}`,
