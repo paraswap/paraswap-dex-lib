@@ -202,57 +202,15 @@ const makerRegistry = [
   },
 ];
 
-export async function getStakersUrl(
-  provider: providers.Provider,
-  makerAddress: string,
-) {
-  const logs = await provider.getLogs({
-    address: makerAddress,
-    fromBlock: 0,
-    toBlock: 'latest',
-  });
-
-  return decodeDataLog(logs);
-}
-
-function decodeDataLog(logs: providers.Log[]) {
-  let iface = new utils.Interface(makerRegistry);
-  const mappedLog = logs.map(log => {
-    const parsed = iface.parseLog(log);
-    if (parsed?.eventFragment?.name === 'SetURL') {
-      return parsed.args[1];
-    }
-    return null;
-  });
-  return mappedLog.filter(url => url !== null);
-}
-
-export async function getAvailableMakersForRFQfromLib(
-  provider: providers.Provider,
-  from: Token,
-  to: Token,
-  network: number,
-): Promise<Maker[]> {
-  try {
-    const servers = await new MakerRegistry(network, provider).getMakers(
-      from.address,
-      to.address,
-    );
-    return Promise.resolve(servers);
-  } catch (err) {
-    return Promise.resolve([]);
-  }
-}
-
 export async function getAvailableMakersForRFQ(
   provider: providers.Provider,
   from: Token,
   to: Token,
-  network: number,
+  registryAddress: string,
 ): Promise<Maker[]> {
   try {
     const contract = new ethers.Contract(
-      '0x8F9DA6d38939411340b19401E8c54Ea1f51B8f95',
+      registryAddress,
       makerRegistry,
       provider,
     );

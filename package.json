@@ -52,7 +52,6 @@
   "dependencies": {
     "@0x/utils": "^4.5.2",
     "@airswap/libraries": "4.0.3",
-    "@airswap/swap": "4.0.2",
     "@airswap/swap-erc20": "4.0.2",
     "@airswap/typescript": "3.0.3",
     "@hashflow/sdk": "1.2.4",

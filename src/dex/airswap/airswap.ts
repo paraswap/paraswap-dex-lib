@@ -24,7 +24,7 @@ import { Interface } from 'ethers/lib/utils';
 import { ethers } from 'ethers';
 import { AddressZero } from '@ethersproject/constants';
 
-import swapABI from '@airswap/swap/build/contracts/Swap.sol/Swap.json';
+import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
 import {
   getAvailableMakersForRFQ,
   getStakersUrl,
@@ -32,7 +32,6 @@ import {
 } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
-import { Maker } from '@airswap/libraries';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -76,15 +75,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
-    // @TODO Put in cache data to build a map of makers that we will poll
-    // get all satkers url for last look cahce, need to connect to any adresses below
-    this.makers = await getStakersUrl(
-      this.localProvider,
-      AirSwapConfig.AirSwap[this.network].makerRegistry,
-    );
-    // console.log('[AIRSWAP]', 'makers:', this.makers);
-  }
+  async initializePricing(blockNumber: number) {}
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -122,6 +113,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     }
 
     const makerAndPairs: Record<string, temporaryMakerAnswer> = {
+      // TODO replace it with registered
       'http://airswap-goerli-maker.mitsi.ovh': {
         pairs: [
           {
@@ -190,7 +182,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     // get pricing to corresponding pair token for each maker
     const levelRequests = marketMakersUris.map(url => ({
       maker: url,
-      levels: [{ level: '1', price: '1' }], //airswapApi.getOptimisticLevel(url, srcToken, destToken),
+      levels: [{ level: '1', price: '1' }], //maker.getPricing(url, srcToken, destToken),
     }));
     const levels = await Promise.all(levelRequests);
 
@@ -221,7 +213,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       );
 
       return {
-        gasCost: 100, // where does it comes from ?
+        gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,
         data: { maker } as AirswapData,
         prices,
@@ -396,8 +388,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       signedOrder.s,
     ];
 
-    // console.log('encodeFunctionData swap', values);
-
     // Encode here the transaction arguments
     const swapData = this.routerInterface.encodeFunctionData('swap', values);
 
@@ -459,15 +449,11 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         ? optimalSwapExchange.srcAmount
         : optimalSwapExchange.destAmount;
 
-    // let makersTmp = await Maker.at('https://aomcfsa7.altono.xyz', {
-    //   swapContract: '0x522D6F36c95A1b6509A14272C17747BbB582F2A6',
-    // });
-    // const makers = [makersTmp];
     const makers = await getAvailableMakersForRFQ(
       this.localProvider,
       normalizedSrcToken,
       normalizedDestToken,
-      this.network,
+      AirSwapConfig.AirSwap[this.network].makerRegistry,
     );
     let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
     try {

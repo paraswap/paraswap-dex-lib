@@ -1,5 +1,4 @@
-import { Address } from '../../types';
-import { Order, OrderERC20 } from '@airswap/typescript';
+import { OrderERC20 } from '@airswap/typescript';
 
 export type PoolState = {
   // TODO: poolState is the state of event
