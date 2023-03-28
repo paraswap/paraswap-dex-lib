@@ -260,27 +260,11 @@ export class MaverickV1
             let gasCosts: number[] = dataList.map(
               ([d, t]: [BigInt, number]) => {
                 if (d == 0n) return 0;
-                let gasCost = MAV_V1_BASE_GAS_COST;
-                // ATTENTION: This place is potentially dangerous
-                // t might be as big as >18k.
-                // But since it is already running in production and we don't see regression
-                // I leave this as it is for now
-                for (let i = 0; i <= t; i++) {
-                  let activeTick = state!.activeTick + BigInt(i!);
-                  let kindCount = 0;
-                  for (let k = 0; k < 4; k++) {
-                    if (
-                      state!.binPositions[activeTick.toString()][
-                        k.toString()
-                      ] === undefined
-                    )
-                      continue;
-                    kindCount++;
-                  }
-                  gasCost += MAV_V1_TICK_GAS_COST;
-                  gasCost += MAV_V1_KIND_GAS_COST * (kindCount - 1);
-                }
-                return gasCost;
+                // I think it is reasonable estimation assuming "kind" gas cost is almost everytime around 1
+                return (
+                  MAV_V1_BASE_GAS_COST +
+                  (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) * t
+                );
               },
             );
             return {
