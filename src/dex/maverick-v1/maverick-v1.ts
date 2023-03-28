@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -35,7 +36,6 @@ import {
 } from './subgraph-queries';
 import { SUBGRAPH_TIMEOUT } from '../../constants';
 import RouterABI from '../../abi/maverick-v1/router.json';
-import _ from 'lodash';
 
 const MAX_POOL_CNT = 1000;
 
@@ -151,6 +151,11 @@ export class MaverickV1
   ): Promise<string[]> {
     const from = this.dexHelper.config.wrapETH(srcToken);
     const to = this.dexHelper.config.wrapETH(destToken);
+
+    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      return [];
+    }
+
     const pools = await this.getPools(from, to);
     return pools.map(
       (pool: any) => `${this.dexKey}_${pool.address.toLowerCase()}`,
@@ -192,6 +197,11 @@ export class MaverickV1
     try {
       const from = this.dexHelper.config.wrapETH(srcToken);
       const to = this.dexHelper.config.wrapETH(destToken);
+
+      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+        return null;
+      }
+
       const allPools = await this.getPools(from, to);
 
       const allowedPools = limitPools
@@ -208,24 +218,54 @@ export class MaverickV1
       return (
         await Promise.all(
           allowedPools.map(async (pool: MaverickV1EventPool) => {
-            const [unit, _tickDiff] = pool.swap(
+            let state = pool.getState(blockNumber);
+            if (state === null) {
+              state = await pool.generateState(blockNumber);
+              pool.setState(state, blockNumber);
+            }
+            if (state === null) {
+              this.logger.debug(`Received null state for pool ${pool.address}`);
+              return null;
+            }
+
+            const [unit] = pool.swap(
               unitAmount,
               from,
               to,
               side == SwapSide.BUY,
             );
-            let dataList = await Promise.all(
-              amounts.map(amount =>
-                pool.swap(amount, from, to, side == SwapSide.BUY),
-              ),
+            // We stop iterating if it becomes 0n at some point
+            let lastOutput = 1n;
+            let dataList: [bigint, number][] = await Promise.all(
+              amounts.map(amount => {
+                if (amount === 0n) {
+                  return [0n, 0];
+                }
+                // We don't want to proceed with calculations if lower amount was not fillable
+                if (lastOutput === 0n) {
+                  return [0n, 0];
+                }
+                const output = pool.swap(
+                  amount,
+                  from,
+                  to,
+                  side == SwapSide.BUY,
+                );
+                lastOutput = output[0];
+                return output;
+              }),
             );
+
             let prices = dataList.map(d => d[0]);
             let gasCosts: number[] = dataList.map(
               ([d, t]: [BigInt, number]) => {
                 if (d == 0n) return 0;
                 let gasCost = MAV_V1_BASE_GAS_COST;
+                // ATTENTION: This place is potentially dangerous
+                // t might be as big as >18k.
+                // But since it is already running in production and we don't see regression
+                // I leave this as it is for now
                 for (let i = 0; i <= t; i++) {
-                  let state = pool.getState(blockNumber);
                   let activeTick = state!.activeTick + BigInt(i!);
                   let kindCount = 0;
                   for (let k = 0; k < 4; k++) {

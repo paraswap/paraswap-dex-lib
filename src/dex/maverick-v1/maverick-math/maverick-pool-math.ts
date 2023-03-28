@@ -102,7 +102,7 @@ export class MaverickPoolMath {
 
       // We can not do too much iteration. This variable chosen
       // as reasonable threshold
-      if (isForPricing && counter++ < MAX_SWAP_ITERATION_CALCULATION) {
+      if (isForPricing && counter++ > MAX_SWAP_ITERATION_CALCULATION) {
         return [0n, 0n];
       }
     }
