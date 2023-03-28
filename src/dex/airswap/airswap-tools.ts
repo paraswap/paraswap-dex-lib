@@ -1,6 +1,6 @@
-import { Contract, ethers, providers, utils } from 'ethers';
+import { Contract, ethers, providers } from 'ethers';
 import { Token } from '../../types';
-import { MakerRegistry, Maker } from '@airswap/libraries';
+import { Maker } from '@airswap/libraries';
 import { QuoteResponse } from './types';
 
 const makerRegistry = [
@@ -209,30 +209,41 @@ export async function getAvailableMakersForRFQ(
   registryAddress: string,
 ): Promise<Maker[]> {
   try {
-    const contract = new ethers.Contract(
+    const urls = await getServersUrl(
+      from.address,
+      to.address,
       registryAddress,
-      makerRegistry,
       provider,
     );
-    const servers = await getServers(contract, from.address, to.address);
+    const servers = await getServers(urls);
     return Promise.resolve(servers);
   } catch (err) {
     return Promise.resolve([]);
   }
 }
 
-async function getServers(
-  contract: Contract,
+export async function getServersUrl(
   quoteToken: string,
   baseToken: string,
-): Promise<Array<Maker>> {
+  registryAddress: string,
+  provider: providers.Provider,
+) {
+  const contract = new ethers.Contract(
+    registryAddress,
+    makerRegistry,
+    provider,
+  );
   const quoteTokenURLs: string[] = await contract.getURLsForToken(quoteToken);
   const baseTokenURLs: string[] = await contract.getURLsForToken(baseToken);
+  const urls = quoteTokenURLs
+    .filter(url => baseTokenURLs.includes(url))
+    .filter(url => !(url.startsWith('wss://') || url.startsWith('ws://')));
+  return Promise.resolve(urls);
+}
+
+async function getServers(serversUrl: string[]): Promise<Array<Maker>> {
   const serverPromises = (await Promise.allSettled(
-    quoteTokenURLs
-      .filter(url => baseTokenURLs.includes(url))
-      .filter(url => !(url.startsWith('wss://') || url.startsWith('ws://')))
-      .map(url => Maker.at(url)),
+    serversUrl.map(url => Maker.at(url)),
   )) as PromiseFulfilledResult<Maker>[];
   return serverPromises
     .filter(promise => promise.status === 'fulfilled')

@@ -27,11 +27,12 @@ import { AddressZero } from '@ethersproject/constants';
 import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
 import {
   getAvailableMakersForRFQ,
-  getStakersUrl,
+  getServersUrl,
   makeRFQ,
 } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
+import { url } from 'inspector';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -112,31 +113,28 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       return [];
     }
 
-    const makerAndPairs: Record<string, temporaryMakerAnswer> = {
-      // TODO replace it with registered
-      'http://airswap-goerli-maker.mitsi.ovh': {
-        pairs: [
-          {
-            baseToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            quoteToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-          },
-          {
-            baseToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-            quoteToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-          },
-          {
-            baseToken: AddressZero,
-            quoteToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-          },
-          {
-            baseToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-            quoteToken: AddressZero,
-          },
-        ],
+    const urls = await getServersUrl(
+      normalizedDestToken.address,
+      destToken.address,
+      AirSwapConfig.AirSwap[this.network].makerRegistry,
+      this.localProvider,
+    );
+    const makerAndPairs: Record<string, temporaryMakerAnswer> = urls.reduce(
+      (dict, url) => {
+        const entry: Record<string, temporaryMakerAnswer> = {};
+        entry[url] = {
+          pairs: [
+            {
+              baseToken: normalizedSrcToken.address,
+              quoteToken: normalizedDestToken.address,
+            },
+          ],
+        };
+        return { ...entry, ...dict };
       },
-    };
+      {},
+    );
     const makers = Object.keys(makerAndPairs);
-
     return makers
       .filter((makerName: string) => {
         const pairs = makerAndPairs[makerName].pairs ?? [];
