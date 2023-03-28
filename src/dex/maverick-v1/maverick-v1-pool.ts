@@ -57,7 +57,7 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
       `${tokenA.address}_${tokenB.address}_${fee}_${tickSpacing}_${lookback}_${address}`,
       dexHelper,
       logger,
-      true,
+      false,
       mapKey,
     );
 
