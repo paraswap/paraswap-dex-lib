@@ -1,4 +1,4 @@
-import { providers, utils } from 'ethers';
+import { Contract, ethers, providers, utils } from 'ethers';
 import { Token } from '../../types';
 import { MakerRegistry, Maker } from '@airswap/libraries';
 import { QuoteResponse } from './types';
@@ -227,7 +227,7 @@ function decodeDataLog(logs: providers.Log[]) {
   return mappedLog.filter(url => url !== null);
 }
 
-export async function getAvailableMakersForRFQ(
+export async function getAvailableMakersForRFQfromLib(
   provider: providers.Provider,
   from: Token,
   to: Token,
@@ -242,6 +242,47 @@ export async function getAvailableMakersForRFQ(
   } catch (err) {
     return Promise.resolve([]);
   }
+}
+
+export async function getAvailableMakersForRFQ(
+  provider: providers.Provider,
+  from: Token,
+  to: Token,
+  network: number,
+): Promise<Maker[]> {
+  try {
+    const contract = new ethers.Contract(
+      '0x8F9DA6d38939411340b19401E8c54Ea1f51B8f95',
+      makerRegistry,
+      provider,
+    );
+    const servers = await getServers(contract, from.address, to.address);
+    return Promise.resolve(servers);
+  } catch (err) {
+    return Promise.resolve([]);
+  }
+}
+
+async function getServers(
+  contract: Contract,
+  quoteToken: string,
+  baseToken: string,
+): Promise<Array<Maker>> {
+  const quoteTokenURLs: string[] = await contract.getURLsForToken(quoteToken);
+  const baseTokenURLs: string[] = await contract.getURLsForToken(baseToken);
+  const serverPromises = (await Promise.allSettled(
+    quoteTokenURLs
+      .filter(url => baseTokenURLs.includes(url))
+      .filter(url => !(url.startsWith('wss://') || url.startsWith('ws://')))
+      .map(url =>
+        Maker.at(url, {
+          swapContract: '0x522d6f36c95a1b6509a14272c17747bbb582f2a6',
+        }),
+      ),
+  )) as PromiseFulfilledResult<Maker>[];
+  return serverPromises
+    .filter(promise => promise.status === 'fulfilled')
+    .map((promise: PromiseFulfilledResult<Maker>) => promise.value);
 }
 
 export async function makeRFQ(

@@ -459,16 +459,16 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         ? optimalSwapExchange.srcAmount
         : optimalSwapExchange.destAmount;
 
-    let makersTmp = await Maker.at('https://aomcfsa7.altono.xyz', {
-      swapContract: '0x522D6F36c95A1b6509A14272C17747BbB582F2A6',
-    });
-    const makers = [makersTmp];
-    // await getAvailableMakersForRFQ(
-    //   this.localProvider,
-    //   normalizedSrcToken,
-    //   normalizedDestToken,
-    //   this.network,
-    // );
+    // let makersTmp = await Maker.at('https://aomcfsa7.altono.xyz', {
+    //   swapContract: '0x522D6F36c95A1b6509A14272C17747BbB582F2A6',
+    // });
+    // const makers = [makersTmp];
+    const makers = await getAvailableMakersForRFQ(
+      this.localProvider,
+      normalizedSrcToken,
+      normalizedDestToken,
+      this.network,
+    );
     let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
     try {
       responses =
@@ -486,7 +486,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
             )
           : ({} as unknown as any);
     } catch (error) {
-      // console.log(error);
+      console.error(error);
     }
 
     const firstResponse = responses
@@ -494,6 +494,8 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       .map(
         (promise: PromiseFulfilledResult<QuoteResponse>) => promise.value,
       )[0];
+
+    console.log(firstResponse);
     return [
       {
         ...optimalSwapExchange,

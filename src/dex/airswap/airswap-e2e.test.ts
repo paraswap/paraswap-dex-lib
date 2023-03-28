@@ -65,7 +65,7 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
+  const nativeTokenSymbol = 'WETH'; //NativeTokenSymbols[network];
 
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
@@ -73,12 +73,12 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
     // TODO: If buy is not supported remove the buy contract methods
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
