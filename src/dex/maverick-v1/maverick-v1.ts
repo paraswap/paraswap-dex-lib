@@ -289,7 +289,7 @@ export class MaverickV1
                 poolAddresses: [pool.address],
               };
             } catch (e) {
-              this.logger.warn(
+              this.logger.debug(
                 `Failed to get prices for pool ${pool.address}, from=${from.address}, to=${to.address}`,
                 e,
               );
