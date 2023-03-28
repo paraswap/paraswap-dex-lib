@@ -1,5 +1,5 @@
 import { Address } from '../../types';
-import { Order } from '@airswap/typescript';
+import { Order, OrderERC20 } from '@airswap/typescript';
 
 export type PoolState = {
   // TODO: poolState is the state of event
@@ -11,7 +11,7 @@ export type PoolState = {
 export type AirswapData = {
   maker: string;
   senderWallet: string;
-  signedOrder: Order;
+  signedOrder: OrderERC20;
 };
 
 export type DexParams = {
@@ -26,5 +26,5 @@ export interface PriceLevel {
 
 export type QuoteResponse = {
   maker: string;
-  signedOrder: Order;
+  signedOrder: OrderERC20;
 };

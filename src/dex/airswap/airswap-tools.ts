@@ -274,11 +274,7 @@ async function getServers(
     quoteTokenURLs
       .filter(url => baseTokenURLs.includes(url))
       .filter(url => !(url.startsWith('wss://') || url.startsWith('ws://')))
-      .map(url =>
-        Maker.at(url, {
-          swapContract: '0x522d6f36c95a1b6509a14272c17747bbb582f2a6',
-        }),
-      ),
+      .map(url => Maker.at(url)),
   )) as PromiseFulfilledResult<Maker>[];
   return serverPromises
     .filter(promise => promise.status === 'fulfilled')
@@ -292,7 +288,7 @@ export async function makeRFQ(
   destToken: Token,
   amount: string,
 ): Promise<QuoteResponse> {
-  const response = await maker.getSignerSideOrder(
+  const response = await maker.getSignerSideOrderERC20(
     amount.toString(),
     destToken.address,
     srcToken.address,
