@@ -299,6 +299,7 @@ export type TestParamE2E = {
   destTokenBalanceOverrides?: Record<Address, string>;
   destTokenAllowanceOverrides?: Record<Address, string>;
   sleepMs?: number;
+  skipTenderly?: boolean;
 };
 
 const makeFakeTransferToSenderAddress = (
@@ -332,14 +333,19 @@ export async function newTestE2E({
   limitOrderProvider,
   transferFees,
   sleepMs,
+  skipTenderly,
 }: TestParamE2E) {
+  const useTenderly = !skipTenderly;
   const amount = BigInt(_amount);
   const twiceAmount = BigInt(_amount) * 2n;
-  const ts = new TenderlySimulation(network);
-  await ts.setup();
+  let ts: TenderlySimulation | undefined = undefined;
+  if (useTenderly) {
+    ts = new TenderlySimulation(network);
+    await ts.setup();
+  }
 
-  if (adapterBytecode) {
-    const deployTx = await ts.simulate(
+  if (useTenderly && adapterBytecode) {
+    const deployTx = await (ts as TenderlySimulation).simulate(
       deployAdapterParams(adapterBytecode, network),
     );
 
@@ -354,13 +360,13 @@ export async function newTestE2E({
       'gas',
     );
 
-    const whitelistTx = await ts.simulate(
+    const whitelistTx = await (ts as TenderlySimulation).simulate(
       whiteListAdapterParams(adapterAddress, network),
     );
     expect(whitelistTx.success).toEqual(true);
   }
 
-  if (thirdPartyAddress) {
+  if (useTenderly && thirdPartyAddress) {
     const stateOverrides: StateOverrides = {
       networkID: `${network}`,
       stateOverrides: {},
@@ -377,43 +383,15 @@ export async function newTestE2E({
         : (BigInt(MAX_UINT) / 4n).toString(),
     );
 
-    await ts.simulate(giftTx, stateOverrides);
+    await (ts as TenderlySimulation).simulate(giftTx, stateOverrides);
   }
-
-  const stateOverrides: StateOverrides = {
-    networkID: `${network}`,
-    stateOverrides: {},
-  };
-  srcToken.applyOverrides(stateOverrides);
-  destToken.applyOverrides(stateOverrides);
-
-  if (swapSide === SwapSide.SELL) {
-    srcToken
-      .addBalance(senderAddress, twiceAmount.toString())
-      .addAllowance(
-        senderAddress,
-        config.tokenTransferProxyAddress,
-        amount.toString(),
-      );
-  } else {
-    srcToken
-      .addBalance(senderAddress, MAX_UINT)
-      .addAllowance(
-        senderAddress,
-        config.tokenTransferProxyAddress,
-        (BigInt(MAX_UINT) / 8n).toString(),
-      );
-  }
-
-  srcToken.applyOverrides(stateOverrides);
-  destToken.applyOverrides(stateOverrides);
 
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = new LocalParaswapSDK(
     network,
     dexKey,
-    `https://rpc.tenderly.co/fork/${ts.forkId}`,
+    '',
     limitOrderProvider,
   );
 
@@ -449,19 +427,52 @@ export async function newTestE2E({
       senderAddress,
     );
 
-    const swapTx = await ts.simulate(swapParams, stateOverrides);
-    console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
-    // Only log gas estimate if testing against API
-    if (useAPI)
-      console.log(
-        `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
-          swapTx!.gasUsed
-        }, Difference: ${
-          parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
-        }`,
+    if (useTenderly) {
+      const stateOverrides: StateOverrides = {
+        networkID: `${network}`,
+        stateOverrides: {},
+      };
+      srcToken.applyOverrides(stateOverrides);
+      destToken.applyOverrides(stateOverrides);
+
+      if (swapSide === SwapSide.SELL) {
+        srcToken
+          .addBalance(senderAddress, twiceAmount.toString())
+          .addAllowance(
+            senderAddress,
+            config.tokenTransferProxyAddress,
+            amount.toString(),
+          );
+      } else {
+        srcToken
+          .addBalance(senderAddress, MAX_UINT)
+          .addAllowance(
+            senderAddress,
+            config.tokenTransferProxyAddress,
+            (BigInt(MAX_UINT) / 8n).toString(),
+          );
+      }
+
+      srcToken.applyOverrides(stateOverrides);
+      destToken.applyOverrides(stateOverrides);
+
+      const swapTx = await (ts as TenderlySimulation).simulate(
+        swapParams,
+        stateOverrides,
       );
-    console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
-    expect(swapTx!.success).toEqual(true);
+      console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+      // Only log gas estimate if testing against API
+      if (useAPI)
+        console.log(
+          `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
+            swapTx!.gasUsed
+          }, Difference: ${
+            parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
+          }`,
+        );
+      console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+      expect(swapTx!.success).toEqual(true);
+    }
   } finally {
     if (paraswap.releaseResources) {
       await paraswap.releaseResources();
