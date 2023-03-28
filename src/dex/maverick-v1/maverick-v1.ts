@@ -218,73 +218,83 @@ export class MaverickV1
       return (
         await Promise.all(
           allowedPools.map(async (pool: MaverickV1EventPool) => {
-            let state = pool.getState(blockNumber);
-            if (state === null) {
-              state = await pool.generateState(blockNumber);
-              pool.setState(state, blockNumber);
-            }
-            if (state === null) {
-              this.logger.debug(`Received null state for pool ${pool.address}`);
+            try {
+              let state = pool.getState(blockNumber);
+              if (state === null) {
+                state = await pool.generateState(blockNumber);
+                pool.setState(state, blockNumber);
+              }
+              if (state === null) {
+                this.logger.debug(
+                  `Received null state for pool ${pool.address}`,
+                );
+                return null;
+              }
+
+              const [unit] = pool.swap(
+                unitAmount,
+                from,
+                to,
+                side == SwapSide.BUY,
+              );
+              // We stop iterating if it becomes 0n at some point
+              let lastOutput = 1n;
+              let dataList: [bigint, number][] = await Promise.all(
+                amounts.map(amount => {
+                  if (amount === 0n) {
+                    return [0n, 0];
+                  }
+                  // We don't want to proceed with calculations if lower amount was not fillable
+                  if (lastOutput === 0n) {
+                    return [0n, 0];
+                  }
+                  const output = pool.swap(
+                    amount,
+                    from,
+                    to,
+                    side == SwapSide.BUY,
+                  );
+                  lastOutput = output[0];
+                  return output;
+                }),
+              );
+
+              let prices = dataList.map(d => d[0]);
+              let gasCosts: number[] = dataList.map(
+                ([d, t]: [BigInt, number]) => {
+                  if (d == 0n) return 0;
+                  // I think it is reasonable estimation assuming "kind" gas cost is almost everytime around 1
+                  return (
+                    MAV_V1_BASE_GAS_COST +
+                    (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) * t
+                  );
+                },
+              );
+              return {
+                prices: prices,
+                unit: BigInt(unit),
+                data: {
+                  fee: pool.fee,
+                  exchange: this.routerAddress,
+                  pool: pool.address,
+                  tokenA: pool.tokenA.address,
+                  tokenB: pool.tokenB.address,
+                  tickSpacing: pool.tickSpacing,
+                  protocolFeeRatio: pool.protocolFeeRatio,
+                  lookback: pool.lookback,
+                },
+                exchange: this.dexKey,
+                poolIdentifier: pool.name,
+                gasCost: gasCosts,
+                poolAddresses: [pool.address],
+              };
+            } catch (e) {
+              this.logger.warn(
+                `Failed to get prices for pool ${pool.address}, from=${from.address}, to=${to.address}`,
+                e,
+              );
               return null;
             }
-
-            const [unit] = pool.swap(
-              unitAmount,
-              from,
-              to,
-              side == SwapSide.BUY,
-            );
-            // We stop iterating if it becomes 0n at some point
-            let lastOutput = 1n;
-            let dataList: [bigint, number][] = await Promise.all(
-              amounts.map(amount => {
-                if (amount === 0n) {
-                  return [0n, 0];
-                }
-                // We don't want to proceed with calculations if lower amount was not fillable
-                if (lastOutput === 0n) {
-                  return [0n, 0];
-                }
-                const output = pool.swap(
-                  amount,
-                  from,
-                  to,
-                  side == SwapSide.BUY,
-                );
-                lastOutput = output[0];
-                return output;
-              }),
-            );
-
-            let prices = dataList.map(d => d[0]);
-            let gasCosts: number[] = dataList.map(
-              ([d, t]: [BigInt, number]) => {
-                if (d == 0n) return 0;
-                // I think it is reasonable estimation assuming "kind" gas cost is almost everytime around 1
-                return (
-                  MAV_V1_BASE_GAS_COST +
-                  (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) * t
-                );
-              },
-            );
-            return {
-              prices: prices,
-              unit: BigInt(unit),
-              data: {
-                fee: pool.fee,
-                exchange: this.routerAddress,
-                pool: pool.address,
-                tokenA: pool.tokenA.address,
-                tokenB: pool.tokenB.address,
-                tickSpacing: pool.tickSpacing,
-                protocolFeeRatio: pool.protocolFeeRatio,
-                lookback: pool.lookback,
-              },
-              exchange: this.dexKey,
-              poolIdentifier: pool.name,
-              gasCost: gasCosts,
-              poolAddresses: [pool.address],
-            };
           }),
         )
       ).filter(isTruthy);
