@@ -282,8 +282,8 @@ export async function testE2E(
 
 export type TestParamE2E = {
   config: Config;
-  srcToken: SmartToken;
-  destToken: SmartToken;
+  srcToken: Token | SmartToken;
+  destToken: Token | SmartToken;
   senderAddress: Address;
   thirdPartyAddress?: Address;
   _amount: string;
@@ -372,12 +372,12 @@ export async function newTestE2E({
       stateOverrides: {},
     };
 
-    destToken.addBalance(GIFTER_ADDRESS, MAX_UINT);
-    destToken.applyOverrides(stateOverrides);
+    (destToken as SmartToken).addBalance(GIFTER_ADDRESS, MAX_UINT);
+    (destToken as SmartToken).applyOverrides(stateOverrides);
 
     const giftTx = makeFakeTransferToSenderAddress(
       thirdPartyAddress,
-      destToken.token,
+      (destToken as SmartToken).token,
       swapSide === SwapSide.SELL
         ? twiceAmount.toString()
         : (BigInt(MAX_UINT) / 4n).toString(),
@@ -402,8 +402,8 @@ export async function newTestE2E({
   }
   try {
     const priceRoute = await paraswap.getPrices(
-      srcToken.token,
-      destToken.token,
+      skipTenderly ? (srcToken as Token) : (srcToken as SmartToken).token,
+      skipTenderly ? (destToken as Token) : (destToken as SmartToken).token,
       amount,
       swapSide,
       contractMethod,
@@ -432,11 +432,11 @@ export async function newTestE2E({
         networkID: `${network}`,
         stateOverrides: {},
       };
-      srcToken.applyOverrides(stateOverrides);
-      destToken.applyOverrides(stateOverrides);
+      (srcToken as SmartToken).applyOverrides(stateOverrides);
+      (destToken as SmartToken).applyOverrides(stateOverrides);
 
       if (swapSide === SwapSide.SELL) {
-        srcToken
+        (srcToken as SmartToken)
           .addBalance(senderAddress, twiceAmount.toString())
           .addAllowance(
             senderAddress,
@@ -444,7 +444,7 @@ export async function newTestE2E({
             amount.toString(),
           );
       } else {
-        srcToken
+        (srcToken as SmartToken)
           .addBalance(senderAddress, MAX_UINT)
           .addAllowance(
             senderAddress,
@@ -453,8 +453,8 @@ export async function newTestE2E({
           );
       }
 
-      srcToken.applyOverrides(stateOverrides);
-      destToken.applyOverrides(stateOverrides);
+      (srcToken as SmartToken).applyOverrides(stateOverrides);
+      (destToken as SmartToken).applyOverrides(stateOverrides);
 
       const swapTx = await (ts as TenderlySimulation).simulate(
         swapParams,
