@@ -213,7 +213,7 @@ export class UniswapV3
       );
 
       try {
-        await pool.initialize('latest', {
+        await pool.initialize(blockNumber, {
           initCallback: (state: DeepReadonly<PoolState>) => {
             //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
             pool!.addressesSubscribed[0] = state.pool;

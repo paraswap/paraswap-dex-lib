@@ -9,11 +9,6 @@ export type MultiResult<T> = {
   returnData: T;
 };
 
-export type MultiWrapperResult<T> = {
-  blockNumber: number;
-  results: MultiResult<T>[];
-};
-
 export type MultiCallParams<T> = {
   target: string;
   callData: string;
