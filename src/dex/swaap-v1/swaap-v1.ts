@@ -74,7 +74,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   async initializePricing(blockNumber: number | 'latest' = 'latest') {
     await this.getPools(blockNumber, true);
     setInterval(
-      () => this.getPools('latest', false),
+      () => this.getPools(blockNumber, false),
       RECURRING_POOL_FETCH_INTERVAL_MS,
     );
   }
