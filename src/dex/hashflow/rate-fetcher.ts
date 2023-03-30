@@ -4,6 +4,7 @@ import { validateAndCast } from '../../lib/validators';
 import { Logger } from '../../types';
 import { HashflowRateFetcherConfig, HashflowRatesResponse, HashflowMarketMakersResponse } from './types';
 import { pricesResponseValidator, marketMakersValidator } from './validators';
+import { Network } from '../../constants';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<HashflowRatesResponse>;
@@ -15,6 +16,7 @@ export class RateFetcher {
   constructor(
     private dexHelper: IDexHelper,
     private dexKey: string,
+    private network: Network,
     private logger: Logger,
     config: HashflowRateFetcherConfig,
   ) {
@@ -36,6 +38,12 @@ export class RateFetcher {
             this.handleMarketMakersResponse(parsedData);
             const { marketMakers } = parsedData;
             const filteredMarketMakers = await config.rateConfig.filterMarketMakers(marketMakers);
+
+            if(filteredMarketMakers.length === 0) {
+              return Promise.reject(new Error(
+                `${dexKey}-${network}: got ${filteredMarketMakers.length} market makers. Skipping pricing request.`,
+              ));
+            }
 
             const prices = await dexHelper.httpRequest.request({
               ...options,

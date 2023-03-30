@@ -109,7 +109,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   async initializePricing(blockNumber: number): Promise<void> {
     if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher = new RateFetcher(this.dexHelper, this.dexKey, this.logger, {
+      this.rateFetcher = new RateFetcher(this.dexHelper, this.dexKey, this.network, this.logger, {
         rateConfig: {
           intervalMs: HASHFLOW_API_POLLING_INTERVAL_MS,
           marketMakersReqParams: {
