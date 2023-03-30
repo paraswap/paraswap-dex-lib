@@ -248,15 +248,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const callData = this._getStateRequestCallData();
 
     const { results, blockNumber: _blockNumber } =
-      await this.dexHelper.multiWrapper.tryAggregate<
+      await this.dexHelper.multiWrapper.blockTryAggregateWithoutBatching<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-      >(
-        false,
-        callData,
-        blockNumber,
-        this.dexHelper.multiWrapper.defaultBatchSize,
-        false,
-      );
+      >(false, callData, blockNumber, false);
 
     const [resBalance0, resBalance1, resState] = results;
 

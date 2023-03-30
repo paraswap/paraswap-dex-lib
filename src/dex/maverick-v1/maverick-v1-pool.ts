@@ -1,7 +1,10 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, Address } from '../../types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  StateWithBlock,
+} from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Bin, MaverickV1Data, PoolState } from './types';
 import { Token } from '../../types';
@@ -128,7 +131,9 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+  async generateState(
+    blockNumber?: number | 'latest',
+  ): Promise<Readonly<StateWithBlock<PoolState>>> {
     const rawBins = await this.poolInspectorContract.methods['getActiveBins'](
       this.address,
       0,
@@ -164,11 +169,14 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
     });
 
     return {
-      activeTick: BigInt(rawState.activeTick),
-      binCounter: BigInt(rawState.binCounter),
-      bins: bins,
-      binPositions: binPositions,
-      binMap: binMap,
+      blockNumber: 0,
+      state: {
+        activeTick: BigInt(rawState.activeTick),
+        binCounter: BigInt(rawState.binCounter),
+        bins: bins,
+        binPositions: binPositions,
+        binMap: binMap,
+      },
     };
   }
 

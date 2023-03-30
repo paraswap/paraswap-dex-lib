@@ -145,13 +145,11 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
             decodeFunction: uint256ToBigInt,
           },
         ];
-        const results = (
-          await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-            true,
-            calls,
-            blockNumber,
-          )
-        ).results;
+        const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+          true,
+          calls,
+          blockNumber,
+        );
         this.state = {
           blockNumber,
           totalPooledEther: results[0].returnData,

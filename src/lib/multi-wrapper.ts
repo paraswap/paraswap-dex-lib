@@ -1,7 +1,6 @@
 import { BytesLike } from 'ethers';
 import _ from 'lodash';
 import { Logger } from 'log4js';
-import { assert } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
 import { uint256DecodeToNumber } from './decoders';
 
@@ -65,6 +64,8 @@ export class MultiWrapper {
     batchSize: number = this.defaultBatchSize,
     reportFails: boolean = true,
   ): Promise<MultiResult<T>[]> {
+    const _blockNumber = blockNumber === undefined ? 'latest' : blockNumber;
+
     const allCalls = new Array(Math.ceil(calls.length / batchSize));
     for (let i = 0; i < calls.length; i += batchSize) {
       const batch = calls.slice(i, i + batchSize);
@@ -75,7 +76,7 @@ export class MultiWrapper {
       allCalls.map(batch =>
         this.multi.methods
           .tryAggregate(mandatory, batch)
-          .call(undefined, blockNumber),
+          .call(undefined, _blockNumber),
       ),
     );
 
@@ -141,11 +142,11 @@ export class MultiWrapper {
     );
 
     // We guaranteed previously that at least one call is contained
-    const blockNumber = results.pop()!.returnData;
+    const blockNumber = results.pop()!.returnData as number;
 
     return {
       blockNumber,
-      results,
+      results: results as MultiResult<T>[],
     };
   }
 }

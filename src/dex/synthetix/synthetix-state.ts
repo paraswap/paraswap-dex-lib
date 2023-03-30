@@ -96,7 +96,7 @@ export class SynthetixState {
       // We can just create promise and don't wait while it is resolved. When it is resolved, the values will be updated automatically
       // There is no reason to wait it
       this._onchainConfigValues.isUpdating = true;
-      this.updateOnchainConfigValues('latest')
+      this.updateOnchainConfigValues()
         .then(() => {
           this.logger.info(`${this.dexKey}: _onchainConfigValues are updated`);
           this._onchainConfigValues.isUpdating = false;
@@ -120,7 +120,7 @@ export class SynthetixState {
     return this._onchainConfigValues.values;
   }
 
-  async updateOnchainConfigValues(blockNumber: number | 'latest') {
+  async updateOnchainConfigValues(blockNumber?: number) {
     this._onchainConfigValues.values = await this.getOnchainConfigValues(
       blockNumber,
     );
@@ -150,7 +150,7 @@ export class SynthetixState {
   }
 
   async updateOnchainState(
-    blockNumber: number | 'latest',
+    blockNumber?: number,
   ): Promise<PoolState | undefined> {
     if (this.onchainConfigValues === undefined)
       throw new Error(
@@ -195,7 +195,7 @@ export class SynthetixState {
         await this.multiWrapper.tryAggregate<
           Record<0 | 1, bigint> | Slot0 | boolean[] | boolean | LatestRoundData
         >(true, slot0TickCumulativesSuspensionsLatestRoundCallData, blockNumber)
-      ).results.map(d => d.returnData) as (
+      ).map(d => d.returnData) as (
         | Record<0 | 1, bigint>
         | boolean
         | boolean[]
@@ -253,15 +253,12 @@ export class SynthetixState {
           latestRoundDatas,
         );
 
-      const results = await this.multiWrapper.tryAggregate<
-        OracleObservation | LatestRoundData | string
-      >(true, observationsRoundAndOverriddenCallData, blockNumber);
-
-      const block = await this.dexHelper.web3Provider.eth.getBlock(
-        results.blockNumber,
-      );
-
-      const observationsRoundDataAndOverridden = results.results;
+      const [block, observationsRoundDataAndOverridden] = await Promise.all([
+        this.dexHelper.web3Provider.eth.getBlock(blockNumber || 'latest'),
+        this.multiWrapper.tryAggregate<
+          OracleObservation | LatestRoundData | string
+        >(true, observationsRoundAndOverriddenCallData, blockNumber),
+      ]);
 
       addressesFromPKBoundary = addressesFromPK.length * _packCounter;
       const observations = observationsRoundDataAndOverridden
@@ -376,7 +373,7 @@ export class SynthetixState {
 
       this.fullState = {
         updatedAtInMs: Date.now(),
-        blockNumber: results.blockNumber,
+        blockNumber: blockNumber || block.number,
         values: newState,
       };
 
@@ -387,7 +384,7 @@ export class SynthetixState {
   }
 
   async getOnchainConfigValues(
-    blockNumber: number | 'latest',
+    blockNumber?: number,
   ): Promise<OnchainConfigValues> {
     // There are four onchain calls for one state update
     // I deliberately don't split into meaningful functions to not add additional
@@ -403,9 +400,9 @@ export class SynthetixState {
       await this.multiWrapper.tryAggregate<string | bigint>(
         true,
         this._buildInitialStateCallData(),
-        blockNumber,
+        blockNumber === undefined ? 'latest' : blockNumber,
       )
-    ).results.map(d => d.returnData) as [
+    ).map(d => d.returnData) as [
       Address,
       Address,
       bigint,
@@ -432,7 +429,7 @@ export class SynthetixState {
         ),
         blockNumber,
       )
-    ).results.map(d => d.returnData) as [
+    ).map(d => d.returnData) as [
       Address,
       Address,
       Address,
@@ -468,7 +465,7 @@ export class SynthetixState {
       await this.multiWrapper.tryAggregate<
         bigint | boolean | string | number | bigint[]
       >(true, flexibleStorageCurrencyCallData, blockNumber)
-    ).results.map(d => d.returnData);
+    ).map(d => d.returnData);
 
     const exchangeDynamicFeeConfigResult = results.pop() as bigint[];
     const exchangeDynamicFeeConfig = {
@@ -542,7 +539,7 @@ export class SynthetixState {
         ),
         blockNumber,
       )
-    ).results.map(d => d.returnData);
+    ).map(d => d.returnData);
 
     const overriddenPools = overriddenPoolAndDecimals.slice(
       0,

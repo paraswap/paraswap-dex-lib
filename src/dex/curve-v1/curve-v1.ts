@@ -511,7 +511,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     let pool = this.getPoolByAddress(exchange);
     if (!pool) {
       throw new Error(
-        `Error_${this.dexKey}_getRatesEvent pool is not initialised`,
+        `Error_${this.dexKey}_getRatesEvent pool is not initialized`,
       );
     }
 
@@ -939,7 +939,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       // the balances array in the pool as it was a mess to have each curve abi
       // Some have balances[uint128] some have balances[uint256]
       // One of the consequence for such a hack is below for ETH Pools
-      // TODO: below can be highly optimised
+      // TODO: below can be highly optimized
       // * we don't need to query token decimals every iteration
       // * we can use the decimals from the tokens list using the api
 
@@ -972,9 +972,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         [],
       );
 
-      const results = (
-        await this.dexHelper.multiWrapper.tryAggregate(true, calls)
-      ).results;
+      const results = await this.dexHelper.multiWrapper.tryAggregate(
+        true,
+        calls,
+      );
 
       let index = 0;
       Object.values(this.pools).forEach(pool => {

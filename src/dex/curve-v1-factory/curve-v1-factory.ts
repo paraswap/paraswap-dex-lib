@@ -227,7 +227,7 @@ export class CurveV1Factory
               decodeFunction: uint8ToNumber,
             })),
           )
-        ).results.map(r => r.returnData);
+        ).map(r => r.returnData);
 
         const poolConstants: PoolConstants = {
           COINS,
@@ -310,7 +310,7 @@ export class CurveV1Factory
     }
 
     // There is no scenario when we need to call initialize custom pools without factory pools
-    // So I put it here to not forget call, because custom pools must be initialised before factory pools
+    // So I put it here to not forget call, because custom pools must be initialized before factory pools
     // This function may be called multiple times, but will execute only once
     await this.initializeCustomPollingPools(
       blockNumber,
@@ -325,8 +325,9 @@ export class CurveV1Factory
       return;
     }
 
-    const poolCountResult = (
-      await this.dexHelper.multiWrapper!.tryAggregate(true, [
+    const poolCountResult = await this.dexHelper.multiWrapper!.tryAggregate(
+      true,
+      [
         {
           target: factoryAddress,
           callData: this.ifaces.factory.encodeFunctionData('pool_count'),
@@ -338,8 +339,8 @@ export class CurveV1Factory
           callData: this.ifaces.factory.encodeFunctionData('base_pool_count'),
           decodeFunction: uint256DecodeToNumber,
         },
-      ])
-    ).results;
+      ],
+    );
 
     const poolCount = poolCountResult[0].returnData;
     const basePoolCount = poolCountResult[1].returnData;
@@ -361,7 +362,7 @@ export class CurveV1Factory
         true,
         calldataGetPoolAddresses.concat(calldataGetBasePoolAddresses),
       )
-    ).results.map(e => e.returnData);
+    ).map(e => e.returnData);
 
     const poolAddresses = allPoolAddresses.slice(0, poolCount);
     const basePoolAddresses = allPoolAddresses.slice(poolCount);
@@ -463,7 +464,7 @@ export class CurveV1Factory
       await this.dexHelper.multiWrapper.tryAggregate<
         string[] | number[] | string
       >(true, callDataFromFactoryPools)
-    ).results.map(r => r.returnData);
+    ).map(r => r.returnData);
 
     const resultsFromFactory = allResultsFromFactory.slice(
       0,

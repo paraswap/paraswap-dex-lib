@@ -135,11 +135,6 @@ export const getAllowanceCallParams = (
     }
     default:
       throw new Error(`missing case for assetType ${req.assetType}`);
-      return {
-        calls: [],
-        spenders: new Set(),
-        length: 0,
-      };
   }
 };
 
@@ -262,11 +257,12 @@ export const getBalances = async (
     params.length += balancesCalls.length;
     decodingInfo.push(params);
   }
-  const resultsAndBn = await multiv2.tryAggregate<MultiCallParamsType>(
-    false,
-    calls,
-    blockNumber,
-  );
+  const resultsAndBn =
+    await multiv2.blockTryAggregateWithoutBatching<MultiCallParamsType>(
+      false,
+      calls,
+      blockNumber,
+    );
 
   const chunks = [];
   let j = 0;
