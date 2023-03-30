@@ -170,12 +170,13 @@ export class BalancerV1
     }
 
     if (poolsMissingState.length) {
-      const { state: poolStates } = await generatePoolStates(
-        this.dexHelper,
-        poolsMissingState,
-        this.balancerMulticall,
-        blockNumber,
-      );
+      const { blockNumber: _blockNumber, state: poolStates } =
+        await generatePoolStates(
+          this.dexHelper,
+          poolsMissingState,
+          this.balancerMulticall,
+          blockNumber,
+        );
 
       await Promise.all(
         poolsMissingState.map(async (poolInfo, i) => {
@@ -192,9 +193,9 @@ export class BalancerV1
               poolInfo,
             );
 
-            await newPool.initialize(blockNumber, {
+            await newPool.initialize(_blockNumber, {
               stateWithBn: {
-                blockNumber,
+                blockNumber: _blockNumber,
                 state: poolState,
               },
             });
