@@ -848,8 +848,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const _tokenAddress = tokenAddress.toLowerCase();
 
     const makers = await this.getMarketMakers();
+    console.log('MAKERS: ', makers);
     const filteredMakers = await this.getFilteredMarketMakers(makers);
+    console.log('FILTERED MAKERS: ', filteredMakers);
     const pLevels = await this.getLevelsWithCache();
+    console.log('PLevels: ', pLevels);
 
     let baseToken: Token | undefined = undefined;
     // TODO: Improve efficiency of this part. Quite inefficient way to determine

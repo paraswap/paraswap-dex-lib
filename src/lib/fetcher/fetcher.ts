@@ -1,6 +1,7 @@
 import { IRequestWrapper } from '../../dex-helper';
 import { Logger } from 'log4js';
 import { RequestConfig, Response } from '../../dex-helper/irequest-wrapper';
+import { isFunction } from 'lodash';
 
 const FETCH_TIMEOUT_MS = 10 * 1000;
 const FETCH_FAIL_MAX_ATTEMPT = 5;
@@ -64,7 +65,7 @@ export default class Fetcher<T> {
 
         try {
           let result;
-          if(info.requestFunc) {
+          if (info.requestFunc && isFunction(info.requestFunc)) {
             result = await info.requestFunc({
               timeout: FETCH_TIMEOUT_MS,
               ...options,
