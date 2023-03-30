@@ -59,7 +59,6 @@ export const getBalanceCallParams = (
       }));
     default:
       throw new Error(`missing case for assetType ${req.assetType}`);
-      return [];
   }
 };
 
@@ -269,23 +268,23 @@ export const getBalances = async (
     blockNumber,
   );
 
-  const chuncks = [];
+  const chunks = [];
   let j = 0;
   for (let i = 0; i < resultsAndBn.results.length; ) {
     const batchSize = decodingInfo[j].length;
-    const chunck = resultsAndBn.results.slice(i, i + batchSize);
-    chuncks.push(chunck);
+    const chunk = resultsAndBn.results.slice(i, i + batchSize);
+    chunks.push(chunk);
     j++;
     i += batchSize;
   }
 
   return {
     blockNumber: resultsAndBn.blockNumber,
-    balances: chuncks.map((chunck, index) =>
+    balances: chunks.map((chunk, index) =>
       decodeBalanceAndAllowanceMultiResult(
         reqs[index],
         decodingInfo[index].spenders,
-        chunck,
+        chunk,
       ),
     ),
   };

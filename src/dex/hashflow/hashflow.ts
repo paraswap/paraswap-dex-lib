@@ -19,7 +19,7 @@ import {
   CACHE_PREFIX,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -48,6 +48,8 @@ import {
   PRICE_LEVELS_TTL_SECONDS,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+
+const HASHFLOW_ASYNC_CALL_TIMEOUT = 150;
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -320,10 +322,15 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
     }
 
-    const makers = await this.getFilteredMarketMakers(this.network as ChainId);
-    const levels = await this.api.getPriceLevels(
-      this.network as ChainId,
-      makers,
+    const makers = await Utils.timeoutPromise(
+      this.getFilteredMarketMakers(this.network as ChainId),
+      HASHFLOW_ASYNC_CALL_TIMEOUT,
+      'Hashflow: getFilteredMarketMakers timeout',
+    );
+    const levels = await Utils.timeoutPromise(
+      this.api.getPriceLevels(this.network as ChainId, makers),
+      HASHFLOW_ASYNC_CALL_TIMEOUT,
+      'Hashflow: getPriceLevels timeout',
     );
 
     await this.dexHelper.cache.setex(
@@ -479,19 +486,23 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     let rfq: RfqResponse;
     try {
-      rfq = await this.api.requestQuote({
-        chainId,
-        baseToken: normalizedSrcToken.address,
-        quoteToken: normalizedDestToken.address,
-        ...(side === SwapSide.SELL
-          ? {
-              baseTokenAmount: optimalSwapExchange.srcAmount,
-            }
-          : { quoteTokenAmount: optimalSwapExchange.destAmount }),
-        wallet: this.augustusAddress.toLowerCase(),
-        effectiveTrader: options.txOrigin.toLowerCase(),
-        marketMakers: [mm],
-      });
+      rfq = await Utils.timeoutPromise(
+        this.api.requestQuote({
+          chainId,
+          baseToken: normalizedSrcToken.address,
+          quoteToken: normalizedDestToken.address,
+          ...(side === SwapSide.SELL
+            ? {
+                baseTokenAmount: optimalSwapExchange.srcAmount,
+              }
+            : { quoteTokenAmount: optimalSwapExchange.destAmount }),
+          wallet: this.augustusAddress.toLowerCase(),
+          effectiveTrader: options.txOrigin.toLowerCase(),
+          marketMakers: [mm],
+        }),
+        HASHFLOW_ASYNC_CALL_TIMEOUT,
+        'Hashflow: requestQuote timeout',
+      );
 
       if (rfq.status !== 'success') {
         const message = `${this.dexKey}-${

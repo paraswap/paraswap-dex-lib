@@ -5,8 +5,9 @@ import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger, TransferFeeParams } from './types';
 import _ from 'lodash';
-import { Contract } from 'web3-eth-contract';
 import { MultiResult } from './lib/multi-wrapper';
+import { Contract } from 'web3-eth-contract';
+import Web3 from 'web3';
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -378,4 +379,9 @@ export const blockAndTryAggregate = async (
       success: res.success,
     })),
   };
+};
+
+export const isContractAddress = async (web3: Web3, addr: string) => {
+  const contractCode = await web3.eth.getCode(addr);
+  return contractCode !== '0x';
 };

@@ -270,6 +270,8 @@ export type Config = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
+  rpcPollingMaxAllowedStateDelayInBlocks: number;
+  rpcPollingBlocksBackToTriggerUpdate: number;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   uniswapV3EventLoggingSampleRate?: number;
@@ -294,3 +296,5 @@ export type TransferFeeParams = {
   srcDexFee: number;
   destDexFee: number;
 };
+
+export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';

@@ -1,7 +1,9 @@
+import { BytesLike } from 'ethers';
 import _ from 'lodash';
 import { Logger } from 'log4js';
+import { assert } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
-import { blockAndTryAggregate } from '../utils';
+import { uint256DecodeToNumber } from './decoders';
 
 export type MultiResult<T> = {
   success: boolean;
@@ -16,7 +18,7 @@ export type MultiWrapperResult<T> = {
 export type MultiCallParams<T> = {
   target: string;
   callData: string;
-  decodeFunction: (str: MultiResult<string> | string) => T;
+  decodeFunction: (str: MultiResult<BytesLike> | BytesLike) => T;
   cb?: (data: T) => void;
 };
 
@@ -62,7 +64,7 @@ export class MultiWrapper {
     blockNumber: number | 'latest' = 'latest',
     batchSize: number = this.defaultBatchSize,
     reportFails: boolean = true,
-  ): Promise<MultiWrapperResult<T>> {
+  ): Promise<MultiResult<T>[]> {
     const allCalls = new Array(Math.ceil(calls.length / batchSize));
     for (let i = 0; i < calls.length; i += batchSize) {
       const batch = calls.slice(i, i + batchSize);
@@ -71,21 +73,16 @@ export class MultiWrapper {
 
     const aggregatedResult = await Promise.all(
       allCalls.map(batch =>
-        blockAndTryAggregate(mandatory, this.multi, batch, blockNumber),
+        this.multi.methods
+          .tryAggregate(mandatory, batch)
+          .call(undefined, blockNumber),
       ),
     );
 
     let globalInd = 0;
     const resultsUndecoded: MultiResult<string>[] = new Array(calls.length);
-
-    let maxBlockNumber = aggregatedResult[0].blockNumber;
     for (const res of aggregatedResult) {
-      if (maxBlockNumber < res.blockNumber) {
-        this.logger.warn(
-          'race-condition: Blocks between batches are different',
-        );
-      }
-      for (const element of res.results) {
+      for (const element of res) {
         resultsUndecoded[globalInd++] = element;
       }
     }
@@ -113,8 +110,41 @@ export class MultiWrapper {
       calls[i].cb?.(results[i].returnData);
     }
 
+    return results;
+  }
+
+  // I removed here batching because it may give inconsistent blockNumber
+  // If we see that is a problem, we can add later
+  async blockTryAggregateWithoutBatching<T>(
+    mandatory: boolean,
+    calls: MultiCallParams<T>[],
+    requestedBlockNumber: number | 'latest' = 'latest',
+    reportFails: boolean = true,
+  ) {
+    const blockNumberCall: MultiCallParams<number> = {
+      target: this.multi.options.address,
+      callData: this.multi.methods.getBlockNumber().encodeABI() as string,
+      decodeFunction: uint256DecodeToNumber,
+    };
+
+    const callsWithBlockNumber: [
+      ...MultiCallParams<T>[],
+      MultiCallParams<number>,
+    ] = [...calls, blockNumberCall];
+
+    const results = await this.tryAggregate(
+      mandatory,
+      callsWithBlockNumber as MultiCallParams<T | number>[],
+      requestedBlockNumber,
+      callsWithBlockNumber.length,
+      reportFails,
+    );
+
+    // We guaranteed previously that at least one call is contained
+    const blockNumber = results.pop()!.returnData;
+
     return {
-      blockNumber: maxBlockNumber,
+      blockNumber,
       results,
     };
   }

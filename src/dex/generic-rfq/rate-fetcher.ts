@@ -33,6 +33,11 @@ import {
 import { genericRFQAuthHttp } from './security';
 
 const GET_FIRM_RATE_TIMEOUT_MS = 2000;
+import {
+  createERC1271Contract,
+  ERC1271Contract,
+} from '../../lib/erc1271-utils';
+import { isContractAddress } from '../../utils';
 
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
   [
@@ -57,6 +62,8 @@ export class RateFetcher {
   private authHttp: (
     secet: RFQSecret,
   ) => (options: RequestConfig) => RequestConfig;
+
+  private verifierContract?: ERC1271Contract;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -140,6 +147,19 @@ export class RateFetcher {
     this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (this.config.firmRateConfig.secret) {
       this.firmRateAuth = this.authHttp(this.config.firmRateConfig.secret);
+    }
+  }
+
+  async initialize() {
+    const isContract = await isContractAddress(
+      this.dexHelper.web3Provider,
+      this.config.maker,
+    );
+    if (isContract) {
+      this.verifierContract = createERC1271Contract(
+        this.dexHelper.web3Provider,
+        this.config.maker,
+      );
     }
   }
 
@@ -383,9 +403,11 @@ export class RateFetcher {
         delete payload.secret;
       }
 
+      this.logger.info('FirmRate Request:', payload);
       const { data } = await this.dexHelper.httpRequest.request<unknown>(
         payload,
       );
+      this.logger.info('FirmRate Response: ', data);
 
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
@@ -397,6 +419,7 @@ export class RateFetcher {
         this.dexHelper.config.data.augustusRFQAddress,
         this.dexHelper.multiWrapper,
         firmRateResp.order,
+        this.verifierContract,
       );
 
       return {
