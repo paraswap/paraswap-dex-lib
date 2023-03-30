@@ -521,7 +521,7 @@ export class BalancerV2
     protected adapters = Adapters[network],
   ) {
     super(dexHelper, dexKey);
-    // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
+    // Initialize cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
     this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
