@@ -47,16 +47,13 @@ export class TransactionBuilder {
     beneficiary?: Address;
     onlyParams?: boolean;
   }) {
-    if (deadline) {
-      const globalDeadline = +deadline;
-      if (!isNaN(globalDeadline)) {
-        const localDeadline = +getLocalDeadlineAsFriendlyPlaceholder();
-        if (globalDeadline > localDeadline)
-          throw new Error(
-            `Deadline is too high. Maximum allowed is ${FRIENDLY_LOCAL_DEADLINE} seconds`,
-          );
-      }
-    }
+    const globalDeadline = +deadline;
+    if (isNaN(globalDeadline)) throw new Error('deadline should be a number');
+    const localDeadline = +getLocalDeadlineAsFriendlyPlaceholder();
+    if (globalDeadline > localDeadline)
+      throw new Error(
+        `Deadline is too high. Maximum allowed is ${FRIENDLY_LOCAL_DEADLINE} seconds`,
+      );
 
     const _beneficiary = beneficiary || userAddress;
     const { encoder, params, networkFee } = await this.routerService
