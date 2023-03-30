@@ -1,13 +1,19 @@
 import { Contract } from 'web3-eth-contract';
 import { PoolInfo, PoolState } from './types';
 import { BALANCES_MULTICALL_POOLS_LIMIT } from './config';
-import { sliceCalls } from '../../utils';
+import { blockAndTryAggregate, sliceCalls } from '../../utils';
+import { StateWithBlock } from '../../stateful-event-subscriber';
+import { IDexHelper } from '../../dex-helper';
+import { defaultAbiCoder } from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
+import { assert } from 'ts-essentials';
 
 export async function generatePoolStates(
+  dexHelper: IDexHelper,
   pools: PoolInfo[],
   balancerMulticall: Contract,
   blockNumber: number | 'latest',
-): Promise<PoolState[]> {
+): Promise<StateWithBlock<PoolState[]>> {
   if (!pools.length) throw new Error('No pools provided to generatePoolStates');
 
   const poolWithTokensAddresses = new Array<string[]>(pools.length);
@@ -22,6 +28,8 @@ export async function generatePoolStates(
     poolWithTokensAddresses[i] = arr;
   }
 
+  let _blockNumber: number | undefined = undefined;
+
   const poolTokenBalances = (
     await Promise.all(
       sliceCalls({
@@ -33,9 +41,28 @@ export async function generatePoolStates(
             0,
           );
 
-          return await balancerMulticall.methods
-            .getPoolInfo(slicedPoolWithTokensAddresses, totalTokensInPools)
-            .call({}, blockNumber);
+          const result = await blockAndTryAggregate(
+            true,
+            dexHelper.multiContract,
+            [
+              {
+                target: balancerMulticall.options.address,
+                callData: balancerMulticall.methods
+                  .getPoolInfo(
+                    slicedPoolWithTokensAddresses,
+                    totalTokensInPools,
+                  )
+                  .encodeABI(),
+              },
+            ],
+            blockNumber,
+          );
+          _blockNumber = result.blockNumber;
+          return result.results.map(r =>
+            defaultAbiCoder
+              .decode(['uint256[]'], r.returnData)[0]
+              .map((v: BigNumber) => v.toBigInt()),
+          );
         },
       }),
     )
@@ -53,5 +80,7 @@ export async function generatePoolStates(
     ret[i] = poolState;
   }
 
-  return ret;
+  assert(_blockNumber !== undefined, 'blockNumber is undefined');
+
+  return { blockNumber: _blockNumber, state: ret };
 }

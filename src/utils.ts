@@ -319,7 +319,7 @@ export class Utils {
   ): Promise<T> {
     return Promise.race([
       promise,
-      new Promise<T>((resolve, reject) => {
+      new Promise<T>((_, reject) => {
         setTimeout(() => reject(message), timeout);
       }),
     ]);

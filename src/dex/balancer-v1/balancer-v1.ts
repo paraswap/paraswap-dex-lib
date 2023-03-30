@@ -170,7 +170,8 @@ export class BalancerV1
     }
 
     if (poolsMissingState.length) {
-      const poolStates = await generatePoolStates(
+      const { state: poolStates } = await generatePoolStates(
+        this.dexHelper,
         poolsMissingState,
         this.balancerMulticall,
         blockNumber,
