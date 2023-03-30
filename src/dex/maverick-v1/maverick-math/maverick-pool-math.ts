@@ -3,6 +3,7 @@ import { MaverickBinMap, Active } from './maverick-bin-map';
 import { BI_POWS } from '../../../bigint-constants';
 import { _require } from '../../../utils';
 import { MMath } from './maverick-basic-math';
+import { MAX_SWAP_ITERATION_CALCULATION } from '../constants';
 
 const MAX_TICK = 460540;
 
@@ -73,6 +74,9 @@ export class MaverickPoolMath {
     amount: bigint,
     tokenAIn: boolean,
     exactOutput: boolean,
+    // We must not restrict in current implementation tick calculations in case
+    // if swap was called for event calculation
+    isForPricing = false,
   ): [bigint, bigint] {
     this.state = state;
     let delta: Delta = {
@@ -91,9 +95,16 @@ export class MaverickPoolMath {
       sqrtUpperTickPrice: 0n,
       sqrtPrice: 0n,
     };
+    let counter = 0;
     while (delta.excess > 0) {
       let newDelta = this.swapTick(delta);
       this.combine(delta, newDelta);
+
+      // We can not do too much iteration. This variable chosen
+      // as reasonable threshold
+      if (isForPricing && counter++ > MAX_SWAP_ITERATION_CALCULATION) {
+        return [0n, 0n];
+      }
     }
     let amountIn = delta.deltaInErc;
     let amountOut = delta.deltaOutErc;
