@@ -52,7 +52,10 @@ import {
 import { CamelotConfig, Adapters } from './config';
 import { Contract } from 'web3-eth-contract';
 import { IDex } from '../idex';
-import { StatefulEventSubscriber, StateWithBlock } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  StateWithBlock,
+} from '../../stateful-event-subscriber';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { SimpleExchange } from '../simple-exchange';
@@ -172,7 +175,7 @@ export class CamelotEventPool extends StatefulEventSubscriber<CamelotPoolState> 
       blockNumber,
     );
 
-    const state =  this.callDecoder(data[0].returnData);
+    const state = this.callDecoder(data[0].returnData);
 
     return {
       blockNumber: blockNum,
@@ -294,8 +297,11 @@ export class Camelot
     );
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
-    await pair.pool.initialize('latest', {
-      stateWithBn: { blockNumber, state: { reserve0, reserve1, token0FeeCode, token1FeeCode, stable }},
+    await pair.pool.initialize(blockNumber, {
+      stateWithBn: {
+        blockNumber,
+        state: { reserve0, reserve1, token0FeeCode, token1FeeCode, stable },
+      },
     });
   }
 

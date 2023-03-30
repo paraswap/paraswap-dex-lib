@@ -401,7 +401,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     amounts: bigint[],
     pools: string[],
     indexes: [number, number, number][],
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ) {
     const chunks = amounts.length - 1;
     const srcAmount = amounts[chunks]!;
@@ -435,9 +435,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       })),
     );
 
-    //const data = await this.multi.methods
-    //  .tryAggregate(false, calldata.flat())
-    //  .call({}, 'latest');
     const data = (
       await Promise.all(
         calldata.map(async poolCalldata => {
@@ -445,7 +442,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             const result = await Utils.timeoutPromise<MultiResult<any>[]>(
               this.dexHelper.multiContract.methods
                 .tryAggregate(false, poolCalldata)
-                .call({}, 'latest'),
+                .call({}, blockNumber),
               2000,
               `Timed out multicall for curve pool ${poolCalldata[0].target}`,
             );
@@ -700,7 +697,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           amountsWithUnitAndFee,
           onChainPools,
           onChainPoolIndexes,
-          blockNumber,
+          'latest',
         );
         _prices = _prices.concat(pricesOnChain);
       }

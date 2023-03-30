@@ -602,7 +602,7 @@ export class BalancerV2
         }
       }, POOL_EVENT_DISABLED_TTL * 1000);
     }
-    await this.setupEventPools('latest');
+    await this.setupEventPools(blockNumber);
   }
 
   releaseResources(): void {
