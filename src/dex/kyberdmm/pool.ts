@@ -115,7 +115,6 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
           },
         };
     }
-    return null;
   }
 
   isAmpPool(): boolean {
@@ -147,7 +146,7 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
       .decode(['uint256', 'uint256', 'uint128', 'uint256'], data.returnData[1])
       .map(a => BigInt(a.toString()));
 
-    if (blockNumber == 'latest')
+    if (blockNumber === 'latest')
       blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
 
     const prevBlockData: { returnData: any[] } =
