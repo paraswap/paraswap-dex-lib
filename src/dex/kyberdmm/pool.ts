@@ -9,6 +9,7 @@ import {
 } from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
+import { blockAndTryAggregate } from '../../utils';
 
 export type KyberDmmPools = { [poolAddress: string]: KyberDmmPool };
 
@@ -124,9 +125,11 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<StateWithBlock<KyberDmmPoolState>> {
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.methods
-        .aggregate([
+    const { results: data, blockNumber: _blockNumber } =
+      await blockAndTryAggregate(
+        true,
+        this.dexHelper.multiContract,
+        [
           {
             target: this.poolAddress,
             callData: iface.encodeFunctionData('getTradeInfo', []),
@@ -135,15 +138,16 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
             target: this.poolAddress,
             callData: iface.encodeFunctionData('getVolumeTrendData', []),
           },
-        ])
-        .call({}, blockNumber);
+        ],
+        blockNumber,
+      );
 
     const [reserves0, reserves1, vReserves0, vReserves1] = coder
-      .decode(['uint256', 'uint256', 'uint256', 'uint256'], data.returnData[0])
+      .decode(['uint256', 'uint256', 'uint256', 'uint256'], data[0].returnData)
       .map(a => BigInt(a.toString()));
 
     const [shortEMA, longEMA, , lastTradeBlock] = coder
-      .decode(['uint256', 'uint256', 'uint128', 'uint256'], data.returnData[1])
+      .decode(['uint256', 'uint256', 'uint128', 'uint256'], data[1].returnData)
       .map(a => BigInt(a.toString()));
 
     if (blockNumber === 'latest')
