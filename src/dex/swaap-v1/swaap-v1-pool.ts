@@ -536,7 +536,7 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
   }
 
   public async getTokensAndParameters(
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ): Promise<[Address[], SwaapV1PoolParameters]> {
     const multiCallInputs: MultiCallInput[] = [
       {
@@ -889,26 +889,29 @@ export class SwaapV1Pool extends StatefulEventSubscriber<SwaapV1PoolState> {
   //function should not use any previous states to derive a new state, it should
   //generate one from scratch.
   public async generateState(
-    blockNumber?: number | 'latest',
+    blockNumber: number | 'latest',
   ): Promise<StateWithBlock<SwaapV1PoolState>> {
-    if (blockNumber === 'latest' || blockNumber === undefined) {
-      blockNumber = await this.dexHelper.provider.getBlockNumber();
-    }
+    const [_blockNumber, tokensAndParameters] = await Promise.all([
+      blockNumber === 'latest'
+        ? this.dexHelper.provider.getBlockNumber()
+        : blockNumber,
+      this.getTokensAndParameters(blockNumber),
+    ]);
 
-    const [tokens, parameters] = await this.getTokensAndParameters(blockNumber);
+    const [tokens, parameters] = tokensAndParameters;
     const [proxies, liquidities] = await this.getProxiesAndLiquidities(
       tokens,
-      blockNumber,
+      _blockNumber,
     );
     const oracles = await this.getOraclesData(
       tokens,
       proxies,
       parameters,
-      blockNumber,
+      _blockNumber,
     );
 
     return {
-      blockNumber,
+      blockNumber: _blockNumber,
       state: {
         parameters: parameters,
         liquidities: liquidities,
