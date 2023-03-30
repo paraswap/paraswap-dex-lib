@@ -6,7 +6,7 @@ import { sliceCalls } from '../../utils';
 export async function generatePoolStates(
   pools: PoolInfo[],
   balancerMulticall: Contract,
-  blockNumber: number,
+  blockNumber: number | 'latest',
 ): Promise<PoolState[]> {
   if (!pools.length) throw new Error('No pools provided to generatePoolStates');
 

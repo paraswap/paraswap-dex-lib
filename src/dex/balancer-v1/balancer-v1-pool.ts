@@ -176,18 +176,23 @@ export class BalancerV1EventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ): Promise<StateWithBlock<PoolState>> {
+    const _blockNumber =
+      blockNumber === 'latest'
+        ? await this.dexHelper.web3Provider.eth.getBlockNumber()
+        : blockNumber;
+
     const state = (
       await generatePoolStates(
         [this.poolInfo],
         this.balancerMulticall,
-        blockNumber,
+        _blockNumber,
       )
     )[0];
 
     return {
-      blockNumber,
+      blockNumber: _blockNumber,
       state,
     };
   }
