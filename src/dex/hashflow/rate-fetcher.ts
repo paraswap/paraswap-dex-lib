@@ -31,7 +31,7 @@ export class RateFetcher {
         info: {
           requestOptions: config.rateConfig.pricesReqParams,
           requestFunc: async (options) => {
-            const marketMakersResponse =  await dexHelper.httpRequest.request({
+            const marketMakersResponse = await dexHelper.httpRequest.request({
               ...config.rateConfig.marketMakersReqParams,
             });
             const parsedData = validateAndCast<HashflowMarketMakersResponse>(marketMakersResponse.data, marketMakersValidator);
