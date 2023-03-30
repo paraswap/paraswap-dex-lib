@@ -939,25 +939,25 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0x321162Cd933E2Be498Cd2267a90534A804051b11',
         },
-        // main_gDAI_gUSDC_gUSDT: {
-        //   underlying: [
-        //     '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E', // DAI
-        //     '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', // USDC
-        //     '0x049d68029688eAbF473097a2fC38ef61633A3C7A', // fUSDT
-        //   ],
-        //   coins: [
-        //     '0x07E6332dD090D287d3489245038daF987955DCFB', // gDAI
-        //     '0xe578C856933D8e1082740bf7661e379Aa2A30b26', // gUSDC
-        //     '0x940F41F0ec9ba1A34CF001cc03347ac092F5F6B5', // gUSDT
-        //   ],
-        //   address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
-        //   name: 'main_gDAI_gUSDC_gUSDT',
-        //   type: 2,
-        //   version: 3,
-        //   isLending: true,
-        //   isMetapool: false,
-        //   baseToken: '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E',
-        // },
+        main_gDAI_gUSDC_gUSDT: {
+          underlying: [
+            '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E', // DAI
+            '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', // USDC
+            '0x049d68029688eAbF473097a2fC38ef61633A3C7A', // fUSDT
+          ],
+          coins: [
+            '0x07E6332dD090D287d3489245038daF987955DCFB', // gDAI
+            '0xe578C856933D8e1082740bf7661e379Aa2A30b26', // gUSDC
+            '0x940F41F0ec9ba1A34CF001cc03347ac092F5F6B5', // gUSDT
+          ],
+          address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
+          name: 'main_gDAI_gUSDC_gUSDT',
+          type: 2,
+          version: 3,
+          isLending: true,
+          isMetapool: false,
+          baseToken: '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E',
+        },
         main_iDAI_iUSDC_iFUSDT: {
           underlying: [
             '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E', // DAI

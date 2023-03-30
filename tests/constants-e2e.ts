@@ -50,6 +50,8 @@ export const Tokens: {
     USDT: {
       address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimals: 6,
+      addBalance: balancesFn,
+      addAllowance: allowedFn,
     },
     STETH: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -473,6 +475,14 @@ export const Tokens: {
     ETH: {
       address: '0x74b23882a30290451A17c44f4F05243b6b58C76d',
       decimals: 18,
+    },
+    GDAI: {
+      address: '0x07E6332dD090D287d3489245038daF987955DCFB',
+      decimals: 18,
+    },
+    GUSDC: {
+      address: '0xe578C856933D8e1082740bf7661e379Aa2A30b26',
+      decimals: 6,
     },
   },
   [Network.BSC]: {
@@ -905,6 +915,8 @@ export const Holders: {
     TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',
     BOO: '0xf778f4d7a14a8cb73d5261f9c61970ef4e7d7842',
     ETH: '0xf48883940b4056801de30f12b934dcea90133ee6',
+    GUSDC: '0x894d774a293f8aa3d23d67815d4cadb5319c1094',
+    GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
