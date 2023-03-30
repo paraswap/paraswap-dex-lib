@@ -54,10 +54,9 @@ import {
   HASHFLOW_API_POLLING_INTERVAL_MS,
   HASHFLOW_PRICES_CACHES_TTL_S,
   HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
+  HASHFLOW_ASYNC_CALL_TIMEOUT,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
-
-const HASHFLOW_ASYNC_CALL_TIMEOUT = 150;
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly isStatePollingDex = true;
