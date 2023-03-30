@@ -68,7 +68,9 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }
 
-  async generateConfigInfo(blockNumber: number): Promise<PlatypusConfigInfo> {
+  async generateConfigInfo(
+    blockNumber: number | 'latest',
+  ): Promise<PlatypusConfigInfo> {
     const cfgInfo: PlatypusConfigInfo = {
       poolAddresses: [],
       pools: {},
@@ -241,7 +243,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     return cfgInfo;
   }
 
-  async init(blockNumber: number) {
+  async init(blockNumber: number | 'latest') {
     if (this.cfgInfo) return;
     this.cfgInfo = await this.generateConfigInfo(blockNumber);
   }
@@ -250,7 +252,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     await this.init(blockNumber);
     if (!this.cfgInfo)
       throw new Error(
@@ -326,7 +328,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   }
 
   // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifers must be unique
+  // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
@@ -425,7 +427,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() couls be useful
+  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,

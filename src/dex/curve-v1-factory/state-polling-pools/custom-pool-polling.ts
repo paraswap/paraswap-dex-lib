@@ -209,7 +209,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
 
   parseMultiResultsToStateValues(
     multiOutputs: MulticallReturnedTypes[],
-    blockNumber: number,
+    blockNumber: number | 'latest',
     updatedAtMs: number,
   ): PoolState {
     const A = multiOutputs[0] as bigint;

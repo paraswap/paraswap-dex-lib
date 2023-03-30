@@ -18,7 +18,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
-    public priceFeedAdress: Address,
+    public priceFeedAddress: Address,
     public poolInterface: Interface,
     public priceFeedContract: Contract,
   ) {
@@ -58,18 +58,21 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ): Promise<StateWithBlock<PoolState>> {
-    const state = (
-      await getOnChainState(this.dexHelper, [this.poolConfig], blockNumber, {
+    const { blockNumber: _blockNumber, state } = await getOnChainState(
+      this.dexHelper,
+      [this.poolConfig],
+      blockNumber,
+      {
         poolInterface: this.poolInterface,
         priceFeedContract: this.priceFeedContract,
-      })
-    )[0];
+      },
+    );
 
     return {
-      blockNumber,
-      state,
+      blockNumber: _blockNumber,
+      state: state[0],
     };
   }
 }

@@ -70,7 +70,10 @@ export class Nerve
     return Object.values(this.eventPools);
   }
 
-  async setupEventPool(poolConfig: NervePoolConfig, blockNumber: number) {
+  async setupEventPool(
+    poolConfig: NervePoolConfig,
+    blockNumber: number | 'latest' = 'latest',
+  ) {
     const poolIdentifier = Nerve.getIdentifier(this.dexKey, poolConfig.address);
 
     if (!poolConfig.isMetapool) {
@@ -93,7 +96,7 @@ export class Nerve
     }
   }
 
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     await Promise.all(
       Object.values(this.poolConfigs).map(
         async poolConfig => await this.setupEventPool(poolConfig, blockNumber),

@@ -104,7 +104,7 @@ export class CurveV1FactoryPoolManager {
   async initializeIndividualPollingPoolState(
     identifier: string,
     isSrcFeeOnTransferTokenToBeExchanged: boolean,
-    blockNumber?: number,
+    blockNumber: number | 'latest' = 'latest',
   ) {
     const pool = this.getPool(identifier, isSrcFeeOnTransferTokenToBeExchanged);
     if (pool === null) {

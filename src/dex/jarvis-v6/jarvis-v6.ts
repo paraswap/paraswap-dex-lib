@@ -93,24 +93,20 @@ export class JarvisV6
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
-    const poolStates = await getOnChainState(
-      this.dexHelper,
-      this.poolConfigs,
-      blockNumber,
-      {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
+    const { blockNumber: _blockNumber, state: poolStates } =
+      await getOnChainState(this.dexHelper, this.poolConfigs, blockNumber, {
         poolInterface: this.poolInterface,
         priceFeedContract: this.priceFeedContract,
-      },
-    );
+      });
 
     await Promise.all(
       this.poolConfigs.map(async (pool, index) => {
         const eventPool = this.eventPools[pool.address.toLowerCase()];
-        await eventPool.initialize(blockNumber, {
+        await eventPool.initialize(_blockNumber, {
           stateWithBn: {
             state: poolStates[index],
-            blockNumber,
+            blockNumber: _blockNumber,
           },
         });
       }),
@@ -168,7 +164,7 @@ export class JarvisV6
     amounts: bigint[],
     side: SwapSide,
     blockNumber: number,
-    limitPools?: string[], // unusued since DEX is constant price, safe to reuse pools
+    limitPools?: string[], // unused since DEX is constant price, safe to reuse pools
   ): Promise<null | ExchangePrices<JarvisV6Data>> {
     if (side !== SwapSide.SELL) return null;
 

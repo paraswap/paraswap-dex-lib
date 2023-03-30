@@ -588,7 +588,7 @@ export class BalancerV2
     );
   }
 
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     if (!this.eventDisabledPoolsTimer) {
       await this.fetchEventDisabledPools();
       this.eventDisabledPoolsTimer = setInterval(async () => {

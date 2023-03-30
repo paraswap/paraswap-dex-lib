@@ -6,6 +6,7 @@ import { getBigIntPow } from '../../utils';
 import { JarvisSwapFunctions, PoolConfig, PoolState } from './types';
 import { Interface } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
+import { StateWithBlock } from '../../stateful-event-subscriber';
 
 export const THIRTY_MINUTES = 60 * 30;
 
@@ -18,27 +19,38 @@ export async function getOnChainState(
     priceFeedContract,
     poolInterface,
   }: { priceFeedContract: Contract; poolInterface: Interface },
-): Promise<PoolState[]> {
+): Promise<StateWithBlock<PoolState[]>> {
+  const _blockNumber =
+    blockNumber === 'latest'
+      ? await dexHelper.web3Provider.eth.getBlockNumber()
+      : blockNumber;
+
+  // These two calls can not be packed into multicall because Jarvis contract
+  // is callable either from Jarvis or EOA. If you try to call from Multicall,
+  // it will fail
   const [pricesFeedValues, poolFeePercentages] = await Promise.all([
     _getPricesFeedValues(
       dexHelper,
       poolConfigs,
-      blockNumber,
+      _blockNumber,
       priceFeedContract,
     ),
-    _getPoolFeePercentages(dexHelper, poolConfigs, blockNumber, poolInterface),
+    _getPoolFeePercentages(dexHelper, poolConfigs, _blockNumber, poolInterface),
   ]);
 
-  return poolConfigs.map((_, index) => ({
-    priceFeed: pricesFeedValues[index],
-    pool: poolFeePercentages[index],
-  }));
+  return {
+    blockNumber: _blockNumber,
+    state: poolConfigs.map((_, index) => ({
+      priceFeed: pricesFeedValues[index],
+      pool: poolFeePercentages[index],
+    })),
+  };
 }
 
 async function _getPoolFeePercentages(
   dexHelper: IDexHelper,
   poolConfigs: PoolConfig[],
-  blockNumber: number | 'latest',
+  blockNumber: number,
   poolInterface: Interface,
 ) {
   const multiContract = dexHelper.multiContract;
@@ -65,7 +77,7 @@ async function _getPoolFeePercentages(
 async function _getPricesFeedValues(
   dexHelper: IDexHelper,
   poolConfigs: PoolConfig[],
-  blockNumber: number | 'latest',
+  blockNumber: number,
   priceFeedContract: Contract,
 ) {
   const pairList = poolConfigs.map(pool =>

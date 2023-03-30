@@ -6,7 +6,7 @@ export const MAX_GAS_COST_ESTIMATION = 375 * 1000;
 export const SUBGRAPH_TIMEOUT = 1000 * 10;
 export const MAX_POOL_CNT = 1000;
 export const POOL_CACHE_TTL = 60 * 60; // 1hr
-export const RECCURING_POOL_FETCH_INTERVAL_MS = 12 * 3600 * 1000; // 12h (in ms)
+export const RECURRING_POOL_FETCH_INTERVAL_MS = 12 * 3600 * 1000; // 12h (in ms)
 
 export const SwaapV1Config: DexConfigMap<DexParams> = {
   SwaapV1: {

@@ -106,7 +106,9 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
     return this._baseTokens;
   }
 
-  async initializePricing(blockNumber: number) {
+  async initializePricing(
+    blockNumber: number | 'latest' = 'latest',
+  ): Promise<void> {
     await this.initializeTokensAndAddresses();
     this._initializePollingPool();
   }

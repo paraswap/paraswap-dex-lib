@@ -31,7 +31,7 @@ import {
   MAX_POOL_CNT,
   POOL_CACHE_TTL,
   MAX_GAS_COST_ESTIMATION,
-  RECCURING_POOL_FETCH_INTERVAL_MS,
+  RECURRING_POOL_FETCH_INTERVAL_MS,
 } from './config';
 import { SwaapV1Pool } from './swaap-v1-pool';
 import PoolABI from '../../abi/swaap-v1/pool.json';
@@ -71,18 +71,20 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     await this.getPools(blockNumber, true);
     setInterval(
-      () => this.getPools(null, false),
-      RECCURING_POOL_FETCH_INTERVAL_MS,
+      () => this.getPools('latest', false),
+      RECURRING_POOL_FETCH_INTERVAL_MS,
     );
   }
 
-  async getPools(_blockNumber: number | null, init: boolean) {
-    const blockNumber = _blockNumber
-      ? _blockNumber
-      : await this.dexHelper.provider.getBlockNumber();
+  async getPools(_blockNumber: number | 'latest', init: boolean) {
+    const blockNumber =
+      _blockNumber === 'latest'
+        ? await this.dexHelper.provider.getBlockNumber()
+        : _blockNumber;
+
     const allPools = await this.fetchAllSubgraphPools(blockNumber);
 
     await SwaapV1.initPools(
@@ -90,12 +92,14 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       blockNumber,
       Object.values(allPools),
     );
+
     if (!allPools)
       if (init) {
         throw new Error(
           'initializePricing: SwaapV1 cfgInfo still null after init',
         );
       }
+
     for (const poolConfig of allPools.values()) {
       if (
         init ||
@@ -152,7 +156,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   }
 
   // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifers must be unique
+  // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
@@ -169,7 +173,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() couls be useful
+  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,

@@ -155,7 +155,7 @@ export class CurveV1Factory
     );
   }
 
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     // This is only to start timer, each pool is initialized with updated state
     this.poolManager.initializePollingPools();
     await this.fetchFactoryPools(blockNumber);
@@ -163,7 +163,7 @@ export class CurveV1Factory
   }
 
   async initializeCustomPollingPools(
-    blockNumber?: number,
+    blockNumber: number | 'latest' = 'latest',
     // We don't want to initialize state for PoolTracker. It doesn't make any sense
     initializeInitialState: boolean = true,
   ) {
@@ -299,7 +299,7 @@ export class CurveV1Factory
   }
 
   async fetchFactoryPools(
-    blockNumber?: number,
+    blockNumber: number | 'latest' = 'latest',
     // Variable initializeInitialState is only for poolTracker. We don't want to keep state updated with scheduler
     // We just want to initialize factory pools and send request to CurveAPI
     // Other values are not used

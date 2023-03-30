@@ -18,7 +18,11 @@ import {
   StatefulEventSubscriber,
   StateWithBlock,
 } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  blockAndTryAggregate,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MakerPsmData, PoolState, PoolConfig } from './types';
@@ -40,7 +44,7 @@ async function getOnChainState(
   poolConfigs: PoolConfig[],
   vatAddress: Address,
   blockNumber: number | 'latest',
-): Promise<PoolState[]> {
+): Promise<StateWithBlock<PoolState[]>> {
   const callData = poolConfigs
     .map(c => [
       {
@@ -58,30 +62,35 @@ async function getOnChainState(
     ])
     .flat();
 
-  const res = await multiContract.methods
-    .aggregate(callData)
-    .call({}, blockNumber);
+  const { blockNumber: _blockNumber, results: res } =
+    await blockAndTryAggregate(true, multiContract, callData, blockNumber);
 
   let i = 0;
-  return poolConfigs.map(c => {
-    const tin = bigIntify(
-      psmInterface.decodeFunctionResult('tin', res.returnData[i++])[0],
-    );
-    const tout = bigIntify(
-      psmInterface.decodeFunctionResult('tout', res.returnData[i++])[0],
-    );
-    const ilks = vatInterface.decodeFunctionResult('ilks', res.returnData[i++]);
-    const Art = bigIntify(ilks.Art);
-    const line = bigIntify(ilks.line);
-    const rate = bigIntify(ilks.rate);
-    return {
-      tin,
-      tout,
-      Art,
-      line,
-      rate,
-    };
-  });
+  return {
+    blockNumber: _blockNumber,
+    state: poolConfigs.map(c => {
+      const tin = bigIntify(
+        psmInterface.decodeFunctionResult('tin', res[i++].returnData)[0],
+      );
+      const tout = bigIntify(
+        psmInterface.decodeFunctionResult('tout', res[i++].returnData)[0],
+      );
+      const ilks = vatInterface.decodeFunctionResult(
+        'ilks',
+        res[i++].returnData,
+      );
+      const Art = bigIntify(ilks.Art);
+      const line = bigIntify(ilks.line);
+      const rate = bigIntify(ilks.rate);
+      return {
+        tin,
+        tout,
+        Art,
+        line,
+        rate,
+      };
+    }),
+  };
 }
 
 export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
@@ -178,20 +187,18 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ): Promise<StateWithBlock<PoolState>> {
-    const state = (
-      await getOnChainState(
-        this.dexHelper.multiContract,
-        [this.poolConfig],
-        this.vatAddress,
-        blockNumber,
-      )
-    )[0];
+    const { blockNumber: _blockNumber, state } = await getOnChainState(
+      this.dexHelper.multiContract,
+      [this.poolConfig],
+      this.vatAddress,
+      blockNumber,
+    );
 
     return {
-      blockNumber,
-      state,
+      blockNumber: _blockNumber,
+      state: state[0],
     };
   }
 }
@@ -233,20 +240,21 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     );
   }
 
-  async initializePricing(blockNumber: number) {
-    const poolStates = await getOnChainState(
-      this.dexHelper.multiContract,
-      this.poolConfigs,
-      this.vatAddress,
-      blockNumber,
-    );
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
+    const { blockNumber: _blockNumber, state: poolStates } =
+      await getOnChainState(
+        this.dexHelper.multiContract,
+        this.poolConfigs,
+        this.vatAddress,
+        blockNumber,
+      );
     await Promise.all(
       this.poolConfigs.map(async (p, i) => {
         const eventPool = this.eventPools[p.gem.address.toLowerCase()];
-        await eventPool.initialize(blockNumber, {
+        await eventPool.initialize(_blockNumber, {
           stateWithBn: {
             state: poolStates[i],
-            blockNumber,
+            blockNumber: _blockNumber,
           },
         });
       }),
@@ -537,7 +545,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       : [];
     if (!validPoolConfigs.length) return [];
 
-    const poolStates = await getOnChainState(
+    const { state: poolStates } = await getOnChainState(
       this.dexHelper.multiContract,
       validPoolConfigs,
       this.vatAddress,

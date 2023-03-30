@@ -81,7 +81,7 @@ export class BalancerV1
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(_blockNumber: number) {
+  async initializePricing(_blockNumber: number | 'latest' = 'latest') {
     this.poolsInfo = await this.dexHelper.httpRequest.get<PoolsInfo>(
       this.config.poolsURL,
       POOLS_FETCH_TIMEOUT,

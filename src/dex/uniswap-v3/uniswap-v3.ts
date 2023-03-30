@@ -110,7 +110,7 @@ export class UniswapV3
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
-    // Normalise once all config addresses and use across all scenarios
+    // Normalize once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
     this.notExistingPoolSetKey =
@@ -130,7 +130,7 @@ export class UniswapV3
     return `${this.dexKey}_${tokenAddresses}_${fee}`;
   }
 
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     // This is only for testing, because cold pool fetching is goes out of
     // FETCH_POOL_INDENTIFIER_TIMEOUT range
     await Promise.all(
@@ -165,7 +165,7 @@ export class UniswapV3
     srcAddress: Address,
     destAddress: Address,
     fee: bigint,
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ): Promise<UniswapV3EventPool | null> {
     let pool =
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
