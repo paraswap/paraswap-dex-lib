@@ -1,5 +1,5 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import _, { result } from 'lodash';
+import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
 import {
