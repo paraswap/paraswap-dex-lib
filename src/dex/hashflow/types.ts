@@ -1,4 +1,5 @@
 import { QuoteData } from '@hashflow/taker-js/dist/types/common';
+import { RequestHeaders } from '../../dex-helper';
 
 export type HashflowData = {
   mm: string;
@@ -25,8 +26,39 @@ export enum RFQType {
 
 export class SlippageCheckError extends Error {}
 
-export type HashflowRatesResponse = {};
+export type HashflowRatesLevel = {
+  pair: Record<string, string>;
+  levels: Array<Record<string, string>>;
+  includesFees: boolean;
+};
+
+export type HashflowMarketMakersResponse = {
+  marketMakers: string[];
+};
+
+export type HashflowRatesResponse = {
+  status: string;
+  networkId: string;
+  levels: Record<string, Array<HashflowRatesLevel>>
+};
 
 export type HashflowRateFetcherConfig = {
-  rateConfig: { reqParams: {}; intervalMs: number };
+  rateConfig: {
+    marketMakersReqParams: {
+      url: string;
+      headers?: RequestHeaders;
+      params?: any;
+    }
+    pricesReqParams: {
+      url: string;
+      headers?: RequestHeaders;
+      params?: any;
+    },
+    intervalMs: number;
+    filterMarketMakers: (makers: string[]) => Promise<string[]>;
+    pricesCacheKey: string;
+    marketMakersCacheKey: string;
+    pricesCacheTTLSecs: number;
+    marketMakersCacheTTLSecs: number;
+  },
 };

@@ -7,6 +7,7 @@ const FETCH_FAIL_MAX_ATTEMPT = 5;
 const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 
 export type RequestInfo<T> = {
+  requestFunc?: (options: RequestConfig) => Promise<Response<T>>;
   requestOptions: RequestConfig;
   caster: (data: unknown) => T;
   authenticate?: (options: RequestConfig) => RequestConfig;
@@ -56,15 +57,25 @@ export default class Fetcher<T> {
       async (reqInfo: RequestInfoWithHandler<T>) => {
         const info = reqInfo.info;
         let options = info.requestOptions;
+
         if (info.authenticate) {
           info.authenticate(options);
         }
 
         try {
-          const result = await this.requestWrapper.request({
-            timeout: FETCH_TIMEOUT_MS,
-            ...options,
-          });
+          let result;
+          if(info.requestFunc) {
+            result = await info.requestFunc({
+              timeout: FETCH_TIMEOUT_MS,
+              ...options,
+            });
+          } else {
+            result = await this.requestWrapper.request({
+              timeout: FETCH_TIMEOUT_MS,
+              ...options,
+            });
+          }
+
           return result;
         } catch (e) {
           return e as Error;
