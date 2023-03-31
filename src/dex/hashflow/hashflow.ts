@@ -99,8 +99,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       this.hashFlowAuthToken,
     );
 
-    this.pricesCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_prices`;
-    this.marketMakersCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_mms`;
+    this.pricesCacheKey = `${CACHE_PREFIX}_${this.dexHelper.config.data.network}_${this.dexKey}_prices`;
+    this.marketMakersCacheKey = `${CACHE_PREFIX}_${this.dexHelper.config.data.network}_${this.dexKey}_mms`;
 
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
     this.runtimeMMsRestrictHashMapKey =
