@@ -61,7 +61,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
   private api: HashflowApi;
-  private rateFetcher: RateFetcher | undefined;
+  private rateFetcher: RateFetcher;
 
   private hashFlowAuthToken: string;
   private disabledMMs: Set<string>;
@@ -105,49 +105,50 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
     this.runtimeMMsRestrictHashMapKey =
       `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
+
+    this.rateFetcher = new RateFetcher(
+      this.dexHelper,
+      this.dexKey,
+      this.network,
+      this.logger,
+      {
+        rateConfig: {
+          pricesIntervalMs: HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
+          markerMakersIntervalMs:
+          HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
+          marketMakersReqParams: {
+            url: `${HASHFLOW_API_URL}/taker/v1/marketMakers`,
+            params: {
+              networkId: this.network,
+              source: HASHFLOW_API_CLIENT_NAME,
+            },
+            headers: { Authorization: this.hashFlowAuthToken },
+          },
+          pricesReqParams: {
+            url: `${HASHFLOW_API_URL}/taker/v2/price-levels`,
+            params: {
+              networkId: this.network,
+              source: HASHFLOW_API_CLIENT_NAME,
+              marketMakers: [],
+            },
+            headers: { Authorization: this.hashFlowAuthToken },
+          },
+          getCachedMarketMakers: this.getCachedMarketMakers.bind(this),
+          filterMarketMakers: this.getFilteredMarketMakers.bind(this),
+          pricesCacheKey: this.pricesCacheKey,
+          pricesCacheTTLSecs: HASHFLOW_PRICES_CACHES_TTL_S,
+          marketMakersCacheKey: this.marketMakersCacheKey,
+          marketMakersCacheTTLSecs: HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
+        },
+      },
+    );
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
     if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher = new RateFetcher(
-        this.dexHelper,
-        this.dexKey,
-        this.network,
-        this.logger,
-        {
-          rateConfig: {
-            pricesIntervalMs: HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
-            markerMakersIntervalMs:
-              HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
-            marketMakersReqParams: {
-              url: `${HASHFLOW_API_URL}/taker/v1/marketMakers`,
-              params: {
-                networkId: this.network,
-                source: HASHFLOW_API_CLIENT_NAME,
-              },
-              headers: { Authorization: this.hashFlowAuthToken },
-            },
-            pricesReqParams: {
-              url: `${HASHFLOW_API_URL}/taker/v2/price-levels`,
-              params: {
-                networkId: this.network,
-                source: HASHFLOW_API_CLIENT_NAME,
-                marketMakers: [],
-              },
-              headers: { Authorization: this.hashFlowAuthToken },
-            },
-            getCachedMarketMakers: this.getCachedMarketMakers.bind(this),
-            filterMarketMakers: this.getFilteredMarketMakers.bind(this),
-            pricesCacheKey: this.pricesCacheKey,
-            pricesCacheTTLSecs: HASHFLOW_PRICES_CACHES_TTL_S,
-            marketMakersCacheKey: this.marketMakersCacheKey,
-            marketMakersCacheTTLSecs: HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
-          },
-        },
-      );
-
       this.rateFetcher.start();
     }
+
     return;
   }
 

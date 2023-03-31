@@ -92,7 +92,9 @@ export default class Fetcher<T> {
       if(!(result instanceof Error)) {
         this.logger.info(
           'Results Data:',
-          JSON.stringify((result as any).data, null, 4).substring(0, 500),
+          JSON.stringify((result as any).data)
+            .replace(/(?:\r\n|\r|\n)/g, ' ')
+            .substring(0, 1000),
         );
       }
     });
