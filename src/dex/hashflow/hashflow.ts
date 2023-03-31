@@ -18,7 +18,7 @@ import {
   CACHE_PREFIX,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork, Utils } from '../../utils';
+import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -29,10 +29,7 @@ import {
   SlippageCheckError,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import {
-  Adapters,
-  HashflowConfig
-} from './config';
+import { Adapters, HashflowConfig } from './config';
 import { HashflowApi } from '@hashflow/taker-js';
 import { RateFetcher } from './rate-fetcher';
 import routerAbi from '../../abi/hashflow/HashflowRouter.abi.json';
@@ -51,10 +48,10 @@ import {
   HASHFLOW_MM_RESTRICT_TTL_S,
   HASHFLOW_API_CLIENT_NAME,
   HASHFLOW_API_URL,
-  HASHFLOW_API_POLLING_INTERVAL_MS,
+  HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
+  HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
   HASHFLOW_PRICES_CACHES_TTL_S,
   HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
-  HASHFLOW_ASYNC_CALL_TIMEOUT,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
@@ -96,7 +93,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     );
 
     this.hashFlowAuthToken = token;
-    this.api = new HashflowApi('taker', HASHFLOW_API_CLIENT_NAME, this.hashFlowAuthToken);
+    this.api = new HashflowApi(
+      'taker',
+      HASHFLOW_API_CLIENT_NAME,
+      this.hashFlowAuthToken,
+    );
 
     this.pricesCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_prices`;
     this.marketMakersCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_mms`;
@@ -108,26 +109,42 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   async initializePricing(blockNumber: number): Promise<void> {
     if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher = new RateFetcher(this.dexHelper, this.dexKey, this.network, this.logger, {
-        rateConfig: {
-          intervalMs: HASHFLOW_API_POLLING_INTERVAL_MS,
-          marketMakersReqParams: {
-            url: `${HASHFLOW_API_URL}/taker/v1/marketMakers`,
-            params: { networkId: this.network, source: HASHFLOW_API_CLIENT_NAME },
-            headers: { Authorization: this.hashFlowAuthToken },
+      this.rateFetcher = new RateFetcher(
+        this.dexHelper,
+        this.dexKey,
+        this.network,
+        this.logger,
+        {
+          rateConfig: {
+            pricesIntervalMs: HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
+            markerMakersIntervalMs:
+              HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
+            marketMakersReqParams: {
+              url: `${HASHFLOW_API_URL}/taker/v1/marketMakers`,
+              params: {
+                networkId: this.network,
+                source: HASHFLOW_API_CLIENT_NAME,
+              },
+              headers: { Authorization: this.hashFlowAuthToken },
+            },
+            pricesReqParams: {
+              url: `${HASHFLOW_API_URL}/taker/v2/price-levels`,
+              params: {
+                networkId: this.network,
+                source: HASHFLOW_API_CLIENT_NAME,
+                marketMakers: [],
+              },
+              headers: { Authorization: this.hashFlowAuthToken },
+            },
+            getCachedMarketMakers: this.getCachedMarketMakers.bind(this),
+            filterMarketMakers: this.getFilteredMarketMakers.bind(this),
+            pricesCacheKey: this.pricesCacheKey,
+            pricesCacheTTLSecs: HASHFLOW_PRICES_CACHES_TTL_S,
+            marketMakersCacheKey: this.marketMakersCacheKey,
+            marketMakersCacheTTLSecs: HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
           },
-          pricesReqParams: {
-            url: `${HASHFLOW_API_URL}/taker/v2/price-levels`,
-            params: { networkId: this.network, source: HASHFLOW_API_CLIENT_NAME, marketMakers: [] },
-            headers: { Authorization: this.hashFlowAuthToken },
-          },
-          filterMarketMakers: this.getFilteredMarketMakers.bind(this),
-          pricesCacheKey: this.pricesCacheKey,
-          pricesCacheTTLSecs: HASHFLOW_PRICES_CACHES_TTL_S,
-          marketMakersCacheKey: this.marketMakersCacheKey,
-          marketMakersCacheTTLSecs: HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
         },
-      });
+      );
 
       this.rateFetcher.start();
     }
@@ -168,7 +185,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return [];
     }
 
-    const levels = await this.getLevelsWithCache();
+    const levels = (await this.getCachedLevels()) || {};
     const makers = Object.keys(levels);
 
     return makers
@@ -190,7 +207,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   private async getFilteredMarketMakers(makers: string[]): Promise<string[]> {
-    const cachedRestrictionUnparsed = await this.dexHelper.cache.hgetAll(this.runtimeMMsRestrictHashMapKey);
+    const cachedRestrictionUnparsed = await this.dexHelper.cache.hgetAll(
+      this.runtimeMMsRestrictHashMapKey,
+    );
 
     const runtimeRestrictedMMs = this.parseCacheRestrictionAndExpiryIfNeeded(
       cachedRestrictionUnparsed,
@@ -354,24 +373,30 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return undefined;
   }
 
-  async getMarketMakers(): Promise<MarketMakersResponse['marketMakers']> {
-    const cachedMarketMakers = await this.dexHelper.cache.rawget(this.marketMakersCacheKey);
+  async getCachedMarketMakers(): Promise<
+    MarketMakersResponse['marketMakers'] | null
+  > {
+    const cachedMarketMakers = await this.dexHelper.cache.rawget(
+      this.marketMakersCacheKey,
+    );
 
-    if(cachedMarketMakers) {
-      return JSON.parse(cachedMarketMakers) as MarketMakersResponse['marketMakers'];
+    if (cachedMarketMakers) {
+      return JSON.parse(
+        cachedMarketMakers,
+      ) as MarketMakersResponse['marketMakers'];
     }
 
-    return [];
+    return null;
   }
 
-  async getLevelsWithCache(): Promise<PriceLevelsResponse['levels']> {
+  async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
     const cachedLevels = await this.dexHelper.cache.rawget(this.pricesCacheKey);
 
-    if(cachedLevels) {
+    if (cachedLevels) {
       return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
     }
 
-    return {};
+    return null;
   }
 
   // Hashflow protocol for native token expects 0x00000... instead of 0xeeeee...
@@ -411,7 +436,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
 
-    const levelsMap = await this.getLevelsWithCache();
+    const levelsMap = (await this.getCachedLevels()) || {};
 
     Object.keys(levelsMap).forEach(mmKey => {
       if (!marketMakersToUse.includes(mmKey)) {
@@ -516,23 +541,19 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     let rfq: RfqResponse;
     try {
-      rfq = await Utils.timeoutPromise(
-        this.api.requestQuote({
-          chainId,
-          baseToken: normalizedSrcToken.address,
-          quoteToken: normalizedDestToken.address,
-          ...(side === SwapSide.SELL
-            ? {
-                baseTokenAmount: optimalSwapExchange.srcAmount,
-              }
-            : { quoteTokenAmount: optimalSwapExchange.destAmount }),
-          wallet: this.augustusAddress.toLowerCase(),
-          effectiveTrader: options.txOrigin.toLowerCase(),
-          marketMakers: [mm],
-        }),
-        HASHFLOW_ASYNC_CALL_TIMEOUT,
-        'Hashflow: requestQuote timeout',
-      );
+      rfq = await this.api.requestQuote({
+        chainId,
+        baseToken: normalizedSrcToken.address,
+        quoteToken: normalizedDestToken.address,
+        ...(side === SwapSide.SELL
+          ? {
+              baseTokenAmount: optimalSwapExchange.srcAmount,
+            }
+          : { quoteTokenAmount: optimalSwapExchange.destAmount }),
+        wallet: this.augustusAddress.toLowerCase(),
+        effectiveTrader: options.txOrigin.toLowerCase(),
+        marketMakers: [mm],
+      });
 
       if (rfq.status !== 'success') {
         const message = `${this.dexKey}-${
@@ -846,9 +867,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<PoolLiquidity[]> {
     const _tokenAddress = tokenAddress.toLowerCase();
 
-    const makers = await this.getMarketMakers();
+    const makers = (await this.getCachedMarketMakers()) || [];
     const filteredMakers = await this.getFilteredMarketMakers(makers);
-    const pLevels = await this.getLevelsWithCache();
+    const pLevels = (await this.getCachedLevels()) || {};
 
     let baseToken: Token | undefined = undefined;
     // TODO: Improve efficiency of this part. Quite inefficient way to determine
@@ -904,7 +925,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   releaseResources(): void {
-    if(this.rateFetcher) {
+    if (this.rateFetcher) {
       this.rateFetcher.stop();
     }
   }

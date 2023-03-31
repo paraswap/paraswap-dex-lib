@@ -39,7 +39,7 @@ export type HashflowMarketMakersResponse = {
 export type HashflowRatesResponse = {
   status: string;
   networkId: string;
-  levels: Record<string, Array<HashflowRatesLevel>>
+  levels: Record<string, Array<HashflowRatesLevel>>;
 };
 
 export type HashflowRateFetcherConfig = {
@@ -48,17 +48,19 @@ export type HashflowRateFetcherConfig = {
       url: string;
       headers?: RequestHeaders;
       params?: any;
-    }
+    };
     pricesReqParams: {
       url: string;
       headers?: RequestHeaders;
       params?: any;
-    },
-    intervalMs: number;
+    };
+    pricesIntervalMs: number;
+    markerMakersIntervalMs: number;
+    getCachedMarketMakers: () => Promise<string[] | null>;
     filterMarketMakers: (makers: string[]) => Promise<string[]>;
     pricesCacheKey: string;
     marketMakersCacheKey: string;
     pricesCacheTTLSecs: number;
     marketMakersCacheTTLSecs: number;
-  },
+  };
 };
