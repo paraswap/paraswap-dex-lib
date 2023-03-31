@@ -8,7 +8,7 @@ const FETCH_FAIL_MAX_ATTEMPT = 5;
 const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 
 export type RequestInfo<T> = {
-  requestFunc?: (options: RequestConfig) => Promise<Response<T>>;
+  requestFunc?: (options: RequestConfig) => Promise<any>;
   requestOptions: RequestConfig;
   caster: (data: unknown) => T;
   authenticate?: (options: RequestConfig) => RequestConfig;

@@ -62,12 +62,10 @@ export class RateFetcher {
             const filteredMarketMakers = await filterMarketMakers(
               cachedMarketMakers,
             );
+
             if (filteredMarketMakers.length === 0) {
-              return Promise.reject(
-                new Error(
-                  `${dexKey}-${network}: got ${filteredMarketMakers.length} market makers. Skipping pricing request.`,
-                ),
-              );
+              logger.warn(`${dexKey}-${network}: got ${filteredMarketMakers.length} market makers. Skipping pricing request.`)
+              return;
             }
 
             const prices = await dexHelper.httpRequest.request({
