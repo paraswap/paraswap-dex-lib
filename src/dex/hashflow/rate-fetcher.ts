@@ -1,5 +1,5 @@
 import { IDexHelper } from '../../dex-helper';
-import Fetcher from '../../lib/fetcher/fetcher';
+import { Fetcher, SkippingRequest } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
 import { Logger } from '../../types';
 import {
@@ -64,8 +64,9 @@ export class RateFetcher {
             );
 
             if (filteredMarketMakers.length === 0) {
-              logger.warn(`${dexKey}-${network}: got ${filteredMarketMakers.length} market makers. Skipping pricing request.`)
-              return;
+              return new SkippingRequest(
+                `${dexKey}-${network}: got ${filteredMarketMakers.length} market makers.`,
+              );
             }
 
             const prices = await dexHelper.httpRequest.request({

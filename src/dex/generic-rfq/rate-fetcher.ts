@@ -3,7 +3,7 @@ import { SwapSide } from '@paraswap/core';
 import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
-import Fetcher from '../../lib/fetcher/fetcher';
+import { Fetcher } from '../../lib/fetcher/fetcher';
 
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';

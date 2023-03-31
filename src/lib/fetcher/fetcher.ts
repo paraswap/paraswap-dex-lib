@@ -7,8 +7,14 @@ const FETCH_TIMEOUT_MS = 10 * 1000;
 const FETCH_FAIL_MAX_ATTEMPT = 5;
 const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 
+export class SkippingRequest {
+  constructor(
+    public message = '',
+  ) {}
+};
+
 export type RequestInfo<T> = {
-  requestFunc?: (options: RequestConfig) => Promise<any>;
+  requestFunc?: (options: RequestConfig) => Promise<Response<T> | SkippingRequest>;
   requestOptions: RequestConfig;
   caster: (data: unknown) => T;
   authenticate?: (options: RequestConfig) => RequestConfig;
@@ -20,7 +26,7 @@ export type RequestInfoWithHandler<T> = {
   handler: (data: T) => void;
 };
 
-export default class Fetcher<T> {
+export class Fetcher<T> {
   private requests: RequestInfoWithHandler<T>[];
   public lastFetchSucceeded: boolean = false;
   private failedCount = 0;
@@ -54,7 +60,7 @@ export default class Fetcher<T> {
       return;
     }
 
-    const promises = this.requests.map<Promise<Error | Response<T>>>(
+    const promises = this.requests.map<Promise<Error | Response<T> | SkippingRequest>>(
       async (reqInfo: RequestInfoWithHandler<T>) => {
         const info = reqInfo.info;
         let options = info.requestOptions;
@@ -88,8 +94,12 @@ export default class Fetcher<T> {
       .map((_, i) => i)
       .filter(i => results[i] instanceof Error);
 
+    const skipped = results
+      .map((_, i) => i)
+      .filter(i => results[i] instanceof SkippingRequest);
+
     results.map(result => {
-      if(!(result instanceof Error)) {
+      if(!(result instanceof Error || result instanceof SkippingRequest)) {
         this.logger.info(
           'Results Data:',
           JSON.stringify((result as any).data)
@@ -98,6 +108,14 @@ export default class Fetcher<T> {
         );
       }
     });
+
+    skipped.forEach(i => {
+      const skippedRes = results[i] as SkippingRequest;
+      this.logger.warn(
+        `skipped request ${this.requests[i].info.requestOptions.url} ${skippedRes.message}`,
+      );
+    });
+
     failures.forEach(i => {
       this.logger.warn(
         `failed polling ${this.requests[i].info.requestOptions.url} ${results[i]}`,
@@ -113,7 +131,7 @@ export default class Fetcher<T> {
 
     results
       .map((_, i) => i)
-      .filter(i => !(results[i] instanceof Error))
+      .filter(i => !(results[i] instanceof Error || results[i] instanceof SkippingRequest))
       .forEach(i => {
         const response = results[i] as Response<T>;
         const reqInfo = this.requests[i];
