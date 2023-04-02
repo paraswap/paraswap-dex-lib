@@ -32,7 +32,6 @@ import {
 } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
-import { url } from 'inspector';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -211,7 +210,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       );
 
       return {
-        gasCost: 100, //* 1000, // estimated fees
+        gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,
         data: { maker } as AirswapData,
         prices,
@@ -459,7 +458,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         makers.length > 0
           ? await Promise.allSettled(
               makers.map(maker => {
-                console.log('maker: ', maker);
                 return makeRFQ(
                   maker,
                   this.augustusAddress.toLocaleLowerCase(),

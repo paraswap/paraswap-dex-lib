@@ -263,11 +263,12 @@ export async function makeRFQ(
     srcToken.address,
     senderWallet,
   );
-  // console.log('[AIRSWAP]', 'getTx', {
-  //   swapContract,
-  //   senderWallet,
-  //   maker: host,
-  //   signedOrder: response,
-  // });
+  console.log('[AIRSWAP]', 'getTx', {
+    //@ts-ignore
+    swapContract: maker.swapContract,
+    senderWallet,
+    maker: maker.locator,
+    signedOrder: response,
+  });
   return Promise.resolve({ maker: maker.locator, signedOrder: response });
 }
