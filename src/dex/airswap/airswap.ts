@@ -180,7 +180,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     // get pricing to corresponding pair token for each maker
     const levelRequests = marketMakersUris.map(url => ({
       maker: url,
-      levels: [{ level: '1', price: '1' }], //maker.getPricing(url, srcToken, destToken),
+      levels: [{ level: '1', price: '1' }], //maker.getPricing(url, srcToken, destToken), @TODO
     }));
     const levels = await Promise.all(levelRequests);
 
@@ -211,7 +211,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       );
 
       return {
-        gasCost: 100 * 1000, // estimated fees
+        gasCost: 100, //* 1000, // estimated fees
         exchange: this.dexKey,
         data: { maker } as AirswapData,
         prices,
@@ -459,6 +459,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         makers.length > 0
           ? await Promise.allSettled(
               makers.map(maker => {
+                console.log('maker: ', maker);
                 return makeRFQ(
                   maker,
                   this.augustusAddress.toLocaleLowerCase(),

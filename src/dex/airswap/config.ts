@@ -5,7 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const AirSwapConfig: DexConfigMap<DexParams> = {
   AirSwap: {
     [Network.MAINNET]: {
-      swap: '0x522d6f36c95a1b6509a14272c17747bbb582f2a6',
+      swap: '0xd82FA167727a4dc6D6F55830A2c47aBbB4b3a0F8',
       makerRegistry: '0x8F9DA6d38939411340b19401E8c54Ea1f51B8f95',
     },
     [Network.BSC]: {
