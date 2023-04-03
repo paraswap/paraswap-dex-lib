@@ -79,7 +79,6 @@ export default class Fetcher<T> {
     results
       .filter(result => !(result instanceof Error))
       .map(result => {
-        debugger;
         this.logger.info(
           'Results Data:',
           JSON.stringify((result as any).data)
