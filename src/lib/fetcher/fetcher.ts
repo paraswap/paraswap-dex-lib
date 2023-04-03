@@ -71,7 +71,7 @@ export class Fetcher<T> {
 
         try {
           let result;
-          if (info.requestFunc && isFunction(info.requestFunc)) {
+          if (isFunction(info.requestFunc)) {
             result = await info.requestFunc({
               timeout: FETCH_TIMEOUT_MS,
               ...options,
