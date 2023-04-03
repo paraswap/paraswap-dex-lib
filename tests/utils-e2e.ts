@@ -30,6 +30,7 @@ import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import { GIFTER_ADDRESS } from './constants-e2e';
 import { sleep } from './utils';
+import { assert } from 'ts-essentials';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -345,7 +346,11 @@ export async function newTestE2E({
   }
 
   if (useTenderly && adapterBytecode) {
-    const deployTx = await (ts as TenderlySimulation).simulate(
+    assert(
+      ts instanceof TenderlySimulation,
+      '`ts`  is not an instance of TenderlySimulation',
+    );
+    const deployTx = await ts.simulate(
       deployAdapterParams(adapterBytecode, network),
     );
 
@@ -360,30 +365,39 @@ export async function newTestE2E({
       'gas',
     );
 
-    const whitelistTx = await (ts as TenderlySimulation).simulate(
+    const whitelistTx = await ts.simulate(
       whiteListAdapterParams(adapterAddress, network),
     );
     expect(whitelistTx.success).toEqual(true);
   }
 
   if (useTenderly && thirdPartyAddress) {
+    assert(
+      destToken instanceof SmartToken,
+      '`destToken` is not an instance of SmartToken',
+    );
+    assert(
+      ts instanceof TenderlySimulation,
+      '`ts` is not an instance of TenderlySimulation',
+    );
+
     const stateOverrides: StateOverrides = {
       networkID: `${network}`,
       stateOverrides: {},
     };
 
-    (destToken as SmartToken).addBalance(GIFTER_ADDRESS, MAX_UINT);
-    (destToken as SmartToken).applyOverrides(stateOverrides);
+    destToken.addBalance(GIFTER_ADDRESS, MAX_UINT);
+    destToken.applyOverrides(stateOverrides);
 
     const giftTx = makeFakeTransferToSenderAddress(
       thirdPartyAddress,
-      (destToken as SmartToken).token,
+      destToken.token,
       swapSide === SwapSide.SELL
         ? twiceAmount.toString()
         : (BigInt(MAX_UINT) / 4n).toString(),
     );
 
-    await (ts as TenderlySimulation).simulate(giftTx, stateOverrides);
+    await ts.simulate(giftTx, stateOverrides);
   }
 
   const useAPI = testingEndpoint && !poolIdentifiers;
@@ -428,15 +442,28 @@ export async function newTestE2E({
     );
 
     if (useTenderly) {
+      assert(
+        srcToken instanceof SmartToken,
+        '`srcToken` is not an instance of SmartToken',
+      );
+      assert(
+        destToken instanceof SmartToken,
+        '`destToken` is not an instance of SmartToken',
+      );
+      assert(
+        ts instanceof TenderlySimulation,
+        '`ts` is not an instance of TenderlySimulation',
+      );
+
       const stateOverrides: StateOverrides = {
         networkID: `${network}`,
         stateOverrides: {},
       };
-      (srcToken as SmartToken).applyOverrides(stateOverrides);
-      (destToken as SmartToken).applyOverrides(stateOverrides);
+      srcToken.applyOverrides(stateOverrides);
+      destToken.applyOverrides(stateOverrides);
 
       if (swapSide === SwapSide.SELL) {
-        (srcToken as SmartToken)
+        srcToken
           .addBalance(senderAddress, twiceAmount.toString())
           .addAllowance(
             senderAddress,
@@ -444,7 +471,7 @@ export async function newTestE2E({
             amount.toString(),
           );
       } else {
-        (srcToken as SmartToken)
+        srcToken
           .addBalance(senderAddress, MAX_UINT)
           .addAllowance(
             senderAddress,
@@ -453,13 +480,10 @@ export async function newTestE2E({
           );
       }
 
-      (srcToken as SmartToken).applyOverrides(stateOverrides);
-      (destToken as SmartToken).applyOverrides(stateOverrides);
+      srcToken.applyOverrides(stateOverrides);
+      destToken.applyOverrides(stateOverrides);
 
-      const swapTx = await (ts as TenderlySimulation).simulate(
-        swapParams,
-        stateOverrides,
-      );
+      const swapTx = await ts.simulate(swapParams, stateOverrides);
       console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
       // Only log gas estimate if testing against API
       if (useAPI)
