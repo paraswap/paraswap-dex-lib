@@ -117,11 +117,4 @@ export class RateFetcher {
       this.pricesCacheTTL,
     );
   }
-
-  checkHealth(): boolean {
-    return (
-      this.marketMakersFetcher.lastFetchSucceeded &&
-      this.rateFetcher.lastFetchSucceeded
-    );
-  }
 }
