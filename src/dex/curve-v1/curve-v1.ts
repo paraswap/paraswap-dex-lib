@@ -503,7 +503,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
     let fromIndex = curveIndexes[0];
     let toIndex = curveIndexes[1];
-    let isTokenSwap = curveIndexes[2] == 1;
+    let isTokenSwap = curveIndexes[2] === 1;
 
     let pool = this.getPoolByAddress(exchange);
     if (!pool) {
