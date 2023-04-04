@@ -62,6 +62,7 @@ import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
+import { NomiswapV3 } from './nomiswap-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -83,6 +84,7 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
+  NomiswapV3,
 ];
 
 const Dexes = [
