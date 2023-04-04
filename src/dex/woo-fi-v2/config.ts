@@ -15,12 +15,12 @@ export const WooFiV2Config: DexConfigMap<DexParams> = {
       },
     },
     [Network.BSC]: {
-      wooPPV2Address: '0xEc054126922a9a1918435c9072c32f1B60cB2B90',
-      wooOracleV2Address: '0x747f99D619D5612399010Ec5706F13e3345c4a9E',
-      integrationHelperAddress: '0xe12dC1F01ccB71ef00ADd1D8A5116b905261D879',
-      // BUSD
+      wooPPV2Address: '0x59dE3B49314Bf5067719364A2Cb43e8525ab93FA',
+      wooOracleV2Address: '0x4B11B9BfAafA840c436a1ddDc13D3738C8ebfD62',
+      integrationHelperAddress: '0xAA9c15cd603428cA8ddD45e933F8EfE3Afbcc173',
+      // USDT
       quoteToken: {
-        address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+        address: '0x55d398326f99059fF775485246999027B3197955',
         decimals: 18,
       },
     },
