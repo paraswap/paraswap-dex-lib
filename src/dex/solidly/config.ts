@@ -86,6 +86,19 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0, // variable
     },
   },
+  Glacier: {
+    [Network.AVALANCHE]: {
+      subgraphURL: '',
+      factoryAddress: '0xaC7B7EaC8310170109301034b8FdB75eCa4CC491',
+      router: '0xC5B8Ce3C8C171d506DEb069a6136a351Ee1629DC',
+      initCode:
+        '02ada2a0163cd4f7e0f0c9805f5230716a95b174140e4c84c14883de216cc6a3',
+      stableFee: 2,
+      volatileFee: 20,
+      poolGasCost: 180 * 1000,
+      feeCode: 2, // variable
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -103,5 +116,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 1 }], // glacier
   },
 };
