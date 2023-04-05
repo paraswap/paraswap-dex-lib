@@ -115,7 +115,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         rateConfig: {
           pricesIntervalMs: HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
           markerMakersIntervalMs:
-          HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
+            HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
           marketMakersReqParams: {
             url: `${HASHFLOW_API_URL}/taker/v1/marketMakers`,
             params: {

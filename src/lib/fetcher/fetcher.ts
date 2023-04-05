@@ -8,13 +8,13 @@ const FETCH_FAIL_MAX_ATTEMPT = 5;
 const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 
 export class SkippingRequest {
-  constructor(
-    public message = '',
-  ) {}
-};
+  constructor(public message = '') {}
+}
 
 export type RequestInfo<T> = {
-  requestFunc?: (options: RequestConfig) => Promise<Response<T> | SkippingRequest>;
+  requestFunc?: (
+    options: RequestConfig,
+  ) => Promise<Response<T> | SkippingRequest>;
   requestOptions: RequestConfig;
   caster: (data: unknown) => T;
   authenticate?: (options: RequestConfig) => RequestConfig;
@@ -60,35 +60,35 @@ export class Fetcher<T> {
       return;
     }
 
-    const promises = this.requests.map<Promise<Error | Response<T> | SkippingRequest>>(
-      async (reqInfo: RequestInfoWithHandler<T>) => {
-        const info = reqInfo.info;
-        let options = info.requestOptions;
+    const promises = this.requests.map<
+      Promise<Error | Response<T> | SkippingRequest>
+    >(async (reqInfo: RequestInfoWithHandler<T>) => {
+      const info = reqInfo.info;
+      let options = info.requestOptions;
 
-        if (info.authenticate) {
-          info.authenticate(options);
+      if (info.authenticate) {
+        info.authenticate(options);
+      }
+
+      try {
+        let result;
+        if (isFunction(info.requestFunc)) {
+          result = await info.requestFunc({
+            timeout: FETCH_TIMEOUT_MS,
+            ...options,
+          });
+        } else {
+          result = await this.requestWrapper.request({
+            timeout: FETCH_TIMEOUT_MS,
+            ...options,
+          });
         }
 
-        try {
-          let result;
-          if (isFunction(info.requestFunc)) {
-            result = await info.requestFunc({
-              timeout: FETCH_TIMEOUT_MS,
-              ...options,
-            });
-          } else {
-            result = await this.requestWrapper.request({
-              timeout: FETCH_TIMEOUT_MS,
-              ...options,
-            });
-          }
-
-          return result;
-        } catch (e) {
-          return e as Error;
-        }
-      },
-    );
+        return result;
+      } catch (e) {
+        return e as Error;
+      }
+    });
     const results = await Promise.all(promises);
     const failures = results
       .map((_, i) => i)
@@ -99,7 +99,7 @@ export class Fetcher<T> {
       .filter(i => results[i] instanceof SkippingRequest);
 
     results.map(result => {
-      if(!(result instanceof Error || result instanceof SkippingRequest)) {
+      if (!(result instanceof Error || result instanceof SkippingRequest)) {
         this.logger.info(
           'Results Data:',
           JSON.stringify((result as any).data)
@@ -131,7 +131,12 @@ export class Fetcher<T> {
 
     results
       .map((_, i) => i)
-      .filter(i => !(results[i] instanceof Error || results[i] instanceof SkippingRequest))
+      .filter(
+        i =>
+          !(
+            results[i] instanceof Error || results[i] instanceof SkippingRequest
+          ),
+      )
       .forEach(i => {
         const response = results[i] as Response<T>;
         const reqInfo = this.requests[i];
@@ -143,10 +148,10 @@ export class Fetcher<T> {
           const parsedData = info.caster(response.data);
           reqInfo.handler(parsedData);
         } catch (e) {
-          this.logger.debug(
+          this.logger.info(
             `(${options.url}) received incorrect data ${JSON.stringify(
               response.data,
-            )}`,
+            ).replace(/(?:\r\n|\r|\n)/g, ' ')}`,
             e,
           );
           return;
