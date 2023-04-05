@@ -402,13 +402,17 @@ export class RateFetcher {
         this.firmRateAuth(payload);
         delete payload.secret;
       }
-
-      this.logger.info('FirmRate Request:', payload);
+      this.logger.info(
+        'FirmRate Request:',
+        JSON.stringify(payload).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
       const { data } = await this.dexHelper.httpRequest.request<unknown>(
         payload,
       );
-      this.logger.info('FirmRate Response: ', data);
-
+      this.logger.info(
+        'FirmRate Response: ',
+        JSON.stringify(data).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
         firmRateResponseValidator,
