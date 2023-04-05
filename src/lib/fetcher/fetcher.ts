@@ -113,10 +113,10 @@ export default class Fetcher<T> {
           const parsedData = info.caster(response.data);
           reqInfo.handler(parsedData);
         } catch (e) {
-          this.logger.debug(
+          this.logger.info(
             `(${options.url}) received incorrect data ${JSON.stringify(
               response.data,
-            )}`,
+            ).replace(/(?:\r\n|\r|\n)/g, ' ')}`,
             e,
           );
           return;
