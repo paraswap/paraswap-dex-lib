@@ -86,6 +86,19 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0, // variable
     },
   },
+  Thena: {
+    [Network.BSC]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/thenaursa/thena-v1',
+      factoryAddress: '0xAFD89d21BdB66d00817d4153E055830B1c2B3970',
+      router: '0xd4ae6eCA985340Dd434D38F470aCCce4DC78D109',
+      initCode:
+        '0x8d3d214c094a9889564f695c3e9fa516dd3b50bc3258207acd7f8b8e6b94fb65',
+      stableFee: 1, // 10000 / 10000 = 1 in BPS
+      volatileFee: 20, // 10000 / 500 = 20 in BPS
+      poolGasCost: 180 * 1000,
+      feeCode: 1,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -99,7 +112,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
   },
   [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // cone
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // thena + cone
   },
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
