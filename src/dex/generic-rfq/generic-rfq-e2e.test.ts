@@ -5,9 +5,15 @@ import { ethers } from 'ethers';
 import { Network, ContractMethod, SwapSide, MAX_UINT } from '../../constants';
 import { generateConfig } from '../../config';
 import { newTestE2E, getEnv } from '../../../tests/utils-e2e';
-import { SmartTokens, GENERIC_ADDR1 } from '../../../tests/constants-e2e';
+import {
+  SmartTokens,
+  GENERIC_ADDR1,
+  Tokens,
+} from '../../../tests/constants-e2e';
 import { RFQConfig } from './types';
 import { testConfig } from './e2e-test-config';
+import { SmartToken } from '../../../tests/smart-tokens';
+import { Token } from '../../types';
 
 const PK_KEY = process.env.TEST_PK_KEY;
 
@@ -85,22 +91,32 @@ const dexKey = 'YOUR_NAME';
 describe(`GenericRFQ ${dexKey} E2E`, () => {
   for (const [_network, testCases] of Object.entries(testConfig)) {
     const network = parseInt(_network, 10);
+    const tokens = Tokens[network];
     const smartTokens = SmartTokens[network];
     const config = generateConfig(network);
 
     config.rfqConfigs[dexKey] = buildConfigForGenericRFQ();
     describe(`${Network[network]}`, () => {
       for (const testCase of testCases) {
-        if (!smartTokens.hasOwnProperty(testCase.srcToken)) {
-          throw new Error(`Please add "addBalance" and "addAllowance" functions for ${testCase.srcToken} on ${Network[network]} (in constants-e2e.ts).`);
-        }
-        if (!smartTokens.hasOwnProperty(testCase.destToken)){ 
-          throw new Error(`Please add "addBalance" and "addAllowance" functions for ${testCase.destToken} on ${Network[network]} (in constants-e2e.ts).`);
-        }
-        const srcToken = smartTokens[testCase.srcToken];
-        const destToken = smartTokens[testCase.destToken];
+        let srcToken: Token | SmartToken, destToken: Token | SmartToken;
 
-        if (!SKIP_TENDERLY) {
+        if (SKIP_TENDERLY) {
+          srcToken = tokens[testCase.srcToken];
+          destToken = tokens[testCase.destToken];
+        } else {
+          if (!smartTokens.hasOwnProperty(testCase.srcToken)) {
+            throw new Error(
+              `Please add "addBalance" and "addAllowance" functions for ${testCase.srcToken} on ${Network[network]} (in constants-e2e.ts).`,
+            );
+          }
+          if (!smartTokens.hasOwnProperty(testCase.destToken)) {
+            throw new Error(
+              `Please add "addBalance" and "addAllowance" functions for ${testCase.destToken} on ${Network[network]} (in constants-e2e.ts).`,
+            );
+          }
+          srcToken = smartTokens[testCase.srcToken];
+          destToken = smartTokens[testCase.destToken];
+
           srcToken.addBalance(testAccount.address, MAX_UINT);
           srcToken.addAllowance(
             testAccount.address,

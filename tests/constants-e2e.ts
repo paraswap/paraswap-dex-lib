@@ -695,6 +695,8 @@ export const Tokens: {
     WETH: {
       address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
       decimals: 18,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
     USDC: {
@@ -704,6 +706,8 @@ export const Tokens: {
     USDT: {
       address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
       decimals: 6,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
     },
     FRAX: {
       address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
