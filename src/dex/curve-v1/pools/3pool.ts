@@ -152,7 +152,7 @@ export class ThreePool extends CurvePool {
 
     let _x: BigNumber = BN_0;
     for (let _i = 0; _i < this.N_COINS; _i++) {
-      if (_i != i) {
+      if (_i !== i) {
         _x = xp[_i];
       } else {
         continue;

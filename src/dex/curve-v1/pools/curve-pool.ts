@@ -6,7 +6,7 @@ import { Address, Log } from '../../../types';
 import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
 import { DeepReadonly } from 'ts-essentials';
 // import { getManyPoolStates } from './getstate-multicall';
-import { BN_0, BN_POWS } from '../../../bignumber-constants';
+import { BN_0, BN_1, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
 import { bigNumberify, catchParseLogError, stringify } from '../../../utils';
@@ -323,7 +323,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     const xp = this._xp(rates, balances);
     const x = xp[i].plus(dx.times(this.PRECISION_MUL[i]));
     const y = this.get_y(i, j, x, xp, A);
-    const dy = xp[j].minus(y).minus(new BigNumber(1)).idiv(this.PRECISION_MUL[j]);
+    const dy = xp[j].minus(y).minus(BN_1).idiv(this.PRECISION_MUL[j]);
     let _fee = fee.times(dy).idiv(this.FEE_DENOMINATOR);
     if (!usefee) _fee = BN_0;
     return dy.minus(_fee);
@@ -360,7 +360,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     const xp = this._xp(rates, balances);
     const x = xp[i].plus(dx.times(rates[i]).idiv(this.PRECISION));
     const y = this.get_y(i, j, x, xp, A);
-    const dy = xp[j].minus(y).minus(new BigNumber(1)).times(this.PRECISION).idiv(rates[j]);
+    const dy = xp[j].minus(y).minus(BN_1).times(this.PRECISION).idiv(rates[j]);
     let _fee = fee.times(dy).idiv(this.FEE_DENOMINATOR);
     if (!usefee) _fee = BN_0;
     return dy.minus(_fee);
