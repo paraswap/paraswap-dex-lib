@@ -27,4 +27,18 @@ export class FullMath {
 
     return result;
   }
+
+  static mulDivRoundingDown(a: bigint, b: bigint, denominator: bigint) {
+    let result = (a * b) / denominator;
+    if ((a * b) % denominator !== 0n) {
+      _require(
+        result < BI_MAX_UINT256,
+        '',
+        { result, BI_MAX_UINT: BI_MAX_UINT256 },
+        'result < BI_MAX_UINT',
+      );
+      result--;
+    }
+    return result;
+  }
 }

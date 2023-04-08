@@ -3,6 +3,10 @@ import { BI_MAX_UINT256 } from '../../../bigint-constants';
 import { _gt } from './utils';
 import { _require } from '../../../utils';
 
+// class TickOutOfBounds extends Error {}
+class PriceOutOfBounds extends Error {}
+class InvalidCPTick extends Error {}
+
 export class TickMath {
   static readonly MIN_TICK = -887272n;
   static readonly MAX_TICK = -TickMath.MIN_TICK;
@@ -70,6 +74,25 @@ export class TickMath {
       160,
       (ratio >> 32n) + (ratio % (1n << 32n) == 0n ? 0n : 1n),
     );
+  }
+
+  static validatePrice(price: bigint, tickSpacing: bigint): void {
+    const MIN_SQRT_RATIO = 4295128739; // Define MIN_SQRT_RATIO constant
+    const MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342; // Define MAX_SQRT_RATIO constant
+    if (price < MIN_SQRT_RATIO || price >= MAX_SQRT_RATIO)
+      throw new PriceOutOfBounds();
+    const tick: bigint = TickMath.getTickAtSqrtRatio(price);
+    if (tick % tickSpacing !== 0n) throw new InvalidCPTick();
+  }
+
+  static validNearestTick(price: bigint, tickSpacing: bigint): bigint {
+    const MIN_SQRT_RATIO = 4295128739; // Define MIN_SQRT_RATIO constant
+    const MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342; // Define MAX_SQRT_RATIO constant
+    if (price < MIN_SQRT_RATIO || price >= MAX_SQRT_RATIO)
+      throw new PriceOutOfBounds();
+    let currentPriceTick: bigint = TickMath.getTickAtSqrtRatio(price);
+    currentPriceTick = currentPriceTick - (currentPriceTick % tickSpacing);
+    return currentPriceTick;
   }
 
   static getTickAtSqrtRatio(sqrtPriceX96: bigint): bigint {
