@@ -965,6 +965,48 @@ describe('UniswapV2 E2E Mainnet', () => {
         );
       });
     });
+
+    describe('Megaswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '50000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
   });
 
   describe('ShibaSwap', () => {
