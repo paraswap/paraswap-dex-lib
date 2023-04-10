@@ -77,7 +77,7 @@ export class SUSDPool extends CurvePool {
     const rates = this.getRates();
 
     const dy: BigNumber = this._exchange(i, j, dx, rates, state);
-    // The constract does the actual transfer here
+    // The contract does the actual transfer here
     return state;
   }
 
