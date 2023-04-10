@@ -330,6 +330,12 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           throw new Error(
             `Error_${this.dexKey} requested unsupported event pool with address ${poolAddress}`,
           );
+
+        const addressesSubscribed = newPool.addressesSubscribed.map((address) => address.toLowerCase());
+        if(!addressesSubscribed.includes(poolAddress)) {
+          newPool.addressesSubscribed.push(poolAddress);
+        }
+
         await newPool.initialize(blockNumber);
         poolsToFetch.push(newPool);
       } else if (!pool.getState(blockNumber)) {
