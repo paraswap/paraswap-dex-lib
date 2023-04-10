@@ -323,7 +323,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     const xp = this._xp(rates, balances);
     const x = xp[i].plus(dx.times(this.PRECISION_MUL[i]));
     const y = this.get_y(i, j, x, xp, A);
-    const dy = xp[j].minus(y).minus(BN_1).idiv(this.PRECISION_MUL[j]);
+    const dy = xp[j].minus(y).idiv(this.PRECISION_MUL[j]);
     let _fee = fee.times(dy).idiv(this.FEE_DENOMINATOR);
     if (!usefee) _fee = BN_0;
     return dy.minus(_fee);
@@ -360,7 +360,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
     const xp = this._xp(rates, balances);
     const x = xp[i].plus(dx.times(rates[i]).idiv(this.PRECISION));
     const y = this.get_y(i, j, x, xp, A);
-    const dy = xp[j].minus(y).minus(BN_1).times(this.PRECISION).idiv(rates[j]);
+    const dy = xp[j].minus(y).times(this.PRECISION).idiv(rates[j]);
     let _fee = fee.times(dy).idiv(this.FEE_DENOMINATOR);
     if (!usefee) _fee = BN_0;
     return dy.minus(_fee);
