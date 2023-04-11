@@ -24,6 +24,7 @@ type BaseConfig = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   uniswapV3EventLoggingSampleRate?: number;
+  pancakeswapV3EventLoggingSampleRate?: number;
   rfqConfigs: Record<string, RFQConfig>;
   rpcPollingMaxAllowedStateDelayInBlocks: number;
   rpcPollingBlocksBackToTriggerUpdate: number;
@@ -60,6 +61,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
     uniswapV3EventLoggingSampleRate: 0,
+    pancakeswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {
       DummyParaSwapPool: {
         maker: process.env.TEST_ADDRESS!,
@@ -191,6 +193,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
     uniswapV3EventLoggingSampleRate: 0,
+    pancakeswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
@@ -273,6 +276,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
     uniswapV3EventLoggingSampleRate: 0,
+    pancakeswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 4,
     rpcPollingBlocksBackToTriggerUpdate: 3,
@@ -301,6 +305,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
     uniswapV3EventLoggingSampleRate: 0,
+    pancakeswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,

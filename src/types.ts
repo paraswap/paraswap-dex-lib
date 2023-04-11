@@ -275,6 +275,7 @@ export type Config = {
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   uniswapV3EventLoggingSampleRate?: number;
+  pancakeswapV3EventLoggingSampleRate?: number;
 };
 
 export type BigIntAsString = string;

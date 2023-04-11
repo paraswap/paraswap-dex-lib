@@ -7,6 +7,7 @@ import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3/uniswap-v3';
+import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
@@ -93,6 +94,7 @@ const Dexes = [
   BalancerV2,
   UniswapV2,
   UniswapV3,
+  PancakeswapV3,
   BiSwap,
   MDEX,
   Dfyn,
@@ -255,6 +257,7 @@ export class DexAdapterService {
 
   getDexByKey(key: string): IDex<any, any, any> {
     const _key = key.toLowerCase();
+
     if (!(_key in this.isLegacy) || this.isLegacy[_key])
       throw new Error(`Invalid Dex Key ${key}`);
 
