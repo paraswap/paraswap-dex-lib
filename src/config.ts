@@ -29,6 +29,7 @@ type BaseConfig = {
   rpcPollingBlocksBackToTriggerUpdate: number;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
+  swaapV2AuthToken?: string;
 };
 
 const baseConfigs: { [network: number]: BaseConfig } = {
@@ -194,6 +195,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
   },
   [Network.AVALANCHE]: {
     network: Network.AVALANCHE,
@@ -276,6 +278,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 4,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
   },
   [Network.OPTIMISM]: {
     network: Network.OPTIMISM,
@@ -304,6 +307,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
   },
 };
 
@@ -345,6 +349,7 @@ export function generateConfig(network: number): Config {
     rpcPollingBlocksBackToTriggerUpdate:
       baseConfig.rpcPollingBlocksBackToTriggerUpdate,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
+    swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
   };
 }

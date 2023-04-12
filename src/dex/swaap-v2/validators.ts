@@ -1,0 +1,123 @@
+import BigNumber from 'bignumber.js';
+import joi, { CustomHelpers, ErrorReport } from 'joi';
+import * as ethers from 'ethers';
+import { SwaapV2PriceLevel } from './types';
+
+
+const priceLevelsValidator = joi.array().items(
+  joi.object({
+    level: joi.number().required(),
+    price: joi.number().required(),
+  }),
+);
+
+const ext: joi.Extension = {
+  type: 'validatedpriceLevels',
+  base: joi.object({
+    bids: priceLevelsValidator,
+    asks: priceLevelsValidator,
+  }),
+  rules: {
+    bidsLowerThanAsks: {
+      validate: (
+        values: { bids: SwaapV2PriceLevel[]; asks: SwaapV2PriceLevel[] },
+        helpers: CustomHelpers,
+      ) => {
+        if (
+          !values.bids ||
+          !values.asks ||
+          values.bids.length === 0 ||
+          values.asks.length === 0
+        ) {
+          return values;
+        }
+        const maxBid = values.bids
+          .map(pl => new BigNumber(pl.price))
+          .reduce(
+            (previousValue, currentValue) =>
+              currentValue.gte(previousValue) ? currentValue : previousValue,
+            new BigNumber(0),
+          );
+        const minAsk = values.asks
+          .map(pl => new BigNumber(pl.price))
+          .reduce(
+            (previousValue, currentValue) =>
+              currentValue.lte(previousValue) ? currentValue : previousValue,
+            new BigNumber('123456789012345678901234567890'),
+          );
+        return maxBid < minAsk
+          ? values
+          : helpers.message({
+              custom: 'the maximum bid is higher than minimum ask',
+            });
+      },
+    },
+  },
+};
+
+export const priceLevelsResponseValidator = joi.object({
+  levels: joi
+    .object()
+    .pattern(
+      joi.string().min(1),
+      joi.extend(ext).validatedpriceLevels().bidsLowerThanAsks(),
+    ),
+  success: joi.boolean().required(),
+});
+
+export const addressSchema = joi.string().custom((value, helpers) => {
+  if (ethers.utils.isAddress(value)) {
+    return value.toLowerCase();
+  }
+  return helpers.message({ custom: `'${value}' is not valid address` });
+});
+
+export const blacklistResponseValidator = joi.object({
+  blacklist: joi.array().items(addressSchema),
+});
+
+const stringPositiveBigIntValidator = (
+  value: string,
+  helpers: CustomHelpers,
+): string | ErrorReport => {
+  try {
+    const val = BigInt(value);
+    if (val < 0) {
+      return helpers.message({ custom: `${value} is < 0` });
+    }
+    return value;
+  } catch (e) {
+    return helpers.message({
+      custom: `${value} is not castable to BigInt`,
+    });
+  }
+};
+
+const mustBeAugustusSwapper = (
+  value: string,
+  helpers: CustomHelpers,
+): string | ErrorReport => {
+  const allowedTakers = [
+    '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57'.toLowerCase(),
+  ];
+  return allowedTakers.includes(value.toLowerCase())
+    ? value
+    : helpers.message({
+        custom: `"order.taker" must be any of ${JSON.stringify(allowedTakers)}`,
+      });
+};
+
+export const getQuoteResponseValidator = joi
+  .object({
+    id: joi.string().required(),
+    recipient: addressSchema.required().custom(mustBeAugustusSwapper),
+    expiration: joi.number().min(0),
+    amount: joi
+      .string()
+      .min(0)
+      .custom(stringPositiveBigIntValidator)
+      .required(),
+    calldata: joi.string().required(),
+    success: joi.boolean().required(),
+  })
+  .unknown(true);

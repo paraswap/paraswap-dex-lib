@@ -1,0 +1,580 @@
+import {
+  Token,
+  Address,
+  ExchangePrices,
+  PoolPrices,
+  AdapterExchangeParam,
+  SimpleExchangeParam,
+  PoolLiquidity,
+  Logger,
+  ExchangeTxInfo,
+  OptimalSwapExchange,
+  PreprocessTransactionOptions,
+} from '../../types';
+import { SwapSide, Network } from '../../constants';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { getDexKeysWithNetwork } from '../../utils';
+import { IDex } from '../idex';
+import { IDexHelper } from '../../dex-helper/idex-helper';
+import {
+  SwaapV2Data,
+  SwaapV2PriceLevel,
+  SwaapV2PriceLevels,
+  SwaapV2APIParameters,
+  SwaapV2QuoteError,
+} from './types';
+import { SimpleExchange } from '../simple-exchange';
+import { Adapters, SwaapV2Config } from './config';
+import { RateFetcher } from './rate-fetcher';
+import routerAbi from '../../abi/swaap-v2/vault.json';
+import BigNumber from 'bignumber.js';
+import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
+import { Interface } from 'ethers/lib/utils';
+import { assert } from 'ts-essentials';
+import {
+  SWAAP_RFQ_API_URL,
+  SWAAP_RFQ_PRICES_ENDPOINT,
+  SWAAP_RFQ_QUOTE_ENDPOINT,
+  SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS,
+  SWAAP_RFQ_PRICES_CACHES_TTL_S,
+} from './constants';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
+import {
+  getPoolIdentifier,
+  getPriceLevelsCacheKey,
+  normalizeTokenAddress,
+  getPairName,
+} from './utils';
+import { Method  } from '../../dex-helper/irequest-wrapper';
+
+export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
+  readonly isStatePollingDex = true;
+  readonly hasConstantPriceLargeAmounts = false;
+  readonly needWrapNative = false;
+  readonly isFeeOnTransferSupported = false;
+  private rateFetcher: RateFetcher;
+  private swaapV2AuthToken: string;
+
+  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
+    getDexKeysWithNetwork(SwaapV2Config);
+
+  logger: Logger;
+
+  constructor(
+    readonly network: Network,
+    readonly dexKey: string,
+    readonly dexHelper: IDexHelper,
+    protected adapters = Adapters[network] || {},
+    readonly routerAddress: string = SwaapV2Config['SwaapV2'][network]
+      .routerAddress,
+    protected routerInterface = new Interface(routerAbi),
+  ) {
+    super(dexHelper, dexKey);
+    this.logger = dexHelper.getLogger(dexKey);
+    const token = dexHelper.config.data.swaapV2AuthToken;
+    assert(
+      token !== undefined,
+      'SwaapV2 auth token is not specified with env variable',
+    );
+
+    this.swaapV2AuthToken = token;
+
+    this.rateFetcher = new RateFetcher(
+      this.dexHelper,
+      this.dexKey,
+      this.logger,
+      {
+        rateConfig: {
+          pricesIntervalMs: SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS,
+          pricesReqParams: this.getPriceLevelsReqParams(),
+          pricesCacheTTLSecs: SWAAP_RFQ_PRICES_CACHES_TTL_S,
+        },
+      },
+    );
+  }
+
+  async initializePricing(blockNumber: number): Promise<void> {
+    if (!this.dexHelper.config.isSlave) {
+      await this.rateFetcher.start();
+    }
+    return;
+  }
+
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
+    return this.adapters[side] ? this.adapters[side] : null;
+  }
+
+  async getPoolIdentifiers(
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    blockNumber: number,
+  ): Promise<string[]> {
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+
+    if (normalizedSrcToken.address === normalizedDestToken.address) {
+      return [];
+    }
+
+    const poolIdentifier = getPoolIdentifier(
+      this.dexKey,
+      normalizedSrcToken.address,
+      normalizedDestToken.address,
+      );
+      
+    const levels = await this.getCachedLevels();
+    if (levels == null) {
+      return [];
+    }
+
+    return Object.keys(levels)
+      .map((pair: string) => {
+        return getPoolIdentifier(
+          this.dexKey,
+          levels[pair].base!,
+          levels[pair].quote!,
+        );
+      })
+      .filter((pi: string) => pi == poolIdentifier);
+  }
+
+  computePricesFromLevelsBis(
+    amounts: BigNumber[],
+    asksAndBids: SwaapV2PriceLevels,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+  ): bigint[] {
+    var levels: SwaapV2PriceLevel[] = [];
+    if (side == SwapSide.BUY) {
+      if (destToken.address == asksAndBids.base!) {
+        levels = asksAndBids.asks;
+      } else {
+        levels = this.invertPrices(asksAndBids.bids);
+      }
+    } else {
+      if (srcToken.address == asksAndBids.base!) {
+        levels = asksAndBids.bids;
+      } else {
+        levels = this.invertPrices(asksAndBids.asks);
+      }
+    }
+    return this.computeLevelsQuote(amounts, levels, srcToken, destToken, side);
+  }
+
+  inversePrice(priceLevel: SwaapV2PriceLevel): SwaapV2PriceLevel {
+    return {
+      level: priceLevel.level * priceLevel.price,
+      price: 1. / priceLevel.price,
+    };
+  }
+
+  invertPrices(levels: SwaapV2PriceLevel[]): SwaapV2PriceLevel[] {
+    return levels.map(pl => this.inversePrice(pl));
+  }
+
+  computeLevelsQuote(
+    amounts: BigNumber[],
+    levels: SwaapV2PriceLevel[],
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+  ): bigint[] {
+    const size = levels.length;
+    if (size == 0) {
+      return amounts.map(_ => BigInt(0));
+    }
+    return amounts.map((amount: BigNumber) => {
+      if (amount.isZero() || amount.lt(BigNumber(levels[0].level))) {
+        return BigInt(0);
+      }
+
+      var i = 0;
+      var output = BN_0;
+      var previousLevel = BN_0;
+      var remaininig = BigNumber(amount);
+      var enoughLiquidity = false;
+      while (i < size) {
+        const levelDelta = BigNumber(levels[i].level).minus(previousLevel);
+        if (levelDelta.lte(remaininig)) {
+          output = output.plus(levelDelta.times(levels[i].price));
+          remaininig = remaininig.minus(levelDelta);
+          previousLevel = BigNumber(levels[i].level);
+          i += 1;
+        } else {
+          output = output.plus(remaininig.times(levels[i].price));
+          enoughLiquidity = true;
+          break;
+        }
+      }
+      if (enoughLiquidity) {
+        return BigInt(
+          output.multipliedBy(getBigNumberPow((side == SwapSide.BUY ? srcToken.decimals : destToken.decimals))).toFixed(0),
+        );
+      }
+      return BigInt(0); // not enough liquidity
+    });
+  }
+
+  async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
+    const cachedLevels = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      getPriceLevelsCacheKey(this.dexKey),
+    );
+
+    if (cachedLevels) {
+      return JSON.parse(cachedLevels) as Record<string, SwaapV2PriceLevels>;
+    }
+
+    return null;
+  }
+
+  normalizeToken(token: Token): Token {
+    return {
+      address: normalizeTokenAddress(token.address),
+      decimals: token.decimals,
+    };
+  }
+
+  async getPricesVolume(
+    srcToken: Token,
+    destToken: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    blockNumber: number,
+    limitPools?: string[],
+  ): Promise<null | ExchangePrices<SwaapV2Data>> {
+
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+
+    const requestedPoolIdentifier: string = getPoolIdentifier(
+      this.dexKey,
+      normalizedSrcToken.address,
+      normalizedDestToken.address,
+    );
+
+    if (normalizedSrcToken.address === normalizedDestToken.address) {
+      return null;
+    }
+
+    const pools =
+      limitPools ??
+      (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+
+    const levels = await this.getCachedLevels();
+    if (levels == null) {
+      return null;
+    }
+
+    const levelEntries: SwaapV2PriceLevels[] = Object.keys(levels)
+      .map((pair: string) => {
+        if (
+          pools.includes(
+            getPoolIdentifier(
+              this.dexKey,
+              normalizedSrcToken.address,
+              normalizedDestToken.address,
+            ),
+          )
+        ) {
+          return levels[pair];
+        }
+        return undefined;
+      })
+      .filter(o => o !== undefined)
+      .map(o => o!);
+
+    const prices = levelEntries.map((askAndBids: SwaapV2PriceLevels) => {
+      const divider = getBigNumberPow(
+        (side === SwapSide.SELL ? normalizedSrcToken : normalizedDestToken)
+          .decimals,
+      );
+
+      const amountsFloat = amounts.map(a =>
+        new BigNumber(a.toString()).dividedBy(divider),
+      );
+
+      const unitPrice = this.computePricesFromLevelsBis(
+        [BN_1],
+        askAndBids,
+        normalizedSrcToken,
+        normalizedDestToken,
+        side,
+      )[0];
+      const prices = this.computePricesFromLevelsBis(
+        amountsFloat,
+        askAndBids,
+        normalizedSrcToken,
+        normalizedDestToken,
+        side,
+      );
+
+      return {
+        gasCost: 190_000,
+        exchange: this.dexKey,
+        data: {},
+        prices,
+        unit: unitPrice,
+        poolIdentifier: requestedPoolIdentifier,
+        poolAddresses: [this.routerAddress],
+      } as PoolPrices<SwaapV2Data>;
+    });
+
+    return prices;
+  }
+
+  getBaseToken(poolIdentifier: string): string {
+    return poolIdentifier.split('_')[1];
+  }
+
+  getLevels(
+    askAndBids: SwaapV2PriceLevels,
+    side: SwapSide,
+    poolIdentifier: string,
+  ) {
+    const baseToken: string = this.getBaseToken(poolIdentifier);
+    if (side == SwapSide.SELL) {
+      return askAndBids.asks;
+    }
+    return askAndBids.asks;
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<SwaapV2Data>,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<SwaapV2Data>, ExchangeTxInfo]> {
+
+    const isSell = side === SwapSide.SELL;
+
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+
+    const quote = await this.rateFetcher.getQuote(
+      this.network,
+      normalizedSrcToken,
+      normalizedDestToken,
+      isSell
+        ? optimalSwapExchange.srcAmount
+        : optimalSwapExchange.destAmount,
+      isSell 
+        ? 1
+        : 2,
+      options.txOrigin,
+      this.augustusAddress,
+      options.slippageFactor,
+      this.swaapV2AuthToken,
+      this.getQuoteReqParams()
+    );
+
+    if (!quote.success) {
+      const message = `${this.dexKey}-${
+        this.network
+      }: Failed to fetch RFQ for ${getPairName(
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      )}: ${JSON.stringify(quote)}`;
+      this.logger.warn(message);
+      throw new SwaapV2QuoteError(message);
+    } else if (!quote.calldata) {
+      const message = `${this.dexKey}-${
+        this.network
+      }: Failed to fetch RFQ for ${getPairName(
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      )}. Missing quote data`;
+      this.logger.warn(message);
+      throw new SwaapV2QuoteError(message);
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          callData: quote.calldata,
+        },
+      },
+      { deadline: BI_MAX_UINT256},
+    ];
+    
+  }
+
+  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  getCalldataGasCost(
+    poolPrices: PoolPrices<SwaapV2Data>,
+  ): number | number[] {
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_LARGE +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[] header
+      CALLDATA_GAS_COST.OFFSET_LARGE +
+      // ParentStruct -> assets[] header
+      CALLDATA_GAS_COST.OFFSET_LARGE +
+      // ParentStruct -> funds
+      CALLDATA_GAS_COST.ADDRESS +
+      CALLDATA_GAS_COST.BOOL +
+      CALLDATA_GAS_COST.ADDRESS +
+      CALLDATA_GAS_COST.BOOL +
+      // ParentStruct -> limits[] header
+      CALLDATA_GAS_COST.OFFSET_LARGE +
+      // ParentStruct -> deadline
+      CALLDATA_GAS_COST.TIMESTAMP +
+      // ParentStruct -> swaps[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> swaps[0] header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[0] -> poolId
+      CALLDATA_GAS_COST.FULL_WORD +
+      // ParentStruct -> swaps[0] -> assetInIndex
+      CALLDATA_GAS_COST.INDEX +
+      // ParentStruct -> swaps[0] -> assetOutIndex
+      CALLDATA_GAS_COST.INDEX +
+      // ParentStruct -> swaps[0] -> amount
+      CALLDATA_GAS_COST.AMOUNT +
+      // ParentStruct -> swaps[0] -> userData header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> swaps[0] -> userData
+      CALLDATA_GAS_COST.ZERO +
+      // ParentStruct -> assets[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> assets[0:2]
+      CALLDATA_GAS_COST.ADDRESS * 2 +
+      // ParentStruct -> limits[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> limits[0:2]
+      CALLDATA_GAS_COST.FULL_WORD * 2
+    );
+  }
+
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: SwaapV2Data,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    const { callData } = data;
+
+    assert(
+      callData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    return {
+      targetExchange: this.routerAddress,
+      payload: callData,
+      networkFee: '0',
+    };
+  }
+
+  async getSimpleParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: SwaapV2Data,
+    side: SwapSide,
+  ): Promise<SimpleExchangeParam> {
+    const { callData } = data;
+
+    assert(
+      callData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      callData,
+      this.routerAddress,
+    );
+  }
+
+  computeMaxLiquidity = (
+    levels: SwaapV2PriceLevels,
+    tokenAddress: string,
+  ): number => {
+    if (tokenAddress == levels.base!) {
+      return (
+        (levels.asks[levels.asks.length - 1]?.level ?? 0) *
+        levels.asks[0]?.price
+      );
+    }
+    return (
+      (levels.asks[levels.bids.length - 1]?.level ?? 0) * levels.asks[0]?.price
+    );
+  };
+
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    limit: number,
+  ): Promise<PoolLiquidity[]> {
+    const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
+
+    const pLevels = await this.getCachedLevels();
+
+    if (pLevels == null) {
+      return [];
+    }
+
+    return Object.keys(pLevels)
+      .filter((pair: string) => {
+        return (
+          normalizedTokenAddress == pLevels[pair].base ||
+          normalizedTokenAddress == pLevels[pair].quote
+        );
+      })
+      .map((pair: string) => {
+        return {
+          exchange: this.dexKey,
+          address: this.routerAddress,
+          connectorTokens: [this.getTokenFromAddress(pLevels[pair].quote!)],
+          liquidityUSD: this.computeMaxLiquidity(pLevels[pair], tokenAddress),
+        } as PoolLiquidity;
+      })
+      .sort((pl: PoolLiquidity) => {
+        return -pl.liquidityUSD;
+      })
+      .slice(0, limit);
+  }
+  
+  getTokenFromAddress(address: Address): Token {
+    return { address, decimals: 0 };
+  }
+
+  releaseResources(): void {
+    if (this.rateFetcher) {
+      this.rateFetcher.stop();
+    }
+  }
+
+  getPriceLevelsReqParams(): SwaapV2APIParameters {
+    return this.geAPIReqParams(SWAAP_RFQ_PRICES_ENDPOINT, 'GET');
+  }
+  
+  getQuoteReqParams(): SwaapV2APIParameters {
+    return this.geAPIReqParams(SWAAP_RFQ_QUOTE_ENDPOINT, 'POST');
+  }
+
+  geAPIReqParams(endpoint: string, method: Method): SwaapV2APIParameters {
+    return {
+      url: `${SWAAP_RFQ_API_URL}/${endpoint}`,
+      params: {
+        networkId: this.network,
+      },
+      headers: { 'x-api-key': this.swaapV2AuthToken },
+      method: method,
+    }
+  }
+
+}

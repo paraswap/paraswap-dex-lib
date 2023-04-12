@@ -62,6 +62,7 @@ import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
+import { SwaapV2 } from './swaap-v2/swaap-v2';
 
 const LegacyDexes = [
   CurveV2,
@@ -121,6 +122,7 @@ const Dexes = [
   Hashflow,
   MaverickV1,
   Camelot,
+  SwaapV2,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
