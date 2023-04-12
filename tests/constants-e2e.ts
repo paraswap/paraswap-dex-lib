@@ -913,7 +913,7 @@ export const Holders: {
     MIM: '0xbcab7d083cf6a01e0dda9ed7f8a02b47d125e682',
     FRAX: '0x4423ac71f53ca92e2f2be5917a9c2468e7412f4a',
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
-    WETH: '0x4ad64fd7ca6d6150614179b9bce4094bc18f29cb',
+    WETH: '0x8AeeaBD8bD2A7bcCB73D14d72b49e7341c9383B3',
     SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
     wBOMB: '0x28aa4f9ffe21365473b64c161b566c3cdead0108',
     TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',
