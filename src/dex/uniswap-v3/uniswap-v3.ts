@@ -30,7 +30,10 @@ import {
   UniswapV3Functions,
   UniswapV3Param,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
@@ -686,7 +689,7 @@ export class UniswapV3
       },
       {
         path,
-        deadline: this.getDeadline(),
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -740,14 +743,14 @@ export class UniswapV3
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             path,
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             path,
