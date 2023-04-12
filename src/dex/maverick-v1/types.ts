@@ -45,7 +45,6 @@ export type MaverickV1Data = {
   tokenA: Address;
   tokenB: Address;
   exchange: Address;
-  deadline?: number;
 };
 
 export enum MaverickV1Functions {
@@ -58,7 +57,7 @@ export type MaverickV1SellParam = {
   tokenOut: Address;
   pool: Address;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountIn: NumberAsString;
   amountOutMinimum: NumberAsString;
   sqrtPriceLimitD18: NumberAsString;
@@ -69,7 +68,7 @@ export type MaverickV1BuyParam = {
   tokenOut: Address;
   pool: Address;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountOut: NumberAsString;
   amountInMaximum: NumberAsString;
   sqrtPriceLimitD18: NumberAsString;
