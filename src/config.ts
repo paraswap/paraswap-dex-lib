@@ -56,7 +56,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
     uniswapV3EventLoggingSampleRate: 0,
@@ -153,7 +153,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
@@ -180,7 +180,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
@@ -208,7 +208,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
     privateHttpProvider: process.env.HTTP_PROVIDER_43114,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     adapterAddresses: {
@@ -235,7 +235,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_250`]?.split(',') || [],
 
@@ -262,7 +262,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
@@ -290,7 +290,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
     privateHttpProvider: process.env.HTTP_PROVIDER_10,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
 
