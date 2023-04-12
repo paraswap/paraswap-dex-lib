@@ -42,14 +42,22 @@ function getReaderCalldata(
   tokenOut: Address,
   fee: bigint,
 ) {
+  const baseQuoteParams = {
+    tokenIn,
+    tokenOut,
+    fee,
+    sqrtPriceLimitX96: 0n,
+  };
+
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      tokenIn,
-      tokenOut,
-      fee,
-      amount,
-      0n,
+      {
+        ...baseQuoteParams,
+        ...('quoteExactInputSingle' === funcName
+          ? { amountIn: amount }
+          : { amount }),
+      },
     ]),
   }));
 }
@@ -345,7 +353,7 @@ describe('PancakeswapV3', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
-    const TokenASymbol = 'DAI';
+    const TokenASymbol = 'USDT';
     const TokenA = Tokens[network][TokenASymbol];
 
     const TokenBSymbol = 'USDC';

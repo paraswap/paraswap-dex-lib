@@ -63,6 +63,7 @@ export class PancakeswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     readonly stateMultiContract: Contract,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
+    protected readonly deployerAddress: Address,
     public readonly feeCode: bigint,
     token0: Address,
     token1: Address,
@@ -107,6 +108,7 @@ export class PancakeswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         this.feeCode,
       );
     }
+
     return this._poolAddress;
   }
 
@@ -230,8 +232,10 @@ export class PancakeswapV3EventPool extends StatefulEventSubscriber<PoolState> {
           decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
         },
       ];
+
       this._stateRequestCallData = callData;
     }
+
     return this._stateRequestCallData;
   }
 
@@ -538,7 +542,7 @@ export class PancakeswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     );
 
     return ethers.utils.getCreate2Address(
-      this.factoryAddress,
+      this.deployerAddress,
       encodedKey,
       this.poolInitCodeHash,
     );

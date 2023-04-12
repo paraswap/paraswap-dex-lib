@@ -63,6 +63,7 @@ export type DexParams = {
   router: Address;
   quoter: Address;
   factory: Address;
+  deployer: Address;
   stateMulticall: Address;
   pancakeswapMulticall: Address;
   supportedFees: bigint[];
