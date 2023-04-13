@@ -120,6 +120,6 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
   },
   [Network.AVALANCHE]: {
-    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: -1 }], // TODO: solisnek
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek
   },
 };
