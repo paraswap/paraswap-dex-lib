@@ -213,7 +213,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0x3fd845dE49eBa45565d3b58CDEbf88d9bdA7aBf6',
+      AvalancheAdapter02: '0x68847D34a84459Fe3654d3b69c6741a0c336D410',
       AvalancheBuyAdapter: '0xad2f7039B0F4c410654886D049ae8406F5aDe709',
     },
     uniswapV2ExchangeRouterAddress:
