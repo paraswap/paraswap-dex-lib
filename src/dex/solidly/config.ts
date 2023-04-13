@@ -91,7 +91,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/solisnek-finance/solisnek-avalanche',
       factoryAddress: '0xeeee1F1c93836B2CAf8B9E929cb978c35d46657E',
-      router: '0xeeee17b45E4d127cFaAAD14e2710489523ADB4d8',
+      router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
       initCode:
         '0x79cda3bba5402e92f13ed1967c06033e6b7a1bc8d2e1d013b29fa0c4d0a4aa0f',
       // updatable fees on the factory without event
