@@ -210,7 +210,7 @@ export class RateFetcher {
     }
 
     this.pairs = pairs;
-    this.rateFetcher.startPolling();
+    // this.rateFetcher.startPolling();
   }
 
   private handleBlackListResponse(resp: BlackListResponse) {
