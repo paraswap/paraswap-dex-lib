@@ -2,6 +2,7 @@ import { BytesLike } from 'ethers';
 import _ from 'lodash';
 import { Logger } from 'log4js';
 import { Contract } from 'web3-eth-contract';
+import { uint256DecodeToNumber } from './decoders';
 
 export type MultiResult<T> = {
   success: boolean;
@@ -54,10 +55,12 @@ export class MultiWrapper {
   async tryAggregate<T>(
     mandatory: boolean,
     calls: MultiCallParams<T>[],
-    blockNumber?: number | string,
+    blockNumber: number | 'latest' = 'latest',
     batchSize: number = this.defaultBatchSize,
     reportFails: boolean = true,
   ): Promise<MultiResult<T>[]> {
+    const _blockNumber = blockNumber === undefined ? 'latest' : blockNumber;
+
     const allCalls = new Array(Math.ceil(calls.length / batchSize));
     for (let i = 0; i < calls.length; i += batchSize) {
       const batch = calls.slice(i, i + batchSize);
@@ -68,7 +71,7 @@ export class MultiWrapper {
       allCalls.map(batch =>
         this.multi.methods
           .tryAggregate(mandatory, batch)
-          .call(undefined, blockNumber),
+          .call(undefined, _blockNumber),
       ),
     );
 
@@ -104,5 +107,41 @@ export class MultiWrapper {
     }
 
     return results;
+  }
+
+  // I removed here batching because it may give inconsistent blockNumber
+  // If we see that is a problem, we can add later
+  async blockTryAggregateWithoutBatching<T>(
+    mandatory: boolean,
+    calls: MultiCallParams<T>[],
+    requestedBlockNumber: number | 'latest' = 'latest',
+    reportFails: boolean = true,
+  ) {
+    const blockNumberCall: MultiCallParams<number> = {
+      target: this.multi.options.address,
+      callData: this.multi.methods.getBlockNumber().encodeABI() as string,
+      decodeFunction: uint256DecodeToNumber,
+    };
+
+    const callsWithBlockNumber: [
+      ...MultiCallParams<T>[],
+      MultiCallParams<number>,
+    ] = [...calls, blockNumberCall];
+
+    const results = await this.tryAggregate(
+      mandatory,
+      callsWithBlockNumber as MultiCallParams<T | number>[],
+      requestedBlockNumber,
+      callsWithBlockNumber.length,
+      reportFails,
+    );
+
+    // We guaranteed previously that at least one call is contained
+    const blockNumber = results.pop()!.returnData as number;
+
+    return {
+      blockNumber,
+      results: results as MultiResult<T>[],
+    };
   }
 }

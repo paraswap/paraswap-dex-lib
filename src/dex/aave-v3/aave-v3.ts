@@ -56,7 +56,9 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     return this.adapters[side];
   }
 
-  async initializePricing(blockNumber: number): Promise<void> {
+  async initializePricing(
+    blockNumber: number | 'latest' = 'latest',
+  ): Promise<void> {
     let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,

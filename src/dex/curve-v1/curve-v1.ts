@@ -355,7 +355,10 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       );
 
       for (let i = 0; i < poolsToFetch.length; i++) {
-        await poolsToFetch[i].setup(blockNumber, poolStates[i] as any);
+        await poolsToFetch[i].setup(
+          poolStates.blockNumber,
+          poolStates.states[i] as any,
+        );
         this.eventPools.push(poolsToFetch[i]);
       }
       return unavailablePools;
@@ -405,7 +408,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     amounts: bigint[],
     pools: string[],
     indexes: [number, number, number][],
-    blockNumber: number,
+    blockNumber: number | 'latest',
   ) {
     const chunks = amounts.length - 1;
     const srcAmount = amounts[chunks]!;
@@ -439,9 +442,6 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       })),
     );
 
-    //const data = await this.multi.methods
-    //  .tryAggregate(false, calldata.flat())
-    //  .call({}, 'latest');
     const data = (
       await Promise.all(
         calldata.map(async poolCalldata => {
@@ -449,7 +449,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
             const result = await Utils.timeoutPromise<MultiResult<any>[]>(
               this.dexHelper.multiContract.methods
                 .tryAggregate(false, poolCalldata)
-                .call({}, 'latest'),
+                .call({}, blockNumber),
               2000,
               `Timed out multicall for curve pool ${poolCalldata[0].target}`,
             );
@@ -515,7 +515,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     let pool = this.getPoolByAddress(exchange);
     if (!pool) {
       throw new Error(
-        `Error_${this.dexKey}_getRatesEvent pool is not initialised`,
+        `Error_${this.dexKey}_getRatesEvent pool is not initialized`,
       );
     }
 
@@ -704,7 +704,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           amountsWithUnitAndFee,
           onChainPools,
           onChainPoolIndexes,
-          blockNumber,
+          'latest',
         );
         _prices = _prices.concat(pricesOnChain);
       }
@@ -934,7 +934,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       [],
     );
 
-    return this.dexHelper.multiWrapper!.tryAggregate(true, calls);
+    return this.dexHelper.multiWrapper.tryAggregate(true, calls);
   }
 
   async fetchAllPools() {
@@ -943,7 +943,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       // the balances array in the pool as it was a mess to have each curve abi
       // Some have balances[uint128] some have balances[uint256]
       // One of the consequence for such a hack is below for ETH Pools
-      // TODO: below can be highly optimised
+      // TODO: below can be highly optimized
       // * we don't need to query token decimals every iteration
       // * we can use the decimals from the tokens list using the api
 
@@ -976,7 +976,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
         [],
       );
 
-      const results = await this.dexHelper.multiWrapper!.tryAggregate(
+      const results = await this.dexHelper.multiWrapper.tryAggregate(
         true,
         calls,
       );

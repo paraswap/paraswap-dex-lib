@@ -1,5 +1,6 @@
 import { DeepReadonly } from 'ts-essentials';
 import { Logger } from '../../types';
+import { StateWithBlock } from '../../stateful-event-subscriber';
 import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { lens } from '../../lens';
@@ -17,7 +18,7 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
-    public priceFeedAdress: Address,
+    public priceFeedAddress: Address,
     public poolInterface: Interface,
     public priceFeedContract: Contract,
   ) {
@@ -56,12 +57,22 @@ export class JarvisV6EventPool extends ComposedEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    return (
-      await getOnChainState(this.dexHelper, [this.poolConfig], blockNumber, {
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<StateWithBlock<PoolState>> {
+    const { blockNumber: _blockNumber, state } = await getOnChainState(
+      this.dexHelper,
+      [this.poolConfig],
+      blockNumber,
+      {
         poolInterface: this.poolInterface,
         priceFeedContract: this.priceFeedContract,
-      })
-    )[0];
+      },
+    );
+
+    return {
+      blockNumber: _blockNumber,
+      state: state[0],
+    };
   }
 }

@@ -26,8 +26,15 @@ import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  StateWithBlock,
+  StatefulEventSubscriber,
+} from '../../stateful-event-subscriber';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  blockAndTryAggregate,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -305,7 +312,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return allPools;
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<StateWithBlock<PoolStateMap>> {
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
     const eventSupportedPools = allPools.filter(
@@ -313,11 +322,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
         this.eventSupportedPoolTypes.includes(pool.poolType) &&
         !this.eventRemovedPools.includes(pool.address.toLowerCase()),
     );
-    const allPoolsLatestState = await this.getOnChainState(
+    const allPoolsLatestStateWithBn = await this.getOnChainState(
       eventSupportedPools,
       blockNumber,
     );
-    return allPoolsLatestState;
+
+    return {
+      blockNumber: allPoolsLatestStateWithBn.blockNumber,
+      state: allPoolsLatestStateWithBn.stateMap,
+    };
   }
 
   handleSwap(event: any, pool: PoolState, log: Log): PoolState {
@@ -430,8 +443,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async getOnChainState(
     subgraphPoolBase: SubgraphPoolBase[],
-    blockNumber: number,
-  ): Promise<PoolStateMap> {
+    blockNumber: number | 'latest',
+  ) {
     const multiCallData = subgraphPoolBase
       .map(pool => {
         if (!this.isSupportedPool(pool.poolType)) return [];
@@ -443,15 +456,18 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // 500 is an arbitrary number chosen based on the blockGasLimit
     const slicedMultiCallData = _.chunk(multiCallData, 500);
 
-    const returnData = (
-      await Promise.all(
-        slicedMultiCallData.map(async _multiCallData =>
-          this.dexHelper.multiContract.methods
-            .tryAggregate(false, _multiCallData)
-            .call({}, blockNumber),
+    const results = await Promise.all(
+      slicedMultiCallData.map(async _multiCallData =>
+        blockAndTryAggregate(
+          false,
+          this.dexHelper.multiContract,
+          multiCallData,
+          blockNumber,
         ),
-      )
-    ).flat();
+      ),
+    );
+
+    const returnData = results.map(res => res.results).flat();
 
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
@@ -468,7 +484,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       {},
     );
 
-    return onChainStateMap;
+    return {
+      blockNumber: results[0].blockNumber,
+      stateMap: onChainStateMap,
+    };
   }
 }
 
@@ -502,7 +521,7 @@ export class BalancerV2
     protected adapters = Adapters[network],
   ) {
     super(dexHelper, dexKey);
-    // Initialise cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
+    // Initialize cache - this will hold pool state of non-event pools in memory to be reused if block hasn't expired
     this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = new BalancerV2EventPool(
@@ -515,7 +534,7 @@ export class BalancerV2
     );
   }
 
-  async setupEventPools(blockNumber: number) {
+  async setupEventPools(blockNumber: number | 'latest') {
     await this.eventPools.initialize(blockNumber);
   }
 
@@ -569,7 +588,7 @@ export class BalancerV2
     );
   }
 
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     if (!this.eventDisabledPoolsTimer) {
       await this.fetchEventDisabledPools();
       this.eventDisabledPoolsTimer = setInterval(async () => {
@@ -723,14 +742,12 @@ export class BalancerV2
 
       // Retrieve onchain state for any missing pools
       if (missingPools.length > 0) {
-        const missingPoolsStateMap = await this.eventPools.getOnChainState(
-          missingPools,
-          blockNumber,
-        );
+        const missingPoolsStateMapWithBlockNumber =
+          await this.eventPools.getOnChainState(missingPools, blockNumber);
         // Update non-event pool state cache with newly retrieved data so it can be reused in future
         nonEventPoolStates = this.updateNonEventPoolStateCache(
-          missingPoolsStateMap,
-          blockNumber,
+          missingPoolsStateMapWithBlockNumber.stateMap,
+          missingPoolsStateMapWithBlockNumber.blockNumber,
         );
       }
 

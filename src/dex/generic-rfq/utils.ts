@@ -53,7 +53,7 @@ export const checkOrder = async (
     },
   ]);
 
-  const balance = balances[0];
+  const balance = balances.balances[0];
 
   const makerAmountBigInt = BigInt(order.makerAmount);
   const makerBalance = BigInt(balance.amounts[DEFAULT_ID_ERC20_AS_STRING]);

@@ -56,7 +56,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
   // for pricing requests.
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     const config = await GMXEventPool.getConfig(
       this.params,
       blockNumber,

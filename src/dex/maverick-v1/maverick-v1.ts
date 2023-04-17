@@ -76,7 +76,7 @@ export class MaverickV1
       MaverickV1Config[this.dexKey][this.network].routerAddress;
   }
 
-  async setupEventPools(blockNumber: number) {
+  async setupEventPools(blockNumber: number | 'latest' = 'latest') {
     const pools = await this.fetchAllSubgraphPools();
     await Promise.all(
       pools.map(async (pool: any) => {
@@ -102,13 +102,14 @@ export class MaverickV1
           MaverickV1Config[this.dexKey][this.network].poolInspectorAddress,
           this.logger,
         );
-        const onChainState = await eventPool.generateState(blockNumber);
+        const { state: generatedState, blockNumber: generatedBlockNumber } =
+          await eventPool.generateState(blockNumber);
         if (blockNumber) {
-          eventPool.setState(onChainState, blockNumber);
+          eventPool.setState(generatedState, generatedBlockNumber);
           this.dexHelper.blockManager.subscribeToLogs(
             eventPool,
             eventPool.addressesSubscribed,
-            blockNumber,
+            generatedBlockNumber,
           );
         }
         this.pools[eventPool.address] = eventPool;
@@ -120,7 +121,7 @@ export class MaverickV1
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {
     await this.setupEventPools(blockNumber);
   }
 
@@ -224,8 +225,11 @@ export class MaverickV1
             try {
               let state = pool.getState(blockNumber);
               if (state === null) {
-                state = await pool.generateState(blockNumber);
-                pool.setState(state, blockNumber);
+                const {
+                  state: generatedState,
+                  blockNumber: generatedBlockNumber,
+                } = await pool.generateState(blockNumber);
+                pool.setState(generatedState, generatedBlockNumber);
               }
               if (state === null) {
                 this.logger.debug(
@@ -266,7 +270,7 @@ export class MaverickV1
               let gasCosts: number[] = dataList.map(
                 ([d, t]: [BigInt, number]) => {
                   if (d == 0n) return 0;
-                  // I think it is reasonable estimation assuming "kind" gas cost is almost everytime around 1
+                  // I think it is reasonable estimation assuming "kind" gas cost is almost every time around 1
                   return (
                     MAV_V1_BASE_GAS_COST +
                     (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) * t

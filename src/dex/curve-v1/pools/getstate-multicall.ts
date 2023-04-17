@@ -2,15 +2,21 @@ import { CurveMetapool, MetapoolState } from './curve-metapool';
 import { CurvePool, PoolState } from './curve-pool';
 import _ from 'lodash';
 import { erc20Iface } from '../../../lib/utils-interfaces';
-import { bigNumberify, stringify } from '../../../utils';
+import { bigNumberify, blockAndTryAggregate, stringify } from '../../../utils';
+import { MultiCallInput } from '../../../types';
 
 const strbnify = (val: any) => bigNumberify(stringify(val));
+
+type _GetManyPoolStatesResult = {
+  blockNumber: number;
+  states: (PoolState | Partial<MetapoolState>)[];
+};
 
 async function _getManyPoolStates(
   pools: (CurvePool | CurveMetapool)[],
   multi: any,
   blockNumber: number | 'latest' = 'latest',
-): Promise<(PoolState | Partial<MetapoolState>)[]> {
+): Promise<_GetManyPoolStatesResult> {
   const calldata = _(pools)
     .map((pool: CurvePool | CurveMetapool) => [
       {
@@ -54,62 +60,80 @@ async function _getManyPoolStates(
     ])
     .flattenDeep()
     .filter(a => !!a)
-    .value();
+    .value() as MultiCallInput[];
 
-  const data = await multi.methods.aggregate(calldata).call({}, blockNumber);
+  const results = await blockAndTryAggregate(
+    true,
+    multi,
+    calldata,
+    blockNumber,
+  );
+
+  const data = results.results;
 
   let p = 0;
-  return pools.map((pool: CurvePool | CurveMetapool) => {
-    const _state = {
-      admin_fee: strbnify(
-        pool.poolIface.decodeFunctionResult(
-          'admin_fee',
-          data.returnData[p++],
-        )[0],
-      ),
-      fee: strbnify(
-        pool.poolIface.decodeFunctionResult('fee', data.returnData[p++])[0],
-      ),
-      A: strbnify(
-        pool.poolIface.decodeFunctionResult('A', data.returnData[p++])[0],
-      ),
-      supply: strbnify(
-        erc20Iface.decodeFunctionResult('totalSupply', data.returnData[p++])[0],
-      ),
-      balances: _.range(0, pool.N_COINS).map(i =>
-        strbnify(
+  return {
+    blockNumber: results.blockNumber,
+    states: pools.map((pool: CurvePool | CurveMetapool) => {
+      const _state = {
+        admin_fee: strbnify(
           pool.poolIface.decodeFunctionResult(
-            'balances',
-            data.returnData[p++],
+            'admin_fee',
+            data[p++].returnData,
           )[0],
         ),
-      ),
-    };
-    return (pool as CurveMetapool).basepool
-      ? {
-          ..._state,
-          base_cache_updated: strbnify(
+        fee: strbnify(
+          pool.poolIface.decodeFunctionResult('fee', data[p++].returnData)[0],
+        ),
+        A: strbnify(
+          pool.poolIface.decodeFunctionResult('A', data[p++].returnData)[0],
+        ),
+        supply: strbnify(
+          erc20Iface.decodeFunctionResult(
+            'totalSupply',
+            data[p++].returnData,
+          )[0],
+        ),
+        balances: _.range(0, pool.N_COINS).map(i =>
+          strbnify(
             pool.poolIface.decodeFunctionResult(
-              'base_cache_updated',
-              data.returnData[p++],
+              'balances',
+              data[p++].returnData,
             )[0],
           ),
-          base_virtual_price: strbnify(
-            pool.poolIface.decodeFunctionResult(
-              'base_virtual_price',
-              data.returnData[p++],
-            )[0],
-          ),
-        }
-      : _state;
-  });
+        ),
+      };
+      return (pool as CurveMetapool).basepool
+        ? {
+            ..._state,
+            base_cache_updated: strbnify(
+              pool.poolIface.decodeFunctionResult(
+                'base_cache_updated',
+                data[p++].returnData,
+              )[0],
+            ),
+            base_virtual_price: strbnify(
+              pool.poolIface.decodeFunctionResult(
+                'base_virtual_price',
+                data[p++].returnData,
+              )[0],
+            ),
+          }
+        : _state;
+    }),
+  };
 }
+
+type GetManyPoolStatesResult = {
+  blockNumber: number;
+  states: (PoolState | MetapoolState)[];
+};
 
 export async function getManyPoolStates(
   pools: (CurvePool | CurveMetapool)[],
   multi: any,
   blockNumber: number | 'latest' = 'latest',
-): Promise<(PoolState | MetapoolState)[]> {
+): Promise<GetManyPoolStatesResult> {
   const _poolsMap = _.reduce(
     pools,
     (
@@ -123,7 +147,7 @@ export async function getManyPoolStates(
     },
     {},
   );
-  const _poolStates = await _getManyPoolStates(
+  const _poolStatesWithBn = await _getManyPoolStates(
     Object.values(_poolsMap),
     multi,
     blockNumber,
@@ -136,21 +160,24 @@ export async function getManyPoolStates(
       add: string,
       i: number,
     ) => {
-      acc[add] = _poolStates[i];
+      acc[add] = _poolStatesWithBn.states[i];
       return acc;
     },
     {},
   );
 
-  return _.map(pools, (pool: CurvePool | CurveMetapool) =>
-    (pool as CurveMetapool).basepool
-      ? ({
-          ..._poolStatesMap[pool.address.toLowerCase()],
-          basepool:
-            _poolStatesMap[
-              (pool as CurveMetapool).basepool.address.toLowerCase()
-            ],
-        } as MetapoolState)
-      : (_poolStatesMap[pool.address.toLowerCase()] as PoolState),
-  );
+  return {
+    blockNumber: _poolStatesWithBn.blockNumber,
+    states: _.map(pools, (pool: CurvePool | CurveMetapool) =>
+      (pool as CurveMetapool).basepool
+        ? ({
+            ..._poolStatesMap[pool.address.toLowerCase()],
+            basepool:
+              _poolStatesMap[
+                (pool as CurveMetapool).basepool.address.toLowerCase()
+              ],
+          } as MetapoolState)
+        : (_poolStatesMap[pool.address.toLowerCase()] as PoolState),
+    ),
+  };
 }

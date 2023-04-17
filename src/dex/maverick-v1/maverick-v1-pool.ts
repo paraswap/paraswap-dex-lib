@@ -1,24 +1,21 @@
-import { AbiCoder, Interface } from '@ethersproject/abi';
-import { assert, DeepReadonly } from 'ts-essentials';
+import _ from 'lodash';
+import { Interface } from '@ethersproject/abi';
+import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger, Address } from '../../types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  StateWithBlock,
+} from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { Bin, MaverickV1Data, PoolState } from './types';
+import { Bin, PoolState } from './types';
 import { Token } from '../../types';
-
-import { MaverickV1Config } from './config';
-import PoolABI from '../../abi/maverick-v1/pool.json';
-import PoolInspectorABI from '../../abi/maverick-v1/pool-inspector.json';
-
-import { Contract } from 'web3-eth-contract';
-import { AbiItem } from 'web3-utils';
 import { MaverickBinMap } from './maverick-math/maverick-bin-map';
 import { MaverickPoolMath } from './maverick-math/maverick-pool-math';
 import { MMath } from './maverick-math/maverick-basic-math';
-
-import * as _ from 'lodash';
 import { BI_POWS } from '../../bigint-constants';
-import { getBigIntPow } from '../../utils';
+import { blockAndTryAggregate, getBigIntPow } from '../../utils';
+import PoolABI from '../../abi/maverick-v1/pool.json';
+import PoolInspectorABI from '../../abi/maverick-v1/pool-inspector.json';
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
@@ -32,8 +29,7 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
-  poolContract: Contract;
-  poolInspectorContract: Contract;
+  poolInspectorInterface: Interface;
   poolMath: MaverickPoolMath;
 
   constructor(
@@ -68,15 +64,7 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
 
     this.addressesSubscribed = [address];
 
-    this.poolInspectorContract = new this.dexHelper.web3Provider.eth.Contract(
-      PoolInspectorABI as AbiItem[],
-      this.inspectorAddress,
-    );
-
-    this.poolContract = new this.dexHelper.web3Provider.eth.Contract(
-      PoolABI as AbiItem[],
-      this.address,
-    );
+    this.poolInspectorInterface = new Interface(PoolInspectorABI);
 
     this.poolMath = new MaverickPoolMath(
       parentName,
@@ -128,16 +116,37 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    const rawBins = await this.poolInspectorContract.methods['getActiveBins'](
-      this.address,
-      0,
-      0,
-    ).call({}, blockNumber);
-    const rawState = await this.poolContract.methods['getState']().call(
-      {},
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<Readonly<StateWithBlock<PoolState>>> {
+    const { blockNumber: _blockNumber, results } = await blockAndTryAggregate(
+      true,
+      this.dexHelper.multiContract,
+      [
+        {
+          target: this.inspectorAddress,
+          callData: this.poolInspectorInterface.encodeFunctionData(
+            'getActiveBins',
+            [this.address, 0, 0],
+          ),
+        },
+        {
+          target: this.address,
+          callData: this.poolInterface.encodeFunctionData('getState', []),
+        },
+      ],
       blockNumber,
     );
+
+    const rawBins = this.poolInspectorInterface.decodeFunctionResult(
+      'getActiveBins',
+      results[0].returnData,
+    );
+    const rawState = this.poolInterface.decodeFunctionResult(
+      'getState',
+      results[1].returnData,
+    );
+
     let binPositions: { [tick: string]: { [kind: string]: bigint } } = {};
     let bins: { [id: string]: Bin } = {};
     let binMap: { [id: string]: bigint } = {};
@@ -164,11 +173,14 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
     });
 
     return {
-      activeTick: BigInt(rawState.activeTick),
-      binCounter: BigInt(rawState.binCounter),
-      bins: bins,
-      binPositions: binPositions,
-      binMap: binMap,
+      blockNumber: await this.dexHelper.web3Provider.eth.getBlockNumber(),
+      state: {
+        activeTick: BigInt(rawState.activeTick),
+        binCounter: BigInt(rawState.binCounter),
+        bins: bins,
+        binPositions: binPositions,
+        binMap: binMap,
+      },
     };
   }
 

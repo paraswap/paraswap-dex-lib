@@ -3,10 +3,13 @@ import { DeepReadonly } from 'ts-essentials';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import { getFee, getRFactor } from './fee-formula';
 import { KyberDmmAbiEvents, TradeInfo } from './types';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  StateWithBlock,
+} from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BI_POWS } from '../../bigint-constants';
+import { blockAndTryAggregate } from '../../utils';
 
 export type KyberDmmPools = { [poolAddress: string]: KyberDmmPool };
 
@@ -113,7 +116,6 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
           },
         };
     }
-    return null;
   }
 
   isAmpPool(): boolean {
@@ -122,10 +124,12 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<KyberDmmPoolState>> {
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.methods
-        .aggregate([
+  ): Promise<StateWithBlock<KyberDmmPoolState>> {
+    const { results: data, blockNumber: _blockNumber } =
+      await blockAndTryAggregate(
+        true,
+        this.dexHelper.multiContract,
+        [
           {
             target: this.poolAddress,
             callData: iface.encodeFunctionData('getTradeInfo', []),
@@ -134,18 +138,19 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
             target: this.poolAddress,
             callData: iface.encodeFunctionData('getVolumeTrendData', []),
           },
-        ])
-        .call({}, blockNumber);
+        ],
+        blockNumber,
+      );
 
     const [reserves0, reserves1, vReserves0, vReserves1] = coder
-      .decode(['uint256', 'uint256', 'uint256', 'uint256'], data.returnData[0])
+      .decode(['uint256', 'uint256', 'uint256', 'uint256'], data[0].returnData)
       .map(a => BigInt(a.toString()));
 
     const [shortEMA, longEMA, , lastTradeBlock] = coder
-      .decode(['uint256', 'uint256', 'uint128', 'uint256'], data.returnData[1])
+      .decode(['uint256', 'uint256', 'uint128', 'uint256'], data[1].returnData)
       .map(a => BigInt(a.toString()));
 
-    if (blockNumber == 'latest')
+    if (blockNumber === 'latest')
       blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
 
     const prevBlockData: { returnData: any[] } =
@@ -166,19 +171,22 @@ export class KyberDmmPool extends StatefulEventSubscriber<KyberDmmPoolState> {
       .map(a => BigInt(a.toString()));
 
     return {
-      trendData: {
-        shortEMA,
-        longEMA,
-        lastBlockVolume,
-        lastTradeBlock,
+      blockNumber,
+      state: {
+        trendData: {
+          shortEMA,
+          longEMA,
+          lastBlockVolume,
+          lastTradeBlock,
+        },
+        reserves: {
+          reserves0,
+          reserves1,
+          vReserves0,
+          vReserves1,
+        },
+        ampBps: this.ampBps,
       },
-      reserves: {
-        reserves0,
-        reserves1,
-        vReserves0,
-        vReserves1,
-      },
-      ampBps: this.ampBps,
     };
   }
 }

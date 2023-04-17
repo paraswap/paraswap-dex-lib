@@ -98,7 +98,7 @@ export class FactoryStateHandler extends PoolPollingBase {
 
   parseMultiResultsToStateValues(
     multiOutputs: MulticallReturnedTypes[],
-    blockNumber: number,
+    blockNumber: number | 'latest',
     updatedAtMs: number,
   ): PoolState {
     const [A, fees, balances] = multiOutputs as [bigint, bigint[], bigint[]];

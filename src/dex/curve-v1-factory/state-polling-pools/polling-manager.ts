@@ -14,7 +14,7 @@ export class StatePollingManager {
   static async fetchAndSetStatesFromRPC(
     dexHelper: IDexHelper,
     pools: PoolPollingBase[],
-    blockNumber?: number,
+    blockNumber: number | 'latest' = 'latest',
   ): Promise<PoolState[]> {
     if (pools.length === 0) {
       return [];
@@ -31,17 +31,6 @@ export class StatePollingManager {
       })
       .flat();
 
-    let _blockNumber = blockNumber;
-    if (_blockNumber === undefined) {
-      // If we were not given with blockNumber, set state blockNumber to 0,
-      // that is indicating that block number was the latest.
-      // If we request here latest blockNumber and try to send query, we frequently
-      // hit problem with late nodes. Some node may give us blockNumber 10,
-      // but when trying to do query we may hit node that is only on 9 blocknumber
-      // And it is a problem. Especially on Optimism and Avalanche.
-      _blockNumber = 0;
-    }
-
     const result = await dexHelper.multiWrapper.aggregate(
       callDatas,
       blockNumber,
@@ -54,7 +43,7 @@ export class StatePollingManager {
     for (const [i, p] of pools.entries()) {
       const newState = p.parseMultiResultsToStateValues(
         result.slice(lastStart, lastStart + poolResultDividers[i]),
-        _blockNumber,
+        blockNumber,
         updatedAt,
       );
       p.setState(newState);
@@ -69,7 +58,7 @@ export class StatePollingManager {
     logger: Logger,
     dexHelper: IDexHelper,
     pools: PoolPollingBase[],
-    blockNumber?: number,
+    blockNumber: number | 'latest' = 'latest',
   ) {
     const dexKey = pools.length > 0 ? pools[0].dexKey : 'CurveV1Factory';
     try {
@@ -113,7 +102,7 @@ export class StatePollingManager {
     logger: Logger,
     dexHelper: IDexHelper,
     pools: PoolPollingBase[],
-    blockNumber?: number,
+    blockNumber: number | 'latest' = 'latest',
   ) {
     const dexKey = pools.length > 0 ? pools[0].dexKey : 'CurveV1Factory';
     const poolsForRPCUpdate: PoolPollingBase[] = [];
@@ -187,7 +176,7 @@ export class StatePollingManager {
     logger: Logger,
     dexHelper: IDexHelper,
     pools: PoolPollingBase[],
-    blockNumber?: number,
+    blockNumber: number | 'latest' = 'latest',
     liquidityUpdateFunc?: Function,
   ) {
     if (pools.length === 0) {

@@ -319,7 +319,7 @@ export class Utils {
   ): Promise<T> {
     return Promise.race([
       promise,
-      new Promise<T>((resolve, reject) => {
+      new Promise<T>((_, reject) => {
         setTimeout(() => reject(message), timeout);
       }),
     ]);
@@ -353,8 +353,8 @@ export const isTruthy = <T>(x: T | undefined | null | '' | false | 0): x is T =>
   !!x;
 
 type MultiCallParams = {
-  target: any;
-  callData: any;
+  target: string;
+  callData: string;
 };
 
 type BlockAndTryAggregateResult = {
@@ -383,6 +383,5 @@ export const blockAndTryAggregate = async (
 
 export const isContractAddress = async (web3: Web3, addr: string) => {
   const contractCode = await web3.eth.getCode(addr);
-
   return contractCode !== '0x';
 };

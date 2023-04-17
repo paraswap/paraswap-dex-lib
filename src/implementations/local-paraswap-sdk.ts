@@ -76,8 +76,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   }
 
   async initializePricing() {
-    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
-    await this.pricingHelper.initialize(blockNumber, [this.dexKey]);
+    await this.pricingHelper.initialize('latest', [this.dexKey]);
   }
 
   async releaseResources() {

@@ -81,7 +81,7 @@ export class BalancerV1
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(_blockNumber: number) {
+  async initializePricing(_blockNumber: number | 'latest' = 'latest') {
     this.poolsInfo = await this.dexHelper.httpRequest.get<PoolsInfo>(
       this.config.poolsURL,
       POOLS_FETCH_TIMEOUT,
@@ -170,11 +170,13 @@ export class BalancerV1
     }
 
     if (poolsMissingState.length) {
-      const poolStates = await generatePoolStates(
-        poolsMissingState,
-        this.balancerMulticall,
-        blockNumber,
-      );
+      const { blockNumber: _blockNumber, state: poolStates } =
+        await generatePoolStates(
+          this.dexHelper,
+          poolsMissingState,
+          this.balancerMulticall,
+          blockNumber,
+        );
 
       await Promise.all(
         poolsMissingState.map(async (poolInfo, i) => {
@@ -191,8 +193,11 @@ export class BalancerV1
               poolInfo,
             );
 
-            await newPool.initialize(blockNumber, {
-              state: poolState,
+            await newPool.initialize(_blockNumber, {
+              stateWithBn: {
+                blockNumber: _blockNumber,
+                state: poolState,
+              },
             });
             this.eventPools[poolInfo.id] = newPool;
           }

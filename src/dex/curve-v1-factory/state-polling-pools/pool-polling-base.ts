@@ -77,7 +77,7 @@ export abstract class PoolPollingBase {
 
   abstract parseMultiResultsToStateValues(
     multiOutputs: MulticallReturnedTypes[],
-    blockNumber: number,
+    blockNumber: number | 'latest',
     updatedAtMs: number,
   ): PoolState;
 

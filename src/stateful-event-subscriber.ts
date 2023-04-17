@@ -15,8 +15,13 @@ type StateCache<State> = {
   state: DeepReadonly<State>;
 };
 
+export type StateWithBlock<State> = {
+  state: DeepReadonly<State>;
+  blockNumber: number;
+};
+
 export type InitializeStateOptions<State> = {
-  state?: DeepReadonly<State>;
+  stateWithBn?: StateWithBlock<State>;
   initCallback?: (state: DeepReadonly<State>) => void;
 };
 
@@ -83,12 +88,13 @@ export abstract class StatefulEventSubscriber<State>
   //      will also publish a message to cache to tell one master version of dex-lib that this slave
   //      instance subscribed to a pool from dex this.parentName and name this.name.
   async initialize(
-    blockNumber: number,
+    blockNumber: number | 'latest',
     options?: InitializeStateOptions<State>,
   ) {
     let masterBn: undefined | number = undefined;
-    if (options && options.state) {
-      this.setState(options.state, blockNumber);
+    if (options && options.stateWithBn) {
+      this.setState(options.stateWithBn.state, options.stateWithBn.blockNumber);
+      masterBn = options.stateWithBn.blockNumber;
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(
@@ -104,37 +110,39 @@ export abstract class StatefulEventSubscriber<State>
             this.logger.warn(
               `${this.parentName}: ${this.name}: found null state in cache generate new one`,
             );
-            state.state = await this.generateState(blockNumber);
+            const stateAndBn = await this.generateState(blockNumber);
+
+            state.state = stateAndBn.state;
+            state.bn = stateAndBn.blockNumber;
+            masterBn = state.bn;
+            this.setState(state.state, state.bn);
           } else {
-            this.logger.info(
+            this.logger.trace(
               `${this.parentName}: ${this.name}: found state from cache`,
             );
-            blockNumber = state.bn;
-
             const _masterBn = await this.dexHelper.cache.rawget(
               this.dexHelper.config.masterBlockNumberCacheKey,
             );
             if (_masterBn) {
               masterBn = parseInt(_masterBn, 10);
-              this.logger.info(
-                `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
+              this.logger.trace(
+                `${this.dexHelper.config.data.network} found master blockNumber ${masterBn}`,
               );
+              this.setState(state.state, state.bn);
             } else {
-              this.logger.error(
+              throw new Error(
                 `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
               );
             }
           }
-          // set state and the according blockNumber. state.bn can be smaller, greater or equal
-          // to blockNumber
-          this.setState(state.state, blockNumber);
         } else {
           // if no state found in cache generate new state using rpc
           this.logger.info(
             `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
           );
-          const state = await this.generateState(blockNumber);
-          this.setState(state, blockNumber);
+          const stateAndBn = await this.generateState(blockNumber);
+          masterBn = stateAndBn.blockNumber;
+          this.setState(stateAndBn.state, stateAndBn.blockNumber);
 
           // we should publish only if generateState succeeded
           this.dexHelper.cache.publish('new_pools', this.cacheName);
@@ -144,8 +152,9 @@ export abstract class StatefulEventSubscriber<State>
         this.logger.info(
           `${this.parentName}: ${this.name}: cache generating state`,
         );
-        const state = await this.generateState(blockNumber);
-        this.setState(state, blockNumber);
+        const stateAndBn = await this.generateState(blockNumber);
+        masterBn = stateAndBn.blockNumber;
+        this.setState(stateAndBn.state, stateAndBn.blockNumber);
       }
     }
 
@@ -160,7 +169,7 @@ export abstract class StatefulEventSubscriber<State>
     this.dexHelper.blockManager.subscribeToLogs(
       this,
       this.addressesSubscribed,
-      masterBn || blockNumber,
+      masterBn,
     );
     this.isInitialized = true;
   }
@@ -203,7 +212,7 @@ export abstract class StatefulEventSubscriber<State>
   //generate one from scratch.
   abstract generateState(
     blockNumber?: number | 'latest',
-  ): AsyncOrSync<DeepReadonly<State>>;
+  ): AsyncOrSync<StateWithBlock<State>>;
 
   restart(blockNumber: number): void {
     for (const _bn of Object.keys(this.stateHistory)) {
@@ -251,8 +260,8 @@ export abstract class StatefulEventSubscriber<State>
         ++indexBlockEnd;
       }
       if (!this.state) {
-        const freshState = await this.generateState(blockNumber);
-        this.setState(freshState, blockNumber);
+        const freshStateAndBn = await this.generateState('latest');
+        this.setState(freshStateAndBn.state, freshStateAndBn.blockNumber);
       }
       //Find the last state before the blockNumber of the logs
       let stateBeforeLog: DeepReadonly<State> | undefined;
@@ -285,18 +294,16 @@ export abstract class StatefulEventSubscriber<State>
         if (this.state !== null) {
           return true;
         }
-        const latestBlockNumber =
-          this.dexHelper.blockManager.getLatestBlockNumber();
         this.logger.warn(
-          `${network}: ${this.parentName}: ${this.name}: master generate (latest: ${latestBlockNumber}) new state because state is null`,
+          `${network}: ${this.parentName}: ${this.name}: master generate (latest) new state because state is null`,
         );
         try {
-          const state = await this.generateState(latestBlockNumber);
-          this.setState(state, latestBlockNumber);
+          const stateAndBn = await this.generateState('latest');
+          this.setState(stateAndBn.state, stateAndBn.blockNumber);
           return true;
         } catch (e) {
           this.logger.error(
-            `${network}: ${this.parentName} ${this.name}: (${latestBlockNumber}) failed fetch state:`,
+            `${network}: ${this.parentName} ${this.name}: (latest) failed fetch state:`,
             e,
           );
         }

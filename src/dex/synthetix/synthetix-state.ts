@@ -400,14 +400,14 @@ export class SynthetixState {
       await this.multiWrapper.tryAggregate<string | bigint>(
         true,
         this._buildInitialStateCallData(),
-        blockNumber,
+        blockNumber === undefined ? 'latest' : blockNumber,
       )
     ).map(d => d.returnData) as [
       Address,
       Address,
       bigint,
       bigint,
-      ...Address[]
+      ...Address[],
     ];
 
     const [
@@ -437,7 +437,7 @@ export class SynthetixState {
       Address,
       Address,
       bigint,
-      ...string[]
+      ...string[],
     ];
 
     _require(

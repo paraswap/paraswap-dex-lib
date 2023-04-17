@@ -50,7 +50,7 @@ export const decodeATokenFromReserveData = (
 };
 
 async function _getAllTokenMetadata(
-  blockNumber: number,
+  blockNumber: number | 'latest',
   reservesList: string[],
   poolAddress: string,
   poolInterface: Interface,
@@ -97,7 +97,7 @@ async function _getAllTokenMetadata(
 }
 
 async function _getATokenSymbols(
-  blockNumber: number,
+  blockNumber: number | 'latest',
   aTokens: string[],
   erc20Interface: Interface,
   multiWrapper: MultiWrapper,
@@ -118,7 +118,7 @@ async function _getATokenSymbols(
 
 export const fetchTokenList = async (
   web3Provider: Web3,
-  blockNumber: number,
+  blockNumber: number | 'latest',
   poolAddress: string,
   poolInterface: Interface,
   erc20Interface: Interface,

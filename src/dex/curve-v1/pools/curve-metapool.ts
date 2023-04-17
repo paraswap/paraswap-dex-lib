@@ -3,7 +3,10 @@ import { Interface } from '@ethersproject/abi';
 import BigNumber from 'bignumber.js';
 import { Logger } from 'log4js';
 import { Address, Log } from '../../../types';
-import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  StateWithBlock,
+} from '../../../stateful-event-subscriber';
 import { DeepReadonly } from 'ts-essentials';
 import { PoolState as BasepoolState } from './curve-pool';
 import { ThreePool } from './3pool';
@@ -196,8 +199,14 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   }
 
   async setup(blockNumber: number, poolState: MetapoolState | null = null) {
-    if (!poolState) poolState = await this.generateState(blockNumber);
-    if (blockNumber) this.setState(poolState, blockNumber);
+    if (!poolState) {
+      const poolStateWithBn = await this.generateState(blockNumber);
+      poolState = poolStateWithBn.state as MetapoolState;
+      blockNumber = poolStateWithBn.blockNumber;
+    }
+    if (blockNumber) {
+      this.setState(poolState, blockNumber);
+    }
   }
 
   protected getRates() {
@@ -207,10 +216,17 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<Readonly<MetapoolState>> {
-    return (
-      await getManyPoolStates([this], this.dexHelper.multiContract, blockNumber)
-    )[0] as MetapoolState;
+  ): Promise<StateWithBlock<MetapoolState>> {
+    const results = await getManyPoolStates(
+      [this],
+      this.dexHelper.multiContract,
+      blockNumber,
+    );
+
+    return {
+      blockNumber: results.blockNumber,
+      state: results.states[0] as MetapoolState,
+    };
     // const getBalancesCalls = _.range(0, this.N_COINS).map<MultiCallParams<BigNumber>>(n => ({
     //   target: this.address,
     //   callData: this.poolIface.encodeFunctionData('balances', [n]),

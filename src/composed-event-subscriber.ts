@@ -1,4 +1,7 @@
-import { StatefulEventSubscriber } from './stateful-event-subscriber';
+import {
+  StatefulEventSubscriber,
+  StateWithBlock,
+} from './stateful-event-subscriber';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import {
   Address,
@@ -10,6 +13,7 @@ import {
 } from './types';
 import { Lens } from './lens';
 import { IDexHelper } from './dex-helper/idex-helper';
+import { blockAndTryAggregate } from './utils';
 
 export abstract class PartialEventSubscriber<State, SubState> {
   constructor(
@@ -51,7 +55,6 @@ export abstract class ComposedEventSubscriber<
     private blankState: DeepReadonly<State>,
   ) {
     super(parentName, name, dexHelper, logger);
-
     this.addressesSubscribed = [];
     for (const p of this.parts) {
       for (const a of p.addressesSubscribed) {
@@ -100,16 +103,21 @@ export abstract class ComposedEventSubscriber<
   }
 
   public async generateState(
-    blockNumber?: number | 'latest',
-  ): Promise<DeepReadonly<State>> {
+    blockNumber: number | 'latest',
+  ): Promise<StateWithBlock<State>> {
     let returnData: MultiCallOutput[] = [];
+    let realBlockNumber: number = 0;
     if (this.multiCallInputs.length) {
-      returnData = (
-        await this.dexHelper.multiContract.methods
-          .aggregate(this.multiCallInputs)
-          .call({}, blockNumber)
-      ).returnData;
+      const results = await blockAndTryAggregate(
+        true,
+        this.dexHelper.multiContract,
+        this.multiCallInputs,
+        blockNumber,
+      );
+      returnData = results.results.map(res => res.returnData);
+      realBlockNumber = results.blockNumber;
     }
+
     const stateParts = await Promise.all(
       this.parts.map((p, i) =>
         p.generateState(
@@ -118,9 +126,12 @@ export abstract class ComposedEventSubscriber<
         ),
       ),
     );
-    return this.parts.reduce(
-      (acc, p, i) => p.lens.set(stateParts[i])(acc),
-      this.blankState,
-    );
+    return {
+      blockNumber: realBlockNumber,
+      state: this.parts.reduce(
+        (acc, p, i) => p.lens.set(stateParts[i])(acc),
+        this.blankState,
+      ),
+    };
   }
 }

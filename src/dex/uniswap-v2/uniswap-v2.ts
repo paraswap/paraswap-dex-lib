@@ -2,7 +2,10 @@ import { AbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import {
+  StateWithBlock,
+  StatefulEventSubscriber,
+} from '../../stateful-event-subscriber';
 import {
   AdapterExchangeParam,
   Address,
@@ -43,6 +46,7 @@ import {
   isETHAddress,
   prependWithOx,
   getBigIntPow,
+  blockAndTryAggregate,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
@@ -137,7 +141,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<UniswapV2PoolState>> {
+  ): Promise<StateWithBlock<UniswapV2PoolState>> {
     let calldata = [
       {
         target: this.poolAddress,
@@ -149,22 +153,29 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
       calldata.push(this.feesMultiCallEntry!);
     }
 
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.methods
-        .aggregate(calldata)
-        .call({}, blockNumber);
+    const results = await blockAndTryAggregate(
+      true,
+      this.dexHelper.multiContract,
+      calldata,
+      blockNumber,
+    );
+
+    const data = results.results;
 
     const decodedData = coder.decode(
       ['uint112', 'uint112', 'uint32'],
-      data.returnData[0],
+      data[0].returnData,
     );
 
     return {
-      reserves0: decodedData[0].toString(),
-      reserves1: decodedData[1].toString(),
-      feeCode: this.dynamicFees
-        ? this.feesMultiCallDecoder!(data.returnData[1])
-        : this.feeCode,
+      blockNumber: results.blockNumber,
+      state: {
+        reserves0: decodedData[0].toString(),
+        reserves1: decodedData[1].toString(),
+        feeCode: this.dynamicFees
+          ? this.feesMultiCallDecoder!(data[1].returnData)
+          : this.feeCode,
+      },
     };
   }
 }
@@ -274,7 +285,10 @@ export class UniswapV2
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
     await pair.pool.initialize(blockNumber, {
-      state: { reserves0, reserves1, feeCode },
+      stateWithBn: {
+        blockNumber: blockNumber,
+        state: { reserves0, reserves1, feeCode },
+      },
     });
   }
 

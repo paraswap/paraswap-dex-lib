@@ -135,11 +135,6 @@ export const getAllowanceCallParams = (
     }
     default:
       throw new Error(`missing case for assetType ${req.assetType}`);
-      return {
-        calls: [],
-        spenders: new Set(),
-        length: 0,
-      };
   }
 };
 
@@ -241,11 +236,16 @@ export const decodeBalanceAndAllowanceMultiResult = (
   return userBalance;
 };
 
+type getBalancesResult = {
+  blockNumber: number;
+  balances: UserBalance[];
+};
+
 export const getBalances = async (
   multiv2: MultiWrapper,
   reqs: BalanceRequest[],
   blockNumber: number | 'latest' = 'latest',
-): Promise<UserBalance[]> => {
+): Promise<getBalancesResult> => {
   const calls: MultiCallParams<MultiCallParamsType>[] = []; // TODO: compute the size on advance
 
   const decodingInfo: MultiCallResultDecodeInfo[] = [];
@@ -257,27 +257,31 @@ export const getBalances = async (
     params.length += balancesCalls.length;
     decodingInfo.push(params);
   }
-  const results = await multiv2.tryAggregate<MultiCallParamsType>(
-    false,
-    calls,
-    blockNumber,
-  );
+  const resultsAndBn =
+    await multiv2.blockTryAggregateWithoutBatching<MultiCallParamsType>(
+      false,
+      calls,
+      blockNumber,
+    );
 
   const chunks = [];
   let j = 0;
-  for (let i = 0; i < results.length; ) {
+  for (let i = 0; i < resultsAndBn.results.length; ) {
     const batchSize = decodingInfo[j].length;
-    const chunk = results.slice(i, i + batchSize);
+    const chunk = resultsAndBn.results.slice(i, i + batchSize);
     chunks.push(chunk);
     j++;
     i += batchSize;
   }
 
-  return chunks.map((chunk, index) =>
-    decodeBalanceAndAllowanceMultiResult(
-      reqs[index],
-      decodingInfo[index].spenders,
-      chunk,
+  return {
+    blockNumber: resultsAndBn.blockNumber,
+    balances: chunks.map((chunk, index) =>
+      decodeBalanceAndAllowanceMultiResult(
+        reqs[index],
+        decodingInfo[index].spenders,
+        chunk,
+      ),
     ),
-  );
+  };
 };

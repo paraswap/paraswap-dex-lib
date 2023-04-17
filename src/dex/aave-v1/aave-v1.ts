@@ -57,7 +57,7 @@ export class AaveV1
     this.aContract = new Interface(ERC20 as JsonFragment[]);
   }
 
-  async initializePricing(blockNumber: number) {}
+  async initializePricing(blockNumber: number | 'latest' = 'latest') {}
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.

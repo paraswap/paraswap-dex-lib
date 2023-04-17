@@ -36,7 +36,10 @@ export class PricingHelper {
       );
   }
 
-  private async initializeDex(dexKey: string, blockNumber: number) {
+  private async initializeDex(
+    dexKey: string,
+    blockNumber: number | 'latest' = 'latest',
+  ) {
     try {
       const dexInstance = this.dexAdapterService.getDexByKey(dexKey);
 
@@ -80,7 +83,7 @@ export class PricingHelper {
     }
   }
 
-  public async initialize(blockNumber: number, dexKeys: string[]) {
+  public async initialize(blockNumber: number | 'latest', dexKeys: string[]) {
     return await Promise.all(
       dexKeys.map(key => this.initializeDex(key, blockNumber)),
     );
