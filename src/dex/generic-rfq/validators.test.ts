@@ -1,11 +1,11 @@
 import {
-  validateAndCast,
   tokensResponseValidator,
   pairsResponseValidator,
   pricesResponse,
   blacklistResponseValidator,
   firmRateResponseValidator,
 } from './validators';
+import { validateAndCast } from '../../lib/validators';
 
 describe('GenericRFQ Validator test', () => {
   describe('GenericRFQ Tokens Test', () => {

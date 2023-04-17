@@ -21,7 +21,10 @@ import {
   PlatypusData,
   PlatypusConfigInfo,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { PlatypusConfig, Adapters } from './config';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { PlatypusPoolBase } from './pool-base';
@@ -465,7 +468,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             destToken,
             1,
             this.augustusAddress,
-            this.getDeadline(),
+            getLocalDeadlineAsFriendlyPlaceholder(),
           ])
         : isETHAddress(destToken)
         ? Platypus.avaxPoolInterface.encodeFunctionData('swapToETH', [
@@ -473,7 +476,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             srcAmount,
             1,
             this.augustusAddress,
-            this.getDeadline(),
+            getLocalDeadlineAsFriendlyPlaceholder(),
           ])
         : Platypus.poolInterface.encodeFunctionData('swap', [
             srcToken,
@@ -481,7 +484,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
             srcAmount,
             1,
             this.augustusAddress,
-            this.getDeadline(),
+            getLocalDeadlineAsFriendlyPlaceholder(),
           ]),
       data.pool,
     );

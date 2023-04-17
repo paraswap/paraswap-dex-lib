@@ -226,11 +226,6 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
         gasCost = WOO_FI_V2_GAS_COST.sellQuote;
       } else if (_destAddress === this.config.quoteToken.address) {
         gasCost = WOO_FI_V2_GAS_COST.sellBase;
-      } else {
-        this.logger.error(
-          `Can not estimate gas cost in getPricesVolume. Check the logic: ` +
-            `${_srcAddress}, ${_destAddress}, ${this.config.quoteToken.address}`,
-        );
       }
 
       return [

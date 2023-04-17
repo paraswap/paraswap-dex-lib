@@ -72,7 +72,7 @@ export type DexParams = {
 export type UniswapV3SellParam = {
   path: string;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountIn: NumberAsString;
   amountOutMinimum: NumberAsString;
 };
@@ -80,7 +80,7 @@ export type UniswapV3SellParam = {
 export type UniswapV3BuyParam = {
   path: string;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountOut: NumberAsString;
   amountInMaximum: NumberAsString;
 };

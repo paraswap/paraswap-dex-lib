@@ -310,7 +310,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     }
   }
 
-  // Makes suer all the pools from poolAddress are being tracked. If a pool in not tracked yet
+  // Makes sure all the pools from poolAddress are being tracked. If a pool in not tracked yet
   // fetch the state and setup the pool, if they are being watched but don't have a valid state
   // add it to the list of unavailable pools. Return the list of unavailable pools.
   async batchCatchUpPools(
@@ -330,7 +330,14 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
           throw new Error(
             `Error_${this.dexKey} requested unsupported event pool with address ${poolAddress}`,
           );
-        newPool.addressesSubscribed = [poolAddress];
+
+        const addressesSubscribed = newPool.addressesSubscribed.map(address =>
+          address.toLowerCase(),
+        );
+        if (!addressesSubscribed.includes(poolAddress)) {
+          newPool.addressesSubscribed.push(poolAddress);
+        }
+
         await newPool.initialize(blockNumber);
         poolsToFetch.push(newPool);
       } else if (!pool.getState(blockNumber)) {
@@ -503,7 +510,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
 
     let fromIndex = curveIndexes[0];
     let toIndex = curveIndexes[1];
-    let isTokenSwap = curveIndexes[2] == 1;
+    let isTokenSwap = curveIndexes[2] === 1;
 
     let pool = this.getPoolByAddress(exchange);
     if (!pool) {
