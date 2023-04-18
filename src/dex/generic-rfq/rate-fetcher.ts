@@ -200,10 +200,6 @@ export class RateFetcher {
   private handlePairsResponse(resp: PairsResponse) {
     this.pairs = {};
 
-    if (this.rateFetcher.isPolling()) {
-      this.rateFetcher.stopPolling();
-    }
-
     const pairs: PairMap = {};
     for (const pairName of Object.keys(resp.pairs)) {
       pairs[pairName] = resp.pairs[pairName];
