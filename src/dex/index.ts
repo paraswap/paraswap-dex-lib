@@ -63,6 +63,7 @@ import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
+import { Morphex } from './morphex/morphex';
 
 const LegacyDexes = [
   CurveV2,
@@ -107,6 +108,7 @@ const Dexes = [
   Nerve,
   Platypus,
   GMX,
+  Morphex,
   JarvisV6,
   WooFiV2,
   ParaSwapLimitOrders,
