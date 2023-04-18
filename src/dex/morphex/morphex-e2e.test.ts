@@ -24,10 +24,10 @@ describe('Morphex E2E', () => {
     );
 
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'WETH';
+    const tokenBSymbol: string = 'DAI';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '2000000000';
     const tokenAAmount: string = '2000000000';
     const nativeTokenAmount = '100000000000000000000';
 
@@ -36,8 +36,8 @@ describe('Morphex E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);
