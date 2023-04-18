@@ -239,6 +239,8 @@ export class RateFetcher {
         return;
       }
 
+      if(isEmpty(this.tokens)) return;
+
       const baseToken = this.tokens[pair.base];
       const quoteToken = this.tokens[pair.quote];
 
