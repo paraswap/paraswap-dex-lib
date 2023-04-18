@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { isEmpty } from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
@@ -164,6 +165,7 @@ export class RateFetcher {
 
   start() {
     this.tokensFetcher.startPolling();
+    this.rateFetcher.startPolling();
     this.pairsFetcher.startPolling();
     if (this.blackListFetcher) {
       this.blackListFetcher.startPolling();
@@ -223,6 +225,9 @@ export class RateFetcher {
 
   private handleRatesResponse(resp: RatesResponse) {
     const pairs = this.pairs;
+
+    if(isEmpty(pairs)) return;
+
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
