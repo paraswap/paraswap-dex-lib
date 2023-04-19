@@ -40,17 +40,17 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     nativeTokenSymbol: 'ETH',
     wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     hasEIP1559: true,
-    augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusAddress: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     adapterAddresses: {
-      Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
-      Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
+      Adapter01: '0x7ebbDBB57d2ab59079423cf8337cf8805e225bB1',
+      Adapter02: '0x24c90C7d8fb463722e304A71255341610Fa7589b',
       Adapter03: '0x7c7f62e5ba00783f57b39df0530e32c195696a57',
-      Adapter04: '0x21ab8aeb35bfc0b3fd84ca810b0aa85938357be2',
-      BuyAdapter: '0x760870be538e7b4E2110e2890473CC17ADB1fdC1',
+      Adapter04: '0x23391Fed156908AeeE06Aba51D915c149D1F2780',
+      BuyAdapter: '0x639082b41b4E6d2F89c4f5F996aFfB621A74Ea10',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -313,6 +313,7 @@ export function generateConfig(network: number): Config {
   if (!baseConfig) {
     throw new Error(`No configuration found for network ${network}`);
   }
+
   const nativeTokenName =
     baseConfig.nativeTokenName || baseConfig.nativeTokenSymbol;
   if (!baseConfig.privateHttpProvider) {

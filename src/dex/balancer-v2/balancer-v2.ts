@@ -618,8 +618,7 @@ export class BalancerV2
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    if (side === SwapSide.BUY) return null;
-    return this.adapters;
+    return this.adapters[side] ? this.adapters[side] : null;
   }
 
   async getPoolIdentifiers(
@@ -628,7 +627,6 @@ export class BalancerV2
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
     const _from = this.dexHelper.config.wrapETH(from);
     const _to = this.dexHelper.config.wrapETH(to);
 
@@ -676,7 +674,6 @@ export class BalancerV2
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
-    if (side === SwapSide.BUY) return null;
     try {
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);

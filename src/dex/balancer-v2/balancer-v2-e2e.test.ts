@@ -2,9 +2,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+
 import { generateConfig } from '../../config';
 
 jest.setTimeout(50 * 1000);
@@ -30,12 +31,18 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
+        [
+          SwapSide.BUY,
+          [
+            ContractMethod.simpleBuy, ContractMethod.buy,
+          ],
+        ]
       ]);
 
-      const pairs: { name: string; sellAmount: string }[][] = [
+      const pairs: { name: string; amount: string }[][] = [
         [
-          { name: 'USDC', sellAmount: '1000000000' },
-          { name: 'dUSDC', sellAmount: '1000000000' },
+          { name: 'USDC', amount: '1000000000' },
+          { name: 'dUSDC', amount: '1000000000' },
         ],
       ];
 
@@ -49,7 +56,7 @@ describe('BalancerV2 E2E', () => {
                     tokens[pair[0].name],
                     tokens[pair[1].name],
                     holders[pair[0].name],
-                    pair[0].sellAmount,
+                    pair[0].amount,
                     side,
                     dexKey,
                     contractMethod,
@@ -62,7 +69,7 @@ describe('BalancerV2 E2E', () => {
                     tokens[pair[1].name],
                     tokens[pair[0].name],
                     holders[pair[1].name],
-                    pair[1].sellAmount,
+                    pair[1].amount,
                     side,
                     dexKey,
                     contractMethod,
