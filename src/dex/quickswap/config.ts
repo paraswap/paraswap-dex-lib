@@ -12,6 +12,15 @@ export const QuickSwapConfig: DexConfigMap<DexParams> = {
         '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
     },
   },
+  ThenaFusion: {
+    [Network.BSC]: {
+      factoryAddress: '0x306F06C147f064A010530292A1EB6737c3e378e4',
+      router: '0x327Dd3208f0bCF590A66110aCB6e5e6941A4EfA0',
+      quoteAddress: '0xeA68020D6A9532EeC42D4dB0f92B83580c39b2cA',
+      initCode:
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+    },
+  },
   QuickSwapV3: {
     [Network.POLYGON]: {
       factoryAddress: '0x411b0fAcC3489691f28ad58c47006AF5E3Ab3A28',

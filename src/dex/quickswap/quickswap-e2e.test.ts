@@ -258,6 +258,77 @@ describe('QuickSwap', () => {
     });
   });
 
+  describe('Bsc', () => {
+    const network = Network.BSC;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+    describe('ThenaFusion', () => {
+      const dexKey = 'ThenaFusion';
+
+      describe('Simpleswap', () => {
+        it('WBNB -> USDT', async () => {
+          await testE2E(
+            tokens.WBNB,
+            tokens.USDT,
+            holders.WBNB,
+            '7000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+        it('USDT -> WBNB', async () => {
+          await testE2E(
+            tokens.USDT,
+            tokens.WBNB,
+            holders.USDT,
+            '100000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+      });
+
+      describe('Multiswap', () => {
+        it('WBNB -> USDT', async () => {
+          await testE2E(
+            tokens.WBNB,
+            tokens.USDT,
+            holders.WBNB,
+            '7000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+        it('USDT -> WBNB', async () => {
+          await testE2E(
+            tokens.USDT,
+            tokens.WBNB,
+            holders.USDT,
+            '100000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+      });
+    });
+  });
+
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[network];
