@@ -59,7 +59,6 @@
     "cross-fetch": "^3.1.5",
     "es6-promise": "^4.2.8",
     "ethers": "^5.6.5",
-    "jest-cli": "^29.5.0",
     "joi": "^17.7.0",
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
