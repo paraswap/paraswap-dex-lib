@@ -291,4 +291,10 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     );
     return true;
   }
+
+  releaseResources(): void {
+    if (this.rateFetcher) {
+      this.rateFetcher.stop();
+    }
+  }
 }

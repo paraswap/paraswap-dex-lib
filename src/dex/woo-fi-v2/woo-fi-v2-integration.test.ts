@@ -360,7 +360,7 @@ describe('WooFiV2', function () {
     });
 
     const baseATokenSymbol = 'WBNB';
-    const quoteTokenSymbol = 'BUSD';
+    const quoteTokenSymbol = 'USDT';
     const baseBTokenSymbol = 'bBTC';
     const untradableSymbol = 'POPS';
 

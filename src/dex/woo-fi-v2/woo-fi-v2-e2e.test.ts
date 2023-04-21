@@ -114,7 +114,7 @@ describe('WooFiV2 E2E', () => {
 
     const baseATokenSymbol = 'WBNB';
     const baseBTokenSymbol = 'bBTC';
-    const quoteTokenSymbol = 'BUSD';
+    const quoteTokenSymbol = 'USDT';
 
     const tokenBaseAAmount = '1000000000000000000';
     const tokenQuoteAmount = '1000000000000000000';

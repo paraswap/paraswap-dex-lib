@@ -47,6 +47,7 @@ import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
+import { SoliSnek } from './solidly/forks-override/solisnek';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -116,6 +117,7 @@ const Dexes = [
   Thena,
   Velodrome,
   Cone,
+  SoliSnek,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
