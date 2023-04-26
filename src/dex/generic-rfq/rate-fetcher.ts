@@ -1,9 +1,10 @@
 import BigNumber from 'bignumber.js';
+import { isEmpty } from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
-import Fetcher from '../../lib/fetcher/fetcher';
+import { Fetcher } from '../../lib/fetcher/fetcher';
 
 import { Logger, Address, Token } from '../../types';
 import { OrderInfo } from '../paraswap-limit-orders/types';
@@ -28,12 +29,16 @@ import {
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
-  validateAndCast,
 } from './validators';
 import { genericRFQAuthHttp } from './security';
+import { validateAndCast } from '../../lib/validators';
+import {
+  createERC1271Contract,
+  ERC1271Contract,
+} from '../../lib/erc1271-utils';
+import { isContractAddress } from '../../utils';
 
 const GET_FIRM_RATE_TIMEOUT_MS = 2000;
-
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
   [
     BN_1.dividedBy(price[0]),
@@ -55,8 +60,10 @@ export class RateFetcher {
   public blackListCacheKey: string;
 
   private authHttp: (
-    secet: RFQSecret,
+    secret: RFQSecret,
   ) => (options: RequestConfig) => RequestConfig;
+
+  private verifierContract?: ERC1271Contract;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -143,8 +150,22 @@ export class RateFetcher {
     }
   }
 
+  async initialize() {
+    const isContract = await isContractAddress(
+      this.dexHelper.web3Provider,
+      this.config.maker,
+    );
+    if (isContract) {
+      this.verifierContract = createERC1271Contract(
+        this.dexHelper.web3Provider,
+        this.config.maker,
+      );
+    }
+  }
+
   start() {
     this.tokensFetcher.startPolling();
+    this.rateFetcher.startPolling();
     this.pairsFetcher.startPolling();
     if (this.blackListFetcher) {
       this.blackListFetcher.startPolling();
@@ -181,17 +202,12 @@ export class RateFetcher {
   private handlePairsResponse(resp: PairsResponse) {
     this.pairs = {};
 
-    if (this.rateFetcher.isPolling()) {
-      this.rateFetcher.stopPolling();
-    }
-
     const pairs: PairMap = {};
     for (const pairName of Object.keys(resp.pairs)) {
       pairs[pairName] = resp.pairs[pairName];
     }
 
     this.pairs = pairs;
-    this.rateFetcher.startPolling();
   }
 
   private handleBlackListResponse(resp: BlackListResponse) {
@@ -209,6 +225,9 @@ export class RateFetcher {
 
   private handleRatesResponse(resp: RatesResponse) {
     const pairs = this.pairs;
+
+    if(isEmpty(pairs)) return;
+
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
@@ -219,6 +238,8 @@ export class RateFetcher {
       if (!prices.asks || !prices.bids) {
         return;
       }
+
+      if(isEmpty(this.tokens)) return;
 
       const baseToken = this.tokens[pair.base];
       const quoteToken = this.tokens[pair.quote];
@@ -382,11 +403,17 @@ export class RateFetcher {
         this.firmRateAuth(payload);
         delete payload.secret;
       }
-
+      this.logger.info(
+        'FirmRate Request:',
+        JSON.stringify(payload).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
       const { data } = await this.dexHelper.httpRequest.request<unknown>(
         payload,
       );
-
+      this.logger.info(
+        'FirmRate Response: ',
+        JSON.stringify(data).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
         firmRateResponseValidator,
@@ -397,6 +424,7 @@ export class RateFetcher {
         this.dexHelper.config.data.augustusRFQAddress,
         this.dexHelper.multiWrapper,
         firmRateResp.order,
+        this.verifierContract,
       );
 
       return {

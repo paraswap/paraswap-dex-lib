@@ -1,11 +1,11 @@
 import {
-  validateAndCast,
   tokensResponseValidator,
   pairsResponseValidator,
   pricesResponse,
   blacklistResponseValidator,
   firmRateResponseValidator,
 } from './validators';
+import { validateAndCast } from '../../lib/validators';
 
 describe('GenericRFQ Validator test', () => {
   describe('GenericRFQ Tokens Test', () => {
@@ -112,10 +112,11 @@ describe('GenericRFQ Validator test', () => {
       },
     };
 
-    const pricesInvalidBidsNotSortedDesc = {
+    const pricesNegativeSpread = {
       prices: {
         'WETH/DAI': {
           bids: [
+            ['1337.425240000000000000', '1.166200000000000000'],
             ['1333.024812000000000000', '1.166200000000000000'],
             ['1333.425240000000000000', '1.166200000000000000'],
             ['1332.624384000000000000', '1.166200000000000000'],
@@ -126,29 +127,6 @@ describe('GenericRFQ Validator test', () => {
           asks: [
             ['1336.745410000000000000', '1.166200000000000000'],
             ['1337.146033000000000000', '1.166200000000000000'],
-            ['1337.546656000000000000', '1.166200000000000000'],
-            ['1337.947279000000000000', '1.166200000000000000'],
-            ['1338.347902000000000000', '1.166200000000000000'],
-            ['1338.748525000000000000', '1.169000000000000000'],
-          ],
-        },
-      },
-    };
-
-    const pricesInvalidAskNotSortedAsc = {
-      prices: {
-        'WETH/DAI': {
-          bids: [
-            ['1333.425240000000000000', '1.166200000000000000'],
-            ['1333.024812000000000000', '1.166200000000000000'],
-            ['1332.624384000000000000', '1.166200000000000000'],
-            ['1332.223956000000000000', '1.166200000000000000'],
-            ['1331.823528000000000000', '1.166200000000000000'],
-            ['1331.423100000000000000', '1.169000000000000000'],
-          ],
-          asks: [
-            ['1337.146033000000000000', '1.166200000000000000'],
-            ['1336.745410000000000000', '1.166200000000000000'],
             ['1337.546656000000000000', '1.166200000000000000'],
             ['1337.947279000000000000', '1.166200000000000000'],
             ['1338.347902000000000000', '1.166200000000000000'],
@@ -201,12 +179,6 @@ describe('GenericRFQ Validator test', () => {
     it('Price test', () => {
       expect(() => validateAndCast(prices, pricesResponse)).not.toThrowError();
       expect(() =>
-        validateAndCast(pricesInvalidBidsNotSortedDesc, pricesResponse),
-      ).toThrowError();
-      expect(() =>
-        validateAndCast(pricesInvalidAskNotSortedAsc, pricesResponse),
-      ).toThrowError();
-      expect(() =>
         validateAndCast(noPrices, pricesResponse),
       ).not.toThrowError();
       expect(() =>
@@ -218,6 +190,9 @@ describe('GenericRFQ Validator test', () => {
       expect(() =>
         validateAndCast(onlyAsks, pricesResponse),
       ).not.toThrowError();
+      expect(() =>
+        validateAndCast(pricesNegativeSpread, pricesResponse),
+      ).toThrowError('the maximum bid is higher than minimum ask');
     });
   });
 
@@ -261,11 +236,10 @@ describe('GenericRFQ Validator test', () => {
       },
     };
 
-    it('Blacklist test', () => {
+    it('Order test', () => {
       expect(() =>
         validateAndCast(order, firmRateResponseValidator),
       ).not.toThrowError();
-      // expect(() => validateAndCast(invalidBlacklist, blacklistResponseValidator)).toThrowError();
     });
   });
 });

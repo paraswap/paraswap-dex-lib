@@ -1,5 +1,5 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, Address } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -20,7 +20,6 @@ import * as _ from 'lodash';
 import { BI_POWS } from '../../bigint-constants';
 import { getBigIntPow } from '../../utils';
 
-const coder = new AbiCoder();
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
@@ -58,7 +57,7 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
       `${tokenA.address}_${tokenB.address}_${fee}_${tickSpacing}_${lookback}_${address}`,
       dexHelper,
       logger,
-      true,
+      false,
       mapKey,
     );
 
@@ -323,19 +322,47 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
-  swap(amount: bigint, from: Token, to: Token, side: boolean) {
-    const scaledAmount = side
-      ? this.scaleFromAmount(amount, to)
-      : this.scaleFromAmount(amount, from);
-    const output = this.poolMath.swap(
-      _.cloneDeep(this.state!),
-      scaledAmount,
-      from.address.toLowerCase() == this.tokenA.address.toLowerCase(),
-      side,
-    );
-    return side
-      ? this.scaleToAmount(output[0], from)
-      : this.scaleToAmount(output[1], to);
+  swap(
+    amount: bigint,
+    from: Token,
+    to: Token,
+    side: boolean,
+  ): [bigint, number] {
+    try {
+      const scaledAmount = side
+        ? this.scaleFromAmount(amount, to)
+        : this.scaleFromAmount(amount, from);
+      const tempState = _.cloneDeep(this.state!);
+      const preActiveTick = tempState.activeTick;
+      const output = this.poolMath.swap(
+        tempState,
+        scaledAmount,
+        from.address.toLowerCase() == this.tokenA.address.toLowerCase(),
+        side,
+        true,
+      );
+
+      if (output[0] == 0n && output[1] == 0n) {
+        this.logger.trace(
+          `Reached max swap iteration calculation for address=${this.address} amount=${amount}, from=${from.address}, to=${to.address}, side=${side}`,
+        );
+        return [0n, 0];
+      }
+
+      const postActiveTick = tempState.activeTick;
+      const tickDiff = Math.abs(Number(postActiveTick) - Number(preActiveTick));
+      return [
+        side
+          ? this.scaleToAmount(output[0], from)
+          : this.scaleToAmount(output[1], to),
+        tickDiff,
+      ];
+    } catch (e) {
+      this.logger.debug(
+        `Failed to calculate swap for address=${this.address} amount=${amount}, from=${from.address}, to=${to.address}, side=${side} math: ${e}`,
+      );
+      return [0n, 0];
+    }
   }
 
   scaleFromAmount(amount: bigint, token: Token) {

@@ -38,7 +38,7 @@ import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { GMX } from './gmx/gmx';
-// import { WooFi } from './woo-fi/woo-fi';
+import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
@@ -46,6 +46,7 @@ import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
+import { SoliSnek } from './solidly/forks-override/solisnek';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -109,13 +110,14 @@ const Dexes = [
   Platypus,
   GMX,
   JarvisV6,
-  // WooFi,
+  WooFiV2,
   ParaSwapLimitOrders,
   Solidly,
   SolidlyEthereum,
   SpiritSwapV2,
   Velodrome,
   Cone,
+  SoliSnek,
   Synthetix,
   CurveV1Factory,
   SwaapV1,

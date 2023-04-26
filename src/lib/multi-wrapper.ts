@@ -1,3 +1,4 @@
+import { BytesLike } from 'ethers';
 import _ from 'lodash';
 import { Logger } from 'log4js';
 import { Contract } from 'web3-eth-contract';
@@ -10,7 +11,7 @@ export type MultiResult<T> = {
 export type MultiCallParams<T> = {
   target: string;
   callData: string;
-  decodeFunction: (str: MultiResult<string> | string) => T;
+  decodeFunction: (str: MultiResult<BytesLike> | BytesLike) => T;
   cb?: (data: T) => void;
 };
 

@@ -358,14 +358,14 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           coinsInputType: 'uint256',
           balancesInputType: 'uint256',
         },
-        '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
-          name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
-          address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
-          lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
-          liquidityApiSlug: '/main',
-          coinsInputType: 'uint256',
-          balancesInputType: 'uint256',
-        },
+        // '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
+        //   name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
+        //   address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
+        //   lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
+        //   liquidityApiSlug: '/main',
+        //   coinsInputType: 'uint256',
+        //   balancesInputType: 'uint256',
+        // },
       },
     },
     [Network.AVALANCHE]: {

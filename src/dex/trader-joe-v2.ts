@@ -2,7 +2,10 @@ import { Network, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { IDexHelper } from '../dex-helper';
-import { SimpleExchange } from './simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from './simple-exchange';
 import { NumberAsString } from '@paraswap/core';
 import { AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
@@ -11,6 +14,7 @@ import TraderJoeV2RouterABI from '../abi/TraderJoeV2Router.json';
 const TRADERJOE_V2_ROUTER_ADDRESS: { [network: number]: Address } = {
   [Network.AVALANCHE]: '0xE3Ffc583dC176575eEA7FD9dF2A7c65F7E23f4C3',
   [Network.ARBITRUM]: '0x7BFd7192E76D950832c77BB412aaE841049D8D9B',
+  [Network.BSC]: '0xb66A2704a0dabC1660941628BE987B4418f7a9E8',
 };
 
 type TraderJoeV2RouterSellParams = [
@@ -28,7 +32,7 @@ type TraderJoeV2RouterBuyParams = [
   _pairBinSteps: NumberAsString[],
   _tokenPath: Address[],
   to: Address,
-  _deadline: number,
+  _deadline: string,
 ];
 
 type TraderJoeV2RouterParam =
@@ -36,7 +40,6 @@ type TraderJoeV2RouterParam =
   | TraderJoeV2RouterBuyParams;
 
 export type TraderJoeV2Data = {
-  deadline?: number;
   tokenIn: string; // redundant
   tokenOut: string; // redundant
   binStep: string;
@@ -86,7 +89,7 @@ export class TraderJoeV2
       {
         _pairBinSteps: [data.binStep],
         _tokenPath: [data.tokenIn, data.tokenOut], // FIXME: redundant, shoot & read from contract
-        _deadline: data.deadline || this.getDeadline(),
+        _deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -118,7 +121,7 @@ export class TraderJoeV2
             [data.binStep],
             [srcToken, destToken],
             this.augustusAddress,
-            data.deadline || this.getDeadline(),
+            getLocalDeadlineAsFriendlyPlaceholder(),
           ]
         : [
             destAmount,
@@ -126,7 +129,7 @@ export class TraderJoeV2
             [data.binStep],
             [srcToken, destToken],
             this.augustusAddress,
-            data.deadline || this.getDeadline(),
+            getLocalDeadlineAsFriendlyPlaceholder(),
           ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
       swapFunction,

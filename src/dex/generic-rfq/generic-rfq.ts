@@ -53,7 +53,8 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     this.rateFetcher = new RateFetcher(dexHelper, config, dexKey, this.logger);
   }
 
-  initializePricing(blockNumber: number): void {
+  async initializePricing(blockNumber: number): Promise<void> {
+    await this.rateFetcher.initialize();
     if (!this.dexHelper.config.isSlave) {
       this.rateFetcher.start();
     }
@@ -289,5 +290,11 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       'true',
     );
     return true;
+  }
+
+  releaseResources(): void {
+    if (this.rateFetcher) {
+      this.rateFetcher.stop();
+    }
   }
 }
