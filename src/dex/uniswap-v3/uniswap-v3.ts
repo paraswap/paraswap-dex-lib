@@ -43,7 +43,6 @@ import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulti
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_FUNCTION_CALL_GAS_COST,
-  UNISWAPV3_SUBGRAPH_URL,
   UNISWAPV3_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
@@ -56,7 +55,6 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
-import { SolidlyConfig } from '../solidly/config';
 
 type PoolPairsInfo = {
   token0: Address;
