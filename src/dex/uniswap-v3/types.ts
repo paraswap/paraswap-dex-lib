@@ -67,6 +67,9 @@ export type DexParams = {
   uniswapMulticall: Address;
   supportedFees: bigint[];
   chunksCount: number;
+  deployer?: Address;
+  subgraphURL: string;
+  initHash: string;
 };
 
 export type UniswapV3SellParam = {
