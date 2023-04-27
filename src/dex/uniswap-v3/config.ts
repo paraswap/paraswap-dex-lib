@@ -48,7 +48,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x963Df249eD09c358A4819E39d9Cd5736c3087184',
       chunksCount: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-bsc',
     },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -59,7 +60,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon',
     },
     [Network.ARBITRUM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -70,7 +72,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal',
     },
     [Network.OPTIMISM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -81,7 +84,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis',
     },
   },
   PancakeswapV3: {
