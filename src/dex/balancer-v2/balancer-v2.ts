@@ -2,49 +2,50 @@ import { Interface } from '@ethersproject/abi';
 import { assert, DeepReadonly } from 'ts-essentials';
 import _, { keyBy } from 'lodash';
 import {
-  Token,
+  AdapterExchangeParam,
   Address,
   ExchangePrices,
-  PoolPrices,
   Log,
-  AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
+  PoolLiquidity,
+  PoolPrices,
+  SimpleExchangeParam,
+  Token,
 } from '../../types';
 import {
-  SwapSide,
   ETHER_ADDRESS,
-  NULL_ADDRESS,
   MAX_INT,
   MAX_UINT,
   Network,
+  NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
+  SwapSide,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { StablePool, WeightedPool } from './balancer-v2-pool';
-import { PhantomStablePool } from './PhantomStablePool';
-import { LinearPool } from './LinearPool';
+import { StablePool } from './pools/stable/StablePool';
+import { WeightedPool } from './pools/weighted/WeightedPool';
+import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
+import { LinearPool } from './pools/linear/LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
-  PoolState,
-  SubgraphPoolBase,
-  BalancerV2Data,
   BalancerParam,
-  BalancerSwap,
-  OptimizedBalancerV2Data,
-  SwapTypes,
-  PoolStateMap,
-  PoolStateCache,
   BalancerPoolTypes,
+  BalancerSwap,
+  BalancerV2Data,
+  OptimizedBalancerV2Data,
+  PoolState,
+  PoolStateCache,
+  PoolStateMap,
   SubgraphPoolAddressDictionary,
+  SubgraphPoolBase,
+  SwapTypes,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { BalancerConfig, Adapters } from './config';
+import { Adapters, BalancerConfig } from './config';
 import {
   getAllPoolsUsedInPaths,
   isSameAddress,
@@ -407,13 +408,22 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const unitResult =
       checkedUnitVolume === 0n
         ? 0n
-        : pool.onSell([checkedUnitVolume], poolPairData as any)[0];
+        : side === SwapSide.SELL
+        ? pool.onSell([checkedUnitVolume], poolPairData as any)[0]
+        : pool.onBuy([checkedUnitVolume], poolPairData as any)[0];
 
     const prices: bigint[] = new Array(amounts.length).fill(0n);
-    const outputs = pool.onSell(
-      amountWithoutZero.slice(0, nonZeroAmountIndex),
-      poolPairData as any,
-    );
+
+    const outputs =
+      side === SwapSide.SELL
+        ? pool.onSell(
+            amountWithoutZero.slice(0, nonZeroAmountIndex),
+            poolPairData as any,
+          )
+        : pool.onBuy(
+            amountWithoutZero.slice(0, nonZeroAmountIndex),
+            poolPairData as any,
+          );
 
     assert(
       outputs.length <= prices.length,
@@ -953,7 +963,12 @@ export class BalancerV2
         poolId: hop.pool.id,
         assetInIndex: swapOffset + index,
         assetOutIndex: swapOffset + index + 1,
-        amount: index === 0 ? swapData.amount : '0',
+        amount:
+          side === SwapSide.SELL && index === 0
+            ? swapData.amount
+            : side === SwapSide.BUY && index === path.length - 1
+            ? swapData.amount
+            : '0',
         userData: '0x',
       }));
 
@@ -980,7 +995,7 @@ export class BalancerV2
 
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
-      swaps,
+      side === SwapSide.SELL ? swaps : swaps.reverse(),
       assets,
       funds,
       limits,

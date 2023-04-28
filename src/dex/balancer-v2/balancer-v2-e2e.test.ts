@@ -21,6 +21,90 @@ describe('BalancerV2 E2E', () => {
       network,
     );
 
+    describe('Popular tokens', () => {
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+        [
+          SwapSide.BUY,
+          [
+            ContractMethod.simpleBuy,
+            ContractMethod.buy,
+          ],
+        ],
+      ]);
+
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+        [
+          { name: 'ETH', sellAmount: '2000000000000', buyAmount: '10000000000' },
+          { name: 'USDC', sellAmount: '37690000', buyAmount: '20035947428035770' },
+        ],
+        [
+          { name: 'USDC', sellAmount: '1000000', buyAmount: '100000000000000' },
+          { name: 'WETH', sellAmount: '70000000000', buyAmount: '20000000000' },
+        ],
+        [
+          { name: 'USDC', sellAmount: '10000000000', buyAmount: '20000000000000000000' },
+          { name: 'DAI',  sellAmount: '200000000000000', buyAmount: '2000000000000' },
+        ],
+        [
+          { name: 'wstETH', sellAmount: '3000000000000000000', buyAmount: '3000000000000000000' },
+          { name: 'ETH', sellAmount: '200000000000', buyAmount: '7000000000000000000' },
+        ],
+        [
+          { name: 'WETH', sellAmount: '20000000000', buyAmount: '200000000000000000' },
+          { name: 'PSP', sellAmount: '200000000000000', buyAmount: '104000894327009489' }
+        ],
+        [
+          { name: 'WETH', sellAmount: '200000000000000000', buyAmount: '20000' },
+          { name: 'WBTC', sellAmount: '20000', buyAmount: '200000000000000000' }
+        ],
+      ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
+
     describe('GearboxLinear pool', () => {
       const sideToContractMethods = new Map([
         [
@@ -34,7 +118,8 @@ describe('BalancerV2 E2E', () => {
         [
           SwapSide.BUY,
           [
-            ContractMethod.simpleBuy, ContractMethod.buy,
+            ContractMethod.simpleBuy,
+            ContractMethod.buy,
           ],
         ]
       ]);
@@ -42,7 +127,7 @@ describe('BalancerV2 E2E', () => {
       const pairs: { name: string; amount: string }[][] = [
         [
           { name: 'USDC', amount: '1000000000' },
-          { name: 'dUSDC', amount: '1000000000' },
+          { name: 'dUSDC', amount: '100000000000' },
         ],
       ];
 
@@ -84,59 +169,6 @@ describe('BalancerV2 E2E', () => {
       );
     });
 
-    describe('Simpleswap', () => {
-      it('ETH -> TOKEN', async () => {
-        await testE2E(
-          tokens['ETH'],
-          tokens['USDC'],
-          holders['ETH'],
-          '7000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('TOKEN -> ETH', async () => {
-        await testE2E(
-          tokens['USDC'],
-          tokens['ETH'],
-          holders['USDC'],
-          '2000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('TOKEN -> TOKEN', async () => {
-        await testE2E(
-          tokens['USDC'],
-          tokens['WETH'],
-          holders['USDC'],
-          '20000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('USDC -> USDT ComposableStable', async () => {
-        await testE2E(
-          tokens['USDC'],
-          tokens['USDT'],
-          holders['USDC'],
-          '10000001000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
       //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
       /*it('MAIN TOKEN -> BPT, LinearPool', async () => {
         // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
@@ -253,62 +285,6 @@ describe('BalancerV2 E2E', () => {
         );
       });*/
 
-      it('wstETH -> ETH, MetaStable Pool', async () => {
-        await testE2E(
-          tokens['wstETH'],
-          tokens['ETH'],
-          holders['wstETH'],
-          '3000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('Multiswap', () => {
-      it('ETH -> TOKEN', async () => {
-        await testE2E(
-          tokens['ETH'],
-          tokens['WBTC'],
-          holders['ETH'],
-          '7000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('TOKEN -> ETH', async () => {
-        await testE2E(
-          tokens['USDC'],
-          tokens['ETH'],
-          holders['USDC'],
-          '2000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('TOKEN -> TOKEN', async () => {
-        await testE2E(
-          tokens['USDC'],
-          tokens['WBTC'],
-          holders['USDC'],
-          '20000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-
       //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
       /*
       it('MAIN TOKEN -> BPT, LinearPool', async () => {
@@ -366,50 +342,6 @@ describe('BalancerV2 E2E', () => {
         );
       });
       */
-    });
-
-    //BUY is not currently supported for BalancerV2
-    //describe('SimpleBuy', () => {
-    //  it('ETH -> TOKEN buy', async () => {
-    //    await testE2E(
-    //      tokens['ETH'],
-    //      tokens['WBTC'],
-    //      holders['ETH'],
-    //      '35000000',
-    //      SwapSide.BUY,
-    //      dexKey,
-    //      ContractMethod.simpleBuy,
-    //      network,
-    //      provider,
-    //    );
-    //  });
-    //  it('TOKEN -> ETH buy', async () => {
-    //    await testE2E(
-    //      tokens['USDC'],
-    //      tokens['ETH'],
-    //      holders['USDC'],
-    //      '1000000000000000000',
-    //      SwapSide.BUY,
-    //      dexKey,
-    //      ContractMethod.simpleBuy,
-    //      network,
-    //      provider,
-    //    );
-    //  });
-    //  it('TOKEN -> TOKEN buy', async () => {
-    //    await testE2E(
-    //      tokens['USDC'],
-    //      tokens['WETH'],
-    //      holders['USDC'],
-    //      '1000000000000000000',
-    //      SwapSide.BUY,
-    //      dexKey,
-    //      ContractMethod.simpleBuy,
-    //      network,
-    //      provider,
-    //    );
-    //  });
-    //});
   });
 
   describe('BalancerV2 ARBITRUM', () => {

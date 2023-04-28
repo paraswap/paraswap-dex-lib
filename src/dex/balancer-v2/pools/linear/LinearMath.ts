@@ -1,4 +1,4 @@
-import { MathSol } from './balancer-v2-math';
+import { MathSol } from '../../balancer-v2-math';
 
 /*
 Note when comparing vs smart contract:
