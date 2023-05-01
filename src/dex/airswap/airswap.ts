@@ -26,6 +26,7 @@ import { AddressZero } from '@ethersproject/constants';
 
 import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
 import {
+  computePricesFromLevels,
   getAvailableMakersForRFQ,
   getServersUrl,
   makeRFQ,
@@ -60,7 +61,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
-    readonly routerAddress: string = AirSwapConfig.AirSwap[network].swap,
+    readonly routerAddress: string = AirSwapConfig.AirSwap[network].swapErc20,
     protected routerInterface = new Interface(JSON.stringify(swapABI.abi)),
   ) {
     super(dexHelper, dexKey);
@@ -179,7 +180,11 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     // get pricing to corresponding pair token for each maker
     const levelRequests = marketMakersUris.map(url => ({
       maker: url,
-      levels: [{ level: '1', price: '1' }], //maker.getPricing(url, srcToken, destToken), @TODO
+      levels: [
+        { level: '10', price: '0.99' },
+        { level: '1000', price: '0.98' },
+        { level: '1000', price: '0.97' },
+      ], //maker.getPricing(url, srcToken, destToken), @TODO
     }));
     const levels = await Promise.all(levelRequests);
 
@@ -194,14 +199,15 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         new BigNumber(amount.toString()).dividedBy(divider),
       );
 
-      const unitPrice: bigint = this.computePricesFromLevels(
+      console.log('amounts', amounts);
+      const unitPrice: bigint = computePricesFromLevels(
         [BN_1],
         levels,
         normalizedSrcToken,
         normalizedDestToken,
         side,
       )[0];
-      const prices = this.computePricesFromLevels(
+      const prices = computePricesFromLevels(
         amountsRaw,
         levels,
         normalizedSrcToken,
@@ -225,104 +231,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     });
 
     return prices;
-  }
-
-  computePricesFromLevels(
-    amounts: BigNumber[],
-    levels: PriceLevel[],
-    srcToken: Token,
-    destToken: Token,
-    side: SwapSide,
-  ): bigint[] {
-    if (levels.length > 0) {
-      const firstLevel = levels[0];
-      if (new BigNumber(firstLevel.level).gt(0)) {
-        // Add zero level for price computation
-        levels.unshift({ level: '0', price: firstLevel.price });
-      }
-    }
-
-    const outputs = new Array<BigNumber>(amounts.length).fill(BN_0);
-    for (const [index, amount] of amounts.entries()) {
-      if (amount.isZero()) {
-        outputs[index] = BN_0;
-      } else {
-        const output =
-          side === SwapSide.SELL
-            ? this.computeLevelsQuote(levels, amount, undefined)
-            : this.computeLevelsQuote(levels, undefined, amount);
-
-        if (output === undefined) {
-          // If current amount was unfillable, then bigger amounts are unfillable as well
-          break;
-        } else {
-          outputs[index] = output;
-        }
-      }
-    }
-
-    const decimals =
-      side === SwapSide.SELL ? destToken.decimals : srcToken.decimals;
-
-    return outputs.map(output =>
-      BigInt(output.multipliedBy(getBigNumberPow(decimals)).toFixed(0)),
-    );
-  }
-
-  levelsToLevelsBigNumber = (
-    priceLevels: PriceLevel[],
-  ): { level: BigNumber; price: BigNumber }[] =>
-    priceLevels.map(l => ({
-      level: new BigNumber(l.level),
-      price: new BigNumber(l.price),
-    }));
-
-  computeLevelsQuote(
-    priceLevels: PriceLevel[],
-    baseAmount?: BigNumber,
-    quoteAmount?: BigNumber,
-  ): BigNumber | undefined {
-    if (priceLevels.length === 0) {
-      return undefined;
-    }
-    const levels = this.levelsToLevelsBigNumber(priceLevels);
-
-    const quote = {
-      baseAmount: levels[0].level,
-      quoteAmount: levels[0].level.multipliedBy(levels[0].price),
-    };
-    if (
-      (baseAmount && baseAmount.lt(quote.baseAmount)) ||
-      (quoteAmount && quoteAmount.lt(quote.quoteAmount))
-    ) {
-      return undefined;
-    }
-
-    for (let i = 1; i < levels.length; i++) {
-      const nextLevel = levels[i];
-      const nextLevelDepth = nextLevel.level.minus(levels[i - 1]!.level);
-      const nextLevelQuote = quote.quoteAmount.plus(
-        nextLevelDepth.multipliedBy(nextLevel.price),
-      );
-      if (baseAmount && baseAmount.lte(nextLevel.level)) {
-        const baseDifference = baseAmount.minus(quote.baseAmount);
-        const quoteAmount = quote.quoteAmount.plus(
-          baseDifference.multipliedBy(nextLevel.price),
-        );
-        return quoteAmount;
-      } else if (quoteAmount && quoteAmount.lte(nextLevelQuote)) {
-        const quoteDifference = quoteAmount.minus(quote.quoteAmount);
-        const baseAmount = quote.baseAmount.plus(
-          quoteDifference.dividedBy(nextLevel.price),
-        );
-        return baseAmount;
-      }
-
-      quote.baseAmount = nextLevel.level;
-      quote.quoteAmount = nextLevelQuote;
-    }
-
-    return undefined;
   }
 
   // @TODO Heeeeelp

@@ -51,9 +51,9 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
-    "@airswap/libraries": "4.0.3",
+    "@airswap/libraries": "4.0.4",
     "@airswap/swap-erc20": "4.0.2",
-    "@airswap/typescript": "3.0.3",
+    "@airswap/types": "4.0.2",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.0.2",
     "@paraswap/core": "1.1.0",

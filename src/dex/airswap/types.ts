@@ -1,4 +1,4 @@
-import { OrderERC20 } from '@airswap/typescript';
+import { OrderERC20 } from '@airswap/types';
 
 export type PoolState = {
   // TODO: poolState is the state of event
@@ -14,12 +14,14 @@ export type AirswapData = {
 };
 
 export type DexParams = {
-  swap: string;
+  swapErc20: string;
   makerRegistry: string;
 };
 
 export interface PriceLevel {
+  // threshold: number;
   level: string;
+  // level: number;
   price: string;
 }
 
