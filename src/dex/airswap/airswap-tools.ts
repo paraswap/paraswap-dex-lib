@@ -277,7 +277,7 @@ export async function makeRFQ(
   return Promise.resolve({ maker: maker.locator, signedOrder: response });
 }
 
-export async function getPricingErc20(
+export async function getPricingErc20( // https://kehr54rr.altono.xyz/airswap/mainet/
   url: string,
   srcToken: Token,
   destToken: Token,
@@ -288,7 +288,7 @@ export async function getPricingErc20(
     method: 'getPricingERC20',
     params: [
       {
-        baseToken: 'WETH',
+        baseToken: 'USDC',
         quoteToken: 'USDT',
       },
     ],
@@ -306,14 +306,18 @@ export async function getPricingErc20(
 
   try {
     const response = await axios.request(config);
-    return response.data.result[0].bid.map((bid: number[]) => {
-      const [threshold, price] = bid;
-      return { threshold, price };
-    });
+    return mapMakerResponse(response.data.result[0].bid);
   } catch (err) {
     console.log('response', err);
     return [];
   }
+}
+
+export function mapMakerResponse(bid: number[][]) {
+  return bid.map((bid: number[]) => {
+    const [threshold, price] = bid;
+    return { level: ""+threshold, price: ""+price };
+  })
 }
 
 export function computePricesFromLevels(

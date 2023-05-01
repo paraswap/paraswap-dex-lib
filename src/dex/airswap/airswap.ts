@@ -30,6 +30,7 @@ import {
   getAvailableMakersForRFQ,
   getServersUrl,
   makeRFQ,
+  mapMakerResponse,
 } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
@@ -76,7 +77,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) {}
+  async initializePricing(blockNumber: number) { }
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -178,13 +179,39 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
 
     const marketMakersUris = pools.map(this.getMakerUrlFromKey);
     // get pricing to corresponding pair token for each maker
+    const mockedBids = mapMakerResponse([
+      [
+          1,
+          1.0000804135489818
+      ],
+      [
+          28632.23189406919,
+          1.000031329146842
+      ],
+      [
+          60127.68697754531,
+          0.9999282642399678
+      ],
+      [
+          94772.68756936904,
+          0.9998149093727866
+      ],
+      [
+          132882.18822037516,
+          0.9996902412973147
+      ],
+      [
+          174802.63893648188,
+          0.9995531333644397
+      ],
+      [
+          220915.13472419925,
+          0.9994023472389632
+      ]
+  ]);
     const levelRequests = marketMakersUris.map(url => ({
       maker: url,
-      levels: [
-        { level: '10', price: '0.99' },
-        { level: '1000', price: '0.98' },
-        { level: '1000', price: '0.97' },
-      ], //maker.getPricing(url, srcToken, destToken), @TODO
+      levels: mockedBids, //maker.getPricing(url, srcToken, destToken), @TODO
     }));
     const levels = await Promise.all(levelRequests);
 
@@ -199,7 +226,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         new BigNumber(amount.toString()).dividedBy(divider),
       );
 
-      console.log('amounts', amounts);
       const unitPrice: bigint = computePricesFromLevels(
         [BN_1],
         levels,
@@ -214,7 +240,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         normalizedDestToken,
         side,
       );
-
+console.log("prices", prices)
       return {
         gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,
@@ -229,7 +255,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         poolAddresses: [this.routerAddress],
       };
     });
-
+    console.log(prices)
     return prices;
   }
 
@@ -340,8 +366,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
       );
       throw new Error(
-        `${this.dexKey}-${
-          this.network
+        `${this.dexKey}-${this.network
         }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
       );
     }
@@ -365,16 +390,16 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       responses =
         makers.length > 0
           ? await Promise.allSettled(
-              makers.map(maker => {
-                return makeRFQ(
-                  maker,
-                  this.augustusAddress.toLocaleLowerCase(),
-                  normalizedSrcToken,
-                  normalizedDestToken,
-                  amount,
-                );
-              }),
-            )
+            makers.map(maker => {
+              return makeRFQ(
+                maker,
+                this.augustusAddress.toLocaleLowerCase(),
+                normalizedSrcToken,
+                normalizedDestToken,
+                amount,
+              );
+            }),
+          )
           : ({} as unknown as any);
     } catch (error) {
       console.error(error);
