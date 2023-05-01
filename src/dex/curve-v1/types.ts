@@ -7,6 +7,7 @@ export type CurveV1Data = {
   j: number;
   underlyingSwap: boolean;
   deadline: number;
+  isApproved?: boolean;
 };
 
 export type PoolConfig = {

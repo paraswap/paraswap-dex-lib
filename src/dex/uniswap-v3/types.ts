@@ -57,6 +57,7 @@ export type UniswapV3Data = {
     tokenOut: Address;
     fee: NumberAsString;
   }[];
+  isApproved?: boolean;
 };
 
 export type DexParams = {

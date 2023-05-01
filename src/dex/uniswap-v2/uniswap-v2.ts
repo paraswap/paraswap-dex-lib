@@ -796,7 +796,6 @@ export class UniswapV2
     feePercent: NumberAsString,
     deadline: NumberAsString,
     partner: string,
-    isApproved: boolean,
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<UniswapParam> {

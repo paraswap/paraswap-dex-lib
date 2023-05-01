@@ -85,6 +85,7 @@ export type BalancerSwapV2 = {
 
 export type OptimizedBalancerV2Data = {
   swaps: BalancerSwapV2[];
+  isApproved?: boolean;
 };
 
 export type BalancerFunds = {

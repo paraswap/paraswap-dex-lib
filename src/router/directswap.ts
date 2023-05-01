@@ -29,7 +29,6 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     permit: string,
     deadline: string,
     uuid: string,
-    isApproved: boolean,
   ): TxInfo<DexDirectReturn> {
     // TODO: add checks for src and dest amounts
     if (
@@ -75,7 +74,6 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       partnerFeePercent,
       deadline,
       partnerAddress,
-      isApproved,
       beneficiary,
       priceRoute.contractMethod,
     );

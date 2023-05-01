@@ -15,6 +15,7 @@ import CurveV2ABI from '../abi/CurveV2.json';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 import { assert } from 'ts-essentials';
+import { Logger } from 'log4js';
 
 export enum CurveV2SwapType {
   EXCHANGE,
@@ -30,6 +31,7 @@ type CurveV2Data = {
   exchange: string;
   originalPoolAddress: Address;
   swapType: CurveV2SwapType;
+  isApproved?: boolean;
 };
 
 type CurveV2Param = [
@@ -83,6 +85,7 @@ export class CurveV2
   genericFactoryZapIface: Interface;
   minConversionRate = '1';
   needWrapNative = true;
+  logger: Logger;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
 
@@ -90,6 +93,9 @@ export class CurveV2
     super(dexHelper, 'curvev2');
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
     this.genericFactoryZapIface = new Interface(GenericFactoryZapABI);
+    this.logger = dexHelper.getLogger(
+      `CurveV2_${dexHelper.config.data.network}`,
+    );
   }
 
   getAdapterParam(
@@ -140,7 +146,6 @@ export class CurveV2
     feePercent: NumberAsString,
     deadline: NumberAsString,
     partner: string,
-    isApproved: boolean,
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<DirectCurveParam> {
@@ -148,6 +153,11 @@ export class CurveV2
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
     assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
 
     const swapParams: DirectCurveParam = [
       srcToken,

@@ -835,7 +835,6 @@ export class CurveV1Factory
     feePercent: NumberAsString,
     deadline: NumberAsString,
     partner: string,
-    isApproved: boolean,
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<DirectCurveParam> {
@@ -843,6 +842,11 @@ export class CurveV1Factory
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
     assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
 
     const isETH =
       srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase() ||

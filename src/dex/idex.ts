@@ -84,7 +84,6 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     feePercent: NumberAsString,
     deadline: NumberAsString,
     partner: string,
-    isApproved: boolean,
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<DirectParam>;

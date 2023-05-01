@@ -70,6 +70,7 @@ export type CurveV1FactoryData = {
   i: number;
   j: number;
   underlyingSwap: boolean;
+  isApproved?: boolean;
 };
 
 export enum FactoryImplementationNames {

@@ -14,7 +14,6 @@ export interface IRouter<RouterParam> {
     permit: string,
     deadline: string,
     uuid: string,
-    isApproved?: boolean,
   ): AsyncOrSync<TxInfo<RouterParam>>;
 
   getContractMethodName(): string;

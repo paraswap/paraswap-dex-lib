@@ -277,7 +277,6 @@ export class ZeroX
     feePercent: NumberAsString,
     deadline: NumberAsString,
     partner: string,
-    isApproved: boolean,
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<ZeroXParam> {

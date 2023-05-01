@@ -12,6 +12,8 @@ import {
   PoolLiquidity,
   Logger,
   TxInfo,
+  PreprocessTransactionOptions,
+  ExchangeTxInfo,
 } from '../../types';
 import {
   SwapSide,
@@ -46,7 +48,10 @@ import {
   SubgraphPoolAddressDictionary,
   BalancerV2DirectParam,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 import {
   getAllPoolsUsedInPaths,
@@ -60,7 +65,7 @@ import {
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
-import { NumberAsString } from '@paraswap/core';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -1005,6 +1010,49 @@ export class BalancerV2
     return [DirectMethods.directSell, DirectMethods.directBuy];
   }
 
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<OptimizedBalancerV2Data>,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<OptimizedBalancerV2Data>, ExchangeTxInfo]> {
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, this.vaultAddress)
+        .call(undefined, 'latest');
+      isApproved =
+        allowance.toBigInt() >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.warn(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
   getDirectParam(
     srcToken: Address,
     destToken: Address,
@@ -1018,7 +1066,6 @@ export class BalancerV2
     feePercent: NumberAsString,
     deadline: NumberAsString,
     partner: string,
-    isApproved: boolean,
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<BalancerV2DirectParam> {
@@ -1027,6 +1074,11 @@ export class BalancerV2
       contractMethod !== DirectMethods.directBuy
     ) {
       throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
     const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(

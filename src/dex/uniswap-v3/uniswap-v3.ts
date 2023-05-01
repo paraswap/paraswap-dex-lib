@@ -746,7 +746,6 @@ export class UniswapV3
     feePercent: NumberAsString,
     deadline: NumberAsString,
     partner: string,
-    isApproved: boolean,
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<UniswapV3Param> {
@@ -755,6 +754,11 @@ export class UniswapV3
       contractMethod !== DirectMethods.directBuy
     ) {
       throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
     const path = this._encodePath(data.path, side);
