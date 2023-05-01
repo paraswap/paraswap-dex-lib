@@ -181,32 +181,32 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     // get pricing to corresponding pair token for each maker
     const mockedBids = mapMakerResponse([
       [
-          1,
-          1.0000804135489818
+          1.000450202591166,
+          0.9996085451854244
       ],
       [
-          28632.23189406919,
-          1.000031329146842
+          25042.410786567885,
+          0.9995656217776242
       ],
       [
-          60127.68697754531,
-          0.9999282642399678
+          52589.06265179256,
+          0.9994754843360436
       ],
       [
-          94772.68756936904,
-          0.9998149093727866
+          82890.37970353971,
+          0.9993763312640255
       ],
       [
-          132882.18822037516,
-          0.9996902412973147
+          116221.82846046158,
+          0.9992672628848045
       ],
       [
-          174802.63893648188,
-          0.9995531333644397
+          152886.42209307564,
+          0.9991472876676625
       ],
       [
-          220915.13472419925,
-          0.9994023472389632
+          193217.4750889511,
+          0.9990153149288057
       ]
   ]);
     const levelRequests = marketMakersUris.map(url => ({
@@ -240,7 +240,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         normalizedDestToken,
         side,
       );
-console.log("prices", prices)
+console.log("prices", prices, levels)
       return {
         gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,

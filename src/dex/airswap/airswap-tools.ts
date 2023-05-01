@@ -6,6 +6,7 @@ import axios, { Method } from 'axios';
 import BigNumber from 'bignumber.js';
 import { BN_0, getBigNumberPow } from '../../bignumber-constants';
 import { SwapSide } from '@paraswap/core';
+import { url } from 'inspector';
 
 const makerRegistry = [
   {
@@ -241,7 +242,8 @@ export async function getServersUrl(
   const baseTokenURLs: string[] = await contract.getURLsForToken(baseToken);
   const urls = quoteTokenURLs
     .filter(url => baseTokenURLs.includes(url))
-    .filter(url => !(url.startsWith('wss://') || url.startsWith('ws://')));
+    .filter(url => !(url.startsWith('wss://') || url.startsWith('ws://')))
+    .filter(url => url.includes("altono"));
   return Promise.resolve(urls);
 }
 
@@ -250,7 +252,7 @@ async function getServers(serversUrl: string[]): Promise<Array<Maker>> {
     serversUrl.map(url => Maker.at(url)),
   )) as PromiseFulfilledResult<Maker>[];
   return serverPromises
-    .filter(promise => promise.status === 'fulfilled')
+    . filter(promise => promise.status === 'fulfilled')
     .map((promise: PromiseFulfilledResult<Maker>) => promise.value);
 }
 
