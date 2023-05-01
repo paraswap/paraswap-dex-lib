@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { AsyncOrSync } from 'ts-essentials';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
   Token,
@@ -11,12 +11,14 @@ import {
   PoolLiquidity,
   Logger,
   TransferFeeParams,
+  TxInfo,
 } from '../../types';
 import {
   SwapSide,
   Network,
   SRC_TOKEN_PARASWAP_TRANSFERS,
   NULL_ADDRESS,
+  ETHER_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
@@ -37,6 +39,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { CurveV1FactoryConfig, Adapters } from './config';
 import {
+  DIRECT_METHOD_NAME,
   FACTORY_MAX_PLAIN_COINS,
   FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN,
   MIN_AMOUNT_TO_RECEIVE,
@@ -44,6 +47,7 @@ import {
 } from './constants';
 import { CurveV1FactoryPoolManager } from './curve-v1-pool-manager';
 import CurveABI from '../../abi/Curve.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import FactoryCurveV1ABI from '../../abi/curve-v1-factory/FactoryCurveV1.json';
 import ThreePoolABI from '../../abi/curve-v1-factory/ThreePool.json';
 import ERC20ABI from '../../abi/erc20.json';
@@ -62,6 +66,8 @@ import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
 import { AbiItem } from 'web3-utils';
+import { NumberAsString } from '@paraswap/core';
+import { DirectCurveParam } from '../curve-v2';
 
 const DefaultCoinsABI: AbiItem = {
   type: 'function',
@@ -82,7 +88,7 @@ const DefaultCoinsABI: AbiItem = {
 
 export class CurveV1Factory
   extends SimpleExchange
-  implements IDex<CurveV1FactoryData>
+  implements IDex<CurveV1FactoryData, DirectCurveParam>
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
@@ -97,6 +103,8 @@ export class CurveV1Factory
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
@@ -812,6 +820,69 @@ export class CurveV1Factory
       payload,
       networkFee: '0',
     };
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: CurveV1FactoryData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<DirectCurveParam> {
+    if (contractMethod !== DIRECT_METHOD_NAME) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    const isETH =
+      srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase() ||
+      destToken.toLowerCase() === ETHER_ADDRESS.toLowerCase();
+
+    const swapParams: DirectCurveParam = [
+      srcToken,
+      destToken,
+      data.exchange,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      data.i.toString(),
+      data.j.toString(),
+      partner,
+      isApproved,
+      beneficiary,
+      data.underlyingSwap,
+      true,
+      isETH,
+      permit,
+      uuid,
+    ];
+
+    const encoder = (...params: DirectCurveParam) => {
+      return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
+        params,
+      ]);
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DIRECT_METHOD_NAME];
   }
 
   async getSimpleParam(

@@ -788,9 +788,16 @@ export class UniswapV2
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
     _data: UniswapData,
     side: SwapSide,
     permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
     contractMethod?: string,
   ): TxInfo<UniswapParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);

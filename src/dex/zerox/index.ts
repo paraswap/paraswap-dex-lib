@@ -269,9 +269,17 @@ export class ZeroX
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
     data: ZeroXData,
     side: SwapSide,
     permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
+    contractMethod?: string,
   ): TxInfo<ZeroXParam> {
     const usePermit = permit !== '0x';
     const encoder = (...params: ZeroXParam) => {

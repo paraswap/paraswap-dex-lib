@@ -76,9 +76,16 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
     data: ExchangeData,
     side: SwapSide,
     permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
     contractMethod?: string,
   ): TxInfo<DirectParam>;
 }

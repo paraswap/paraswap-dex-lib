@@ -3,6 +3,7 @@ import { IDex } from '../dex/idex';
 import { Address, OptimalRate, TxInfo, Adapters } from '../types';
 import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
+import { assert } from 'ts-essentials';
 
 export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
   // This is just psuedo name as the DirectSwap
@@ -28,6 +29,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     permit: string,
     deadline: string,
     uuid: string,
+    isApproved: boolean,
   ): TxInfo<DexDirectReturn> {
     // TODO: add checks for src and dest amounts
     if (
@@ -51,6 +53,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       );
 
     const swapExchange = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
+
     const srcAmount =
       priceRoute.side === SwapSide.SELL ? swapExchange.srcAmount : minMaxAmount;
     const destAmount =
@@ -63,9 +66,17 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.destToken,
       srcAmount,
       destAmount,
+      minMaxAmount,
       swapExchange.data,
       priceRoute.side,
       permit,
+      uuid,
+      // TODO: CLARIFY BEFORE PUTTING TO PROD IF PARTNER FEE IS EQUAL TO FEE PERCENT IN CONTRACT
+      partnerFeePercent,
+      deadline,
+      partnerAddress,
+      isApproved,
+      beneficiary,
       priceRoute.contractMethod,
     );
   }

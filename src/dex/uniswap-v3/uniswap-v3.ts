@@ -11,6 +11,7 @@ import {
   Logger,
   NumberAsString,
   PoolPrices,
+  TxInfo,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -29,6 +30,7 @@ import {
   UniswapV3Data,
   UniswapV3Functions,
   UniswapV3Param,
+  UniswapV3SimpleSwapParams,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -39,8 +41,10 @@ import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
+  DirectMethods,
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_FUNCTION_CALL_GAS_COST,
   UNISWAPV3_TICK_GAS_COST,
@@ -75,6 +79,8 @@ export class UniswapV3
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   intervalTask?: NodeJS.Timeout;
 
@@ -112,7 +118,7 @@ export class UniswapV3
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
-    // Normalise once all config addresses and use across all scenarios
+    // Normalize once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
     this.notExistingPoolSetKey =
@@ -445,6 +451,7 @@ export class UniswapV3
               fee: pool.feeCodeAsString,
             },
           ],
+          exchange: pool.poolAddress,
         },
         poolIdentifier: this.getPoolIdentifier(
           pool.token0,
@@ -726,6 +733,69 @@ export class UniswapV3
     return arr;
   }
 
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: UniswapV3Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<UniswapV3Param> {
+    if (
+      contractMethod !== DirectMethods.directSell &&
+      contractMethod !== DirectMethods.directBuy
+    ) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const path = this._encodePath(data.path, side);
+
+    const swapParams: UniswapV3Param = [
+      srcToken,
+      destToken,
+      this.config.router,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      deadline,
+      partner,
+      isApproved,
+      beneficiary,
+      path,
+      permit,
+      uuid,
+    ];
+
+    const encoder = (...params: UniswapV3Param) => {
+      return this.directSwapIface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethods.directSell
+          : DirectMethods.directBuy,
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -740,7 +810,7 @@ export class UniswapV3
         : UniswapV3Functions.exactOutput;
 
     const path = this._encodePath(data.path, side);
-    const swapFunctionParams: UniswapV3Param =
+    const swapFunctionParams: UniswapV3SimpleSwapParams =
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,

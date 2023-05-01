@@ -1,6 +1,7 @@
 import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
 import BigNumber from 'bignumber.js';
 import CurveABI from '../../abi/Curve.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import { Adapters, CurveV1Config } from './config';
 
 import {
@@ -12,6 +13,7 @@ import {
   SimpleExchangeParam,
   Token,
   TransferFeeParams,
+  TxInfo,
 } from '../../types';
 import {
   Network,
@@ -74,6 +76,10 @@ import {
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { DIRECT_METHOD_NAME } from './constants';
+import { NumberAsString } from '@paraswap/core';
+import { DirectCurveParam } from '../curve-v2';
+import { assert } from 'ts-essentials';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -82,7 +88,10 @@ const CURVE_POOL_GAS = 200 * 1000;
 
 const coder = new AbiCoder();
 
-export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
+export class CurveV1
+  extends SimpleExchange
+  implements IDex<CurveV1Data, DirectCurveParam>
+{
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
@@ -101,6 +110,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   protected baseTokens: Record<string, TokenWithReasonableVolume>;
 
   protected disableFeeOnTransferTokenAddresses: Set<string>;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
@@ -840,6 +851,69 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     return this.adapters[side];
   }
 
+  static getDirectFunctionName(): string[] {
+    return [DIRECT_METHOD_NAME];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: CurveV1Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<DirectCurveParam> {
+    if (contractMethod !== DIRECT_METHOD_NAME) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    const isETH =
+      srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase() ||
+      destToken.toLowerCase() === ETHER_ADDRESS.toLowerCase();
+
+    const swapParams: DirectCurveParam = [
+      srcToken,
+      destToken,
+      data.exchange,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      data.i.toString(),
+      data.j.toString(),
+      partner,
+      isApproved,
+      beneficiary,
+      data.underlyingSwap,
+      true,
+      isETH,
+      permit,
+      uuid,
+    ];
+
+    const encoder = (...params: DirectCurveParam) => {
+      return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
+        params,
+      ]);
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -943,7 +1017,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       // the balances array in the pool as it was a mess to have each curve abi
       // Some have balances[uint128] some have balances[uint256]
       // One of the consequence for such a hack is below for ETH Pools
-      // TODO: below can be highly optimised
+      // TODO: below can be highly optimized
       // * we don't need to query token decimals every iteration
       // * we can use the decimals from the tokens list using the api
 

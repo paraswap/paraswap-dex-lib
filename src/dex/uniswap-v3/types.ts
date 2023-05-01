@@ -72,7 +72,7 @@ export type DexParams = {
   initHash: string;
 };
 
-export type UniswapV3SellParam = {
+export type UniswapV3SimpleSwapSellParam = {
   path: string;
   recipient: Address;
   deadline: string;
@@ -80,7 +80,7 @@ export type UniswapV3SellParam = {
   amountOutMinimum: NumberAsString;
 };
 
-export type UniswapV3BuyParam = {
+export type UniswapV3SimpleSwapBuyParam = {
   path: string;
   recipient: Address;
   deadline: string;
@@ -88,7 +88,26 @@ export type UniswapV3BuyParam = {
   amountInMaximum: NumberAsString;
 };
 
-export type UniswapV3Param = UniswapV3SellParam | UniswapV3BuyParam;
+export type UniswapV3SimpleSwapParams =
+  | UniswapV3SimpleSwapSellParam
+  | UniswapV3SimpleSwapBuyParam;
+
+export type UniswapV3Param = [
+  fromToken: Address,
+  toToken: Address,
+  exchange: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  feePercent: NumberAsString,
+  deadline: NumberAsString,
+  partner: Address,
+  isApproved: boolean,
+  beneficiary: Address,
+  path: string,
+  permit: string,
+  uuid: string,
+];
 
 export enum UniswapV3Functions {
   exactInput = 'exactInput',

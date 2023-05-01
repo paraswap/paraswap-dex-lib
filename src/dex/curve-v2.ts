@@ -5,19 +5,24 @@ import {
   Address,
   NumberAsString,
   SimpleExchangeParam,
+  TxInfo,
 } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
+import DirectSwapABI from '../abi/DirectSwap.json';
 import CurveV2ABI from '../abi/CurveV2.json';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
+import { assert } from 'ts-essentials';
 
 export enum CurveV2SwapType {
   EXCHANGE,
   EXCHANGE_UNDERLYING,
   EXCHANGE_GENERIC_FACTORY_ZAP,
 }
+
+const DIRECT_METHOD_NAME = 'directCurveSwap';
 
 type CurveV2Data = {
   i: number;
@@ -43,6 +48,26 @@ type CurveV2ParamsForGenericFactoryZap = [
   min_dy: NumberAsString,
 ];
 
+export type DirectCurveParam = [
+  fromToken: Address,
+  toToken: Address,
+  poolAddress: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  feePercent: NumberAsString,
+  i: NumberAsString,
+  j: NumberAsString,
+  partner: Address,
+  isApproved: boolean,
+  beneficiary: Address,
+  underlyingSwap: boolean,
+  curveV1Swap: boolean,
+  stEthSwap: boolean,
+  permit: string,
+  uuid: string,
+];
+
 enum CurveV2SwapFunctions {
   exchange = 'exchange(uint256 i, uint256 j, uint256 dx, uint256 minDy)',
   exchange_underlying = 'exchange_underlying(uint256 i, uint256 j, uint256 dx, uint256 minDy)',
@@ -51,13 +76,15 @@ enum CurveV2SwapFunctions {
 
 export class CurveV2
   extends SimpleExchange
-  implements IDexTxBuilder<CurveV2Data, CurveV2Param>
+  implements IDexTxBuilder<CurveV2Data, DirectCurveParam>
 {
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
   genericFactoryZapIface: Interface;
   minConversionRate = '1';
   needWrapNative = true;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'curvev2');
@@ -98,6 +125,65 @@ export class CurveV2
       payload,
       networkFee: '0',
     };
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: CurveV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<DirectCurveParam> {
+    if (contractMethod !== DIRECT_METHOD_NAME) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    const swapParams: DirectCurveParam = [
+      srcToken,
+      destToken,
+      data.exchange,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      data.i.toString(),
+      data.j.toString(),
+      partner,
+      isApproved,
+      beneficiary,
+      data.swapType === CurveV2SwapType.EXCHANGE_UNDERLYING,
+      false,
+      true,
+      permit,
+      uuid,
+    ];
+
+    const encoder = (...params: DirectCurveParam) => {
+      return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
+        params,
+      ]);
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [];
   }
 
   async getSimpleParam(

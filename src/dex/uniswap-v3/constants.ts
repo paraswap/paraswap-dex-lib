@@ -33,3 +33,8 @@ export const ZERO_ORACLE_OBSERVATION = {
 export const OUT_OF_RANGE_ERROR_POSTFIX = `INVALID_TICK_BIT_MAP_RANGES`;
 
 export const DEFAULT_POOL_INIT_CODE_HASH = `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`;
+
+export enum DirectMethods {
+  directSell = 'directUniV3Swap',
+  directBuy = 'directUniV3Buy',
+}

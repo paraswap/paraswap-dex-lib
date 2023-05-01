@@ -11,6 +11,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  TxInfo,
 } from '../../types';
 import {
   SwapSide,
@@ -26,6 +27,7 @@ import { StablePool, WeightedPool } from './balancer-v2-pool';
 import { PhantomStablePool } from './PhantomStablePool';
 import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -42,6 +44,7 @@ import {
   PoolStateCache,
   BalancerPoolTypes,
   SubgraphPoolAddressDictionary,
+  BalancerV2DirectParam,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
@@ -52,10 +55,12 @@ import {
   poolGetPathForTokenInOut,
 } from './utils';
 import {
+  DirectMethods,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
+import { NumberAsString } from '@paraswap/core';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -474,12 +479,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements
+    IDex<BalancerV2Data, BalancerV2DirectParam, OptimizedBalancerV2Data>
 {
   protected eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -991,6 +999,75 @@ export class BalancerV2
     ];
 
     return params;
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    isApproved: boolean,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<BalancerV2DirectParam> {
+    if (
+      contractMethod !== DirectMethods.directSell &&
+      contractMethod !== DirectMethods.directBuy
+    ) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    const swapParams: BalancerV2DirectParam = [
+      swaps,
+      assets,
+      funds,
+      limits,
+      expectedAmount,
+      _deadline,
+      feePercent,
+      this.vaultAddress,
+      partner,
+      isApproved,
+      beneficiary,
+      permit,
+      uuid,
+    ];
+
+    const encoder = (...params: BalancerV2DirectParam) => {
+      return this.directSwapIface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethods.directSell
+          : DirectMethods.directBuy,
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
   }
 
   async getSimpleParam(
