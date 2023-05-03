@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { ETHER_ADDRESS, SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -23,7 +23,7 @@ export enum CurveV2SwapType {
   EXCHANGE_GENERIC_FACTORY_ZAP,
 }
 
-const DIRECT_METHOD_NAME = 'directCurveSwap';
+const DIRECT_METHOD_NAME = 'directCurveV2Swap';
 
 type CurveV2Data = {
   i: number;
@@ -50,9 +50,10 @@ type CurveV2ParamsForGenericFactoryZap = [
   min_dy: NumberAsString,
 ];
 
-export type DirectCurveParam = [
+export type DirectCurveV2Param = [
   fromToken: Address,
   toToken: Address,
+  exchange: Address,
   poolAddress: Address,
   fromAmount: NumberAsString,
   toAmount: NumberAsString,
@@ -62,10 +63,9 @@ export type DirectCurveParam = [
   j: NumberAsString,
   partner: Address,
   isApproved: boolean,
+  swapType: CurveV2SwapType,
   beneficiary: Address,
-  underlyingSwap: boolean,
-  curveV1Swap: boolean,
-  stEthSwap: boolean,
+  isNativeEth: boolean,
   permit: string,
   uuid: string,
 ];
@@ -78,7 +78,7 @@ enum CurveV2SwapFunctions {
 
 export class CurveV2
   extends SimpleExchange
-  implements IDexTxBuilder<CurveV2Data, DirectCurveParam>
+  implements IDexTxBuilder<CurveV2Data, DirectCurveV2Param>
 {
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
@@ -148,7 +148,7 @@ export class CurveV2
     partner: string,
     beneficiary: string,
     contractMethod?: string,
-  ): TxInfo<DirectCurveParam> {
+  ): TxInfo<DirectCurveV2Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
@@ -159,10 +159,11 @@ export class CurveV2
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
-    const swapParams: DirectCurveParam = [
+    const swapParams: DirectCurveV2Param = [
       srcToken,
       destToken,
       data.exchange,
+      data.originalPoolAddress,
       srcAmount,
       destAmount,
       expectedAmount,
@@ -171,15 +172,14 @@ export class CurveV2
       data.j.toString(),
       partner,
       isApproved,
+      data.swapType,
       beneficiary,
-      data.swapType === CurveV2SwapType.EXCHANGE_UNDERLYING,
-      false,
-      true,
+      destToken.toLowerCase() === ETHER_ADDRESS.toLowerCase(),
       permit,
       uuid,
     ];
 
-    const encoder = (...params: DirectCurveParam) => {
+    const encoder = (...params: DirectCurveV2Param) => {
       return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
         params,
       ]);
@@ -193,7 +193,7 @@ export class CurveV2
   }
 
   static getDirectFunctionName(): string[] {
-    return [];
+    return [DIRECT_METHOD_NAME];
   }
 
   async getSimpleParam(

@@ -184,10 +184,15 @@ export type CurveV1FactoryIfaces = {
 
 export type LiquidityInCache = Record<string, number>;
 
-export type DirectCurveParam = [
+export enum CurveV1SwapType {
+  EXCHANGE,
+  EXCHANGE_UNDERLYING,
+}
+
+export type DirectCurveV1Param = [
   fromToken: Address,
   toToken: Address,
-  poolAddress: Address,
+  exchange: Address,
   fromAmount: NumberAsString,
   toAmount: NumberAsString,
   expectedAmount: NumberAsString,
@@ -196,9 +201,8 @@ export type DirectCurveParam = [
   j: NumberAsString,
   partner: Address,
   isApproved: boolean,
+  swapType: CurveV1SwapType,
   beneficiary: Address,
-  underlyingSwap: boolean,
-  curveV1Swap: boolean,
   stEthSwap: boolean,
   permit: string,
   uuid: string,

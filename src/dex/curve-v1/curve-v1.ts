@@ -1,4 +1,6 @@
 import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
+import { NumberAsString } from '@paraswap/core';
+import { assert } from 'ts-essentials';
 import BigNumber from 'bignumber.js';
 import CurveABI from '../../abi/Curve.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
@@ -73,13 +75,12 @@ import {
   CurveV1Data,
   TokenWithReasonableVolume,
   CurveSwapFunctions,
+  CurveV1SwapType,
+  DirectCurveV1Param,
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { DIRECT_METHOD_NAME } from './constants';
-import { NumberAsString } from '@paraswap/core';
-import { DirectCurveParam } from '../curve-v2';
-import { assert } from 'ts-essentials';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -90,7 +91,7 @@ const coder = new AbiCoder();
 
 export class CurveV1
   extends SimpleExchange
-  implements IDex<CurveV1Data, DirectCurveParam>
+  implements IDex<CurveV1Data, DirectCurveV1Param>
 {
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
@@ -870,7 +871,7 @@ export class CurveV1
     partner: string,
     beneficiary: string,
     contractMethod?: string,
-  ): TxInfo<DirectCurveParam> {
+  ): TxInfo<DirectCurveV1Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
@@ -885,7 +886,7 @@ export class CurveV1
       srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase() ||
       destToken.toLowerCase() === ETHER_ADDRESS.toLowerCase();
 
-    const swapParams: DirectCurveParam = [
+    const swapParams: DirectCurveV1Param = [
       srcToken,
       destToken,
       data.exchange,
@@ -897,15 +898,16 @@ export class CurveV1
       data.j.toString(),
       partner,
       isApproved,
+      data.underlyingSwap
+        ? CurveV1SwapType.EXCHANGE_UNDERLYING
+        : CurveV1SwapType.EXCHANGE,
       beneficiary,
-      data.underlyingSwap,
-      true,
       isETH,
       permit,
       uuid,
     ];
 
-    const encoder = (...params: DirectCurveParam) => {
+    const encoder = (...params: DirectCurveV1Param) => {
       return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
         params,
       ]);
