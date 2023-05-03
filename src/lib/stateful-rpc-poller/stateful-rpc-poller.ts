@@ -327,7 +327,7 @@ export abstract class StatefulRpcPoller<State, M>
     // As a last step. If we failed everything above, try to fetch from RPC
     try {
       const rpcState = await this._retrieveStateWithChecks(
-        async () => (await this.fetchLatestStateFromRpc()) ?? null,
+        async () => (await this.fetchLatestStateFromRpc(blockNumber)) ?? null,
         blockNumber,
         StateSources.RPC,
       );
@@ -433,13 +433,15 @@ export abstract class StatefulRpcPoller<State, M>
     };
   }
 
-  async fetchLatestStateFromRpc(): Promise<ObjWithUpdateInfo<State> | null> {
+  async fetchLatestStateFromRpc(
+    blockNumber: number | 'latest' = 'latest',
+  ): Promise<ObjWithUpdateInfo<State> | null> {
     const multiCalls = this.getFetchStateWithBlockInfoMultiCalls();
     try {
       const lastUpdatedAtMs = Date.now();
       const aggregatedResults = (await this.dexHelper.multiWrapper.tryAggregate<
         number | M
-      >(true, multiCalls as MultiCallParams<M | number>[])) as [
+      >(true, multiCalls as MultiCallParams<M | number>[], blockNumber)) as [
         MultiResult<number>,
         ...MultiResult<M>[],
       ];
@@ -581,7 +583,7 @@ export abstract class StatefulRpcPoller<State, M>
 
   async initializeState(): Promise<void> {
     try {
-      const state = await this.fetchLatestStateFromRpc();
+      const state = await this.fetchLatestStateFromRpc('latest');
 
       if (state === null) {
         this._immediateLogMessage(

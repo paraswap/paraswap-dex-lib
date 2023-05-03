@@ -327,6 +327,8 @@ describe('WooFiV2', function () {
 
     beforeAll(async () => {
       initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      initProps.dex.setUseBlockNumberInsteadOfLatest(true);
+      console.log(`BlockNumber-${network}: ${initProps.blockNumber}`);
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
@@ -356,6 +358,8 @@ describe('WooFiV2', function () {
 
     beforeAll(async () => {
       initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      initProps.dex.setUseBlockNumberInsteadOfLatest(true);
+      console.log(`BlockNumber-${network}: ${initProps.blockNumber}`);
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
@@ -386,6 +390,8 @@ describe('WooFiV2', function () {
 
     beforeAll(async () => {
       initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      initProps.dex.setUseBlockNumberInsteadOfLatest(true);
+      console.log(`BlockNumber-${network}: ${initProps.blockNumber}`);
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
@@ -415,6 +421,8 @@ describe('WooFiV2', function () {
 
     beforeAll(async () => {
       initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      initProps.dex.setUseBlockNumberInsteadOfLatest(true);
+      console.log(`BlockNumber-${network}: ${initProps.blockNumber}`);
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
@@ -444,6 +452,8 @@ describe('WooFiV2', function () {
 
     beforeAll(async () => {
       initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      initProps.dex.setUseBlockNumberInsteadOfLatest(true);
+      console.log(`BlockNumber-${network}: ${initProps.blockNumber}`);
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 
@@ -460,6 +470,7 @@ describe('WooFiV2', function () {
       baseBTokenSymbol,
       untradableSymbol,
       pricingCheckFuncName,
+      1,
     );
   });
 
@@ -473,6 +484,8 @@ describe('WooFiV2', function () {
 
     beforeAll(async () => {
       initProps.blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      initProps.dex.setUseBlockNumberInsteadOfLatest(true);
+      console.log(`BlockNumber-${network}: ${initProps.blockNumber}`);
       await initProps.dex.initializePricing(initProps.blockNumber);
     });
 

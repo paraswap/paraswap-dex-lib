@@ -37,7 +37,9 @@ export interface IStatefulRpcPoller<State, M> {
 
   fetchStateFromCache(): Promise<ObjWithUpdateInfo<State> | null>;
 
-  fetchLatestStateFromRpc(): Promise<ObjWithUpdateInfo<State> | null>;
+  fetchLatestStateFromRpc(
+    blockNumber: number | 'latest',
+  ): Promise<ObjWithUpdateInfo<State> | null>;
 
   // This function must not throw any errors
   initializeState(): Promise<void>;

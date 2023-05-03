@@ -63,12 +63,14 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly config = WooFiV2Config[dexKey][network],
+    // This is only for testing purposes to be able to request state for exactly expected blockNumber
+    private _useBlockNumberInsteadOfLatest = false,
   ) {
     super(dexHelper, dexKey);
     const loggerName = `${dexKey}-${network}`;
     this.logger = dexHelper.getLogger(loggerName);
 
-    // Normalise once all config addresses and use across all scenarios
+    // Normalize once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
     this.quoteTokenAddress = this.config.quoteToken.address;
@@ -80,6 +82,10 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       this.quoteTokenAddress,
     );
     this.pollingManager = StatePollingManager.getInstance(dexHelper);
+  }
+
+  setUseBlockNumberInsteadOfLatest(useBlockNumberInsteadOfLatest: boolean) {
+    this._useBlockNumberInsteadOfLatest = true;
   }
 
   private _toLowerForAllConfigAddresses() {
@@ -197,7 +203,9 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
         'pollingPool is not initialized in getPricesVolume',
       );
 
-      const state = await this.pollingPool.getState(blockNumber);
+      const state = await this.pollingPool.getState(
+        this._useBlockNumberInsteadOfLatest ? blockNumber : 'latest',
+      );
 
       if (state === null) {
         this.logger.error(`State is null in getPricesVolume`);
