@@ -68,7 +68,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     token1: Address,
     logger: Logger,
     mapKey: string = '',
-    readonly poolInitCodeHash = DEFAULT_POOL_INIT_CODE_HASH,
+    readonly poolInitCodeHash: string,
+    readonly poolDeployer?: string,
   ) {
     super(
       parentName,
@@ -538,7 +539,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     );
 
     return ethers.utils.getCreate2Address(
-      this.factoryAddress,
+      this.poolDeployer ? this.poolDeployer : this.factoryAddress,
       encodedKey,
       this.poolInitCodeHash,
     );
