@@ -537,6 +537,101 @@
           },
           {
             "internalType": "address",
+            "name": "exchange",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feePercent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "int128",
+            "name": "i",
+            "type": "int128"
+          },
+          {
+            "internalType": "int128",
+            "name": "j",
+            "type": "int128"
+          },
+          {
+            "internalType": "address payable",
+            "name": "partner",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "isApproved",
+            "type": "bool"
+          },
+          {
+            "internalType": "enum Utils.CurveSwapType",
+            "name": "swapType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address payable",
+            "name": "beneficiary",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permit",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "uuid",
+            "type": "bytes16"
+          }
+        ],
+        "internalType": "struct Utils.DirectCurveV1",
+        "name": "data",
+        "type": "tuple"
+      }
+    ],
+    "name": "directCurveV1Swap",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "fromToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "toToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "exchange",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
             "name": "poolAddress",
             "type": "address"
           },
@@ -581,24 +676,14 @@
             "type": "bool"
           },
           {
+            "internalType": "enum Utils.CurveSwapType",
+            "name": "swapType",
+            "type": "uint8"
+          },
+          {
             "internalType": "address payable",
             "name": "beneficiary",
             "type": "address"
-          },
-          {
-            "internalType": "bool",
-            "name": "underlyingSwap",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "curveV1Swap",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "stEthSwap",
-            "type": "bool"
           },
           {
             "internalType": "bytes",
@@ -611,12 +696,12 @@
             "type": "bytes16"
           }
         ],
-        "internalType": "struct Utils.DirectCurve",
+        "internalType": "struct Utils.DirectCurveV2",
         "name": "data",
         "type": "tuple"
       }
     ],
-    "name": "directCurveSwap",
+    "name": "directCurveV2Swap",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"

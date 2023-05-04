@@ -879,6 +879,10 @@ export class CurveV1Factory
     ];
   }
 
+  getTokenFromAddress(address: Address): Token {
+    return { address, decimals: 0 };
+  }
+
   getDirectParam(
     srcToken: Address,
     destToken: Address,

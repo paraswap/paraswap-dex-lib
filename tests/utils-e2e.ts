@@ -35,11 +35,17 @@ import { assert } from 'ts-essentials';
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
 // Assign here bytecode deploy params
-let bytecodeArgs: [string, string, string[]] | undefined;
+let adapterBytecodeArgs: [string, string, string[]] | undefined;
+let routerBytecodeArgs: [string, string, string[]] | undefined;
+
 const adapterBytecode =
-  bytecodeArgs === undefined ? '' : generateDeployBytecode(...bytecodeArgs);
+  adapterBytecodeArgs === undefined
+    ? ''
+    : generateDeployBytecode(...adapterBytecodeArgs);
 const routerBytecode =
-  bytecodeArgs === undefined ? '' : generateDeployBytecode(...bytecodeArgs);
+  routerBytecodeArgs === undefined
+    ? ''
+    : generateDeployBytecode(...routerBytecodeArgs);
 
 const erc20Interface = new Interface(Erc20ABI);
 const augustusInterface = new Interface(AugustusABI);

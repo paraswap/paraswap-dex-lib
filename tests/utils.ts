@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ethers } from 'ethers';
 import { PoolPrices, PoolLiquidity, Address } from '../src/types';
 import { SwapSide } from '../src/constants';
@@ -79,6 +80,7 @@ export const sleep = (time: number) =>
 export const generateDeployBytecode = (
   artifactJsonPath: string,
   configJsonPath: string,
+  // If not found, it will use as it is without mapping to config
   fieldsToPickFromConfig: string[],
 ): string => {
   const artifact = require(artifactJsonPath) as {
@@ -91,16 +93,16 @@ export const generateDeployBytecode = (
 
   const args = fieldsToPickFromConfig.map(f => {
     const value = config[f];
-    assert(
-      value === undefined,
-      `Field ${f} is not defined in configJsonPath=${configJsonPath} and loaded config=${JSON.stringify(
-        config,
-      )}`,
-    );
+    if (value === undefined) {
+      console.log(
+        `Field ${f} is not defined in configJsonPath=${configJsonPath}. Using value as it is`,
+      );
+      return f;
+    }
     return value;
   });
 
-  const deployedBytecode = factory.getDeployTransaction(args).data;
+  const deployedBytecode = factory.getDeployTransaction(...args).data;
 
   assert(deployedBytecode !== undefined, 'deployedBytecode is undefined');
 

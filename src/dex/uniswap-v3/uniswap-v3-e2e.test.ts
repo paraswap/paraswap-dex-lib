@@ -49,6 +49,20 @@ describe('UniswapV3 E2E', () => {
         provider,
       );
     });
+
+    it('directSwap SELL WETH -> SHIBA', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['SHIBA'],
+        holders['WETH'],
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.directUniV3Swap,
+        network,
+        provider,
+      );
+    });
   });
 
   describe('UniswapV3 POLYGON', () => {
@@ -75,6 +89,7 @@ describe('UniswapV3 E2E', () => {
           ContractMethod.simpleSwap,
           ContractMethod.multiSwap,
           ContractMethod.megaSwap,
+          ContractMethod.directUniV3Swap,
         ],
       ],
       [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
