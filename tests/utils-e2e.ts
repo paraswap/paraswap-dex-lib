@@ -29,12 +29,17 @@ import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import { GIFTER_ADDRESS } from './constants-e2e';
-import { sleep } from './utils';
+import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
-const adapterBytecode = '';
+// Assign here bytecode deploy params
+let bytecodeArgs: [string, string, string[]] | undefined;
+const adapterBytecode =
+  bytecodeArgs === undefined ? '' : generateDeployBytecode(...bytecodeArgs);
+const routerBytecode =
+  bytecodeArgs === undefined ? '' : generateDeployBytecode(...bytecodeArgs);
 
 const erc20Interface = new Interface(Erc20ABI);
 const augustusInterface = new Interface(AugustusABI);
@@ -146,7 +151,7 @@ function allowTokenTransferProxyParams(
   };
 }
 
-function deployAdapterParams(bytecode: string, network = Network.MAINNET) {
+function deployContractParams(bytecode: string, network = Network.MAINNET) {
   const ownerAddress = DEPLOYER_ADDRESS[network];
   if (!ownerAddress) throw new Error('No deployer address set for network');
   return {
@@ -156,13 +161,30 @@ function deployAdapterParams(bytecode: string, network = Network.MAINNET) {
   };
 }
 
-function whiteListAdapterParams(contractAddress: Address, network: Network) {
+function augustusGrantRoleParams(
+  contractAddress: Address,
+  network: Network,
+  type: 'adapter' | 'router' = 'adapter',
+) {
   const augustusAddress = generateConfig(network).augustusAddress;
   if (!augustusAddress) throw new Error('No whitelist address set for network');
   const ownerAddress = MULTISIG[network];
   if (!ownerAddress) throw new Error('No whitelist owner set for network');
-  const role =
-    '0x8429d542926e6695b59ac6fbdcd9b37e8b1aeb757afab06ab60b1bb5878c3b49';
+
+  let role: string;
+  switch (type) {
+    case 'adapter':
+      role =
+        '0x8429d542926e6695b59ac6fbdcd9b37e8b1aeb757afab06ab60b1bb5878c3b49';
+      break;
+    case 'router':
+      role =
+        '0x7a05a596cb0ce7fdea8a1e1ec73be300bdb35097c944ce1897202f7a13122eb2';
+      break;
+    default:
+      throw new Error(`Unrecognized type ${type}`);
+  }
+
   return {
     from: ownerAddress,
     to: augustusAddress,
@@ -204,7 +226,7 @@ export async function testE2E(
 
   if (adapterBytecode) {
     const deployTx = await ts.simulate(
-      deployAdapterParams(adapterBytecode, network),
+      deployContractParams(adapterBytecode, network),
     );
 
     expect(deployTx.success).toEqual(true);
@@ -219,7 +241,29 @@ export async function testE2E(
     );
 
     const whitelistTx = await ts.simulate(
-      whiteListAdapterParams(adapterAddress, network),
+      augustusGrantRoleParams(adapterAddress, network),
+    );
+    expect(whitelistTx.success).toEqual(true);
+  }
+
+  if (routerBytecode) {
+    const deployTx = await ts.simulate(
+      deployContractParams(adapterBytecode, network),
+    );
+
+    expect(deployTx.success).toEqual(true);
+    const routerAddress =
+      deployTx.transaction.transaction_info.contract_address;
+    console.log(
+      'Deployed router to address',
+      routerAddress,
+      'used',
+      deployTx.gasUsed,
+      'gas',
+    );
+
+    const whitelistTx = await ts.simulate(
+      augustusGrantRoleParams(routerAddress, network, 'router'),
     );
     expect(whitelistTx.success).toEqual(true);
   }
@@ -351,7 +395,7 @@ export async function newTestE2E({
       '`ts`  is not an instance of TenderlySimulation',
     );
     const deployTx = await ts.simulate(
-      deployAdapterParams(adapterBytecode, network),
+      deployContractParams(adapterBytecode, network),
     );
 
     expect(deployTx.success).toEqual(true);
@@ -366,7 +410,7 @@ export async function newTestE2E({
     );
 
     const whitelistTx = await ts.simulate(
-      whiteListAdapterParams(adapterAddress, network),
+      augustusGrantRoleParams(adapterAddress, network),
     );
     expect(whitelistTx.success).toEqual(true);
   }

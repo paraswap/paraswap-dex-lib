@@ -1,5 +1,7 @@
+import { ethers } from 'ethers';
 import { PoolPrices, PoolLiquidity, Address } from '../src/types';
 import { SwapSide } from '../src/constants';
+import { assert } from 'ts-essentials';
 
 // Assuming that the amounts are increasing at same interval, and start with 0
 export function checkPoolPrices(
@@ -73,3 +75,34 @@ export const sleep = (time: number) =>
   new Promise(resolve => {
     setTimeout(resolve, time);
   });
+
+export const generateDeployBytecode = (
+  artifactJsonPath: string,
+  configJsonPath: string,
+  fieldsToPickFromConfig: string[],
+): string => {
+  const artifact = require(artifactJsonPath) as {
+    abi: ethers.ContractInterface;
+    bytecode: string;
+  };
+  // I don't want to type this testing thing. If something is wrong, I will just throw
+  const config = require(configJsonPath) as any;
+  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode);
+
+  const args = fieldsToPickFromConfig.map(f => {
+    const value = config[f];
+    assert(
+      value === undefined,
+      `Field ${f} is not defined in configJsonPath=${configJsonPath} and loaded config=${JSON.stringify(
+        config,
+      )}`,
+    );
+    return value;
+  });
+
+  const deployedBytecode = factory.getDeployTransaction(args).data;
+
+  assert(deployedBytecode !== undefined, 'deployedBytecode is undefined');
+
+  return deployedBytecode.toString();
+};

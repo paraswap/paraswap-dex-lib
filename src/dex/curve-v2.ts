@@ -1,21 +1,27 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { ETHER_ADDRESS, SwapSide } from '../constants';
+import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
   Address,
+  ExchangeTxInfo,
   NumberAsString,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
+  Token,
   TxInfo,
 } from '../types';
 import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from './simple-exchange';
 import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
 import DirectSwapABI from '../abi/DirectSwap.json';
 import CurveV2ABI from '../abi/CurveV2.json';
-import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 import { assert } from 'ts-essentials';
 import { Logger } from 'log4js';
+import { OptimalSwapExchange } from '@paraswap/core';
 
 export enum CurveV2SwapType {
   EXCHANGE,
@@ -65,7 +71,6 @@ export type DirectCurveV2Param = [
   isApproved: boolean,
   swapType: CurveV2SwapType,
   beneficiary: Address,
-  isNativeEth: boolean,
   permit: string,
   uuid: string,
 ];
@@ -89,7 +94,7 @@ export class CurveV2
 
   readonly directSwapIface = new Interface(DirectSwapABI);
 
-  constructor(dexHelper: IDexHelper) {
+  constructor(readonly dexHelper: IDexHelper) {
     super(dexHelper, 'curvev2');
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
     this.genericFactoryZapIface = new Interface(GenericFactoryZapABI);
@@ -99,10 +104,10 @@ export class CurveV2
   }
 
   getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
+    _0: string,
+    _1: string,
+    _2: string,
+    _3: string,
     data: CurveV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
@@ -133,6 +138,58 @@ export class CurveV2
     };
   }
 
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<CurveV2Data>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<CurveV2Data>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
+        .call(undefined, 'latest');
+      isApproved =
+        allowance.toBigInt() >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
   getDirectParam(
     srcToken: Address,
     destToken: Address,
@@ -144,7 +201,7 @@ export class CurveV2
     permit: string,
     uuid: string,
     feePercent: NumberAsString,
-    deadline: NumberAsString,
+    _0: NumberAsString,
     partner: string,
     beneficiary: string,
     contractMethod?: string,
@@ -174,7 +231,6 @@ export class CurveV2
       isApproved,
       data.swapType,
       beneficiary,
-      destToken.toLowerCase() === ETHER_ADDRESS.toLowerCase(),
       permit,
       uuid,
     ];

@@ -11,7 +11,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@paraswap/sdk": "^6.1.0",
+    "@paraswap/sdk": "6.2.1-new-direct-methods.0",
     "@types/async": "^3.2.15",
     "@types/axios": "0.14.0",
     "@types/express": "^4.17.14",
@@ -53,7 +53,7 @@
     "@0x/utils": "^4.5.2",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.0.2",
-    "@paraswap/core": "1.0.3",
+    "@paraswap/core": "1.0.5-new-direct-methods.0",
     "async": "^3.2.4",
     "bignumber.js": "9.1.0",
     "cross-fetch": "^3.1.5",

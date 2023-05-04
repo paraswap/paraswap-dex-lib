@@ -28,6 +28,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.simpleSwap,
             ContractMethod.multiSwap,
             ContractMethod.megaSwap,
+            ContractMethod.directBalancerV2GivenInSwap,
           ],
         ],
       ]);

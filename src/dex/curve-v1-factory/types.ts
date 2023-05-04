@@ -203,7 +203,6 @@ export type DirectCurveV1Param = [
   isApproved: boolean,
   swapType: CurveV1SwapType,
   beneficiary: Address,
-  stEthSwap: boolean,
   permit: string,
   uuid: string,
 ];

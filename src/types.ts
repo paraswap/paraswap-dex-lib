@@ -288,6 +288,7 @@ export type PreprocessTransactionOptions = {
   txOrigin: Address;
   hmac?: string;
   mockRfqAndLO?: boolean;
+  isDirectMethod?: boolean;
 };
 
 export type TransferFeeParams = {

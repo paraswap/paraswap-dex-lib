@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { AbiItem } from 'web3-utils';
-import { NumberAsString } from '@paraswap/core';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
@@ -14,13 +14,14 @@ import {
   Logger,
   TransferFeeParams,
   TxInfo,
+  PreprocessTransactionOptions,
+  ExchangeTxInfo,
 } from '../../types';
 import {
   SwapSide,
   Network,
   SRC_TOKEN_PARASWAP_TRANSFERS,
   NULL_ADDRESS,
-  ETHER_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
@@ -40,7 +41,10 @@ import {
   PoolConstants,
   DirectCurveV1Param,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { CurveV1FactoryConfig, Adapters } from './config';
 import {
   DIRECT_METHOD_NAME,
@@ -823,6 +827,58 @@ export class CurveV1Factory
     };
   }
 
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<CurveV1FactoryData>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<CurveV1FactoryData>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
+        .call(undefined, 'latest');
+      isApproved =
+        allowance.toBigInt() >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
   getDirectParam(
     srcToken: Address,
     destToken: Address,
@@ -849,10 +905,6 @@ export class CurveV1Factory
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
-    const isETH =
-      srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase() ||
-      destToken.toLowerCase() === ETHER_ADDRESS.toLowerCase();
-
     const swapParams: DirectCurveV1Param = [
       srcToken,
       destToken,
@@ -869,7 +921,6 @@ export class CurveV1Factory
         ? CurveV1SwapType.EXCHANGE_UNDERLYING
         : CurveV1SwapType.EXCHANGE,
       beneficiary,
-      isETH,
       permit,
       uuid,
     ];

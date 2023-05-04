@@ -1017,6 +1017,15 @@ export class BalancerV2
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<OptimizedBalancerV2Data>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
     assert(
       optimalSwapExchange.data !== undefined,
       `preProcessTransaction: data field is missing`,
@@ -1033,7 +1042,7 @@ export class BalancerV2
       isApproved =
         allowance.toBigInt() >= BigInt(optimalSwapExchange.srcAmount);
     } catch (e) {
-      this.logger.warn(
+      this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
         e,
       );
