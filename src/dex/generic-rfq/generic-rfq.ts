@@ -179,7 +179,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         data: {
           orderInfos: null,
         },
-        poolAddresses: [this.augustusRFQAddress],
+        poolAddresses: [this.config.maker],
       },
     ];
   }
