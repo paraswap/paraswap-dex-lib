@@ -22,6 +22,7 @@ import { IDexHelper } from '../dex-helper';
 import { assert } from 'ts-essentials';
 import { Logger } from 'log4js';
 import { OptimalSwapExchange } from '@paraswap/core';
+import { uuidToBytes16 } from '../utils';
 
 export enum CurveV2SwapType {
   EXCHANGE,
@@ -232,7 +233,7 @@ export class CurveV2
       data.swapType,
       beneficiary,
       permit,
-      uuid,
+      uuidToBytes16(uuid),
     ];
 
     const encoder = (...params: DirectCurveV2Param) => {

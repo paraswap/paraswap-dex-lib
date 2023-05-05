@@ -17,6 +17,7 @@ import {
 } from '../types';
 import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
+import { v4 as uuid } from 'uuid';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -255,7 +256,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       partnerAddress: NULL_ADDRESS,
       partnerFeePercent: '0',
       deadline: deadline.toString(),
-      uuid: '00000000-0000-0000-0000-000000000000',
+      uuid: uuid(),
     });
   }
 }

@@ -62,6 +62,7 @@ import {
   isDestTokenTransferFeeToBeExchanged,
   isSrcTokenTransferFeeToBeExchanged,
   Utils,
+  uuidToBytes16,
 } from '../../utils';
 import { BN_0 } from '../../bignumber-constants';
 import {
@@ -955,7 +956,7 @@ export class CurveV1
         : CurveV1SwapType.EXCHANGE,
       beneficiary,
       permit,
-      uuid,
+      uuidToBytes16(uuid),
     ];
 
     const encoder = (...params: DirectCurveV1Param) => {

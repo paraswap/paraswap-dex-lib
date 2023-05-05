@@ -28,6 +28,7 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   isSrcTokenTransferFeeToBeExchanged,
+  uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -926,7 +927,7 @@ export class CurveV1Factory
         : CurveV1SwapType.EXCHANGE,
       beneficiary,
       permit,
-      uuid,
+      uuidToBytes16(uuid),
     ];
 
     const encoder = (...params: DirectCurveV1Param) => {

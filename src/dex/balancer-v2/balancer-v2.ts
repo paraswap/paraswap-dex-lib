@@ -31,7 +31,11 @@ import { LinearPool } from './LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -1112,7 +1116,7 @@ export class BalancerV2
       isApproved,
       beneficiary,
       permit,
-      uuid,
+      uuidToBytes16(uuid),
     ];
 
     const encoder = (...params: BalancerV2DirectParam) => {

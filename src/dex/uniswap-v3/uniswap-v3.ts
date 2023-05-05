@@ -20,6 +20,7 @@ import {
   getDexKeysWithNetwork,
   interpolate,
   isTruthy,
+  uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -777,7 +778,7 @@ export class UniswapV3
       beneficiary,
       path,
       permit,
-      uuid,
+      uuidToBytes16(uuid),
     ];
 
     const encoder = (...params: UniswapV3Param) => {
