@@ -69,14 +69,16 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.localProvider = new ethers.providers.JsonRpcProvider(this.dexHelper.config.data.privateHttpProvider);
+    this.localProvider = new ethers.providers.JsonRpcProvider(
+      this.dexHelper.config.data.privateHttpProvider,
+    );
   }
 
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
   // implement this function
-  async initializePricing(blockNumber: number) { }
+  async initializePricing(blockNumber: number) {}
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -176,9 +178,9 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       limitPools ??
       (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
     const marketMakersUris = pools.map(this.getMakerUrlFromKey);
-    const levelRequests = marketMakersUris.map(async (url) => ({
+    const levelRequests = marketMakersUris.map(async url => ({
       maker: url,
-      levels: await getPricingErc20(url!, srcToken, destToken)
+      levels: await getPricingErc20(url!, srcToken, destToken),
     }));
     const levels = await Promise.all(levelRequests);
     const prices = levels.map(({ maker, levels }) => {
@@ -206,7 +208,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         normalizedDestToken,
         side,
       );
-      console.log("computePricesFromLevels prices", prices, levels)
+      console.log('computePricesFromLevels prices', prices, levels);
       return {
         gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,
@@ -221,7 +223,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         poolAddresses: [this.routerAddress],
       };
     });
-    console.log("computePricesFromLevels prices", prices)
+    console.log('computePricesFromLevels prices', prices);
     return prices;
   }
 
@@ -332,7 +334,8 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
       );
       throw new Error(
-        `${this.dexKey}-${this.network
+        `${this.dexKey}-${
+          this.network
         }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
       );
     }
@@ -350,22 +353,23 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       normalizedSrcToken,
       normalizedDestToken,
       AirSwapConfig.AirSwap[this.network].makerRegistry,
+      this.network,
     );
     let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
     try {
       responses =
         makers.length > 0
           ? await Promise.allSettled(
-            makers.map(maker => {
-              return makeRFQ(
-                maker,
-                this.augustusAddress.toLocaleLowerCase(),
-                normalizedSrcToken,
-                normalizedDestToken,
-                amount,
-              );
-            }),
-          )
+              makers.map(maker => {
+                return makeRFQ(
+                  maker,
+                  this.augustusAddress.toLocaleLowerCase(),
+                  normalizedSrcToken,
+                  normalizedDestToken,
+                  amount,
+                );
+              }),
+            )
           : ({} as unknown as any);
     } catch (error) {
       console.error(error);
@@ -377,7 +381,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         (promise: PromiseFulfilledResult<QuoteResponse>) => promise.value,
       )[0];
 
-    console.log("firstResponse", firstResponse);
+    console.log('firstResponse', firstResponse);
     return [
       {
         ...optimalSwapExchange,

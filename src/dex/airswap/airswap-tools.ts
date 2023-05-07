@@ -214,6 +214,7 @@ export async function getAvailableMakersForRFQ(
   from: Token,
   to: Token,
   registryAddress: string,
+  chainId: number,
 ): Promise<Server[]> {
   try {
     const urls = await getServersUrl(
@@ -222,7 +223,7 @@ export async function getAvailableMakersForRFQ(
       registryAddress,
       provider,
     );
-    const servers = await getServers(urls);
+    const servers = await getServers(urls, chainId);
     return Promise.resolve(servers);
   } catch (err) {
     return Promise.resolve([]);
@@ -245,13 +246,16 @@ export async function getServersUrl(
   const urls = quoteTokenURLs
     .filter(url => baseTokenURLs.includes(url))
     .filter(url => !(url.startsWith('wss://') || url.startsWith('ws://')))
-    .filter(url => url.includes("altono"));
+    .filter(url => url.includes('altono'));
   return Promise.resolve(urls);
 }
 
-async function getServers(serversUrl: string[]): Promise<Array<Server>> {
+async function getServers(
+  serversUrl: string[],
+  chainId: number,
+): Promise<Array<Server>> {
   const serverPromises = (await Promise.allSettled(
-    serversUrl.map(url => Server.at(url)),
+    serversUrl.map(url => Server.at(url, { chainId })),
   )) as PromiseFulfilledResult<Server>[];
   return serverPromises
     .filter(promise => promise.status === 'fulfilled')
@@ -281,8 +285,11 @@ export async function makeRFQ(
     });
     return Promise.resolve({ maker: maker.locator, signedOrder: response });
   } catch (e) {
-    console.error(e)
-    return Promise.resolve({ maker: maker.locator, signedOrder: {} as FullOrderERC20})
+    console.error(e);
+    return Promise.resolve({
+      maker: maker.locator,
+      signedOrder: {} as FullOrderERC20,
+    });
   }
 }
 
@@ -297,22 +304,21 @@ export async function getPricingErc20( // https://kehr54rr.altono.xyz/airswap/ma
     method: 'getPricingERC20',
     params: [
       {
-        baseToken: srcToken.symbol,//'USDC',
-        quoteToken: destToken.symbol,//'USDT',
+        baseToken: srcToken.symbol, //'USDC',
+        quoteToken: destToken.symbol, //'USDT',
       },
     ],
   });
   let config = {
     method: 'POST' as Method,
     maxBodyLength: Infinity,
-    url: "https://kehr54rr.altono.xyz/airswap/polygon/",
+    url: 'https://kehr54rr.altono.xyz/airswap/polygon/',
     headers: {
       'Content-Type': 'application/json',
     },
     data: data,
   };
   console.log('data', config, data);
-
 
   try {
     const response = await axios.request(config);
@@ -326,8 +332,8 @@ export async function getPricingErc20( // https://kehr54rr.altono.xyz/airswap/ma
 export function mapMakerResponse(bid: number[][]) {
   return bid.map((bid: number[]) => {
     const [threshold, price] = bid;
-    return { level: "" + threshold, price: "" + (price * (1 - 0.06)) };
-  })
+    return { level: '' + threshold, price: '' + price };
+  });
 }
 
 export function computePricesFromLevels(
