@@ -297,6 +297,7 @@ export async function getPricingErc20( // https://kehr54rr.altono.xyz/airswap/ma
   url: string,
   srcToken: Token,
   destToken: Token,
+  swapSide: SwapSide,
 ): Promise<PriceLevel[]> {
   let data = JSON.stringify({
     jsonrpc: '2.0',
@@ -322,16 +323,25 @@ export async function getPricingErc20( // https://kehr54rr.altono.xyz/airswap/ma
 
   try {
     const response = await axios.request(config);
-    return mapMakerResponse(response.data.result[0].bid);
+    return swapSide === SwapSide.SELL
+      ? mapMakerSELLResponse(response.data.result[0].bid)
+      : mapMakerBUYResponse(response.data.result[0].ask);
   } catch (err) {
     console.log('response', err);
     return [];
   }
 }
 
-export function mapMakerResponse(bid: number[][]) {
+export function mapMakerSELLResponse(bid: number[][]) {
   return bid.map((bid: number[]) => {
     const [threshold, price] = bid;
+    return { level: '' + threshold, price: '' + price };
+  });
+}
+
+export function mapMakerBUYResponse(ask: number[][]) {
+  return ask.map((ask: number[]) => {
+    const [threshold, price] = ask;
     return { level: '' + threshold, price: '' + price };
   });
 }

@@ -31,7 +31,7 @@ import {
   getPricingErc20,
   getServersUrl,
   makeRFQ,
-  mapMakerResponse,
+  mapMakerSELLResponse,
 } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
@@ -180,7 +180,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     const marketMakersUris = pools.map(this.getMakerUrlFromKey);
     const levelRequests = marketMakersUris.map(async url => ({
       maker: url,
-      levels: await getPricingErc20(url!, srcToken, destToken),
+      levels: await getPricingErc20(url!, srcToken, destToken, side),
     }));
     const levels = await Promise.all(levelRequests);
     const prices = levels.map(({ maker, levels }) => {
@@ -223,7 +223,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         poolAddresses: [this.routerAddress],
       };
     });
-    console.log('computePricesFromLevels prices', prices);
+    console.log('prices', prices);
     return prices;
   }
 
