@@ -65,7 +65,7 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const nativeTokenSymbol = 'WETH'; //NativeTokenSymbols[network];
+  const nativeTokenSymbol = NativeTokenSymbols[network];
 
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
@@ -135,14 +135,14 @@ function testForNetwork(
 describe('Airswap E2E', () => {
   const dexKey = 'Airswap';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('POLYGON', () => {
+    const network = Network.POLYGON;
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '2000';
-    const tokenBAmount: string = '2000';
+    const tokenAAmount: string = '20000';
+    const tokenBAmount: string = '20000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

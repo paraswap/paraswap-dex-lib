@@ -337,6 +337,7 @@ export const Tokens: {
       decimals: 6,
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,
+      symbol: 'USDC'
     },
     POPS: {
       address: '0xa92A1576D11dB45c53be71d59245ac97ce0d8147',
@@ -371,6 +372,7 @@ export const Tokens: {
     USDT: {
       address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
       decimals: 6,
+      symbol: 'USDT'
     },
     WBTC: {
       address: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6',

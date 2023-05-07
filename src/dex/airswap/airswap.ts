@@ -28,12 +28,14 @@ import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20
 import {
   computePricesFromLevels,
   getAvailableMakersForRFQ,
+  getPricingErc20,
   getServersUrl,
   makeRFQ,
   mapMakerResponse,
 } from './airswap-tools';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
+import { SwapERC20, Server } from '@airswap/libraries';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -117,8 +119,8 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     const urls = await getServersUrl(
       normalizedDestToken.address,
       destToken.address,
-      AirSwapConfig.AirSwap[this.network].makerRegistry,
       this.localProvider,
+      this.network,
     );
     const makerAndPairs: Record<string, temporaryMakerAnswer> = urls.reduce(
       (dict, url) => {
@@ -181,37 +183,37 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     // get pricing to corresponding pair token for each maker
     const mockedBids = mapMakerResponse([
       [
-          1.000450202591166,
-          0.9996085451854244
+          1.0017530678687703,
+          0.9986555627429434
       ],
       [
-          25042.410786567885,
-          0.9995656217776242
+          4623.273320102576,
+          0.9986548706036671
       ],
       [
-          52589.06265179256,
-          0.9994754843360436
+          9708.87397221541,
+          0.9986534172611561
       ],
       [
-          82890.37970353971,
-          0.9993763312640255
+          15303.034689539527,
+          0.9986518184194275
       ],
       [
-          116221.82846046158,
-          0.9992672628848045
+          21456.611478596056,
+          0.9986500596935255
       ],
       [
-          152886.42209307564,
-          0.9991472876676625
+          28225.54594655824,
+          0.9986481250950328
       ],
       [
-          193217.4750889511,
-          0.9990153149288057
+          35671.37386131664,
+          0.998645997036693
       ]
   ]);
-    const levelRequests = marketMakersUris.map(url => ({
+    const levelRequests = marketMakersUris.map(async (url) => ({
       maker: url,
-      levels: mockedBids, //maker.getPricing(url, srcToken, destToken), @TODO
+      levels: await getPricingErc20(url!, srcToken, destToken), //maker.getPricing(url, srcToken, destToken), @TODO
     }));
     const levels = await Promise.all(levelRequests);
 
@@ -383,7 +385,7 @@ console.log("prices", prices, levels)
       this.localProvider,
       normalizedSrcToken,
       normalizedDestToken,
-      AirSwapConfig.AirSwap[this.network].makerRegistry,
+      this.network,
     );
     let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
     try {
