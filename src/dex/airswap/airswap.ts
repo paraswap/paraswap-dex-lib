@@ -52,7 +52,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   readonly needWrapNative = true;
   readonly isFeeOnTransferSupported = false;
 
-  private localProvider: ethers.providers.InfuraWebSocketProvider;
+  private localProvider: ethers.providers.JsonRpcProvider;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AirSwapConfig);
@@ -69,10 +69,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.localProvider = ethers.providers.InfuraProvider.getWebSocketProvider(
-      this.dexHelper.config.data.network,
-      process.env.INFURA_KEY,
-    );
+    this.localProvider = new ethers.providers.JsonRpcProvider(this.dexHelper.config.data.privateHttpProvider);
   }
 
   // Initialize pricing is called once in the start of
@@ -119,8 +116,8 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     const urls = await getServersUrl(
       normalizedDestToken.address,
       destToken.address,
+      AirSwapConfig.AirSwap[this.network].makerRegistry,
       this.localProvider,
-      this.network,
     );
     const makerAndPairs: Record<string, temporaryMakerAnswer> = urls.reduce(
       (dict, url) => {
@@ -178,45 +175,12 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     const pools =
       limitPools ??
       (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
-
     const marketMakersUris = pools.map(this.getMakerUrlFromKey);
-    // get pricing to corresponding pair token for each maker
-    const mockedBids = mapMakerResponse([
-      [
-          1.0017530678687703,
-          0.9986555627429434
-      ],
-      [
-          4623.273320102576,
-          0.9986548706036671
-      ],
-      [
-          9708.87397221541,
-          0.9986534172611561
-      ],
-      [
-          15303.034689539527,
-          0.9986518184194275
-      ],
-      [
-          21456.611478596056,
-          0.9986500596935255
-      ],
-      [
-          28225.54594655824,
-          0.9986481250950328
-      ],
-      [
-          35671.37386131664,
-          0.998645997036693
-      ]
-  ]);
     const levelRequests = marketMakersUris.map(async (url) => ({
       maker: url,
-      levels: await getPricingErc20(url!, srcToken, destToken), //maker.getPricing(url, srcToken, destToken), @TODO
+      levels: await getPricingErc20(url!, srcToken, destToken)
     }));
     const levels = await Promise.all(levelRequests);
-
     const prices = levels.map(({ maker, levels }) => {
       const divider = getBigNumberPow(
         side === SwapSide.SELL
@@ -242,7 +206,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         normalizedDestToken,
         side,
       );
-console.log("prices", prices, levels)
+      console.log("computePricesFromLevels prices", prices, levels)
       return {
         gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,
@@ -257,7 +221,7 @@ console.log("prices", prices, levels)
         poolAddresses: [this.routerAddress],
       };
     });
-    console.log(prices)
+    console.log("computePricesFromLevels prices", prices)
     return prices;
   }
 
@@ -337,7 +301,7 @@ console.log("prices", prices, levels)
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): Promise<void> {
-    this.localProvider.websocket.close();
+    // this.localProvider.websocket.close();
     return Promise.resolve();
   }
 
@@ -385,7 +349,7 @@ console.log("prices", prices, levels)
       this.localProvider,
       normalizedSrcToken,
       normalizedDestToken,
-      this.network,
+      AirSwapConfig.AirSwap[this.network].makerRegistry,
     );
     let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
     try {
@@ -413,7 +377,7 @@ console.log("prices", prices, levels)
         (promise: PromiseFulfilledResult<QuoteResponse>) => promise.value,
       )[0];
 
-    console.log(firstResponse);
+    console.log("firstResponse", firstResponse);
     return [
       {
         ...optimalSwapExchange,
