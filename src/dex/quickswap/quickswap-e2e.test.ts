@@ -367,41 +367,44 @@ describe('QuickSwap', () => {
       const dexKey = 'SpiritSwapV3';
 
       const sideToContractMethods = new Map([
-        // [
-        //   SwapSide.SELL,
-        //   [
-        //     ContractMethod.simpleSwap,
-        //     // ContractMethod.multiSwap,
-        //     // ContractMethod.megaSwap,
-        //   ],
-        // ],
         [
-          SwapSide.BUY,
+          SwapSide.SELL,
           [
-            ContractMethod.simpleBuy,
-            // ContractMethod.buy,
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
           ],
         ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
-      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
         [
-          { name: 'USDC', sellAmount: '1000000', buyAmount: '99999000000000' },
-          { name: 'WFTM', sellAmount: '10000000000000', buyAmount: '100' },
-        ],
-        // [
-        //   { name: 'FTM', sellAmount: '700000000000000000', buyAmount: '100000000' },
-        //   { name: 'WETH', sellAmount: '700000000000000000', buyAmount: '700000000000000000' },
-        // ],
-        // [
-        //   { name: 'FUSDT', sellAmount: '90000000000000000000000', buyAmount: '100000000' },
-        //   { name: 'WETH', sellAmount: '700000000000000000', buyAmount: '700000000000000000' },
-        // ],
-        // [
-        //   { name: 'FUSDT', sellAmount: '90000000000000000000000', buyAmount: '100000000' },
-        //   { name: 'FTM', sellAmount: '700000000000000000', buyAmount: '700000000000000000' },
-        // ]
-      ];
+          [
+            {
+              name: 'USDC',
+              sellAmount: '100',
+              buyAmount: '10000000000000000',
+            },
+            {
+              name: 'WFTM',
+              sellAmount: '10000000000000000',
+              buyAmount: '100',
+            },
+          ],
+          [
+            {
+              name: 'FTM',
+              sellAmount: '1000000000000000',
+              buyAmount: '100',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '100',
+              buyAmount: '10000000000000000',
+            },
+          ],
+        ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
@@ -413,7 +416,9 @@ describe('QuickSwap', () => {
                     tokens[pair[0].name],
                     tokens[pair[1].name],
                     holders[pair[0].name],
-                    side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
                     side,
                     dexKey,
                     contractMethod,
@@ -426,7 +431,9 @@ describe('QuickSwap', () => {
                     tokens[pair[1].name],
                     tokens[pair[0].name],
                     holders[pair[1].name],
-                    side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
                     side,
                     dexKey,
                     contractMethod,
