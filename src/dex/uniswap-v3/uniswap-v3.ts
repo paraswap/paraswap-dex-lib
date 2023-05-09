@@ -43,7 +43,6 @@ import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulti
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_FUNCTION_CALL_GAS_COST,
-  UNISWAPV3_SUBGRAPH_URL,
   UNISWAPV3_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
@@ -80,7 +79,7 @@ export class UniswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(UniswapV3Config);
+    getDexKeysWithNetwork(_.pick(UniswapV3Config, ['UniswapV3']));
 
   logger: Logger;
 
@@ -213,6 +212,8 @@ export class UniswapV3
         token1,
         this.logger,
         this.cacheStateKey,
+        this.config.initHash,
+        this.config.deployer,
       );
 
       try {
@@ -880,6 +881,9 @@ export class UniswapV3
       stateMulticall: this.config.stateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
       uniswapMulticall: this.config.uniswapMulticall,
+      deployer: this.config.deployer?.toLowerCase(),
+      initHash: this.config.initHash,
+      subgraphURL: this.config.subgraphURL,
     };
     return newConfig;
   }
@@ -943,7 +947,7 @@ export class UniswapV3
   ) {
     try {
       const res = await this.dexHelper.httpRequest.post(
-        UNISWAPV3_SUBGRAPH_URL,
+        this.config.subgraphURL,
         { query, variables },
         undefined,
         { timeout: timeout },

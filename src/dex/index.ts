@@ -64,6 +64,7 @@ import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
 import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
+import { PancakeswapV3 } from './uniswap-v3/forks/pancakeswap-v3/pancakeswap-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -96,6 +97,7 @@ const Dexes = [
   BalancerV2,
   UniswapV2,
   UniswapV3,
+  PancakeswapV3,
   BiSwap,
   MDEX,
   Dfyn,
