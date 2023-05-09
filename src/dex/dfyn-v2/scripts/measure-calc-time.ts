@@ -10,7 +10,7 @@ import { DeepReadonly } from 'ts-essentials';
 dotenv.config();
 import { Network, SwapSide } from '../../../constants';
 import { DummyDexHelper } from '../../../dex-helper';
-import { uniswapV3Math } from '../contract-math/uniswap-v3-math';
+import { dfynV2Math } from '../contract-math/dfyn-v2-math'
 import { PoolState } from '../types';
 import { DfynV2 } from '../dfyn-v2';
 
@@ -112,7 +112,7 @@ const executeGetPricesVolume = async (blockNumber: number) => {
 const executeOnlySyncOperations = async (states: DeepReadonly<PoolState>[]) => {
   await Promise.all(
     states.map(async state => {
-      await uniswapV3Math.queryOutputs(state, amounts, zeroForOne, side);
+      await dfynV2Math.queryOutputs(state, amounts, zeroForOne, side);
     }),
   );
 };

@@ -1,96 +1,68 @@
-import { IConcentratedLiquidityPoolStruct } from "./IConcentratedLiquidityPool";
+import { StructHelper , PoolState } from "./../types";
 import { BI_POWS } from '../../../bigint-constants';
 //import { ConcStruct, SwapExecuteCache } from "./ILimitOrderStruct";
 import { DyDxMath } from "./DyDxMath";
 import { FullMath } from "./FullMath";
-import { UnsafeMath } from "./UnsafeMath";
-import { number } from "joi";
-
-interface TickCrossRequest{
-    nextTickToCross: number;
-    currentLiquidity: bigint;
-}
-interface TickCache {
-    limitFee: bigint;
-    limitOrderAmountIn: bigint;
-    amountIn: bigint;
-    amountInRemaining: bigint;
-    limitOrderAmountOut: bigint;
-    tokenLiquidity: bigint;
-    tokenClaimable: bigint;
-    tokenClaimableGrowth: bigint;
-  }
-  
-
-export interface  ExecuteLimitOrderParams {
-    tick: number;
-    cross: boolean;
-    exactIn: boolean;
-    zeroForOne: boolean;
-    sqrtpriceX96: bigint;
-    amountIn: bigint;
-    amountOut: bigint;
-    limitOrderAmountOut: bigint;
-    limitOrderAmountIn: bigint;
-    limitOrderFee: bigint;
-    token0LimitOrderFee: bigint;
-    token1LimitOrderFee: bigint;
-}
 
 export class Ticks{
 
     static cross(
-        ticks: Record<number, IConcentratedLiquidityPoolStruct["Tick"]>,
-        request: TickCrossRequest,
-        secondsGrowthGlobal: number,
-        feeGrowthGlobalA: number,
-        feeGrowthGlobalB: number,
+        ticks: PoolState["ticks"],
+        request: StructHelper["TickCrossRequest"],
+        secondsGrowthGlobal: bigint,
+        feeGrowthGlobalA: bigint,
+        feeGrowthGlobalB: bigint,
         zeroForOne: boolean,
-        tickSpacing: number
-    ): [number, number] {
-        if (ticks[request.nextTickToCross].liquidity !== 0n) {
-        ticks[request.nextTickToCross].secondsGrowthOutside = secondsGrowthGlobal - ticks[request.nextTickToCross].secondsGrowthOutside;
+        tickSpacing: bigint
+    ): [bigint, bigint] {
+            
+        let nextTickToCross = Number(request.nextTickToCross)
+
+        if (ticks[nextTickToCross].liquidity !== 0n) {
+        ticks[nextTickToCross].secondsGrowthOutside = secondsGrowthGlobal - ticks[nextTickToCross].secondsGrowthOutside;
         if (zeroForOne) {
             // Moving backwards through the linked list.
             // Liquidity cannot overflow due to the MAX_TICK_LIQUIDITY requirement.
-            if ((request.nextTickToCross / tickSpacing) % 2 === 0) {
-            request.currentLiquidity -= ticks[request.nextTickToCross].liquidity;
+            if ((nextTickToCross / Number(tickSpacing)) % 2 === 0) {
+            request.currentLiquidity -= ticks[nextTickToCross].liquidity;
             } else {
-            request.currentLiquidity += ticks[request.nextTickToCross].liquidity;
+            request.currentLiquidity += ticks[nextTickToCross].liquidity;
             }
-            ticks[request.nextTickToCross].feeGrowthOutside0 = BigInt(feeGrowthGlobalB) - ticks[request.nextTickToCross].feeGrowthOutside0;
-            ticks[request.nextTickToCross].feeGrowthOutside1 = BigInt(feeGrowthGlobalA) - ticks[request.nextTickToCross].feeGrowthOutside1;
-            request.nextTickToCross = ticks[request.nextTickToCross].previousTick;
+            ticks[nextTickToCross].feeGrowthOutside0 = BigInt(feeGrowthGlobalB) - ticks[nextTickToCross].feeGrowthOutside0;
+            ticks[nextTickToCross].feeGrowthOutside1 = BigInt(feeGrowthGlobalA) - ticks[nextTickToCross].feeGrowthOutside1;
+            nextTickToCross = Number(ticks[nextTickToCross].previousTick);
         } else {
             // Moving forwards through the linked list.
-            if ((request.nextTickToCross / tickSpacing) % 2 === 0) {
-            request.currentLiquidity += ticks[request.nextTickToCross].liquidity;
+            if ((nextTickToCross /  Number(tickSpacing)) % 2 === 0) {
+            request.currentLiquidity += ticks[nextTickToCross].liquidity;
             } else {
-            request.currentLiquidity -= ticks[request.nextTickToCross].liquidity;
+            request.currentLiquidity -= ticks[nextTickToCross].liquidity;
             }
-            ticks[request.nextTickToCross].feeGrowthOutside1 = BigInt(feeGrowthGlobalB) - ticks[request.nextTickToCross].feeGrowthOutside1;
-            ticks[request.nextTickToCross].feeGrowthOutside0 = BigInt(feeGrowthGlobalA) - ticks[request.nextTickToCross].feeGrowthOutside0;
-            request.nextTickToCross = ticks[request.nextTickToCross].nextTick;
+            ticks[nextTickToCross].feeGrowthOutside1 = BigInt(feeGrowthGlobalB) - ticks[nextTickToCross].feeGrowthOutside1;
+            ticks[nextTickToCross].feeGrowthOutside0 = BigInt(feeGrowthGlobalA) - ticks[nextTickToCross].feeGrowthOutside0;
+            nextTickToCross = Number(ticks[nextTickToCross].nextTick);
         }
         } else {
         if (zeroForOne) {
-            request.nextTickToCross = ticks[request.nextTickToCross].previousTick;
+            nextTickToCross = Number(ticks[nextTickToCross].previousTick);
         } else {
-            request.nextTickToCross = ticks[request.nextTickToCross].nextTick;
+            nextTickToCross = Number(ticks[nextTickToCross].nextTick);
         }
         }
-    
-        return [Number(request.currentLiquidity), request.nextTickToCross];
+        
+        const currentLiquidity = request.currentLiquidity
+        const _nextTickToCross = BigInt(nextTickToCross)
+        return [currentLiquidity,_nextTickToCross];
     }
     
 
     static excecuteLimitOrder(
-        limitOrderTicks: Record<number, IConcentratedLiquidityPoolStruct["LimitOrderTickData"]>,
-        params: ExecuteLimitOrderParams,
+        limitOrderTicks: PoolState["limitOrderTicks"],
+        params: StructHelper["ExecuteLimitOrderParams"],
         limitOrderLiquidity: bigint
     ):[bigint, bigint, bigint, bigint, bigint, boolean] {
 
-        const cache: TickCache = {
+        const cache: StructHelper["TickCache"] = {
             limitFee : 0n,
             limitOrderAmountIn : 0n,
             amountIn :  0n,
@@ -161,17 +133,17 @@ export class Ticks{
             }
         }
         if (params.zeroForOne) {
-            limitOrderTicks[params.tick].token1Liquidity = cache.tokenLiquidity === 0n
-                ? 0
-                : limitOrderTicks[params.tick].token1Liquidity - Number(cache.tokenLiquidity);
-            limitOrderTicks[params.tick].token0Claimable += cache.tokenClaimable;
-            limitOrderTicks[params.tick].token0ClaimableGrowth += cache.tokenClaimableGrowth;
+            limitOrderTicks[Number(params.tick)].token1Liquidity = cache.tokenLiquidity === 0n
+                ? 0n
+                : limitOrderTicks[Number(params.tick)].token1Liquidity - (cache.tokenLiquidity);
+            limitOrderTicks[Number(params.tick)].token0Claimable += cache.tokenClaimable;
+            limitOrderTicks[Number(params.tick)].token0ClaimableGrowth += cache.tokenClaimableGrowth;
         } else {
-            limitOrderTicks[params.tick].token0Liquidity = cache.tokenLiquidity === 0n
-                ? 0
-                : limitOrderTicks[params.tick].token0Liquidity - Number(cache.tokenLiquidity);
-            limitOrderTicks[params.tick].token1Claimable += cache.tokenClaimable;
-            limitOrderTicks[params.tick].token1ClaimableGrowth += cache.tokenClaimableGrowth;
+            limitOrderTicks[Number(params.tick)].token0Liquidity = cache.tokenLiquidity === 0n
+                ? 0n
+                : limitOrderTicks[Number(params.tick)].token0Liquidity - (cache.tokenLiquidity);
+            limitOrderTicks[Number(params.tick)].token1Claimable += cache.tokenClaimable;
+            limitOrderTicks[Number(params.tick)].token1ClaimableGrowth += cache.tokenClaimableGrowth;
         }
         return [cache.limitFee, params.amountIn, params.amountOut, params.limitOrderAmountOut, params.limitOrderAmountIn, params.cross];
         

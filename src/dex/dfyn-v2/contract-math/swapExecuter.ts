@@ -1,37 +1,32 @@
 import { BI_POWS } from '../../../bigint-constants';
-import { ILimitOrderStruct } from "./ILimitOrder";
-import { IConcentratedLiquidityPoolStruct } from "./IConcentratedLiquidityPool";
+//import { ILimitOrderStruct } from "./ILimitOrder";
+import { StructHelper, PoolState } from "./../types";
 import { DyDxMath } from "./DyDxMath";
 import { FullMath } from "./FullMath";
 import { UnsafeMath } from "./UnsafeMath";
 import { Ticks } from "./Ticks"
 
 
-export interface ExecuteLimitResponse {
-    amountIn: bigint;
-    amountOut: bigint;
-    cross: boolean;
-    token0LimitOrderFee: bigint;
-    token1LimitOrderFee: bigint;
-    limitOrderAmountOut: bigint;
-    limitOrderAmountIn: bigint;
-  }
-
-
 export class SwapExecuter {
     
     static _executeConcentrateLiquidity(
-        cache: ILimitOrderStruct["ConcStruct"],
+        cache: StructHelper["ConcStruct"],
         zeroForOne: boolean,
         nextTickPrice: bigint,
         swapFee: bigint
     ): 
-    [bigint,bigint,boolean,bigint,bigint]{
-    let amountOut: bigint;
-    let currentPrice: bigint;
-    let cross: boolean;
-    let amountIn: bigint;
-    let fee: bigint;
+    {
+        amountOut:bigint;
+        currentPrice :bigint;
+        cross:boolean;
+        amountIn:bigint;
+        fee:bigint
+    }{
+    let amountOut= 0n;
+    let currentPrice= 0n;
+    let cross = false ;
+    let amountIn =  0n;
+    let fee = 0n;
     
     if (cache.exactIn) {
         [amountOut, currentPrice, cross, amountIn, fee] = SwapExecuter.swapExactIn(
@@ -49,17 +44,17 @@ export class SwapExecuter {
         );
     }
     
-    return [amountOut, currentPrice, cross, amountIn, fee];
+    return {amountOut, currentPrice, cross, amountIn, fee};
     
     }
 
     static swapExactOut(
-        cache: ILimitOrderStruct["ConcStruct"],
+        cache: StructHelper["ConcStruct"],
         zeroForOne: boolean,
         nextTickPrice: bigint,
         swapFee: number
     ) : [bigint,bigint,boolean,bigint,bigint] {
-    const swapExecute: IConcentratedLiquidityPoolStruct["SwapExecuteCache"] = {} as any;
+    const swapExecute: StructHelper["SwapExecuteCache"] = {} as any;
     swapExecute.amountIn = cache.amountIn;
     if (zeroForOne) {
         swapExecute.max = DyDxMath.getDy(
@@ -194,13 +189,13 @@ export class SwapExecuter {
     }
 
     static swapExactIn(
-        cache: ILimitOrderStruct["ConcStruct"],
+        cache: StructHelper["ConcStruct"],
         zeroForOne: boolean,
         nextTickPrice: bigint,
         swapFee: number,
     ): [bigint,bigint,boolean,bigint,bigint]
     {
-    const swapExecute: IConcentratedLiquidityPoolStruct["SwapExecuteCache"] = {} as any;
+    const swapExecute: StructHelper["SwapExecuteCache"] = {} as any;
     swapExecute.amountIn = cache.amountIn;
 
     if (zeroForOne) {
@@ -320,10 +315,10 @@ export class SwapExecuter {
     }
   
   static _executeLimitOrder(
-    data: ILimitOrderStruct["ExecuteLimitOrderParams"],
-    limitOrderTicks: Record<number, IConcentratedLiquidityPoolStruct["LimitOrderTickData"]>,
+    data: StructHelper["ExecuteLimitOrderParams"],
+    limitOrderTicks: PoolState["limitOrderTicks"],
     limitOrderLiquidity: bigint
-  ): ExecuteLimitResponse {
+  ): StructHelper["ExecuteLimitResponse"]{
     let feeAmount: bigint;
     let amountIn: bigint;
     let amountOut: bigint;
@@ -334,7 +329,7 @@ export class SwapExecuter {
     // Call the excecuteLimitOrder function and unpack its results
     [feeAmount, amountIn, amountOut, limitOrderAmountOut, limitOrderAmountIn, cross] = Ticks.excecuteLimitOrder(limitOrderTicks, data, limitOrderLiquidity);
   
-    const response: ExecuteLimitResponse = {
+    const response: StructHelper["ExecuteLimitResponse"] = {
       amountIn,
       amountOut,
       cross,
@@ -355,7 +350,7 @@ export class SwapExecuter {
   }
   
   static updatePosition(
-    positions: Record<string, Record<number, Record<number, IConcentratedLiquidityPoolStruct['Position']>>>,
+    positions: Record<string, Record<number, Record<number, StructHelper['Position']>>>,
     owner: string,
     lower: number,
     upper: number,
