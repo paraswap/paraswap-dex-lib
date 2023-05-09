@@ -137,7 +137,7 @@ describe('SwaapV2 E2E', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'ETH';
+    const tokenBSymbol: string = 'WETH';
 
     const tokenAAmount: string = '100000000';
     const tokenBAmount: string = '1000000000000000000';

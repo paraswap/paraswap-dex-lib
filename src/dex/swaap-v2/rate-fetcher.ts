@@ -10,7 +10,10 @@ import {
   SwaapV2QuoteRequest,
   SwaapV2OrderType,
 } from './types';
-import { priceLevelsResponseValidator, getQuoteResponseValidator } from './validators';
+import {
+  priceLevelsResponseValidator,
+  getQuoteResponseValidator,
+} from './validators';
 import { getPriceLevelsCacheKey, normalizeTokenAddress } from './utils';
 import { SWAAP_RFQ_QUOTE_TIMEOUT_MS } from './constants';
 import BigNumber from 'bignumber.js';
@@ -106,10 +109,8 @@ export class RateFetcher {
     userAddress: Address,
     aggregatorRecipient: Address,
     tolerance: BigNumber,
-    apiKey: string,
     requestParameters: RequestConfig,
   ): Promise<SwaapV2QuoteResponse> {
-
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
     const destToken = this.dexHelper.config.wrapETH(_destToken);
 
@@ -156,6 +157,7 @@ export class RateFetcher {
       return {
         id: quoteResp.id,
         calldata: quoteResp.calldata,
+        router: quoteResp.router,
         expiration: quoteResp.expiration,
         amount: quoteResp.amount,
         guaranteed_price: quoteResp.guaranteed_price,
@@ -168,5 +170,3 @@ export class RateFetcher {
     }
   }
 }
-
-

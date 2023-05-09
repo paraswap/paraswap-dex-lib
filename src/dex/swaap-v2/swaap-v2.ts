@@ -11,7 +11,7 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../idex';
@@ -37,6 +37,9 @@ import {
   SWAAP_RFQ_QUOTE_ENDPOINT,
   SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS,
   SWAAP_RFQ_PRICES_CACHES_TTL_S,
+  GAS_COST_ESTIMATION,
+  BATCH_SWAP_SELECTOR,
+  CALLER_SLOT,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import {
@@ -45,7 +48,7 @@ import {
   normalizeTokenAddress,
   getPairName,
 } from './utils';
-import { Method  } from '../../dex-helper/irequest-wrapper';
+import { Method } from '../../dex-helper/irequest-wrapper';
 
 export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly isStatePollingDex = true;
@@ -65,8 +68,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerAddress: string = SwaapV2Config['SwaapV2'][network]
-      .routerAddress,
+    readonly routerAddressPlaceholder: string = SwaapV2Config['SwaapV2'][
+      network
+    ].routerAddress,
     protected routerInterface = new Interface(routerAbi),
   ) {
     super(dexHelper, dexKey);
@@ -121,8 +125,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       this.dexKey,
       normalizedSrcToken.address,
       normalizedDestToken.address,
-      );
-      
+    );
+
     const levels = await this.getCachedLevels();
     if (levels == null) {
       return [];
@@ -166,7 +170,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   inversePrice(priceLevel: SwaapV2PriceLevel): SwaapV2PriceLevel {
     return {
       level: priceLevel.level * priceLevel.price,
-      price: 1. / priceLevel.price,
+      price: 1 / priceLevel.price,
     };
   }
 
@@ -210,7 +214,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       }
       if (enoughLiquidity) {
         return BigInt(
-          output.multipliedBy(getBigNumberPow((side == SwapSide.BUY ? srcToken.decimals : destToken.decimals))).toFixed(0),
+          output
+            .multipliedBy(
+              getBigNumberPow(
+                side == SwapSide.BUY ? srcToken.decimals : destToken.decimals,
+              ),
+            )
+            .toFixed(0),
         );
       }
       return BigInt(0); // not enough liquidity
@@ -246,7 +256,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SwaapV2Data>> {
-
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
 
@@ -313,13 +322,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       );
 
       return {
-        gasCost: 190_000,
+        gasCost: GAS_COST_ESTIMATION,
         exchange: this.dexKey,
         data: {},
         prices,
         unit: unitPrice,
         poolIdentifier: requestedPoolIdentifier,
-        poolAddresses: [this.routerAddress],
+        poolAddresses: [this.routerAddressPlaceholder],
       } as PoolPrices<SwaapV2Data>;
     });
 
@@ -349,7 +358,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<SwaapV2Data>, ExchangeTxInfo]> {
-
     const isSell = side === SwapSide.SELL;
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
@@ -359,17 +367,12 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       this.network,
       normalizedSrcToken,
       normalizedDestToken,
-      isSell
-        ? optimalSwapExchange.srcAmount
-        : optimalSwapExchange.destAmount,
-      isSell 
-        ? 1
-        : 2,
+      isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
+      isSell ? 1 : 2,
       options.txOrigin,
       this.augustusAddress,
       options.slippageFactor,
-      this.swaapV2AuthToken,
-      this.getQuoteReqParams()
+      this.getQuoteReqParams(),
     );
 
     if (!quote.success) {
@@ -390,24 +393,31 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       )}. Missing quote data`;
       this.logger.warn(message);
       throw new SwaapV2QuoteError(message);
+    } else if (!quote.router) {
+      const message = `${this.dexKey}-${
+        this.network
+      }: Failed to fetch RFQ for ${getPairName(
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      )}. Missing router address`;
+      this.logger.warn(message);
+      throw new SwaapV2QuoteError(message);
     }
 
     return [
       {
         ...optimalSwapExchange,
         data: {
+          router: quote.router,
           callData: quote.calldata,
         },
       },
-      { deadline: BI_MAX_UINT256},
+      { deadline: BI_MAX_UINT256 },
     ];
-    
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(
-    poolPrices: PoolPrices<SwaapV2Data>,
-  ): number | number[] {
+  getCalldataGasCost(poolPrices: PoolPrices<SwaapV2Data>): number | number[] {
     return (
       CALLDATA_GAS_COST.DEX_OVERHEAD +
       CALLDATA_GAS_COST.LENGTH_LARGE +
@@ -449,7 +459,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       // ParentStruct -> limits[]
       CALLDATA_GAS_COST.LENGTH_SMALL +
       // ParentStruct -> limits[0:2]
-      CALLDATA_GAS_COST.FULL_WORD * 2
+      CALLDATA_GAS_COST.FULL_WORD * 2 +
+      // Bool -> IsBatchSwap
+      CALLDATA_GAS_COST.BOOL
     );
   }
 
@@ -461,16 +473,132 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     data: SwaapV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { callData } = data;
+    const { router, callData } = data;
+
+    assert(
+      router !== undefined,
+      `${this.dexKey}-${this.network}: router undefined`,
+    );
 
     assert(
       callData !== undefined,
-      `${this.dexKey}-${this.network}: quoteData undefined`,
+      `${this.dexKey}-${this.network}: callData undefined`,
     );
 
+    let payload: string;
+    const truncatedCalldata = '0x' + callData.slice(10); // droping the function selector
+    const isBatchSwap = callData.slice(0, 10) == BATCH_SWAP_SELECTOR;
+
+    if (isBatchSwap) {
+      const batchswapAbi = routerAbi.filter(abi => abi.name == 'batchSwap');
+
+      const callDataStruct = this.abiCoder.decodeParameters(
+        batchswapAbi[0].inputs!,
+        truncatedCalldata,
+      );
+
+      const callerSlots = Array(callDataStruct.swaps.length).fill(160);
+
+      payload = this.abiCoder.encodeParameters(
+        [
+          'bool',
+          'uint256[]',
+          {
+            ParentStruct: {
+              'swaps[]': {
+                poolId: 'bytes32',
+                assetInIndex: 'uint256',
+                assetOutIndex: 'uint256',
+                amount: 'uint256',
+                userData: 'bytes',
+              },
+              assets: 'address[]',
+              funds: {
+                sender: 'address',
+                fromInternalBalance: 'bool',
+                recipient: 'address',
+                toInternalBalance: 'bool',
+              },
+              limits: 'int256[]',
+              deadline: 'uint256',
+            },
+          },
+        ],
+        [
+          isBatchSwap,
+          callerSlots,
+          {
+            swaps: callDataStruct.swaps,
+            assets: callDataStruct.assets,
+            funds: callDataStruct.funds,
+            limits: callDataStruct.limits.map((_: any) => MAX_INT),
+            deadline: callDataStruct.deadline,
+          },
+        ],
+      );
+    } else {
+      const swapAbi = routerAbi.filter(abi => abi.name == 'swap');
+
+      const callDataStruct = this.abiCoder.decodeParameters(
+        swapAbi[0].inputs!,
+        truncatedCalldata,
+      );
+
+      const callerSlot = CALLER_SLOT;
+
+      payload = this.abiCoder.encodeParameters(
+        [
+          'bool',
+          'uint256',
+          {
+            ParentStruct: {
+              swap: {
+                poolId: 'bytes32',
+                kind: 'uint8',
+                assetIn: 'address',
+                assetOut: 'address',
+                amount: 'uint256',
+                userData: 'bytes',
+              },
+              funds: {
+                sender: 'address',
+                fromInternalBalance: 'bool',
+                recipient: 'address',
+                toInternalBalance: 'bool',
+              },
+              limit: 'uint256',
+              deadline: 'uint256',
+            },
+          },
+        ],
+        [
+          isBatchSwap,
+          callerSlot,
+          {
+            swap: {
+              poolId: callDataStruct.singleSwap.poolId,
+              kind: callDataStruct.singleSwap.kind,
+              assetIn: callDataStruct.singleSwap.assetIn,
+              assetOut: callDataStruct.singleSwap.assetOut,
+              amount: callDataStruct.singleSwap.amount,
+              userData: callDataStruct.singleSwap.userData,
+            },
+            funds: {
+              sender: callDataStruct.funds.sender,
+              fromInternalBalance: callDataStruct.funds.fromInternalBalance,
+              recipient: callDataStruct.funds.recipient,
+              toInternalBalance: callDataStruct.funds.toInternalBalance,
+            },
+            limit: side == SwapSide.BUY ? MAX_UINT : BN_0,
+            deadline: callDataStruct.deadline,
+          },
+        ],
+      );
+    }
+
     return {
-      targetExchange: this.routerAddress,
-      payload: callData,
+      targetExchange: router,
+      payload: payload,
       networkFee: '0',
     };
   }
@@ -483,11 +611,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     data: SwaapV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const { callData } = data;
+    const { router, callData } = data;
+
+    assert(
+      router !== undefined,
+      `${this.dexKey}-${this.network}: router undefined`,
+    );
 
     assert(
       callData !== undefined,
-      `${this.dexKey}-${this.network}: quoteData undefined`,
+      `${this.dexKey}-${this.network}: callData undefined`,
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -496,7 +629,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       destToken,
       destAmount,
       callData,
-      this.routerAddress,
+      router,
     );
   }
 
@@ -537,7 +670,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       .map((pair: string) => {
         return {
           exchange: this.dexKey,
-          address: this.routerAddress,
+          address: this.routerAddressPlaceholder,
           connectorTokens: [this.getTokenFromAddress(pLevels[pair].quote!)],
           liquidityUSD: this.computeMaxLiquidity(pLevels[pair], tokenAddress),
         } as PoolLiquidity;
@@ -547,7 +680,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       })
       .slice(0, limit);
   }
-  
+
   getTokenFromAddress(address: Address): Token {
     return { address, decimals: 0 };
   }
@@ -561,7 +694,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   getPriceLevelsReqParams(): SwaapV2APIParameters {
     return this.geAPIReqParams(SWAAP_RFQ_PRICES_ENDPOINT, 'GET');
   }
-  
+
   getQuoteReqParams(): SwaapV2APIParameters {
     return this.geAPIReqParams(SWAAP_RFQ_QUOTE_ENDPOINT, 'POST');
   }
@@ -574,7 +707,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       },
       headers: { 'x-api-key': this.swaapV2AuthToken },
       method: method,
-    }
+    };
   }
-
 }

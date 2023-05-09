@@ -2,6 +2,7 @@ import { RequestHeaders } from '../../dex-helper';
 import { Method } from '../../dex-helper/irequest-wrapper';
 
 export type SwaapV2Data = {
+  router: string;
   callData: string;
 };
 
@@ -39,6 +40,7 @@ export type SwaapV2RateFetcherConfig = {
 export type SwaapV2QuoteResponse = {
   id: string;
   calldata: string;
+  router: string;
   expiration: number;
   amount: string;
   recipient: string;
