@@ -686,4 +686,13 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  Chronos: {
+    [Network.ARBITRUM]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/xliee/chronos',
+      factoryAddress: '0xce9240869391928253ed9cc9bcb8cb98cb5b0722',
+      initCode:
+        '0x5abbc2a893de2e0c13e13a387327e28bf31b9b2babc3c60dbe14ccb4c538a9cd',
+      feeCode: 30,
+    },
+  },
 };
