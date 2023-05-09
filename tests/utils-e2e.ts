@@ -35,8 +35,23 @@ import { assert } from 'ts-essentials';
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
 // Assign here bytecode deploy params
+const adapterContractName = '';
+const adapterContractPath = '';
 let adapterBytecodeArgs: [string, string, string[]] | undefined;
-let routerBytecodeArgs: [string, string, string[]] | undefined;
+
+const routerContractName = 'DirectSwap';
+const routerContractPath = 'contracts/routers';
+let routerBytecodeArgs: [string, string, string[]] | undefined = [
+  `/home/assanix/projects/ParaSwap/paraswap-contracts/artifacts/${routerContractPath}/${routerContractName}.sol/${routerContractName}.json`,
+  '/home/assanix/projects/ParaSwap/paraswap-contracts/config/polygon.json',
+  [
+    'WMATIC',
+    'PARTNER_SHARE_PERCENT',
+    'MAX_FEE_PERCENT',
+    'PS_SLIPPAGE_SHARE',
+    '0x8b5cF413214CA9348F047D1aF402Db1b4E96c060',
+  ],
+];
 
 const adapterBytecode =
   adapterBytecodeArgs === undefined
@@ -202,6 +217,21 @@ function augustusGrantRoleParams(
   };
 }
 
+export function formatDeployMessage(
+  type: 'router' | 'adapter',
+  address: Address,
+  forkId: string,
+  contractName: string,
+  contractPath: string,
+) {
+  // This formatting is useful for verification on Tenderly
+  return `Deployed ${type} contract with env params:
+    TENDERLY_FORK_ID=${forkId}
+    TENDERLY_VERIFY_CONTRACT_ADDRESS=${address}
+    TENDERLY_VERIFY_CONTRACT_NAME=${contractName}
+    TENDERLY_VERIFY_CONTRACT_PATH=${contractPath}`;
+}
+
 export async function testE2E(
   srcToken: Token,
   destToken: Token,
@@ -239,13 +269,14 @@ export async function testE2E(
     const adapterAddress =
       deployTx.transaction.transaction_info.contract_address;
     console.log(
-      'Deployed adapter to address',
-      adapterAddress,
-      'used',
-      deployTx.gasUsed,
-      'gas',
+      formatDeployMessage(
+        'adapter',
+        adapterAddress,
+        ts.forkId,
+        adapterContractName,
+        adapterContractPath,
+      ),
     );
-
     const whitelistTx = await ts.simulate(
       augustusGrantRoleParams(adapterAddress, network),
     );
@@ -261,11 +292,13 @@ export async function testE2E(
     const routerAddress =
       deployTx.transaction.transaction_info.contract_address;
     console.log(
-      'Deployed router to address',
-      routerAddress,
-      'used',
-      deployTx.gasUsed,
-      'gas',
+      formatDeployMessage(
+        'router',
+        routerAddress,
+        ts.forkId,
+        routerContractName,
+        routerContractPath,
+      ),
     );
 
     const whitelistTx = await ts.simulate(
