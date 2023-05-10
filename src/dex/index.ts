@@ -65,6 +65,7 @@ import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
 import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { PancakeswapV3 } from './uniswap-v3/forks/pancakeswap-v3/pancakeswap-v3';
+import { TraderJoeV21 } from './trader-joe-v2.1';
 
 const LegacyDexes = [
   CurveV2,
@@ -84,6 +85,7 @@ const LegacyDexes = [
   ZyberSwapV3,
   SpiritSwapV3,
   TraderJoeV2,
+  TraderJoeV21,
   Jarvis,
   Lido,
   AugustusRFQOrder,
