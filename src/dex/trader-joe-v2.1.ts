@@ -80,21 +80,26 @@ export class TraderJoeV21
     data: TraderJoeV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          _pairBinSteps: 'uint256[]',
-          _tokenPath: 'address[]',
-          _deadline: 'uint256',
-          _mintOutAmount: 'uint256',
-        },
-      },
-      {
-        _pairBinSteps: [data.binStep],
-        _tokenPath: [data.tokenIn, data.tokenOut], // FIXME: redundant, shoot & read from contract
-        _deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
-        _minOutAmount: destAmount,
-      },
+    let payload = this.abiCoder.encodeParameters(
+      ['tuple(tuple(uint256[],uint8[],address[]),uint256,uint256)'],
+      [
+        [
+          [
+            [
+              data.binStep, // _pairBinSteps: uint256[]
+            ],
+            [
+              2, // _versions: uint8[]
+            ],
+            [
+              data.tokenIn,
+              data.tokenOut, // _tokenPath: address[]
+            ],
+          ],
+          getLocalDeadlineAsFriendlyPlaceholder(), // _deadline: uint256
+          destAmount, // _mintOutAmount: uint256
+        ],
+      ],
     );
 
     return {
