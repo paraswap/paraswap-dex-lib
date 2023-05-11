@@ -81,7 +81,7 @@ export class TraderJoeV21
     side: SwapSide,
   ): AdapterExchangeParam {
     let payload = this.abiCoder.encodeParameters(
-      ['tuple(tuple(uint256[],uint8[],address[]),uint256,uint256)'],
+      ['tuple(tuple(uint256[],uint8[],address[]),uint256)'],
       [
         [
           [
@@ -97,7 +97,6 @@ export class TraderJoeV21
             ],
           ],
           getLocalDeadlineAsFriendlyPlaceholder(), // _deadline: uint256
-          destAmount, // _mintOutAmount: uint256
         ],
       ],
     );
