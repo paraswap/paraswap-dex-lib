@@ -1395,10 +1395,10 @@
   resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.5-new-direct-methods.0.tgz#2ed9750ca225741b1095676cbdd290656636d5d9"
   integrity sha512-o1NKM5h6Ejikz3ddEbsfxeYhu/7dpT1bU/zvbUEyM9kWYKlMIfisAzxZ179LjMtqbpj8uNzRb51yJybM2hLzFA==
 
-"@paraswap/core@1.0.5-new-direct-methods.1":
-  version "1.0.5-new-direct-methods.1"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.5-new-direct-methods.1.tgz#0f32c864953f61953eaed4ca2ff1a23a23bd4d57"
-  integrity sha512-QZAFHijJXjGYqKXK6l1dGLwM+vW1/AzdghRa15xAbvd8r6RJofiNZBAZk+V5AnjZdlL/gzOqArUQMOhGY+6dTQ==
+"@paraswap/core@1.0.5-new-direct-methods.2":
+  version "1.0.5-new-direct-methods.2"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.5-new-direct-methods.2.tgz#3b118fd8b8dcd668b2c89299573ab12cada7a205"
+  integrity sha512-kv1ni8wnfDLaU2FjIErzC3mikIoQI5dj/MYWfIeIlpdFMW3xRj4er2gz6T0DiBSIb9o3vRJTSbKGqvsiTULWHw==
 
 "@paraswap/sdk@6.2.1-new-direct-methods.0":
   version "6.2.1-new-direct-methods.0"
