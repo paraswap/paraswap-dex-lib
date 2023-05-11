@@ -18,6 +18,7 @@ import {
 import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
 import { v4 as uuid } from 'uuid';
+import { DirectContractMethods } from '@paraswap/core/build/constants';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -197,6 +198,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         : priceRoute.srcAmount,
     );
 
+    const contractMethod = priceRoute.contractMethod;
+
     // Call preprocessTransaction for each exchange before we build transaction
     try {
       priceRoute.bestRoute = await Promise.all(
@@ -226,6 +229,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         {
                           slippageFactor,
                           txOrigin: userAddress,
+                          isDirectMethod: DirectContractMethods.includes(
+                            contractMethod as ContractMethod,
+                          ),
                         },
                       );
 

@@ -1395,6 +1395,11 @@
   resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.5-new-direct-methods.0.tgz#2ed9750ca225741b1095676cbdd290656636d5d9"
   integrity sha512-o1NKM5h6Ejikz3ddEbsfxeYhu/7dpT1bU/zvbUEyM9kWYKlMIfisAzxZ179LjMtqbpj8uNzRb51yJybM2hLzFA==
 
+"@paraswap/core@1.0.5-new-direct-methods.1":
+  version "1.0.5-new-direct-methods.1"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.5-new-direct-methods.1.tgz#0f32c864953f61953eaed4ca2ff1a23a23bd4d57"
+  integrity sha512-QZAFHijJXjGYqKXK6l1dGLwM+vW1/AzdghRa15xAbvd8r6RJofiNZBAZk+V5AnjZdlL/gzOqArUQMOhGY+6dTQ==
+
 "@paraswap/sdk@6.2.1-new-direct-methods.0":
   version "6.2.1-new-direct-methods.0"
   resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.1-new-direct-methods.0.tgz#e822d0bc27b1e3494614aa0bdada9a533b7ede19"

@@ -1014,11 +1014,16 @@ export class BalancerV2
     return [DirectMethods.directSell, DirectMethods.directBuy];
   }
 
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<OptimizedBalancerV2Data>,
     srcToken: Token,
-    destToken: Token,
-    side: SwapSide,
+    _0: Token,
+    _1: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<OptimizedBalancerV2Data>, ExchangeTxInfo]> {
     if (!options.isDirectMethod) {
@@ -1044,7 +1049,7 @@ export class BalancerV2
         .allowance(this.augustusAddress, this.vaultAddress)
         .call(undefined, 'latest');
       isApproved =
-        allowance.toBigInt() >= BigInt(optimalSwapExchange.srcAmount);
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,

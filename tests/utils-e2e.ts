@@ -34,33 +34,32 @@ import { assert } from 'ts-essentials';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
-// Assign here bytecode deploy params
-const adapterContractName = '';
-const adapterContractPath = '';
-let adapterBytecodeArgs: [string, string, string[]] | undefined;
+const testContractProjectRootPath = process.env.TEST_CONTRACT_PROJECT_ROOT_PATH;
+const testContractName = process.env.TEST_CONTRACT_NAME;
+const testContractConfigFileName = process.env.TEST_CONTRACT_CONFIG_FILE_NAME;
+const testContractRelativePath = process.env.TEST_CONTRACT_RELATIVE_PATH;
+// Comma separated fields from config or actual values
+const testContractDeployArgs = process.env.TEST_CONTRACT_DEPLOY_ARGS;
 
-const routerContractName = 'DirectSwap';
-const routerContractPath = 'contracts/routers';
-let routerBytecodeArgs: [string, string, string[]] | undefined = [
-  `/home/assanix/projects/ParaSwap/paraswap-contracts/artifacts/${routerContractPath}/${routerContractName}.sol/${routerContractName}.json`,
-  '/home/assanix/projects/ParaSwap/paraswap-contracts/config/polygon.json',
-  [
-    'WMATIC',
-    'PARTNER_SHARE_PERCENT',
-    'MAX_FEE_PERCENT',
-    'PS_SLIPPAGE_SHARE',
-    '0x8b5cF413214CA9348F047D1aF402Db1b4E96c060',
-  ],
-];
+// If you want to test against deployed and verified contract
+const deployedTestContractAddress = process.env.DEPLOYED_TEST_CONTRACT_ADDRESS;
+const testContractType = process.env.TEST_CONTRACT_TYPE;
 
-const adapterBytecode =
-  adapterBytecodeArgs === undefined
-    ? ''
-    : generateDeployBytecode(...adapterBytecodeArgs);
-const routerBytecode =
-  routerBytecodeArgs === undefined
-    ? ''
-    : generateDeployBytecode(...routerBytecodeArgs);
+// Only for router tests
+const testDirectRouterAbiPath = process.env.TEST_DIRECT_ROUTER_ABI_PATH;
+
+const directRouterIface = new Interface(
+  testDirectRouterAbiPath ? require(testDirectRouterAbiPath) : '',
+);
+
+const testContractBytecode = generateDeployBytecode(
+  testContractProjectRootPath,
+  testContractName,
+  testContractConfigFileName,
+  testContractRelativePath,
+  testContractDeployArgs,
+  testContractType,
+);
 
 const erc20Interface = new Interface(Erc20ABI);
 const augustusInterface = new Interface(AugustusABI);
@@ -182,10 +181,31 @@ function deployContractParams(bytecode: string, network = Network.MAINNET) {
   };
 }
 
+function augustusSetImplementationParams(
+  contractAddress: Address,
+  network: Network,
+  functionName: string,
+) {
+  const augustusAddress = generateConfig(network).augustusAddress;
+  if (!augustusAddress) throw new Error('No whitelist address set for network');
+  const ownerAddress = MULTISIG[network];
+  if (!ownerAddress) throw new Error('No whitelist owner set for network');
+
+  return {
+    from: ownerAddress,
+    to: augustusAddress,
+    data: augustusInterface.encodeFunctionData('setImplementation', [
+      directRouterIface.getSighash(functionName),
+      contractAddress,
+    ]),
+    value: '0',
+  };
+}
+
 function augustusGrantRoleParams(
   contractAddress: Address,
   network: Network,
-  type: 'adapter' | 'router' = 'adapter',
+  type: string = 'adapter',
 ) {
   const augustusAddress = generateConfig(network).augustusAddress;
   if (!augustusAddress) throw new Error('No whitelist address set for network');
@@ -241,7 +261,7 @@ export async function testE2E(
   dexKey: string,
   contractMethod: ContractMethod,
   network: Network = Network.MAINNET,
-  provider: Provider,
+  _0: Provider,
   poolIdentifiers?: string[],
   limitOrderProvider?: DummyLimitOrderProvider,
   transferFees?: TransferFeeParams,
@@ -260,51 +280,63 @@ export async function testE2E(
     expect(allowanceTx!.success).toEqual(true);
   }
 
-  if (adapterBytecode) {
+  if (deployedTestContractAddress) {
+    const whitelistTx = await ts.simulate(
+      augustusGrantRoleParams(
+        deployedTestContractAddress,
+        network,
+        testContractType || 'adapter',
+      ),
+    );
+    expect(whitelistTx.success).toEqual(true);
+
+    if (testContractType === 'router') {
+      const setImplementationTx = await ts.simulate(
+        augustusSetImplementationParams(
+          deployedTestContractAddress,
+          network,
+          contractMethod,
+        ),
+      );
+      expect(setImplementationTx.success).toEqual(true);
+    }
+  } else if (testContractBytecode) {
     const deployTx = await ts.simulate(
-      deployContractParams(adapterBytecode, network),
+      deployContractParams(testContractBytecode, network),
     );
 
     expect(deployTx.success).toEqual(true);
-    const adapterAddress =
+
+    const contractAddress =
       deployTx.transaction.transaction_info.contract_address;
     console.log(
       formatDeployMessage(
         'adapter',
-        adapterAddress,
+        contractAddress,
         ts.forkId,
-        adapterContractName,
-        adapterContractPath,
+        testContractName || '',
+        testContractRelativePath || '',
       ),
     );
     const whitelistTx = await ts.simulate(
-      augustusGrantRoleParams(adapterAddress, network),
-    );
-    expect(whitelistTx.success).toEqual(true);
-  }
-
-  if (routerBytecode) {
-    const deployTx = await ts.simulate(
-      deployContractParams(adapterBytecode, network),
-    );
-
-    expect(deployTx.success).toEqual(true);
-    const routerAddress =
-      deployTx.transaction.transaction_info.contract_address;
-    console.log(
-      formatDeployMessage(
-        'router',
-        routerAddress,
-        ts.forkId,
-        routerContractName,
-        routerContractPath,
+      augustusGrantRoleParams(
+        contractAddress,
+        network,
+        testContractType || 'adapter',
       ),
     );
-
-    const whitelistTx = await ts.simulate(
-      augustusGrantRoleParams(routerAddress, network, 'router'),
-    );
     expect(whitelistTx.success).toEqual(true);
+
+    if (testContractType === 'router') {
+      const setImplementationTx = await ts.simulate(
+        augustusSetImplementationParams(
+          contractAddress,
+          network,
+          contractMethod,
+        ),
+      );
+      expect(setImplementationTx.success).toEqual(true);
+    }
   }
 
   const useAPI = testingEndpoint && !poolIdentifiers;
@@ -428,13 +460,13 @@ export async function newTestE2E({
     await ts.setup();
   }
 
-  if (useTenderly && adapterBytecode) {
+  if (useTenderly && testContractBytecode) {
     assert(
       ts instanceof TenderlySimulation,
       '`ts`  is not an instance of TenderlySimulation',
     );
     const deployTx = await ts.simulate(
-      deployContractParams(adapterBytecode, network),
+      deployContractParams(testContractBytecode, network),
     );
 
     expect(deployTx.success).toEqual(true);

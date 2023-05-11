@@ -828,6 +828,11 @@ export class CurveV1Factory
     };
   }
 
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<CurveV1FactoryData>,
     srcToken: Token,
@@ -858,7 +863,7 @@ export class CurveV1Factory
         .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
         .call(undefined, 'latest');
       isApproved =
-        allowance.toBigInt() >= BigInt(optimalSwapExchange.srcAmount);
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
@@ -878,10 +883,6 @@ export class CurveV1Factory
         deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
       },
     ];
-  }
-
-  getTokenFromAddress(address: Address): Token {
-    return { address, decimals: 0 };
   }
 
   getDirectParam(

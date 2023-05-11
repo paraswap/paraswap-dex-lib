@@ -78,7 +78,7 @@ describe('UniswapV3 E2E', () => {
     const tokenBSymbol: string = 'WETH';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
-    const tokenAAmount: string = '11111000000';
+    const tokenAAmount: string = '11000000';
     const tokenBAmount: string = '11000000000000000000';
     const nativeTokenAmount = '11000000000000000000';
 
@@ -92,7 +92,14 @@ describe('UniswapV3 E2E', () => {
           ContractMethod.directUniV3Swap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [
+        SwapSide.BUY,
+        [
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+          ContractMethod.directUniV3Buy,
+        ],
+      ],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>

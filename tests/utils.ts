@@ -78,11 +78,28 @@ export const sleep = (time: number) =>
   });
 
 export const generateDeployBytecode = (
-  artifactJsonPath: string,
-  configJsonPath: string,
-  // If not found, it will use as it is without mapping to config
-  fieldsToPickFromConfig: string[],
+  testContractProjectRootPath: string | undefined,
+  testContractName: string | undefined,
+  testContractConfigFileName: string | undefined,
+  testContractRelativePath: string | undefined,
+  testContractDeployArgs: string | undefined,
+  testContractType: string | undefined,
 ): string => {
+  if (
+    !testContractProjectRootPath ||
+    !testContractName ||
+    !testContractConfigFileName ||
+    !testContractRelativePath ||
+    !testContractDeployArgs ||
+    !testContractType
+  ) {
+    return '';
+  }
+
+  const artifactJsonPath = `${testContractProjectRootPath}/artifacts/${testContractName}.json`;
+  const configJsonPath = `${testContractProjectRootPath}/config/${testContractConfigFileName}.json`;
+  const fieldsToPickFromConfig = testContractDeployArgs.split(',');
+
   const artifact = require(artifactJsonPath) as {
     abi: ethers.ContractInterface;
     bytecode: string;
