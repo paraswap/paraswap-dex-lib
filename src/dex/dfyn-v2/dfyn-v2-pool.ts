@@ -11,14 +11,19 @@ import {
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
-  DecodedStateMultiCallResultWithRelativeBitmaps,
   TickInfo,
-  TickBitMapMappingsWithBigNumber,
   TickInfoMappingsWithBigNumber,
+  LimitOrderTickData,
+  LimitOrderTickInfoMappingsWithBigNumber,
+  DecodedGetReserves,
+  DecodedGetImmutables,DecodedGetPriceAndNearestTicks,
+  DecodedGetSecondsGrowthAndLastObservation,
+  DecodedTicksData,
+  DecodedLimitOrderTicksData
 } from './types';
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
+import DfynV2PoolHelperABI from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json'
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
-import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
 import {
@@ -27,9 +32,10 @@ import {
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
 } from './constants';
-import { TickBitMap } from './contract-math/TickBitMap';
-import { uint256ToBigInt } from '../../lib/decoders';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
+import { uint256ToBigInt,uint160ToBigInt, uint128ToBigInt } from '../../lib/decoders';
+import { decodeGetReserves,
+  decodeGetImmutables, decodeGetPriceAndNearestTicks,decodeGetSecondsGrowthAndLastObservation,decodeTicks,decodeLimitOrderTicks } from './utils';
+import { dfynV2Math } from './contract-math/dfyn-v2-math';
 
 export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -50,10 +56,17 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   private _poolAddress?: Address;
 
   private _stateRequestCallData?: MultiCallParams<
-    bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+   DecodedGetReserves | 
+   DecodedGetImmutables | 
+   DecodedGetPriceAndNearestTicks | 
+   DecodedGetSecondsGrowthAndLastObservation  | 
+   DecodedTicksData |
+   DecodedLimitOrderTicksData |
+   bigint
   >[];
 
   public readonly poolIface = new Interface(DfynV2PoolABI);
+  public readonly poolHelper = new Interface(DfynV2PoolHelperABI)
 
   // public readonly feeCodeAsString;
 
@@ -79,17 +92,17 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
 
     // Add handlers
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
-    this.handlers['Burn'] = this.handleBurnEvent.bind(this);
-    this.handlers['Mint'] = this.handleMintEvent.bind(this);
-    this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
-    this.handlers['IncreaseObservationCardinalityNext'] =
-      this.handleIncreaseObservationCardinalityNextEvent.bind(this);
+    // this.handlers['Burn'] = this.handleBurnEvent.bind(this);
+    // this.handlers['Mint'] = this.handleMintEvent.bind(this);
+    // this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
+    // this.handlers['IncreaseObservationCardinalityNext'] =
+    //   this.handleIncreaseObservationCardinalityNextEvent.bind(this);
 
-    // Wen need them to keep balance of the pool up to date
-    this.handlers['Collect'] = this.handleCollectEvent.bind(this);
-    // Almost the same as Collect, but for pool owners
-    this.handlers['CollectProtocol'] = this.handleCollectEvent.bind(this);
-    this.handlers['Flash'] = this.handleFlashEvent.bind(this);
+    // // Wen need them to keep balance of the pool up to date
+    // this.handlers['Collect'] = this.handleCollectEvent.bind(this);
+    // // Almost the same as Collect, but for pool owners
+    // this.handlers['CollectProtocol'] = this.handleCollectEvent.bind(this);
+    // this.handlers['Flash'] = this.handleFlashEvent.bind(this);
   }
 
   get poolAddress() {
@@ -186,54 +199,146 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   private _getStateRequestCallData() {
+    
     if (!this._stateRequestCallData) {
       const callData: MultiCallParams<
-        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-      >[] = [
+        DecodedGetReserves | 
+        DecodedGetImmutables | 
+        DecodedGetPriceAndNearestTicks | 
+        DecodedGetSecondsGrowthAndLastObservation | 
+        DecodedTicksData |
+        DecodedLimitOrderTicksData |
+        bigint
+      >[] = 
+      
+      [
         {
-          target: this.token0,
-          callData: this.erc20Interface.encodeFunctionData('balanceOf', [
-            this.poolAddress,
-          ]),
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('getReserves'),
+          decodeFunction: decodeGetReserves,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('getImmutables'),
+          decodeFunction: decodeGetImmutables,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('getPriceAndNearestTicks'),
+          decodeFunction: decodeGetPriceAndNearestTicks,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('getSecondsGrowthAndLastObservation'),
+          decodeFunction: decodeGetSecondsGrowthAndLastObservation,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('tickCount'),
+          decodeFunction: uint256ToBigInt
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('ticks',[]),
+          decodeFunction: decodeTicks,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('limitOrderTicks',[]),
+          decodeFunction: decodeLimitOrderTicks,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('dfynFee'),
           decodeFunction: uint256ToBigInt,
         },
         {
-          target: this.token1,
-          callData: this.erc20Interface.encodeFunctionData('balanceOf', [
-            this.poolAddress,
-          ]),
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('limitOrderFee'),
           decodeFunction: uint256ToBigInt,
         },
         {
-          target: this.stateMultiContract.options.address,
-          callData: this.stateMultiContract.methods
-            .getFullStateWithRelativeBitmaps(
-              this.factoryAddress,
-              this.token0,
-              this.token1,
-              //this.feeCode,
-              this.getBitmapRangeToRequest(),
-              this.getBitmapRangeToRequest(),
-            )
-            .encodeABI(),
-          decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('liquidity'),
+          decodeFunction: uint128ToBigInt,
         },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('feeGrowthGlobal0'),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('feeGrowthGlobal1'),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('limitOrderReserve0'),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('limitOrderReserve1'),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('token0LimitOrderFee'),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('token1LimitOrderFee'),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('nearestPrice'),
+          decodeFunction: uint160ToBigInt,
+        },
+
       ];
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;
   }
 
-  getBitmapRangeToRequest() {
-    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
-  }
+  // getBitmapRangeToRequest() {
+  //   return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
+  // }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    const callData = this._getStateRequestCallData();
 
-    const [resBalance0, resBalance1, resState] =
+
+    const callData = this._getStateRequestCallData();
+    debugger
+    const [
+      reserves,
+      resImmutables,
+      resPriceAndNearestTicks,
+      resSecondsGrowthAndLastObservation,
+      resTicksData,
+      resLimitOrderTicksdata,
+      resDfynFee,
+      resLimitOrderFee,
+      resLiquidity,
+      resFeeGrowthGlobal0,
+      resFeeGrowthGlobal1,
+      resLimitOrderReserve0,
+      resLimitOrderReserve1,
+      resToken0LimitOrderFee,
+      resToken1LimitOrderFee,
+      resNearestPrice
+    ] =
       await this.dexHelper.multiWrapper.tryAggregate<
-        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      DecodedGetReserves | 
+      DecodedGetImmutables | 
+      DecodedGetPriceAndNearestTicks | 
+      DecodedGetSecondsGrowthAndLastObservation | 
+      DecodedTicksData |
+      DecodedLimitOrderTicksData |
+      bigint
       >(
         false,
         callData,
@@ -245,67 +350,84 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     // Quite ugly solution, but this is the one that fits to current flow.
     // I think UniswapV3 callbacks subscriptions are complexified for no reason.
     // Need to be revisited later
-    assert(resState.success, 'Pool does not exist');
+   // assert(resState.success, 'Pool does not exist');
 
-    const [balance0, balance1, _state] = [
-      resBalance0.returnData,
-      resBalance1.returnData,
-      resState.returnData,
-    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
-
-    const tickBitmap = {};
+    const [
+      balance,
+      immutables,
+      priceAndNearestTicks, 
+      secondsGrowthAndLastObservation,
+      ticksData,
+      limitOrderTicksData,
+      dfynFee,
+      limitOrderFee,
+      liquidity,
+      feeGrowthGlobal0,
+      feeGrowthGlobal1,
+      limitOrderReserve0,
+      limitOrderReserve1,
+      token0LimitOrderFee,
+      token1LimitOrderFee,
+      nearestPrice
+    ] = [
+      reserves.returnData,
+      resImmutables.returnData,
+      resPriceAndNearestTicks.returnData,
+      resSecondsGrowthAndLastObservation.returnData,
+      resTicksData.returnData,
+      resLimitOrderTicksdata.returnData,
+      resDfynFee.returnData,
+      resLimitOrderFee.returnData,
+      resLiquidity.returnData,
+      resFeeGrowthGlobal0.returnData,
+      resFeeGrowthGlobal1.returnData,
+      resLimitOrderReserve0.returnData,
+      resLimitOrderReserve1.returnData,
+      resToken0LimitOrderFee.returnData,
+      resToken1LimitOrderFee.returnData,
+      resNearestPrice.returnData
+    ] as [
+      DecodedGetReserves,
+      DecodedGetImmutables,
+      DecodedGetPriceAndNearestTicks,
+      DecodedGetSecondsGrowthAndLastObservation,
+      DecodedTicksData,
+      DecodedLimitOrderTicksData,
+      bigint, bigint, bigint , bigint , bigint, bigint, bigint, bigint, bigint, bigint
+    ]
     const ticks = {};
+    const limitOrderTicks = {};
 
-    this._reduceTickBitmap(tickBitmap, _state.tickBitmap);
-    this._reduceTicks(ticks, _state.ticks);
-
-    const observations = {
-      [_state.slot0.observationIndex]: {
-        blockTimestamp: bigIntify(_state.observation.blockTimestamp),
-        tickCumulative: bigIntify(_state.observation.tickCumulative),
-        secondsPerLiquidityCumulativeX128: bigIntify(
-          _state.observation.secondsPerLiquidityCumulativeX128,
-        ),
-        initialized: _state.observation.initialized,
-      },
-    };
-
-    const currentTick = bigIntify(_state.slot0.tick);
-    const tickSpacing = bigIntify(_state.tickSpacing);
-
-    const startTickBitmap = TickBitMap.position(currentTick / tickSpacing)[0];
-    const requestedRange = this.getBitmapRangeToRequest();
+    //this._reduceTickBitmap(tickBitmap, _state.tickBitmap);
+    this._reduceTicks(ticks, ticksData.ticks);
+    this._reduceLimitOrderTicks(limitOrderTicks,limitOrderTicksData.limitOrderTicks)
 
     return {
-      pool: _state.pool,
-      blockTimestamp: bigIntify(_state.blockTimestamp),
+      pool: this._computePoolAddress(immutables._token0,immutables._token1),
+      balance0: bigIntify(balance.reserve0),
+      balance1: bigIntify(balance.reserve1),
+      tickSpacing: bigIntify(immutables._tickSpacing),
+      swapFee: bigIntify(immutables._swapFee),
       slot0: {
-        sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
-        tick: currentTick,
-        observationIndex: +_state.slot0.observationIndex,
-        observationCardinality: +_state.slot0.observationCardinality,
-        observationCardinalityNext: +_state.slot0.observationCardinalityNext,
-        feeProtocol: bigIntify(_state.slot0.feeProtocol),
+        sqrtPriceX96: bigIntify(priceAndNearestTicks._price),
+        tick: bigIntify(priceAndNearestTicks._nearestTick),
       },
-      liquidity: bigIntify(_state.liquidity),
-      //fee: this.feeCode,
-      tickSpacing,
-      maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
-      tickBitmap,
+      nearestPrice: nearestPrice,
+      secondsGrowthGlobal: bigIntify(secondsGrowthAndLastObservation._secondsGrowthGlobal),
+      lastObservation: bigIntify(secondsGrowthAndLastObservation._lastObservation), // block.timestamp
       ticks,
-      observations,
+      limitOrderTicks,
       isValid: true,
-      startTickBitmap,
-      lowestKnownTick:
-        (BigInt.asIntN(24, startTickBitmap - requestedRange) << 8n) *
-        tickSpacing,
-      highestKnownTick:
-        ((BigInt.asIntN(24, startTickBitmap + requestedRange) << 8n) +
-          BigInt.asIntN(24, 255n)) *
-        tickSpacing,
-      balance0,
-      balance1,
-    };
+      dfynFee: dfynFee,
+      limitOrderFee: limitOrderFee,
+      liquidity: liquidity,
+      feeGrowthGlobal0: feeGrowthGlobal0,
+      feeGrowthGlobal1: feeGrowthGlobal1,
+      limitOrderReserve0: limitOrderReserve0,
+      limitOrderReserve1: limitOrderReserve1,
+      token0LimitOrderFee: token0LimitOrderFee,
+      token1LimitOrderFee: token1LimitOrderFee,
+    }; 
   }
 
   handleSwapEvent(
@@ -319,7 +441,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     const amount1 = bigIntify(event.args.amount1);
     const newTick = bigIntify(event.args.tick);
     const newLiquidity = bigIntify(event.args.liquidity);
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+    pool.lastObservation = bigIntify(blockHeader.timestamp);
 
     if (amount0 <= 0n && amount1 <= 0n) {
       this.logger.error(
@@ -331,7 +453,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     } else {
       const zeroForOne = amount0 > 0n;
 
-      uniswapV3Math.swapFromEvent(
+      dfynV2Math.swapFromEvent(
         pool,
         newSqrtPriceX96,
         newTick,
@@ -367,22 +489,22 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
-  handleBurnEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const amount = bigIntify(event.args.amount);
-    const tickLower = bigIntify(event.args.tickLower);
-    const tickUpper = bigIntify(event.args.tickUpper);
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+  // handleBurnEvent(
+  //   event: any,
+  //   pool: PoolState,
+  //   log: Log,
+  //   blockHeader: BlockHeader,
+  // ) {
+  //   const amount = bigIntify(event.args.amount);
+  //   const tickLower = bigIntify(event.args.tickLower);
+  //   const tickUpper = bigIntify(event.args.tickUpper);
+  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    uniswapV3Math._modifyPosition(pool, {
-      tickLower,
-      tickUpper,
-      liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
-    });
+  //   dfynV2Math._modifyPosition(pool, {
+  //     tickLower,
+  //     tickUpper,
+  //     liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
+  //   });
 
     // From this transaction I conclude that there is no balance change from
     // Burn event: https://dashboard.tenderly.co/tx/mainnet/0xfccf5341147ac3ad0e66452273d12dfc3219e81f8fb369a6cdecfb24b9b9d078/logs
@@ -391,105 +513,105 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     // It just updates positions and tokensOwed which may be requested calling collect
     // So, we don't need to update pool.balances0 and pool.balances1 here
 
-    return pool;
-  }
+  //   return pool;
+  // }
 
-  handleMintEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const amount = bigIntify(event.args.amount);
-    const tickLower = bigIntify(event.args.tickLower);
-    const tickUpper = bigIntify(event.args.tickUpper);
-    const amount0 = bigIntify(event.args.amount0);
-    const amount1 = bigIntify(event.args.amount1);
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+  // handleMintEvent(
+  //   event: any,
+  //   pool: PoolState,
+  //   log: Log,
+  //   blockHeader: BlockHeader,
+  // ) {
+  //   const amount = bigIntify(event.args.amount);
+  //   const tickLower = bigIntify(event.args.tickLower);
+  //   const tickUpper = bigIntify(event.args.tickUpper);
+  //   const amount0 = bigIntify(event.args.amount0);
+  //   const amount1 = bigIntify(event.args.amount1);
+  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    uniswapV3Math._modifyPosition(pool, {
-      tickLower,
-      tickUpper,
-      liquidityDelta: amount,
-    });
+  //   uniswapV3Math._modifyPosition(pool, {
+  //     tickLower,
+  //     tickUpper,
+  //     liquidityDelta: amount,
+  //   });
 
-    pool.balance0 += amount0;
-    pool.balance1 += amount1;
+  //   pool.balance0 += amount0;
+  //   pool.balance1 += amount1;
 
-    return pool;
-  }
+  //   return pool;
+  // }
 
-  handleSetFeeProtocolEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
-    const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
-    pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+  // handleSetFeeProtocolEvent(
+  //   event: any,
+  //   pool: PoolState,
+  //   log: Log,
+  //   blockHeader: BlockHeader,
+  // ) {
+  //   const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
+  //   const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
+  //  // pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
+  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    return pool;
-  }
+  //   return pool;
+  // }
 
-  handleCollectEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const amount0 = bigIntify(event.args.amount0);
-    const amount1 = bigIntify(event.args.amount1);
-    pool.balance0 -= amount0;
-    pool.balance1 -= amount1;
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+  // handleCollectEvent(
+  //   event: any,
+  //   pool: PoolState,
+  //   log: Log,
+  //   blockHeader: BlockHeader,
+  // ) {
+  //   const amount0 = bigIntify(event.args.amount0);
+  //   const amount1 = bigIntify(event.args.amount1);
+  //   pool.balance0 -= amount0;
+  //   pool.balance1 -= amount1;
+  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    return pool;
-  }
+  //   return pool;
+  // }
 
-  handleFlashEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const paid0 = bigIntify(event.args.paid0);
-    const paid1 = bigIntify(event.args.paid1);
-    pool.balance0 += paid0;
-    pool.balance1 += paid1;
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+  // handleFlashEvent(
+  //   event: any,
+  //   pool: PoolState,
+  //   log: Log,
+  //   blockHeader: BlockHeader,
+  // ) {
+  //   const paid0 = bigIntify(event.args.paid0);
+  //   const paid1 = bigIntify(event.args.paid1);
+  //   pool.balance0 += paid0;
+  //   pool.balance1 += paid1;
+  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    return pool;
-  }
+  //   return pool;
+  // }
 
-  handleIncreaseObservationCardinalityNextEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    pool.slot0.observationCardinalityNext = parseInt(
-      event.args.observationCardinalityNextNew,
-      10,
-    );
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-    return pool;
-  }
+  // handleIncreaseObservationCardinalityNextEvent(
+  //   event: any,
+  //   pool: PoolState,
+  //   log: Log,
+  //   blockHeader: BlockHeader,
+  // ) {
+  //   // pool.slot0.observationCardinalityNext = parseInt(
+  //   //   event.args.observationCardinalityNextNew,
+  //   //   10,
+  //   // );
+  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+  //   return pool;
+  // }
 
-  private _reduceTickBitmap(
-    tickBitmap: Record<NumberAsString, bigint>,
-    tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
-  ) {
-    return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
-      (acc, curr) => {
-        const { index, value } = curr;
-        acc[index] = bigIntify(value);
-        return acc;
-      },
-      tickBitmap,
-    );
-  }
+  // private _reduceTickBitmap(
+  //   tickBitmap: Record<NumberAsString, bigint>,
+  //   tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
+  // ) {
+  //   return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
+  //     (acc, curr) => {
+  //       const { index, value } = curr;
+  //       acc[index] = bigIntify(value);
+  //       return acc;
+  //     },
+  //     tickBitmap,
+  //   );
+  // }
 
   private _reduceTicks(
     ticks: Record<NumberAsString, TickInfo>,
@@ -498,17 +620,34 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
       const { index, value } = curr;
       acc[index] = {
-        liquidityGross: bigIntify(value.liquidityGross),
-        liquidityNet: bigIntify(value.liquidityNet),
-        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
-        secondsPerLiquidityOutsideX128: bigIntify(
-          value.secondsPerLiquidityOutsideX128,
-        ),
-        secondsOutside: bigIntify(value.secondsOutside),
-        initialized: value.initialized,
+        liquidity: bigIntify(value.liquidity),
+        previousTick: bigIntify(value.previousTick),
+        nextTick:bigIntify(value.nextTick) ,
+        feeGrowthOutside0:bigIntify(value.feeGrowthOutside0) ,
+        feeGrowthOutside1:bigIntify(value.feeGrowthOutside1) ,
+        secondsGrowthOutside:bigIntify(value.secondsGrowthOutside)
       };
       return acc;
     }, ticks);
+  }
+
+  private _reduceLimitOrderTicks(
+    limitOrderTicks: Record<NumberAsString,LimitOrderTickData>,
+    limitOrderTicksToReduce: LimitOrderTickInfoMappingsWithBigNumber[],
+  ) {
+    return limitOrderTicksToReduce.reduce<Record<string, LimitOrderTickData>>((acc, curr) => {
+      const { index, value } = curr;
+      acc[index] = {
+        token0Liquidity: bigIntify(value.token0Liquidity),
+        token1Liquidity: bigIntify(value.token1Liquidity),
+        token0Claimable: bigIntify(value.token0Claimable),
+        token1Claimable: bigIntify(value.token1Claimable),
+        token0ClaimableGrowth: bigIntify(value.token0ClaimableGrowth),
+        token1ClaimableGrowth: bigIntify(value.token1ClaimableGrowth),
+        isActive: value.isActive,
+      };
+      return acc;
+    }, limitOrderTicks);
   }
 
   private _computePoolAddress(token0: Address, token1: Address): Address {
