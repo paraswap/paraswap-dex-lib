@@ -60,7 +60,7 @@ describe('BalancerV2 E2E', () => {
             {
               name: 'USDC',
               sellAmount: '1000000000',
-              buyAmount: '100000000000',
+              buyAmount: '20000947428035770',
             },
           ],
           [
