@@ -31,41 +31,84 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [
-          SwapSide.BUY,
-          [
-            ContractMethod.simpleBuy,
-            ContractMethod.buy,
-          ],
-        ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
-      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
         [
-          { name: 'ETH', sellAmount: '2000000000000', buyAmount: '10000000000' },
-          { name: 'USDC', sellAmount: '37690000', buyAmount: '20035947428035770' },
-        ],
-        [
-          { name: 'USDC', sellAmount: '1000000', buyAmount: '100000000000000' },
-          { name: 'WETH', sellAmount: '70000000000', buyAmount: '20000000000' },
-        ],
-        [
-          { name: 'USDC', sellAmount: '10000000000', buyAmount: '20000000000000000000' },
-          { name: 'DAI',  sellAmount: '200000000000000', buyAmount: '2000000000000' },
-        ],
-        [
-          { name: 'wstETH', sellAmount: '3000000000000000000', buyAmount: '3000000000000000000' },
-          { name: 'ETH', sellAmount: '200000000000', buyAmount: '7000000000000000000' },
-        ],
-        [
-          { name: 'WETH', sellAmount: '20000000000', buyAmount: '200000000000000000' },
-          { name: 'PSP', sellAmount: '200000000000000', buyAmount: '104000894327009489' }
-        ],
-        [
-          { name: 'WETH', sellAmount: '200000000000000000', buyAmount: '20000' },
-          { name: 'WBTC', sellAmount: '20000', buyAmount: '200000000000000000' }
-        ],
-      ];
+          [
+            {
+              name: 'ETH',
+              sellAmount: '2000000000000',
+              buyAmount: '10000000000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '37690000',
+              buyAmount: '20035947428035770',
+            },
+          ],
+          [
+            {
+              name: 'USDC',
+              sellAmount: '1000000',
+              buyAmount: '100000000000000',
+            },
+            {
+              name: 'WETH',
+              sellAmount: '70000000000',
+              buyAmount: '20000000000',
+            },
+          ],
+          [
+            {
+              name: 'USDC',
+              sellAmount: '10000000000',
+              buyAmount: '10000000000000000000',
+            },
+            {
+              name: 'DAI',
+              sellAmount: '200000000000000',
+              buyAmount: '2000000000000',
+            },
+          ],
+          [
+            {
+              name: 'wstETH',
+              sellAmount: '3000000000000000000',
+              buyAmount: '3000000000000000000',
+            },
+            {
+              name: 'ETH',
+              sellAmount: '200000000000',
+              buyAmount: '7000000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'WETH',
+              sellAmount: '20000000000',
+              buyAmount: '100000000000000000000000',
+            },
+            {
+              name: 'PSP',
+              sellAmount: '200000000000000',
+              buyAmount: '1871289184941469675',
+            },
+          ],
+          [
+            {
+              name: 'WETH',
+              sellAmount: '200000000000000000',
+              buyAmount: '20000',
+            },
+            {
+              name: 'WBTC',
+              sellAmount: '20000',
+              buyAmount: '200000000000000000',
+            },
+          ],
+        ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
@@ -77,7 +120,9 @@ describe('BalancerV2 E2E', () => {
                     tokens[pair[0].name],
                     tokens[pair[1].name],
                     holders[pair[0].name],
-                    side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
                     side,
                     dexKey,
                     contractMethod,
@@ -90,7 +135,9 @@ describe('BalancerV2 E2E', () => {
                     tokens[pair[1].name],
                     tokens[pair[0].name],
                     holders[pair[1].name],
-                    side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
                     side,
                     dexKey,
                     contractMethod,
@@ -115,13 +162,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [
-          SwapSide.BUY,
-          [
-            ContractMethod.simpleBuy,
-            ContractMethod.buy,
-          ],
-        ]
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; amount: string }[][] = [
@@ -169,8 +210,8 @@ describe('BalancerV2 E2E', () => {
       );
     });
 
-      //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
-      /*it('MAIN TOKEN -> BPT, LinearPool', async () => {
+    //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
+    /*it('MAIN TOKEN -> BPT, LinearPool', async () => {
         // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
         await testE2E(
           tokens['USDT'],
@@ -197,67 +238,67 @@ describe('BalancerV2 E2E', () => {
           provider,
         );
       });*/
-      // NO HOLDERS OF waUSDT (ONLY VAULT)
-      // it('WRAPPED TOKEN -> BPT, LinearPool', async () => {
-      //   // Linear Pools allow swaps between wrapped token (i.e. waUSDT) and pools BPT
-      //   await testE2E(
-      //     tokens['waUSDT'],
-      //     tokens['BBAUSDT'],
-      //     holders['waUSDT'],
-      //     '20000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // NO HOLDERS OF BBADAI (ONLY VAULT)
-      // it('WRAPPED TOKEN -> MAIN TOKEN, LinearPool', async () => {
-      //   await testE2E(
-      //     tokens['waUSDT'],
-      //     tokens['BBAUSDT'],
-      //     holders['waUSDT'],
-      //     '20000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // NO HOLDERS OF BBADAI (ONLY VAULT)
-      // it('BPT -> MAIN TOKEN, LinearPool', async () => {
-      //   // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
-      //   await testE2E(
-      //     tokens['BBADAI'],
-      //     tokens['DAI'],
-      //     holders['BBADAI'],
-      //     '20000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // it('BPT -> WRAPPED TOKEN, LinearPool', async () => {
-      //   // Linear Pools allow swaps between wrapped token (i.e. waDAI) and pools BPT
-      //   await testE2E(
-      //     tokens['BBADAI'],
-      //     tokens['waDAI'],
-      //     holders['BBADAI'],
-      //     '20000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
+    // NO HOLDERS OF waUSDT (ONLY VAULT)
+    // it('WRAPPED TOKEN -> BPT, LinearPool', async () => {
+    //   // Linear Pools allow swaps between wrapped token (i.e. waUSDT) and pools BPT
+    //   await testE2E(
+    //     tokens['waUSDT'],
+    //     tokens['BBAUSDT'],
+    //     holders['waUSDT'],
+    //     '20000000',
+    //     SwapSide.SELL,
+    //     dexKey,
+    //     ContractMethod.simpleSwap,
+    //     network,
+    //     provider,
+    //   );
+    // });
+    // NO HOLDERS OF BBADAI (ONLY VAULT)
+    // it('WRAPPED TOKEN -> MAIN TOKEN, LinearPool', async () => {
+    //   await testE2E(
+    //     tokens['waUSDT'],
+    //     tokens['BBAUSDT'],
+    //     holders['waUSDT'],
+    //     '20000000',
+    //     SwapSide.SELL,
+    //     dexKey,
+    //     ContractMethod.simpleSwap,
+    //     network,
+    //     provider,
+    //   );
+    // });
+    // NO HOLDERS OF BBADAI (ONLY VAULT)
+    // it('BPT -> MAIN TOKEN, LinearPool', async () => {
+    //   // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
+    //   await testE2E(
+    //     tokens['BBADAI'],
+    //     tokens['DAI'],
+    //     holders['BBADAI'],
+    //     '20000000',
+    //     SwapSide.SELL,
+    //     dexKey,
+    //     ContractMethod.simpleSwap,
+    //     network,
+    //     provider,
+    //   );
+    // });
+    // it('BPT -> WRAPPED TOKEN, LinearPool', async () => {
+    //   // Linear Pools allow swaps between wrapped token (i.e. waDAI) and pools BPT
+    //   await testE2E(
+    //     tokens['BBADAI'],
+    //     tokens['waDAI'],
+    //     holders['BBADAI'],
+    //     '20000000',
+    //     SwapSide.SELL,
+    //     dexKey,
+    //     ContractMethod.simpleSwap,
+    //     network,
+    //     provider,
+    //   );
+    // });
 
-      //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
-      /*it('BPT -> TOKEN, PhantomStablePool', async () => {
+    //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
+    /*it('BPT -> TOKEN, PhantomStablePool', async () => {
         // PhantomStable allows swaps between BPT and tokens
         await testE2E(
           tokens['BBAUSD'],
@@ -285,8 +326,8 @@ describe('BalancerV2 E2E', () => {
         );
       });*/
 
-      //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
-      /*
+    //daniel: BPT swaps are currently not supported, we've refactored to focus on mainToken paths
+    /*
       it('MAIN TOKEN -> BPT, LinearPool', async () => {
         // Linear Pools allow swaps between main token (i.e. USDT) and pools BPT
         await testE2E(

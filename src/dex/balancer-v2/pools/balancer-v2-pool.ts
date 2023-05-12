@@ -9,6 +9,13 @@ export class BasePool {
     return amount - feeAmount;
   }
 
+  _addFeeAmount(amount: bigint, _swapFeePercentage: bigint): bigint {
+    return MathSol.divUpFixed(
+      amount,
+      MathSol.complementFixed(_swapFeePercentage),
+    );
+  }
+
   // These methods use fixed versions to match SC scaling
   _upscaleArray(amounts: bigint[], scalingFactors: bigint[]): bigint[] {
     return amounts.map((a, i) => MathSol.mulUpFixed(a, scalingFactors[i]));
@@ -31,9 +38,7 @@ export class BasePool {
   }
 }
 
-
 export abstract class BaseGeneralPool extends BasePool {
-
   // Swap Hooks
   onBuy(amounts: bigint[], poolPairData: StablePoolPairData): bigint[] {
     return this._swapGivenOut(
@@ -104,7 +109,6 @@ export abstract class BaseGeneralPool extends BasePool {
     _swapFeePercentage: bigint,
     _amplificationParameter: bigint,
   ): bigint[] {
-
     const balancesUpscaled = this._upscaleArray(balances, scalingFactors);
     const tokenAmountsOutScaled = tokenAmountsOut.map(a =>
       this._upscale(a, scalingFactors[indexOut]),
@@ -120,9 +124,7 @@ export abstract class BaseGeneralPool extends BasePool {
         _amplificationParameter,
       );
     } catch (e) {
-      amountsIn = new Array(tokenAmountsOut.length).fill(
-        0n,
-      );
+      amountsIn = new Array(tokenAmountsOut.length).fill(0n);
     }
 
     // amountIn tokens are entering the Pool, so we round up.
@@ -200,17 +202,17 @@ export abstract class BaseMinimalSwapInfoPool extends BasePool {
         poolPairData.tokenOutWeight,
       );
     } catch (e) {
-      amountsIn = new Array(tokenAmountsOut.length).fill(
-        0n,
-      );
+      amountsIn = new Array(tokenAmountsOut.length).fill(0n);
     }
 
+    // amountIn tokens are entering the Pool, so we round up.
     const amountsInDownscaled = amountsIn.map(a =>
       this._downscaleUp(a, poolPairData.tokenInScalingFactor),
     );
 
+    // Fees are added after scaling happens, to reduce the complexity of the rounding direction analysis.
     return amountsInDownscaled.map(a =>
-      this._subtractSwapFeeAmount(a, poolPairData.swapFee),
+      this._addFeeAmount(a, poolPairData.swapFee),
     );
   }
 
@@ -270,4 +272,3 @@ export abstract class BaseMinimalSwapInfoPool extends BasePool {
     _weightOut: bigint,
   ): bigint[];
 }
-

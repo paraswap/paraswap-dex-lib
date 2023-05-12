@@ -17,16 +17,16 @@ export class WeightedMath {
   ): bigint[] {
     /* https://docs.balancer.fi/reference/math/weighted-math.html#ingivenout */
     /**********************************************************************************************
-     // outGivenOut                                                                              //
-     // aI = amountIn                                                                            //
-     // bI = balanceIn                                                                           //
-     // bO = balanceOut              /  /            bO             \    (wO / wI)     \         //
-     // aO = amountOut    aI = bI * |  | -------------------------- | ^            - 1  |        //
-     // wI = weightIn               \  \       ( bO - aO )         /                   /         //
-     // wO = weightOut                                                                           //
-     *********************************************************************************************/
+    // outGivenOut                                                                              //
+    // aI = amountIn                                                                            //
+    // bI = balanceIn                                                                           //
+    // bO = balanceOut              /  /            bO             \    (wO / wI)     \         //
+    // aO = amountOut    aI = bI * |  | -------------------------- | ^            - 1  |        //
+    // wI = weightIn               \  \       ( bO - aO )         /                   /         //
+    // wO = weightOut                                                                           //
+    *********************************************************************************************/
     const exponent = MathSol.divUpFixed(weightOut, weightIn);
-    return amountsOut.map((amountOut) => {
+    return amountsOut.map(amountOut => {
       _require(
         amountOut <= MathSol.mulDownFixed(balanceOut, this._MAX_OUT_RATIO),
         'Errors.MAX_OUT_RATIO',
@@ -52,21 +52,21 @@ export class WeightedMath {
   ): bigint[] {
     /* https://docs.balancer.fi/reference/math/weighted-math.html#outgivenin */
     /**********************************************************************************************
-     // outGivenIn                                                                                //
-     // aO = amountOut                                                                            //
-     // bO = balanceOut                                                                           //
-     // bI = balanceIn              /      /            bI             \    (wI / wO) \           //
-     // aI = amountIn    aO = bO * |  1 - | --------------------------  | ^            |          //
-     // wI = weightIn               \      \       ( bI + aI )         /              /           //
-     // wO = weightOut                                                                            //
-     **********************************************************************************************/
+   // outGivenIn                                                                                //
+   // aO = amountOut                                                                            //
+   // bO = balanceOut                                                                           //
+   // bI = balanceIn              /      /            bI             \    (wI / wO) \           //
+   // aI = amountIn    aO = bO * |  1 - | --------------------------  | ^            |          //
+   // wI = weightIn               \      \       ( bI + aI )         /              /           //
+   // wO = weightOut                                                                            //
+   **********************************************************************************************/
 
-      // Amount out, so we round down overall.
+    // Amount out, so we round down overall.
 
-      // The multiplication rounds down, and the subtrahend (power) rounds up (so the base rounds up too).
-      // Because bI / (bI + aI) <= 1, the exponent rounds down.
+    // The multiplication rounds down, and the subtrahend (power) rounds up (so the base rounds up too).
+    // Because bI / (bI + aI) <= 1, the exponent rounds down.
 
-      // Cannot exceed maximum in ratio
+    // Cannot exceed maximum in ratio
 
     const exponent = MathSol.divDownFixed(weightIn, weightOut);
     return amountsIn.map(amountIn => {
