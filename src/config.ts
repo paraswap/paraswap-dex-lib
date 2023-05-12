@@ -158,8 +158,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
-      BscAdapter02: '0xe102429Ef7CAaBaAA3bc2C017aC784c5F665EE82',
-      BscBuyAdapter: '0xA7f4fBCEB76a1B1c05C106a4289C28B3b91C17ca',
+      BscAdapter02: '0x1d2Fd92a1942A92a51198168eFCd626ed441CEC0',
+      BscBuyAdapter: '0x64C856fafE4C83a818514cBDfD661a3563a71B98',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
     rpcPollingBlocksBackToTriggerUpdate: 1,
@@ -213,8 +213,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0x68847D34a84459Fe3654d3b69c6741a0c336D410',
-      AvalancheBuyAdapter: '0xad2f7039B0F4c410654886D049ae8406F5aDe709',
+      AvalancheAdapter02: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
+      AvalancheBuyAdapter: '0xfa072107a2CCfE5664794282EF36400735ABB70F',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -267,8 +267,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      ArbitrumAdapter02: '0xCBaeB06C2dF373c07A2Dc205266EC3bCd525DfB6',
-      ArbitrumBuyAdapter: '0xeBF40A40CA3D4310Bf53048F48e860656e1D7C81',
+      ArbitrumAdapter02: '0x3ad7f275E27AC579cA88e0b4765828242A9E8C49',
+      ArbitrumBuyAdapter: '0x6c33C7f6CBB4a428fe9ee31ca500a787c9f1525b',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
