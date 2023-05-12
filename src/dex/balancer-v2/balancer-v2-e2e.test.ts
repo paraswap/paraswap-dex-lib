@@ -31,7 +31,10 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+        [SwapSide.BUY, [
+          ContractMethod.simpleBuy,
+          ContractMethod.buy
+        ]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -40,7 +43,7 @@ describe('BalancerV2 E2E', () => {
             {
               name: 'ETH',
               sellAmount: '2000000000000',
-              buyAmount: '10000000000',
+              buyAmount: '100000000',
             },
             {
               name: 'USDC',
@@ -50,14 +53,14 @@ describe('BalancerV2 E2E', () => {
           ],
           [
             {
-              name: 'USDC',
-              sellAmount: '1000000',
-              buyAmount: '100000000000000',
+              name: 'WETH',
+              sellAmount: '70000000000000',
+              buyAmount: '100000000',
             },
             {
-              name: 'WETH',
-              sellAmount: '70000000000',
-              buyAmount: '20000000000',
+              name: 'USDC',
+              sellAmount: '1000000000',
+              buyAmount: '100000000000',
             },
           ],
           [
