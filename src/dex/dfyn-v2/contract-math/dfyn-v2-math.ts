@@ -6,8 +6,6 @@ import {
   TickInfo,
   StructHelper,
 } from '../types';
-import { LiquidityMath } from './LiquidityMath';
-import { SqrtPriceMath } from './SqrtPriceMath';
 import { Ticks } from './Ticks';
 import { TickMath } from './TickMath';
 import { _require } from '../../../utils';
@@ -16,11 +14,9 @@ import { NumberAsString, SwapSide } from '@paraswap/core';
 import { BI_MAX_INT } from '../../../bigint-constants';
 import {
   MAX_PRICING_COMPUTATION_STEPS_ALLOWED,
-  OUT_OF_RANGE_ERROR_POSTFIX,
 } from '../constants';
 import { SwapExecuter } from './SwapExecuter';
 import { stat } from 'fs';
-//import { StructHelper } from './IConcentratedLiquidityPool';
 import { FeeHandler } from './FeeHandler';
 
 // type ModifyPositionParams = {
@@ -317,7 +313,7 @@ class DfynV2Math {
 
     const cache: StructHelper['SwapCache'] = {
       currentLiquidity: poolState.liquidity,
-      blockTimestamp: this._blockTimestamp(poolState),
+      //blockTimestamp: this._blockTimestamp(poolState),
       protocolFee: 0n,
       tickCount: 0,
       nextTickToCross: zeroForOne
@@ -345,7 +341,7 @@ class DfynV2Math {
         : poolState.token1LimitOrderFee,
       token0LimitOrderFee: poolState.token0LimitOrderFee,
       token1LimitOrderFee: poolState.token1LimitOrderFee,
-      currentPrice: poolState.price,
+      currentPrice: poolState.slot0.sqrtPriceX96,
     };
 
     let isOutOfRange = false;
@@ -464,7 +460,6 @@ class DfynV2Math {
 
     const cache: StructHelper['SwapCache'] = {
       currentLiquidity: poolState.liquidity,
-      blockTimestamp: this._blockTimestamp(poolState),
       protocolFee: 0n,
       tickCount: 0,
       nextTickToCross: zeroForOne
@@ -492,15 +487,16 @@ class DfynV2Math {
         : poolState.token1LimitOrderFee,
       token0LimitOrderFee: poolState.token0LimitOrderFee,
       token1LimitOrderFee: poolState.token1LimitOrderFee,
-      currentPrice: poolState.price,
+      currentPrice: poolState.slot0.sqrtPriceX96,
     };
 
-    // Because I didn't have all variables, adapted loop stop with state.tick !== newTick
-    // condition. This cycle need only to calculate Tick.cross() function values
-    // It means that we are interested in cycling only if state.tick !== newTick
-    // When they become equivalent, we proceed with state updating part as normal
-    // And if assumptions regarding this cycle are correct, we don't need to process
-    // the last cycle when state.tick === newTick
+    const diff = BigInt(Date.now() / 1000)-(poolState.lastObservation);
+    if (diff > 0n && cache.currentLiquidity > 0n) {
+      poolState.lastObservation = BigInt(Date.now() / 1000);
+      poolState.secondsGrowthGlobal = poolState.secondsGrowthGlobal + (diff*(BigInt((2**128))/(cache.currentLiquidity)));
+    }
+
+
     while (
       slot0Start.tick !== newTick &&
       slot0Start.sqrtPriceX96 !== newSqrtPriceX96
@@ -636,7 +632,7 @@ class DfynV2Math {
         }
       }
     }
-    poolState.price = cache.currentPrice;
+    poolState.slot0.sqrtPriceX96 = cache.currentPrice;
     poolState.nearestPrice = cache.nearestPriceCached;
     //const newNearestTick = zeroForOne ? cache.nextTickToCross : poolState.ticks[Number(cache.nextTickToCross)].previousTick;
     poolState.token0LimitOrderFee = cache.token0LimitOrderFee;
@@ -650,9 +646,9 @@ class DfynV2Math {
     }
   }
 
-  private _blockTimestamp(state: DeepReadonly<PoolState>) {
-    return BigInt.asUintN(32, state.blockTimestamp);
-  }
+  // private _blockTimestamp(state: DeepReadonly<PoolState>) {
+  //   return BigInt.asUintN(32, state.blockTimestamp);
+  // }
 }
 
 export const dfynV2Math = new DfynV2Math();
