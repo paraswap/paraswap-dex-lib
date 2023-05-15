@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { indexOf } from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
@@ -19,7 +19,8 @@ import {
   DecodedGetImmutables,DecodedGetPriceAndNearestTicks,
   DecodedGetSecondsGrowthAndLastObservation,
   DecodedTicksData,
-  DecodedLimitOrderTicksData
+  DecodedLimitOrderTicksData,
+  DecodedGetTickState
 } from './types';
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
 import DfynV2PoolHelperABI from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json'
@@ -29,12 +30,13 @@ import { NumberAsString } from '@paraswap/core';
 import {
   DEFAULT_POOL_INIT_CODE_HASH,
   OUT_OF_RANGE_ERROR_POSTFIX,
-  TICK_BITMAP_BUFFER,
-  TICK_BITMAP_TO_USE,
 } from './constants';
 import { uint256ToBigInt,uint160ToBigInt, uint128ToBigInt } from '../../lib/decoders';
-import { decodeGetReserves,
-  decodeGetImmutables, decodeGetPriceAndNearestTicks,decodeGetSecondsGrowthAndLastObservation,decodeTicks,decodeLimitOrderTicks } from './utils';
+import { 
+  decodeGetReserves,decodeGetImmutables,decodeGetPriceAndNearestTicks,
+  decodeGetSecondsGrowthAndLastObservation,decodeTicks,
+  decodeLimitOrderTicks,decodeGetTickState
+} from './utils';
 import { dfynV2Math } from './contract-math/dfyn-v2-math';
 
 export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
@@ -60,10 +62,14 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
    DecodedGetImmutables | 
    DecodedGetPriceAndNearestTicks | 
    DecodedGetSecondsGrowthAndLastObservation  | 
-   DecodedTicksData |
-   DecodedLimitOrderTicksData |
    bigint
   >[];
+
+  private _ticksStateCallData?: MultiCallParams<DecodedGetTickState>[];
+
+  private _ticksCallData?: MultiCallParams<DecodedTicksData>[];
+
+  private _limitOrderTicksCallData?: MultiCallParams<DecodedLimitOrderTicksData>[];
 
   public readonly poolIface = new Interface(DfynV2PoolABI);
   public readonly poolHelper = new Interface(DfynV2PoolHelperABI)
@@ -73,7 +79,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
-    readonly stateMultiContract: Contract,
+    readonly poolHelperContract: Contract,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
     // public readonly feeCode: bigint,
@@ -143,17 +149,17 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     try {
       const event = this.logDecoder(log);
 
-      const uniswapV3EventLoggingSampleRate =
-        this.dexHelper.config.data.uniswapV3EventLoggingSampleRate;
+      const dfynV2EventLoggingSampleRate =
+        this.dexHelper.config.data.dfynV2EventLoggingSampleRate;
       if (
         !this.dexHelper.config.isSlave &&
-        uniswapV3EventLoggingSampleRate &&
-        isSampled(uniswapV3EventLoggingSampleRate)
+        dfynV2EventLoggingSampleRate &&
+        isSampled(dfynV2EventLoggingSampleRate)
       ) {
         this.logger.info(
           `event=${event.name} - block=${
             blockHeader.number
-          }. Log sampled at rate ${uniswapV3EventLoggingSampleRate * 100}%`,
+          }. Log sampled at rate ${dfynV2EventLoggingSampleRate * 100}%`,
         );
       }
 
@@ -184,7 +190,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
                 `error while handling event on blockNumber=${blockHeader.number}, ` +
                 `blockHash=${blockHeader.hash} and parentHash=${
                   blockHeader.parentHash
-                } for UniswapV3, ${JSON.stringify(event)}`,
+                } for DfynV2, ${JSON.stringify(event)}`,
               e,
             );
           }
@@ -206,8 +212,6 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
         DecodedGetImmutables | 
         DecodedGetPriceAndNearestTicks | 
         DecodedGetSecondsGrowthAndLastObservation | 
-        DecodedTicksData |
-        DecodedLimitOrderTicksData |
         bigint
       >[] = 
       
@@ -236,16 +240,6 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
           target: this.poolAddress,
           callData: this.poolIface.encodeFunctionData('tickCount'),
           decodeFunction: uint256ToBigInt
-        },
-        {
-          target: this.poolAddress,
-          callData: this.poolIface.encodeFunctionData('ticks',[]),
-          decodeFunction: decodeTicks,
-        },
-        {
-          target: this.poolAddress,
-          callData: this.poolIface.encodeFunctionData('limitOrderTicks',[]),
-          decodeFunction: decodeLimitOrderTicks,
         },
         {
           target: this.poolAddress,
@@ -304,22 +298,73 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     return this._stateRequestCallData;
   }
 
-  // getBitmapRangeToRequest() {
-  //   return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
-  // }
+  private _getTicksStateCallData( ticksCount: number ) { 
+
+    if (!this._ticksStateCallData) {
+      const callData: MultiCallParams<
+        DecodedGetTickState
+      >[] = 
+      [
+        {
+          target: this.poolHelperContract.options.address,
+          callData: this.poolHelper.encodeFunctionData('getTickState',
+          [
+            this.poolAddress,
+            ticksCount.toString()
+          ]),
+          decodeFunction: decodeGetTickState,
+        }
+      ];
+      this._ticksStateCallData = callData;
+    }
+    return this._ticksStateCallData;
+  }
+
+  private _getTicks(tickState: string | any[]) {
+    
+    if (!this._ticksCallData) {
+        const callData: MultiCallParams<DecodedTicksData>[] = [];
+        for (let i = 0;i < tickState.length; i++){
+         callData.push({
+            target: this.poolAddress,
+            callData: this.poolIface.encodeFunctionData('ticks',[tickState[i].index]),
+            decodeFunction: decodeTicks,
+          })
+        }
+      this._ticksCallData = callData;
+      
+    }
+    return this._ticksCallData;
+  }
+
+  private _getLimitOrderTicks(limitOrderTickState: string | any[]) {
+    
+    if (!this._limitOrderTicksCallData) {
+        const callData: MultiCallParams<DecodedLimitOrderTicksData>[] = [];
+        for (let i = 0;i < limitOrderTickState.length; i++){
+          callData.push({
+            target: this.poolAddress,
+            callData: this.poolIface.encodeFunctionData('limitOrderTicks',[limitOrderTickState[i].index]),
+            decodeFunction: decodeLimitOrderTicks,
+          })
+        }
+      this._limitOrderTicksCallData = callData;
+      
+    }
+    return this._limitOrderTicksCallData;
+  }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
 
 
     const callData = this._getStateRequestCallData();
-    debugger
+
     const [
       reserves,
       resImmutables,
       resPriceAndNearestTicks,
       resSecondsGrowthAndLastObservation,
-      resTicksData,
-      resLimitOrderTicksdata,
+      resTickCount,
       resDfynFee,
       resLimitOrderFee,
       resLiquidity,
@@ -336,8 +381,6 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       DecodedGetImmutables | 
       DecodedGetPriceAndNearestTicks | 
       DecodedGetSecondsGrowthAndLastObservation | 
-      DecodedTicksData |
-      DecodedLimitOrderTicksData |
       bigint
       >(
         false,
@@ -347,18 +390,15 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
         false,
       );
 
-    // Quite ugly solution, but this is the one that fits to current flow.
-    // I think UniswapV3 callbacks subscriptions are complexified for no reason.
-    // Need to be revisited later
-   // assert(resState.success, 'Pool does not exist');
+    
+    //assert(resState.success, 'Pool does not exist');
 
     const [
       balance,
       immutables,
       priceAndNearestTicks, 
       secondsGrowthAndLastObservation,
-      ticksData,
-      limitOrderTicksData,
+      tickCount,
       dfynFee,
       limitOrderFee,
       liquidity,
@@ -374,8 +414,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       resImmutables.returnData,
       resPriceAndNearestTicks.returnData,
       resSecondsGrowthAndLastObservation.returnData,
-      resTicksData.returnData,
-      resLimitOrderTicksdata.returnData,
+      resTickCount.returnData,
       resDfynFee.returnData,
       resLimitOrderFee.returnData,
       resLiquidity.returnData,
@@ -391,21 +430,76 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       DecodedGetImmutables,
       DecodedGetPriceAndNearestTicks,
       DecodedGetSecondsGrowthAndLastObservation,
-      DecodedTicksData,
-      DecodedLimitOrderTicksData,
-      bigint, bigint, bigint , bigint , bigint, bigint, bigint, bigint, bigint, bigint
+      bigint, bigint, bigint , bigint , bigint, bigint, bigint, bigint, bigint, bigint, bigint
     ]
+    console.log(balance._reserve0)
+    const getTicksStateCallData = await this._getTicksStateCallData(Number(tickCount))
+    
+    const resTickStatecallData = await this.dexHelper.multiWrapper.tryAggregate<DecodedGetTickState>
+    (
+      false,
+      getTicksStateCallData,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
+    );
+   
+    
+    let tickState : any = [], limitOrderTickState : any = []
+   
+    for (let i = 0; i<= Number(tickCount)-1; i++){
+      tickState.push({
+        index : ((resTickStatecallData[0].returnData.ticks as any)[0][i].index as TickInfoMappingsWithBigNumber).toString()
+      })
+      limitOrderTickState.push({
+        index : ((resTickStatecallData[0].returnData.ticks as any)[0][i].index as LimitOrderTickInfoMappingsWithBigNumber).toString()
+      })
+    }
+    
+    const ticksCallData = await this._getTicks(tickState)
+
+    const resTicks = await this.dexHelper.multiWrapper.tryAggregate<DecodedTicksData>
+    (
+      false,
+      ticksCallData,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
+    );
+
+    const limitOrderTicksCallData = await this._getLimitOrderTicks(limitOrderTickState)
+    
+    const resLimitOrderTicks = await this.dexHelper.multiWrapper.tryAggregate<DecodedLimitOrderTicksData>
+    (
+      false,
+      limitOrderTicksCallData,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
+    );
+    
+    let ticksData : any = [], limitOrderTicksData : any = []
+    for (let i = 0; i<= Number(tickCount)-1; i++) {
+      ticksData.push({
+        index: (resTickStatecallData[0].returnData.ticks as any)[0][i].index,
+        value : (resTicks[0].returnData.ticks[i] as any) as TickInfoMappingsWithBigNumber
+      });
+      limitOrderTicksData.push({
+        index: (resTickStatecallData[0].returnData.ticks as any)[0][i].index,
+        value: (resLimitOrderTicks[0].returnData.limitOrderTicks[i] as any) as LimitOrderTickInfoMappingsWithBigNumber
+      });
+    }
+        
     const ticks = {};
     const limitOrderTicks = {};
 
-    //this._reduceTickBitmap(tickBitmap, _state.tickBitmap);
-    this._reduceTicks(ticks, ticksData.ticks);
-    this._reduceLimitOrderTicks(limitOrderTicks,limitOrderTicksData.limitOrderTicks)
-
+    this._reduceTicks(ticks,ticksData);
+    this._reduceLimitOrderTicks(limitOrderTicks,limitOrderTicksData)
+    
     return {
       pool: this._computePoolAddress(immutables._token0,immutables._token1),
-      balance0: bigIntify(balance.reserve0),
-      balance1: bigIntify(balance.reserve1),
+      balance0: bigIntify(balance._reserve0),
+      balance1: bigIntify(balance._reserve1),
       tickSpacing: bigIntify(immutables._tickSpacing),
       swapFee: bigIntify(immutables._swapFee),
       slot0: {
@@ -599,20 +693,6 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   //   return pool;
   // }
 
-  // private _reduceTickBitmap(
-  //   tickBitmap: Record<NumberAsString, bigint>,
-  //   tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
-  // ) {
-  //   return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
-  //     (acc, curr) => {
-  //       const { index, value } = curr;
-  //       acc[index] = bigIntify(value);
-  //       return acc;
-  //     },
-  //     tickBitmap,
-  //   );
-  // }
-
   private _reduceTicks(
     ticks: Record<NumberAsString, TickInfo>,
     ticksToReduce: TickInfoMappingsWithBigNumber[],
@@ -651,7 +731,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   private _computePoolAddress(token0: Address, token1: Address): Address {
-    // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/PoolAddress.sol
+
     if (token0 > token1) [token0, token1] = [token1, token0];
 
     const encodedKey = ethers.utils.keccak256(
