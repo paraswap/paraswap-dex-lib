@@ -287,6 +287,10 @@ export const Tokens: {
       address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
       decimals: 6,
     },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -415,6 +419,10 @@ export const Tokens: {
     },
     MAI: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
+      decimals: 18,
+    },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
       decimals: 18,
     },
   },
@@ -804,6 +812,10 @@ export const Tokens: {
       address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
       decimals: 8,
     },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
+      decimals: 18,
+    },
   },
 };
 
@@ -865,6 +877,7 @@ export const Holders: {
     aEthUSDC: '0x3178490d60B5cceaA5a79FD4D9050C7405Bab80c',
     aEthWETH: '0x645C4c0c95C1Aa6EF25d12f4a25038cA9b0C6Cc7',
     dUSDC: '0x3C6A135F7A3A7Ce203EF629B43D9dc66f0f98BFa',
+    BOB: '0x02BF3258D6024B2B34fD7D21F225Db6CDA939E76',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -900,6 +913,7 @@ export const Holders: {
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
+    BOB: '0x02BF3258D6024B2B34fD7D21F225Db6CDA939E76',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
@@ -1004,6 +1018,7 @@ export const Holders: {
     wstETH: '0xf7626459234e9249808a06aa08dc6b67c8e0a2fc',
     rETH: '0x4c2e69e58b14de9afedfb94319519ce34e087283',
     WBTC: '0xb9c8f0d3254007ee4b98970b94544e473cd610ec',
+    BOB: '0xF7626459234e9249808A06aA08dc6b67c8e0A2fc',
   },
 };
 
