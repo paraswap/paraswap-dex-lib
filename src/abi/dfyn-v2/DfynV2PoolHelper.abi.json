@@ -1,0 +1,101 @@
+[
+    {
+      "inputs": [
+        {
+          "internalType": "contract IConcentratedLiquidityPool",
+          "name": "pool",
+          "type": "address"
+        },
+        {
+          "internalType": "int24",
+          "name": "lower",
+          "type": "int24"
+        },
+        {
+          "internalType": "int24",
+          "name": "upper",
+          "type": "int24"
+        }
+      ],
+      "name": "getLowerOldAndUpperOld",
+      "outputs": [
+        {
+          "internalType": "int24",
+          "name": "",
+          "type": "int24"
+        },
+        {
+          "internalType": "int24",
+          "name": "",
+          "type": "int24"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IConcentratedLiquidityPool",
+          "name": "pool",
+          "type": "address"
+        },
+        {
+          "internalType": "int24",
+          "name": "limitTick",
+          "type": "int24"
+        }
+      ],
+      "name": "getLowerOldAndUpperOldLimit",
+      "outputs": [
+        {
+          "internalType": "int24",
+          "name": "",
+          "type": "int24"
+        },
+        {
+          "internalType": "int24",
+          "name": "",
+          "type": "int24"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IConcentratedLiquidityPool",
+          "name": "pool",
+          "type": "address"
+        },
+        {
+          "internalType": "uint24",
+          "name": "tickCount",
+          "type": "uint24"
+        }
+      ],
+      "name": "getTickState",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "int24",
+              "name": "index",
+              "type": "int24"
+            },
+            {
+              "internalType": "uint128",
+              "name": "liquidity",
+              "type": "uint128"
+            }
+          ],
+          "internalType": "struct ConcentratedLiquidityPoolHelper.SimpleTick[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]

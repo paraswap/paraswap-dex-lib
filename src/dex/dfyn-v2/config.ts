@@ -31,7 +31,7 @@ export const DfynV2Config: DexConfigMap<DexParams> = {
       quoter: '0x20928030b08E498445B66Bdf35aB6bD72d9598f2',
       router: '0x65AC726680E958Ae6872569C08c264Fe04D65C80',
       supportedFees: SUPPORTED_FEES,
-      stateMulticall: '0x6Dc993Fe1e945A640576B4Dca81281d8e998DF71',
+      poolHelper: '0x02dE9a2031ac7E53e5170236C8857659aB915db8',
       dfynMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
     },
