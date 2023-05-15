@@ -1,4 +1,4 @@
-import { StructHelper } from "./IConcentratedLiquidityPool";
+import { StructHelper } from "./../types";
 import { FullMath } from './FullMath';
 import { TickMath } from "./TickMath";
 
