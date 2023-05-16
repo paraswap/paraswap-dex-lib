@@ -21,9 +21,9 @@ export class BobSwapMath {
     bobBalance: bigint,
   ): bigint[] | null {
     try {
-      if (toToken === this.bobToken) {
+      if (toToken.toLowerCase() === this.bobToken.toLowerCase()) {
         return this.buyBob(fromToken, fromAmounts, bobBalance);
-      } else if (fromToken === this.bobToken) {
+      } else if (fromToken.toLowerCase() === this.bobToken.toLowerCase()) {
         return this.sellBob(toToken, fromAmounts);
       } else {
         return this.swap(fromToken, toToken, fromAmounts, bobBalance);

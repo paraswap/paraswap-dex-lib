@@ -13,6 +13,8 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { Address } from '@paraswap/core';
+import BobVaultABI from '../../abi/bob-swap/BobVault.json';
 
 /*
   README
@@ -34,12 +36,15 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
+  srcTokenAddress: Address,
+  destTokenAddress: Address,
   // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      srcTokenAddress,
+      destTokenAddress,
       amount,
     ]),
   }));
@@ -50,7 +55,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -63,19 +67,20 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  srcTokenAddress: Address,
+  destTokenAddress: Address,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = bobSwap.config.bobSwapAddress;
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from bobSwap.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = new Interface(BobVaultABI);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    srcTokenAddress,
+    destTokenAddress,
   );
   const readerResult = (
     await bobSwap.dexHelper.multiContract.methods
@@ -143,6 +148,8 @@ async function testPricingOnNetwork(
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    networkTokens[srcTokenSymbol].address,
+    networkTokens[destTokenSymbol].address,
   );
 }
 
@@ -151,16 +158,14 @@ describe('BobSwap', function () {
   let blockNumber: number;
   let bobSwap: BobSwap;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'BOB';
+    const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
@@ -174,20 +179,6 @@ describe('BobSwap', function () {
       8n * BI_POWS[tokens[srcTokenSymbol].decimals],
       9n * BI_POWS[tokens[srcTokenSymbol].decimals],
       10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
-
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
     ];
 
     beforeAll(async () => {
@@ -208,21 +199,7 @@ describe('BobSwap', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        bobSwap,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'getAmountOut', // TODO: Put here proper function name to check pricing
       );
     });
 

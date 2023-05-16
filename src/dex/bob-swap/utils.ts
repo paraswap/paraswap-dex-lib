@@ -1,5 +1,5 @@
 import { MultiResult } from '../../lib/multi-wrapper';
-import { BytesLike, ethers } from 'ethers';
+import { BigNumber, BytesLike, ethers } from 'ethers';
 import { DecodedCollateralState } from './types';
 import { extractSuccessAndValue } from '../../lib/decoders';
 import { assert } from 'ts-essentials';
@@ -10,9 +10,21 @@ export function decodeCollateralStateResult(
   const [isSuccess, toDecode] = extractSuccessAndValue(result);
 
   assert(
-    isSuccess && toDecode !== '0x',
+    isSuccess,
     `decodeCollateralStateResult failed to get decodable result: ${result}`,
   );
+
+  if (toDecode === '0x') {
+    return {
+      balance: BigNumber.from(0),
+      buffer: BigNumber.from(0),
+      dust: BigNumber.from(0),
+      yield: '',
+      price: BigNumber.from(0),
+      inFee: BigNumber.from(0),
+      outFee: BigNumber.from(0),
+    };
+  }
 
   const decoded = ethers.utils.defaultAbiCoder.decode(
     [
@@ -24,9 +36,7 @@ export function decodeCollateralStateResult(
             address yield,
             uint128 price,
             uint64 inFee,
-            uint64 outFee,
-            uint256 maxBalance,
-            uint256 maxInvested
+            uint64 outFee
           )
           `,
     ],

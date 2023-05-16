@@ -7,7 +7,6 @@ export type CollateralInfo = {
   price: bigint;
   balance: bigint;
   maxBalance: bigint;
-  decimals: number;
 };
 
 export type PoolState = {
@@ -26,8 +25,6 @@ export type DecodedCollateralState = {
   price: BigNumber;
   inFee: BigNumber;
   outFee: BigNumber;
-  maxBalance: BigNumber;
-  maxInvested: BigNumber;
 };
 
 export type BobSwapData = {};

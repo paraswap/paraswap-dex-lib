@@ -24,7 +24,6 @@ import { ERC20EventSubscriber } from '../../lib/generics-events-subscribers/erc2
 import { BobSwapMath } from './bob-swap-math';
 import { assert } from 'ts-essentials';
 import { BOB_VAULT_GAS_COST } from './constants';
-import { ColoredLayout } from 'log4js';
 import { DexParams } from './types';
 
 export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
@@ -45,6 +44,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
   readonly bobSwap: Address;
 
   readonly bobToken: Address;
+  tokenDecimals: Record<Address, number> = {};
 
   totalUSDBalance: number = 0;
 
@@ -67,8 +67,8 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
-    this.bobSwap = this.config.bobSwapAddress;
-    this.bobToken = this.config.bobTokenAddress;
+    this.bobSwap = this.config.bobSwapAddress.toLowerCase();
+    this.bobToken = this.config.bobTokenAddress.toLowerCase();
     const loggerName = `${dexKey}-${network}`;
     this.logger = dexHelper.getLogger(loggerName);
     this.bobTokenTracker = new ERC20EventSubscriber(dexHelper, this.bobToken);
@@ -76,6 +76,10 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
       dexHelper.getLogger(`${loggerName}_math`),
       this.bobToken,
     );
+
+    this.config.tokens.forEach(token => {
+      this.tokenDecimals[token.address] = token.decimals;
+    });
 
     this.eventPools = new BobSwapEventPool(
       dexKey,
@@ -113,22 +117,49 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
       this.bobSwap,
       blockNumber,
     );
+    await this.eventPools.fetchAndUpdateState(blockNumber);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return null;
   }
 
-  isBob(token: string) {
+  private _isBob(token: string): boolean {
     return this.bobToken.toLowerCase() === token.toLowerCase();
   }
 
-  isCollateral(token: string, state: PoolState) {
+  private _isCollateral(token: string, state: PoolState): boolean {
     return token in state.collaterals;
   }
 
-  isBobOrCollateral(token: string, state: PoolState) {
-    return this.isBob(token) || this.isCollateral(token, state);
+  private _isBobOrCollateral(token: string, state: PoolState): boolean {
+    return this._isBob(token) || this._isCollateral(token, state);
+  }
+
+  private async _fetchDecimals(token: string): Promise<number> {
+    if (token in this.tokenDecimals) {
+      return this.tokenDecimals[token];
+    }
+
+    const decimalsData = this.erc20Interface.encodeFunctionData('decimals', []);
+    const decimalsRaw = await this.dexHelper.web3Provider.eth.call({
+      to: token,
+      data: decimalsData,
+    });
+    const decimalsResult = this.erc20Interface.decodeFunctionResult(
+      'decimals',
+      decimalsRaw,
+    );
+
+    const decimals = Number(decimalsResult.toString());
+
+    this.tokenDecimals[token] = decimals;
+
+    return decimals;
+  }
+
+  private _updateDecimals(token: Token) {
+    this.tokenDecimals[token.address] = token.decimals;
   }
 
   // Returns list of pool identifiers that can be used
@@ -141,14 +172,18 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    this._updateDecimals(srcToken);
+    this._updateDecimals(destToken);
     if (side === SwapSide.BUY) return [];
-    const state = this.eventPools.getState(blockNumber);
+    await this.eventPools.fetchAndUpdateState(blockNumber);
+    let state = this.eventPools.getState(blockNumber);
     if (state === null) {
+      this.logger.error('State is null after check');
       return [];
     }
     if (
-      !this.isBobOrCollateral(srcToken.address, state) ||
-      !this.isBobOrCollateral(destToken.address, state)
+      !this._isBobOrCollateral(srcToken.address, state) ||
+      !this._isBobOrCollateral(destToken.address, state)
     ) {
       return [];
     }
@@ -171,18 +206,21 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BobSwapData>> {
+    this._updateDecimals(srcToken);
+    this._updateDecimals(destToken);
     if (side === SwapSide.BUY) return null;
     try {
-      const state = this.eventPools.getState(blockNumber);
+      await this.eventPools.fetchAndUpdateState(blockNumber);
+      let state = this.eventPools.getState(blockNumber);
 
       if (state === null) {
-        this.logger.error(`State is null in getPricesVolume`);
+        this.logger.error('State is null after check');
         return null;
       }
 
       const checkIsPossibleSwap =
-        this.isBobOrCollateral(srcToken.address, state) &&
-        this.isBobOrCollateral(destToken.address, state);
+        this._isBobOrCollateral(srcToken.address, state) &&
+        this._isBobOrCollateral(destToken.address, state);
 
       if (!checkIsPossibleSwap || srcToken.address === destToken.address)
         return null;
@@ -258,7 +296,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     data: BobSwapData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (side === SwapSide.BUY) throw new Error(`Buy is not supported`);
 
     // Encode here the payload for adapter
     const payload = '';
@@ -282,19 +320,19 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     data: BobSwapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (side === SwapSide.BUY) throw new Error(`Buy is not supported`);
 
     let swapData = BobSwap.bobSwapIface.encodeFunctionData('swap', [
       srcToken,
       destToken,
       srcAmount,
     ]);
-    if (this.isBob(srcToken)) {
+    if (this._isBob(srcToken)) {
       swapData = BobSwap.bobSwapIface.encodeFunctionData('sell', [
         destToken,
         srcAmount,
       ]);
-    } else if (this.isBob(destToken)) {
+    } else if (this._isBob(destToken)) {
       swapData = BobSwap.bobSwapIface.encodeFunctionData('buy', [
         srcToken,
         srcAmount,
@@ -318,23 +356,32 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    const state = this.eventPools.getStaleState();
+    let state = this.eventPools.getStaleState();
+
     if (state === null) {
-      return;
+      let blockNumber = await this.dexHelper.provider.getBlockNumber();
+      await this.initializePricing(blockNumber);
+      state = this.eventPools.getStaleState();
+      if (state === null) {
+        this.logger.error('State is null after check');
+        return;
+      }
     }
+
     const bobBalance = await this.dexHelper.getTokenUSDPrice(
       { address: this.bobToken, decimals: 18 },
       await this.bobTokenTracker.getBalance(
         this.bobSwap,
-        this.eventPools.getStateBlockNumber(),
+        this.bobTokenTracker.getStateBlockNumber(),
       ),
     );
+
     const tokenBalancesUSD = await Promise.all(
-      Object.entries(state.collaterals).map(([tokenAddress, tokenInfo]) =>
+      Object.entries(state.collaterals).map(async ([tokenAddress, tokenInfo]) =>
         this.dexHelper.getTokenUSDPrice(
           {
             address: tokenAddress,
-            decimals: tokenInfo.decimals,
+            decimals: await this._fetchDecimals(tokenAddress),
           },
           tokenInfo.balance,
         ),
@@ -351,17 +398,27 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const state = this.eventPools.getStaleState();
-    if (state === null || !this.isBobOrCollateral(tokenAddress, state)) {
+    await this.eventPools.fetchAndUpdateState();
+    let state = this.eventPools.getStaleState();
+
+    if (state === null) {
+      this.logger.error('State is null after check');
       return [];
     }
-    const connectorTokens = Object.entries(state.collaterals).map(
-      ([tokenAddress, tokenInfo]) => {
-        return {
-          address: tokenAddress,
-          decimals: tokenInfo.decimals,
-        };
-      },
+
+    if (!this._isBobOrCollateral(tokenAddress, state)) {
+      return [];
+    }
+
+    const connectorTokens = await Promise.all(
+      Object.entries(state.collaterals).map(
+        async ([tokenAddress, tokenInfo]) => {
+          return {
+            address: tokenAddress,
+            decimals: await this._fetchDecimals(tokenAddress),
+          };
+        },
+      ),
     );
     return [
       {
@@ -375,7 +432,5 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
+  releaseResources(): AsyncOrSync<void> {}
 }

@@ -89,6 +89,31 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   /**
+   * The function checks if state is correct, because
+   * after AddCollateral event we don't know the exact
+   * decimals of added token. In that case we have to
+   * fetch it on-chain, but it is very rare situation.
+   * Also, we will support very small amount of tokens,
+   * so we can generate state from scratch every time.
+   */
+  async fetchAndUpdateState(
+    blockNumber?: number,
+  ): Promise<DeepReadonly<PoolState>> {
+    if (blockNumber === undefined) {
+      blockNumber = await this.dexHelper.provider.getBlockNumber();
+    }
+
+    const state = await this.getState(blockNumber);
+    if (state !== null) {
+      return state;
+    }
+
+    const newState = await this.generateState(blockNumber);
+    this.setState(newState, blockNumber);
+    return newState;
+  }
+
+  /**
    * The function generates state using on-chain calls. This
    * function is called to regenerate state if the event based
    * system fails to fetch events and the local state is no
@@ -97,27 +122,28 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    let multicallInputs: MultiCallParams<bigint | DecodedCollateralState>[] =
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<DeepReadonly<PoolState>> {
+    let multicallInputs: MultiCallParams<DecodedCollateralState>[] =
       this.tokens.map(token => {
         return {
           target: this.bobSwapAddress.toString(),
           callData: this.bobSwapIface.encodeFunctionData('collateral', [
-            token.toString(),
+            token.address,
           ]),
           decodeFunction: decodeCollateralStateResult,
         };
       });
 
-    const res = await this.dexHelper.multiWrapper.tryAggregate<
-      bigint | DecodedCollateralState
-    >(
-      false,
-      multicallInputs,
-      blockNumber,
-      this.dexHelper.multiWrapper.defaultBatchSize,
-      false,
-    );
+    const res =
+      await this.dexHelper.multiWrapper.tryAggregate<DecodedCollateralState>(
+        false,
+        multicallInputs,
+        blockNumber,
+        this.dexHelper.multiWrapper.defaultBatchSize,
+        false,
+      );
 
     let i: number = 0;
 
@@ -125,13 +151,14 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
 
     for (let token of this.tokens) {
       let collateralInfo = res[i++].returnData as DecodedCollateralState;
-      collaterals[token.address] = {
+      collaterals[token.address.toLowerCase()] = {
         inFee: collateralInfo.inFee.toBigInt(),
         outFee: collateralInfo.outFee.toBigInt(),
         price: collateralInfo.price.toBigInt(),
         balance: collateralInfo.balance.toBigInt(),
-        maxBalance: collateralInfo.maxBalance.toBigInt(),
-        decimals: token.decimals,
+        maxBalance: BigInt(
+          '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+        ),
       };
     }
 
@@ -167,8 +194,9 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
         outFee: outFee,
         price: 0n,
         balance: 0n,
-        maxBalance: 0n,
-        decimals: 0,
+        maxBalance: BigInt(
+          '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+        ),
       };
     }
 
