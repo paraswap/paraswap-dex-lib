@@ -1,4 +1,4 @@
-import { gt } from 'lodash';
+
 import { BI_MAX_UINT256 } from '../../../bigint-constants';
 import { _gt } from './utils';
 import { _require } from '../../../utils';

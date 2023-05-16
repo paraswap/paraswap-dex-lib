@@ -28,8 +28,7 @@ import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
 import {
-  DEFAULT_POOL_INIT_CODE_HASH,
-  OUT_OF_RANGE_ERROR_POSTFIX,
+  DEFAULT_POOL_INIT_CODE_HASH, OUT_OF_RANGE_ERROR_POSTFIX
 } from './constants';
 import { uint256ToBigInt,uint160ToBigInt, uint128ToBigInt } from '../../lib/decoders';
 import { 
@@ -432,7 +431,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       DecodedGetSecondsGrowthAndLastObservation,
       bigint, bigint, bigint , bigint , bigint, bigint, bigint, bigint, bigint, bigint, bigint
     ]
-    console.log(balance._reserve0)
+    
     const getTicksStateCallData = await this._getTicksStateCallData(Number(tickCount))
     
     const resTickStatecallData = await this.dexHelper.multiWrapper.tryAggregate<DecodedGetTickState>

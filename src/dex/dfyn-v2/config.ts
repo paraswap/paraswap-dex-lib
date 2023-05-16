@@ -28,7 +28,7 @@ export const DfynV2Config: DexConfigMap<DexParams> = {
   DfynV2: {
     [Network.POLYGON]: {
       factory: '0xf79a83E3f8E853D9658e8b97a83942Af80d45b85',
-      quoter: '0x20928030b08E498445B66Bdf35aB6bD72d9598f2',
+      quoter: '0xeE4545ABC69C17Bbc48971E4be98D35626Bd8793',
       router: '0x65AC726680E958Ae6872569C08c264Fe04D65C80',
       supportedFees: SUPPORTED_FEES,
       poolHelper: '0x02dE9a2031ac7E53e5170236C8857659aB915db8',

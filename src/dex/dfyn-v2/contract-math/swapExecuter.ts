@@ -1,5 +1,3 @@
-import { BI_POWS } from '../../../bigint-constants';
-//import { ILimitOrderStruct } from "./ILimitOrder";
 import { StructHelper, PoolState } from "./../types";
 import { DyDxMath } from "./DyDxMath";
 import { FullMath } from "./FullMath";

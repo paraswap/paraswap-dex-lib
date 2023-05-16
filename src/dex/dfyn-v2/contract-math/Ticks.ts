@@ -1,7 +1,4 @@
 import { StructHelper , PoolState } from "./../types";
-import { BI_POWS } from '../../../bigint-constants';
-//import { ConcStruct, SwapExecuteCache } from "./ILimitOrderStruct";
-import { DyDxMath } from "./DyDxMath";
 import { FullMath } from "./FullMath";
 
 export class Ticks{

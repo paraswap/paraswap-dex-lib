@@ -23,65 +23,6 @@ export function getDfynV2DexKey(DfynV2Config: DexConfigMap<DexParams>) {
   return DfynV2Keys[0].toLowerCase();
 }
 
-// export function decodeStateMultiCallResultWithRelativeBitmaps(
-//   result: MultiResult<BytesLike> | BytesLike,
-// ): DecodedStateMultiCallResultWithRelativeBitmaps {
-//   const [isSuccess, toDecode] = extractSuccessAndValue(result);
-
-//   assert(
-//     isSuccess && toDecode !== '0x',
-//     `decodeStateMultiCallResultWithRelativeBitmaps failed to get decodable result: ${result}`,
-//   );
-
-//   const decoded = ethers.utils.defaultAbiCoder.decode(
-//     [
-//       // I don't want to pass here any interface, so I just use it in ethers format
-//       `
-//       tuple(
-//         address pool,
-//         uint256 blockTimestamp,
-//         tuple(
-//           uint160 sqrtPriceX96,
-//           int24 tick,
-//           uint16 observationIndex,
-//           uint16 observationCardinality,
-//           uint16 observationCardinalityNext,
-//           uint8 feeProtocol,
-//           bool unlocked,
-//         ) slot0,
-//         uint128 liquidity,
-//         int24 tickSpacing,
-//         uint128 maxLiquidityPerTick,
-//         tuple(
-//           uint32 blockTimestamp,
-//           int56 tickCumulative,
-//           uint160 secondsPerLiquidityCumulativeX128,
-//           bool initialized,
-//         ) observation,
-//         tuple(
-//           int16 index,
-//           uint256 value,
-//         )[] tickBitmap,
-//         tuple(
-//           int24 index,
-//           tuple(
-//             uint128 liquidityGross,
-//             int128 liquidityNet,
-//             int56 tickCumulativeOutside,
-//             uint160 secondsPerLiquidityOutsideX128,
-//             uint32 secondsOutside,
-//             bool initialized,
-//           ) value,
-//         )[] ticks
-//       )
-//     `,
-//     ],
-//     toDecode,
-//   )[0];
-//   // This conversion is not precise, because when we decode, we have more values
-//   // But I typed only the ones that are used later
-//   return decoded as DecodedStateMultiCallResultWithRelativeBitmaps;
-// }
 
 export function decodeGetReserves(
   result: MultiResult<BytesLike> | BytesLike
@@ -186,17 +127,6 @@ export function decodeGetSecondsGrowthAndLastObservation(
     return decoded as DecodedGetSecondsGrowthAndLastObservation;
 }
 
-// tuple(
-//   int24 index,
-//   tuple(
-//     uint128 liquidityGross,
-//     int128 liquidityNet,
-//     int56 tickCumulativeOutside,
-//     uint160 secondsPerLiquidityOutsideX128,
-//     uint32 secondsOutside,
-//     bool initialized,
-//   ) value,
-// )[] ticks
 
 export function decodeTicks(
   result: MultiResult<BytesLike> | BytesLike
@@ -225,58 +155,12 @@ export function decodeTicks(
     
 
     ticksData.push(decoded);
-    // console.log(ticksData)
-    return {ticks: ticksData} as DecodedTicksData;
     
-    // return {ticks:decoded} as DecodedTicksData;
+    return {ticks: ticksData} as DecodedTicksData;
 
 }
 
 const ticksData: TickInfoMappingsWithBigNumber[] = [];
-
-// export function decodeTicks(
-//   result: MultiResult<BytesLike> | BytesLike
-//   ) : DecodedTicksData {
-//     const [isSuccess, toDecode] = extractSuccessAndValue(result);
-
-//     assert(
-//       isSuccess && toDecode !== '0x',
-//       `DecodedTicksData failed to get decodable result: ${result}`,
-//     );
-//     debugger
-//     const decoded = ethers.utils.defaultAbiCoder.decode(
-//       [
-//         `tuple(
-//           tuple(
-//             int24 previousTick,
-//             int24 nextTick,
-//             uint128 liquidity,
-//             uint256 feeGrowthOutside0,
-//             uint256 feeGrowthOutside1,
-//             uint160 secondsGrowthOutside
-//           )[]ticks
-//         )[] tickInfoMapping`,
-//       ],
-//       toDecode,
-//     )[0]; // grab first (and only) element of tuple
-  
-//     const ticks = decoded.map((tickInfoMappings: { value: any; }, index: any) => {
-//       const tick = tickInfoMappings.value;
-//       return {
-//         index,
-//         value: {
-//           previousTick: BigNumber.from(tick.previousTick),
-//           nextTick: BigNumber.from(tick.nextTick),
-//           liquidity: BigNumber.from(tick.liquidity),
-//           feeGrowthOutside0: BigNumber.from(tick.feeGrowthOutside0),
-//           feeGrowthOutside1: BigNumber.from(tick.feeGrowthOutside1),
-//           secondsGrowthOutside: BigNumber.from(tick.secondsGrowthOutside),
-//         },
-//       };
-//     });
-//     return {ticks} as DecodedTicksData;
-// }
-
 export function decodeLimitOrderTicks(
   result: MultiResult<BytesLike> | BytesLike
   ) : DecodedLimitOrderTicksData {

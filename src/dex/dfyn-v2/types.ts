@@ -15,11 +15,6 @@ export type TickInfo = {
 export type Slot0 = {
   sqrtPriceX96: bigint;
   tick: bigint;
-  //observationIndex: number;
-  //nearestPrice:bigint;
-  // observationCardinality: number;
-  // observationCardinalityNext: number;
-  // feeProtocol: bigint;
 };
 
 export type PoolState = {
@@ -101,7 +96,6 @@ interface MintParams {
   }
   
 interface SwapCache {
-  //blockTimestamp: bigint;
   exactIn: boolean;
   nextTickToCross: bigint;
   protocolFee: bigint;
@@ -292,12 +286,6 @@ export type OutputResult = {
 
 // Just rewrote every type with BigNumber basically
 
-// export type TickBitMapMappingsWithBigNumber = {
-//   index: number;
-//   value: BigNumber;
-// };
-
-
 export type DecodedGetTickStateInfo = {
   index: BigNumber;
   liquidity: BigNumber;
@@ -323,12 +311,6 @@ export type TickInfoWithBigNumber = {
 export type TickInfoMappingsWithBigNumber = {
   index: number;
   value: TickInfoWithBigNumber;
-  // previousTick: BigNumber;
-  // nextTick: BigNumber;
-  // liquidity: BigNumber;
-  // feeGrowthOutside0: BigNumber; // Per unit of liquidity.
-  // feeGrowthOutside1: BigNumber;
-  // secondsGrowthOutside: BigNumber;
 };
 
 export type DecodedTicksData = {
@@ -350,13 +332,6 @@ export type LimitOrderTickInfoWithBigNumber = {
 export type LimitOrderTickInfoMappingsWithBigNumber = {
   index: number;
   value: LimitOrderTickInfoWithBigNumber;
-  // token0Liquidity: BigNumber;
-  // token1Liquidity: BigNumber;
-  // token0Claimable: BigNumber;
-  // token1Claimable: BigNumber;
-  // token0ClaimableGrowth: BigNumber;
-  // token1ClaimableGrowth: BigNumber;
-  // isActive: boolean;
 };
 
 export type DecodedLimitOrderTicksData = {
@@ -391,34 +366,3 @@ export type DecodedGetSecondsGrowthAndLastObservation = {
   _secondsGrowthGlobal : BigNumber;
   _lastObservation : BigNumber;
 }
-
-export type DecodedStateMultiCallResultWithRelativeBitmaps = {
-  pool: Address;
-  blockTimestamp: BigNumber;
-  slot0: {
-    sqrtPriceX96: BigNumber;
-    tick: number;
-  };
-  liquidity: BigNumber;
-  tickSpacing: number;
-  ticks: TickInfoMappingsWithBigNumber[];
-  limitOrderTicks: LimitOrderTickInfoMappingsWithBigNumber[];
-  isValid: boolean;
-  lowestKnownTick: bigint;
-  highestKnownTick: bigint;
-  balance0: bigint;
-  balance1: bigint;
-  swapFee:bigint;
-  dfynFee: bigint;
-  limitOrderFee:bigint;
-  secondsGrowthGlobal:bigint;
-  lastObservation:bigint;
-  feeGrowthGlobal1:bigint;
-  feeGrowthGlobal0:bigint;
-  nearestPrice:bigint;
-  limitOrderReserve0:bigint;
-  limitOrderReserve1:bigint;
-  token0LimitOrderFee:bigint;
-  token1LimitOrderFee:bigint;
-  price:bigint;
-};
