@@ -25,53 +25,7 @@ import { FeeHandler } from './FeeHandler';
 //   liquidityDelta: bigint;
 // };
 
-// type PriceComputationState = {
-//   amountSpecifiedRemaining: bigint;
-//   amountIn: bigint;
-//   amountOut:bigint;
-//   exactIn: boolean;
-//   amountCalculated: bigint;
-//   sqrtPriceX96: bigint;
-//   tick: bigint;
-//   protocolFee: bigint;
-//   liquidity: bigint;
-//   swapFee: bigint;
-//   isFirstCycleState: boolean;
-// };
 
-// type PriceComputationCache = {
-//   liquidityStart: bigint;
-//   blockTimestamp: bigint;
-//   feeProtocol: bigint;
-//   secondsPerLiquidityCumulativeX128: bigint;
-//   tickCumulative: bigint;
-//   computedLatestObservation: boolean;
-//   tickCount: number;
-//   exactIn: number;
-//   amountIn: number;
-//   amountOut: number;
-
-// };
-
-// type PriceComputationCache = {
-//   protocolFee: bigint,
-//   feeGrowthGlobalA: zeroForOne ? poolState.feeGrowthGlobal1 : feeGrowthGlobal0,
-//   feeGrowthGlobalB: zeroForOne ? feeGrowthGlobal0 : feeGrowthGlobal1,
-//   currentPrice: bigint,
-//   nearestPriceCached: bigint,
-//   currentLiquidity: bigint,
-//   amountIn: quantity > 0 ? quantity as number : 0,
-//   amountOut: quantity > 0 ? 0 : (-quantity) as number,
-//   totalAmount: 0,
-//   exactIn: quantity > 0,
-//   nextTickToCross: boolean,
-//   limitOrderAmountOut: 0,
-//   limitOrderAmountIn: 0,
-//   limitOrderReserve: zeroForOne ? limitOrderReserve0 : limitOrderReserve1,
-//   limitOrderFeeGrowth: zeroForOne ? token0LimitOrderFee : token1LimitOrderFee,
-//   token0LimitOrderFee: token0LimitOrderFee,
-//   token1LimitOrderFee: token1LimitOrderFee
-// }
 
 function _updatePriceComputationObjects<T extends StructHelper['SwapCache']>(
   toUpdate: T,
@@ -119,6 +73,7 @@ function _priceComputationCycles(
 
   let i = 0;
   for (; cache.exactIn ? cache.amountIn != 0n : cache.amountOut != 0n; ++i) {
+    
     if (
       latestFullCycleCache.tickCount + i >
       MAX_PRICING_COMPUTATION_STEPS_ALLOWED
@@ -147,12 +102,13 @@ function _priceComputationCycles(
     };
 
     _require(
-      cache.nextTickToCross === TickMath.MIN_TICK ||
-        cache.nextTickToCross === TickMath.MAX_TICK,
+      cache.nextTickToCross != TickMath.MIN_TICK ||
+        cache.nextTickToCross != TickMath.MAX_TICK,
       'E4',
     );
 
     if (cache.currentLiquidity !== 0n) {
+      
       const { amountOut, currentPrice, cross, amountIn, fee } =
         SwapExecuter._executeConcentrateLiquidity(
           ConcStruct,
@@ -299,6 +255,7 @@ class DfynV2Math {
     zeroForOne: boolean,
     side: SwapSide,
   ): OutputResult {
+    
     const slot0Start = poolState.slot0;
 
     const isSell = side === SwapSide.SELL;
@@ -323,7 +280,7 @@ class DfynV2Math {
       amountOut: 0n,
       totalAmount: 0n,
       isFirstCycleState: true,
-      exactIn: false,
+      exactIn: true,
       feeGrowthGlobalA: zeroForOne
         ? poolState.feeGrowthGlobal1
         : poolState.feeGrowthGlobal0,
@@ -359,7 +316,7 @@ class DfynV2Math {
       const amountSpecified = isSell
         ? BigInt.asIntN(256, amount)
         : -BigInt.asIntN(256, amount);
-
+      
       if (cache.isFirstCycleState) {
         // Set first non zero amount
         if (isSell) {
@@ -371,14 +328,15 @@ class DfynV2Math {
       } else {
         if (isSell) {
           cache.amountIn =
-            amountSpecified - (previousAmount - cache.totalAmount);
+            amountSpecified - (previousAmount - cache.amountIn);
         } else {
           cache.amountOut =
-            amountSpecified - (previousAmount - cache.totalAmount);
+            amountSpecified - (previousAmount - cache.amountOut);
         }
       }
 
       const exactInput = amountSpecified > 0n;
+      cache.exactIn = exactInput;
 
       _require(
         zeroForOne
@@ -392,6 +350,7 @@ class DfynV2Math {
       );
 
       if (!isOutOfRange) {
+        
         const [finalCache, { latestFullCycleCache }] = _priceComputationCycles(
           poolState,
           ticksCopy,
@@ -401,6 +360,7 @@ class DfynV2Math {
           zeroForOne,
           exactInput,
         );
+        
         if (
           (finalCache.amountIn === 0n && finalCache.totalAmount === 0n) ||
           (finalCache.amountOut === 0n && finalCache.totalAmount === 0n)
@@ -411,27 +371,25 @@ class DfynV2Math {
           continue;
         }
 
-        // We use it on next step to correct cache.amountIn or cache.AmountOut
+        // We use it on next step to correct cache.amountIn or cache.amountOut
         previousAmount = amountSpecified;
 
         // First extract calculated values
         const [amount0, amount1] =
           zeroForOne === exactInput
             ? [amountSpecified - finalCache.amountIn, finalCache.totalAmount]
-            : [finalCache.totalAmount, amountSpecified - finalCache.amountOut];
+            : [finalCache.totalAmount, amountSpecified - finalCache.amountOut]; 
 
         // Update for next amount
         // _updatePriceComputationObjects(state, latestFullCycleState);
         _updatePriceComputationObjects(cache, latestFullCycleCache);
-
+        
         if (isSell) {
-          outputs[i] = BigInt.asUintN(256, -(zeroForOne ? amount1 : amount0));
+          outputs[i] = BigInt.asUintN(256,(zeroForOne ? amount1 : amount0));
           tickCounts[i] = latestFullCycleCache.tickCount;
           continue;
         } else {
-          outputs[i] = zeroForOne
-            ? BigInt.asUintN(256, amount0)
-            : BigInt.asUintN(256, amount1);
+          outputs[i] =  BigInt.asUintN(256,-(zeroForOne? amount0 : amount1));
           tickCounts[i] = latestFullCycleCache.tickCount;
           continue;
         }
