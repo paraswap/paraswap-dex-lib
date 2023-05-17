@@ -518,7 +518,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   QuickSwap: {
     [Network.POLYGON]: {
-      subgraphURL: 'https://api.fura.org/subgraphs/name/quickswap',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap06',
       factoryAddress: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       initCode:
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
