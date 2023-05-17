@@ -80,7 +80,6 @@ export class LinearPool extends BasePool {
       poolPairData.swapFee,
       poolPairData.lowerTarget,
       poolPairData.upperTarget,
-      poolPairData.rate,
     );
   }
 
@@ -134,7 +133,7 @@ export class LinearPool extends BasePool {
 
     const balancesUpscaled = this._upscaleArray(balances, scalingFactors);
     const tokenAmountsOutScaled = tokenAmountsOut.map(a =>
-      this._upscale(a, scalingFactors[indexOut]),
+      this._upscale(a, scalingFactors[indexIn]),
     );
 
     // VirtualBPTSupply must be used for the maths
@@ -154,7 +153,7 @@ export class LinearPool extends BasePool {
       rate,
     );
 
-    return amountsIn.map(a => this._downscaleUp(a, scalingFactors[indexIn]));
+    return amountsIn.map(a => this._downscaleUp(a, scalingFactors[indexOut]));
   }
 
   _onSwapGivenOut(
@@ -181,7 +180,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -203,7 +201,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -220,7 +217,6 @@ export class LinearPool extends BasePool {
           let amt: bigint;
           try {
             amt = LinearMath._calcMainInPerWrappedOut(amountIn, mainBalance, {
-              rate,
               fee: fee,
               lowerTarget: lowerTarget,
               upperTarget: upperTarget,
@@ -236,7 +232,6 @@ export class LinearPool extends BasePool {
           let amt: bigint;
           try {
             amt = LinearMath._calcWrappedInPerMainOut(amountIn, mainBalance, {
-              rate,
               fee: fee,
               lowerTarget: lowerTarget,
               upperTarget: upperTarget,
@@ -257,7 +252,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -279,7 +273,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -310,7 +303,6 @@ export class LinearPool extends BasePool {
     swapFeePercentage: bigint,
     lowerTarget: bigint,
     upperTarget: bigint,
-    rate: bigint,
   ): bigint[] {
     /*
         Linear pools allow trading between:
@@ -352,7 +344,6 @@ export class LinearPool extends BasePool {
       upperTarget,
       virtualBptSupply,
       pairType,
-      rate,
     );
 
     // amountOut tokens are exiting the Pool, so we round down.
@@ -376,7 +367,6 @@ export class LinearPool extends BasePool {
     upperTarget: bigint,
     virtualBptSupply: bigint,
     pairType: PairTypes,
-    rate: bigint,
   ): bigint[] {
     const amountsOut: bigint[] = [];
 
@@ -391,7 +381,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -413,7 +402,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -430,7 +418,6 @@ export class LinearPool extends BasePool {
           let amt: bigint;
           try {
             amt = LinearMath._calcWrappedOutPerMainIn(amountIn, mainBalance, {
-              rate,
               fee: fee,
               lowerTarget: lowerTarget,
               upperTarget: upperTarget,
@@ -446,7 +433,6 @@ export class LinearPool extends BasePool {
           let amt: bigint;
           try {
             amt = LinearMath._calcMainOutPerWrappedIn(amountIn, mainBalance, {
-              rate,
               fee: fee,
               lowerTarget: lowerTarget,
               upperTarget: upperTarget,
@@ -467,7 +453,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -489,7 +474,6 @@ export class LinearPool extends BasePool {
               wrappedBalance,
               virtualBptSupply,
               {
-                rate,
                 fee: fee,
                 lowerTarget: lowerTarget,
                 upperTarget: upperTarget,
@@ -663,7 +647,7 @@ export class LinearPool extends BasePool {
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
-      ) *
+        ) *
         99n) /
       100n
     );
