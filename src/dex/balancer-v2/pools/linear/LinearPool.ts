@@ -30,7 +30,6 @@ type LinearPoolPairData = {
   mainIndex: number;
   lowerTarget: bigint;
   upperTarget: bigint;
-  rate: bigint;
 };
 
 /*
@@ -97,7 +96,6 @@ export class LinearPool extends BasePool {
       poolPairData.swapFee,
       poolPairData.lowerTarget,
       poolPairData.upperTarget,
-      poolPairData.rate,
     );
   }
 
@@ -114,7 +112,6 @@ export class LinearPool extends BasePool {
     swapFeePercentage: bigint,
     lowerTarget: bigint,
     upperTarget: bigint,
-    rate: bigint,
   ): bigint[] {
     let pairType: PairTypes;
     if (isSameAddress(tokens[indexIn], tokens[bptIndex])) {
@@ -150,7 +147,6 @@ export class LinearPool extends BasePool {
       upperTarget,
       virtualBptSupply,
       pairType,
-      rate,
     );
 
     return amountsIn.map(a => this._downscaleUp(a, scalingFactors[indexOut]));
@@ -165,7 +161,6 @@ export class LinearPool extends BasePool {
     upperTarget: bigint,
     virtualBptSupply: bigint,
     pairType: PairTypes,
-    rate: bigint,
   ): bigint[] {
     const amountsIn: bigint[] = [];
 
@@ -525,7 +520,6 @@ export class LinearPool extends BasePool {
       indexOut,
       scalingFactors,
       bptIndex,
-      rate: poolState.rate!,
       swapFee: poolState.swapFee,
       amp: poolState.amp || 0n,
       wrappedIndex: poolState.wrappedIndex || 0,
@@ -560,10 +554,6 @@ export class LinearPool extends BasePool {
     poolCallData.push({
       target: pool.address,
       callData: this.poolInterface.encodeFunctionData('getTargets'),
-    });
-    poolCallData.push({
-      target: pool.address,
-      callData: this.poolInterface.encodeFunctionData('getRate'),
     });
     return poolCallData;
   }
@@ -604,12 +594,6 @@ export class LinearPool extends BasePool {
       data[startIndex++],
       pool.address,
     );
-    const rate = decodeThrowError(
-      this.poolInterface,
-      'getRate',
-      data[startIndex++],
-      pool.address,
-    )[0];
 
     const bptIndex = pool.tokens.findIndex(
       t => t.address.toLowerCase() === pool.address.toLowerCase(),
@@ -623,7 +607,6 @@ export class LinearPool extends BasePool {
 
     const poolState: PoolState = {
       swapFee: BigInt(swapFee.toString()),
-      rate: BigInt(rate.toString()),
       mainIndex: Number(pool.mainIndex),
       wrappedIndex: Number(pool.wrappedIndex),
       bptIndex,
