@@ -71,7 +71,6 @@ export function poolGetPathForTokenInOut(
   ];
 
   return side === SwapSide.SELL ? result : result.reverse();
-  // return result;
 }
 
 export function getAllPoolsUsedInPaths(
