@@ -60,12 +60,17 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
         ? minMaxAmount
         : swapExchange.destAmount;
 
+    const expectedAmount =
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount;
+
     return dex.getDirectParam!(
       priceRoute.srcToken,
       priceRoute.destToken,
       srcAmount,
       destAmount,
-      minMaxAmount,
+      expectedAmount,
       swapExchange.data,
       priceRoute.side,
       permit,
