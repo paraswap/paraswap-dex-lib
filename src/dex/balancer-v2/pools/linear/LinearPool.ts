@@ -3,7 +3,7 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { isSameAddress, decodeThrowError } from '../../utils';
 import * as LinearMath from './LinearMath';
 import { BasePool } from '../balancer-v2-pool';
-import { callData, SubgraphPoolBase, PoolState, TokenState } from '../../types';
+import { callData, SubgraphPoolBase, PoolState } from '../../types';
 import LinearPoolABI from '../../../../abi/balancer-v2/linearPoolAbi.json';
 import { SwapSide } from '../../../../constants';
 import { keyBy } from 'lodash';
@@ -130,7 +130,7 @@ export class LinearPool extends BasePool {
 
     const balancesUpscaled = this._upscaleArray(balances, scalingFactors);
     const tokenAmountsOutScaled = tokenAmountsOut.map(a =>
-      this._upscale(a, scalingFactors[indexIn]),
+      this._upscale(a, scalingFactors[indexOut]),
     );
 
     // VirtualBPTSupply must be used for the maths
@@ -149,7 +149,7 @@ export class LinearPool extends BasePool {
       pairType,
     );
 
-    return amountsIn.map(a => this._downscaleUp(a, scalingFactors[indexOut]));
+    return amountsIn.map(a => this._downscaleUp(a, scalingFactors[indexIn]));
   }
 
   _onSwapGivenOut(
@@ -185,6 +185,7 @@ export class LinearPool extends BasePool {
           }
           amountsIn.push(amt);
         });
+
         break;
       case PairTypes.MainTokenToBpt:
         tokenAmountsIn.forEach(amountIn => {

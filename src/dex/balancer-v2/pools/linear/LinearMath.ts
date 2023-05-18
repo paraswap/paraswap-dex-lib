@@ -11,6 +11,7 @@ type Params = {
   fee: bigint;
   lowerTarget: bigint;
   upperTarget: bigint;
+  rate?: bigint;
 };
 
 export function _calcBptOutPerMainIn(

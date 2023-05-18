@@ -41,12 +41,12 @@ describe('BalancerV2 E2E', () => {
         [
           [
             {
-              name: 'USDC',
-              sellAmount: '100000',
+              name: 'USDT',
+              sellAmount: '1000000000000',
               buyAmount: '1000000000000',
             },
             {
-              name: 'USDT',
+              name: 'USDC',
               sellAmount: '1000000000',
               buyAmount: '1000000000000',
             },

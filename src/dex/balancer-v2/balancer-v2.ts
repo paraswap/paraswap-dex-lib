@@ -12,15 +12,7 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import {
-  ETHER_ADDRESS,
-  MAX_INT,
-  MAX_UINT,
-  Network,
-  NULL_ADDRESS,
-  SUBGRAPH_TIMEOUT,
-  SwapSide,
-} from '../../constants';
+import { ETHER_ADDRESS, MAX_INT, MAX_UINT, Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT, SwapSide, } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool } from './pools/stable/StablePool';
 import { WeightedPool } from './pools/weighted/WeightedPool';
@@ -46,17 +38,8 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, BalancerConfig } from './config';
-import {
-  getAllPoolsUsedInPaths,
-  isSameAddress,
-  poolGetMainTokens,
-  poolGetPathForTokenInOut,
-} from './utils';
-import {
-  MIN_USD_LIQUIDITY_TO_FETCH,
-  STABLE_GAS_COST,
-  VARIABLE_GAS_COST_PER_CYCLE,
-} from './constants';
+import { getAllPoolsUsedInPaths, isSameAddress, poolGetMainTokens, poolGetPathForTokenInOut, } from './utils';
+import { MIN_USD_LIQUIDITY_TO_FETCH, STABLE_GAS_COST, VARIABLE_GAS_COST_PER_CYCLE, } from './constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -717,6 +700,7 @@ export class BalancerV2
         _to.address,
         allowedPools,
         this.poolAddressMap,
+        side,
       );
 
       // Missing pools are pools that don't already exist in event or non-event
@@ -750,6 +734,7 @@ export class BalancerV2
             _to.address,
             pool,
             this.poolAddressMap,
+            side,
           );
 
           let pathAmounts = amounts;
@@ -952,23 +937,23 @@ export class BalancerV2
         decimals: 18,
       }).address;
 
-      const path = poolGetPathForTokenInOut(
+      let path = poolGetPathForTokenInOut(
         _srcToken,
         _destToken,
         pool,
         this.poolAddressMap,
+        side,
       );
+
+      if(side === SwapSide.BUY) {
+        path = path.reverse();
+      }
 
       const _swaps = path.map((hop, index) => ({
         poolId: hop.pool.id,
         assetInIndex: swapOffset + index,
         assetOutIndex: swapOffset + index + 1,
-        amount:
-          side === SwapSide.SELL && index === 0
-            ? swapData.amount
-            : side === SwapSide.BUY && index === path.length - 1
-            ? swapData.amount
-            : '0',
+        amount: (side === SwapSide.SELL && index === 0 || side === SwapSide.BUY && index === path.length - 1) ? swapData.amount  : '0',
         userData: '0x',
       }));
 

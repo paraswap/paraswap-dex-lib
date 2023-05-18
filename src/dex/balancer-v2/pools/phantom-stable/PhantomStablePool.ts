@@ -113,7 +113,7 @@ export class PhantomStablePool extends BasePool {
     indexIn: number;
     indexOut: number;
   } {
-    if (bptIndex != -1) {
+    if (bptIndex !== -1) {
       balances.splice(bptIndex, 1);
       if (bptIndex < tokenIndexIn) tokenIndexIn -= 1;
       if (bptIndex < tokenIndexOut) tokenIndexOut -= 1;
@@ -175,11 +175,11 @@ export class PhantomStablePool extends BasePool {
     );
 
     const amountsInDownscaled = amountsIn.map(a =>
-      this._downscaleDown(a, scalingFactors[indexIn]),
+      this._downscaleUp(a, scalingFactors[indexIn]),
     );
 
     return amountsInDownscaled.map(a =>
-      this._subtractSwapFeeAmount(a, swapFeePercentage),
+      this._addFeeAmount(a, swapFeePercentage),
     );
   }
 
@@ -209,6 +209,7 @@ export class PhantomStablePool extends BasePool {
     const tokenAmountsInWithFee = tokenAmountsIn.map(a =>
       this._subtractSwapFeeAmount(a, swapFeePercentage),
     );
+
     const balancesUpscaled = this._upscaleArray(balances, scalingFactors);
     const tokenAmountsInScaled = tokenAmountsInWithFee.map(a =>
       this._upscale(a, scalingFactors[indexIn]),
