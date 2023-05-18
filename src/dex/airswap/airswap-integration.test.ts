@@ -151,7 +151,7 @@ describe('Airswap', function () {
   let airswap: Airswap;
 
   describe('Mainnet', () => {
-    const network = Network.MAINNET;
+    const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];

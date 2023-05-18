@@ -26,16 +26,15 @@ import { AddressZero } from '@ethersproject/constants';
 
 import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
 import {
-  computePricesFromLevels,
+  // computePricesFromLevels,
   getAvailableMakersForRFQ,
   getPricingErc20,
   getServersUrl,
   makeRFQ,
-  mapMakerSELLResponse,
+  priceFromThreshold,
 } from './airswap-tools';
-import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
+import { BN_1, getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
-import { SwapERC20, Server } from '@airswap/libraries';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -190,25 +189,39 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
           : normalizedDestToken.decimals,
       );
 
-      const amountsRaw = amounts.map(amount =>
-        new BigNumber(amount.toString()).dividedBy(divider),
+      const amountsRaw = amounts.map(
+        amount => new BigNumber(amount.toString()), //.dividedBy(divider),
       );
 
-      const unitPrice: bigint = computePricesFromLevels(
-        [BN_1],
-        levels,
-        normalizedSrcToken,
-        normalizedDestToken,
-        side,
-      )[0];
-      const prices = computePricesFromLevels(
+      const { unitPrice, prices } = priceFromThreshold(
         amountsRaw,
         levels,
         normalizedSrcToken,
         normalizedDestToken,
         side,
       );
-      console.log('computePricesFromLevels prices', prices, levels);
+
+      // const unitPrice: bigint = computePricesFromLevels(
+      //   [BN_1],
+      //   levels,
+      //   normalizedSrcToken,
+      //   normalizedDestToken,
+      //   side,
+      // )[0];
+      // const prices = computePricesFromLevels(
+      //   amountsRaw,
+      //   levels,
+      //   normalizedSrcToken,
+      //   normalizedDestToken,
+      //   side,
+      // );
+      console.log(
+        'computePricesFromLevels prices',
+        amounts,
+        amountsRaw,
+        prices,
+        levels,
+      );
       return {
         gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,
@@ -224,6 +237,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       };
     });
     console.log('prices', prices);
+    //@ts-ignore
     return prices;
   }
 

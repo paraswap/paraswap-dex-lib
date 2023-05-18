@@ -19,10 +19,8 @@ export type DexParams = {
 };
 
 export interface PriceLevel {
-  // threshold: number;
-  level: string;
-  // level: number;
-  price: string;
+  threshold: number;
+  price: number;
 }
 
 export type QuoteResponse = {
