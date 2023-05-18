@@ -49,7 +49,7 @@ const testContractType = process.env.TEST_CONTRACT_TYPE;
 const testDirectRouterAbiPath = process.env.TEST_DIRECT_ROUTER_ABI_PATH;
 
 const directRouterIface = new Interface(
-  testDirectRouterAbiPath ? require(testDirectRouterAbiPath) : '',
+  testDirectRouterAbiPath ? require(testDirectRouterAbiPath) : '[]',
 );
 
 const testContractBytecode = generateDeployBytecode(
