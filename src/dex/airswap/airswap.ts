@@ -26,7 +26,6 @@ import { AddressZero } from '@ethersproject/constants';
 
 import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
 import {
-  // computePricesFromLevels,
   getAvailableMakersForRFQ,
   getPricingErc20,
   getServersUrl,
@@ -190,7 +189,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       );
 
       const amountsRaw = amounts.map(
-        amount => new BigNumber(amount.toString()), //.dividedBy(divider),
+        amount => new BigNumber(amount.toString()),
       );
 
       const { unitPrice, prices } = priceFromThreshold(
@@ -201,20 +200,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         side,
       );
 
-      // const unitPrice: bigint = computePricesFromLevels(
-      //   [BN_1],
-      //   levels,
-      //   normalizedSrcToken,
-      //   normalizedDestToken,
-      //   side,
-      // )[0];
-      // const prices = computePricesFromLevels(
-      //   amountsRaw,
-      //   levels,
-      //   normalizedSrcToken,
-      //   normalizedDestToken,
-      //   side,
-      // );
       console.log(
         'computePricesFromLevels prices',
         amounts,
@@ -237,7 +222,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       };
     });
     console.log('prices', prices);
-    //@ts-ignore
     return prices;
   }
 
