@@ -1,5 +1,7 @@
+import { _require } from "../../../utils";
 import { StructHelper , PoolState } from "./../types";
 import { FullMath } from "./FullMath";
+import { TickMath } from "./TickMath";
 
 export class Ticks{
 
@@ -145,4 +147,133 @@ export class Ticks{
         return [cache.limitFee, params.amountIn, params.amountOut, params.limitOrderAmountOut, params.limitOrderAmountIn, params.cross];
         
     }
-}
+
+    static insert(
+        ticks: PoolState["ticks"],
+        limitOrderTicks: PoolState["limitOrderTicks"],
+        feeGrowthGlobal0: bigint,
+        feeGrowthGlobal1: bigint,
+        secondsGrowthGlobal: bigint,
+        lowerOld: bigint,
+        lower: bigint,
+        upperOld: bigint,
+        upper: bigint,
+        data: StructHelper["InsertTickParams"]
+      ): [bigint, bigint] {
+        _require(lower < upper, "WRONG_ORDER");
+        _require(TickMath.MIN_TICK <= lower, "LOWER_RANGE");
+        _require(upper <= TickMath.MAX_TICK, "UPPER_RANGE");
+      
+        {
+          const currentLowerLiquidity: bigint = ticks[Number(lower)].liquidity;
+          if (
+            currentLowerLiquidity > 0n ||
+            lower === TickMath.MIN_TICK ||
+            limitOrderTicks[Number(lower)].isActive
+          ) {
+            // We are adding liquidity to an existing tick.
+            ticks[Number(lower)].liquidity = currentLowerLiquidity + data.amount;
+            if (currentLowerLiquidity == 0n) {
+              if (lower <= data.tickAtPrice) {
+                ticks[Number(lower)].feeGrowthOutside0 = feeGrowthGlobal0;
+                ticks[Number(lower)].feeGrowthOutside1 = feeGrowthGlobal1;
+                ticks[Number(lower)].secondsGrowthOutside = secondsGrowthGlobal;
+              }
+            }
+          } else {
+            // We are inserting a new tick.
+            const old = ticks[Number(lowerOld)];
+            const oldNextTick =  old.nextTick;
+      
+            _require(
+              (old.liquidity > 0n || lowerOld === TickMath.MIN_TICK || limitOrderTicks[Number(lowerOld)].isActive) &&
+                lowerOld < lower && lower < oldNextTick, "LOWER_ORDER"
+            );
+      
+            if (lower <= data.tickAtPrice) {
+              ticks[Number(lower)] = {
+                previousTick: lowerOld,
+                nextTick: oldNextTick,
+                liquidity: data.amount,
+                feeGrowthOutside0: feeGrowthGlobal0,
+                feeGrowthOutside1: feeGrowthGlobal1,
+                secondsGrowthOutside: secondsGrowthGlobal,
+              };
+            } else {
+              ticks[Number(lower)] = {
+                previousTick: lowerOld,
+                nextTick: oldNextTick,
+                liquidity: data.amount,
+                feeGrowthOutside0: 0n,
+                feeGrowthOutside1: 0n,
+                secondsGrowthOutside: 0n,
+              };
+            }
+      
+            old.nextTick = lower;
+            ticks[Number(oldNextTick)].previousTick = lower;
+            data.tickCount++;
+          }
+        }
+      
+        const currentUpperLiquidity = ticks[Number(upper)].liquidity;
+        if (
+          currentUpperLiquidity > 0n ||
+          upper === TickMath.MAX_TICK ||
+          limitOrderTicks[Number(upper)].isActive
+        ) {
+          // We are adding liquidity to an existing tick.
+          ticks[Number(upper)].liquidity = currentUpperLiquidity + data.amount;
+          if (currentUpperLiquidity == 0n && upper !== TickMath.MAX_TICK) {
+            if (upper <= data.tickAtPrice) {
+              ticks[Number(upper)].feeGrowthOutside0 = feeGrowthGlobal0;
+              ticks[Number(upper)].feeGrowthOutside1 = feeGrowthGlobal1;
+              ticks[Number(upper)].secondsGrowthOutside = secondsGrowthGlobal;
+            }
+          }
+        } else {
+            // Inserting a new tick.
+            const old  = ticks[Number(upperOld)];
+            const oldNextTick = old.nextTick;
+        
+            _require(
+                (old.liquidity > 0n ||
+                    limitOrderTicks[Number(upperOld)].isActive ||
+                    upperOld === TickMath.MAX_TICK) &&
+                    oldNextTick > upper &&
+                    upperOld < upper,
+                "UPPER_ORDER"
+            );
+        
+            if (upper <= data.tickAtPrice) {
+                ticks[Number(upper)] = {
+                    previousTick: upperOld,
+                    nextTick: oldNextTick,
+                    liquidity: data.amount,
+                    feeGrowthOutside0: feeGrowthGlobal0,
+                    feeGrowthOutside1: feeGrowthGlobal1,
+                    secondsGrowthOutside: secondsGrowthGlobal,
+                };
+            } else {
+                ticks[Number(upper)] = {
+                    previousTick: upperOld,
+                    nextTick: oldNextTick,
+                    liquidity: data.amount,
+                    feeGrowthOutside0: 0n,
+                    feeGrowthOutside1: 0n,
+                    secondsGrowthOutside: 0n,
+                };
+            }
+            old.nextTick = upper;
+            ticks[Number(oldNextTick)].previousTick = upper;
+            data.tickCount++;
+        }
+        if (data.nearestTick < upper && upper <= data.tickAtPrice) {
+            data.nearestTick = upper;
+        } else if (data.nearestTick < lower && lower <= data.tickAtPrice) {
+            data.nearestTick = lower;
+        }
+        
+        return [data.nearestTick, data.tickCount];
+    }
+}       
