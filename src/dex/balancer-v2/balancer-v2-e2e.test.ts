@@ -246,18 +246,18 @@ describe('BalancerV2 E2E', () => {
               buyAmount: '1871289184941469675',
             },
           ],
-          // [
-          //   {
-          //     name: 'WETH',
-          //     sellAmount: '200000000000000000',
-          //     buyAmount: '20000',
-          //   },
-          //   {
-          //     name: 'WBTC',
-          //     sellAmount: '200000000',
-          //     buyAmount: '200000000000000000',
-          //   },
-          // ],
+          [
+            {
+              name: 'WETH',
+              sellAmount: '200000000000000000',
+              buyAmount: '20000',
+            },
+            {
+              name: 'WBTC',
+              sellAmount: '200000000',
+              buyAmount: '200000000000000000',
+            },
+          ],
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
