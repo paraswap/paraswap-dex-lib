@@ -292,6 +292,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
+    const util = require('util')
+
     const eventSupportedPools = allPools.filter(
       pool =>
         this.eventSupportedPoolTypes.includes(pool.poolType) &&
@@ -301,6 +303,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       eventSupportedPools,
       blockNumber,
     );
+
     return allPoolsLatestState;
   }
 
@@ -343,6 +346,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ): { unit: bigint; prices: bigint[] } | null {
     if (!this.isSupportedPool(subgraphPool.poolType)) {
       this.logger.error(`Unsupported Pool Type: ${subgraphPool.poolType}`);
+      return null;
+    }
+
+    if(subgraphPool.poolType !== BalancerPoolTypes.Weighted && side === SwapSide.BUY) {
       return null;
     }
 
@@ -590,7 +597,7 @@ export class BalancerV2
   }
 
   getPoolsWithTokenPair(from: Token, to: Token): SubgraphPoolBase[] {
-    return this.eventPools.allPools
+    const pools = this.eventPools.allPools
       .filter(p => {
         const fromMain = p.mainTokens.find(
           token => token.address.toLowerCase() === from.address.toLowerCase(),
@@ -606,8 +613,9 @@ export class BalancerV2
           // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
           !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
         );
-      })
-      .slice(0, 10);
+      });
+
+    return pools.slice(0, 10);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {

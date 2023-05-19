@@ -102,7 +102,7 @@ export const Tokens: {
       decimals: 18,
     },
     aUSDT: {
-      address: '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
+      address: '0x3Ed3B47Dd13ECAURA9a98b44e6204A523E766B225811',
       decimals: 6,
     },
     waUSDT: {
@@ -115,6 +115,14 @@ export const Tokens: {
     },
     BAL: {
       address: '0xba100000625a3754423978a60c9317c58a424e3D',
+      decimals: 18,
+    },
+    OHM: {
+      address: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
+      decimals: 9,
+    },
+    AURA: {
+      address: '0xc0c293ce456ff0ed870add98a0828dd4d2903dbf',
       decimals: 18,
     },
     WISE: {
@@ -831,7 +839,9 @@ export const Holders: {
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
-    BAL: '0x7514f531ef3721b8d2ff8d3a841d7c05011eecca',
+    BAL: '0x740a4AEEfb44484853AA96aB12545FC0290805F3',
+    OHM: '0x3D7FEAB5cfab1c7De8ab2b7D5B260E76fD88BC78',
+    AURA: '0xBB19053E031D9B2B364351B21a8ed3568b21399b',
     WISE: '0x25c315e0758beeab30ee048a4e2080e7084b64b3',
     DDIM: '0x229cbd1955fee93ab6e7876c1b17f6d0b859e953',
     DODO: '0x3e19d726ed435afd3a42967551426b3a47c0f5b7',

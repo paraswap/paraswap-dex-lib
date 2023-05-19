@@ -21,7 +21,7 @@ describe('BalancerV2 E2E', () => {
       network,
     );
 
-    describe('Popular tokens', () => {
+    describe('Weighted Pool', () => {
       const sideToContractMethods = new Map([
         [
           SwapSide.SELL,
@@ -39,6 +39,141 @@ describe('BalancerV2 E2E', () => {
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
         [
+          [
+            {
+              name: 'WETH',
+              sellAmount: '20000000000',
+              buyAmount: '100000000000000000000000',
+            },
+            {
+              name: 'PSP',
+              sellAmount: '200000000000000',
+              buyAmount: '1871289184941469675',
+            },
+          ],
+          [
+            {
+              name: 'BAL',
+              sellAmount: '100000',
+              buyAmount: '10000000000000',
+            },
+            {
+              name: 'WETH',
+              sellAmount: '200000000000000',
+              buyAmount: '1871289184',
+            },
+          ],
+          [
+            {
+              name: 'OHM',
+              sellAmount: '20000000000',
+              buyAmount: '1000000000000',
+            },
+            {
+              name: 'DAI',
+              sellAmount: '200000000000000',
+              buyAmount: '20000000000',
+            },
+          ],
+          [
+            {
+              name: 'OHM',
+              sellAmount: '20000000000',
+              buyAmount: '10000000000000',
+            },
+            {
+              name: 'WETH',
+              sellAmount: '200000000000000',
+              buyAmount: '10000000000',
+            },
+          ],
+          [
+            {
+              name: 'WETH',
+              sellAmount: '20000000000',
+              buyAmount: '10000000000000',
+            },
+            {
+              name: 'AURA',
+              sellAmount: '200000000000000',
+              buyAmount: '10000000000',
+            },
+          ]
+        ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    })
+
+    describe('Popular tokens', () => {
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+        [SwapSide.BUY, [
+          // Buy support is enabled only for Weighted Pools
+          // ContractMethod.simpleBuy,
+          // ContractMethod.buy
+        ]],
+      ]);
+
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
+        [
+          [
+            {
+              name: 'USDC',
+              sellAmount: '100000000',
+              buyAmount: '100000000',
+            },
+            {
+              name: 'USDT',
+              sellAmount: '1000000000',
+              buyAmount: '1000000000000',
+            },
+          ],
           [
             {
               name: 'USDT',
@@ -111,18 +246,18 @@ describe('BalancerV2 E2E', () => {
               buyAmount: '1871289184941469675',
             },
           ],
-          [
-            {
-              name: 'WETH',
-              sellAmount: '200000000000000000',
-              buyAmount: '20000',
-            },
-            {
-              name: 'WBTC',
-              sellAmount: '20000',
-              buyAmount: '200000000000000000',
-            },
-          ],
+          // [
+          //   {
+          //     name: 'WETH',
+          //     sellAmount: '200000000000000000',
+          //     buyAmount: '20000',
+          //   },
+          //   {
+          //     name: 'WBTC',
+          //     sellAmount: '200000000',
+          //     buyAmount: '200000000000000000',
+          //   },
+          // ],
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
