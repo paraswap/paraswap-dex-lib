@@ -37,6 +37,7 @@ import DfynV2RouterABI from '../../abi/dfyn-v2/DfynV2Router.abi.json';
 import DfynV2QuoterABI from '../../abi/dfyn-v2/DfynV2Quoter.abi.json';
 import DfynV2MultiABI from '../../abi/dfyn-v2/DfynMulti.abi.json';
 import DfynV2StateMulticallABI from '../../abi/dfyn-v2/DfynV2StateMulticall.abi.json';
+import DfynV2PoolHelper from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json'
 import {
   DFYNV2_EFFICIENCY_FACTOR,
   DFYNV2_FUNCTION_CALL_GAS_COST,
@@ -44,7 +45,7 @@ import {
   DFYNV2_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
-import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { dfynV2Math } from './contract-math/dfyn-v2-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
@@ -90,7 +91,7 @@ export class DfynV2
   logger: Logger;
 
   private dfynMulti: Contract;
-  private stateMultiContract: Contract;
+  private poolHelper: Contract;
 
   private notExistingPoolSetKey: string;
 
@@ -110,9 +111,9 @@ export class DfynV2
       DfynV2MultiABI as AbiItem[],
       this.config.dfynMulticall,
     );
-    this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      DfynV2StateMulticallABI as AbiItem[],
-      this.config.stateMulticall,
+    this.poolHelper = new this.dexHelper.web3Provider.eth.Contract(
+      DfynV2PoolHelper as AbiItem[],
+      this.config.poolHelper,
     );
 
     // To receive revert reasons
@@ -128,7 +129,7 @@ export class DfynV2
   get supportedFees() {
     return this.config.supportedFees;
   }
-
+  
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
@@ -173,6 +174,7 @@ export class DfynV2
     destAddress: Address,
     blockNumber: number,
   ): Promise<DfynV2EventPool | null> {
+    
     let pool = this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)];
 
     if (pool === undefined) {
@@ -206,7 +208,7 @@ export class DfynV2
       pool = new DfynV2EventPool(
         this.dexHelper,
         this.dexKey,
-        this.stateMultiContract,
+        this.poolHelper,
         this.erc20Interface,
         this.config.factory,
         token0,
@@ -282,21 +284,21 @@ export class DfynV2
 
     if (_srcAddress === _destAddress) return [];
 
-    // const pools = (
-    //   await Promise.all(
-    //     this.supportedFees.map(async fee =>
-    //       this.getPool(_srcAddress, _destAddress, fee, blockNumber),
-    //     ),
-    //   )
-    // ).filter(pool => pool);
+    const pools = (
+      await Promise.all(
+        this.supportedFees.map(async fee =>
+          this.getPool(_srcAddress, _destAddress, blockNumber),
+        ),
+      )
+    ).filter(pool => pool);
 
-    // if (pools.length === 0) return [];
+    if (pools.length === 0) return [];
 
-    // return pools.map(pool =>
-    //   this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
-    // );
-    const pools = [await this.getPoolIdentifier(_srcAddress, _destAddress)];
-    return pools;
+    return pools.map(pool =>
+      this.getPoolIdentifier(_srcAddress, _destAddress),
+    );
+    //const pools = [await this.getPoolIdentifier(_srcAddress, _destAddress)];
+    //return pools;
   }
 
   async getPricingFromRpc(
@@ -304,7 +306,7 @@ export class DfynV2
     to: Token,
     amounts: bigint[],
     side: SwapSide,
-    // pools: DfynV2EventPool[],
+    pools: DfynV2EventPool[],
   ): Promise<ExchangePrices<DfynV2Data> | null> {
     // if (pools.length === 0) {
     //   return null;
@@ -453,180 +455,180 @@ export class DfynV2
 
       if (_srcAddress === _destAddress) return null;
 
-      //let selectedPools: DfynV2EventPool[] = [];
+      let selectedPools: DfynV2EventPool[] = [];
 
-      // if (!limitPools) {
-      //   selectedPools = (
-      //     await Promise.all(
-      //       this.supportedFees.map(async fee => {
-      //         const locallyFoundPool =
-      //           this.eventPools[
-      //             this.getPoolIdentifier(_srcAddress, _destAddress)
-      //           ];
-      //         if (locallyFoundPool) return locallyFoundPool;
+      if (!limitPools) {
+        selectedPools = (
+          await Promise.all(
+            this.supportedFees.map(async fee => {
+              const locallyFoundPool =
+                this.eventPools[
+                  this.getPoolIdentifier(_srcAddress, _destAddress)
+                ];
+              if (locallyFoundPool) return locallyFoundPool;
 
-      //         const newlyFetchedPool = await this.getPool(
-      //           _srcAddress,
-      //           _destAddress,
-      //           //fee,
-      //           blockNumber,
-      //         );
-      //         return newlyFetchedPool;
-      //       }),
-      //     )
-      //   ).filter(isTruthy);
-      // } else {
-      //   const pairIdentifierWithoutFee = this.getPoolIdentifier(
-      //     _srcAddress,
-      //     _destAddress
-      //   );
+              const newlyFetchedPool = await this.getPool(
+                _srcAddress,
+                _destAddress,
+                //fee,
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
+      } else {
+        const pairIdentifierWithoutFee = this.getPoolIdentifier(
+          _srcAddress,
+          _destAddress
+        );
 
-      //   const poolIdentifiers = limitPools.filter(identifier =>
-      //     identifier.startsWith(pairIdentifierWithoutFee),
-      //   );
+        const poolIdentifiers = limitPools.filter(identifier =>
+          identifier.startsWith(pairIdentifierWithoutFee),
+        );
 
-      //   selectedPools = (
-      //     await Promise.all(
-      //       poolIdentifiers.map(async identifier => {
-      //         let locallyFoundPool = this.eventPools[identifier];
-      //         if (locallyFoundPool) return locallyFoundPool;
+        selectedPools = (
+          await Promise.all(
+            poolIdentifiers.map(async identifier => {
+              let locallyFoundPool = this.eventPools[identifier];
+              if (locallyFoundPool) return locallyFoundPool;
 
-      //         const [,srcAddress, destAddress] = identifier.split('_');
-      //         const newlyFetchedPool = await this.getPool(
-      //           srcAddress,
-      //           destAddress,
-      //           //BigInt(fee),
-      //           blockNumber,
-      //         );
-      //         return newlyFetchedPool;
-      //       }),
-      //     )
-      //   ).filter(isTruthy);
-      // }
+              const [,srcAddress, destAddress] = identifier.split('_');
+              const newlyFetchedPool = await this.getPool(
+                srcAddress,
+                destAddress,
+                //BigInt(fee),
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
+      }
 
-      // if (selectedPools.length === 0) return null;
+      if (selectedPools.length === 0) return null;
 
-      // const poolsToUse = selectedPools.reduce(
-      //   (acc, pool) => {
-      //     let state = pool.getState(blockNumber);
-      //     if (state === null) {
-      //       this.logger.trace(
-      //         `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
-      //       );
-      //       acc.poolWithoutState.push(pool);
-      //     } else {
-      //       acc.poolWithState.push(pool);
-      //     }
-      //     return acc;
-      //   },
-      //   {
-      //     poolWithState: [] as DfynV2EventPool[],
-      //     poolWithoutState: [] as DfynV2EventPool[],
-      //   },
-      // );
+      const poolsToUse = selectedPools.reduce(
+        (acc, pool) => {
+          let state = pool.getState(blockNumber);
+          if (state === null) {
+            this.logger.trace(
+              `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
+            );
+            acc.poolWithoutState.push(pool);
+          } else {
+            acc.poolWithState.push(pool);
+          }
+          return acc;
+        },
+        {
+          poolWithState: [] as DfynV2EventPool[],
+          poolWithoutState: [] as DfynV2EventPool[],
+        },
+      );
 
       const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
         side,
-        // poolsToUse.poolWithoutState,
+        poolsToUse.poolWithoutState,
       );
 
-      // const states = poolsToUse.poolWithState.map(
-      //   p => p.getState(blockNumber)!,
-      // );
+      const states = poolsToUse.poolWithState.map(
+        p => p.getState(blockNumber)!,
+      );
 
-      //const states:any[] = []
-      // const unitAmount = getBigIntPow(
-      //   side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
-      // );
+      // const states:any[] = []
+      const unitAmount = getBigIntPow(
+        side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
+      );
 
-      // const _amounts = [...amounts.slice(1)];
+      const _amounts = [...amounts.slice(1)];
 
-      // const [token0] = this._sortTokens(_srcAddress, _destAddress);
+      const [token0] = this._sortTokens(_srcAddress, _destAddress);
 
-      // const zeroForOne = token0 === _srcAddress ? true : false;
+      const zeroForOne = token0 === _srcAddress ? true : false;
 
-      // const result = await Promise.all(
-      //   poolsToUse.poolWithState.map(async (pool, i) => {
-      //     const state = states[i];
+      const result = await Promise.all(
+        poolsToUse.poolWithState.map(async (pool, i) => {
+          const state = states[i];
 
-      //     if (state.liquidity <= 0n) {
-      //       this.logger.trace(`pool have 0 liquidity`);
-      //       return null;
-      //     }
+          if (state.liquidity <= 0n) {
+            this.logger.trace(`pool have 0 liquidity`);
+            return null;
+          }
 
-      //     const balanceDestToken =
-      //       _destAddress === pool.token0 ? state.balance0 : state.balance1;
+          const balanceDestToken =
+            _destAddress === pool.token0 ? state.balance0 : state.balance1;
+          
+          const unitResult = this._getOutputs(
+            state,
+            [unitAmount],
+            zeroForOne,
+            side,
+            balanceDestToken,
+          );
+          const pricesResult = this._getOutputs(
+            state,
+            _amounts,
+            zeroForOne,
+            side,
+            balanceDestToken,
+          );
+          
+          if (!unitResult || !pricesResult) {
+            this.logger.debug('Prices or unit is not calculated');
+            return null;
+          }
 
-      //     const unitResult = this._getOutputs(
-      //       state,
-      //       [unitAmount],
-      //       zeroForOne,
-      //       side,
-      //       balanceDestToken,
-      //     );
-      //     const pricesResult = this._getOutputs(
-      //       state,
-      //       _amounts,
-      //       zeroForOne,
-      //       side,
-      //       balanceDestToken,
-      //     );
-
-      //     if (!unitResult || !pricesResult) {
-      //       this.logger.debug('Prices or unit is not calculated');
-      //       return null;
-      //     }
-
-      //     const prices = [0n, ...pricesResult.outputs];
-      //     const gasCost = [
-      //       0,
-      //       ...pricesResult.outputs.map((p, index) => {
-      //         if (p == 0n) {
-      //           return 0;
-      //         } else {
-      //           return (
-      //             DFYNV2_FUNCTION_CALL_GAS_COST +
-      //             pricesResult.tickCounts[index] * DFYNV2_TICK_GAS_COST
-      //           );
-      //         }
-      //       }),
-      //     ];
-      //     return {
-      //       unit: unitResult.outputs[0],
-      //       prices,
-      //       data: {
-      //         path: [
-      //           {
-      //             tokenIn: _srcAddress,
-      //             tokenOut: _destAddress,
-      //           },
-      //         ],
-      //       },
-      //       poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
-      //       exchange: this.dexKey,
-      //       gasCost: gasCost,
-      //       poolAddresses: [pool.poolAddress],
-      //     };
-      //   }),
-      // );
+          const prices = [0n, ...pricesResult.outputs];
+          const gasCost = [
+            0,
+            ...pricesResult.outputs.map((p, index) => {
+              if (p == 0n) {
+                return 0;
+              } else {
+                return (
+                  DFYNV2_FUNCTION_CALL_GAS_COST +
+                  pricesResult.tickCounts[index] * DFYNV2_TICK_GAS_COST
+                );
+              }
+            }),
+          ];
+          return {
+            unit: unitResult.outputs[0],
+            prices,
+            data: {
+              path: [
+                {
+                  tokenIn: _srcAddress,
+                  tokenOut: _destAddress,
+                },
+              ],
+            },
+            poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
+            exchange: this.dexKey,
+            gasCost: gasCost,
+            poolAddresses: [pool.poolAddress],
+          };
+        }),
+      );
+      
       const rpcResults = await rpcResultsPromise;
 
-      // const notNullResult = result.filter(
-      //   res => res !== null,
-      // ) as ExchangePrices<DfynV2Data>;
+      const notNullResult = result.filter(
+        res => res !== null,
+      ) as ExchangePrices<DfynV2Data>;
 
-      // if (rpcResults) {
-      //   rpcResults.forEach(r => {
-      //     if (r) {
-      //       notNullResult.push(r);
-      //     }
-      //   });
-      // }
-
-      return rpcResults;
+      if (rpcResults) {
+        rpcResults.forEach(r => {
+          if (r) {
+            notNullResult.push(r);
+          }
+        });
+      }
+      return notNullResult;
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -846,7 +848,7 @@ export class DfynV2
       quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
       supportedFees: this.config.supportedFees,
-      stateMulticall: this.config.stateMulticall.toLowerCase(),
+      poolHelper: this.config.poolHelper.toLowerCase(),
       chunksCount: this.config.chunksCount,
       dfynMulticall: this.config.dfynMulticall,
     };
@@ -876,8 +878,9 @@ export class DfynV2
     side: SwapSide,
     destTokenBalance: bigint,
   ): OutputResult | null {
-    try {
-      const outputsResult = uniswapV3Math.queryOutputs(
+    try { 
+      
+      const outputsResult = dfynV2Math.queryOutputs(
         state,
         amounts,
         zeroForOne,
