@@ -92,19 +92,19 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[nativeTokenSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[nativeTokenSymbol],
-            //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            //   it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //     await testE2E(
+            //       tokens[nativeTokenSymbol],
+            //       tokens[tokenASymbol],
+            //       holders[nativeTokenSymbol],
+            //       side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+            //       side,
+            //       dexKey,
+            //       contractMethod,
+            //       network,
+            //       provider,
+            //     );
+            //   });
             // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
             //   await testE2E(
             //     tokens[tokenASymbol],
@@ -149,9 +149,9 @@ describe('Airswap E2E', () => {
       const tokenBSymbol: string = 'USDC';
       const nativeTokenSymbol: string = 'WMATIC';
 
-      const tokenAAmount: string = '200';
-      const tokenBAmount: string = '200';
-      const nativeTokenAmount = '200';
+      const tokenAAmount: string = '2000';
+      const tokenBAmount: string = '2000';
+      const nativeTokenAmount = '100';
 
       testForNetwork(
         network,

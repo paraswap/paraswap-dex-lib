@@ -17,7 +17,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AirswapData, PriceLevel, QuoteResponse } from './types';
+import { AirswapData, QuoteResponse } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AirSwapConfig, Adapters } from './config';
 import { Interface } from 'ethers/lib/utils';
@@ -32,7 +32,7 @@ import {
   makeRFQ,
   priceFromThreshold,
 } from './airswap-tools';
-import { BN_1, getBigNumberPow } from '../../bignumber-constants';
+import { getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
 
 type temporaryMakerAnswer = {
@@ -115,9 +115,9 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
 
     const urls = await getServersUrl(
       normalizedDestToken.address,
-      destToken.address,
-      AirSwapConfig.AirSwap[this.network].makerRegistry,
+      normalizedSrcToken.address,
       this.localProvider,
+      this.network,
     );
     const makerAndPairs: Record<string, temporaryMakerAnswer> = urls.reduce(
       (dict, url) => {
@@ -182,12 +182,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     }));
     const levels = await Promise.all(levelRequests);
     const prices = levels.map(({ maker, levels }) => {
-      const divider = getBigNumberPow(
-        side === SwapSide.SELL
-          ? normalizedSrcToken.decimals
-          : normalizedDestToken.decimals,
-      );
-
       const amountsRaw = amounts.map(
         amount => new BigNumber(amount.toString()),
       );
@@ -350,7 +344,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       this.localProvider,
       normalizedSrcToken,
       normalizedDestToken,
-      AirSwapConfig.AirSwap[this.network].makerRegistry,
       this.network,
     );
     let responses = {} as PromiseFulfilledResult<QuoteResponse>[];

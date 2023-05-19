@@ -32,6 +32,7 @@ export const Tokens: {
       decimals: 6,
       addBalance: balancesFn,
       addAllowance: allowedFn,
+      symbol: 'USDC',
     },
     CUSDC: {
       address: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
@@ -56,6 +57,7 @@ export const Tokens: {
       decimals: 6,
       addBalance: balancesFn,
       addAllowance: allowedFn,
+      symbol: 'USDT',
     },
     STETH: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -70,6 +72,7 @@ export const Tokens: {
       decimals: 18,
       addBalance: balanceOfFn,
       addAllowance: allowanceFn,
+      symbol: 'WETH',
     },
     PSP: {
       address: '0xcafe001067cdef266afb7eb5a286dcfd277f3de5',
@@ -550,6 +553,7 @@ export const Tokens: {
     USDT: {
       address: '0x55d398326f99059ff775485246999027b3197955',
       decimals: 18,
+      symbol: 'USDT',
     },
     ETH: {
       address: '0x2170ed0880ac9a755fd29b2688956bd959f933f8',
@@ -562,6 +566,7 @@ export const Tokens: {
     USDC: {
       address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
       decimals: 18,
+      symbol: 'USDC',
     },
     RADIO: {
       address: '0x30807D3b851A31d62415B8bb7Af7dCa59390434a',
