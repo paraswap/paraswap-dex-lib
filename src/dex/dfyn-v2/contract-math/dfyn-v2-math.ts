@@ -8,7 +8,7 @@ import {
 } from '../types';
 import { Ticks } from './Ticks';
 import { TickMath } from './TickMath';
-import { _require } from '../../../utils';
+import { _require, bigIntify } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { BI_MAX_INT } from '../../../bigint-constants';
@@ -244,8 +244,12 @@ function _priceComputationCycles(
     cache.totalAmount = 0n;
   }
 
+
   return [cache, { latestFullCycleCache }];
 }
+
+class Token0Missing extends Error {}
+class Token1Missing extends Error {}
 
 class DfynV2Math {
   queryOutputs(
@@ -378,7 +382,13 @@ class DfynV2Math {
         const [amount0, amount1] =
           zeroForOne === exactInput
             ? [amountSpecified - finalCache.amountIn, finalCache.totalAmount]
-            : [finalCache.totalAmount, amountSpecified - finalCache.amountOut]; 
+            : [finalCache.totalAmount, amountSpecified - finalCache.amountOut];
+         
+        finalCache.amountIn =
+          amount1 - (
+            zeroForOne ? 
+              (cache.token0LimitOrderFee - cache.limitOrderFeeGrowth) : (cache.token1LimitOrderFee - cache.limitOrderFeeGrowth)
+          );
 
         // Update for next amount
         // _updatePriceComputationObjects(state, latestFullCycleState);
@@ -409,9 +419,11 @@ class DfynV2Math {
     poolState: PoolState,
     newSqrtPriceX96: bigint,
     newTick: bigint,
-    newLiquidity: bigint,
+    amount: bigint,
+    //newLiquidity: bigint,
     zeroForOne: boolean,
   ): void {
+    
     // const ticks = poolState.ticks
     //const limitOrderTicks = poolState.limitOrderTicks
     const slot0Start = poolState.slot0;
@@ -423,11 +435,11 @@ class DfynV2Math {
       nextTickToCross: zeroForOne
         ? slot0Start.tick
         : poolState.ticks[Number(slot0Start.tick)].nextTick,
-      amountIn: BI_MAX_INT,
-      amountOut: BI_MAX_INT,
+      amountIn: amount > 0n ? amount: 0n,
+      amountOut: amount < 0n ? -amount: 0n,
       totalAmount: 0n,
       isFirstCycleState: true,
-      exactIn: false,
+      exactIn: amount > 0,
       feeGrowthGlobalA: zeroForOne
         ? poolState.feeGrowthGlobal1
         : poolState.feeGrowthGlobal0,
@@ -447,18 +459,18 @@ class DfynV2Math {
       token1LimitOrderFee: poolState.token1LimitOrderFee,
       currentPrice: poolState.slot0.sqrtPriceX96,
     };
-
-    const diff = BigInt(Date.now() / 1000)-(poolState.lastObservation);
+    //console.log(Math.floor(Date.now() / 1000))
+    
+    const diff = bigIntify(Math.floor(Date.now() / 1000))-(poolState.lastObservation);
     if (diff > 0n && cache.currentLiquidity > 0n) {
-      poolState.lastObservation = BigInt(Date.now() / 1000);
+      poolState.lastObservation = bigIntify(Math.floor(Date.now() / 1000));
       poolState.secondsGrowthGlobal = poolState.secondsGrowthGlobal + (diff*(BigInt((2**128))/(cache.currentLiquidity)));
     }
 
 
-    while (
-      slot0Start.tick !== newTick &&
-      slot0Start.sqrtPriceX96 !== newSqrtPriceX96
-    ) {
+    while (cache.exactIn ? cache.amountIn != 0n : cache.amountOut != 0n)
+    {
+
       const swapLocal: StructHelper['SwapCacheLocal'] = {
         nextTickPrice: TickMath.getSqrtRatioAtTick(cache.nextTickToCross),
         cross: false,
@@ -466,10 +478,9 @@ class DfynV2Math {
         amountIn: 0n,
         amountOut: 0n,
       };
-
       _require(
-        cache.nextTickToCross === TickMath.MIN_TICK ||
-          cache.nextTickToCross === TickMath.MAX_TICK,
+        cache.nextTickToCross != TickMath.MIN_TICK ||
+          cache.nextTickToCross != TickMath.MAX_TICK,
         'E4',
       );
 
@@ -583,6 +594,7 @@ class DfynV2Math {
             zeroForOne,
             poolState.tickSpacing,
           );
+          slot0Start.tick = cache.nextTickToCross;
         } else {
           cache.nearestPriceCached = zeroForOne
             ? cache.currentPrice + 1n
@@ -592,21 +604,160 @@ class DfynV2Math {
     }
     poolState.slot0.sqrtPriceX96 = cache.currentPrice;
     poolState.nearestPrice = cache.nearestPriceCached;
-    //const newNearestTick = zeroForOne ? cache.nextTickToCross : poolState.ticks[Number(cache.nextTickToCross)].previousTick;
+    const newNearestTick = zeroForOne ? cache.nextTickToCross : poolState.ticks[Number(cache.nextTickToCross)].previousTick;
     poolState.token0LimitOrderFee = cache.token0LimitOrderFee;
     poolState.token1LimitOrderFee = cache.token1LimitOrderFee;
-    if (slot0Start.tick !== newTick) {
-      poolState.slot0.tick = newTick;
-      // poolState.liquidity = BigInt(cache.currentLiquidity);
+    if (poolState.slot0.tick != newNearestTick) {
+      poolState.slot0.tick = newNearestTick;
+      poolState.liquidity = cache.currentLiquidity;
     }
-    if (poolState.liquidity !== newLiquidity) {
-      poolState.liquidity = newLiquidity;
-    }
-  }
+    let amountOut = 0n;
+    let amountIn = 0n;
 
+    [amountOut,amountIn] = cache.exactIn ? [cache.totalAmount, amount] : [(-amount),cache.totalAmount];
+
+    cache.amountIn = 
+      amountIn - (
+        zeroForOne ?
+          (cache.token0LimitOrderFee - cache.limitOrderFeeGrowth) : (cache.token1LimitOrderFee - cache.limitOrderFeeGrowth)
+      );
+    
+    this._updateReserves(poolState,zeroForOne, cache.amountIn, amountOut, cache.limitOrderAmountIn, cache.limitOrderAmountOut);
+  }
+  
+  private _updateReserves(
+    pool: PoolState,
+    zeroForOne: boolean,
+    inAmount: bigint,
+    amountOut: bigint,
+    limitOrderAmountIn: bigint,
+    limitOrderAmountOut: bigint
+  ): void {
+    if (zeroForOne) {
+      const newBalance =  pool.balance0 + (inAmount - limitOrderAmountIn);
+      if (newBalance > pool.vaultBalance0 ) throw new Token0Missing();
+      pool.balance0 = newBalance;
+      pool.balance1 -= amountOut - limitOrderAmountOut;
+  
+      pool.limitOrderReserve0 += limitOrderAmountIn;
+      pool.limitOrderReserve1 -= limitOrderAmountOut;
+    } else {
+      const newBalance =  pool.balance1 + inAmount - limitOrderAmountIn;
+      if (newBalance > pool.vaultBalance1) throw new Token1Missing();
+      pool.balance1 = newBalance;
+      pool.balance0 -= amountOut - limitOrderAmountOut;
+  
+      pool.limitOrderReserve0 -= limitOrderAmountOut;
+      pool.limitOrderReserve1 += limitOrderAmountIn;
+    }
   // private _blockTimestamp(state: DeepReadonly<PoolState>) {
   //   return BigInt.asUintN(32, state.blockTimestamp);
   // }
+  }
+
+//   private _updatePosition(
+//     _owner: string,
+//     lower: bigint,
+//     upper: bigint,
+//     amount: bigint
+// ): [bigint, bigint] {
+//     const [rangeFeeGrowth0, rangeFeeGrowth1] = rangeFeeGrowth(lower, upper);
+//     const [amount0Fees, amount1Fees] = SwapExecuter.updatePosition(
+//         positions,
+//         _owner,
+//         lower,
+//         upper,
+//         amount,
+//         rangeFeeGrowth0,
+//         rangeFeeGrowth1,
+//         MAX_TICK_LIQUIDITY
+//     );
+//     return [amount0Fees, amount1Fees];
+// }
+
+//   function mint(mintParams: MintParams): uint256 {
+//     Validators._ensureTickSpacing(mintParams.lower, mintParams.upper, tickSpacing);
+//     const priceLower: uint256 = TickMath.getSqrtRatioAtTick(mintParams.lower).toNumber();
+//     const priceUpper: uint256 = TickMath.getSqrtRatioAtTick(mintParams.upper).toNumber();
+//     const currentPrice: uint256 = nearestPrice.toNumber();
+
+//     const liquidityMinted: uint256 = DyDxMath.getLiquidityForAmounts(
+//         priceLower,
+//         priceUpper,
+//         currentPrice,
+//         mintParams.amount1Desired.toNumber(),
+//         mintParams.amount0Desired.toNumber()
+//     );
+
+//     if (liquidityMinted > uint128Max) revert new Overflow();
+
+//     _updateSecondsPerLiquidity(liquidity.toNumber());
+
+//     const data: InsertTickParams = {
+//         nearestTick,
+//         currentPrice: currentPrice as uint160,
+//         tickCount,
+//         amount: liquidityMinted as uint128,
+//         tickAtPrice: TickMath.getTickAtSqrtRatio(currentPrice as uint160)
+//     };
+
+//     [nearestTick, tickCount] = Ticks.insert(
+//         ticks,
+//         limitOrderTicks,
+//         feeGrowthGlobal0,
+//         feeGrowthGlobal1,
+//         secondsGrowthGlobal,
+//         mintParams.lowerOld,
+//         mintParams.lower,
+//         mintParams.upperOld,
+//         mintParams.upper,
+//         data
+//     );
+
+//     const [amount0Fees, amount1Fees] = _updatePosition(
+//         msg.sender,
+//         mintParams.lower,
+//         mintParams.upper,
+//         liquidityMinted as int128
+//     );
+//     if (amount0Fees !== 0) {
+//         _transfer(token0, amount0Fees, msg.sender, false);
+//         reserve0 -= amount0Fees as uint128;
+//     }
+//     if (amount1Fees !== 0) {
+//         _transfer(token1, amount1Fees, msg.sender, false);
+//         reserve1 -= amount1Fees as uint128;
+//     }
+
+//     if (priceLower <= currentPrice && currentPrice < priceUpper) {
+//         liquidity += liquidityMinted as uint128;
+//     }
+
+//     const [amount0Actual, amount1Actual] = DyDxMath.getAmountsForLiquidity(
+//         priceLower,
+//         priceUpper,
+//         currentPrice,
+//         liquidityMinted,
+//         true
+//     );
+
+//     IPositionManager(msg.sender).mintCallback(token0, token1, amount0Actual, amount1Actual, mintParams.native);
+
+//     if (amount0Actual !== 0) {
+//         reserve0 += amount0Actual as uint128;
+//         if (reserve0 + limitOrderReserve0 + token0LimitOrderFee > _balance(token0)) revert new Token0Missing();
+//     }
+
+//     if (amount1Actual !== 0) {
+//         reserve1 += amount1Actual as uint128;
+//         if (reserve1 + limitOrderReserve1 + token1LimitOrderFee > _balance(token1)) revert new Token1Missing();
+//     }
+
+//     emit Mint(msg.sender, amount0Actual, amount1Actual, mintParams.lower, mintParams.upper);
+
+//     return liquidityMinted;
+// }
+
 }
 
 export const dfynV2Math = new DfynV2Math();
