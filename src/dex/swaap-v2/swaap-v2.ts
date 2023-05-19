@@ -363,6 +363,12 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
 
+    const tolerance = (
+      options.slippageFactor > BN_1
+        ? options.slippageFactor.minus(BN_1)
+        : BN_1.minus(options.slippageFactor)
+    ).toNumber();
+
     const quote = await this.rateFetcher.getQuote(
       this.network,
       normalizedSrcToken,
@@ -371,7 +377,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       isSell ? 1 : 2,
       options.txOrigin,
       this.augustusAddress,
-      options.slippageFactor,
+      tolerance,
       this.getQuoteReqParams(),
     );
 

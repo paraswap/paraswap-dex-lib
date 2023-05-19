@@ -108,7 +108,7 @@ export class RateFetcher {
     side: SwaapV2OrderType,
     userAddress: Address,
     aggregatorRecipient: Address,
-    tolerance: BigNumber,
+    tolerance: number,
     requestParameters: RequestConfig,
   ): Promise<SwaapV2QuoteResponse> {
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
@@ -128,7 +128,7 @@ export class RateFetcher {
       token_in: srcToken.address,
       token_out: destToken.address,
       amount: srcAmount,
-      tolerance: tolerance.toNumber(),
+      tolerance: tolerance,
     };
 
     try {
