@@ -11,6 +11,7 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import DfynV2QuoterAbi from '../../abi/dfyn-v2/DfynV2Quoter.abi.json';
 import { Address } from '@paraswap/core';
+import { debug } from 'console';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
@@ -19,9 +20,9 @@ const TokenA = Tokens[network][TokenASymbol];
 const TokenBSymbol = 'DFYN';
 const TokenB = Tokens[network][TokenBSymbol];
 
-const amounts = [0n, 1n * BI_POWS[6]];
+const amounts = [0n, 10_0n * BI_POWS[6],20_0n * BI_POWS[6],30_0n * BI_POWS[6]];
 
-const amountsBuy = [0n, 1n * BI_POWS[18]];
+const amountsBuy = [0n, 10_00n * BI_POWS[18]];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'DfynV2';
@@ -67,8 +68,9 @@ async function checkOnChainPricing(
   // fee: bigint,
   _amounts: bigint[],
 ) {
+  
   // Quoter address
-  const exchangeAddress = '0x20928030b08E498445B66Bdf35aB6bD72d9598f2';
+  const exchangeAddress = '0xeE4545ABC69C17Bbc48971E4be98D35626Bd8793';
   const readerIface = quoterIface;
 
   const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
@@ -108,12 +110,13 @@ async function checkOnChainPricing(
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
-
+    
   let firstZeroIndex = prices.slice(1).indexOf(0n);
 
   // we skipped first, so add +1 on result
   firstZeroIndex = firstZeroIndex === -1 ? prices.length : firstZeroIndex;
 
+  
   // Compare only the ones for which we were able to calculate prices
   expect(prices.slice(0, firstZeroIndex)).toEqual(
     expectedPrices.slice(0, firstZeroIndex),
@@ -137,17 +140,18 @@ describe('DfynV2', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    
     const pools = await dfynV2.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
       blockNumber,
     );
-
+    debugger
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
-
+    
     const poolPrices = await dfynV2.getPricesVolume(
       TokenA,
       TokenB,
@@ -156,11 +160,13 @@ describe('DfynV2', function () {
       blockNumber,
       pools,
     );
+    
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
-
+    
+    
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-
+    
     let falseChecksCounter = 0;
     await Promise.all(
       poolPrices!.map(async price => {
@@ -190,7 +196,7 @@ describe('DfynV2', function () {
     console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
-
+    
     const poolPrices = await dfynV2.getPricesVolume(
       TokenA,
       TokenB,
@@ -204,7 +210,7 @@ describe('DfynV2', function () {
     expect(poolPrices).not.toBeNull();
 
     checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
-
+    
     // Check if onchain pricing equals to calculated ones
     let falseChecksCounter = 0;
     await Promise.all(
@@ -225,7 +231,7 @@ describe('DfynV2', function () {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
-  it.skip('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
+  it('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
     const TokenASymbol = 'USDT';
     const TokenA = Tokens[network][TokenASymbol];
 
@@ -335,8 +341,8 @@ describe('DfynV2', function () {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 
-  it.skip('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
-    const TokenASymbol = 'DAI';
+  it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
+    const TokenASymbol = 'USDT';
     const TokenA = Tokens[network][TokenASymbol];
 
     const TokenBSymbol = 'USDC';
@@ -431,7 +437,7 @@ describe('DfynV2', function () {
         //const fee = dfynV2.eventPools[price.poolIdentifier!]!.feeCode;
         const res = await checkOnChainPricing(
           dfynV2,
-          'quoteExactOutputSingle',
+          'quoteExactOutput',
           blockNumber,
           price.prices,
           TokenA.address,
