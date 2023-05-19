@@ -28,6 +28,8 @@ export type PoolState = {
   isValid: boolean;
   balance0: bigint;
   balance1: bigint;
+  vaultBalance0:bigint;
+  vaultBalance1:bigint;
   swapFee:bigint;
   dfynFee: bigint;
   limitOrderFee:bigint;
@@ -73,10 +75,10 @@ interface Tick {
   
 interface InsertTickParams {
   amount: bigint;
-  nearestTick: number;
-  currentPrice: number;
+  nearestTick: bigint;
+  currentPrice: bigint;
   tickCount: bigint;
-  tickAtPrice: number;
+  tickAtPrice: bigint;
 }
   
 interface Position {
