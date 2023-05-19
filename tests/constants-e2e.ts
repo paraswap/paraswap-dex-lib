@@ -715,6 +715,14 @@ export const Tokens: {
       address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
       decimals: 6,
     },
+    OHM: {
+      address: '0xf0cb2dc0db5e6c66b9a70ac27b06b878da017028',
+      decimals: 9,
+    },
+    RDNT: {
+      address: '0x3082cc23568ea640225c2467653db90e9250aaa0',
+      decimals: 18,
+    },
     USDT: {
       address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
       decimals: 6,
@@ -987,7 +995,8 @@ export const Holders: {
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
-    USDC: '0xb19fe973edd97e971534f6c46d96f2b109d3f1de',
+    USDC: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
     USDT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     FRAX: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
@@ -1002,6 +1011,7 @@ export const Holders: {
     aArbUSDC: '0x048BF2F5908e95976CeAD0E47D805b3803E286e2',
     ZYB: '0x3ec0eddcd1e25025077327886a78133589082fb2',
     WBTC: '0xd9d611c6943585bc0e18e51034af8fa28778f7da',
+    RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6'
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
