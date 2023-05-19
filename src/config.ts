@@ -24,6 +24,7 @@ type BaseConfig = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   uniswapV3EventLoggingSampleRate?: number;
+  dfynV2EventLoggingSampleRate?: number;
   rfqConfigs: Record<string, RFQConfig>;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
@@ -55,6 +56,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
     uniswapV3EventLoggingSampleRate: 0,
+    dfynV2EventLoggingSampleRate: 0,
     rfqConfigs: {
       DummyParaSwapPool: {
         maker: process.env.TEST_ADDRESS!,
@@ -182,6 +184,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
     uniswapV3EventLoggingSampleRate: 0,
+    dfynV2EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
   [Network.AVALANCHE]: {
@@ -257,6 +260,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
     uniswapV3EventLoggingSampleRate: 0,
+    dfynV2EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
   [Network.OPTIMISM]: {
@@ -283,6 +287,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
     uniswapV3EventLoggingSampleRate: 0,
+    dfynV2EventLoggingSampleRate: 0,
     rfqConfigs: {},
   },
 };
@@ -319,6 +324,7 @@ export function generateConfig(network: number): Config {
     adapterAddresses: { ...baseConfig.adapterAddresses },
     uniswapV2ExchangeRouterAddress: baseConfig.uniswapV2ExchangeRouterAddress,
     uniswapV3EventLoggingSampleRate: baseConfig.uniswapV3EventLoggingSampleRate,
+    dfynV2EventLoggingSampleRate: baseConfig.dfynV2EventLoggingSampleRate,
     rfqConfigs: baseConfig.rfqConfigs,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
