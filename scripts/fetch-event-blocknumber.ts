@@ -7,7 +7,7 @@ import { Network } from '../src/constants';
 import { Address } from '../src/types';
 import { generateConfig } from '../src/config';
 // TODO: Import correct ABI
-import ABI from '../src/abi/erc20.json';
+import ABI from '../src/abi/dfyn-v2/DfynV2Pool.abi.json';
 
 // This is a helper script to fetch blockNumbers where a certain
 // event was released by a certain contract
@@ -40,12 +40,13 @@ async function getBlockNumbersForEvents(
 }
 
 // TODO: Set your values here
-const network = Network.AVALANCHE;
-const eventNames = ['Transfer'];
-const address = '0xc0253c3cc6aa5ab407b5795a04c28fb063273894';
+const network = Network.POLYGON;
+const eventNames = ['Swap','Burn','Mint','Collect','CreateLimitOrder','ClaimLimitOrder','CancelLimitOrder','SwapFeeUpdated'];
+const address = '0x1a7c22A039dFbD3950F3B5B22aeA098DD25f8e94';
 const provider = new StaticJsonRpcProvider(
   generateConfig(network).privateHttpProvider,
   network,
 );
 
-getBlockNumbersForEvents(address, ABI, eventNames, 0, 2000, provider);
+getBlockNumbersForEvents(address, ABI, eventNames, 100000, 10000, provider);
+//,'Burn','Mint','Collect','CreateLimitOrder','ClaimLimitOrder','CancelLimitOrder','SwapFeeUpdated'
