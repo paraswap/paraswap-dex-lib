@@ -101,6 +101,21 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 2,
     },
   },
+  Ramses: {
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/sullivany/ramses-v2',
+      factoryAddress: '0xAAA20D08e59F6561f242b08513D36266C5A29415',
+      router: '0xAAA87963EFeB6f7E0a2711F397663105Acb1805e',
+      initCode:
+        '0x46eb5e16f609c262a2c57fe68565ee8672558699d0968e1e84dc4dc024b331fb',
+      // fees can be modified
+      stableFee: 1,
+      volatileFee: 20,
+      poolGasCost: 180 * 1000,
+      feeCode: 2,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -121,5 +136,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.AVALANCHE]: {
     [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // ramses
   },
 };
