@@ -37,6 +37,7 @@ import {
   decodeLimitOrderTicks,decodeGetTickState
 } from './utils';
 import { dfynV2Math } from './contract-math/dfyn-v2-math';
+import { debug } from 'console';
 
 export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -63,6 +64,8 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
    DecodedGetSecondsGrowthAndLastObservation  | 
    bigint
   >[];
+
+  private _vaultBalanceCallData?: MultiCallParams<bigint>[];
 
   private _ticksStateCallData?: MultiCallParams<DecodedGetTickState>[];
 
@@ -289,12 +292,36 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
           target: this.poolAddress,
           callData: this.poolIface.encodeFunctionData('nearestPrice'),
           decodeFunction: uint160ToBigInt,
-        },
-
+        }
       ];
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;
+  }
+
+  private _getVaultBalanceCallData( vaultAddress : Address ) { 
+
+    if (!this._vaultBalanceCallData) {
+      const callData: MultiCallParams<bigint>[] = 
+      [
+        {
+          target: this.token0,
+          callData: this.erc20Interface.encodeFunctionData('balanceOf',
+            [vaultAddress]
+          ),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.token1,
+          callData: this.erc20Interface.encodeFunctionData('balanceOf',
+            [vaultAddress]
+          ),
+          decodeFunction: uint256ToBigInt,
+        }
+      ];
+      this._vaultBalanceCallData = callData;
+    }
+    return this._vaultBalanceCallData;
   }
 
   private _getTicksStateCallData( ticksCount: number ) { 
@@ -355,9 +382,9 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
 
-
+    
     const callData = this._getStateRequestCallData();
-
+    
     const [
       reserves,
       resImmutables,
@@ -423,7 +450,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       resLimitOrderReserve1.returnData,
       resToken0LimitOrderFee.returnData,
       resToken1LimitOrderFee.returnData,
-      resNearestPrice.returnData
+      resNearestPrice.returnData,
     ] as [
       DecodedGetReserves,
       DecodedGetImmutables,
@@ -432,6 +459,17 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       bigint, bigint, bigint , bigint , bigint, bigint, bigint, bigint, bigint, bigint, bigint
     ]
     
+    const vaultBalanceCallData = await this._getVaultBalanceCallData(immutables._vault)
+    const [resVaultBalance0,resVaultBalance1] = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+      false,
+      vaultBalanceCallData,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
+    )
+
+    const [vaultBalance0,vaultBalance1] = [resVaultBalance0.returnData,resVaultBalance1.returnData] as [bigint,bigint]
+
     const getTicksStateCallData = await this._getTicksStateCallData(Number(tickCount))
     
     const resTickStatecallData = await this.dexHelper.multiWrapper.tryAggregate<DecodedGetTickState>
@@ -488,7 +526,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
         value: (resLimitOrderTicks[0].returnData.limitOrderTicks[i] as any) as LimitOrderTickInfoMappingsWithBigNumber
       });
     }
-        
+    
     const ticks = {};
     const limitOrderTicks = {};
 
@@ -506,6 +544,8 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
         tick: bigIntify(priceAndNearestTicks._nearestTick),
       },
       nearestPrice: nearestPrice,
+      vaultBalance0: vaultBalance0,
+      vaultBalance1: vaultBalance1,
       secondsGrowthGlobal: bigIntify(secondsGrowthAndLastObservation._secondsGrowthGlobal),
       lastObservation: bigIntify(secondsGrowthAndLastObservation._lastObservation), // block.timestamp
       ticks,
@@ -529,14 +569,16 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     log: Log,
     blockHeader: BlockHeader,
   ) {
-    const newSqrtPriceX96 = bigIntify(event.args.sqrtPriceX96);
-    const amount0 = bigIntify(event.args.amount0);
-    const amount1 = bigIntify(event.args.amount1);
+    
+    const newSqrtPriceX96 = bigIntify(event.args.price);
+    const amountIn = bigIntify(event.args.amountIn);
+    const amountOut = bigIntify(event.args.amountOut);
     const newTick = bigIntify(event.args.tick);
-    const newLiquidity = bigIntify(event.args.liquidity);
+    const zeroForOne = event.args.zeroForOne;
+    //const newLiquidity = bigIntify(event.args.);
     pool.lastObservation = bigIntify(blockHeader.timestamp);
 
-    if (amount0 <= 0n && amount1 <= 0n) {
+    if (amountIn <= 0n && amountOut <= 0n) {
       this.logger.error(
         `${this.parentName}: amount0 <= 0n && amount1 <= 0n for ` +
           `${this.poolAddress} and ${blockHeader.number}. Check why it happened`,
@@ -544,43 +586,45 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       pool.isValid = false;
       return pool;
     } else {
-      const zeroForOne = amount0 > 0n;
-
+    
       dfynV2Math.swapFromEvent(
         pool,
         newSqrtPriceX96,
         newTick,
-        newLiquidity,
+        zeroForOne ? amountIn : -amountOut,
+        //newLiquidity,
         zeroForOne,
       );
 
-      if (zeroForOne) {
-        if (amount1 < 0n) {
-          pool.balance1 -= BigInt.asUintN(256, -amount1);
-        } else {
-          this.logger.error(
-            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
-          );
-          pool.isValid = false;
-        }
-        // This is not correct fully, because pool may get more tokens then it needs, but
-        // it is not accounted in internal state, it should be good enough
-        pool.balance0 += BigInt.asUintN(256, amount0);
-      } else {
-        if (amount0 < 0n) {
-          pool.balance0 -= BigInt.asUintN(256, -amount0);
-        } else {
-          this.logger.error(
-            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
-          );
-          pool.isValid = false;
-        }
-        pool.balance1 += BigInt.asUintN(256, amount1);
-      }
-
+      // if (zeroForOne) {
+      //   if (amountOut < 0n) {
+      //     pool.balance1 -= BigInt.asUintN(256, -amountOut);
+      //   } else {
+      //     this.logger.error(
+      //       `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amountOut}`,
+      //     );
+      //     pool.isValid = false;
+      //   }
+      //   // This is not correct fully, because pool may get more tokens then it needs, but
+      //   // it is not accounted in internal state, it should be good enough
+      //   pool.balance0 += BigInt.asUintN(256, amountIn);
+      // } else {
+      //   if (amountIn < 0n) {
+      //     pool.balance0 -= BigInt.asUintN(256, -amountIn);
+      //   } else {
+      //     this.logger.error(
+      //       `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amountIn}`,
+      //     );
+      //     pool.isValid = false;
+      //   }
+      //   pool.balance1 += BigInt.asUintN(256, amountOut);
+      // }
+      
       return pool;
     }
   }
+
+
 
   // handleBurnEvent(
   //   event: any,
