@@ -108,7 +108,6 @@ describe('BobSwap EventPool Polygon', function () {
           blockNumber,
           `${dexKey}_${config.bobSwapAddress}`,
           dexHelper.provider,
-          logger,
         );
       });
     });
