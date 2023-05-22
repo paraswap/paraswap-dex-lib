@@ -1,4 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import {
   AdapterExchangeParam,
   Address,
@@ -14,24 +14,26 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BobSwapData, CollateralInfo, PoolState } from './types';
+import { BobSwapData, DexParams, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, BobSwapConfig } from './config';
-import { BobSwapEventPool } from './bob-swap-pool';
+import {
+  AbstractBobSwapEventPool,
+  BobSwapEventPool,
+  BobSwapEventPoolPolygon,
+} from './bob-swap-pool';
 import { Interface } from '@ethersproject/abi';
 import BobVaultABI from '../../abi/bob-swap/BobVault.json';
 import { ERC20EventSubscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber';
 import { BobSwapMath } from './bob-swap-math';
-import { assert } from 'ts-essentials';
 import { BOB_VAULT_GAS_COST } from './constants';
-import { DexParams } from './types';
 
 export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
   static readonly bobSwapIface = new Interface(BobVaultABI);
 
   readonly math: BobSwapMath;
 
-  protected eventPools: BobSwapEventPool;
+  protected eventPools: AbstractBobSwapEventPool;
 
   protected bobTokenTracker: ERC20EventSubscriber;
 
@@ -44,7 +46,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
   readonly bobSwap: Address;
 
   readonly bobToken: Address;
-  tokenDecimals: Record<Address, number> = {};
+  tokenDecimals: Record<string, number> = {};
 
   totalUSDBalance: number = 0;
 
@@ -61,10 +63,6 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     readonly config = BobSwapConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
-    // protected bobSwapAddress: Address,
-    //     protected bobTokenAddress: Address,
-    //     protected tokensAddresses: Array<Token>,
-    // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
     this.bobSwap = this.config.bobSwapAddress.toLowerCase();
@@ -78,19 +76,32 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     );
 
     this.config.tokens.forEach(token => {
-      this.tokenDecimals[token.address] = token.decimals;
+      this.tokenDecimals[token.address.toLowerCase()] = token.decimals;
     });
 
-    this.eventPools = new BobSwapEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-      this.bobSwap,
-      this.bobToken,
-      this.config.tokens,
-      this.erc20Interface,
-    );
+    if (network == Network.POLYGON) {
+      this.eventPools = new BobSwapEventPoolPolygon(
+        dexKey,
+        network,
+        dexHelper,
+        this.logger,
+        this.bobSwap,
+        this.bobToken,
+        this.config.tokens,
+        this.erc20Interface,
+      );
+    } else {
+      this.eventPools = new BobSwapEventPool(
+        dexKey,
+        network,
+        dexHelper,
+        this.logger,
+        this.bobSwap,
+        this.bobToken,
+        this.config.tokens,
+        this.erc20Interface,
+      );
+    }
   }
 
   private _toLowerForAllConfigAddresses() {
@@ -129,7 +140,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
   }
 
   private _isCollateral(token: string, state: PoolState): boolean {
-    return token in state.collaterals;
+    return token.toLowerCase() in state.collaterals;
   }
 
   private _isBobOrCollateral(token: string, state: PoolState): boolean {
@@ -159,7 +170,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
   }
 
   private _updateDecimals(token: Token) {
-    this.tokenDecimals[token.address] = token.decimals;
+    this.tokenDecimals[token.address.toLowerCase()] = token.decimals;
   }
 
   // Returns list of pool identifiers that can be used
@@ -381,7 +392,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
         this.dexHelper.getTokenUSDPrice(
           {
             address: tokenAddress,
-            decimals: await this._fetchDecimals(tokenAddress),
+            decimals: await this._fetchDecimals(tokenAddress.toLowerCase()),
           },
           tokenInfo.balance,
         ),
@@ -410,7 +421,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
       return [];
     }
 
-    const connectorTokens = await Promise.all(
+    const allTokens = await Promise.all(
       Object.entries(state.collaterals).map(
         async ([tokenAddress, tokenInfo]) => {
           return {
@@ -420,11 +431,16 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
         },
       ),
     );
+
+    const connectorTokens = Object.values(allTokens).filter(
+      t => t.address !== tokenAddress,
+    );
+
     return [
       {
         exchange: this.dexKey,
         address: this.bobSwap,
-        connectorTokens,
+        connectorTokens: connectorTokens,
         liquidityUSD: this.totalUSDBalance,
       },
     ];

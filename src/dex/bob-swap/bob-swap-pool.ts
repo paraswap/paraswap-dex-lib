@@ -10,13 +10,22 @@ import {
 import { bigIntify, catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { CollateralInfo, DecodedCollateralState, PoolState } from './types';
+import {
+  CollateralInfo,
+  DecodedCollateralState,
+  DecodedCollateralStateLegacy,
+  PoolState,
+} from './types';
 import BobVaultABI from '../../abi/bob-swap/BobVault.json';
 import { Address } from '@paraswap/core';
-import { decodeCollateralStateResult } from './utils';
-import { MultiCallParams } from '../../lib/multi-wrapper';
+import {
+  decodeCollateralStateLegacyResult,
+  decodeCollateralStateResult,
+} from './utils';
+import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
+import { BytesLike } from 'ethers';
 
-export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
+export abstract class AbstractBobSwapEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
@@ -88,14 +97,6 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
     return null;
   }
 
-  /**
-   * The function checks if state is correct, because
-   * after AddCollateral event we don't know the exact
-   * decimals of added token. In that case we have to
-   * fetch it on-chain, but it is very rare situation.
-   * Also, we will support very small amount of tokens,
-   * so we can generate state from scratch every time.
-   */
   async fetchAndUpdateState(
     blockNumber?: number,
   ): Promise<DeepReadonly<PoolState>> {
@@ -120,45 +121,48 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
    * more correct.
    * @param blockNumber - Blocknumber for which the state should
    * should be generated
+   * @param decodeStateResult - Decode state function
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(
+  async _generateState<T>(
     blockNumber: number | 'latest',
+    decodeStateResult: (result: MultiResult<BytesLike> | BytesLike) => T,
   ): Promise<DeepReadonly<PoolState>> {
-    let multicallInputs: MultiCallParams<DecodedCollateralState>[] =
-      this.tokens.map(token => {
-        return {
-          target: this.bobSwapAddress.toString(),
-          callData: this.bobSwapIface.encodeFunctionData('collateral', [
-            token.address,
-          ]),
-          decodeFunction: decodeCollateralStateResult,
-        };
-      });
+    let multicallInputs: MultiCallParams<T>[] = this.tokens.map(token => {
+      return {
+        target: this.bobSwapAddress.toString(),
+        callData: this.bobSwapIface.encodeFunctionData('collateral', [
+          token.address,
+        ]),
+        decodeFunction: decodeStateResult,
+      };
+    });
 
-    const res =
-      await this.dexHelper.multiWrapper.tryAggregate<DecodedCollateralState>(
-        false,
-        multicallInputs,
-        blockNumber,
-        this.dexHelper.multiWrapper.defaultBatchSize,
-        false,
-      );
+    const res = await this.dexHelper.multiWrapper.tryAggregate(
+      false,
+      multicallInputs,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
+    );
 
     let i: number = 0;
 
     let collaterals: Record<Address, CollateralInfo> = {};
 
     for (let token of this.tokens) {
-      let collateralInfo = res[i++].returnData as DecodedCollateralState;
+      let collateralInfo = res[i++].returnData as T;
       collaterals[token.address.toLowerCase()] = {
-        inFee: collateralInfo.inFee.toBigInt(),
-        outFee: collateralInfo.outFee.toBigInt(),
-        price: collateralInfo.price.toBigInt(),
-        balance: collateralInfo.balance.toBigInt(),
-        maxBalance: BigInt(
-          '115792089237316195423570985008687907853269984665640564039457584007913129639935',
-        ),
+        inFee: (collateralInfo as any).inFee.toBigInt(),
+        outFee: (collateralInfo as any).outFee.toBigInt(),
+        price: (collateralInfo as any).price.toBigInt(),
+        balance: (collateralInfo as any).balance.toBigInt(),
+        maxBalance:
+          'maxBalance' in collateralInfo
+            ? (collateralInfo as any).maxBalance.toBigInt()
+            : BigInt(
+                '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+              ),
       };
     }
 
@@ -174,7 +178,6 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
   ): PoolState | null {
     const token = event.args.token.toLowerCase();
     const price = bigIntify(event.args.price);
-
     state.collaterals[token].price = price;
 
     return state;
@@ -257,5 +260,27 @@ export class BobSwapEventPool extends StatefulEventSubscriber<PoolState> {
     state.collaterals[outToken].balance -= buyAmount;
 
     return state;
+  }
+}
+
+export class BobSwapEventPoolPolygon extends AbstractBobSwapEventPool {
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<DeepReadonly<PoolState>> {
+    return await this._generateState<DecodedCollateralStateLegacy>(
+      blockNumber,
+      decodeCollateralStateLegacyResult,
+    );
+  }
+}
+
+export class BobSwapEventPool extends AbstractBobSwapEventPool {
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<DeepReadonly<PoolState>> {
+    return await this._generateState<DecodedCollateralState>(
+      blockNumber,
+      decodeCollateralStateResult,
+    );
   }
 }

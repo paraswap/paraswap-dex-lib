@@ -105,6 +105,12 @@
         "internalType": "uint96",
         "name": "dust",
         "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxInvested",
+        "type": "uint256"
       }
     ],
     "name": "EnableYield",
@@ -320,6 +326,25 @@
         "type": "address"
       },
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxBalance",
+        "type": "uint256"
+      }
+    ],
+    "name": "UpdateMaxBalance",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
         "indexed": true,
         "internalType": "address",
         "name": "yield",
@@ -336,6 +361,12 @@
         "internalType": "uint96",
         "name": "dust",
         "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxInvested",
+        "type": "uint256"
       }
     ],
     "name": "UpdateYield",
@@ -409,6 +440,16 @@
             "internalType": "uint64",
             "name": "outFee",
             "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxBalance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInvested",
+            "type": "uint256"
           }
         ],
         "internalType": "struct BobVault.Collateral",
@@ -502,6 +543,16 @@
         "internalType": "uint64",
         "name": "outFee",
         "type": "uint64"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxInvested",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -541,6 +592,11 @@
         "internalType": "uint96",
         "name": "_dust",
         "type": "uint96"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxInvested",
+        "type": "uint256"
       }
     ],
     "name": "enableCollateralYield",
@@ -814,6 +870,24 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxBalance",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxBalance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_yieldAdmin",
         "type": "address"
       }
@@ -917,6 +991,11 @@
         "internalType": "uint96",
         "name": "_dust",
         "type": "uint96"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxInvested",
+        "type": "uint256"
       }
     ],
     "name": "updateCollateralYield",

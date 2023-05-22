@@ -20,6 +20,8 @@ export class BobSwapMath {
     fromAmounts: bigint[],
     bobBalance: bigint,
   ): bigint[] | null {
+    fromToken = fromToken.toLowerCase();
+    toToken = toToken.toLowerCase();
     try {
       if (toToken.toLowerCase() === this.bobToken.toLowerCase()) {
         return this.buyBob(fromToken, fromAmounts, bobBalance);

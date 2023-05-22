@@ -38,7 +38,6 @@ function getReaderCalldata(
   funcName: string,
   srcTokenAddress: Address,
   destTokenAddress: Address,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
@@ -153,76 +152,133 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('BobSwap', function () {
+function testNetwork(network: number) {
   const dexKey = 'BobSwap';
   let blockNumber: number;
   let bobSwap: BobSwap;
 
+  const dexHelper = new DummyDexHelper(network);
+
+  const tokens = Tokens[network];
+
+  const bobTokenSymbol = 'BOB';
+  const srcTokenSymbol = 'USDC';
+  const destTokenSymbol = 'USDT';
+
+  const amountsForSell = [
+    0n,
+    1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  ];
+
+  beforeAll(async () => {
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    bobSwap = new BobSwap(network, dexKey, dexHelper);
+    if (bobSwap.initializePricing) {
+      await bobSwap.initializePricing(blockNumber);
+    }
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL BOB -> Token', async function () {
+    await testPricingOnNetwork(
+      bobSwap,
+      network,
+      dexKey,
+      blockNumber,
+      bobTokenSymbol,
+      destTokenSymbol,
+      SwapSide.SELL,
+      amountsForSell,
+      'getAmountOut',
+    );
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL Token -> BOB', async function () {
+    await testPricingOnNetwork(
+      bobSwap,
+      network,
+      dexKey,
+      blockNumber,
+      destTokenSymbol,
+      bobTokenSymbol,
+      SwapSide.SELL,
+      amountsForSell,
+      'getAmountOut',
+    );
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL Token -> Token', async function () {
+    let amounts = amountsForSell;
+    if (network == Network.POLYGON) {
+      // Currently we have only dust as USDT amount and getAmountOut reverts, if the swap won't be successful
+      amounts = amounts.map(amount => {
+        return amount / BigInt(100);
+      });
+    }
+
+    await testPricingOnNetwork(
+      bobSwap,
+      network,
+      dexKey,
+      blockNumber,
+      srcTokenSymbol,
+      destTokenSymbol,
+      SwapSide.SELL,
+      amounts,
+      'getAmountOut',
+    );
+  });
+
+  it('getTopPoolsForToken', async function () {
+    // We have to check without calling initializePricing, because
+    // pool-tracker is not calling that function
+    const newBobSwap = new BobSwap(network, dexKey, dexHelper);
+    if (newBobSwap.updatePoolState) {
+      await newBobSwap.updatePoolState();
+    }
+    const poolLiquidity = await newBobSwap.getTopPoolsForToken(
+      tokens[srcTokenSymbol].address,
+      10,
+    );
+    console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+    if (!newBobSwap.hasConstantPriceLargeAmounts) {
+      checkPoolsLiquidity(
+        poolLiquidity,
+        Tokens[network][srcTokenSymbol].address,
+        dexKey,
+      );
+    }
+  });
+}
+
+describe('BobSwap', function () {
   describe('Polygon', () => {
     const network = Network.POLYGON;
-    const dexHelper = new DummyDexHelper(network);
-
-    const tokens = Tokens[network];
-
-    const srcTokenSymbol = 'BOB';
-    const destTokenSymbol = 'USDC';
-
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
-
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      bobSwap = new BobSwap(network, dexKey, dexHelper);
-      if (bobSwap.initializePricing) {
-        await bobSwap.initializePricing(blockNumber);
-      }
-    });
-
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        bobSwap,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        'getAmountOut', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newBobSwap = new BobSwap(network, dexKey, dexHelper);
-      if (newBobSwap.updatePoolState) {
-        await newBobSwap.updatePoolState();
-      }
-      const poolLiquidity = await newBobSwap.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newBobSwap.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
-    });
+    testNetwork(network);
+  });
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    testNetwork(network);
+  });
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+    testNetwork(network);
+  });
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    testNetwork(network);
+  });
+  describe('Binance Smart Chain', () => {
+    const network = Network.BSC;
+    testNetwork(network);
   });
 });
