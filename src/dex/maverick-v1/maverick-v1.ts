@@ -269,7 +269,8 @@ export class MaverickV1
                   // I think it is reasonable estimation assuming "kind" gas cost is almost everytime around 1
                   return (
                     MAV_V1_BASE_GAS_COST +
-                    (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) * t
+                    (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) *
+                      (t === 0 ? 1 : t)
                   );
                 },
               );

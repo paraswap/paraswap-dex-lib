@@ -1,5 +1,5 @@
-export const UNISWAPV3_TICK_GAS_COST = 12_000; // Ceiled
-export const UNISWAPV3_TICK_BASE_OVERHEAD = 87_000;
+export const UNISWAPV3_TICK_GAS_COST = 24_000; // Ceiled
+export const UNISWAPV3_TICK_BASE_OVERHEAD = 75_000;
 export const UNISWAPV3_POOL_SEARCH_OVERHEAD = 10_000;
 
 // This is used for price calculation. If out of scope, return 0n

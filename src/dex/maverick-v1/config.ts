@@ -3,8 +3,8 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
 export const MAV_V1_BASE_GAS_COST = 5_574 + 2_258 + 4_472 + 90_000;
-export const MAV_V1_TICK_GAS_COST = 18_960;
-export const MAV_V1_KIND_GAS_COST = 9_890;
+export const MAV_V1_TICK_GAS_COST = 25_000;
+export const MAV_V1_KIND_GAS_COST = 15_000;
 
 export const MaverickV1Config: DexConfigMap<DexParams> = {
   MaverickV1: {
