@@ -42,7 +42,8 @@ import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
-  UNISWAPV3_FUNCTION_CALL_GAS_COST,
+  UNISWAPV3_POOL_SEARCH_OVERHEAD,
+  UNISWAPV3_TICK_BASE_OVERHEAD,
   UNISWAPV3_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
@@ -615,7 +616,8 @@ export class UniswapV3
                 return 0;
               } else {
                 return (
-                  UNISWAPV3_FUNCTION_CALL_GAS_COST +
+                  UNISWAPV3_POOL_SEARCH_OVERHEAD +
+                  UNISWAPV3_TICK_BASE_OVERHEAD +
                   pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
                 );
               }
