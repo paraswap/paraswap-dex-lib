@@ -355,7 +355,8 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
         side
           ? this.scaleToAmount(output[0], from)
           : this.scaleToAmount(output[1], to),
-        tickDiff,
+        // Tick calculation must be started from 1 to account at least one tick
+        tickDiff + 1,
       ];
     } catch (e) {
       this.logger.debug(

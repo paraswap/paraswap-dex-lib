@@ -132,6 +132,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       side === SwapSide.SELL ? quoteAmount : amount
     ).toString();
 
+    // eslint-disable-next-line no-console
+    console.log(
+      `Estimated gas cost for ${this.dexKey}: ${
+        Array.isArray(finalPrice.gasCost)
+          ? finalPrice.gasCost[finalPrice.gasCost.length - 1]
+          : finalPrice.gasCost
+      }`,
+    );
+
     const unoptimizedRate = {
       blockNumber,
       network: this.network,
