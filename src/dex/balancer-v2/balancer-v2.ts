@@ -1113,6 +1113,8 @@ export class BalancerV2
       assets,
       funds,
       limits,
+      srcAmount,
+      destAmount,
       expectedAmount,
       _deadline,
       feePercent,

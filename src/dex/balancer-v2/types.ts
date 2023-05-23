@@ -123,6 +123,8 @@ export type BalancerV2DirectParam = [
   assets: Address[],
   funds: BalancerFunds,
   limits: NumberAsString[],
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
   expectedAmount: NumberAsString,
   deadline: NumberAsString,
   feePercent: NumberAsString,
