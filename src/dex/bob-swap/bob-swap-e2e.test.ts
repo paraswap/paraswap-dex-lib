@@ -64,7 +64,6 @@ function testForNetwork(
   const holders = Holders[network];
   const bobTokenSymbol = 'BOB';
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [
       SwapSide.SELL,
@@ -74,7 +73,6 @@ function testForNetwork(
         // ContractMethod.megaSwap,
       ],
     ],
-    // TODO: If buy is not supported remove the buy contract methods
     // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 

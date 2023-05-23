@@ -93,7 +93,10 @@ export const BobSwapConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
   // This is an example to copy
   [Network.POLYGON]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.OPTIMISM]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.ARBITRUM]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.BSC]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
 };

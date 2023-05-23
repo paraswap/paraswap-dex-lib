@@ -38,7 +38,6 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
   protected bobTokenTracker: ERC20EventSubscriber;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
@@ -59,7 +58,7 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
     readonly config = BobSwapConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
@@ -292,7 +291,6 @@ export class BobSwap extends SimpleExchange implements IDex<BobSwapData> {
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<BobSwapData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
