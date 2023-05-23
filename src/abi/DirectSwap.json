@@ -18,6 +18,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "_paraswapReferralShare",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "_paraswapSlippageShare",
         "type": "uint256"
       },
@@ -338,6 +343,16 @@
           },
           {
             "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
             "name": "expectedAmount",
             "type": "uint256"
           },
@@ -464,6 +479,16 @@
             "internalType": "int256[]",
             "name": "limits",
             "type": "int256[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
           },
           {
             "internalType": "uint256",
@@ -918,6 +943,19 @@
   {
     "inputs": [],
     "name": "maxFeePercent",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paraswapReferralShare",
     "outputs": [
       {
         "internalType": "uint256",
