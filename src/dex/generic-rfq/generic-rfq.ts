@@ -12,7 +12,6 @@ import { IDexHelper } from '../../dex-helper';
 import { ParaSwapLimitOrders } from '../paraswap-limit-orders/paraswap-limit-orders';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { ParaSwapLimitOrdersData } from '../paraswap-limit-orders/types';
-import { ONE_ORDER_GASCOST } from '../paraswap-limit-orders/constant';
 import { RateFetcher } from './rate-fetcher';
 import {
   PriceAndAmountBigNumber,
@@ -21,6 +20,7 @@ import {
 } from './types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { ONE_ORDER_GASCOST } from './constants';
 
 export const OVERORDER_BPS = 100;
 export const BPS_MAX_VALUE = 10000n;
