@@ -163,7 +163,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       rates,
     );
 
-    const unit = unitResults[0];
+    const unit = unitResults[0] !== 0n ? unitResults[0] : undefined;
     const outputs = this.calcOutsFromAmounts(
       _amountsInBN,
       getBigNumberPow(outDecimals),
@@ -175,7 +175,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         exchange: this.dexKey,
         poolIdentifier: expectedIdentifier,
         prices: outputs,
-        unit,
+        ...(unit && { unit }),
         data: {
           orderInfos: null,
         },

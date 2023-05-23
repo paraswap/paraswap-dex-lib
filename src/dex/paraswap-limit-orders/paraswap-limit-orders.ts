@@ -150,7 +150,7 @@ export class ParaSwapLimitOrders
 
       // Unit is volume is not increasing, so better to request separate
       let {
-        prices: [unit],
+        prices: [unitResult],
       } = this._getPrices([unitVolume], orderBook, isSell);
 
       const { prices, gasCosts, maxOrdersCount } = this._getPrices(
@@ -159,14 +159,11 @@ export class ParaSwapLimitOrders
         isSell,
       );
 
-      if (unit === 0n) {
-        // If we didn't fulfill unit amount, scale up latest amount till unit
-        unit = (unitVolume * prices.slice(-1)[0]) / amounts.slice(-1)[0];
-      }
+      const unit = unitResult !== 0n ? unitResult : undefined;
 
       return [
         {
-          unit,
+          ...(unit && { unit }),
           prices,
           data: {
             orderInfos: null,

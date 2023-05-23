@@ -553,7 +553,7 @@ export class Camelot
         isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
       );
 
-      const unit = isSell
+      const unitResult = isSell
         ? await this.getSellPricePath(unitVolumeWithFee, [pairParam])
         : await this.getBuyPricePath(unitVolumeWithFee, [pairParam]);
 
@@ -570,7 +570,7 @@ export class Camelot
           );
 
       const [unitOutWithFee, ...outputsWithFee] = applyTransferFee(
-        [unit, ...prices],
+        [unitResult, ...prices],
         side,
         // This part is confusing, because we treat differently SELL and BUY fees
         // If Buy, we should apply transfer fee on srcToken on top of dexFee applied earlier
@@ -579,11 +579,12 @@ export class Camelot
         isSell ? this.DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
       );
 
+      const unit = unitOutWithFee !== 0n ? unitOutWithFee : undefined;
       // As camelot just has one pool per token pair
       return [
         {
           prices: outputsWithFee,
-          unit: unitOutWithFee,
+          ...(unit && { unit }),
           data: {
             router:
               side === SwapSide.SELL

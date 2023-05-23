@@ -587,7 +587,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
         if (!state) {
           state = await this.eventPools[poolAddress].generateState(blockNumber);
         }
-        let [unit, prices] = this.getPricesPool(
+        let [unitResult, prices] = this.getPricesPool(
           from.address,
           to.address,
           unitVolume,
@@ -597,22 +597,10 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
           currentTimestamp,
         );
 
-        if (unit === 0n) {
-          // If we didn't fulfill unit amount, scale up the latest amount with a positive price till unit
-          let i = prices.length - 1;
-          let largestAmountPositivePrice = prices.slice(i)[0];
-          while (largestAmountPositivePrice == 0n && i > 0) {
-            --i;
-            largestAmountPositivePrice = prices.slice(i)[0];
-          }
-          if (largestAmountPositivePrice > 0n) {
-            unit =
-              (unitVolume * largestAmountPositivePrice) / amounts.slice(i)[0];
-          }
-        }
+        const unit = unitResult !== 0n ? unitResult : undefined;
         return {
           prices,
-          unit,
+          ...(unit && { unit }),
           data: {
             pool: poolAddress,
           },

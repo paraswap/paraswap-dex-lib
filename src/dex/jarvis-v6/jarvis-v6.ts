@@ -179,7 +179,7 @@ export class JarvisV6
     const swapFunction = getJarvisSwapFunction(srcToken, eventPool.poolConfig);
     const systemMaxVars = await this.getSystemMaxVars(poolAddress, blockNumber);
 
-    const [unit, ...prices] = this.computePrices(
+    const [unitResult, ...prices] = this.computePrices(
       [unitVolume, ...amounts],
       swapFunction,
       systemMaxVars,
@@ -187,10 +187,11 @@ export class JarvisV6
       poolState,
     );
 
+    const unit = unitResult !== 0n ? unitResult : undefined;
     return [
       {
         prices,
-        unit,
+        ...(unit && { unit }),
         data: {
           swapFunction,
           poolAddress,

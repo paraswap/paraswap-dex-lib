@@ -389,7 +389,7 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
                 pool.setState(state, blockNumber);
               }
               if (state.params.paused) return null;
-              const [unit, ...prices] = pool.computePrices(
+              const [unitResult, ...prices] = pool.computePrices(
                 {
                   address: srcTokenAddress,
                   decimals: srcToken.decimals,
@@ -401,9 +401,10 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
                 [getBigIntPow(srcToken.decimals), ...amounts],
                 state,
               );
+              const unit = unitResult !== 0n ? unitResult : undefined;
               const ret: PoolPrices<PlatypusData> = {
                 prices,
-                unit,
+                ...(unit && { unit }),
                 data: {
                   pool: poolAddress,
                 },

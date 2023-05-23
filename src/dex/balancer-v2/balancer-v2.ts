@@ -787,8 +787,9 @@ export class BalancerV2
             return null;
           }
 
+          const unit = resOut.unit !== 0n ? resOut.unit : undefined;
           return {
-            unit: resOut.unit,
+            ...(unit && { unit }),
             prices: resOut.prices,
             data: {
               poolId: pool.id,

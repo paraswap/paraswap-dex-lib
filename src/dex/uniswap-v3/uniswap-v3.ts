@@ -426,7 +426,7 @@ export class UniswapV3
     let i = 0;
     const result = pools.map(pool => {
       const _rates = _amounts.map(() => decode(i++));
-      const unit: bigint = _rates[0];
+      const unitResult: bigint = _rates[0];
 
       const prices = interpolate(
         _amounts.slice(1),
@@ -435,9 +435,10 @@ export class UniswapV3
         side,
       );
 
+      const unit = unitResult !== 0n ? unitResult : undefined;
       return {
         prices,
-        unit,
+        ...(unit && { unit }),
         data: {
           path: [
             {

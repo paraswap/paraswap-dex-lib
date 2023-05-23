@@ -247,10 +247,10 @@ export class Nerve
           }
         }
 
-        const unit = _prices[0];
+        const unit = _prices[0] !== 0n ? _prices[0] : undefined;
 
         result.push({
-          unit,
+          ...(unit && { unit }),
           prices: [0n, ..._prices.slice(1)],
           data: {
             i: srcIndex.toString(),

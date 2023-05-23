@@ -217,7 +217,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
 
       if (!_prices) return null;
 
-      const unit = _prices[0];
+      const unit = _prices[0] !== 0n ? _prices[0] : undefined;
 
       let gasCost = WOO_FI_V2_GAS_COST.baseToBase;
       if (_srcAddress === this.config.quoteToken.address) {
@@ -228,7 +228,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
 
       return [
         {
-          unit,
+          ...(unit && { unit }),
           prices: [0n, ..._prices.slice(1)],
           data: {},
           poolIdentifier: expectedIdentifier,

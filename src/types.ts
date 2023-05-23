@@ -188,7 +188,7 @@ export type ExchangePrices<T> = PoolPrices<T>[];
 
 export type PoolPrices<T> = {
   prices: bigint[];
-  unit: bigint;
+  unit?: bigint;
   data: T;
   poolIdentifier?: string;
   exchange: string;

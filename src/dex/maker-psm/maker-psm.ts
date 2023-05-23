@@ -348,7 +348,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
         ? poolState.tout
         : poolState.tin;
 
-    const [unit, ...prices] = this.computePrices(
+    const [unitResult, ...prices] = this.computePrices(
       isSrcDai,
       eventPool.to18ConversionFactor,
       side,
@@ -356,10 +356,11 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       poolState,
     );
 
+    const unit = unitResult !== 0n ? unitResult : undefined;
     return [
       {
         prices,
-        unit,
+        ...(unit && { unit }),
         data: {
           toll: toll.toString(),
           psmAddress: eventPool.poolConfig.psmAddress,
