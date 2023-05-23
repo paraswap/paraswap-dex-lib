@@ -65,7 +65,7 @@ describe('BalancerV2 E2E', () => {
           ],
           [
             {
-              name: ' ',
+              name: 'OHM',
               sellAmount: '20000000000',
               buyAmount: '1000000000000',
             },
