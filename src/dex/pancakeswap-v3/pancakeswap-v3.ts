@@ -29,7 +29,7 @@ import {
   UniswapV3Data,
   UniswapV3Functions,
   UniswapV3Param,
-} from './types';
+} from '../uniswap-v3/types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
@@ -95,9 +95,8 @@ export class PancakeswapV3
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(PancakeswapV3RouterABI),
     readonly quoterIface = new Interface(PancakeswapV3QuoterABI),
-    protected config = PancakeswapV3Config[dexKey][network],
-  ) // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
-  {
+    protected config = PancakeswapV3Config[dexKey][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
+  ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
     this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
