@@ -16,21 +16,6 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { Address } from '@paraswap/core';
 import BobVaultABI from '../../abi/bob-swap/BobVault.json';
 
-/*
-  README
-  ======
-
-  This test script adds tests for BobSwap general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover BobSwap specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
