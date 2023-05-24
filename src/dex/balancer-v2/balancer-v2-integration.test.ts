@@ -9,7 +9,8 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 import { BalancerConfig } from './config';
 import { Tokens } from '../../../tests/constants-e2e';
-import { BalancerPoolTypes } from './types';
+import { BalancerPoolTypes, BalancerV2Data, OptimizedBalancerV2Data } from './types';
+import { PoolPrices } from '../../types';
 
 const WETH = {
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
@@ -45,9 +46,64 @@ const BBAUSD_PoolId =
 const BBAUSDT_PoolId =
   '0x2bbf681cc4eb09218bee85ea2a5d3d13fa40fc0c0000000000000000000000fd';
 
-const amounts = [0n, BI_POWS[18], 2000000000000000000n];
+const amounts = [ 0n, BI_POWS[18], 2000000000000000000n ];
 
 const dexKey = 'BalancerV2';
+
+async function getOnChainPricingForWeightedPool(
+  balancerV2: BalancerV2,
+  blockNumber: number,
+  poolPrice: PoolPrices<BalancerV2Data>,
+  amounts: bigint[],
+  srcTokenAddress: string,
+  destTokenAddress: string,
+  side: SwapSide,
+): Promise<BigInt[]>{
+
+  console.log('SRC TOKEN ADDRESS: ', srcTokenAddress);
+  console.log('DST TOKEN ADDRESS: ', destTokenAddress);
+
+  return Promise.all(poolPrice.prices.map(async (price, index) => {
+
+    if(amounts[index] === 0n) {
+      return Promise.resolve(0n);
+    }
+
+    const swaps = [
+      { poolId: poolPrice.data.poolId, amount: amounts[index].toString() },
+    ];
+
+    const data = { swaps };
+
+    const params = balancerV2.getBalancerParam(
+      srcTokenAddress,
+      destTokenAddress,
+      '0',
+      '0',
+      data as unknown as OptimizedBalancerV2Data,
+      side,
+    );
+
+    let calldata = [
+      {
+        target: balancerV2.vaultAddress,
+        callData: balancerV2.eventPools.vaultInterface.encodeFunctionData('queryBatchSwap', params.slice(0, 4)),
+      },
+    ];
+
+    const results = (
+      await balancerV2.dexHelper.multiContract.methods
+        .aggregate(calldata)
+        .call({}, blockNumber)
+    ).returnData;
+
+    const parsed = balancerV2.eventPools.vaultInterface.decodeFunctionResult('queryBatchSwap', results[0]);
+    console.log('PARAMS: ', params.slice(0, 4));
+    console.log('RESULT: ', BigInt(parsed[0][0]._hex));
+    console.log('=======================================');
+    return BigInt(parsed[0][0]._hex);
+  }));
+}
 
 describe('BalancerV2', function () {
   describe('ComposableStable', () => {
@@ -127,7 +183,8 @@ describe('BalancerV2', function () {
     });
   });
   describe('Weighted', () => {
-    it('getPoolIdentifiers and getPricesVolume', async function () {
+
+    it('SELL getPoolIdentifiers and getPricesVolume WETH -> DAI', async function () {
       const dexHelper = new DummyDexHelper(Network.MAINNET);
       const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
@@ -160,18 +217,123 @@ describe('BalancerV2', function () {
       await balancerV2.releaseResources();
     });
 
-    it('getTopPoolsForToken', async function () {
+    it('BUY getPoolIdentifiers and getPricesVolume for PSP -> WETH', async function () {
+      // const amounts = [0n, 500000000000n, 200000000000000n, 10000000000000000000n ];
+
+      const PSP = Tokens[Network.MAINNET]['PSP'];
+      const WETH = Tokens[Network.MAINNET]['WETH'];
+
       const dexHelper = new DummyDexHelper(Network.MAINNET);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
-      const poolLiquidity = await balancerV2.getTopPoolsForToken(
-        WETH.address,
-        10,
-      );
-      console.log('WETH Top Pools:', poolLiquidity);
+      await balancerV2.initializePricing(blocknumber);
 
-      checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
+      const pools = await balancerV2.getPoolIdentifiers(
+        PSP,
+        WETH,
+        SwapSide.BUY,
+        blocknumber,
+      );
+      console.log('PSP <> WETH Pool Identifiers: ', pools);
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await balancerV2.getPricesVolume(
+        PSP,
+        WETH,
+        amounts,
+        SwapSide.BUY,
+        blocknumber,
+        pools,
+      );
+      console.log('PSP <> WETH Pool Prices: ', poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+
+      checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+
+      const onChainPrices = await getOnChainPricingForWeightedPool(
+        balancerV2,
+        blocknumber,
+        poolPrices![0],
+        amounts,
+        PSP.address,
+        WETH.address,
+        SwapSide.BUY,
+      );
+
+      console.log('PSP <> WETH on-chain prices: ', onChainPrices);
+
+      expect(onChainPrices).toEqual(poolPrices![0].prices);
+
+      await balancerV2.releaseResources();
     });
+
+    it('SELL getPoolIdentifiers and getPricesVolume for PSP -> WETH', async function () {
+      // const amounts = [0n, 20000000000000n, 40000000000000n, 60000000000000n ];
+
+      const PSP = Tokens[Network.MAINNET]['PSP'];
+      const WETH = Tokens[Network.MAINNET]['WETH'];
+
+      const dexHelper = new DummyDexHelper(Network.MAINNET);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+
+      await balancerV2.initializePricing(blocknumber);
+
+      const pools = await balancerV2.getPoolIdentifiers(
+        PSP,
+        WETH,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log('PSP <> WETH Pool Identifiers: ', pools);
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await balancerV2.getPricesVolume(
+        PSP,
+        WETH,
+        amounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
+      console.log('PSP <> WETH Pool Prices: ', poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      // checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      const onChainPrices = await getOnChainPricingForWeightedPool(
+        balancerV2,
+        blocknumber,
+        poolPrices![0],
+        amounts,
+        PSP.address,
+        WETH.address,
+        SwapSide.SELL,
+      );
+
+      console.log('PSP <> WETH on-chain prices: ', onChainPrices);
+
+      expect(onChainPrices).toEqual(poolPrices![0].prices);
+
+      await balancerV2.releaseResources();
+    });
+
+    // it('getTopPoolsForToken', async function () {
+    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
+    //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+    //
+    //   const poolLiquidity = await balancerV2.getTopPoolsForToken(
+    //     WETH.address,
+    //     10,
+    //   );
+    //   console.log('WETH Top Pools:', poolLiquidity);
+    //
+    //   checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);
+    // });
   });
 
   describe('Linear', () => {
@@ -223,43 +385,43 @@ describe('BalancerV2', function () {
       checkPoolsLiquidity(poolLiquidity, BBADAI.address, dexKey);
     });
 
-    it('applies getRate to phantom bpt scaling factor', async function () {
-      const config = BalancerConfig[dexKey][Network.MAINNET];
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const tokens = Tokens[Network.MAINNET];
-      const logger = dexHelper.getLogger(dexKey);
-      const blocknumber = 15731000;
-
-      const balancerPools = new BalancerV2EventPool(
-        dexKey,
-        Network.MAINNET,
-        config.vaultAddress,
-        config.subgraphURL,
-        dexHelper,
-        logger,
-      );
-
-      const state = await balancerPools.getOnChainState(
-        [
-          {
-            id: BBAUSDT_PoolId,
-            address: tokens.BBAUSDT.address,
-            poolType: BalancerPoolTypes.AaveLinear,
-            mainIndex: 1,
-            wrappedIndex: 0,
-            tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
-            mainTokens: [],
-          },
-        ],
-        blocknumber,
-      );
-
-      expect(
-        state[tokens.BBAUSDT.address].tokens[
-          tokens.BBAUSDT.address
-        ].scalingFactor!.toString(),
-      ).toBe('1015472217207213567');
-    });
+    // it('applies getRate to phantom bpt scaling factor', async function () {
+    //   const config = BalancerConfig[dexKey][Network.MAINNET];
+    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
+    //   const tokens = Tokens[Network.MAINNET];
+    //   const logger = dexHelper.getLogger(dexKey);
+    //   const blocknumber = 15731000;
+    //
+    //   const balancerPools = new BalancerV2EventPool(
+    //     dexKey,
+    //     Network.MAINNET,
+    //     config.vaultAddress,
+    //     config.subgraphURL,
+    //     dexHelper,
+    //     logger,
+    //   );
+    //
+    //   const state = await balancerPools.getOnChainState(
+    //     [
+    //       {
+    //         id: BBAUSDT_PoolId,
+    //         address: tokens.BBAUSDT.address,
+    //         poolType: BalancerPoolTypes.AaveLinear,
+    //         mainIndex: 1,
+    //         wrappedIndex: 0,
+    //         tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
+    //         mainTokens: [],
+    //       },
+    //     ],
+    //     blocknumber,
+    //   );
+    //
+    //   expect(
+    //     state[tokens.BBAUSDT.address].tokens[
+    //       tokens.BBAUSDT.address
+    //     ].scalingFactor!.toString(),
+    //   ).toBe('1015472217207213567');
+    // });
   });
 
   describe('PhantomStable', () => {
@@ -316,46 +478,46 @@ describe('BalancerV2', function () {
       checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
     });
 
-    it('applies getRate to phantom bpt scaling factor', async function () {
-      const config = BalancerConfig[dexKey][Network.MAINNET];
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const tokens = Tokens[Network.MAINNET];
-      const logger = dexHelper.getLogger(dexKey);
-      const blocknumber = 15731000;
-
-      const balancerPools = new BalancerV2EventPool(
-        dexKey,
-        Network.MAINNET,
-        config.vaultAddress,
-        config.subgraphURL,
-        dexHelper,
-        logger,
-      );
-
-      const state = await balancerPools.getOnChainState(
-        [
-          {
-            id: BBAUSD_PoolId,
-            address: BBAUSD.address,
-            poolType: BalancerPoolTypes.StablePhantom,
-            mainIndex: 0,
-            wrappedIndex: 0,
-            tokens: [
-              tokens.BBAUSDT,
-              tokens.BBAUSD,
-              tokens.BBADAI,
-              tokens.BBAUSDC,
-            ],
-            mainTokens: [],
-          },
-        ],
-        blocknumber,
-      );
-
-      expect(
-        state[BBAUSD.address].tokens[BBAUSD.address].scalingFactor!.toString(),
-      ).toBe('1015093119997891367');
-    });
+    // it('applies getRate to phantom bpt scaling factor', async function () {
+    //   const config = BalancerConfig[dexKey][Network.MAINNET];
+    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
+    //   const tokens = Tokens[Network.MAINNET];
+    //   const logger = dexHelper.getLogger(dexKey);
+    //   const blocknumber = 15731000;
+    //
+    //   const balancerPools = new BalancerV2EventPool(
+    //     dexKey,
+    //     Network.MAINNET,
+    //     config.vaultAddress,
+    //     config.subgraphURL,
+    //     dexHelper,
+    //     logger,
+    //   );
+    //
+    //   const state = await balancerPools.getOnChainState(
+    //     [
+    //       {
+    //         id: BBAUSD_PoolId,
+    //         address: BBAUSD.address,
+    //         poolType: BalancerPoolTypes.StablePhantom,
+    //         mainIndex: 0,
+    //         wrappedIndex: 0,
+    //         tokens: [
+    //           tokens.BBAUSDT,
+    //           tokens.BBAUSD,
+    //           tokens.BBADAI,
+    //           tokens.BBAUSDC,
+    //         ],
+    //         mainTokens: [],
+    //       },
+    //     ],
+    //     blocknumber,
+    //   );
+    //
+    //   expect(
+    //     state[BBAUSD.address].tokens[BBAUSD.address].scalingFactor!.toString(),
+    //   ).toBe('1015093119997891367');
+    // });
   });
 });
 

@@ -39,7 +39,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, BalancerConfig } from './config';
 import { getAllPoolsUsedInPaths, isSameAddress, poolGetMainTokens, poolGetPathForTokenInOut, } from './utils';
-import { MIN_USD_LIQUIDITY_TO_FETCH, STABLE_GAS_COST, VARIABLE_GAS_COST_PER_CYCLE, } from './constants';
+import { MIN_USD_LIQUIDITY_TO_FETCH, STABLE_GAS_COST, VARIABLE_GAS_COST_PER_CYCLE } from './constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -144,7 +144,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   constructor(
     parentName: string,
     protected network: number,
-    protected vaultAddress: Address,
+    public vaultAddress: Address,
     protected subgraphURL: string,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -475,7 +475,7 @@ export class BalancerV2
   extends SimpleExchange
   implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
 {
-  protected eventPools: BalancerV2EventPool;
+  public eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
@@ -494,8 +494,8 @@ export class BalancerV2
   constructor(
     protected network: Network,
     dexKey: string,
-    protected dexHelper: IDexHelper,
-    protected vaultAddress: Address = BalancerConfig[dexKey][network]
+    public dexHelper: IDexHelper,
+    public vaultAddress: Address = BalancerConfig[dexKey][network]
       .vaultAddress,
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
@@ -674,6 +674,7 @@ export class BalancerV2
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
+    console.log('AMOUNTS: ', amounts);
     try {
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
@@ -880,6 +881,8 @@ export class BalancerV2
       side,
     );
 
+    console.log('PARAMS: ', params);
+
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -917,7 +920,7 @@ export class BalancerV2
     };
   }
 
-  private getBalancerParam(
+  public getBalancerParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
@@ -1013,6 +1016,8 @@ export class BalancerV2
       data,
       side,
     );
+
+    console.log('PARAMS: ', params);
 
     const swapData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
