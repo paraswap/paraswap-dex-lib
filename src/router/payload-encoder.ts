@@ -18,9 +18,9 @@ const OneShift15 = 1n << 15n;
 const OneShift16 = 1n << 16n;
 const OneShift248 = 1n << 248n;
 
-// Referrer gets 50% of what ParaSwap takes i.e. 25% of positive slippage
+// Referrer gets 25% of positive slippage
 // Set 16th bit to indicate referral program
-const REFERRER_FEE = 5000n | OneShift14 | OneShift16 | OneShift248;
+const REFERRER_FEE = 2500n | OneShift14 | OneShift16 | OneShift248;
 
 export function encodeFeePercent(
   partnerFeePercent: string,
