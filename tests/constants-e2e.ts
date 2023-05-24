@@ -61,6 +61,22 @@ export const Tokens: {
       address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
       decimals: 18,
     },
+    cbETH: {
+      address: '0xBe9895146f7AF43049ca1c1AE358B0541Ea49704',
+      decimals: 18,
+    },
+    sfrxETH: {
+      address: '0xac3E018457B222d93114458476f3E3416Abbe38F',
+      decimals: 18,
+    },
+    rETH: {
+      address: '0xae78736Cd615f374D3085123A210448E74Fc6393',
+      decimals: 18,
+    },
+    unshETH: {
+      address: '0x0Ae38f7E10A43B5b2fB064B42a2f4514cbA909ef',
+      decimals: 18,
+    },
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
