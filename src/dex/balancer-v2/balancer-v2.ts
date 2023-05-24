@@ -674,7 +674,6 @@ export class BalancerV2
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
-    console.log('AMOUNTS: ', amounts);
     try {
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
@@ -881,8 +880,6 @@ export class BalancerV2
       side,
     );
 
-    console.log('PARAMS: ', params);
-
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -1016,8 +1013,6 @@ export class BalancerV2
       data,
       side,
     );
-
-    console.log('PARAMS: ', params);
 
     const swapData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',

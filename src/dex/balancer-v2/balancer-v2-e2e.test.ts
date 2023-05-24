@@ -27,12 +27,12 @@ describe('BalancerV2 E2E', () => {
           SwapSide.SELL,
           [
             ContractMethod.simpleSwap,
-            // ContractMethod.multiSwap,
-            // ContractMethod.megaSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
           ],
         ],
         [SwapSide.BUY, [
-          // ContractMethod.simpleBuy,
+          ContractMethod.simpleBuy,
           ContractMethod.buy
         ]],
       ]);
@@ -41,76 +41,64 @@ describe('BalancerV2 E2E', () => {
         [
           [
             {
+              name: 'WETH',
+              sellAmount: '20000000000',
+              buyAmount: '100000000000000000000000',
+            },
+            {
               name: 'PSP',
               sellAmount: '200000000000000',
-              buyAmount: '10000001000000',
+              buyAmount: '1871289184941469675',
+            },
+          ],
+          [
+            {
+              name: 'BAL',
+              sellAmount: '100000',
+              buyAmount: '10000000000000',
             },
             {
               name: 'WETH',
-              sellAmount: '10401000000000000000',
-              buyAmount: '100000000000000000000000',
+              sellAmount: '200000000000000',
+              buyAmount: '1871289184',
             },
           ],
-          // [
-          //   {
-          //     name: 'WETH',
-          //     sellAmount: '20000000000',
-          //     buyAmount: '100000000000000000000000',
-          //   },
-          //   {
-          //     name: 'PSP',
-          //     sellAmount: '200000000000000',
-          //     buyAmount: '1871289184941469675',
-          //   },
-          // ],
-          // [
-          //   {
-          //     name: 'BAL',
-          //     sellAmount: '100000',
-          //     buyAmount: '10000000000000',
-          //   },
-          //   {
-          //     name: 'WETH',
-          //     sellAmount: '200000000000000',
-          //     buyAmount: '1871289184',
-          //   },
-          // ],
-          // [
-          //   {
-          //     name: 'OHM',
-          //     sellAmount: '20000000000',
-          //     buyAmount: '1000000000000',
-          //   },
-          //   {
-          //     name: 'DAI',
-          //     sellAmount: '200000000000000',
-          //     buyAmount: '20000000000',
-          //   },
-          // ],
-          // [
-          //   {
-          //     name: 'OHM',
-          //     sellAmount: '20000000000',
-          //     buyAmount: '10000000000000',
-          //   },
-          //   {
-          //     name: 'WETH',
-          //     sellAmount: '200000000000000',
-          //     buyAmount: '10000000000',
-          //   },
-          // ],
-          // [
-          //   {
-          //     name: 'WETH',
-          //     sellAmount: '20000000000',
-          //     buyAmount: '10000000000000',
-          //   },
-          //   {
-          //     name: 'AURA',
-          //     sellAmount: '200000000000000',
-          //     buyAmount: '10000000000',
-          //   },
-          // ]
+          [
+            {
+              name: 'OHM',
+              sellAmount: '20000000000',
+              buyAmount: '1000000000000',
+            },
+            {
+              name: 'DAI',
+              sellAmount: '200000000000000',
+              buyAmount: '20000000000',
+            },
+          ],
+          [
+            {
+              name: 'OHM',
+              sellAmount: '20000000000',
+              buyAmount: '10000000000000',
+            },
+            {
+              name: 'WETH',
+              sellAmount: '200000000000000',
+              buyAmount: '10000000000',
+            },
+          ],
+          [
+            {
+              name: 'WETH',
+              sellAmount: '20000000000',
+              buyAmount: '10000000000000',
+            },
+            {
+              name: 'AURA',
+              sellAmount: '200000000000000',
+              buyAmount: '10000000000',
+            },
+          ]
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
@@ -133,21 +121,21 @@ describe('BalancerV2 E2E', () => {
                     provider,
                   );
                 });
-                // it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                //   await testE2E(
-                //     tokens[pair[1].name],
-                //     tokens[pair[0].name],
-                //     holders[pair[1].name],
-                //     side === SwapSide.SELL
-                //       ? pair[1].sellAmount
-                //       : pair[1].buyAmount,
-                //     side,
-                //     dexKey,
-                //     contractMethod,
-                //     network,
-                //     provider,
-                //   );
-                // });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
               });
             });
           });
