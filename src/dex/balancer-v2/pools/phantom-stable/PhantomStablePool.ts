@@ -1,12 +1,12 @@
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
-import { BasePool } from './balancer-v2-pool';
-import { isSameAddress, decodeThrowError } from './utils';
-import * as StableMath from './StableMath';
-import { SubgraphPoolBase, PoolState, callData, TokenState } from './types';
-import { SwapSide } from '../../constants';
-import MetaStablePoolABI from '../../abi/balancer-v2/meta-stable-pool.json';
-import ComposableStablePoolABI from '../../abi/balancer-v2/ComposableStable.json';
+import { BasePool } from '../balancer-v2-pool';
+import { isSameAddress, decodeThrowError } from '../../utils';
+import * as PhantomStableMath from './PhantomStableMath';
+import { SubgraphPoolBase, PoolState, callData } from '../../types';
+import { SwapSide } from '../../../../constants';
+import MetaStablePoolABI from '../../../../abi/balancer-v2/meta-stable-pool.json';
+import ComposableStablePoolABI from '../../../../abi/balancer-v2/ComposableStable.json';
 import { keyBy } from 'lodash';
 
 enum PairTypes {
@@ -84,6 +84,21 @@ export class PhantomStablePool extends BasePool {
     );
   }
 
+  onBuy(amounts: bigint[], poolPairData: PhantomStablePoolPairData): bigint[] {
+    return this._swapGivenOut(
+      amounts,
+      poolPairData.tokens,
+      poolPairData.balances,
+      poolPairData.indexIn,
+      poolPairData.indexOut,
+      poolPairData.bptIndex,
+      poolPairData.scalingFactors,
+      poolPairData.swapFee,
+      poolPairData.amp,
+      poolPairData.actualSupply,
+    );
+  }
+
   // StablePool's `_onSwapGivenIn` and `_onSwapGivenOut` handlers are meant to process swaps between Pool tokens.
   // Since one of the Pool's tokens is the preminted BPT, we need to a) handle swaps where that tokens is involved
   // separately (as they are effectively single-token joins or exits), and b) remove BPT from the balances array when
@@ -98,7 +113,7 @@ export class PhantomStablePool extends BasePool {
     indexIn: number;
     indexOut: number;
   } {
-    if (bptIndex != -1) {
+    if (bptIndex !== -1) {
       balances.splice(bptIndex, 1);
       if (bptIndex < tokenIndexIn) tokenIndexIn -= 1;
       if (bptIndex < tokenIndexOut) tokenIndexOut -= 1;
@@ -108,6 +123,64 @@ export class PhantomStablePool extends BasePool {
       indexIn: tokenIndexIn,
       indexOut: tokenIndexOut,
     };
+  }
+
+  _swapGivenOut(
+    tokenAmountsOut: bigint[],
+    tokens: string[],
+    balances: bigint[],
+    indexIn: number,
+    indexOut: number,
+    bptIndex: number,
+    scalingFactors: bigint[],
+    swapFeePercentage: bigint,
+    amplificationParameter: bigint,
+    actualSupply: bigint | undefined,
+  ) {
+    // Phantom pools allow trading between token and pool BPT
+    let pairType: PairTypes;
+    if (isSameAddress(tokens[indexIn], tokens[bptIndex])) {
+      pairType = PairTypes.BptToToken;
+    } else if (isSameAddress(tokens[indexOut], tokens[bptIndex])) {
+      pairType = PairTypes.TokenToBpt;
+    } else {
+      pairType = PairTypes.TokenToToken;
+    }
+
+    const balancesUpscaled = this._upscaleArray(balances, scalingFactors);
+    const tokenAmountsOutScaled = tokenAmountsOut.map(a =>
+      this._upscale(a, scalingFactors[indexOut]),
+    );
+
+    let bptSupply: bigint;
+    if (actualSupply) bptSupply = actualSupply;
+    // VirtualBPTSupply must be used for the maths
+    else bptSupply = this.MAX_TOKEN_BALANCE.sub(balances[bptIndex]).toBigInt();
+
+    const droppedBpt = this.removeBPT(
+      balancesUpscaled,
+      indexIn,
+      indexOut,
+      bptIndex,
+    );
+
+    const amountsIn = this._onSwapGivenOut(
+      tokenAmountsOutScaled,
+      droppedBpt.balances,
+      droppedBpt.indexIn,
+      droppedBpt.indexOut,
+      amplificationParameter,
+      bptSupply,
+      pairType,
+    );
+
+    const amountsInDownscaled = amountsIn.map(a =>
+      this._downscaleUp(a, scalingFactors[indexIn]),
+    );
+
+    return amountsInDownscaled.map(a =>
+      this._addFeeAmount(a, swapFeePercentage),
+    );
   }
 
   _swapGivenIn(
@@ -136,6 +209,7 @@ export class PhantomStablePool extends BasePool {
     const tokenAmountsInWithFee = tokenAmountsIn.map(a =>
       this._subtractSwapFeeAmount(a, swapFeePercentage),
     );
+
     const balancesUpscaled = this._upscaleArray(balances, scalingFactors);
     const tokenAmountsInScaled = tokenAmountsInWithFee.map(a =>
       this._upscale(a, scalingFactors[indexIn]),
@@ -169,6 +243,87 @@ export class PhantomStablePool extends BasePool {
     );
   }
 
+  _onSwapGivenOut(
+    tokenAmountsOut: bigint[],
+    balances: bigint[],
+    indexIn: number,
+    indexOut: number,
+    _amplificationParameter: bigint,
+    virtualBptSupply: bigint,
+    pairType: PairTypes,
+  ) {
+    const invariant = PhantomStableMath._calculateInvariant(
+      _amplificationParameter,
+      balances,
+      true,
+    );
+
+    const amountsIn: bigint[] = [];
+
+    if (pairType === PairTypes.TokenToBpt) {
+      tokenAmountsOut.forEach(amountOut => {
+        let amt: bigint;
+        try {
+          const amountsInBigInt = Array(balances.length).fill(0n);
+          amountsInBigInt[indexIn] = amountOut;
+
+          amt = PhantomStableMath._calcTokenInGivenExactBptOut(
+            _amplificationParameter,
+            balances,
+            indexIn,
+            amountOut,
+            virtualBptSupply,
+            0n,
+            invariant,
+          );
+        } catch (err) {
+          amt = 0n;
+        }
+        amountsIn.push(amt);
+      });
+    } else if (pairType === PairTypes.BptToToken) {
+
+      tokenAmountsOut.forEach(amountOut => {
+        let amt: bigint;
+        try {
+          const amountsOutBigInt = Array(balances.length).fill(0n);
+          amountsOutBigInt[indexOut] = amountOut;
+
+          amt = PhantomStableMath._calcBptInGivenExactTokensOut(
+            _amplificationParameter,
+            balances,
+            amountsOutBigInt,
+            virtualBptSupply,
+            0n,
+            invariant,
+          );
+        } catch (err) {
+          amt = 0n;
+        }
+        amountsIn.push(amt);
+      });
+    } else {
+      tokenAmountsOut.forEach(amountOut => {
+        let amt: bigint;
+        try {
+          amt = PhantomStableMath._calcInGivenOut(
+            _amplificationParameter,
+            balances,
+            indexIn,
+            indexOut,
+            amountOut,
+            0n,
+            invariant,
+          );
+        } catch (err) {
+          amt = 0n;
+        }
+        amountsIn.push(amt);
+      });
+    }
+    return amountsIn;
+  }
+
   /*
      Called when a swap with the Pool occurs, where the amount of tokens entering the Pool is known.
      All amounts are upscaled.
@@ -184,7 +339,7 @@ export class PhantomStablePool extends BasePool {
     virtualBptSupply: bigint,
     pairType: PairTypes,
   ): bigint[] {
-    const invariant = StableMath._calculateInvariant(
+    const invariant = PhantomStableMath._calculateInvariant(
       _amplificationParameter,
       balances,
       true,
@@ -199,7 +354,7 @@ export class PhantomStablePool extends BasePool {
           const amountsInBigInt = Array(balances.length).fill(0n);
           amountsInBigInt[indexIn] = amountIn;
 
-          amt = StableMath._calcBptOutGivenExactTokensIn(
+          amt = PhantomStableMath._calcBptOutGivenExactTokensIn(
             _amplificationParameter,
             balances,
             amountsInBigInt,
@@ -215,7 +370,7 @@ export class PhantomStablePool extends BasePool {
       tokenAmountsIn.forEach(amountIn => {
         let amt: bigint;
         try {
-          amt = StableMath._calcTokenOutGivenExactBptIn(
+          amt = PhantomStableMath._calcTokenOutGivenExactBptIn(
             _amplificationParameter,
             balances,
             indexOut,
@@ -232,7 +387,7 @@ export class PhantomStablePool extends BasePool {
       tokenAmountsIn.forEach(amountIn => {
         let amt: bigint;
         try {
-          amt = StableMath._calcOutGivenIn(
+          amt = PhantomStableMath._calcOutGivenIn(
             _amplificationParameter,
             balances,
             indexIn,
