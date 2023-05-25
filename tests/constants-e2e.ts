@@ -558,12 +558,10 @@ export const Tokens: {
       decimals: 6,
     },
     USDT: {
-      address: '0xde3A24028580884448a5397872046a019649b084',
-      decimals: 6,
-    },
-    USDt: {
       address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
       decimals: 6,
+      addAllowance: _allowancesFn,
+      addBalance: balanceOfFn,
     },
     POPS: {
       address: '0x240248628B7B6850352764C5dFa50D1592A033A8',
@@ -572,6 +570,8 @@ export const Tokens: {
     WAVAX: {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
+      addAllowance: allowanceFn,
+      addBalance: balanceOfFn,
     },
     sAVAX: {
       address: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
@@ -945,7 +945,6 @@ export const Holders: {
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
     USDC: '0xbf14db80d9275fb721383a77c00ae180fc40ae98',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
-    USDT: '0x715f3c533Cf264215Ba8BE00838a053284351086',
     WETHe: '0xD291B51f7a1a1F4917D085F2a7731A447E4aF82D',
     POPS: '0x5268c2331658cb0b2858cfa9db27d8f22f5434bc',
     ETH: '0x9852e84b5AA485683d8AeE7B0332e42442763b75',
@@ -960,7 +959,7 @@ export const Holders: {
     TSD: '0x691A89db352B72dDb249bFe16503494eC0D920A4',
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
     aAvaUSDT: '0x50B1Ba98Cf117c9682048D56628B294ebbAA4ec2',
-    USDt: '0x4aeFa39caEAdD662aE31ab0CE7c8C2c9c0a013E8',
+    USDT: '0x4aeFa39caEAdD662aE31ab0CE7c8C2c9c0a013E8',
     aAvaWAVAX: '0x1B18Df70863636AEe4BfBAb6F7C70ceBCA9bA404',
     oldFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     newFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
