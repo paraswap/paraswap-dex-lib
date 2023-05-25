@@ -34,6 +34,7 @@ export type PoolState = {
   };
   swapFee: bigint;
   orderedTokens: string[];
+  rate?: bigint;
   amp?: bigint;
   // Linear Pools
   mainIndex?: number;
