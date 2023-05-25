@@ -50,7 +50,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0x7c7f62e5ba00783f57b39df0530e32c195696a57',
       Adapter04: '0x21ab8aeb35bfc0b3fd84ca810b0aa85938357be2',
-      BuyAdapter: '0x760870be538e7b4E2110e2890473CC17ADB1fdC1',
+      BuyAdapter: '0xb2634b3cbc1e401ab3c2743db44d459c5c9aa662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -186,7 +186,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
       PolygonAdapter02: '0xfb2a3de6c7B8c77b520E3da16021f3D8A4E93168',
-      PolygonBuyAdapter: '0xbE36ddfCDB6D60c1B20FfD73594540E5cc2c7E97',
+      PolygonBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -241,7 +241,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
 
     adapterAddresses: {
       FantomAdapter01: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
-      FantomBuyAdapter: '0xFb8773AA4Fd02e54bbd352061D8Be1911FAa210a',
+      FantomBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
@@ -296,7 +296,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
 
     adapterAddresses: {
       OptimismAdapter01: '0x4669D27A649f5451e0D44C20a2b246431F1B0572',
-      OptimismBuyAdapter: '0x4Ae8ad57912e207f5bFaFbF2e90486e5feab1634',
+      OptimismBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',

@@ -2,6 +2,7 @@ import { getAddress } from '@ethersproject/address';
 import { Interface, Result } from '@ethersproject/abi';
 import { getBigIntPow } from '../../utils';
 import { BI_POWS } from '../../bigint-constants';
+import { SwapSide } from '../../constants';
 
 import {
   BalancerPoolTypes,
@@ -44,6 +45,7 @@ export function poolGetPathForTokenInOut(
   tokenOutAddress: string,
   pool: SubgraphPoolBase,
   poolsMap: SubgraphPoolAddressDictionary,
+  side: SwapSide,
 ): BalancerPathHop[] {
   const tokenIn = findRequiredMainTokenInPool(tokenInAddress, pool);
   const tokenOut = findRequiredMainTokenInPool(tokenOutAddress, pool);
@@ -62,11 +64,13 @@ export function poolGetPathForTokenInOut(
     tokenOut: hop.token,
   }));
 
-  return [
+  const result = [
     ...tokenInHops,
     { pool, tokenIn: tokenIn.poolToken, tokenOut: tokenOut.poolToken },
     ...tokenOutHops,
   ];
+
+  return side === SwapSide.SELL ? result : result.reverse();
 }
 
 export function getAllPoolsUsedInPaths(
@@ -74,6 +78,7 @@ export function getAllPoolsUsedInPaths(
   to: string,
   allowedPools: SubgraphPoolBase[],
   poolAddressMap: SubgraphPoolAddressDictionary,
+  side: SwapSide,
 ) {
   //get all pools from the nested paths
   return uniqBy(
@@ -84,6 +89,7 @@ export function getAllPoolsUsedInPaths(
           to.toLowerCase(),
           pool,
           poolAddressMap,
+          side,
         ).map(hop => hop.pool),
       )
       .flat(),

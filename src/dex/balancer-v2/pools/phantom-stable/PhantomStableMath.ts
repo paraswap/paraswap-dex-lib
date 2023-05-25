@@ -1,5 +1,5 @@
-import { BI_POWS } from '../../bigint-constants';
-import { MathSol } from './balancer-v2-math';
+import { BI_POWS } from '../../../../bigint-constants';
+import { MathSol } from '../../balancer-v2-math';
 
 const AMP_PRECISION = BI_POWS[3];
 
@@ -9,13 +9,13 @@ export function _calculateInvariant(
   roundUp: boolean,
 ): bigint {
   /**********************************************************************************************
-      // invariant                                                                                 //
-      // D = invariant                                                  D^(n+1)                    //
-      // A = amplification coefficient      A  n^n S + D = A D n^n + -----------                   //
-      // S = sum of balances                                             n^n P                     //
-      // P = product of balances                                                                   //
-      // n = number of tokens                                                                      //
-      *********x************************************************************************************/
+   // invariant                                                                                 //
+   // D = invariant                                                  D^(n+1)                    //
+   // A = amplification coefficient      A  n^n S + D = A D n^n + -----------                   //
+   // S = sum of balances                                             n^n P                     //
+   // P = product of balances                                                                   //
+   // n = number of tokens                                                                      //
+   *********x************************************************************************************/
 
   // We support rounding up or down.
 
@@ -81,6 +81,17 @@ export function _calcOutGivenIn(
   amountIn: bigint,
   invariant?: bigint,
 ): bigint {
+  /**************************************************************************************************************
+   // outGivenIn token x for y - polynomial equation to solve                                                   //
+   // ay = amount out to calculate                                                                              //
+   // by = balance token out                                                                                    //
+   // y = by - ay (finalBalanceOut)                                                                             //
+   // D = invariant                                               D                     D^(n+1)                 //
+   // A = amplification coefficient               y^2 + ( S - ----------  - D) * y -  ------------- = 0         //
+   // n = number of tokens                                    (A * n^n)               A * n^2n * P              //
+   // S = sum of final balances but y                                                                           //
+   // P = product of final balances but y                                                                       //
+   **************************************************************************************************************/
   balances = [...balances];
   // Given that we need to have a greater final balance out, the invariant needs to be rounded up
   if (!invariant) invariant = _calculateInvariant(amp, balances, true);
@@ -105,6 +116,19 @@ export function _calcInGivenOut(
   fee: bigint,
   invariant?: bigint,
 ): bigint {
+  /**************************************************************************************************************
+   // inGivenOut token x for y - polynomial equation to solve                                                   //
+   // ax = amount in to calculate                                                                               //
+   // bx = balance token in                                                                                     //
+   // x = bx + ax (finalBalanceIn)                                                                              //
+   // D = invariant                                                D                     D^(n+1)                //
+   // A = amplification coefficient               x^2 + ( S - ----------  - D) * x -  ------------- = 0         //
+   // n = number of tokens                                     (A * n^n)               A * n^2n * P             //
+   // S = sum of final balances but x                                                                           //
+   // P = product of final balances but x                                                                       //
+   **************************************************************************************************************/
+
+  // Given that we need to have a greater final balance in, the invariant needs to be rounded up
   balances = [...balances];
   if (!invariant) invariant = _calculateInvariant(amp, balances, true);
   balances[tokenIndexOut] = MathSol.sub(balances[tokenIndexOut], amountOut);
@@ -120,6 +144,7 @@ export function _calcInGivenOut(
     MathSol.sub(finalBalanceIn, balances[tokenIndexIn]),
     1n,
   );
+
   amountIn = addFee(amountIn, fee);
   return amountIn;
 }
@@ -193,6 +218,61 @@ export function _calcBptOutGivenExactTokensIn(
   } else {
     return 0n;
   }
+}
+
+export function _calcTokenInGivenExactBptOut(
+  amp: bigint,
+  balances: bigint[],
+  tokenIndexIn: number,
+  bptAmountOut: bigint,
+  bptTotalSupply: bigint,
+  fee: bigint,
+  invariant?: bigint,
+): bigint {
+  if (!invariant) invariant = _calculateInvariant(amp, balances, true);
+
+  const newInvariant = MathSol.mulUpFixed(
+    MathSol.divUpFixed(
+      MathSol.add(bptTotalSupply, bptAmountOut),
+      bptTotalSupply,
+    ),
+    invariant,
+  );
+
+  const newBalanceTokenIndex =
+    _getTokenBalanceGivenInvariantAndAllOtherBalances(
+      amp,
+      balances,
+      newInvariant,
+      tokenIndexIn,
+    );
+  const amountInWithoutFee = MathSol.sub(
+    newBalanceTokenIndex,
+    balances[tokenIndexIn],
+  );
+
+  let sumBalances = BigInt(0);
+  for (let i = 0; i < balances.length; i++) {
+    sumBalances = MathSol.add(sumBalances, balances[i]);
+  }
+
+  // We can now compute how much extra balance is being deposited
+  // and used in virtual swaps, and charge swap fees accordingly.
+  const currentWeight = MathSol.divDownFixed(
+    balances[tokenIndexIn],
+    sumBalances,
+  );
+  const taxablePercentage = MathSol.complementFixed(currentWeight);
+  const taxableAmount = MathSol.mulUpFixed(
+    amountInWithoutFee,
+    taxablePercentage,
+  );
+  const nonTaxableAmount = MathSol.sub(amountInWithoutFee, taxableAmount);
+
+  return MathSol.add(
+    nonTaxableAmount,
+    MathSol.divUpFixed(taxableAmount, MathSol.sub(MathSol.ONE, fee)),
+  );
 }
 
 /*
