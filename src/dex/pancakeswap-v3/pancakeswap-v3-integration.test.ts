@@ -13,20 +13,35 @@ import { Address } from '@paraswap/core';
 import { PancakeswapV3 } from './pancakeswap-v3';
 
 const network = Network.MAINNET;
-const TokenASymbol = 'USDC';
-const TokenA = Tokens[network][TokenASymbol];
+const stableASymbol = 'USDC';
+const stableA = Tokens[network][stableASymbol];
 
-const TokenBSymbol = 'USDT';
-const TokenB = Tokens[network][TokenBSymbol];
+const stableBSymbol = 'USDT';
+const stableB = Tokens[network][stableBSymbol];
 
-const amounts = [
+const tokenASymbol = 'WBTC';
+const tokenA = Tokens[network][tokenASymbol];
+
+const tokenBSymbol = 'WETH';
+const tokenB = Tokens[network][tokenBSymbol];
+
+const amounts = [0n, 1n * BI_POWS[8], 2n * BI_POWS[8], 3n * BI_POWS[8]];
+
+const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
+
+const stableAmounts = [
   0n,
   10_000n * BI_POWS[6],
   20_000n * BI_POWS[6],
   30_000n * BI_POWS[6],
 ];
 
-const amountsBuy = [0n, 1n * BI_POWS[6], 2n * BI_POWS[6], 3n * BI_POWS[6]];
+const stableAmountsBuy = [
+  0n,
+  1n * BI_POWS[6],
+  2n * BI_POWS[6],
+  3n * BI_POWS[6],
+];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'PancakeswapV3';
@@ -104,7 +119,6 @@ async function checkOnChainPricing(
   } catch (e) {
     console.log(
       `Can not fetch on-chain pricing for fee ${fee}. It happens for low liquidity pools`,
-      e,
     );
     return false;
   }
@@ -136,24 +150,24 @@ describe('PancakeswapV3', function () {
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const pools = await pancakeswapV3.getPoolIdentifiers(
-      TokenA,
-      TokenB,
+      tokenA,
+      tokenB,
       SwapSide.SELL,
       blockNumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    console.log(`${tokenASymbol} <> ${tokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await pancakeswapV3.getPricesVolume(
-      TokenA,
-      TokenB,
+      tokenA,
+      tokenB,
       amounts,
       SwapSide.SELL,
       blockNumber,
       pools,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    console.log(`${tokenASymbol} <> ${tokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
@@ -167,8 +181,8 @@ describe('PancakeswapV3', function () {
           'quoteExactInputSingle',
           blockNumber,
           price.prices,
-          TokenA.address,
-          TokenB.address,
+          tokenA.address,
+          tokenB.address,
           fee,
           amounts,
         );
@@ -181,24 +195,27 @@ describe('PancakeswapV3', function () {
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
     const pools = await pancakeswapV3.getPoolIdentifiers(
-      TokenA,
-      TokenB,
+      tokenA,
+      tokenB,
       SwapSide.BUY,
       blockNumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    console.log(
+      `${stableASymbol} <> ${stableBSymbol} Pool Identifiers: `,
+      pools,
+    );
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await pancakeswapV3.getPricesVolume(
-      TokenA,
-      TokenB,
+      tokenA,
+      tokenB,
       amountsBuy,
       SwapSide.BUY,
       blockNumber,
       pools,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    console.log(`${tokenASymbol} <> ${tokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
@@ -213,8 +230,8 @@ describe('PancakeswapV3', function () {
           'quoteExactOutputSingle',
           blockNumber,
           price.prices,
-          TokenA.address,
-          TokenB.address,
+          tokenA.address,
+          tokenB.address,
           fee,
           amountsBuy,
         );
@@ -226,29 +243,35 @@ describe('PancakeswapV3', function () {
 
   it('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
     const pools = await pancakeswapV3.getPoolIdentifiers(
-      TokenA,
-      TokenB,
+      stableA,
+      stableB,
       SwapSide.SELL,
       blockNumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    console.log(
+      `${stableASymbol} <> ${stableBSymbol} Pool Identifiers: `,
+      pools,
+    );
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await pancakeswapV3.getPricesVolume(
-      TokenA,
-      TokenB,
-      amounts,
+      stableA,
+      stableB,
+      stableAmounts,
       SwapSide.SELL,
       blockNumber,
       pools,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    console.log(
+      `${stableASymbol} <> ${stableBSymbol} Pool Prices: `,
+      poolPrices,
+    );
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(
       poolPrices!.filter(pp => pp.unit !== 0n),
-      amounts,
+      stableAmounts,
       SwapSide.SELL,
       dexKey,
     );
@@ -263,10 +286,10 @@ describe('PancakeswapV3', function () {
           'quoteExactInputSingle',
           blockNumber,
           price.prices,
-          TokenA.address,
-          TokenB.address,
+          stableA.address,
+          stableB.address,
           fee,
-          amounts,
+          stableAmounts,
         );
         if (res === false) falseChecksCounter++;
       }),
@@ -276,29 +299,35 @@ describe('PancakeswapV3', function () {
 
   it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
     const pools = await pancakeswapV3.getPoolIdentifiers(
-      TokenA,
-      TokenB,
+      stableA,
+      stableB,
       SwapSide.BUY,
       blockNumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    console.log(
+      `${stableASymbol} <> ${stableBSymbol} Pool Identifiers: `,
+      pools,
+    );
 
     expect(pools.length).toBeGreaterThan(0);
 
     const poolPrices = await pancakeswapV3.getPricesVolume(
-      TokenA,
-      TokenB,
-      amountsBuy,
+      stableA,
+      stableB,
+      stableAmountsBuy,
       SwapSide.BUY,
       blockNumber,
       pools,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    console.log(
+      `${stableASymbol} <> ${stableBSymbol} Pool Prices: `,
+      poolPrices,
+    );
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(
       poolPrices!.filter(pp => pp.unit !== 0n),
-      amountsBuy,
+      stableAmountsBuy,
       SwapSide.BUY,
       dexKey,
     );
@@ -313,10 +342,10 @@ describe('PancakeswapV3', function () {
           'quoteExactOutputSingle',
           blockNumber,
           price.prices,
-          TokenA.address,
-          TokenB.address,
+          stableA.address,
+          stableB.address,
           fee,
-          amountsBuy,
+          stableAmountsBuy,
         );
         if (res === false) falseChecksCounter++;
       }),
@@ -329,10 +358,10 @@ describe('PancakeswapV3', function () {
       Tokens[Network.MAINNET]['USDC'].address,
       10,
     );
-    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+    console.log(`${stableASymbol} Top Pools:`, poolLiquidity);
 
     if (!pancakeswapV3.hasConstantPriceLargeAmounts) {
-      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+      checkPoolsLiquidity(poolLiquidity, stableA.address, dexKey);
     }
   });
 });
