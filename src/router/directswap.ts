@@ -4,6 +4,10 @@ import { Address, OptimalRate, TxInfo, Adapters } from '../types';
 import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { assert } from 'ts-essentials';
+import {
+  encodeFeePercent,
+  encodeFeePercentForReferrer,
+} from './payload-encoder';
 
 export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
   // This is just psuedo name as the DirectSwap
@@ -75,10 +79,15 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.side,
       permit,
       uuid,
-      // TODO: CLARIFY BEFORE PUTTING TO PROD IF PARTNER FEE IS EQUAL TO FEE PERCENT IN CONTRACT
-      partnerFeePercent,
+      referrerAddress
+        ? encodeFeePercentForReferrer(priceRoute.side)
+        : encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            priceRoute.side,
+          ),
       deadline,
-      partnerAddress,
+      referrerAddress || partnerAddress,
       beneficiary,
       priceRoute.contractMethod,
     );
