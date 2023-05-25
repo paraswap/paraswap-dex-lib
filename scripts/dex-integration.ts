@@ -116,7 +116,7 @@ function testIntegration(argv: IOptions) {
       process.env.NODE_ENV = 'test';
     }
 
-    require('../node_modules/jest-cli/build/cli').run(
+    require('../node_modules/jest-cli/bin/jest.js').run(
       `src\/dex\/${dexNameParam}\/.+\.test\.ts`,
     );
   }
