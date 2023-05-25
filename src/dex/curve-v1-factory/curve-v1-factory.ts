@@ -927,6 +927,8 @@ export class CurveV1Factory
         ? CurveV1SwapType.EXCHANGE_UNDERLYING
         : CurveV1SwapType.EXCHANGE,
       beneficiary,
+      // For CurveV1 we work as it is, without wrapping and unwrapping
+      false,
       permit,
       uuidToBytes16(uuid),
     ];

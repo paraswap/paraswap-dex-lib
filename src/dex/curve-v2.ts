@@ -72,6 +72,7 @@ export type DirectCurveV2Param = [
   isApproved: boolean,
   swapType: CurveV2SwapType,
   beneficiary: Address,
+  needWrapNative: boolean,
   permit: string,
   uuid: string,
 ];
@@ -237,6 +238,8 @@ export class CurveV2
       isApproved,
       data.swapType,
       beneficiary,
+      // For now we always wrap native. We don't support non native trade
+      true,
       permit,
       uuidToBytes16(uuid),
     ];

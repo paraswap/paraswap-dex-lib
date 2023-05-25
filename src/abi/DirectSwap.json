@@ -616,6 +616,11 @@
             "type": "address"
           },
           {
+            "internalType": "bool",
+            "name": "needWrapNative",
+            "type": "bool"
+          },
+          {
             "internalType": "bytes",
             "name": "permit",
             "type": "bytes"
@@ -709,6 +714,11 @@
             "internalType": "address payable",
             "name": "beneficiary",
             "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "needWrapNative",
+            "type": "bool"
           },
           {
             "internalType": "bytes",

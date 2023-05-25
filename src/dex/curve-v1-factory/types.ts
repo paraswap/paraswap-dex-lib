@@ -203,6 +203,7 @@ export type DirectCurveV1Param = [
   isApproved: boolean,
   swapType: CurveV1SwapType,
   beneficiary: Address,
+  needWrapNative: boolean,
   permit: string,
   uuid: string,
 ];

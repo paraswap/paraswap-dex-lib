@@ -555,6 +555,14 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.directBalancerV2GivenInSwap,
         ],
       ],
+      [
+        SwapSide.BUY,
+        [
+          ContractMethod.directBalancerV2GivenOutSwap,
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
     ]);
 
     const pairs: { name: string; sellAmount: string }[][] = [
