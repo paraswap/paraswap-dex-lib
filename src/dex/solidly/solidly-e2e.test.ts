@@ -2,20 +2,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import { generateConfig } from '../../config';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network, SwapSide } from '../../constants';
+import { getRpcProvider } from '../../web3-provider';
 
 describe('Solidly E2E', () => {
   describe('Fantom', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe(`Solidly`, () => {
       const dexKey = 'Solidly';
@@ -315,10 +311,7 @@ describe('Solidly E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe(`SolidlyV2`, () => {
       const dexKey = 'SolidlyV2';
@@ -395,10 +388,7 @@ describe('Solidly E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('Dystopia', () => {
       const dexKey = 'Dystopia';
@@ -596,10 +586,7 @@ describe('Solidly E2E', () => {
     const network = Network.OPTIMISM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('Velodrome', () => {
       const dexKey = 'Velodrome';
@@ -695,10 +682,7 @@ describe('Solidly E2E', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('Cone', () => {
       const dexKey = 'Cone';
@@ -896,10 +880,7 @@ describe('Solidly E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('SoliSnek', () => {
       const dexKey = 'SoliSnek';

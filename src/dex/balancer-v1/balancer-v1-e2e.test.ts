@@ -8,8 +8,7 @@ import {
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
 
 function testForNetwork(
   network: Network,
@@ -20,10 +19,7 @@ function testForNetwork(
   tokenBAmount: string,
   nativeTokenAmount: string,
 ) {
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
+  const provider = getRpcProvider(network);
   const tokens = Tokens[network];
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];

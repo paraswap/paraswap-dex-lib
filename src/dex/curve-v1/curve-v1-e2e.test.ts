@@ -8,8 +8,8 @@ import {
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
 
 describe('CurveV1 E2E', () => {
   const dexKey = 'CurveV1';
@@ -18,10 +18,7 @@ describe('CurveV1 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokensToTest = [
       [
@@ -137,10 +134,7 @@ describe('CurveV1 E2E', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokensToTest = [
       [
@@ -230,10 +224,7 @@ describe('Acryptos E2E', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'DAI';
@@ -281,10 +272,7 @@ describe('Ellipsis E2E', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'BUSD';
     const tokenBSymbol: string = 'USDC';
@@ -345,10 +333,7 @@ describe('Beltfi E2E', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'BUSD';
     const tokenBSymbol: string = 'USDC';
@@ -396,10 +381,7 @@ describe('Swerve E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'USDC';

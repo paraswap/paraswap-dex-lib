@@ -3,11 +3,10 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import { ParaSwapOrderResponse, ParaSwapOrderBookResponse } from './types';
+import { ContractMethod, Network, SwapSide } from '../../constants';
+import { ParaSwapOrderBookResponse, ParaSwapOrderResponse } from './types';
 import { DummyLimitOrderProvider } from '../../dex-helper/index';
-import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
 
 describe('ParaSwapLimitOrders E2E', () => {
   const dexKey = 'ParaSwapLimitOrders';
@@ -15,10 +14,7 @@ describe('ParaSwapLimitOrders E2E', () => {
   describe('ParaSwapLimitOrders ROPSTEN', () => {
     const network = Network.ROPSTEN;
     const tokens = Tokens[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'DAI';
     const tokenBSymbol: string = 'WETH';

@@ -8,8 +8,9 @@ import {
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
+
 import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
 
 describe('GMX E2E', () => {
   const dexKey = 'GMX';
@@ -18,10 +19,7 @@ describe('GMX E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'WETHe';
     const tokenBSymbol: string = 'USDCe';
@@ -93,10 +91,7 @@ describe('GMX E2E', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'WETH';

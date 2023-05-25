@@ -7,8 +7,7 @@ import {
 } from './index';
 import axios from 'axios';
 import { Address, LoggerConstructor, Token } from '../types';
-// import { Contract } from '@ethersproject/contracts';
-import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import multiABIV2 from '../abi/multi-v2.json';
 import log4js from 'log4js';
 import { getLogger } from '../lib/log4js';
@@ -19,6 +18,7 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
+import { getRpcProvider } from '../web3-provider';
 
 const logger = getLogger('DummyDexHelper');
 
@@ -248,9 +248,9 @@ export class DummyDexHelper implements IDexHelper {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
     this.httpRequest = new DummyRequestWrapper();
-    this.provider = new StaticJsonRpcProvider(
-      rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
+    this.provider = getRpcProvider(
       network,
+      rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
     );
     this.web3Provider = new Web3(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
@@ -281,6 +281,6 @@ export class DummyDexHelper implements IDexHelper {
   }
 
   replaceProviderWithRPC(rpcUrl: string) {
-    this.provider = new StaticJsonRpcProvider(rpcUrl, this.config.data.network);
+    this.provider = getRpcProvider(this.config.data.network, rpcUrl);
   }
 }

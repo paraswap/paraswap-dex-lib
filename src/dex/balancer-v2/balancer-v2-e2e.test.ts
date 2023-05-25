@@ -4,9 +4,8 @@ dotenv.config();
 import { testE2E } from '../../../tests/utils-e2e';
 import { Holders, Tokens } from '../../../tests/constants-e2e';
 import { ContractMethod, Network, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
-import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
 
 jest.setTimeout(50 * 1000);
 
@@ -16,10 +15,7 @@ describe('BalancerV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[Network.MAINNET];
     const holders = Holders[Network.MAINNET];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('Weighted Pool', () => {
       const sideToContractMethods = new Map([
@@ -31,10 +27,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          ContractMethod.simpleBuy,
-          ContractMethod.buy
-        ]],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -98,7 +91,7 @@ describe('BalancerV2 E2E', () => {
               sellAmount: '200000000000000',
               buyAmount: '10000000000',
             },
-          ]
+          ],
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
@@ -153,11 +146,14 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          // Buy support is enabled only for Weighted Pools
-          // ContractMethod.simpleBuy,
-          // ContractMethod.buy
-        ]],
+        [
+          SwapSide.BUY,
+          [
+            // Buy support is enabled only for Weighted Pools
+            // ContractMethod.simpleBuy,
+            // ContractMethod.buy
+          ],
+        ],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -540,10 +536,7 @@ describe('BalancerV2 E2E', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[Network.ARBITRUM];
     const holders = Holders[Network.ARBITRUM];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('Weighted Pool', () => {
       const sideToContractMethods = new Map([
@@ -555,10 +548,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          ContractMethod.simpleBuy,
-          ContractMethod.buy
-        ]],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -721,10 +711,7 @@ describe('BalancerV2 E2E', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('Simpleswap', () => {
       it('FTM -> BOO', async () => {
@@ -842,10 +829,7 @@ describe('BalancerV2 E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[Network.POLYGON];
     const holders = Holders[Network.POLYGON];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     describe('Weighted Pool', () => {
       const sideToContractMethods = new Map([
@@ -857,10 +841,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          ContractMethod.simpleBuy,
-          ContractMethod.buy
-        ]],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -932,17 +913,14 @@ describe('BalancerV2 E2E', () => {
         }),
       );
     });
-  })
+  });
 
   describe('BeetsFi OPTIMISM', () => {
     const dexKey = 'BeetsFi';
     const network = Network.OPTIMISM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
     const BBAUSD_OP = '0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd';
     const BBAUSDMAI_OP = '0x1f131ec1175f023ee1534b16fa8ab237c00e2381';
     const LIDO_SHUFFLE = '0xde45f101250f2ca1c0f8adfc172576d10c12072d';

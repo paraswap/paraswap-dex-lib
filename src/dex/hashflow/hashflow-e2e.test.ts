@@ -3,13 +3,12 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import {
-  Tokens,
   Holders,
   NativeTokenSymbols,
+  Tokens,
 } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import { generateConfig } from '../../config';
+import { ContractMethod, Network, SwapSide } from '../../constants';
+import { getRpcProvider } from '../../web3-provider';
 
 function testForNetwork(
   network: Network,
@@ -21,10 +20,7 @@ function testForNetwork(
   nativeTokenAmount: string,
   excludeNativeTokenTests: boolean = false,
 ) {
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
+  const provider = getRpcProvider(network);
   const tokens = Tokens[network];
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
