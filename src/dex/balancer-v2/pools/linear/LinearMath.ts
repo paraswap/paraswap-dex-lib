@@ -1,4 +1,4 @@
-import { MathSol } from './balancer-v2-math';
+import { MathSol } from '../../balancer-v2-math';
 
 /*
 Note when comparing vs smart contract:
@@ -11,6 +11,7 @@ type Params = {
   fee: bigint;
   lowerTarget: bigint;
   upperTarget: bigint;
+  rate?: bigint;
 };
 
 export function _calcBptOutPerMainIn(
@@ -262,16 +263,16 @@ export function _calcTokensOutGivenExactBptIn(
   bptIndex: number,
 ): bigint[] {
   /**********************************************************************************************
-    // exactBPTInForTokensOut                                                                    //
-    // (per token)                                                                               //
-    // aO = tokenAmountOut             /        bptIn         \                                  //
-    // b = tokenBalance      a0 = b * | ---------------------  |                                 //
-    // bptIn = bptAmountIn             \     bptTotalSupply    /                                 //
-    // bpt = bptTotalSupply                                                                      //
-    **********************************************************************************************/
+   // exactBPTInForTokensOut                                                                    //
+   // (per token)                                                                               //
+   // aO = tokenAmountOut             /        bptIn         \                                  //
+   // b = tokenBalance      a0 = b * | ---------------------  |                                 //
+   // bptIn = bptAmountIn             \     bptTotalSupply    /                                 //
+   // bpt = bptTotalSupply                                                                      //
+   **********************************************************************************************/
 
-  // Since we're computing an amount out, we round down overall. This means rounding down on both the
-  // multiplication and division.
+    // Since we're computing an amount out, we round down overall. This means rounding down on both the
+    // multiplication and division.
 
   const bptRatio = MathSol.divDownFixed(bptAmountIn, bptTotalSupply);
   const amountsOut: bigint[] = new Array(balances.length);
