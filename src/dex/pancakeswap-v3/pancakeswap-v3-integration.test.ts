@@ -76,6 +76,83 @@ const testingData: Partial<{ [key in Network]: any }> = {
 };
 
 describe('PancakeswapV3', function () {
+
+  describe('BSC', () => {
+    describe('WBNB -> USDT', () => {
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        const network = Network.BSC;
+        const dexHelper = new DummyDexHelper(network);
+        const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        const pancakeswapV3 = new PancakeswapV3(network, dexKey, dexHelper);
+
+        const WBNB = Tokens[network]['WBNB'];
+        const USDT = Tokens[network]['USDT'];
+
+        const amounts = [
+          0n,
+          1n * BI_POWS[18],
+          2n * BI_POWS[18],
+        ];
+
+        const pools = await pancakeswapV3.getPoolIdentifiers(
+          WBNB,
+          USDT,
+          SwapSide.SELL,
+          blockNumber,
+        );
+        console.log(
+          `WBNB <> USDT Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await pancakeswapV3.getPricesVolume(
+          WBNB,
+          USDT,
+          amounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+        console.log(
+          `WBNB <> USDT Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(
+          poolPrices!.filter(pp => pp.unit !== 0n),
+          amounts,
+          SwapSide.SELL,
+          dexKey,
+        );
+
+        // Check if onchain pricing equals to calculated ones
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const fee =
+              pancakeswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+            const res = await checkOnChainPricing(
+              pancakeswapV3,
+              dexHelper,
+              'quoteExactInputSingle',
+              blockNumber,
+              price.prices,
+              WBNB.address,
+              USDT.address,
+              fee,
+              amounts,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+    });
+  });
+
   networks.forEach(network =>
     describe(network, function () {
       let blockNumber: number;
@@ -451,6 +528,9 @@ async function checkOnChainPricing(
 
   // we skipped first, so add +1 on result
   firstZeroIndex = firstZeroIndex === -1 ? prices.length : firstZeroIndex;
+
+  console.log('PRICE: ', prices);
+  console.log('ON-chain prices: ', prices);
 
   // Compare only the ones for which we were able to calculate prices
   expect(prices.slice(0, firstZeroIndex)).toEqual(
