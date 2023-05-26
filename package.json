@@ -54,6 +54,7 @@
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.0.2",
     "@paraswap/core": "1.1.0",
+    "@sushiswap/router": "^0.0.12",
     "async": "^3.2.4",
     "axios": "0.26.0",
     "bignumber.js": "9.1.0",
