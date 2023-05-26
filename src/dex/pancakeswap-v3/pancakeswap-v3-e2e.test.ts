@@ -152,14 +152,6 @@ describe('PancakeswapV3 E2E', () => {
       network,
     );
 
-    const tokenASymbol: string = 'BUSD';
-    const tokenBSymbol: string = 'WBNB';
-    const nativeTokenSymbol = NativeTokenSymbols[network];
-
-    const tokenAAmount: string = '100000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
-
     const sideToContractMethods = new Map([
       [
         SwapSide.SELL,
@@ -172,47 +164,69 @@ describe('PancakeswapV3 E2E', () => {
       [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     ]);
 
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [
+        {
+          name: NativeTokenSymbols[network],
+          sellAmount: '100000000000000000000',
+          buyAmount: '100000000000000000000',
+        },
+        {
+          name: 'BUSD',
+          sellAmount: '100000000000000000000',
+          buyAmount: '10000000000000',
+        },
+      ],
+      [
+        {
+          name: 'WBNB',
+          sellAmount: '1000000000000000000',
+          buyAmount: '100000000000000000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '100000000000000000000',
+          buyAmount: '100000000000000000000',
+        },
+      ]
+    ];
+
     sideToContractMethods.forEach((contractMethods, side) =>
-      contractMethods.forEach((contractMethod: ContractMethod) => {
-        describe(`${contractMethod}`, () => {
-          it(`${network} ${side} ${contractMethod} ${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-            await testE2E(
-              tokens[nativeTokenSymbol],
-              tokens[tokenASymbol],
-              holders[nativeTokenSymbol],
-              side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-          it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[nativeTokenSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-          it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[tokenBSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach(pair => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
           });
         });
       }),
