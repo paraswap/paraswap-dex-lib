@@ -23,14 +23,6 @@ describe('PancakeswapV3 E2E', () => {
       network,
     );
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDC';
-    const nativeTokenSymbol = NativeTokenSymbols[network];
-
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000';
-    const nativeTokenAmount = '1000000000000000000';
-
     const sideToContractMethods = new Map([
       [
         SwapSide.SELL,
@@ -40,50 +32,111 @@ describe('PancakeswapV3 E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [SwapSide.BUY, [
+        ContractMethod.simpleBuy,
+        ContractMethod.buy,
+      ]],
     ]);
 
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [
+        {
+          name: 'USDT',
+          sellAmount: '10000000000',
+          buyAmount: '20000000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '100000000000',
+          buyAmount: '500000000',
+        },
+      ],
+      [
+        {
+          name: NativeTokenSymbols[network],
+          sellAmount: '20000000000000000',
+          buyAmount: '100000000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '10000000000',
+          buyAmount: '1500000000000000000',
+        },
+      ],
+      [
+        {
+          name: NativeTokenSymbols[network],
+          sellAmount: '10000000000000000',
+          buyAmount: '500000000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '500000000000',
+          buyAmount: '10000000000000000',
+        },
+      ],
+      [
+        {
+          name: 'WETH',
+          sellAmount: '450000000000000000',
+          buyAmount: '900000000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '20000000000',
+          buyAmount: '2000000000000000000',
+        },
+      ],
+      [
+        {
+          name: 'DAI',
+          sellAmount: '100000000000000000000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '10000000000',
+          buyAmount: '500000000000000000000',
+        },
+      ]
+    ]
+
     sideToContractMethods.forEach((contractMethods, side) =>
-      contractMethods.forEach((contractMethod: ContractMethod) => {
-        describe(`${contractMethod}`, () => {
-          it(`${network} ${side} ${contractMethod} ${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-            await testE2E(
-              tokens[nativeTokenSymbol],
-              tokens[tokenASymbol],
-              holders[nativeTokenSymbol],
-              side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-          it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[nativeTokenSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-          it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[tokenBSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach(pair => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
           });
         });
       }),
