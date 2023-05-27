@@ -36,7 +36,6 @@ import { DfynV2EventPool } from './dfyn-v2-pool';
 import DfynV2RouterABI from '../../abi/dfyn-v2/DfynV2Router.abi.json';
 import DfynV2QuoterABI from '../../abi/dfyn-v2/DfynV2Quoter.abi.json';
 import DfynV2MultiABI from '../../abi/dfyn-v2/DfynMulti.abi.json';
-import DfynV2StateMulticallABI from '../../abi/dfyn-v2/DfynV2StateMulticall.abi.json';
 import DfynV2PoolHelper from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json'
 import {
   DFYNV2_EFFICIENCY_FACTOR,
@@ -48,22 +47,12 @@ import { DeepReadonly } from 'ts-essentials';
 import { dfynV2Math } from './contract-math/dfyn-v2-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import {
-  AssetType,
-  DEFAULT_ID_ERC20,
-  DEFAULT_ID_ERC20_AS_STRING,
-} from '../../lib/tokens/types';
+
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
 import { Contract as Contract2, ethers } from 'ethers';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { DEFAULT_POOL_INIT_CODE_HASH } from './constants';
-
-type PoolPairsInfo = {
-  token0: Address;
-  token1: Address;
-  fee: string;
-};
+import { RebaseLibrary } from './contract-math/RebaseLibrary';
 
 const DFYNV2_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const DFYNV2_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
@@ -527,7 +516,7 @@ export class DfynV2
         },
       );
 
-      const rpcResultsPromise = this.getPricingFromRpc(
+      const rpcResultsPromise = await this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
@@ -549,7 +538,6 @@ export class DfynV2
       const [token0] = this._sortTokens(_srcAddress, _destAddress);
 
       const zeroForOne = token0 === _srcAddress ? true : false;
-
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
           const state = states[i];
@@ -879,13 +867,30 @@ export class DfynV2
     destTokenBalance: bigint,
   ): OutputResult | null {
     try { 
-      
+
+      const shares = []
+      for(let i=0; i<amounts.length; i++){
+        shares.push(RebaseLibrary.toBase(
+          zeroForOne ? state.total0 : state.total1,
+          amounts[i],
+          false
+        ))
+      }
+      debugger
       const outputsResult = dfynV2Math.queryOutputs(
         state,
-        amounts,
+        shares,
         zeroForOne,
         side,
       );
+        debugger
+      for(let i=0; i<outputsResult.outputs.length; i++){
+        outputsResult.outputs[i] = RebaseLibrary.toElastic(
+          zeroForOne ? state.total1 : state.total0,
+          outputsResult.outputs[i],
+          false
+        )
+      }
 
       if (side === SwapSide.SELL) {
         if (outputsResult.outputs[0] > destTokenBalance) {
