@@ -16,14 +16,17 @@ import {
   LimitOrderTickData,
   LimitOrderTickInfoMappingsWithBigNumber,
   DecodedGetReserves,
+  DecodedGetTokenProtocolFees,
   DecodedGetImmutables,DecodedGetPriceAndNearestTicks,
   DecodedGetSecondsGrowthAndLastObservation,
   DecodedTicksData,
   DecodedLimitOrderTicksData,
-  DecodedGetTickState
+  DecodedGetTickState,
+  DecodedGetTotals,
 } from './types';
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
-import DfynV2PoolHelperABI from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json'
+import DfynV2PoolHelperABI from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json';
+import DfynV2VaultABI from '../../abi/dfyn-v2/DfynV2Vault.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
@@ -34,10 +37,12 @@ import { uint256ToBigInt,uint160ToBigInt, uint128ToBigInt } from '../../lib/deco
 import { 
   decodeGetReserves,decodeGetImmutables,decodeGetPriceAndNearestTicks,
   decodeGetSecondsGrowthAndLastObservation,decodeTicks,
-  decodeLimitOrderTicks,decodeGetTickState
+  decodeLimitOrderTicks,decodeGetTickState,decodedGetTotals,decodeGetTokenProtocolFees
 } from './utils';
 import { dfynV2Math } from './contract-math/dfyn-v2-math';
 import { debug } from 'console';
+import { address } from '@hashflow/sdk';
+import { RebaseLibrary } from './contract-math/RebaseLibrary';
 
 export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -59,6 +64,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _stateRequestCallData?: MultiCallParams<
    DecodedGetReserves | 
+   DecodedGetTokenProtocolFees |
    DecodedGetImmutables | 
    DecodedGetPriceAndNearestTicks | 
    DecodedGetSecondsGrowthAndLastObservation  | 
@@ -66,6 +72,8 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   >[];
 
   private _vaultBalanceCallData?: MultiCallParams<bigint>[];
+  
+  private _getTotalsCallData?: MultiCallParams<DecodedGetTotals>[];
 
   private _ticksStateCallData?: MultiCallParams<DecodedGetTickState>[];
 
@@ -75,6 +83,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
 
   public readonly poolIface = new Interface(DfynV2PoolABI);
   public readonly poolHelper = new Interface(DfynV2PoolHelperABI)
+  public readonly vault = new Interface(DfynV2VaultABI)
 
   // public readonly feeCodeAsString;
 
@@ -211,6 +220,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     if (!this._stateRequestCallData) {
       const callData: MultiCallParams<
         DecodedGetReserves | 
+        DecodedGetTokenProtocolFees |
         DecodedGetImmutables | 
         DecodedGetPriceAndNearestTicks | 
         DecodedGetSecondsGrowthAndLastObservation | 
@@ -222,6 +232,11 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
           target: this.poolAddress,
           callData: this.poolIface.encodeFunctionData('getReserves'),
           decodeFunction: decodeGetReserves,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolIface.encodeFunctionData('getTokenProtocolFees'),
+          decodeFunction: decodeGetTokenProtocolFees,
         },
         {
           target: this.poolAddress,
@@ -305,16 +320,16 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       const callData: MultiCallParams<bigint>[] = 
       [
         {
-          target: this.token0,
-          callData: this.erc20Interface.encodeFunctionData('balanceOf',
-            [vaultAddress]
+          target: vaultAddress,
+          callData: this.vault.encodeFunctionData('balanceOf',
+            [this.token0,this.poolAddress]
           ),
           decodeFunction: uint256ToBigInt,
         },
         {
-          target: this.token1,
-          callData: this.erc20Interface.encodeFunctionData('balanceOf',
-            [vaultAddress]
+          target: vaultAddress,
+          callData: this.vault.encodeFunctionData('balanceOf',
+            [this.token1,this.poolAddress]
           ),
           decodeFunction: uint256ToBigInt,
         }
@@ -344,6 +359,34 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       this._ticksStateCallData = callData;
     }
     return this._ticksStateCallData;
+  }
+
+  private _getTotals( token0: address, token1 : address, vaultAddress : Address ) { 
+
+    if (!this._getTotalsCallData) {
+      const callData: MultiCallParams<
+      DecodedGetTotals
+      >[] = 
+      [
+        {
+          target: vaultAddress,
+          callData: this.vault.encodeFunctionData('totals',
+          [
+            token0
+          ]),
+          decodeFunction: decodedGetTotals,
+        },{
+          target: vaultAddress,
+          callData: this.vault.encodeFunctionData('totals',
+          [
+            token1
+          ]),
+          decodeFunction: decodedGetTotals,
+        }
+      ];
+      this._getTotalsCallData = callData;
+    }
+    return this._getTotalsCallData;
   }
 
   private _getTicks(tickState: string | any[]) {
@@ -387,6 +430,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     
     const [
       reserves,
+      resProtocolFees,
       resImmutables,
       resPriceAndNearestTicks,
       resSecondsGrowthAndLastObservation,
@@ -404,6 +448,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     ] =
       await this.dexHelper.multiWrapper.tryAggregate<
       DecodedGetReserves | 
+      DecodedGetTokenProtocolFees |
       DecodedGetImmutables | 
       DecodedGetPriceAndNearestTicks | 
       DecodedGetSecondsGrowthAndLastObservation | 
@@ -421,6 +466,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
 
     const [
       balance,
+      protocolFees,
       immutables,
       priceAndNearestTicks, 
       secondsGrowthAndLastObservation,
@@ -437,6 +483,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       nearestPrice
     ] = [
       reserves.returnData,
+      resProtocolFees.returnData,
       resImmutables.returnData,
       resPriceAndNearestTicks.returnData,
       resSecondsGrowthAndLastObservation.returnData,
@@ -453,6 +500,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       resNearestPrice.returnData,
     ] as [
       DecodedGetReserves,
+      DecodedGetTokenProtocolFees,
       DecodedGetImmutables,
       DecodedGetPriceAndNearestTicks,
       DecodedGetSecondsGrowthAndLastObservation,
@@ -467,8 +515,18 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       this.dexHelper.multiWrapper.defaultBatchSize,
       false,
     )
-
     const [vaultBalance0,vaultBalance1] = [resVaultBalance0.returnData,resVaultBalance1.returnData] as [bigint,bigint]
+
+    const vaultTotalsCallData = await this._getTotals(this.token0, this.token1 ,immutables._vault)
+    const [resVaultTotals0,resVaultTotals1] = await this.dexHelper.multiWrapper.tryAggregate<DecodedGetTotals>(
+      false,
+      vaultTotalsCallData,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
+    )
+
+    const [vaultTotals0,vaultTotals1] = [resVaultTotals0.returnData,resVaultTotals1.returnData] as [DecodedGetTotals,DecodedGetTotals]
 
     const getTicksStateCallData = await this._getTicksStateCallData(Number(tickCount))
     
@@ -537,6 +595,8 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       pool: this._computePoolAddress(immutables._token0,immutables._token1),
       balance0: bigIntify(balance._reserve0),
       balance1: bigIntify(balance._reserve1),
+      token0ProtocolFee: bigIntify(protocolFees._token0ProtocolFee),
+      token1ProtocolFee: bigIntify(protocolFees._token1ProtocolFee),
       tickSpacing: bigIntify(immutables._tickSpacing),
       swapFee: bigIntify(immutables._swapFee),
       slot0: {
@@ -560,6 +620,14 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       limitOrderReserve1: limitOrderReserve1,
       token0LimitOrderFee: token0LimitOrderFee,
       token1LimitOrderFee: token1LimitOrderFee,
+      total0:{ 
+        base:bigIntify(vaultTotals0.base),
+        elastic: bigIntify(vaultTotals0.elastic)
+      },
+      total1:{
+        base:bigIntify(vaultTotals1.base),
+        elastic: bigIntify(vaultTotals1.elastic)
+      }
     }; 
   }
 
@@ -569,14 +637,14 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     log: Log,
     blockHeader: BlockHeader,
   ) {
-    
+    debugger
     const newSqrtPriceX96 = bigIntify(event.args.price);
     const amountIn = bigIntify(event.args.amountIn);
     const amountOut = bigIntify(event.args.amountOut);
     const newTick = bigIntify(event.args.tick);
     const zeroForOne = event.args.zeroForOne;
     //const newLiquidity = bigIntify(event.args.);
-    pool.lastObservation = bigIntify(blockHeader.timestamp);
+    const lastObservation = bigIntify(blockHeader.timestamp);
 
     if (amountIn <= 0n && amountOut <= 0n) {
       this.logger.error(
@@ -586,12 +654,29 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       pool.isValid = false;
       return pool;
     } else {
-    
+      const exactIn = newSqrtPriceX96 > pool.slot0.sqrtPriceX96 ? true : false
+
+      const total = zeroForOne ? pool.total0 : pool.total1;
+      if(zeroForOne) {
+        pool.vaultBalance0 += amountIn
+        const amount = RebaseLibrary.toElastic(total,amountIn,true);
+        total.elastic = total.elastic + amount;
+        total.base = total.base + amountIn;
+        pool.total0 = total;
+      } else {
+        pool.vaultBalance1 += amountIn
+        const amount = RebaseLibrary.toElastic(total,amountIn,true);
+        total.elastic = total.elastic + amount;
+        total.base = total.base + amountIn;
+        pool.total1 = total;
+      }
+      
       dfynV2Math.swapFromEvent(
+        lastObservation,
         pool,
         newSqrtPriceX96,
         newTick,
-        zeroForOne ? amountIn : -amountOut,
+        exactIn ? amountIn : -amountOut,
         //newLiquidity,
         zeroForOne,
       );
