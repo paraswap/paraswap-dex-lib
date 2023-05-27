@@ -18,6 +18,9 @@ import {
 import { SwapExecuter } from './SwapExecuter';
 import { stat } from 'fs';
 import { FeeHandler } from './FeeHandler';
+import { RebaseLibrary } from './RebaseLibrary';
+import { Address } from '@0x/utils/lib/src/abi_encoder';
+import { Pool } from '@hashflow/sdk/dist/modules/Pool';
 
 // type ModifyPositionParams = {
 //   tickLower: bigint;
@@ -54,8 +57,8 @@ function _priceComputationCycles(
     latestFullCycleCache: StructHelper['SwapCache'];
   },
 ] {
+  debugger
   //const latestFullCycleState: PriceComputationState = { ...state };
-
   if (cache.tickCount == 0) {
     cache.tickCount = 1;
   }
@@ -73,7 +76,8 @@ function _priceComputationCycles(
 
   let i = 0;
   for (; cache.exactIn ? cache.amountIn != 0n : cache.amountOut != 0n; ++i) {
-    
+    // cache.amountIn = BigInt(Math.abs(Number(cache.amountIn)))
+    // cache.amountOut = BigInt(Math.abs(Number(cache.amountOut)))
     if (
       latestFullCycleCache.tickCount + i >
       MAX_PRICING_COMPUTATION_STEPS_ALLOWED
@@ -244,7 +248,7 @@ function _priceComputationCycles(
     cache.totalAmount = 0n;
   }
 
-
+  
   return [cache, { latestFullCycleCache }];
 }
 
@@ -323,11 +327,11 @@ class DfynV2Math {
       
       if (cache.isFirstCycleState) {
         // Set first non zero amount
-        if (isSell) {
-          cache.amountIn = amountSpecified;
-        } else {
-          cache.amountOut = amountSpecified;
-        }
+        // if (isSell) {
+          cache.amountIn = amountSpecified > 0n ? amountSpecified : 0n;
+        // } else {
+          cache.amountOut = amountSpecified > 0n ? 0n : -amountSpecified;
+        // }
         cache.isFirstCycleState = false;
       } else {
         if (isSell) {
@@ -393,13 +397,13 @@ class DfynV2Math {
         // Update for next amount
         // _updatePriceComputationObjects(state, latestFullCycleState);
         _updatePriceComputationObjects(cache, latestFullCycleCache);
-        
+        debugger
         if (isSell) {
           outputs[i] = BigInt.asUintN(256,(zeroForOne ? amount1 : amount0));
           tickCounts[i] = latestFullCycleCache.tickCount;
           continue;
         } else {
-          outputs[i] =  BigInt.asUintN(256,-(zeroForOne? amount0 : amount1));
+          outputs[i] =  BigInt.asUintN(256,(zeroForOne? amount0 : amount1));
           tickCounts[i] = latestFullCycleCache.tickCount;
           continue;
         }
@@ -416,6 +420,7 @@ class DfynV2Math {
   }
 
   swapFromEvent(
+    lastObservation: bigint,
     poolState: PoolState,
     newSqrtPriceX96: bigint,
     newTick: bigint,
@@ -423,7 +428,33 @@ class DfynV2Math {
     //newLiquidity: bigint,
     zeroForOne: boolean,
   ): void {
+     debugger
+    //const total = zeroForOne ? poolState.total0 : poolState.total1;
+    // if (amount == 0n) {
+    //     // value of the share paid could be lower than the amount paid due to rounding, in that case, add a share (Always round up)
+    //     amount = RebaseLibrary.toBase(total,amount);
+    // } else {
+        // amount may be lower than the value of share due to rounding, that's ok
     
+    //const _amount = RebaseLibrary.toElastic(total,bigIntify(Math.abs(Number(amount))));
+    
+    // total.elastic = total.elastic + _amount;
+    // total.base = total.base + bigIntify(Math.abs(Number(amount)));
+    // There have to be at least 1000 shares left to prevent reseting the share/amount ratio (unless it's fully emptied)
+    //require(total.base >= MINIMUM_SHARE_BALANCE || total.base == 0, "cannot be empty");
+    // if(zeroForOne){
+    //   poolState.total0 = total;
+    // } else {
+    //   poolState.total1 = total;
+    // }
+
+    
+    
+    // amount = RebaseLibrary.toBase(
+    //     zeroForOne ? poolState.total1 : poolState.total0,
+    //     amount
+    //   )
+  
     // const ticks = poolState.ticks
     //const limitOrderTicks = poolState.limitOrderTicks
     const slot0Start = poolState.slot0;
@@ -459,14 +490,12 @@ class DfynV2Math {
       token1LimitOrderFee: poolState.token1LimitOrderFee,
       currentPrice: poolState.slot0.sqrtPriceX96,
     };
-    //console.log(Math.floor(Date.now() / 1000))
     
-    const diff = bigIntify(Math.floor(Date.now() / 1000))-(poolState.lastObservation);
+    const diff = lastObservation - (poolState.lastObservation);
     if (diff > 0n && cache.currentLiquidity > 0n) {
-      poolState.lastObservation = bigIntify(Math.floor(Date.now() / 1000));
-      poolState.secondsGrowthGlobal = poolState.secondsGrowthGlobal + (diff*(BigInt((2**128))/(cache.currentLiquidity)));
+      poolState.lastObservation = lastObservation;
+      poolState.secondsGrowthGlobal = poolState.secondsGrowthGlobal + (diff << 128n )/(cache.currentLiquidity);
     }
-
 
     while (cache.exactIn ? cache.amountIn != 0n : cache.amountOut != 0n)
     {
@@ -510,7 +539,6 @@ class DfynV2Math {
         [cache.amountOut, cache.amountIn] = cache.exactIn
           ? [0n, cache.amountIn]
           : [cache.amountOut, 0n];
-
         if (swapLocal.fee !== 0n) {
           const {
             protocolFee: newProtocolFee,
@@ -602,6 +630,7 @@ class DfynV2Math {
         }
       }
     }
+    
     poolState.slot0.sqrtPriceX96 = cache.currentPrice;
     poolState.nearestPrice = cache.nearestPriceCached;
     const newNearestTick = zeroForOne ? cache.nextTickToCross : poolState.ticks[Number(cache.nextTickToCross)].previousTick;
@@ -616,15 +645,114 @@ class DfynV2Math {
 
     [amountOut,amountIn] = cache.exactIn ? [cache.totalAmount, amount] : [(-amount),cache.totalAmount];
 
+    this._transfer(zeroForOne,poolState, amountOut, true);
+    
     cache.amountIn = 
       amountIn - (
         zeroForOne ?
           (cache.token0LimitOrderFee - cache.limitOrderFeeGrowth) : (cache.token1LimitOrderFee - cache.limitOrderFeeGrowth)
       );
-    
+    debugger
+    this._updateFees(poolState,zeroForOne,cache.feeGrowthGlobalB,cache.protocolFee)
     this._updateReserves(poolState,zeroForOne, cache.amountIn, amountOut, cache.limitOrderAmountIn, cache.limitOrderAmountOut);
   }
+
+  private _updateFees(
+    poolState: PoolState,
+    zeroForOne: boolean,
+    feeGrowthGlobal: bigint,
+    protocolFee: bigint
+  ): void {
+    if (zeroForOne) {
+      poolState.feeGrowthGlobal0 = feeGrowthGlobal;
+      poolState.token0ProtocolFee += protocolFee;
+    } else {
+      poolState.feeGrowthGlobal1 = feeGrowthGlobal;
+      poolState.token1ProtocolFee += protocolFee;
+    }
+  }
   
+
+  private _transfer(
+    zeroForOne:boolean,
+    poolState: PoolState,
+    //token: Address,
+    shares: bigint,
+    //to: Address,
+    unwrapVault: boolean,
+  ): void {
+    if (unwrapVault) {
+        this.withdraw(zeroForOne,poolState, 0n, shares);
+    } else {
+        // this.transfer(zeroForOne,poolState,token, address(this), to, shares);
+    }
+  }
+
+      /// @notice Withdraws an amount of `token` from a user account.
+    /// @param token_ The ERC-20 token to withdraw.
+    /// @param from which user to pull the tokens.
+    /// @param to which user to push the tokens.
+    /// @param amount of tokens. Either one of `amount` or `share` needs to be supplied.
+    /// @param share Like above, but `share` takes precedence over `amount`.
+    private withdraw(
+      zeroForOne:boolean,
+      poolState: PoolState,
+      // token: Address,
+      // from: Address,
+      // to: Address,
+      amount:bigint,
+      share:bigint
+    ) : [bigint, bigint] {
+      debugger
+      // Checks
+      //require(to != address(0), "to address not set"); // To avoid a bad UI from burning funds
+
+      // Effects
+      //IERC20 token = token_ == USE_ETHEREUM ? wethToken : token_;
+      const total = zeroForOne ? poolState.total1 : poolState.total0;
+      if (share == 0n) {
+          // value of the share paid could be lower than the amount paid due to rounding, in that case, add a share (Always round up)
+          share = RebaseLibrary.toBase(total,amount,false);
+      } else {
+          // amount may be lower than the value of share due to rounding, that's ok
+          amount = RebaseLibrary.toElastic(total,share,false);
+      }
+
+      if(zeroForOne){
+        poolState.vaultBalance1 = poolState.vaultBalance1-share;
+        total.elastic = total.elastic - amount;
+        total.base = total.base - share;
+        poolState.total1 = total;
+      } else {
+        poolState.vaultBalance0 = poolState.vaultBalance0-share;
+        total.elastic = total.elastic - amount;
+        total.base = total.base - share;
+        poolState.total0 = total;
+      }
+      
+      
+      // There have to be at least 1000 shares left to prevent reseting the share/amount ratio (unless it's fully emptied)
+      //require(total.base >= MINIMUM_SHARE_BALANCE || total.base == 0, "cannot be empty");
+      
+      // Interactions
+      // if (token_ == USE_ETHEREUM) {
+      //     // X2, X3: A revert or big gas usage in the WETH contract could block withdrawals, but WETH9 is fine.
+      //     IWETH(address(wethToken)).withdraw(amount);
+      //     // X2, X3: A revert or big gas usage could block, however, the to address is under control of the caller.
+      //     (bool success, ) = to.call{value: amount}("");
+      //     require(success, "ETH transfer failed");
+      // } else {
+      //     // X2, X3: A malicious token could block withdrawal of just THAT token.
+      //     //         masterContracts may want to take care not to rely on withdraw always succeeding.
+      //     token.safeTransfer(to, amount);
+      // }
+      //emit LogWithdraw(token, from, to, amount, share);
+      const amountOut = amount;
+      const shareOut = share;
+      return [amountOut, shareOut]
+  }
+
+
   private _updateReserves(
     pool: PoolState,
     zeroForOne: boolean,
@@ -633,6 +761,7 @@ class DfynV2Math {
     limitOrderAmountIn: bigint,
     limitOrderAmountOut: bigint
   ): void {
+    debugger
     if (zeroForOne) {
       const newBalance =  pool.balance0 + (inAmount - limitOrderAmountIn);
       if (newBalance > pool.vaultBalance0 ) throw new Token0Missing();
@@ -650,9 +779,6 @@ class DfynV2Math {
       pool.limitOrderReserve0 -= limitOrderAmountOut;
       pool.limitOrderReserve1 += limitOrderAmountIn;
     }
-  // private _blockTimestamp(state: DeepReadonly<PoolState>) {
-  //   return BigInt.asUintN(32, state.blockTimestamp);
-  // }
   }
 
 //   private _updatePosition(
