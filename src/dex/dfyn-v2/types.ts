@@ -17,6 +17,16 @@ export type Slot0 = {
   tick: bigint;
 };
 
+export type Total = {
+  elastic : bigint
+  base : bigint
+}
+
+// export type Total1 = {
+//   elastic1 : bigint
+//   base1 : bigint
+// }
+
 export type PoolState = {
   pool: Address;
   //blockTimestamp: bigint;
@@ -28,6 +38,8 @@ export type PoolState = {
   isValid: boolean;
   balance0: bigint;
   balance1: bigint;
+  token0ProtocolFee: bigint;
+  token1ProtocolFee:bigint;
   vaultBalance0:bigint;
   vaultBalance1:bigint;
   swapFee:bigint;
@@ -42,6 +54,13 @@ export type PoolState = {
   limitOrderReserve1:bigint;
   token0LimitOrderFee:bigint;
   token1LimitOrderFee:bigint;
+  total0: Total;
+  total1: Total;
+  // base0: bigint;
+  // elastic0: bigint;
+  // base1: bigint;
+  // elastic1: bigint;
+  //totals : Record<Address,Totals>;
 };
 
 
@@ -274,13 +293,6 @@ export enum DfynV2Functions {
   exactOutput = 'exactOutput',
 }
 
-
-
-export type TickBitMapMappings = {
-  index: number;
-  value: bigint;
-};
-
 export type OutputResult = {
   outputs: bigint[];
   tickCounts: number[];
@@ -345,6 +357,20 @@ export type DecodedGetReserves = {
   _reserve0 : BigNumber;
   _reserve1 : BigNumber;
 }
+
+/// ProtocolFees
+export type DecodedGetTokenProtocolFees ={
+  _token0ProtocolFee : BigNumber;
+  _token1ProtocolFee : BigNumber;
+}
+
+/// totals
+export type DecodedGetTotals = {
+  elastic : BigNumber;
+  base : BigNumber;
+}
+
+
 
 /// Immutables
 export type DecodedGetImmutables = {

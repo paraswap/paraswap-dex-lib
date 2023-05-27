@@ -5,7 +5,7 @@ import { MultiResult } from '../../lib/multi-wrapper';
 import { DexConfigMap } from '../../types';
 import {
   DexParams,DecodedGetReserves,DecodedGetImmutables,DecodedGetPriceAndNearestTicks,DecodedGetSecondsGrowthAndLastObservation,
-  DecodedTicksData,DecodedLimitOrderTicksData,DecodedGetTickState,TickInfoMappingsWithBigNumber,LimitOrderTickInfoMappingsWithBigNumber
+  DecodedTicksData,DecodedLimitOrderTicksData,DecodedGetTickState,TickInfoMappingsWithBigNumber,LimitOrderTickInfoMappingsWithBigNumber,DecodedGetTotals, DecodedGetTokenProtocolFees
 } from './types';
 import { debug } from 'console';
 
@@ -47,6 +47,55 @@ export function decodeGetReserves(
     )[0];
     return decoded as DecodedGetReserves;
 }
+
+export function decodeGetTokenProtocolFees(
+  result: MultiResult<BytesLike> | BytesLike
+  ) : DecodedGetTokenProtocolFees {
+    const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+    assert(
+      isSuccess && toDecode !== '0x',
+      `DecodedGetTokenProtocolFees failed to get decodable result: ${result}`,
+    );
+
+    const decoded = ethers.utils.defaultAbiCoder.decode(
+      [
+        `
+        tuple(
+          uint128 _token0ProtocolFee,
+          uint128 _token1ProtocolFee
+        )
+      `,
+      ],
+      toDecode,
+    )[0];
+    return decoded as DecodedGetTokenProtocolFees;
+}
+
+export function decodedGetTotals(
+  result: MultiResult<BytesLike> | BytesLike
+  ) : DecodedGetTotals {
+    const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+    assert(
+      isSuccess && toDecode !== '0x',
+      `DecodedGetTotals failed to get decodable result: ${result}`,
+    );
+
+    const decoded = ethers.utils.defaultAbiCoder.decode(
+      [
+        `
+        tuple(
+          uint128 elastic,
+          uint128 base
+        )
+      `,
+      ],
+      toDecode,
+    )[0];
+    return decoded as DecodedGetTotals;
+}
+
 
   export function decodeGetImmutables(
     result: MultiResult<BytesLike> | BytesLike
