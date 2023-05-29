@@ -40,7 +40,7 @@ import DfynV2PoolHelper from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json'
 import {
   DFYNV2_EFFICIENCY_FACTOR,
   DFYNV2_FUNCTION_CALL_GAS_COST,
-  DFYNV2_SUBGRAPH_URL,
+  //DFYNV2_SUBGRAPH_URL,
   DFYNV2_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
@@ -49,10 +49,13 @@ import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
+import DfynV2Multicall from '../../abi/dfyn-v2/DfynV2Multicall.abi.json';
 import { Contract as Contract2, ethers } from 'ethers';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { DEFAULT_POOL_INIT_CODE_HASH } from './constants';
+//import { DEFAULT_POOL_INIT_CODE_HASH } from './constants';
 import { RebaseLibrary } from './contract-math/RebaseLibrary';
+import { mulInPrecision } from '../kyberdmm/math-ext';
+import { receiveMessageOnPort } from 'worker_threads';
 
 const DFYNV2_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const DFYNV2_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
@@ -516,7 +519,7 @@ export class DfynV2
         },
       );
 
-      const rpcResultsPromise = await this.getPricingFromRpc(
+      const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
@@ -534,9 +537,7 @@ export class DfynV2
       );
 
       const _amounts = [...amounts.slice(1)];
-
       const [token0] = this._sortTokens(_srcAddress, _destAddress);
-
       const zeroForOne = token0 === _srcAddress ? true : false;
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
@@ -638,7 +639,46 @@ export class DfynV2
   ): AdapterExchangeParam {
     const { path: rawPath } = data;
     const path = this._encodePath(rawPath, side);
+    debugger
+    const swapFunction =
+    side === SwapSide.SELL
+      ? '0xb8fd05a5' //DfynV2Functions.exactInput
+      : '0x015a4b6d';
 
+  //const path = this._encodePath(data.path, side);
+    // const swapFunctionParams: DfynV2Param =
+    //   side === SwapSide.SELL
+    //     ? {
+    //         recipient: this.augustusAddress,
+    //         deadline: this.getDeadline(),
+    //         amountIn: '0',
+    //         amountOutMinimum: destAmount,
+    //         unWrapVault: true,
+    //         tokenIn: srcToken,
+    //         tokenOut: destToken,
+            
+    //       }
+    //     : {
+    //         recipient: this.augustusAddress,
+    //         deadline: this.getDeadline(),
+    //         amountOut: destAmount,
+    //         amountInMaximum: '0',
+    //         unWrapVault: true,
+    //         tokenIn: srcToken,
+    //         tokenOut: destToken,
+    //       };
+  //   const swapData = this.routerIface.encodeFunctionData(swapFunction, [
+  //     swapFunctionParams,
+  //   ]);
+
+  // const transfer = this.routerIface.encodeFunctionData('0x01c6adc3',[
+  //   srcToken,
+  //   srcAmount
+  // ])
+  
+  // const payload = this.routerIface.encodeFunctionData('0xac9650d8',[
+  //   [transfer, swapData]
+  // ]);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -683,7 +723,7 @@ export class DfynV2
     });
     return arr;
   }
-
+  
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -692,10 +732,11 @@ export class DfynV2
     data: DfynV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    debugger
     const swapFunction =
       side === SwapSide.SELL
-        ? DfynV2Functions.exactInput
-        : DfynV2Functions.exactOutput;
+        ? '0xb8fd05a5' //DfynV2Functions.exactInput
+        : '0x015a4b6d';
 
     const path = this._encodePath(data.path, side);
     const swapFunctionParams: DfynV2Param =
@@ -703,27 +744,46 @@ export class DfynV2
         ? {
             recipient: this.augustusAddress,
             deadline: this.getDeadline(),
-            amountIn: srcAmount,
+            amountIn: '0',
             amountOutMinimum: destAmount,
-            path,
+            unWrapVault: true,
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            
           }
         : {
             recipient: this.augustusAddress,
             deadline: this.getDeadline(),
             amountOut: destAmount,
-            amountInMaximum: srcAmount,
-            path,
+            amountInMaximum: '0',
+            unWrapVault: true,
+            tokenIn: srcToken,
+            tokenOut: destToken,
           };
     const swapData = this.routerIface.encodeFunctionData(swapFunction, [
       swapFunctionParams,
     ]);
 
+    
+    const transfer = side === SwapSide.SELL? 
+      this.routerIface.encodeFunctionData('0x01c6adc3',[
+        srcToken,
+        srcAmount
+      ]) :
+      this.routerIface.encodeFunctionData('0x01c6adc3',[
+        srcToken,
+        srcAmount
+      ])
+    
+    const multicall = this.routerIface.encodeFunctionData('0xac9650d8',[
+      [transfer, swapData]
+    ]);
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
       srcAmount,
       destToken,
       destAmount,
-      swapData,
+      multicall,
       this.config.router,
     );
   }
@@ -839,6 +899,8 @@ export class DfynV2
       poolHelper: this.config.poolHelper.toLowerCase(),
       chunksCount: this.config.chunksCount,
       dfynMulticall: this.config.dfynMulticall,
+      DFYNV2_SUBGRAPH_URL: this.config.DFYNV2_SUBGRAPH_URL,
+      DEFAULT_POOL_INIT_CODE_HASH: this.config.DEFAULT_POOL_INIT_CODE_HASH
     };
     return newConfig;
   }
@@ -855,7 +917,7 @@ export class DfynV2
     return ethers.utils.getCreate2Address(
       this.config.factory,
       encodedKey,
-      DEFAULT_POOL_INIT_CODE_HASH,
+      this.config.DEFAULT_POOL_INIT_CODE_HASH,
     );
   }
 
@@ -876,14 +938,12 @@ export class DfynV2
           false
         ))
       }
-      debugger
       const outputsResult = dfynV2Math.queryOutputs(
         state,
         shares,
         zeroForOne,
         side,
       );
-        debugger
       for(let i=0; i<outputsResult.outputs.length; i++){
         outputsResult.outputs[i] = RebaseLibrary.toElastic(
           zeroForOne ? state.total1 : state.total0,
@@ -936,7 +996,7 @@ export class DfynV2
   ) {
     try {
       const res = await this.dexHelper.httpRequest.post(
-        DFYNV2_SUBGRAPH_URL,
+        this.config.DFYNV2_SUBGRAPH_URL,
         { query, variables },
         undefined,
         { timeout: timeout },
