@@ -391,23 +391,19 @@ export class UniswapV3
         callData:
           side === SwapSide.SELL
             ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
-              [
                 from.address,
                 to.address,
-                _amount.toString(),
                 pool.feeCodeAsString,
+                _amount.toString(),
                 0, //sqrtPriceLimitX96
-              ],
-            ])
+              ])
             : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
-              [
                 from.address,
                 to.address,
-                _amount.toString(),
                 pool.feeCodeAsString,
+                _amount.toString(),
                 0, //sqrtPriceLimitX96
-              ],
-            ]),
+              ]),
       })),
     );
 
