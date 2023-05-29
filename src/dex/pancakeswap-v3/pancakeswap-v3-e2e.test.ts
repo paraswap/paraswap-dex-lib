@@ -181,14 +181,14 @@ describe('PancakeswapV3 E2E', () => {
         {
           name: 'WBNB',
           sellAmount: '1000000000000000000',
-          buyAmount: '100000000000000000000',
+          buyAmount: '10000000000000000000',
         },
         {
           name: 'USDT',
-          sellAmount: '100000000000000000000',
-          buyAmount: '100000000000000000000',
+          sellAmount: '10000000000000000000',
+          buyAmount: '1000000000000000000',
         },
-      ]
+      ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>

@@ -29,7 +29,7 @@ import {
   TickInfo,
   TickInfoMappingsWithBigNumber,
 } from '../uniswap-v3/types';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/utils';
+import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 
 export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
