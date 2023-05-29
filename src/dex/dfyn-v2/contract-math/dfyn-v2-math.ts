@@ -21,6 +21,7 @@ import { FeeHandler } from './FeeHandler';
 import { RebaseLibrary } from './RebaseLibrary';
 import { Address } from '@0x/utils/lib/src/abi_encoder';
 import { Pool } from '@hashflow/sdk/dist/modules/Pool';
+import { debug } from 'console';
 
 // type ModifyPositionParams = {
 //   tickLower: bigint;
@@ -57,7 +58,6 @@ function _priceComputationCycles(
     latestFullCycleCache: StructHelper['SwapCache'];
   },
 ] {
-  debugger
   //const latestFullCycleState: PriceComputationState = { ...state };
   if (cache.tickCount == 0) {
     cache.tickCount = 1;
@@ -120,7 +120,6 @@ function _priceComputationCycles(
           swapLocal.nextTickPrice,
           poolState.swapFee,
         );
-
       cache.amountOut = amountOut;
       cache.currentPrice = currentPrice;
       swapLocal.cross = cross;
@@ -263,7 +262,6 @@ class DfynV2Math {
     zeroForOne: boolean,
     side: SwapSide,
   ): OutputResult {
-    
     const slot0Start = poolState.slot0;
 
     const isSell = side === SwapSide.SELL;
@@ -320,11 +318,11 @@ class DfynV2Math {
         tickCounts[i] = 0;
         continue;
       }
-
+      
       const amountSpecified = isSell
         ? BigInt.asIntN(256, amount)
         : -BigInt.asIntN(256, amount);
-      
+
       if (cache.isFirstCycleState) {
         // Set first non zero amount
         // if (isSell) {
@@ -339,10 +337,10 @@ class DfynV2Math {
             amountSpecified - (previousAmount - cache.amountIn);
         } else {
           cache.amountOut =
-            amountSpecified - (previousAmount - cache.amountOut);
+            -amountSpecified + (previousAmount + cache.amountOut);
         }
       }
-
+      
       const exactInput = amountSpecified > 0n;
       cache.exactIn = exactInput;
 
@@ -397,7 +395,6 @@ class DfynV2Math {
         // Update for next amount
         // _updatePriceComputationObjects(state, latestFullCycleState);
         _updatePriceComputationObjects(cache, latestFullCycleCache);
-        debugger
         if (isSell) {
           outputs[i] = BigInt.asUintN(256,(zeroForOne ? amount1 : amount0));
           tickCounts[i] = latestFullCycleCache.tickCount;
@@ -429,34 +426,6 @@ class DfynV2Math {
     zeroForOne: boolean,
   ): void {
      debugger
-    //const total = zeroForOne ? poolState.total0 : poolState.total1;
-    // if (amount == 0n) {
-    //     // value of the share paid could be lower than the amount paid due to rounding, in that case, add a share (Always round up)
-    //     amount = RebaseLibrary.toBase(total,amount);
-    // } else {
-        // amount may be lower than the value of share due to rounding, that's ok
-    
-    //const _amount = RebaseLibrary.toElastic(total,bigIntify(Math.abs(Number(amount))));
-    
-    // total.elastic = total.elastic + _amount;
-    // total.base = total.base + bigIntify(Math.abs(Number(amount)));
-    // There have to be at least 1000 shares left to prevent reseting the share/amount ratio (unless it's fully emptied)
-    //require(total.base >= MINIMUM_SHARE_BALANCE || total.base == 0, "cannot be empty");
-    // if(zeroForOne){
-    //   poolState.total0 = total;
-    // } else {
-    //   poolState.total1 = total;
-    // }
-
-    
-    
-    // amount = RebaseLibrary.toBase(
-    //     zeroForOne ? poolState.total1 : poolState.total0,
-    //     amount
-    //   )
-  
-    // const ticks = poolState.ticks
-    //const limitOrderTicks = poolState.limitOrderTicks
     const slot0Start = poolState.slot0;
 
     const cache: StructHelper['SwapCache'] = {
@@ -688,27 +657,13 @@ class DfynV2Math {
     }
   }
 
-      /// @notice Withdraws an amount of `token` from a user account.
-    /// @param token_ The ERC-20 token to withdraw.
-    /// @param from which user to pull the tokens.
-    /// @param to which user to push the tokens.
-    /// @param amount of tokens. Either one of `amount` or `share` needs to be supplied.
-    /// @param share Like above, but `share` takes precedence over `amount`.
     private withdraw(
       zeroForOne:boolean,
       poolState: PoolState,
-      // token: Address,
-      // from: Address,
-      // to: Address,
       amount:bigint,
       share:bigint
     ) : [bigint, bigint] {
       debugger
-      // Checks
-      //require(to != address(0), "to address not set"); // To avoid a bad UI from burning funds
-
-      // Effects
-      //IERC20 token = token_ == USE_ETHEREUM ? wethToken : token_;
       const total = zeroForOne ? poolState.total1 : poolState.total0;
       if (share == 0n) {
           // value of the share paid could be lower than the amount paid due to rounding, in that case, add a share (Always round up)
@@ -729,24 +684,6 @@ class DfynV2Math {
         total.base = total.base - share;
         poolState.total0 = total;
       }
-      
-      
-      // There have to be at least 1000 shares left to prevent reseting the share/amount ratio (unless it's fully emptied)
-      //require(total.base >= MINIMUM_SHARE_BALANCE || total.base == 0, "cannot be empty");
-      
-      // Interactions
-      // if (token_ == USE_ETHEREUM) {
-      //     // X2, X3: A revert or big gas usage in the WETH contract could block withdrawals, but WETH9 is fine.
-      //     IWETH(address(wethToken)).withdraw(amount);
-      //     // X2, X3: A revert or big gas usage could block, however, the to address is under control of the caller.
-      //     (bool success, ) = to.call{value: amount}("");
-      //     require(success, "ETH transfer failed");
-      // } else {
-      //     // X2, X3: A malicious token could block withdrawal of just THAT token.
-      //     //         masterContracts may want to take care not to rely on withdraw always succeeding.
-      //     token.safeTransfer(to, amount);
-      // }
-      //emit LogWithdraw(token, from, to, amount, share);
       const amountOut = amount;
       const shareOut = share;
       return [amountOut, shareOut]
