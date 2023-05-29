@@ -890,6 +890,197 @@ describe('Solidly E2E', () => {
         });
       });
     });
+
+    describe('Usdfi', () => {
+      const dexKey = 'Usdfi';
+      const usdAmount = '1000000';
+
+      describe('Usdfi UniswapV2 Pools', () => {
+        const bnbAmount = '1000000000000000000';
+
+        describe('simpleSwap', () => {
+          it('BNB -> TOKEN', async () => {
+            await testE2E(
+              tokens.BNB,
+              tokens.BUSD,
+              holders.BNB,
+              bnbAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.simpleSwap,
+              network,
+              provider,
+            );
+          });
+
+          it('Token -> BNB', async () => {
+            await testE2E(
+              tokens.USDT,
+              tokens.BNB,
+              holders.USDT,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.simpleSwap,
+              network,
+              provider,
+            );
+          });
+
+          it('Token -> Token', async () => {
+            await testE2E(
+              tokens.WBNB,
+              tokens.CONE,
+              holders.WBNB,
+              bnbAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.simpleSwap,
+              network,
+              provider,
+            );
+          });
+        });
+
+        describe('multiSwap', () => {
+          it('BNB -> TOKEN', async () => {
+            await testE2E(
+              tokens.BNB,
+              tokens.BUSD,
+              holders.BNB,
+              bnbAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.multiSwap,
+              network,
+              provider,
+            );
+          });
+
+          it('Token -> BNB', async () => {
+            await testE2E(
+              tokens.USDT,
+              tokens.BNB,
+              holders.USDT,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.multiSwap,
+              network,
+              provider,
+            );
+          });
+
+          it('Token -> Token', async () => {
+            await testE2E(
+              tokens.WBNB,
+              tokens.CONE,
+              holders.WBNB,
+              bnbAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.multiSwap,
+              network,
+              provider,
+            );
+          });
+        });
+
+        describe('megaSwap', () => {
+          it('BNB -> TOKEN', async () => {
+            await testE2E(
+              tokens.USDT,
+              tokens.BNB,
+              holders.USDT,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+            );
+          });
+
+          it('Token -> BNB', async () => {
+            await testE2E(
+              tokens.USDT,
+              tokens.BNB,
+              holders.USDT,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+            );
+          });
+
+          it('Token -> Token', async () => {
+            await testE2E(
+              tokens.WBNB,
+              tokens.CONE,
+              holders.WBNB,
+              bnbAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+            );
+          });
+        });
+      });
+
+      describe('Usdfi Stable Pools', () => {
+        describe('simpleSwap', () => {
+          it('Token -> Token', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.USDT,
+              holders.USDC,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.simpleSwap,
+              network,
+              provider,
+            );
+          });
+        });
+
+        describe('multiSwap', () => {
+          it('Token -> Token', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.USDT,
+              holders.USDC,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.multiSwap,
+              network,
+              provider,
+            );
+          });
+        });
+
+        describe('megaSwap', () => {
+          it('Token -> Token', async () => {
+            await testE2E(
+              tokens.USDC,
+              tokens.USDT,
+              holders.USDC,
+              usdAmount,
+              SwapSide.SELL,
+              dexKey,
+              ContractMethod.megaSwap,
+              network,
+              provider,
+            );
+          });
+        });
+      });
+    });
   });
 
   describe('Avalanche', () => {
