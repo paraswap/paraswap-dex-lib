@@ -268,10 +268,14 @@ export type DexParams = {
   dfynMulticall: Address;
   supportedFees: bigint[];
   chunksCount: number;
+  DFYNV2_SUBGRAPH_URL: string;
+  DEFAULT_POOL_INIT_CODE_HASH: string;
 };
 
 export type DfynV2SellParam = {
-  path: string;
+  unWrapVault: boolean;
+  tokenIn: Address;
+  tokenOut: Address;
   recipient: Address;
   deadline: number;
   amountIn: NumberAsString;
@@ -279,7 +283,14 @@ export type DfynV2SellParam = {
 };
 
 export type DfynV2BuyParam = {
-  path: string;
+  // path: string;
+  // recipient: Address;
+  // deadline: number;
+  // amountOut: NumberAsString;
+  // amountInMaximum: NumberAsString;
+  unWrapVault: boolean;
+  tokenIn: Address;
+  tokenOut: Address;
   recipient: Address;
   deadline: number;
   amountOut: NumberAsString;
@@ -289,8 +300,8 @@ export type DfynV2BuyParam = {
 export type DfynV2Param = DfynV2SellParam | DfynV2BuyParam;
 
 export enum DfynV2Functions {
-  exactInput = 'exactInput',
-  exactOutput = 'exactOutput',
+  exactInput = 'exactInputSingle',
+  exactOutput = 'exactOutputSingle',
 }
 
 export type OutputResult = {

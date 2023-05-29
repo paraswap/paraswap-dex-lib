@@ -9,15 +9,13 @@ export interface Rebase {
 export class  RebaseLibrary {
 /// @notice Calculates the base value in relationship to `elastic` and `total`.
     static toBase(total: Rebase, elastic: bigint, roundup: boolean): bigint {
-        debugger
-        let base: bigint;
 
+        let base: bigint;
         if (total.elastic === 0n) {
         base = elastic;
         } else {
         base = roundup ? FullMath.mulDivRoundingUp(elastic,total.base,total.elastic) : FullMath.mulDiv(elastic,total.base,total.elastic)
         }
-
         return base;
     }
 

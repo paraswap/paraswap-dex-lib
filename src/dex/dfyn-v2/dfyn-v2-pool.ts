@@ -27,11 +27,12 @@ import {
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
 import DfynV2PoolHelperABI from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json';
 import DfynV2VaultABI from '../../abi/dfyn-v2/DfynV2Vault.abi.json';
-import { bigIntify, catchParseLogError, isSampled } from '../../utils';
+import { bigIntify, catchParseLogError, getDexKeysWithNetwork, isSampled } from '../../utils';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
 import {
-  DEFAULT_POOL_INIT_CODE_HASH, OUT_OF_RANGE_ERROR_POSTFIX
+  //DEFAULT_POOL_INIT_CODE_HASH,
+   OUT_OF_RANGE_ERROR_POSTFIX
 } from './constants';
 import { uint256ToBigInt,uint160ToBigInt, uint128ToBigInt } from '../../lib/decoders';
 import { 
@@ -40,9 +41,12 @@ import {
   decodeLimitOrderTicks,decodeGetTickState,decodedGetTotals,decodeGetTokenProtocolFees
 } from './utils';
 import { dfynV2Math } from './contract-math/dfyn-v2-math';
-import { debug } from 'console';
 import { address } from '@hashflow/sdk';
 import { RebaseLibrary } from './contract-math/RebaseLibrary';
+import { Network } from '../../constants';
+import { config } from 'yargs';
+import { DfynConfig } from '../uniswap-v2/dfyn';
+import { DfynV2Config } from './config';
 
 export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -98,7 +102,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
     token1: Address,
     logger: Logger,
     mapKey: string = '',
-    readonly poolInitCodeHash = DEFAULT_POOL_INIT_CODE_HASH,
+    readonly poolInitCodeHash = DfynV2Config[parentName][dexHelper.config.data.network].DEFAULT_POOL_INIT_CODE_HASH,
   ) {
     super(parentName, `${token0}_${token1}`, dexHelper, logger, true, mapKey);
     //this.feeCodeAsString = feeCode.toString();
@@ -175,9 +179,6 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       }
 
       if (event.name in this.handlers) {
-        // Because we have observations in array which is mutable by nature, there is a
-        // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
-        // And there is no good workaround, so turn off the type checker for this line
         const _state = _.cloneDeep(state) as PoolState;
         try {
           return this.handlers[event.name](event, _state, log, blockHeader);
@@ -462,7 +463,7 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
       );
 
     
-    //assert(resState.success, 'Pool does not exist');
+    assert(reserves.success, 'Pool does not exist');
 
     const [
       balance,
@@ -680,146 +681,11 @@ export class DfynV2EventPool extends StatefulEventSubscriber<PoolState> {
         //newLiquidity,
         zeroForOne,
       );
-
-      // if (zeroForOne) {
-      //   if (amountOut < 0n) {
-      //     pool.balance1 -= BigInt.asUintN(256, -amountOut);
-      //   } else {
-      //     this.logger.error(
-      //       `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amountOut}`,
-      //     );
-      //     pool.isValid = false;
-      //   }
-      //   // This is not correct fully, because pool may get more tokens then it needs, but
-      //   // it is not accounted in internal state, it should be good enough
-      //   pool.balance0 += BigInt.asUintN(256, amountIn);
-      // } else {
-      //   if (amountIn < 0n) {
-      //     pool.balance0 -= BigInt.asUintN(256, -amountIn);
-      //   } else {
-      //     this.logger.error(
-      //       `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amountIn}`,
-      //     );
-      //     pool.isValid = false;
-      //   }
-      //   pool.balance1 += BigInt.asUintN(256, amountOut);
-      // }
-      
       return pool;
     }
   }
 
 
-
-  // handleBurnEvent(
-  //   event: any,
-  //   pool: PoolState,
-  //   log: Log,
-  //   blockHeader: BlockHeader,
-  // ) {
-  //   const amount = bigIntify(event.args.amount);
-  //   const tickLower = bigIntify(event.args.tickLower);
-  //   const tickUpper = bigIntify(event.args.tickUpper);
-  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-
-  //   dfynV2Math._modifyPosition(pool, {
-  //     tickLower,
-  //     tickUpper,
-  //     liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
-  //   });
-
-    // From this transaction I conclude that there is no balance change from
-    // Burn event: https://dashboard.tenderly.co/tx/mainnet/0xfccf5341147ac3ad0e66452273d12dfc3219e81f8fb369a6cdecfb24b9b9d078/logs
-    // And it aligns with UniswapV3 doc:
-    // https://github.com/Uniswap/v3-core/blob/05c10bf6d547d6121622ac51c457f93775e1df09/contracts/interfaces/pool/IUniswapV3PoolActions.sol#L59
-    // It just updates positions and tokensOwed which may be requested calling collect
-    // So, we don't need to update pool.balances0 and pool.balances1 here
-
-  //   return pool;
-  // }
-
-  // handleMintEvent(
-  //   event: any,
-  //   pool: PoolState,
-  //   log: Log,
-  //   blockHeader: BlockHeader,
-  // ) {
-  //   const amount = bigIntify(event.args.amount);
-  //   const tickLower = bigIntify(event.args.tickLower);
-  //   const tickUpper = bigIntify(event.args.tickUpper);
-  //   const amount0 = bigIntify(event.args.amount0);
-  //   const amount1 = bigIntify(event.args.amount1);
-  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-
-  //   uniswapV3Math._modifyPosition(pool, {
-  //     tickLower,
-  //     tickUpper,
-  //     liquidityDelta: amount,
-  //   });
-
-  //   pool.balance0 += amount0;
-  //   pool.balance1 += amount1;
-
-  //   return pool;
-  // }
-
-  // handleSetFeeProtocolEvent(
-  //   event: any,
-  //   pool: PoolState,
-  //   log: Log,
-  //   blockHeader: BlockHeader,
-  // ) {
-  //   const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
-  //   const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
-  //  // pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
-  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-
-  //   return pool;
-  // }
-
-  // handleCollectEvent(
-  //   event: any,
-  //   pool: PoolState,
-  //   log: Log,
-  //   blockHeader: BlockHeader,
-  // ) {
-  //   const amount0 = bigIntify(event.args.amount0);
-  //   const amount1 = bigIntify(event.args.amount1);
-  //   pool.balance0 -= amount0;
-  //   pool.balance1 -= amount1;
-  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-
-  //   return pool;
-  // }
-
-  // handleFlashEvent(
-  //   event: any,
-  //   pool: PoolState,
-  //   log: Log,
-  //   blockHeader: BlockHeader,
-  // ) {
-  //   const paid0 = bigIntify(event.args.paid0);
-  //   const paid1 = bigIntify(event.args.paid1);
-  //   pool.balance0 += paid0;
-  //   pool.balance1 += paid1;
-  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-
-  //   return pool;
-  // }
-
-  // handleIncreaseObservationCardinalityNextEvent(
-  //   event: any,
-  //   pool: PoolState,
-  //   log: Log,
-  //   blockHeader: BlockHeader,
-  // ) {
-  //   // pool.slot0.observationCardinalityNext = parseInt(
-  //   //   event.args.observationCardinalityNextNew,
-  //   //   10,
-  //   // );
-  //   pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-  //   return pool;
-  // }
 
   private _reduceTicks(
     ticks: Record<NumberAsString, TickInfo>,
