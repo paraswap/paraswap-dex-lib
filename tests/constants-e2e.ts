@@ -918,7 +918,7 @@ export const Holders: {
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
     stMATIC: '0x6725b8cd3cdbc82a6044689a8bbc64a915d200e7',
-    axlUSDC: '0x42875ae5766dfd4d70772a3a956842e4b708d59a',
+    axlUSDC: '0xe743a49f04f2f77eb2d3b753ae3ad599de8cea84',
     deUSDC: '0x94d5ead1f80cf0b4d3480ab59dff16d47c93e9fe',
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
