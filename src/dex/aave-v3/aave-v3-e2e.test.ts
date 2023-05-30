@@ -217,7 +217,7 @@ describe('AaveV3 E2E', () => {
 
     const pairs = [
       {
-        tokenSymbol: 'USDt',
+        tokenSymbol: 'USDT',
         aTokenSymbol: 'aAvaUSDT',
         amount: '1000000',
       },
