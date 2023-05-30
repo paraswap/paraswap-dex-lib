@@ -47,6 +47,19 @@ export const uint256ToBigInt = (
   return generalDecoder(result, ['uint256'], 0n, value => value[0].toBigInt());
 };
 
+export const uint128ToBigInt = (
+  result: MultiResult<BytesLike> | BytesLike,
+): bigint => {
+  return generalDecoder(result, ['uint128'], 0n, value => value[0].toBigInt());
+};
+
+export const uint160ToBigInt = (
+  result: MultiResult<BytesLike> | BytesLike,
+): bigint => {
+  return generalDecoder(result, ['uint160'], 0n, value => value[0].toBigInt());
+};
+
+
 export const uint256ArrayDecode = (
   result: MultiResult<BytesLike> | BytesLike,
 ): bigint => {

@@ -36,33 +36,26 @@ import { DfynV2EventPool } from './dfyn-v2-pool';
 import DfynV2RouterABI from '../../abi/dfyn-v2/DfynV2Router.abi.json';
 import DfynV2QuoterABI from '../../abi/dfyn-v2/DfynV2Quoter.abi.json';
 import DfynV2MultiABI from '../../abi/dfyn-v2/DfynMulti.abi.json';
-import DfynV2StateMulticallABI from '../../abi/dfyn-v2/DfynV2StateMulticall.abi.json';
+import DfynV2PoolHelper from '../../abi/dfyn-v2/DfynV2PoolHelper.abi.json'
 import {
   DFYNV2_EFFICIENCY_FACTOR,
   DFYNV2_FUNCTION_CALL_GAS_COST,
-  DFYNV2_SUBGRAPH_URL,
+  //DFYNV2_SUBGRAPH_URL,
   DFYNV2_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
-import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { dfynV2Math } from './contract-math/dfyn-v2-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import {
-  AssetType,
-  DEFAULT_ID_ERC20,
-  DEFAULT_ID_ERC20_AS_STRING,
-} from '../../lib/tokens/types';
+
 import DfynV2PoolABI from '../../abi/dfyn-v2/DfynV2Pool.abi.json';
+import DfynV2Multicall from '../../abi/dfyn-v2/DfynV2Multicall.abi.json';
 import { Contract as Contract2, ethers } from 'ethers';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { DEFAULT_POOL_INIT_CODE_HASH } from './constants';
-
-type PoolPairsInfo = {
-  token0: Address;
-  token1: Address;
-  fee: string;
-};
+//import { DEFAULT_POOL_INIT_CODE_HASH } from './constants';
+import { RebaseLibrary } from './contract-math/RebaseLibrary';
+import { mulInPrecision } from '../kyberdmm/math-ext';
+import { receiveMessageOnPort } from 'worker_threads';
 
 const DFYNV2_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const DFYNV2_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
@@ -90,7 +83,7 @@ export class DfynV2
   logger: Logger;
 
   private dfynMulti: Contract;
-  private stateMultiContract: Contract;
+  private poolHelper: Contract;
 
   private notExistingPoolSetKey: string;
 
@@ -110,9 +103,9 @@ export class DfynV2
       DfynV2MultiABI as AbiItem[],
       this.config.dfynMulticall,
     );
-    this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      DfynV2StateMulticallABI as AbiItem[],
-      this.config.stateMulticall,
+    this.poolHelper = new this.dexHelper.web3Provider.eth.Contract(
+      DfynV2PoolHelper as AbiItem[],
+      this.config.poolHelper,
     );
 
     // To receive revert reasons
@@ -128,7 +121,7 @@ export class DfynV2
   get supportedFees() {
     return this.config.supportedFees;
   }
-
+  
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
@@ -173,6 +166,7 @@ export class DfynV2
     destAddress: Address,
     blockNumber: number,
   ): Promise<DfynV2EventPool | null> {
+    
     let pool = this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)];
 
     if (pool === undefined) {
@@ -206,7 +200,7 @@ export class DfynV2
       pool = new DfynV2EventPool(
         this.dexHelper,
         this.dexKey,
-        this.stateMultiContract,
+        this.poolHelper,
         this.erc20Interface,
         this.config.factory,
         token0,
@@ -282,8 +276,21 @@ export class DfynV2
 
     if (_srcAddress === _destAddress) return [];
 
-    const pools = [await this.getPoolIdentifier(_srcAddress, _destAddress)];
-    return pools;
+    const pools = (
+      await Promise.all(
+        this.supportedFees.map(async fee =>
+          this.getPool(_srcAddress, _destAddress, blockNumber),
+        ),
+      )
+    ).filter(pool => pool);
+
+    if (pools.length === 0) return [];
+
+    return pools.map(pool =>
+      this.getPoolIdentifier(_srcAddress, _destAddress),
+    );
+    //const pools = [await this.getPoolIdentifier(_srcAddress, _destAddress)];
+    //return pools;
   }
 
   async getPricingFromRpc(
@@ -291,8 +298,9 @@ export class DfynV2
     to: Token,
     amounts: bigint[],
     side: SwapSide,
-    // pools: DfynV2EventPool[],
+    pools: DfynV2EventPool[],
   ): Promise<ExchangePrices<DfynV2Data> | null> {
+
     const poolAddress = this._computePoolAddress(from.address, to.address);
 
     const concentratedPool = new Contract2(
@@ -389,16 +397,177 @@ export class DfynV2
 
       if (_srcAddress === _destAddress) return null;
 
+      let selectedPools: DfynV2EventPool[] = [];
+
+      if (!limitPools) {
+        selectedPools = (
+          await Promise.all(
+            this.supportedFees.map(async fee => {
+              const locallyFoundPool =
+                this.eventPools[
+                  this.getPoolIdentifier(_srcAddress, _destAddress)
+                ];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const newlyFetchedPool = await this.getPool(
+                _srcAddress,
+                _destAddress,
+                //fee,
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
+      } else {
+        const pairIdentifierWithoutFee = this.getPoolIdentifier(
+          _srcAddress,
+          _destAddress
+        );
+
+        const poolIdentifiers = limitPools.filter(identifier =>
+          identifier.startsWith(pairIdentifierWithoutFee),
+        );
+
+        selectedPools = (
+          await Promise.all(
+            poolIdentifiers.map(async identifier => {
+              let locallyFoundPool = this.eventPools[identifier];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const [,srcAddress, destAddress] = identifier.split('_');
+              const newlyFetchedPool = await this.getPool(
+                srcAddress,
+                destAddress,
+                //BigInt(fee),
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
+      }
+
+      if (selectedPools.length === 0) return null;
+
+      const poolsToUse = selectedPools.reduce(
+        (acc, pool) => {
+          let state = pool.getState(blockNumber);
+          if (state === null) {
+            this.logger.trace(
+              `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
+            );
+            acc.poolWithoutState.push(pool);
+          } else {
+            acc.poolWithState.push(pool);
+          }
+          return acc;
+        },
+        {
+          poolWithState: [] as DfynV2EventPool[],
+          poolWithoutState: [] as DfynV2EventPool[],
+        },
+      );
+
       const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
         side,
+        poolsToUse.poolWithoutState,
       );
 
+      const states = poolsToUse.poolWithState.map(
+        p => p.getState(blockNumber)!,
+      );
+
+      // const states:any[] = []
+      const unitAmount = getBigIntPow(
+        side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
+      );
+
+      const _amounts = [...amounts.slice(1)];
+      const [token0] = this._sortTokens(_srcAddress, _destAddress);
+      const zeroForOne = token0 === _srcAddress ? true : false;
+      const result = await Promise.all(
+        poolsToUse.poolWithState.map(async (pool, i) => {
+          const state = states[i];
+
+          if (state.liquidity <= 0n) {
+            this.logger.trace(`pool have 0 liquidity`);
+            return null;
+          }
+
+          const balanceDestToken =
+            _destAddress === pool.token0 ? state.balance0 : state.balance1;
+          
+          const unitResult = this._getOutputs(
+            state,
+            [unitAmount],
+            zeroForOne,
+            side,
+            balanceDestToken,
+          );
+          const pricesResult = this._getOutputs(
+            state,
+            _amounts,
+            zeroForOne,
+            side,
+            balanceDestToken,
+          );
+          
+          if (!unitResult || !pricesResult) {
+            this.logger.debug('Prices or unit is not calculated');
+            return null;
+          }
+
+          const prices = [0n, ...pricesResult.outputs];
+          const gasCost = [
+            0,
+            ...pricesResult.outputs.map((p, index) => {
+              if (p == 0n) {
+                return 0;
+              } else {
+                return (
+                  DFYNV2_FUNCTION_CALL_GAS_COST +
+                  pricesResult.tickCounts[index] * DFYNV2_TICK_GAS_COST
+                );
+              }
+            }),
+          ];
+          return {
+            unit: unitResult.outputs[0],
+            prices,
+            data: {
+              path: [
+                {
+                  tokenIn: _srcAddress,
+                  tokenOut: _destAddress,
+                },
+              ],
+            },
+            poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
+            exchange: this.dexKey,
+            gasCost: gasCost,
+            poolAddresses: [pool.poolAddress],
+          };
+        }),
+      );
+      
       const rpcResults = await rpcResultsPromise;
 
-      return rpcResults;
+      const notNullResult = result.filter(
+        res => res !== null,
+      ) as ExchangePrices<DfynV2Data>;
+
+      if (rpcResults) {
+        rpcResults.forEach(r => {
+          if (r) {
+            notNullResult.push(r);
+          }
+        });
+      }
+      return notNullResult;
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -420,7 +589,46 @@ export class DfynV2
   ): AdapterExchangeParam {
     const { path: rawPath } = data;
     const path = this._encodePath(rawPath, side);
+    debugger
+    const swapFunction =
+    side === SwapSide.SELL
+      ? '0xb8fd05a5' //DfynV2Functions.exactInput
+      : '0x015a4b6d';
 
+  //const path = this._encodePath(data.path, side);
+    // const swapFunctionParams: DfynV2Param =
+    //   side === SwapSide.SELL
+    //     ? {
+    //         recipient: this.augustusAddress,
+    //         deadline: this.getDeadline(),
+    //         amountIn: '0',
+    //         amountOutMinimum: destAmount,
+    //         unWrapVault: true,
+    //         tokenIn: srcToken,
+    //         tokenOut: destToken,
+            
+    //       }
+    //     : {
+    //         recipient: this.augustusAddress,
+    //         deadline: this.getDeadline(),
+    //         amountOut: destAmount,
+    //         amountInMaximum: '0',
+    //         unWrapVault: true,
+    //         tokenIn: srcToken,
+    //         tokenOut: destToken,
+    //       };
+  //   const swapData = this.routerIface.encodeFunctionData(swapFunction, [
+  //     swapFunctionParams,
+  //   ]);
+
+  // const transfer = this.routerIface.encodeFunctionData('0x01c6adc3',[
+  //   srcToken,
+  //   srcAmount
+  // ])
+  
+  // const payload = this.routerIface.encodeFunctionData('0xac9650d8',[
+  //   [transfer, swapData]
+  // ]);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -465,7 +673,7 @@ export class DfynV2
     });
     return arr;
   }
-
+  
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -474,10 +682,11 @@ export class DfynV2
     data: DfynV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    debugger
     const swapFunction =
       side === SwapSide.SELL
-        ? DfynV2Functions.exactInput
-        : DfynV2Functions.exactOutput;
+        ? '0xb8fd05a5' //DfynV2Functions.exactInput
+        : '0x015a4b6d';
 
     const path = this._encodePath(data.path, side);
     const swapFunctionParams: DfynV2Param =
@@ -485,27 +694,46 @@ export class DfynV2
         ? {
             recipient: this.augustusAddress,
             deadline: this.getDeadline(),
-            amountIn: srcAmount,
+            amountIn: '0',
             amountOutMinimum: destAmount,
-            path,
+            unWrapVault: true,
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            
           }
         : {
             recipient: this.augustusAddress,
             deadline: this.getDeadline(),
             amountOut: destAmount,
-            amountInMaximum: srcAmount,
-            path,
+            amountInMaximum: '0',
+            unWrapVault: true,
+            tokenIn: srcToken,
+            tokenOut: destToken,
           };
     const swapData = this.routerIface.encodeFunctionData(swapFunction, [
       swapFunctionParams,
     ]);
 
+    
+    const transfer = side === SwapSide.SELL? 
+      this.routerIface.encodeFunctionData('0x01c6adc3',[
+        srcToken,
+        srcAmount
+      ]) :
+      this.routerIface.encodeFunctionData('0x01c6adc3',[
+        srcToken,
+        srcAmount
+      ])
+    
+    const multicall = this.routerIface.encodeFunctionData('0xac9650d8',[
+      [transfer, swapData]
+    ]);
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
       srcAmount,
       destToken,
       destAmount,
-      swapData,
+      multicall,
       this.config.router,
     );
   }
@@ -618,9 +846,11 @@ export class DfynV2
       quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
       supportedFees: this.config.supportedFees,
-      stateMulticall: this.config.stateMulticall.toLowerCase(),
+      poolHelper: this.config.poolHelper.toLowerCase(),
       chunksCount: this.config.chunksCount,
       dfynMulticall: this.config.dfynMulticall,
+      DFYNV2_SUBGRAPH_URL: this.config.DFYNV2_SUBGRAPH_URL,
+      DEFAULT_POOL_INIT_CODE_HASH: this.config.DEFAULT_POOL_INIT_CODE_HASH
     };
     return newConfig;
   }
@@ -637,7 +867,7 @@ export class DfynV2
     return ethers.utils.getCreate2Address(
       this.config.factory,
       encodedKey,
-      DEFAULT_POOL_INIT_CODE_HASH,
+      this.config.DEFAULT_POOL_INIT_CODE_HASH,
     );
   }
 
@@ -648,13 +878,29 @@ export class DfynV2
     side: SwapSide,
     destTokenBalance: bigint,
   ): OutputResult | null {
-    try {
-      const outputsResult = uniswapV3Math.queryOutputs(
+    try { 
+
+      const shares = []
+      for(let i=0; i<amounts.length; i++){
+        shares.push(RebaseLibrary.toBase(
+          zeroForOne ? state.total0 : state.total1,
+          amounts[i],
+          false
+        ))
+      }
+      const outputsResult = dfynV2Math.queryOutputs(
         state,
-        amounts,
+        shares,
         zeroForOne,
         side,
       );
+      for(let i=0; i<outputsResult.outputs.length; i++){
+        outputsResult.outputs[i] = RebaseLibrary.toElastic(
+          zeroForOne ? state.total1 : state.total0,
+          outputsResult.outputs[i],
+          false
+        )
+      }
 
       if (side === SwapSide.SELL) {
         if (outputsResult.outputs[0] > destTokenBalance) {
@@ -700,7 +946,7 @@ export class DfynV2
   ) {
     try {
       const res = await this.dexHelper.httpRequest.post(
-        DFYNV2_SUBGRAPH_URL,
+        this.config.DFYNV2_SUBGRAPH_URL,
         { query, variables },
         undefined,
         { timeout: timeout },
