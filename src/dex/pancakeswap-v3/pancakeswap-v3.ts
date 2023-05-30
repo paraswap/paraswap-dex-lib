@@ -42,7 +42,8 @@ import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import PancakeswapV3StateMulticallABI from '../../abi/pancakeswap-v3/PancakeV3StateMulticall.abi.json';
 import {
   PANCAKESWAPV3_EFFICIENCY_FACTOR,
-  PANCAKESWAP3_FUNCTION_CALL_GAS_COST,
+  PANCAKESWAPV3_TICK_BASE_OVERHEAD,
+  PANCAKESWAPV3_POOL_SEARCH_OVERHEAD,
   PANCAKESWAPV3_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
@@ -606,7 +607,8 @@ export class PancakeswapV3
                 return 0;
               } else {
                 return (
-                  PANCAKESWAP3_FUNCTION_CALL_GAS_COST +
+                  PANCAKESWAPV3_POOL_SEARCH_OVERHEAD +
+                  PANCAKESWAPV3_TICK_BASE_OVERHEAD +
                   pricesResult.tickCounts[index] * PANCAKESWAPV3_TICK_GAS_COST
                 );
               }

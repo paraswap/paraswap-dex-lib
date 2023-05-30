@@ -1,5 +1,6 @@
-export const PANCAKESWAP3_FUNCTION_CALL_GAS_COST = 21_000; // Ceiled
 export const PANCAKESWAPV3_TICK_GAS_COST = 24_000; // Ceiled
+export const PANCAKESWAPV3_TICK_BASE_OVERHEAD = 75_000;
+export const PANCAKESWAPV3_POOL_SEARCH_OVERHEAD = 10_000;
 
 // This is used for price calculation. If out of scope, return 0n
 export const TICK_BITMAP_TO_USE = 4n;
