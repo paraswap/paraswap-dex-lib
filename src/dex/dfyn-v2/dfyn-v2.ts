@@ -300,27 +300,6 @@ export class DfynV2
     side: SwapSide,
     pools: DfynV2EventPool[],
   ): Promise<ExchangePrices<DfynV2Data> | null> {
-    // if (pools.length === 0) {
-    //   return null;
-    // }
-    //this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
-    // get balances of erc20 in a pool in our case we will fetch reserves0 or reserves1 or maybe vault balance of the pool
-    // const requests = pools.map<BalanceRequest>(
-    //   pool => ({
-    //     owner: pool.poolAddress,
-    //     asset: side == SwapSide.SELL ? from.address : to.address,
-    //     assetType: AssetType.ERC20,
-    //     ids: [
-    //       {
-    //         id: DEFAULT_ID_ERC20,
-    //         spenders: [],
-    //       },
-    //     ],
-    //   }),
-    //   [],
-    // );
-    // // fetches balances from the chain
-    // const balances = await getBalances(this.dexHelper.multiWrapper, requests);
 
     const poolAddress = this._computePoolAddress(from.address, to.address);
 
@@ -329,35 +308,6 @@ export class DfynV2
       DfynV2PoolABI,
       provider,
     );
-
-    // const reserves = await concentratedPool.getReserves();
-    // for (const reserve of reserves) {
-    //   const balance = reserves[reserve].amounts[DEFAULT_ID_ERC20_AS_STRING];
-    //   if (balance >= amounts[amounts.length - 1]) {
-    //     continue;
-    //   } else {
-    //     this.logger.warn(
-    //       `[${this.network}] have no balance ${poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-    //     );
-    //   }
-    // }
-
-    // pools = pools.filter((pool, index) => {
-    //   const balance = reserves[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
-    //   if (balance >= amounts[amounts.length - 1]) {
-    //     return true;
-    //   }
-    //   this.logger.warn(
-    //     `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-    //   );
-    //   return false;
-    // });
-    // // fetching pools with balances
-    // pools.forEach(pool => {
-    //   this.logger.warn(
-    //     `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
-    //   );
-    // });
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
