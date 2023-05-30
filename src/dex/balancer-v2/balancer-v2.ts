@@ -12,7 +12,15 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { ETHER_ADDRESS, MAX_INT, MAX_UINT, Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT, SwapSide, } from '../../constants';
+import {
+  ETHER_ADDRESS,
+  MAX_INT,
+  MAX_UINT,
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool } from './pools/stable/StablePool';
 import { WeightedPool } from './pools/weighted/WeightedPool';
@@ -38,8 +46,17 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, BalancerConfig } from './config';
-import { getAllPoolsUsedInPaths, isSameAddress, poolGetMainTokens, poolGetPathForTokenInOut, } from './utils';
-import { MIN_USD_LIQUIDITY_TO_FETCH, STABLE_GAS_COST, VARIABLE_GAS_COST_PER_CYCLE } from './constants';
+import {
+  getAllPoolsUsedInPaths,
+  isSameAddress,
+  poolGetMainTokens,
+  poolGetPathForTokenInOut,
+} from './utils';
+import {
+  MIN_USD_LIQUIDITY_TO_FETCH,
+  STABLE_GAS_COST,
+  VARIABLE_GAS_COST_PER_CYCLE,
+} from './constants';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -348,7 +365,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       return null;
     }
 
-    if(subgraphPool.poolType !== BalancerPoolTypes.Weighted && side === SwapSide.BUY) {
+    if (
+      subgraphPool.poolType !== BalancerPoolTypes.Weighted &&
+      side === SwapSide.BUY
+    ) {
       return null;
     }
 
@@ -495,8 +515,7 @@ export class BalancerV2
     protected network: Network,
     dexKey: string,
     public dexHelper: IDexHelper,
-    public vaultAddress: Address = BalancerConfig[dexKey][network]
-      .vaultAddress,
+    public vaultAddress: Address = BalancerConfig[dexKey][network].vaultAddress,
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
   ) {
@@ -596,23 +615,22 @@ export class BalancerV2
   }
 
   getPoolsWithTokenPair(from: Token, to: Token): SubgraphPoolBase[] {
-    const pools = this.eventPools.allPools
-      .filter(p => {
-        const fromMain = p.mainTokens.find(
-          token => token.address.toLowerCase() === from.address.toLowerCase(),
-        );
-        const toMain = p.mainTokens.find(
-          token => token.address.toLowerCase() === to.address.toLowerCase(),
-        );
+    const pools = this.eventPools.allPools.filter(p => {
+      const fromMain = p.mainTokens.find(
+        token => token.address.toLowerCase() === from.address.toLowerCase(),
+      );
+      const toMain = p.mainTokens.find(
+        token => token.address.toLowerCase() === to.address.toLowerCase(),
+      );
 
-        return (
-          fromMain &&
-          toMain &&
-          // filter instances similar to the following:
-          // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
-          !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
-        );
-      });
+      return (
+        fromMain &&
+        toMain &&
+        // filter instances similar to the following:
+        // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
+        !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
+      );
+    });
 
     return pools.slice(0, 10);
   }
@@ -952,7 +970,7 @@ export class BalancerV2
         side,
       );
 
-      if(side === SwapSide.BUY) {
+      if (side === SwapSide.BUY) {
         path = path.reverse();
       }
 
@@ -960,7 +978,11 @@ export class BalancerV2
         poolId: hop.pool.id,
         assetInIndex: swapOffset + index,
         assetOutIndex: swapOffset + index + 1,
-        amount: (side === SwapSide.SELL && index === 0 || side === SwapSide.BUY && index === path.length - 1) ? swapData.amount  : '0',
+        amount:
+          (side === SwapSide.SELL && index === 0) ||
+          (side === SwapSide.BUY && index === path.length - 1)
+            ? swapData.amount
+            : '0',
         userData: '0x',
       }));
 
