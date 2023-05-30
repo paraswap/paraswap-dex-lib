@@ -331,6 +331,8 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount1 = bigIntify(event.args.amount1);
     const newTick = bigIntify(event.args.tick);
     const newLiquidity = bigIntify(event.args.liquidity);
+    // const protocolFeesToken0 = bigIntify(event.arg.protocolFeesToken0);
+    // const protocolFeesToken1 = bigIntify(event.arg.protocolFeesToken1);
 
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
@@ -381,7 +383,6 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleBurnEvent(
-    // TODO DONE
     event: any,
     pool: PoolState,
     log: Log,
@@ -409,7 +410,6 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleMintEvent(
-    // TODO DONE
     event: any,
     pool: PoolState,
     log: Log,
@@ -435,7 +435,6 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleSetFeeProtocolEvent(
-    // TODO DONE
     event: any,
     pool: PoolState,
     log: Log,
@@ -443,14 +442,13 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
     const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
-    pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 16n); // TODO CHANGED
+    pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 16n);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
   }
 
   handleCollectEvent(
-    // TODO DONE
     event: any,
     pool: PoolState,
     log: Log,
@@ -466,7 +464,6 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleFlashEvent(
-    // TODO DONE
     event: any,
     pool: PoolState,
     log: Log,
@@ -474,6 +471,7 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const paid0 = bigIntify(event.args.paid0);
     const paid1 = bigIntify(event.args.paid1);
+
     pool.balance0 += paid0;
     pool.balance1 += paid1;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
@@ -482,7 +480,6 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleIncreaseObservationCardinalityNextEvent(
-    // TODO DONE
     event: any,
     pool: PoolState,
     log: Log,

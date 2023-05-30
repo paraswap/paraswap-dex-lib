@@ -1,7 +1,6 @@
 import { DexParams } from '../uniswap-v3/types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
-import { Address } from '../../types';
 
 const PANCAKE_SUPPORTED_FEES = [10000n, 2500n, 500n, 100n];
 

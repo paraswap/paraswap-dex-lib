@@ -140,7 +140,6 @@ function _priceComputationCycles(
     }
 
     if (step.tickNext < TickMath.MIN_TICK) {
-      //TODO in contract
       step.tickNext = TickMath.MIN_TICK;
     } else if (step.tickNext > TickMath.MAX_TICK) {
       step.tickNext = TickMath.MAX_TICK;
@@ -149,8 +148,7 @@ function _priceComputationCycles(
     step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
 
     const swapStepResult = SwapMath.computeSwapStep(
-      //TODO check if fee changes
-      state.sqrtPriceX96, //TODO in contract
+      state.sqrtPriceX96,
       (
         zeroForOne
           ? step.sqrtPriceNextX96 < sqrtPriceLimitX96
@@ -169,7 +167,6 @@ function _priceComputationCycles(
     step.feeAmount = swapStepResult.feeAmount;
 
     if (exactInput) {
-      //TODO in contract
       state.amountSpecifiedRemaining -= step.amountIn + step.feeAmount;
       state.amountCalculated = state.amountCalculated - step.amountOut;
     } else {
@@ -308,7 +305,6 @@ class PancakeswapV3Math {
         : -BigInt.asIntN(256, amount);
 
       if (state.isFirstCycleState) {
-        // TODO what is this
         // Set first non zero amount
         state.amountSpecifiedRemaining = amountSpecified;
         state.isFirstCycleState = false;
