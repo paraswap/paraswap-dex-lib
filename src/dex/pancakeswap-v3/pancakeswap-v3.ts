@@ -29,6 +29,7 @@ import {
   UniswapV3Data,
   UniswapV3Functions,
   UniswapV3Param,
+  UniswapV3SimpleSwapParams,
 } from '../uniswap-v3/types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -733,7 +734,7 @@ export class PancakeswapV3
         : UniswapV3Functions.exactOutput;
 
     const path = this._encodePath(data.path, side);
-    const swapFunctionParams: UniswapV3Param =
+    const swapFunctionParams: UniswapV3SimpleSwapParams =
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
