@@ -9,16 +9,9 @@ import {
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import {
-  PoolState,
-  DecodedStateMultiCallResultWithRelativeBitmaps,
-  TickInfo,
-  TickBitMapMappingsWithBigNumber,
-  TickInfoMappingsWithBigNumber,
-} from './types';
-import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
+import PancakeswapV3PoolABI from '../../abi/pancakeswap-v3/PancakeswapV3Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
-import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { pancakeswapV3Math } from './contract-math/pancakeswap-v3-math';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
 import {
@@ -29,9 +22,16 @@ import {
 } from './constants';
 import { TickBitMap } from './contract-math/TickBitMap';
 import { uint256ToBigInt } from '../../lib/decoders';
+import {
+  DecodedStateMultiCallResultWithRelativeBitmaps,
+  PoolState,
+  TickBitMapMappingsWithBigNumber,
+  TickInfo,
+  TickInfoMappingsWithBigNumber,
+} from '../uniswap-v3/types';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 
-export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
+export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
@@ -53,7 +53,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
 
-  public readonly poolIface = new Interface(UniswapV3PoolABI);
+  public readonly poolIface = new Interface(PancakeswapV3PoolABI);
 
   public readonly feeCodeAsString;
 
@@ -69,6 +69,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     logger: Logger,
     mapKey: string = '',
     readonly poolInitCodeHash: string,
+    readonly poolDeployer?: string,
   ) {
     super(
       parentName,
@@ -330,6 +331,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount1 = bigIntify(event.args.amount1);
     const newTick = bigIntify(event.args.tick);
     const newLiquidity = bigIntify(event.args.liquidity);
+    // const protocolFeesToken0 = bigIntify(event.arg.protocolFeesToken0);
+    // const protocolFeesToken1 = bigIntify(event.arg.protocolFeesToken1);
+
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     if (amount0 <= 0n && amount1 <= 0n) {
@@ -342,7 +346,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     } else {
       const zeroForOne = amount0 > 0n;
 
-      uniswapV3Math.swapFromEvent(
+      pancakeswapV3Math.swapFromEvent(
         pool,
         newSqrtPriceX96,
         newTick,
@@ -389,7 +393,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    uniswapV3Math._modifyPosition(pool, {
+    pancakeswapV3Math._modifyPosition(pool, {
       tickLower,
       tickUpper,
       liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
@@ -418,7 +422,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount1 = bigIntify(event.args.amount1);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    uniswapV3Math._modifyPosition(pool, {
+    pancakeswapV3Math._modifyPosition(pool, {
       tickLower,
       tickUpper,
       liquidityDelta: amount,
@@ -438,7 +442,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
     const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
-    pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
+    pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 16n);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
@@ -467,6 +471,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const paid0 = bigIntify(event.args.paid0);
     const paid1 = bigIntify(event.args.paid1);
+
     pool.balance0 += paid0;
     pool.balance1 += paid1;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
@@ -538,7 +543,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     );
 
     return ethers.utils.getCreate2Address(
-      this.factoryAddress,
+      this.poolDeployer ? this.poolDeployer : this.factoryAddress,
       encodedKey,
       this.poolInitCodeHash,
     );
