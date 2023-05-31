@@ -30,7 +30,10 @@ import {
   UniswapV3Functions,
   UniswapV3Param,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
@@ -39,8 +42,8 @@ import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   UNISWAPV3_EFFICIENCY_FACTOR,
-  UNISWAPV3_FUNCTION_CALL_GAS_COST,
-  UNISWAPV3_SUBGRAPH_URL,
+  UNISWAPV3_POOL_SEARCH_OVERHEAD,
+  UNISWAPV3_TICK_BASE_OVERHEAD,
   UNISWAPV3_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
@@ -77,7 +80,7 @@ export class UniswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(UniswapV3Config);
+    getDexKeysWithNetwork(_.pick(UniswapV3Config, ['UniswapV3']));
 
   logger: Logger;
 
@@ -210,6 +213,7 @@ export class UniswapV3
         token1,
         this.logger,
         this.cacheStateKey,
+        this.config.initHash,
       );
 
       try {
@@ -387,18 +391,22 @@ export class UniswapV3
         callData:
           side === SwapSide.SELL
             ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
-                from.address,
-                to.address,
-                pool.feeCodeAsString,
-                _amount.toString(),
-                0, //sqrtPriceLimitX96
+                [
+                  from.address,
+                  to.address,
+                  _amount.toString(),
+                  pool.feeCodeAsString,
+                  0, //sqrtPriceLimitX96
+                ],
               ])
             : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
-                from.address,
-                to.address,
-                pool.feeCodeAsString,
-                _amount.toString(),
-                0, //sqrtPriceLimitX96
+                [
+                  from.address,
+                  to.address,
+                  _amount.toString(),
+                  pool.feeCodeAsString,
+                  0, //sqrtPriceLimitX96
+                ],
               ]),
       })),
     );
@@ -611,7 +619,8 @@ export class UniswapV3
                 return 0;
               } else {
                 return (
-                  UNISWAPV3_FUNCTION_CALL_GAS_COST +
+                  UNISWAPV3_POOL_SEARCH_OVERHEAD +
+                  UNISWAPV3_TICK_BASE_OVERHEAD +
                   pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
                 );
               }
@@ -686,7 +695,7 @@ export class UniswapV3
       },
       {
         path,
-        deadline: this.getDeadline(),
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -740,14 +749,14 @@ export class UniswapV3
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             path,
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             path,
@@ -877,6 +886,9 @@ export class UniswapV3
       stateMulticall: this.config.stateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
       uniswapMulticall: this.config.uniswapMulticall,
+      deployer: this.config.deployer?.toLowerCase(),
+      initHash: this.config.initHash,
+      subgraphURL: this.config.subgraphURL,
     };
     return newConfig;
   }
@@ -940,7 +952,7 @@ export class UniswapV3
   ) {
     try {
       const res = await this.dexHelper.httpRequest.post(
-        UNISWAPV3_SUBGRAPH_URL,
+        this.config.subgraphURL,
         { query, variables },
         undefined,
         { timeout: timeout },

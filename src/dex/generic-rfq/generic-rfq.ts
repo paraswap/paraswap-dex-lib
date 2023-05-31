@@ -179,7 +179,6 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         data: {
           orderInfos: null,
         },
-        poolAddresses: [this.augustusRFQAddress],
       },
     ];
   }
@@ -290,5 +289,11 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       'true',
     );
     return true;
+  }
+
+  releaseResources(): void {
+    if (this.rateFetcher) {
+      this.rateFetcher.stop();
+    }
   }
 }

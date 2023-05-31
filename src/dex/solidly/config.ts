@@ -86,6 +86,21 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0, // variable
     },
   },
+  SoliSnek: {
+    [Network.AVALANCHE]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/solisnek-finance/solisnek-avalanche',
+      factoryAddress: '0xeeee1F1c93836B2CAf8B9E929cb978c35d46657E',
+      router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
+      initCode:
+        '0x79cda3bba5402e92f13ed1967c06033e6b7a1bc8d2e1d013b29fa0c4d0a4aa0f',
+      // updatable fees on the factory without event
+      stableFee: 2,
+      volatileFee: 20,
+      poolGasCost: 180 * 1000,
+      feeCode: 2,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -103,5 +118,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek
   },
 };

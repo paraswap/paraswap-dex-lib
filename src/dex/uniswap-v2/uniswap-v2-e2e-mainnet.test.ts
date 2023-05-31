@@ -879,6 +879,136 @@ describe('UniswapV2 E2E Mainnet', () => {
     });
   });
 
+  describe('Verse', () => {
+    const dexKey = 'Verse';
+
+    describe('Simpleswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '2000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.USDT,
+          holders.WETH,
+          '100000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multiswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '50000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Megaswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '50000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
   describe('ShibaSwap', () => {
     const dexKey = 'ShibaSwap';
 

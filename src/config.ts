@@ -50,13 +50,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0x7c7f62e5ba00783f57b39df0530e32c195696a57',
       Adapter04: '0x21ab8aeb35bfc0b3fd84ca810b0aa85938357be2',
-      BuyAdapter: '0x760870be538e7b4E2110e2890473CC17ADB1fdC1',
+      BuyAdapter: '0xb2634b3cbc1e401ab3c2743db44d459c5c9aa662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
     uniswapV3EventLoggingSampleRate: 0,
@@ -153,13 +153,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
-      BscAdapter02: '0xe102429Ef7CAaBaAA3bc2C017aC784c5F665EE82',
-      BscBuyAdapter: '0xA7f4fBCEB76a1B1c05C106a4289C28B3b91C17ca',
+      BscAdapter02: '0x1d2Fd92a1942A92a51198168eFCd626ed441CEC0',
+      BscBuyAdapter: '0x64C856fafE4C83a818514cBDfD661a3563a71B98',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
     rpcPollingBlocksBackToTriggerUpdate: 1,
@@ -180,13 +180,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
       PolygonAdapter02: '0xfb2a3de6c7B8c77b520E3da16021f3D8A4E93168',
-      PolygonBuyAdapter: '0xbE36ddfCDB6D60c1B20FfD73594540E5cc2c7E97',
+      PolygonBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -208,13 +208,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
     privateHttpProvider: process.env.HTTP_PROVIDER_43114,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0x3fd845dE49eBa45565d3b58CDEbf88d9bdA7aBf6',
-      AvalancheBuyAdapter: '0xad2f7039B0F4c410654886D049ae8406F5aDe709',
+      AvalancheAdapter02: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
+      AvalancheBuyAdapter: '0xfa072107a2CCfE5664794282EF36400735ABB70F',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -235,13 +235,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_250`]?.split(',') || [],
 
     adapterAddresses: {
-      FantomAdapter01: '0x66152A2a538644Ae125570De522ADEaC9E41D865',
-      FantomBuyAdapter: '0x27eb327B7255a2bF666EBB4D60AB4752dA4611b9',
+      FantomAdapter01: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
+      FantomBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
@@ -262,13 +262,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      ArbitrumAdapter02: '0xCBaeB06C2dF373c07A2Dc205266EC3bCd525DfB6',
-      ArbitrumBuyAdapter: '0xfa072107a2CCfE5664794282EF36400735ABB70F',
+      ArbitrumAdapter02: '0x3ad7f275E27AC579cA88e0b4765828242A9E8C49',
+      ArbitrumBuyAdapter: '0x6c33C7f6CBB4a428fe9ee31ca500a787c9f1525b',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -290,13 +290,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
     privateHttpProvider: process.env.HTTP_PROVIDER_10,
-    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
 
     adapterAddresses: {
       OptimismAdapter01: '0x4669D27A649f5451e0D44C20a2b246431F1B0572',
-      OptimismBuyAdapter: '0x4Ae8ad57912e207f5bFaFbF2e90486e5feab1634',
+      OptimismBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',

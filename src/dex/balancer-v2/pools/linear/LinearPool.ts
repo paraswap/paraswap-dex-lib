@@ -1,11 +1,11 @@
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
-import { isSameAddress, decodeThrowError } from './utils';
+import { isSameAddress, decodeThrowError } from '../../utils';
 import * as LinearMath from './LinearMath';
-import { BasePool } from './balancer-v2-pool';
-import { callData, SubgraphPoolBase, PoolState, TokenState } from './types';
-import LinearPoolABI from '../../abi/balancer-v2/linearPoolAbi.json';
-import { SwapSide } from '../../constants';
+import { BasePool } from '../balancer-v2-pool';
+import { callData, SubgraphPoolBase, PoolState } from '../../types';
+import LinearPoolABI from '../../../../abi/balancer-v2/linearPoolAbi.json';
+import { SwapSide } from '../../../../constants';
 import { keyBy } from 'lodash';
 
 export enum PairTypes {
@@ -80,6 +80,210 @@ export class LinearPool extends BasePool {
       poolPairData.lowerTarget,
       poolPairData.upperTarget,
     );
+  }
+
+  onBuy(amounts: bigint[], poolPairData: LinearPoolPairData): bigint[] {
+    return this._swapGivenOut(
+      amounts,
+      poolPairData.tokens,
+      poolPairData.balances,
+      poolPairData.indexIn,
+      poolPairData.indexOut,
+      poolPairData.bptIndex,
+      poolPairData.wrappedIndex,
+      poolPairData.mainIndex,
+      poolPairData.scalingFactors,
+      poolPairData.swapFee,
+      poolPairData.lowerTarget,
+      poolPairData.upperTarget,
+    );
+  }
+
+  _swapGivenOut(
+    tokenAmountsOut: bigint[],
+    tokens: string[],
+    balances: bigint[],
+    indexIn: number,
+    indexOut: number,
+    bptIndex: number,
+    wrappedIndex: number,
+    mainIndex: number,
+    scalingFactors: bigint[],
+    swapFeePercentage: bigint,
+    lowerTarget: bigint,
+    upperTarget: bigint,
+  ): bigint[] {
+    let pairType: PairTypes;
+    if (isSameAddress(tokens[indexIn], tokens[bptIndex])) {
+      if (isSameAddress(tokens[indexOut], tokens[wrappedIndex]))
+        pairType = PairTypes.BptToWrappedToken;
+      else pairType = PairTypes.BptToMainToken;
+    } else if (isSameAddress(tokens[indexOut], tokens[bptIndex])) {
+      if (isSameAddress(tokens[indexIn], tokens[wrappedIndex]))
+        pairType = PairTypes.WrappedTokenToBpt;
+      else pairType = PairTypes.MainTokenToBpt;
+    } else {
+      if (isSameAddress(tokens[indexIn], tokens[wrappedIndex]))
+        pairType = PairTypes.WrappedTokenToMainToken;
+      else pairType = PairTypes.MainTokenToWrappedToken;
+    }
+
+    const balancesUpscaled = this._upscaleArray(balances, scalingFactors);
+    const tokenAmountsOutScaled = tokenAmountsOut.map(a =>
+      this._upscale(a, scalingFactors[indexOut]),
+    );
+
+    // VirtualBPTSupply must be used for the maths
+    const virtualBptSupply = this.MAX_TOKEN_BALANCE.sub(
+      balances[bptIndex],
+    ).toBigInt();
+
+    const amountsIn = this._onSwapGivenOut(
+      tokenAmountsOutScaled,
+      balancesUpscaled[mainIndex],
+      balancesUpscaled[wrappedIndex],
+      swapFeePercentage,
+      lowerTarget,
+      upperTarget,
+      virtualBptSupply,
+      pairType,
+    );
+
+    return amountsIn.map(a => this._downscaleUp(a, scalingFactors[indexIn]));
+  }
+
+  _onSwapGivenOut(
+    tokenAmountsIn: bigint[],
+    mainBalance: bigint,
+    wrappedBalance: bigint,
+    fee: bigint,
+    lowerTarget: bigint,
+    upperTarget: bigint,
+    virtualBptSupply: bigint,
+    pairType: PairTypes,
+  ): bigint[] {
+    const amountsIn: bigint[] = [];
+
+    switch (pairType) {
+      case PairTypes.BptToMainToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcBptInPerMainOut(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = 0n;
+          }
+          amountsIn.push(amt);
+        });
+
+        break;
+      case PairTypes.MainTokenToBpt:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcMainInPerBptOut(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = 0n;
+          }
+          amountsIn.push(amt);
+        });
+        break;
+      case PairTypes.MainTokenToWrappedToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcMainInPerWrappedOut(amountIn, mainBalance, {
+              fee: fee,
+              lowerTarget: lowerTarget,
+              upperTarget: upperTarget,
+            });
+          } catch (err) {
+            amt = 0n;
+          }
+          amountsIn.push(amt);
+        });
+        break;
+      case PairTypes.WrappedTokenToMainToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcWrappedInPerMainOut(amountIn, mainBalance, {
+              fee: fee,
+              lowerTarget: lowerTarget,
+              upperTarget: upperTarget,
+            });
+          } catch (err) {
+            amt = 0n;
+          }
+          amountsIn.push(amt);
+        });
+        break;
+      case PairTypes.BptToWrappedToken:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcBptInPerWrappedOut(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = 0n;
+          }
+          amountsIn.push(amt);
+        });
+        break;
+      case PairTypes.WrappedTokenToBpt:
+        tokenAmountsIn.forEach(amountIn => {
+          let amt: bigint;
+          try {
+            amt = LinearMath._calcWrappedInPerBptOut(
+              amountIn,
+              mainBalance,
+              wrappedBalance,
+              virtualBptSupply,
+              {
+                fee: fee,
+                lowerTarget: lowerTarget,
+                upperTarget: upperTarget,
+              },
+            );
+          } catch (err) {
+            amt = 0n;
+          }
+          amountsIn.push(amt);
+        });
+        break;
+      default:
+        amountsIn.push(0n);
+    }
+    return amountsIn;
   }
 
   _swapGivenIn(
