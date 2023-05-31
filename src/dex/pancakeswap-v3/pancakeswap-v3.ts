@@ -28,7 +28,6 @@ import {
   PoolState,
   UniswapV3Data,
   UniswapV3Functions,
-  UniswapV3Param,
   UniswapV3SimpleSwapParams,
 } from '../uniswap-v3/types';
 import {
@@ -70,7 +69,7 @@ const PANCAKESWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class PancakeswapV3
   extends SimpleExchange
-  implements IDex<UniswapV3Data, UniswapV3Param>
+  implements IDex<UniswapV3Data>
 {
   readonly isFeeOnTransferSupported: boolean = false;
   readonly eventPools: Record<string, PancakeSwapV3EventPool | null> = {};
