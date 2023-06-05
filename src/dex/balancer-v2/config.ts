@@ -1,6 +1,6 @@
 import { DexParams } from './types';
-import { DexConfigMap } from '../../types';
-import { Network } from '../../constants';
+import { AdapterMappings, DexConfigMap } from '../../types';
+import { Network, SwapSide } from '../../constants';
 
 export const BalancerConfig: DexConfigMap<DexParams> = {
   BalancerV2: {
@@ -42,37 +42,25 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
   // },
 };
 
-export const Adapters: {
-  [chainId: number]: { name: string; index: number }[];
-} = {
-  [Network.MAINNET]: [
-    {
-      name: 'Adapter02',
-      index: 9,
-    },
-  ],
-  [Network.POLYGON]: [
-    {
-      name: 'PolygonAdapter01',
-      index: 9,
-    },
-  ],
-  [Network.FANTOM]: [
-    {
-      name: 'FantomAdapter01',
-      index: 5,
-    },
-  ],
-  [Network.ARBITRUM]: [
-    {
-      name: 'ArbitrumAdapter01',
-      index: 5,
-    },
-  ],
-  [Network.OPTIMISM]: [
-    {
-      name: 'OptimismAdapter01',
-      index: 4,
-    },
-  ],
+export const Adapters: Record<number, AdapterMappings> = {
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter02', index: 9 }],
+    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 9 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 9 }],
+    [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 6 }],
+  },
+  [Network.FANTOM]: {
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'FantomBuyAdapter', index: 4 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 6 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 5 }],
+  },
 };

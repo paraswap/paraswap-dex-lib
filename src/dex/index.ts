@@ -46,6 +46,7 @@ import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
+import { SoliSnek } from './solidly/forks-override/solisnek';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -63,6 +64,9 @@ import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
+import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
+import { TraderJoeV21 } from './trader-joe-v2.1';
+import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -80,7 +84,9 @@ const LegacyDexes = [
   DodoV2,
   QuickSwapV3,
   ZyberSwapV3,
+  SpiritSwapV3,
   TraderJoeV2,
+  TraderJoeV21,
   Jarvis,
   Lido,
   AugustusRFQOrder,
@@ -94,6 +100,7 @@ const Dexes = [
   BalancerV2,
   UniswapV2,
   UniswapV3,
+  PancakeswapV3,
   BiSwap,
   MDEX,
   Dfyn,
@@ -115,6 +122,7 @@ const Dexes = [
   SpiritSwapV2,
   Velodrome,
   Cone,
+  SoliSnek,
   Synthetix,
   CurveV1Factory,
   SwaapV1,

@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { isEmpty } from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
@@ -164,6 +165,7 @@ export class RateFetcher {
 
   start() {
     this.tokensFetcher.startPolling();
+    this.rateFetcher.startPolling();
     this.pairsFetcher.startPolling();
     if (this.blackListFetcher) {
       this.blackListFetcher.startPolling();
@@ -200,17 +202,12 @@ export class RateFetcher {
   private handlePairsResponse(resp: PairsResponse) {
     this.pairs = {};
 
-    if (this.rateFetcher.isPolling()) {
-      this.rateFetcher.stopPolling();
-    }
-
     const pairs: PairMap = {};
     for (const pairName of Object.keys(resp.pairs)) {
       pairs[pairName] = resp.pairs[pairName];
     }
 
     this.pairs = pairs;
-    this.rateFetcher.startPolling();
   }
 
   private handleBlackListResponse(resp: BlackListResponse) {
@@ -228,6 +225,9 @@ export class RateFetcher {
 
   private handleRatesResponse(resp: RatesResponse) {
     const pairs = this.pairs;
+
+    if(isEmpty(pairs)) return;
+
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
@@ -238,6 +238,8 @@ export class RateFetcher {
       if (!prices.asks || !prices.bids) {
         return;
       }
+
+      if(isEmpty(this.tokens)) return;
 
       const baseToken = this.tokens[pair.base];
       const quoteToken = this.tokens[pair.quote];

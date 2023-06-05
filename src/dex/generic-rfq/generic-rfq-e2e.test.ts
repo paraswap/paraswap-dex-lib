@@ -64,8 +64,8 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
         method: 'GET',
       },
       secret,
-      intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
-      dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
+      intervalMs: 1000 * 2 * 1, // every 2 seconds
+      dataTTLS: 1000 * 5 * 1, // ttl 5 seconds
     },
     firmRateConfig: {
       url: `${url}/firm`,
