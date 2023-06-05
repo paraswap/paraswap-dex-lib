@@ -278,16 +278,26 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
-  ): bigint[] {
-    if (levels.length > 0) {
-      const firstLevel = levels[0];
-      if (new BigNumber(firstLevel.level).gt(0)) {
-        // Add zero level for price computation
-        levels.unshift({ level: '0', price: firstLevel.price });
-      }
+  ): bigint[] | null {
+    assert(levels.length > 0, 'Levels should not be empty');
+
+    const firstLevelRaw = levels[0];
+    const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
+    if (firstLevelAmountBN.gt(0)) {
+      // Add zero level for price computation
+      levels.unshift({ level: '0', price: firstLevelRaw.price });
+    }
+
+    if (amounts[amounts.length - 1].lt(firstLevelAmountBN)) {
+      return null;
     }
 
     const outputs = new Array<BigNumber>(amounts.length).fill(BN_0);
+    // FIXME: There is still case when last amount is fillable, but in between
+    // we may have splits that are less than min. amount. I assume that case is very
+    // and not addressing in current fix. If someone will look into that case, just be aware
+    // that it is not addressed
+
     for (const [i, amount] of amounts.entries()) {
       if (amount.isZero()) {
         outputs[i] = BN_0;
@@ -470,6 +480,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const prices = levelEntries.map(lEntry => {
       const { mm, levels } = lEntry;
 
+      if (levels.length === 0) {
+        return null;
+      }
+
       const divider = getBigNumberPow(
         side === SwapSide.SELL
           ? normalizedSrcToken.decimals
@@ -486,7 +500,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         normalizedSrcToken,
         normalizedDestToken,
         side,
-      )[0];
+      );
+
       const prices = this.computePricesFromLevels(
         amountsRaw,
         levels,
@@ -495,12 +510,17 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         side,
       );
 
+      if (prices === null) {
+        return null;
+      }
+
       return {
         gasCost: 100_000,
         exchange: this.dexKey,
         data: { mm },
         prices,
-        unit: unitPrice,
+        // Just a mock since we are not using unit amount anymore
+        unit: unitPrice ? unitPrice[0] : 0n,
         poolIdentifier: this.getPoolIdentifier(
           normalizedSrcToken.address,
           normalizedDestToken.address,
@@ -510,7 +530,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       } as PoolPrices<HashflowData>;
     });
 
-    return prices;
+    return prices.filter((p): p is PoolPrices<HashflowData> => !!p);
   }
 
   async preProcessTransaction(
