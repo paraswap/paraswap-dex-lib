@@ -3,8 +3,6 @@ import { ETHER_ADDRESS, SwapSide } from './constants';
 import { RouterService } from './router';
 import { DexAdapterService } from './dex';
 
-const HALF_PERCENT_SPLIT = '5000';
-
 export class TransactionBuilder {
   routerService: RouterService;
 
@@ -46,10 +44,6 @@ export class TransactionBuilder {
     onlyParams?: boolean;
   }) {
     const _beneficiary = beneficiary || userAddress;
-    const _partnerFeePercent =
-      positiveSlippageToUser === false && BigInt(partnerFeePercent) === 0n
-        ? HALF_PERCENT_SPLIT
-        : partnerFeePercent;
     const { encoder, params, networkFee } = await this.routerService
       .getRouterByContractMethod(priceRoute.contractMethod)
       .build(
@@ -58,7 +52,7 @@ export class TransactionBuilder {
         userAddress,
         referrerAddress,
         partnerAddress,
-        _partnerFeePercent,
+        partnerFeePercent,
         positiveSlippageToUser ?? true,
         _beneficiary,
         permit || '0x',

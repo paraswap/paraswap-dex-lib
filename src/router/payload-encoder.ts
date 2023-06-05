@@ -22,13 +22,24 @@ const OneShift248 = 1n << 248n;
 // Set 16th bit to indicate referral program
 const REFERRER_FEE = 2500n | OneShift14 | OneShift16 | OneShift248;
 
+const HALF_SPLIT = '5000';
+
 export function encodeFeePercent(
   partnerFeePercent: string,
   positiveSlippageToUser: boolean,
   side: SwapSide,
 ) {
-  let fee = BigInt(partnerFeePercent);
+  const isNoFeeAndPositiveSlippageToPartner =
+    positiveSlippageToUser === false && BigInt(partnerFeePercent) === 0n;
+
+  let fee = isNoFeeAndPositiveSlippageToPartner
+    ? BigInt(HALF_SPLIT)
+    : BigInt(partnerFeePercent);
+
   if (fee > 10000) throw new Error('fee bps should be less than 10000');
+
+  // Set 16th bit as referrer to split positive slippage for partner and protocol
+  if (isNoFeeAndPositiveSlippageToPartner) fee |= OneShift16;
 
   // Set 14th bit if positiveSlippageToUser is true
   if (positiveSlippageToUser) fee |= OneShift14;
