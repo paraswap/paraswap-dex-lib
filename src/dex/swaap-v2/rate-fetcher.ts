@@ -16,7 +16,6 @@ import {
 } from './validators';
 import { getPriceLevelsCacheKey, normalizeTokenAddress } from './utils';
 import { SWAAP_RFQ_QUOTE_TIMEOUT_MS } from './constants';
-import BigNumber from 'bignumber.js';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 
 export class RateFetcher {
