@@ -515,7 +515,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         exchange: this.dexKey,
         data: { mm },
         prices,
-        // Just a mock since we are not using unit amount anymore
         unit: unitPrice,
         poolIdentifier: this.getPoolIdentifier(
           normalizedSrcToken.address,
