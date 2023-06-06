@@ -418,114 +418,124 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<HashflowData>> {
-    const normalizedSrcToken = this.normalizeToken(srcToken);
-    const normalizedDestToken = this.normalizeToken(destToken);
+    try {
+      const normalizedSrcToken = this.normalizeToken(srcToken);
+      const normalizedDestToken = this.normalizeToken(destToken);
 
-    if (normalizedSrcToken.address === normalizedDestToken.address) {
+      if (normalizedSrcToken.address === normalizedDestToken.address) {
+        return null;
+      }
+
+      const prefix = this.getIdentifierPrefix(
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      );
+
+      const pools =
+        limitPools ??
+        (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+
+      const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
+
+      const levelsMap = (await this.getCachedLevels()) || {};
+
+      Object.keys(levelsMap).forEach(mmKey => {
+        if (!marketMakersToUse.includes(mmKey)) {
+          delete levelsMap[mmKey];
+        }
+      });
+
+      const levelEntries: {
+        mm: string;
+        levels: PriceLevel[];
+      }[] = Object.keys(levelsMap)
+        .map(mm => {
+          const entry = levelsMap[mm]?.find(
+            e =>
+              `${e.pair.baseToken}_${e.pair.quoteToken}` ===
+              this.getPairName(
+                normalizedSrcToken.address,
+                normalizedDestToken.address,
+              ),
+          );
+          if (entry === undefined) {
+            return undefined;
+          } else {
+            return { mm, levels: entry.levels };
+          }
+        })
+        .filter(o => o !== undefined)
+        .map(o => o!);
+
+      const prices = levelEntries.map(lEntry => {
+        const { mm, levels } = lEntry;
+
+        if (levels.length === 0) {
+          return null;
+        }
+
+        const divider = getBigNumberPow(
+          side === SwapSide.SELL
+            ? normalizedSrcToken.decimals
+            : normalizedDestToken.decimals,
+        );
+
+        const amountsRaw = amounts.map(a =>
+          new BigNumber(a.toString()).dividedBy(divider),
+        );
+        const firstLevelRaw = levels[0];
+        const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
+
+        if (amountsRaw[amountsRaw.length - 1].lt(firstLevelAmountBN)) {
+          return null;
+        }
+
+        if (firstLevelAmountBN.gt(0)) {
+          // Add zero level for price computation
+          levels.unshift({ level: '0', price: firstLevelRaw.price });
+        }
+
+        const unitPrice = this.computePricesFromLevels(
+          [BN_1],
+          levels,
+          normalizedSrcToken,
+          normalizedDestToken,
+          side,
+        )[0];
+
+        const prices = this.computePricesFromLevels(
+          amountsRaw,
+          levels,
+          normalizedSrcToken,
+          normalizedDestToken,
+          side,
+        );
+
+        return {
+          gasCost: 100_000,
+          exchange: this.dexKey,
+          data: { mm },
+          prices,
+          unit: unitPrice,
+          poolIdentifier: this.getPoolIdentifier(
+            normalizedSrcToken.address,
+            normalizedDestToken.address,
+            mm,
+          ),
+          poolAddresses: [this.routerAddress],
+        } as PoolPrices<HashflowData>;
+      });
+
+      return prices.filter((p): p is PoolPrices<HashflowData> => !!p);
+    } catch (e: unknown) {
+      this.logger.error(
+        `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
+          destToken.symbol || destToken.address
+        }, ${side}:`,
+        e,
+      );
       return null;
     }
-
-    const prefix = this.getIdentifierPrefix(
-      normalizedSrcToken.address,
-      normalizedDestToken.address,
-    );
-
-    const pools =
-      limitPools ??
-      (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
-
-    const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
-
-    const levelsMap = (await this.getCachedLevels()) || {};
-
-    Object.keys(levelsMap).forEach(mmKey => {
-      if (!marketMakersToUse.includes(mmKey)) {
-        delete levelsMap[mmKey];
-      }
-    });
-
-    const levelEntries: {
-      mm: string;
-      levels: PriceLevel[];
-    }[] = Object.keys(levelsMap)
-      .map(mm => {
-        const entry = levelsMap[mm]?.find(
-          e =>
-            `${e.pair.baseToken}_${e.pair.quoteToken}` ===
-            this.getPairName(
-              normalizedSrcToken.address,
-              normalizedDestToken.address,
-            ),
-        );
-        if (entry === undefined) {
-          return undefined;
-        } else {
-          return { mm, levels: entry.levels };
-        }
-      })
-      .filter(o => o !== undefined)
-      .map(o => o!);
-
-    const prices = levelEntries.map(lEntry => {
-      const { mm, levels } = lEntry;
-
-      if (levels.length === 0) {
-        return null;
-      }
-
-      const divider = getBigNumberPow(
-        side === SwapSide.SELL
-          ? normalizedSrcToken.decimals
-          : normalizedDestToken.decimals,
-      );
-
-      const amountsRaw = amounts.map(a =>
-        new BigNumber(a.toString()).dividedBy(divider),
-      );
-      const firstLevelRaw = levels[0];
-      const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
-
-      if (amountsRaw[amountsRaw.length - 1].lt(firstLevelAmountBN)) {
-        return null;
-      }
-
-      if (firstLevelAmountBN.gt(0)) {
-        // Add zero level for price computation
-        levels.unshift({ level: '0', price: firstLevelRaw.price });
-      }
-
-      const unitPrice = this.computePricesFromLevels(
-        [BN_1],
-        levels,
-        normalizedSrcToken,
-        normalizedDestToken,
-        side,
-      )[0];
-
-      const prices = this.computePricesFromLevels(
-        amountsRaw,
-        levels,
-        normalizedSrcToken,
-        normalizedDestToken,
-        side,
-      );
-
-      return {
-        gasCost: 100_000,
-        exchange: this.dexKey,
-        data: { mm },
-        prices,
-        unit: unitPrice,
-        poolIdentifier: this.getPoolIdentifier(
-          normalizedSrcToken.address,
-          normalizedDestToken.address,
-          mm,
-        ),
-        poolAddresses: [this.routerAddress],
-      } as PoolPrices<HashflowData>;
-    });
-
-    return prices.filter((p): p is PoolPrices<HashflowData> => !!p);
   }
 
   async preProcessTransaction(
