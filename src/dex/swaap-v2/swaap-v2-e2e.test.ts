@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { testE2E, newTestE2E } from '../../../tests/utils-e2e';
+import { testE2E } from '../../../tests/utils-e2e';
 import {
   Tokens,
   Holders,
@@ -140,7 +140,7 @@ describe('SwaapV2 E2E', () => {
     const tokenBSymbol: string = 'WETH';
 
     const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '10000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -153,4 +153,47 @@ describe('SwaapV2 E2E', () => {
       nativeTokenAmount,
     );
   });
+
+  // Arbitrum will be supported later
+  // describe('Arbitrum', () => {
+  //   const network = Network.ARBITRUM;
+  //
+  //   const tokenASymbol: string = 'ETH';
+  //   const tokenBSymbol: string = 'DAI';
+  //
+  //   const tokenAAmount: string = '100000000';
+  //   const tokenBAmount: string = '1000000000000000000';
+  //   const nativeTokenAmount = '1000000000000000000';
+  //
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //     nativeTokenAmount,
+  //   );
+  // });
+
+  // Mainnet will be supported later
+  // describe('Mainnet', () => {
+  //   const network = Network.MAINNET;
+  //   const tokenASymbol: string = 'USDC';
+  //   const tokenBSymbol: string = 'USDT';
+  //
+  //   const tokenAAmount: string = '100000000';
+  //   const tokenBAmount: string = '1000000000000000000';
+  //   const nativeTokenAmount = '1000000000000000000';
+  //
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //     nativeTokenAmount,
+  //   );
+  // });
 });

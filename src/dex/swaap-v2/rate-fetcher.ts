@@ -36,14 +36,6 @@ export class RateFetcher {
       {
         info: {
           requestOptions: config.rateConfig.pricesReqParams,
-          requestFunc: async options => {
-            const prices = await dexHelper.httpRequest.request({
-              ...options,
-              params: { ...options.params },
-            });
-
-            return prices;
-          },
           caster: (data: unknown) => {
             return validateAndCast<SwaapV2PriceLevelsResponse>(
               data,
@@ -58,7 +50,7 @@ export class RateFetcher {
     );
   }
 
-  async start() {
+  start() {
     this.rateFetcher.startPolling();
   }
 
