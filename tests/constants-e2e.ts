@@ -299,6 +299,10 @@ export const Tokens: {
       address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
       decimals: 6,
     },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -429,6 +433,10 @@ export const Tokens: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
       decimals: 18,
     },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -554,6 +562,10 @@ export const Tokens: {
     axlUSD: {
       address: '0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3',
       decimals: 6,
+    },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
+      decimals: 18,
     },
   },
   [Network.AVALANCHE]: {
@@ -769,6 +781,10 @@ export const Tokens: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
     },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -823,6 +839,10 @@ export const Tokens: {
     WBTC: {
       address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
       decimals: 8,
+    },
+    BOB: {
+      address: '0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B',
+      decimals: 18,
     },
   },
 };
@@ -886,6 +906,7 @@ export const Holders: {
     SHIBA: '0x73af3bcf944a6559933396c1577b257e2054d935',
     aEthUSDC: '0x3178490d60B5cceaA5a79FD4D9050C7405Bab80c',
     aEthWETH: '0x645C4c0c95C1Aa6EF25d12f4a25038cA9b0C6Cc7',
+    BOB: '0x02BF3258D6024B2B34fD7D21F225Db6CDA939E76',
     dUSDC: '0x2FC2F705110A7F46Ce85F701d7217EF1018f01A3',
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
   },
@@ -923,6 +944,7 @@ export const Holders: {
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
+    BOB: '0x02BF3258D6024B2B34fD7D21F225Db6CDA939E76',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
@@ -953,12 +975,13 @@ export const Holders: {
     BNB: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
     USDT: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
-    USDC: '0x83455d6c365dcbac10855c623da884b552aaefdd',
+    USDC: '0xe2fc31f816a9b94326492132018c3aecc4a93ae1',
     RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
     bBTC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',
     nUSD: '0x28ec0b36f0819ecb5005cab836f4ed5a2eca4d13',
     axlUSD: '0xc03fbeda9069b22a120ae6a09349a0b5eea5570a',
+    BOB: '0x02BF3258D6024B2B34fD7D21F225Db6CDA939E76',
   },
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
@@ -1010,6 +1033,7 @@ export const Holders: {
     aArbUSDC: '0x048BF2F5908e95976CeAD0E47D805b3803E286e2',
     ZYB: '0x3ec0eddcd1e25025077327886a78133589082fb2',
     WBTC: '0xd9d611c6943585bc0e18e51034af8fa28778f7da',
+    BOB: '0x02BF3258D6024B2B34fD7D21F225Db6CDA939E76',
     RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
   },
   [Network.OPTIMISM]: {
@@ -1017,7 +1041,7 @@ export const Holders: {
     DAI: '0x1337bedc9d22ecbe766df105c9623922a27963ec',
     WETH: '0x68F5C0A2DE713a54991E01858Fd27a3832401849',
     POPS: '0x3cbd9044aaabef08ce93a68448e093cff405ad76',
-    USDC: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
+    USDC: '0xEbe80f029b1c02862B9E8a70a7e5317C06F62Cae',
     USDT: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     OP: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     aOptWETH: '0x7B7D80C40415F744864f051B806b466e2fbB8E68',
@@ -1028,6 +1052,7 @@ export const Holders: {
     wstETH: '0xf7626459234e9249808a06aa08dc6b67c8e0a2fc',
     rETH: '0x4c2e69e58b14de9afedfb94319519ce34e087283',
     WBTC: '0xb9c8f0d3254007ee4b98970b94544e473cd610ec',
+    BOB: '0x02BF3258D6024B2B34fD7D21F225Db6CDA939E76',
   },
 };
 
