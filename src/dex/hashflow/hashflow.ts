@@ -278,19 +278,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
-  ): bigint[] | null {
+  ): bigint[] {
     assert(levels.length > 0, 'Levels should not be empty');
-
-    const firstLevelRaw = levels[0];
-    const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
-    if (firstLevelAmountBN.gt(0)) {
-      // Add zero level for price computation
-      levels.unshift({ level: '0', price: firstLevelRaw.price });
-    }
-
-    if (amounts[amounts.length - 1].lt(firstLevelAmountBN)) {
-      return null;
-    }
 
     const outputs = new Array<BigNumber>(amounts.length).fill(BN_0);
     // FIXME: There is still case when last amount is fillable, but in between
@@ -493,6 +482,17 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const amountsRaw = amounts.map(a =>
         new BigNumber(a.toString()).dividedBy(divider),
       );
+      const firstLevelRaw = levels[0];
+      const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
+
+      if (amountsRaw[amountsRaw.length - 1].lt(firstLevelAmountBN)) {
+        return null;
+      }
+
+      if (firstLevelAmountBN.gt(0)) {
+        // Add zero level for price computation
+        levels.unshift({ level: '0', price: firstLevelRaw.price });
+      }
 
       const unitPrice = this.computePricesFromLevels(
         [BN_1],
@@ -500,7 +500,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         normalizedSrcToken,
         normalizedDestToken,
         side,
-      );
+      )[0];
 
       const prices = this.computePricesFromLevels(
         amountsRaw,
@@ -510,17 +510,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         side,
       );
 
-      if (prices === null) {
-        return null;
-      }
-
       return {
         gasCost: 100_000,
         exchange: this.dexKey,
         data: { mm },
         prices,
         // Just a mock since we are not using unit amount anymore
-        unit: unitPrice ? unitPrice[0] : 0n,
+        unit: unitPrice,
         poolIdentifier: this.getPoolIdentifier(
           normalizedSrcToken.address,
           normalizedDestToken.address,
