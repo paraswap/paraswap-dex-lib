@@ -526,7 +526,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
                 toInternalBalance: 'bool',
               },
               limits: 'int256[]',
-              deadline: 'uint256',
             },
           },
         ],
@@ -538,7 +537,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
             assets: callDataStruct.assets,
             funds: callDataStruct.funds,
             limits: callDataStruct.limits.map((_: any) => MAX_INT),
-            deadline: callDataStruct.deadline,
           },
         ],
       );
@@ -573,7 +571,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
                 toInternalBalance: 'bool',
               },
               limit: 'uint256',
-              deadline: 'uint256',
             },
           },
         ],
@@ -596,7 +593,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
               toInternalBalance: callDataStruct.funds.toInternalBalance,
             },
             limit: side == SwapSide.BUY ? MAX_UINT : BN_0,
-            deadline: callDataStruct.deadline,
           },
         ],
       );

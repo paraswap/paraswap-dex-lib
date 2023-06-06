@@ -278,7 +278,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 4,
     rpcPollingBlocksBackToTriggerUpdate: 3,
-    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
   },
   [Network.OPTIMISM]: {
     network: Network.OPTIMISM,
@@ -307,7 +306,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
-    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
   },
 };
 
