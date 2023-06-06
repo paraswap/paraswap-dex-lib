@@ -150,7 +150,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     destToken: Token,
     side: SwapSide,
   ): bigint[] {
-    var levels: SwaapV2PriceLevel[] = [];
+    let levels: SwaapV2PriceLevel[] = [];
     if (side == SwapSide.BUY) {
       if (destToken.address == asksAndBids.base!) {
         levels = asksAndBids.asks;
@@ -194,11 +194,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         return BigInt(0);
       }
 
-      var i = 0;
-      var output = BN_0;
-      var previousLevel = BN_0;
-      var remaininig = BigNumber(amount);
-      var enoughLiquidity = false;
+      let i = 0;
+      let output = BN_0;
+      let previousLevel = BN_0;
+      let remaininig = BigNumber(amount);
+      let enoughLiquidity = false;
       while (i < size) {
         const levelDelta = BigNumber(levels[i].level).minus(previousLevel);
         if (levelDelta.lte(remaininig)) {
