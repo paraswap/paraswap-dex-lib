@@ -23,7 +23,7 @@ import {
   SwaapV2APIParameters,
   SwaapV2QuoteError,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
 import { RateFetcher } from './rate-fetcher';
 import routerAbi from '../../abi/swaap-v2/vault.json';
@@ -418,7 +418,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           callData: quote.calldata,
         },
       },
-      { deadline: BI_MAX_UINT256 },
+      { deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()) },
     ];
   }
 

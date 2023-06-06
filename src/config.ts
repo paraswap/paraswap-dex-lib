@@ -186,8 +186,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0x6BBE298219087A6097f91C12F751883b9D1274C2',
-      PolygonBuyAdapter: '0xa1052A8d4A6A077E58B60DFe78a58726f8E555c3',
+      PolygonAdapter02: '0x338EeCf8cE57ea2f34F4c99e4d120c2c9487F497',
+      PolygonBuyAdapter: '0x639082b41b4E6d2F89c4f5F996aFfB621A74Ea10',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
