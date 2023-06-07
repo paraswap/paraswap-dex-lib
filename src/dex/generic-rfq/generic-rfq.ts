@@ -131,11 +131,14 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
 
-    const _srcAddress = _srcToken.address.toLowerCase();
-    const _destAddress = _destToken.address.toLowerCase();
-    if (_srcAddress === _destAddress) return null;
+    _srcToken.address = _srcToken.address.toLowerCase();
+    _destToken.address = _destToken.address.toLowerCase();
+    if (_srcToken.address === _destToken.address) return null;
 
-    const expectedIdentifier = this.getIdentifier(_srcAddress, _destAddress);
+    const expectedIdentifier = this.getIdentifier(
+      _srcToken.address,
+      _destToken.address,
+    );
 
     const rates = await this.rateFetcher.getOrderPrice(
       _srcToken,
@@ -179,7 +182,6 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         data: {
           orderInfos: null,
         },
-        poolAddresses: [this.augustusRFQAddress],
       },
     ];
   }
