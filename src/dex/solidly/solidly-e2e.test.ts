@@ -905,54 +905,36 @@ describe('Solidly E2E', () => {
         ],
       ]);
 
-      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
+      const pairs: { name: string; sellAmount: string; }[][] =
         [
           [
             {
               name: 'BNB',
-              sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
+              sellAmount: '1000000000000000000',
             },
             {
               name: 'USDT',
               sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
-            },
-          ],
-          [
-            {
-              name: 'BNB',
-              sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
-            },
-            {
-              name: 'USDC',
-              sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
             },
           ],
           [
             {
               name: 'USDT',
               sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
             },
             {
               name: 'USDC',
               sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
             },
           ],
           [
             {
               name: 'ETH',
-              sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
+              sellAmount: '5000000000000000000',
             },
             {
               name: 'BNB',
-              sellAmount: '10000000000000000000',
-              buyAmount: '10000000000000000000',
+              sellAmount: '1000000000000000000',
             },
           ]
         ];
@@ -967,9 +949,7 @@ describe('Solidly E2E', () => {
                     tokens[pair[0].name],
                     tokens[pair[1].name],
                     holders[pair[0].name],
-                    side === SwapSide.SELL
-                      ? pair[0].sellAmount
-                      : pair[0].buyAmount,
+                    pair[0].sellAmount,
                     side,
                     dexKey,
                     contractMethod,
@@ -982,9 +962,7 @@ describe('Solidly E2E', () => {
                     tokens[pair[1].name],
                     tokens[pair[0].name],
                     holders[pair[1].name],
-                    side === SwapSide.SELL
-                      ? pair[1].sellAmount
-                      : pair[1].buyAmount,
+                    pair[1].sellAmount,
                     side,
                     dexKey,
                     contractMethod,
