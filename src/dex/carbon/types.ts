@@ -19,4 +19,7 @@ export type DexParams = {
   // TODO: DexParams is set of parameters the can
   // be used to initiate a DEX fork.
   // Complete me!
+  subgraphURL: string;
+  carbonController: string;
+  voucher: string;
 };

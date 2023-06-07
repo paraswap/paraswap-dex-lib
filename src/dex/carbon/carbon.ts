@@ -1,4 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -18,6 +19,16 @@ import { CarbonData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CarbonConfig, Adapters } from './config';
 import { CarbonEventPool } from './carbon-pool';
+import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
+
+import {
+  BigNumber,
+  Decimal,
+  mulDiv,
+  tenPow,
+  formatUnits,
+  parseUnits,
+} from '@bancor/carbon-sdk/utils';
 
 export class Carbon extends SimpleExchange implements IDex<CarbonData> {
   protected eventPools: CarbonEventPool;
@@ -38,6 +49,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected config = CarbonConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -166,8 +178,113 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    if (!this.config.subgraphURL) return [];
+
+    const _tokenAddress = tokenAddress.toLowerCase();
+
+    const query = `
+    query ($token: Bytes!, $count: Int)) {
+      orders0: orders(first: $count, orderBy: y, orderDirection: desc, where: {type: "order0", strategy_: {token0: $token}}) {
+        pair {
+          id
+        }
+        strategy {
+          id
+          token0 {
+            decimals
+          }
+        }
+        y
+      }
+      orders1: orders(first: $count, orderBy: y, orderDirection: desc, where: {type: "order1", strategy_: {token1: $token}}) {
+        pair {
+          id
+        }
+        strategy {
+          id
+          token1 {
+            decimals
+          }
+        }
+        y
+      }
+    }
+    `;
+
+    const data = await this._querySubgraph(query, {
+      token: _tokenAddress,
+      count: limit,
+    });
+
+    if (!(data && data.orders0 && data.orders1)) {
+      this.logger.error(
+        `Error_${this.dexKey}_Subgraph: couldn't fetch the orders from the subgraph`,
+      );
+      return [];
+    }
+
+    let tokenDecimals: number = data.orders0[0].strategy.token0.decimals;
+
+    const tokenPriceUsd = await this.dexHelper.getTokenUSDPrice(
+      {
+        address: _tokenAddress,
+        decimals: tokenDecimals,
+      },
+      BigInt(getBigNumberPow(tokenDecimals).toFixed(0)),
+    );
+
+    const orders0 = _.map(data.orders0, order => ({
+      exchange: this.dexKey,
+      address: order.strategy.id,
+      connectorTokens: [
+        {
+          address: order.pair.id.split('-')[0],
+          decimals: tokenDecimals,
+        },
+      ],
+      liquidityUSD:
+        Number(formatUnits(BigInt(order.y), tokenDecimals)) * tokenPriceUsd,
+    }));
+
+    const orders1 = _.map(data.orders1, order => ({
+      exchange: this.dexKey,
+      address: order.strategy.id,
+      connectorTokens: [
+        {
+          address: order.pair.id.split('-')[1],
+          decimals: tokenDecimals,
+        },
+      ],
+      liquidityUSD:
+        Number(formatUnits(BigInt(order.y), tokenDecimals)) * tokenPriceUsd,
+    }));
+
+    const orders = _.slice(
+      _.sortBy(_.concat(orders0, orders1), [order => -1 * order.liquidityUSD]),
+      0,
+      limit,
+    );
+
+    return orders;
+  }
+
+  private async _querySubgraph(
+    query: string,
+    variables: Object,
+    timeout = 30000,
+  ) {
+    try {
+      const res = await this.dexHelper.httpRequest.post(
+        this.config.subgraphURL,
+        { query, variables },
+        undefined,
+        { timeout: timeout },
+      );
+      return res.data;
+    } catch (e) {
+      this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
+      return {};
+    }
   }
 
   // This is optional function in case if your implementation has acquired any resources
