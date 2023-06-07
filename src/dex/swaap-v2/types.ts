@@ -6,9 +6,7 @@ export type SwaapV2Data = {
   callData: string;
 };
 
-export type DexParams = {
-  routerAddress: string;
-};
+export type DexParams = {};
 
 export class SwaapV2QuoteError extends Error {}
 
@@ -72,3 +70,5 @@ export type SwaapV2APIParameters = {
   params?: any;
   method?: Method;
 };
+
+export class SlippageCheckError extends Error {}

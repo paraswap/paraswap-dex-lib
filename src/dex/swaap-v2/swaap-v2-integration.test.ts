@@ -123,14 +123,14 @@ describe('Swaap V2', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newHashflow = new SwaapV2(network, dexKey, dexHelper);
-      const poolLiquidity = await newHashflow.getTopPoolsForToken(
+      const swaapV2 = new SwaapV2(network, dexKey, dexHelper);
+      const poolLiquidity = await swaapV2.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newHashflow.hasConstantPriceLargeAmounts) {
+      if (!swaapV2.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,

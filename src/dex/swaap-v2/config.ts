@@ -5,15 +5,9 @@ import { Network, SwapSide } from '../../constants';
 export const SwaapV2Config: DexConfigMap<DexParams> = {
   SwaapV2: {
     // Mainnet and Arbitrum will be supported later
-    // [Network.MAINNET]: {
-    //   routerAddress: '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
-    // },
-    // [Network.ARBITRUM]: {
-    //   routerAddress: '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
-    // },
-    [Network.POLYGON]: {
-      routerAddress: '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
-    },
+    // [Network.MAINNET]: {},
+    // [Network.ARBITRUM]: {},
+    [Network.POLYGON]: {},
   },
 };
 

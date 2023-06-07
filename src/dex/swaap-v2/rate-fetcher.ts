@@ -58,37 +58,39 @@ export class RateFetcher {
   }
 
   private handleRatesResponse(resp: SwaapV2PriceLevelsResponse): void {
-    if (resp.success) {
-      const levels = Object.keys(resp.levels)
-        .map(pairName => {
-          const pair = resp.levels[pairName];
-          if (!pair) {
-            return;
-          }
-          const levels = resp.levels[pairName];
-
-          if (!levels.asks || !levels.bids) {
-            return;
-          }
-
-          const pairSplit = pairName.split('/');
-
-          const baseAddress = pairSplit[0];
-          const quoteAddress = pairSplit[1];
-          pair.base = normalizeTokenAddress(baseAddress);
-          pair.quote = normalizeTokenAddress(quoteAddress);
-          return pair;
-        })
-        .filter((p: SwaapV2PriceLevels | undefined) => p != null);
-
-      this.dexHelper.cache.setex(
-        this.dexKey,
-        this.dexHelper.config.data.network,
-        `${getPriceLevelsCacheKey(this.dexKey)}`,
-        this.pricesCacheTTL,
-        JSON.stringify(levels),
-      );
+    if (!resp.success) {
+      return;
     }
+
+    const levels = Object.keys(resp.levels)
+      .map(pairName => {
+        const pair = resp.levels[pairName];
+        if (!pair) {
+          return;
+        }
+        const levels = resp.levels[pairName];
+
+        if (!levels.asks || !levels.bids) {
+          return;
+        }
+
+        const pairSplit = pairName.split('/');
+
+        const baseAddress = pairSplit[0];
+        const quoteAddress = pairSplit[1];
+        pair.base = normalizeTokenAddress(baseAddress);
+        pair.quote = normalizeTokenAddress(quoteAddress);
+        return pair;
+      })
+      .filter((p: SwaapV2PriceLevels | undefined) => p != null);
+
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.dexHelper.config.data.network,
+      `${getPriceLevelsCacheKey(this.dexKey)}`,
+      this.pricesCacheTTL,
+      JSON.stringify(levels),
+    );
   }
 
   async getQuote(

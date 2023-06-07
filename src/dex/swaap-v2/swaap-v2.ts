@@ -11,7 +11,7 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
 } from '../../types';
-import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
+import { SwapSide, Network, MAX_INT, MAX_UINT, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../idex';
@@ -22,6 +22,7 @@ import {
   SwaapV2PriceLevels,
   SwaapV2APIParameters,
   SwaapV2QuoteError,
+  SlippageCheckError,
 } from './types';
 import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
@@ -40,6 +41,7 @@ import {
   GAS_COST_ESTIMATION,
   BATCH_SWAP_SELECTOR,
   CALLER_SLOT,
+  SWAAP_BLACKLIST_TTL_S,
 } from './constants';
 import {
   getPoolIdentifier,
@@ -67,9 +69,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerAddressPlaceholder: string = SwaapV2Config['SwaapV2'][
-      network
-    ].routerAddress,
     protected routerInterface = new Interface(routerAbi),
   ) {
     super(dexHelper, dexKey);
@@ -255,47 +254,44 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SwaapV2Data>> {
-    const normalizedSrcToken = this.normalizeToken(srcToken);
-    const normalizedDestToken = this.normalizeToken(destToken);
+    try {
+      const normalizedSrcToken = this.normalizeToken(srcToken);
+      const normalizedDestToken = this.normalizeToken(destToken);
 
-    const requestedPoolIdentifier: string = getPoolIdentifier(
-      this.dexKey,
-      normalizedSrcToken.address,
-      normalizedDestToken.address,
-    );
+      const requestedPoolIdentifier: string = getPoolIdentifier(
+        this.dexKey,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      );
 
-    if (normalizedSrcToken.address === normalizedDestToken.address) {
-      return null;
-    }
+      if (normalizedSrcToken.address === normalizedDestToken.address) {
+        return null;
+      }
 
-    const pools =
-      limitPools ??
-      (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+      const pools =
+        limitPools ??
+        (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
-    const levels = await this.getCachedLevels();
-    if (levels === null) {
-      return null;
-    }
+      const levels = await this.getCachedLevels();
+      if (levels === null) {
+        return null;
+      }
 
-    const levelEntries: SwaapV2PriceLevels[] = Object.keys(levels)
-      .map((pair: string) => {
-        if (
-          pools.includes(
-            getPoolIdentifier(
-              this.dexKey,
-              normalizedSrcToken.address,
-              normalizedDestToken.address,
-            ),
-          )
-        ) {
-          return levels[pair];
-        }
-        return undefined;
-      })
-      .filter(o => o !== undefined)
-      .map(o => o!);
+      const poolIdentifier = getPoolIdentifier(
+        this.dexKey,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      );
 
-    const prices = levelEntries.map((askAndBids: SwaapV2PriceLevels) => {
+      const levelEntries: SwaapV2PriceLevels[] = Object.keys(levels)
+        .map((pair: string) => {
+          if (pools.includes(poolIdentifier)) {
+            return levels[pair];
+          }
+          return undefined;
+        })
+        .filter((o): o is SwaapV2PriceLevels => o !== undefined);
+
       const divider = getBigNumberPow(
         (side === SwapSide.SELL ? normalizedSrcToken : normalizedDestToken)
           .decimals,
@@ -305,33 +301,40 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         new BigNumber(a.toString()).dividedBy(divider),
       );
 
-      const unitPrice = this.computePricesFromLevelsBis(
-        [BN_1],
-        askAndBids,
-        normalizedSrcToken,
-        normalizedDestToken,
-        side,
-      )[0];
-      const prices = this.computePricesFromLevelsBis(
-        amountsFloat,
-        askAndBids,
-        normalizedSrcToken,
-        normalizedDestToken,
-        side,
+      const prices = levelEntries.map((askAndBids: SwaapV2PriceLevels) => {
+
+        const unitPrice = this.computePricesFromLevelsBis(
+          [BN_1],
+          askAndBids,
+          normalizedSrcToken,
+          normalizedDestToken,
+          side,
+        )[0];
+        const prices = this.computePricesFromLevelsBis(
+          amountsFloat,
+          askAndBids,
+          normalizedSrcToken,
+          normalizedDestToken,
+          side,
+        );
+
+        return {
+          gasCost: GAS_COST_ESTIMATION,
+          exchange: this.dexKey,
+          data: {},
+          prices,
+          unit: unitPrice,
+          poolIdentifier: requestedPoolIdentifier,
+        } as PoolPrices<SwaapV2Data>;
+      });
+
+      return prices;
+    } catch (e) {
+      this.logger.error(
+        `Error_getPrices ${srcToken}, ${destToken}, ${side}:`, e,
       );
-
-      return {
-        gasCost: GAS_COST_ESTIMATION,
-        exchange: this.dexKey,
-        data: {},
-        prices,
-        unit: unitPrice,
-        poolIdentifier: requestedPoolIdentifier,
-        poolAddresses: [this.routerAddressPlaceholder],
-      } as PoolPrices<SwaapV2Data>;
-    });
-
-    return prices;
+      return null;
+    }
   }
 
   getBaseToken(poolIdentifier: string): string {
@@ -357,6 +360,17 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<SwaapV2Data>, ExchangeTxInfo]> {
+    if (await this.isBlacklisted(options.txOrigin)) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+      );
+      throw new Error(
+        `${this.dexKey}-${
+          this.network
+        }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+      );
+    }
+
     const isSell = side === SwapSide.SELL;
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
@@ -368,57 +382,121 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         : BN_1.minus(options.slippageFactor)
     ).toNumber();
 
-    const quote = await this.rateFetcher.getQuote(
-      this.network,
-      normalizedSrcToken,
-      normalizedDestToken,
-      isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
-      isSell ? 1 : 2,
-      options.txOrigin,
-      this.augustusAddress,
-      tolerance,
-      this.getQuoteReqParams(),
-    );
+    try {
+      const quote = await this.rateFetcher.getQuote(
+        this.network,
+        normalizedSrcToken,
+        normalizedDestToken,
+        isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
+        isSell ? 1 : 2,
+        options.txOrigin,
+        this.augustusAddress,
+        tolerance,
+        this.getQuoteReqParams(),
+      );
 
-    if (!quote.success) {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}: ${JSON.stringify(quote)}`;
-      this.logger.warn(message);
-      throw new SwaapV2QuoteError(message);
-    } else if (!quote.calldata) {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Missing quote data`;
-      this.logger.warn(message);
-      throw new SwaapV2QuoteError(message);
-    } else if (!quote.router) {
-      const message = `${this.dexKey}-${
-        this.network
-      }: Failed to fetch RFQ for ${getPairName(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      )}. Missing router address`;
-      this.logger.warn(message);
-      throw new SwaapV2QuoteError(message);
-    }
+      if (!quote.success) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}: ${JSON.stringify(quote)}`;
+        this.logger.warn(message);
+        throw new SwaapV2QuoteError(message);
+      } else if (!quote.calldata) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Missing quote data`;
+        this.logger.warn(message);
+        throw new SwaapV2QuoteError(message);
+      } else if (!quote.router) {
+        const message = `${this.dexKey}-${
+          this.network
+        }: Failed to fetch RFQ for ${getPairName(
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )}. Missing router address`;
+        this.logger.warn(message);
+        throw new SwaapV2QuoteError(message);
+      }
 
-    return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          router: quote.router,
-          callData: quote.calldata,
+      const srcAmount = BigInt(optimalSwapExchange.srcAmount);
+      const destAmount = BigInt(optimalSwapExchange.destAmount);
+      const quoteTokenAmount = BigInt(quote.amount);
+      const slippageFactor = options.slippageFactor;
+
+      if(side === SwapSide.SELL) {
+        if (
+          quoteTokenAmount <
+          BigInt(
+            new BigNumber(destAmount.toString())
+              .times(slippageFactor)
+              .toFixed(0),
+          )
+        ) {
+          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        }
+      } else {
+        if (
+          quoteTokenAmount >
+          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
+        ) {
+          const message = `${this.dexKey}-${
+            this.network
+          }: too much slippage on quote ${side} baseTokenAmount ${srcAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+          this.logger.warn(message);
+          throw new SlippageCheckError(message);
+        }
+      }
+
+      return [
+        {
+          ...optimalSwapExchange,
+          data: {
+            router: quote.router,
+            callData: quote.calldata,
+          },
         },
-      },
-      { deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()) },
-    ];
+        { deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()) },
+      ];
+    } catch (e) {
+      await this.setBlacklist(options.txOrigin);
+
+      throw e;
+    }
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+    );
+    return result === 'blacklisted';
+  }
+
+  getBlackListKey(address: Address) {
+    return `blacklist_${address}`.toLowerCase();
+  }
+
+  async setBlacklist(
+    txOrigin: Address,
+    ttl: number = SWAAP_BLACKLIST_TTL_S,
+  ) {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+      ttl,
+      'blacklisted',
+    );
+    return true;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -671,8 +749,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       .map((pair: string) => {
         return {
           exchange: this.dexKey,
-          address: this.routerAddressPlaceholder,
-          connectorTokens: [this.getTokenFromAddress(pLevels[pair].quote!)],
+          connectorTokens: [this.getTokenFromAddress(normalizedTokenAddress === pLevels[pair].base ? pLevels[pair].quote : pLevels[pair].base)],
           liquidityUSD: this.computeMaxLiquidity(pLevels[pair], tokenAddress),
         } as PoolLiquidity;
       })
