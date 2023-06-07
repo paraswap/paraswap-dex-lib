@@ -409,9 +409,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       throw new SwaapV2QuoteError(message);
     }
 
-    console.log('getLocalDeadlineAsFriendlyPlaceholder(): ', getLocalDeadlineAsFriendlyPlaceholder());
-    console.log('BigInt(getLocalDeadlineAsFriendlyPlaceholder()): ', BigInt(getLocalDeadlineAsFriendlyPlaceholder()))
-
     return [
       {
         ...optimalSwapExchange,
