@@ -90,7 +90,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
     [Network.BSC]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/thenaursa/thena-v1',
       factoryAddress: '0xAFD89d21BdB66d00817d4153E055830B1c2B3970',
-      router: '0xd4ae6eCA985340Dd434D38F470aCCce4DC78D109',
+      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
       initCode:
         '0x8d3d214c094a9889564f695c3e9fa516dd3b50bc3258207acd7f8b8e6b94fb65',
       stableFee: 1, // 10000 / 10000 = 1 in BPS
