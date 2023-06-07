@@ -41,7 +41,6 @@ import {
   BATCH_SWAP_SELECTOR,
   CALLER_SLOT,
 } from './constants';
-import { BI_MAX_UINT256 } from '../../bigint-constants';
 import {
   getPoolIdentifier,
   getPriceLevelsCacheKey,
@@ -128,7 +127,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     );
 
     const levels = await this.getCachedLevels();
-    if (levels == null) {
+    if (levels === null) {
       return [];
     }
 
@@ -140,7 +139,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           levels[pair].quote!,
         );
       })
-      .filter((pi: string) => pi == poolIdentifier);
+      .filter((pi: string) => pi === poolIdentifier);
   }
 
   computePricesFromLevelsBis(
@@ -151,14 +150,14 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     side: SwapSide,
   ): bigint[] {
     let levels: SwaapV2PriceLevel[] = [];
-    if (side == SwapSide.BUY) {
-      if (destToken.address == asksAndBids.base!) {
+    if (side === SwapSide.BUY) {
+      if (destToken.address === asksAndBids.base!) {
         levels = asksAndBids.asks;
       } else {
         levels = this.invertPrices(asksAndBids.bids);
       }
     } else {
-      if (srcToken.address == asksAndBids.base!) {
+      if (srcToken.address === asksAndBids.base!) {
         levels = asksAndBids.bids;
       } else {
         levels = this.invertPrices(asksAndBids.asks);
@@ -186,7 +185,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     side: SwapSide,
   ): bigint[] {
     const size = levels.length;
-    if (size == 0) {
+    if (size === 0) {
       return amounts.map(_ => BigInt(0));
     }
     return amounts.map((amount: BigNumber) => {
@@ -217,7 +216,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           output
             .multipliedBy(
               getBigNumberPow(
-                side == SwapSide.BUY ? srcToken.decimals : destToken.decimals,
+                side === SwapSide.BUY ? srcToken.decimals : destToken.decimals,
               ),
             )
             .toFixed(0),
@@ -274,7 +273,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
     const levels = await this.getCachedLevels();
-    if (levels == null) {
+    if (levels === null) {
       return null;
     }
 
@@ -345,7 +344,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     poolIdentifier: string,
   ) {
     const baseToken: string = this.getBaseToken(poolIdentifier);
-    if (side == SwapSide.SELL) {
+    if (side === SwapSide.SELL) {
       return askAndBids.asks;
     }
     return askAndBids.asks;
@@ -409,6 +408,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       this.logger.warn(message);
       throw new SwaapV2QuoteError(message);
     }
+
+    console.log('getLocalDeadlineAsFriendlyPlaceholder(): ', getLocalDeadlineAsFriendlyPlaceholder());
+    console.log('BigInt(getLocalDeadlineAsFriendlyPlaceholder()): ', BigInt(getLocalDeadlineAsFriendlyPlaceholder()))
 
     return [
       {
@@ -493,10 +495,10 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
     let payload: string;
     const truncatedCalldata = '0x' + callData.slice(10); // droping the function selector
-    const isBatchSwap = callData.slice(0, 10) == BATCH_SWAP_SELECTOR;
+    const isBatchSwap = callData.slice(0, 10) === BATCH_SWAP_SELECTOR;
 
     if (isBatchSwap) {
-      const batchswapAbi = routerAbi.filter(abi => abi.name == 'batchSwap');
+      const batchswapAbi = routerAbi.filter(abi => abi.name === 'batchSwap');
 
       const callDataStruct = this.abiCoder.decodeParameters(
         batchswapAbi[0].inputs!,
@@ -541,7 +543,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         ],
       );
     } else {
-      const swapAbi = routerAbi.filter(abi => abi.name == 'swap');
+      const swapAbi = routerAbi.filter(abi => abi.name === 'swap');
 
       const callDataStruct = this.abiCoder.decodeParameters(
         swapAbi[0].inputs!,
@@ -592,7 +594,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
               recipient: callDataStruct.funds.recipient,
               toInternalBalance: callDataStruct.funds.toInternalBalance,
             },
-            limit: side == SwapSide.BUY ? MAX_UINT : BN_0,
+            limit: side === SwapSide.BUY ? MAX_UINT : '0',
           },
         ],
       );
@@ -639,7 +641,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     levels: SwaapV2PriceLevels,
     tokenAddress: string,
   ): number => {
-    if (tokenAddress == levels.base!) {
+    if (tokenAddress === levels.base!) {
       return (
         (levels.asks[levels.asks.length - 1]?.level ?? 0) *
         levels.asks[0]?.price
@@ -658,15 +660,15 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
     const pLevels = await this.getCachedLevels();
 
-    if (pLevels == null) {
+    if (pLevels === null) {
       return [];
     }
 
     return Object.keys(pLevels)
       .filter((pair: string) => {
         return (
-          normalizedTokenAddress == pLevels[pair].base ||
-          normalizedTokenAddress == pLevels[pair].quote
+          normalizedTokenAddress === pLevels[pair].base ||
+          normalizedTokenAddress === pLevels[pair].quote
         );
       })
       .map((pair: string) => {
