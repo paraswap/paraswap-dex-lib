@@ -16,6 +16,7 @@ import { convertToBasisPoints } from '../utils';
 const OneShift14 = 1n << 14n;
 const OneShift15 = 1n << 15n;
 const OneShift16 = 1n << 16n;
+const OneShift17 = 1n << 17n;
 const OneShift248 = 1n << 248n;
 
 // Referrer gets 25% of positive slippage
@@ -39,7 +40,11 @@ export function encodeFeePercent(
   if (fee > 10000) throw new Error('fee bps should be less than 10000');
 
   // Set 16th bit as referrer to split positive slippage for partner and protocol
-  if (isNoFeeAndPositiveSlippageToPartner) fee |= OneShift16;
+  // Set 17th bit to flag on Subgraph that this is a special case
+  if (isNoFeeAndPositiveSlippageToPartner) {
+    fee |= OneShift16;
+    fee |= OneShift17;
+  }
 
   // Set 14th bit if positiveSlippageToUser is true
   if (positiveSlippageToUser) fee |= OneShift14;
