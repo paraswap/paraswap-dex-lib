@@ -69,6 +69,7 @@ export class Solidly extends UniswapV2 {
         'SpiritSwapV2',
         'Cone',
         'SolidlyV2',
+        'Thena',
         'SoliSnek',
       ]),
     );
