@@ -29,25 +29,25 @@ import {
   UniswapV3Data,
   UniswapV3Functions,
   UniswapV3Param,
-} from './types';
+} from '../uniswap-v3/types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
-import { UniswapV3EventPool } from './uniswap-v3-pool';
-import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
-import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
+import { PancakeswapV3Config, Adapters } from './config';
+import { PancakeSwapV3EventPool } from './pancakeswap-v3-pool';
+import PancakeswapV3RouterABI from '../../abi/pancakeswap-v3/PancakeswapV3Router.abi.json';
+import PancakeswapV3QuoterABI from '../../abi/pancakeswap-v3/PancakeswapV3Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
-import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
+import PancakeswapV3StateMulticallABI from '../../abi/pancakeswap-v3/PancakeV3StateMulticall.abi.json';
 import {
-  UNISWAPV3_EFFICIENCY_FACTOR,
-  UNISWAPV3_POOL_SEARCH_OVERHEAD,
-  UNISWAPV3_TICK_BASE_OVERHEAD,
-  UNISWAPV3_TICK_GAS_COST,
+  PANCAKESWAPV3_EFFICIENCY_FACTOR,
+  PANCAKESWAPV3_TICK_BASE_OVERHEAD,
+  PANCAKESWAPV3_POOL_SEARCH_OVERHEAD,
+  PANCAKESWAPV3_TICK_GAS_COST,
 } from './constants';
 import { DeepReadonly } from 'ts-essentials';
-import { uniswapV3Math } from './contract-math/uniswap-v3-math';
+import { pancakeswapV3Math } from './contract-math/pancakeswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
@@ -63,16 +63,16 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
-const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
+const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
+const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const PANCAKESWAPV3_QUOTE_GASLIMIT = 200_000;
 
-export class UniswapV3
+export class PancakeswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
   readonly isFeeOnTransferSupported: boolean = false;
-  readonly eventPools: Record<string, UniswapV3EventPool | null> = {};
+  readonly eventPools: Record<string, PancakeSwapV3EventPool | null> = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -80,7 +80,7 @@ export class UniswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(UniswapV3Config, ['UniswapV3']));
+    getDexKeysWithNetwork(_.pick(PancakeswapV3Config, ['PancakeswapV3']));
 
   logger: Logger;
 
@@ -94,10 +94,9 @@ export class UniswapV3
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerIface = new Interface(UniswapV3RouterABI),
-    readonly quoterIface = new Interface(UniswapV3QuoterABI),
-    protected config = UniswapV3Config[dexKey][network],
-    protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
+    readonly routerIface = new Interface(PancakeswapV3RouterABI),
+    readonly quoterIface = new Interface(PancakeswapV3QuoterABI),
+    protected config = PancakeswapV3Config[dexKey][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
@@ -106,7 +105,7 @@ export class UniswapV3
       this.config.uniswapMulticall,
     );
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3StateMulticallABI as AbiItem[],
+      PancakeswapV3StateMulticallABI as AbiItem[],
       this.config.stateMulticall,
     );
 
@@ -134,22 +133,10 @@ export class UniswapV3
   }
 
   async initializePricing(blockNumber: number) {
-    // This is only for testing, because cold pool fetching is goes out of
-    // FETCH_POOL_INDENTIFIER_TIMEOUT range
-    await Promise.all(
-      this.poolsToPreload.map(async pool =>
-        Promise.all(
-          this.config.supportedFees.map(async fee =>
-            this.getPool(pool.token0, pool.token1, fee, blockNumber),
-          ),
-        ),
-      ),
-    );
-
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
         const maxTimestamp =
-          Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+          Date.now() - PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
         await this.dexHelper.cache.zremrangebyscore(
           this.notExistingPoolSetKey,
           0,
@@ -159,7 +146,7 @@ export class UniswapV3
 
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
-        UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+        PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
       );
     }
   }
@@ -169,7 +156,7 @@ export class UniswapV3
     destAddress: Address,
     fee: bigint,
     blockNumber: number,
-  ): Promise<UniswapV3EventPool | null> {
+  ): Promise<PancakeSwapV3EventPool | null> {
     let pool =
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
 
@@ -202,7 +189,7 @@ export class UniswapV3
       );
 
       this.logger.trace(`starting to listen to new pool: ${key}`);
-      pool = new UniswapV3EventPool(
+      pool = new PancakeSwapV3EventPool(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
@@ -214,6 +201,7 @@ export class UniswapV3
         this.logger,
         this.cacheStateKey,
         this.config.initHash,
+        this.config.deployer,
       );
 
       try {
@@ -329,7 +317,7 @@ export class UniswapV3
     to: Token,
     amounts: bigint[],
     side: SwapSide,
-    pools: UniswapV3EventPool[],
+    pools: PancakeSwapV3EventPool[],
   ): Promise<ExchangePrices<UniswapV3Data> | null> {
     if (pools.length === 0) {
       return null;
@@ -387,7 +375,7 @@ export class UniswapV3
     const calldata = pools.map(pool =>
       _amounts.map(_amount => ({
         target: this.config.quoter,
-        gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
+        gasLimit: PANCAKESWAPV3_QUOTE_GASLIMIT,
         callData:
           side === SwapSide.SELL
             ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
@@ -456,7 +444,7 @@ export class UniswapV3
           pool.feeCode,
         ),
         exchange: this.dexKey,
-        gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
+        gasCost: prices.map(p => (p === 0n ? 0 : PANCAKESWAPV3_QUOTE_GASLIMIT)),
         poolAddresses: [pool.poolAddress],
       };
     });
@@ -483,7 +471,7 @@ export class UniswapV3
 
       if (_srcAddress === _destAddress) return null;
 
-      let selectedPools: UniswapV3EventPool[] = [];
+      let selectedPools: PancakeSwapV3EventPool[] = [];
 
       if (!limitPools) {
         selectedPools = (
@@ -552,8 +540,8 @@ export class UniswapV3
           return acc;
         },
         {
-          poolWithState: [] as UniswapV3EventPool[],
-          poolWithoutState: [] as UniswapV3EventPool[],
+          poolWithState: [] as PancakeSwapV3EventPool[],
+          poolWithoutState: [] as PancakeSwapV3EventPool[],
         },
       );
 
@@ -619,9 +607,9 @@ export class UniswapV3
                 return 0;
               } else {
                 return (
-                  UNISWAPV3_POOL_SEARCH_OVERHEAD +
-                  UNISWAPV3_TICK_BASE_OVERHEAD +
-                  pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
+                  PANCAKESWAPV3_POOL_SEARCH_OVERHEAD +
+                  PANCAKESWAPV3_TICK_BASE_OVERHEAD +
+                  pricesResult.tickCounts[index] * PANCAKESWAPV3_TICK_GAS_COST
                 );
               }
             }),
@@ -831,7 +819,7 @@ export class UniswapV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.totalValueLockedUSD) * PANCAKESWAPV3_EFFICIENCY_FACTOR,
     }));
 
     const pools1 = _.map(res.pools1, pool => ({
@@ -844,7 +832,7 @@ export class UniswapV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.totalValueLockedUSD) * PANCAKESWAPV3_EFFICIENCY_FACTOR,
     }));
 
     const pools = _.slice(
@@ -858,14 +846,14 @@ export class UniswapV3
   private async _getPoolsFromIdentifiers(
     poolIdentifiers: string[],
     blockNumber: number,
-  ): Promise<UniswapV3EventPool[]> {
+  ): Promise<PancakeSwapV3EventPool[]> {
     const pools = await Promise.all(
       poolIdentifiers.map(async identifier => {
         const [, srcAddress, destAddress, fee] = identifier.split('_');
         return this.getPool(srcAddress, destAddress, BigInt(fee), blockNumber);
       }),
     );
-    return pools.filter(pool => pool) as UniswapV3EventPool[];
+    return pools.filter(pool => pool) as PancakeSwapV3EventPool[];
   }
 
   private _getLoweredAddresses(srcToken: Token, destToken: Token) {
@@ -901,7 +889,7 @@ export class UniswapV3
     destTokenBalance: bigint,
   ): OutputResult | null {
     try {
-      const outputsResult = uniswapV3Math.queryOutputs(
+      const outputsResult = pancakeswapV3Math.queryOutputs(
         state,
         amounts,
         zeroForOne,

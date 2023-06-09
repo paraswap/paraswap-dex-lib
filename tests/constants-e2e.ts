@@ -953,7 +953,7 @@ export const Holders: {
     BNB: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
     USDT: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
-    USDC: '0x83455d6c365dcbac10855c623da884b552aaefdd',
+    USDC: '0x554b52bf57b387fd09d6644368c5a8aacaaf5ae0',
     RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
     bBTC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',
@@ -1010,7 +1010,7 @@ export const Holders: {
     aArbUSDC: '0x048BF2F5908e95976CeAD0E47D805b3803E286e2',
     ZYB: '0x3ec0eddcd1e25025077327886a78133589082fb2',
     WBTC: '0xd9d611c6943585bc0e18e51034af8fa28778f7da',
-    RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6'
+    RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',

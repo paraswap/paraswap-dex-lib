@@ -31,10 +31,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          ContractMethod.simpleBuy,
-          ContractMethod.buy
-        ]],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -98,7 +95,7 @@ describe('BalancerV2 E2E', () => {
               sellAmount: '200000000000000',
               buyAmount: '10000000000',
             },
-          ]
+          ],
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
@@ -153,11 +150,14 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          // Buy support is enabled only for Weighted Pools
-          // ContractMethod.simpleBuy,
-          // ContractMethod.buy
-        ]],
+        [
+          SwapSide.BUY,
+          [
+            // Buy support is enabled only for Weighted Pools
+            // ContractMethod.simpleBuy,
+            // ContractMethod.buy
+          ],
+        ],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -555,10 +555,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          ContractMethod.simpleBuy,
-          ContractMethod.buy
-        ]],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -857,10 +854,7 @@ describe('BalancerV2 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [
-          ContractMethod.simpleBuy,
-          ContractMethod.buy
-        ]],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
@@ -932,7 +926,7 @@ describe('BalancerV2 E2E', () => {
         }),
       );
     });
-  })
+  });
 
   describe('BeetsFi OPTIMISM', () => {
     const dexKey = 'BeetsFi';

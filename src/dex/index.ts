@@ -42,6 +42,7 @@ import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { Thena } from './solidly/forks-override/thena';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
@@ -64,8 +65,8 @@ import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
 import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
-import { PancakeswapV3 } from './uniswap-v3/forks/pancakeswap-v3/pancakeswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
+import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -119,6 +120,7 @@ const Dexes = [
   Solidly,
   SolidlyEthereum,
   SpiritSwapV2,
+  Thena,
   Velodrome,
   Cone,
   SoliSnek,
