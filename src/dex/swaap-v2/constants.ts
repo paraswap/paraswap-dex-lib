@@ -14,6 +14,10 @@ export const SWAAP_RFQ_TOKENS_ENDPOINT = 'tokens';
 
 export const SWAAP_BLACKLIST_TTL_S = 60 * 60 * 24; // 24 hours
 
+export const SWAAP_RESTRICT_TTL_S = 60 * 60 * 24; // 24 hours
+
+export const SWAAP_RESTRICTED_CACHE_KEY = 'restricted';
+
 export const GAS_COST_ESTIMATION = 142_000;
 
 export const BATCH_SWAP_SELECTOR = '0x945bcec9';
