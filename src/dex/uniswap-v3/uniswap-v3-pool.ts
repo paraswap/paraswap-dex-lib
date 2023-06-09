@@ -68,7 +68,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     token1: Address,
     logger: Logger,
     mapKey: string = '',
-    readonly poolInitCodeHash = DEFAULT_POOL_INIT_CODE_HASH,
+    readonly poolInitCodeHash: string,
   ) {
     super(
       parentName,

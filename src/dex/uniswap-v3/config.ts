@@ -28,12 +28,14 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
   UniswapV3: {
     [Network.MAINNET]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      quoter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
+      quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x9c764D2e92dA68E4CDfD784B902283A095ff8b63',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
     },
     [Network.BSC]: {
       factory: '0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7',
@@ -43,33 +45,45 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x593F39A4Ba26A9c8ed2128ac95D109E8e403C485',
       uniswapMulticall: '0x963Df249eD09c358A4819E39d9Cd5736c3087184',
       chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-bsc',
     },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      quoter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
+      quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x6Dc993Fe1e945A640576B4Dca81281d8e998DF71',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon',
     },
     [Network.ARBITRUM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      quoter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
+      quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal',
     },
     [Network.OPTIMISM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      quoter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
+      quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x4FF0dEC5f9a763Aa1E5C2a962aa6f4eDFeE4f9eA',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis',
     },
   },
 };
@@ -94,5 +108,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 3 }],
     [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 2 }],
+  },
+  [Network.FANTOM]: {
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 11 }],
+    [SwapSide.BUY]: [{ name: 'FantomBuyAdapter', index: 3 }],
   },
 };
