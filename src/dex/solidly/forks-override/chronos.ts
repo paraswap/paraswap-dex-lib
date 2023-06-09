@@ -19,9 +19,9 @@ const ChronosFactoryABI = [
 
 const chronosFactoryIface = new Interface(ChronosFactoryABI);
 
-export class Velodrome extends Solidly {
+export class Chronos extends Solidly {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(SolidlyConfig, ['Velodrome']));
+    getDexKeysWithNetwork(_.pick(SolidlyConfig, ['Chronos']));
 
   constructor(
     protected network: Network,
