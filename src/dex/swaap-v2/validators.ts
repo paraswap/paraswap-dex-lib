@@ -107,6 +107,13 @@ const mustBeAugustusSwapper = (
       });
 };
 
+export const getTokensResponseValidator = joi
+  .object({
+    tokens: joi.object().required(),
+    success: joi.boolean().required(),
+  });
+
+
 export const getQuoteResponseValidator = joi
   .object({
     id: joi.string().required(),

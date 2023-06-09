@@ -123,7 +123,10 @@ describe('Swaap V2', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+
       const swaapV2 = new SwaapV2(network, dexKey, dexHelper);
+      await swaapV2.initializePricing(blocknumber);
       const poolLiquidity = await swaapV2.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,

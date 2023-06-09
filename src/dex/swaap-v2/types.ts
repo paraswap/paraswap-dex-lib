@@ -1,5 +1,6 @@
 import { RequestHeaders } from '../../dex-helper';
 import { Method } from '../../dex-helper/irequest-wrapper';
+import { Token } from '../../types';
 
 export type SwaapV2Data = {
   router: string;
@@ -34,6 +35,17 @@ export type SwaapV2RateFetcherConfig = {
     pricesCacheTTLSecs: number;
   };
 };
+
+export type SwaapV2TokensResponse = {
+  tokens: {
+    [address: string]: {
+      symbol: string;
+      address: string;
+      decimals: number;
+    },
+  },
+  success: boolean;
+}
 
 export type SwaapV2QuoteResponse = {
   id: string;
@@ -72,3 +84,7 @@ export type SwaapV2APIParameters = {
 };
 
 export class SlippageCheckError extends Error {}
+
+export type TokensMap = {
+  [address: string]: Token,
+};

@@ -104,24 +104,24 @@ function testForNetwork(
                   sleepMs,
                 );
               });
-              // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              //   await testE2E(
-              //     tokens[tokenASymbol],
-              //     tokens[nativeTokenSymbol],
-              //     holders[tokenASymbol],
-              //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-              //     side,
-              //     dexKey,
-              //     contractMethod,
-              //     network,
-              //     provider,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     sleepMs,
-              //   );
-              // });
+              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[nativeTokenSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
+                );
+              });
             }
           });
         });

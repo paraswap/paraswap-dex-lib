@@ -22,7 +22,7 @@ import {
   SwaapV2PriceLevels,
   SwaapV2APIParameters,
   SwaapV2QuoteError,
-  SlippageCheckError,
+  SlippageCheckError, TokensMap, SwaapV2TokensResponse,
 } from './types';
 import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
@@ -41,7 +41,7 @@ import {
   GAS_COST_ESTIMATION,
   BATCH_SWAP_SELECTOR,
   CALLER_SLOT,
-  SWAAP_BLACKLIST_TTL_S,
+  SWAAP_BLACKLIST_TTL_S, SWAAP_RFQ_TOKENS_ENDPOINT,
 } from './constants';
 import {
   getPoolIdentifier,
@@ -50,6 +50,8 @@ import {
   getPairName,
 } from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
+import { validateAndCast } from '../../lib/validators';
+import { getTokensResponseValidator } from './validators';
 
 export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly isStatePollingDex = true;
@@ -57,6 +59,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
   private rateFetcher: RateFetcher;
+  private tokensMap: TokensMap = {};
   private swaapV2AuthToken: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -96,9 +99,24 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
+    const { data } = await this.dexHelper.httpRequest.request<unknown>(
+      this.getTokensReqParams(),
+    );
+
+    const tokensResp = validateAndCast<SwaapV2TokensResponse>(
+      data,
+      getTokensResponseValidator,
+    );
+
+    this.tokensMap = Object.keys(tokensResp.tokens).reduce((acc, key: string) => {
+      acc[key.toLowerCase()] = tokensResp.tokens[key];
+      return acc;
+    }, {} as TokensMap);
+
     if (!this.dexHelper.config.isSlave) {
       await this.rateFetcher.start();
     }
+
     return;
   }
 
@@ -760,7 +778,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   getTokenFromAddress(address: Address): Token {
-    return { address, decimals: 0 };
+    return this.tokensMap[address];
   }
 
   releaseResources(): void {
@@ -770,14 +788,18 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   getPriceLevelsReqParams(): SwaapV2APIParameters {
-    return this.geAPIReqParams(SWAAP_RFQ_PRICES_ENDPOINT, 'GET');
+    return this.getAPIReqParams(SWAAP_RFQ_PRICES_ENDPOINT, 'GET');
   }
 
   getQuoteReqParams(): SwaapV2APIParameters {
-    return this.geAPIReqParams(SWAAP_RFQ_QUOTE_ENDPOINT, 'POST');
+    return this.getAPIReqParams(SWAAP_RFQ_QUOTE_ENDPOINT, 'POST');
   }
 
-  geAPIReqParams(endpoint: string, method: Method): SwaapV2APIParameters {
+  getTokensReqParams(): SwaapV2APIParameters {
+    return this.getAPIReqParams(SWAAP_RFQ_TOKENS_ENDPOINT, 'GET');
+  }
+
+  getAPIReqParams(endpoint: string, method: Method): SwaapV2APIParameters {
     return {
       url: `${SWAAP_RFQ_API_URL}/${endpoint}`,
       params: {
