@@ -14,7 +14,7 @@ export const SWAAP_RFQ_TOKENS_ENDPOINT = 'tokens';
 
 export const SWAAP_BLACKLIST_TTL_S = 60 * 60 * 24; // 24 hours
 
-export const SWAAP_RESTRICT_TTL_S = 60 * 60 * 24; // 24 hours
+export const SWAAP_RESTRICT_TTL_S = 60 * 60 * 2; // 2 hours
 
 export const SWAAP_RESTRICTED_CACHE_KEY = 'restricted';
 
