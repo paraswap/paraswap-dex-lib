@@ -12,7 +12,7 @@ export const SWAAP_RFQ_QUOTE_ENDPOINT = 'quote';
 
 export const SWAAP_RFQ_TOKENS_ENDPOINT = 'tokens';
 
-export const SWAAP_BLACKLIST_TTL_S = 60 * 60 * 24;
+export const SWAAP_BLACKLIST_TTL_S = 60 * 60 * 24; // 24 hours
 
 export const GAS_COST_ESTIMATION = 142_000;
 

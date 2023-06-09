@@ -11,7 +11,7 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
 } from '../../types';
-import { SwapSide, Network, MAX_INT, MAX_UINT, CACHE_PREFIX } from '../../constants';
+import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../idex';
@@ -41,7 +41,8 @@ import {
   GAS_COST_ESTIMATION,
   BATCH_SWAP_SELECTOR,
   CALLER_SLOT,
-  SWAAP_BLACKLIST_TTL_S, SWAAP_RFQ_TOKENS_ENDPOINT,
+  SWAAP_BLACKLIST_TTL_S,
+  SWAAP_RFQ_TOKENS_ENDPOINT,
 } from './constants';
 import {
   getPoolIdentifier,
@@ -52,6 +53,8 @@ import {
 import { Method } from '../../dex-helper/irequest-wrapper';
 import { validateAndCast } from '../../lib/validators';
 import { getTokensResponseValidator } from './validators';
+
+const BLACKLISTED = 'blacklisted';
 
 export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly isStatePollingDex = true;
@@ -485,7 +488,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       ];
     } catch (e) {
       await this.setBlacklist(options.txOrigin);
-
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
+      );
       throw e;
     }
   }
@@ -496,7 +501,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       this.network,
       this.getBlackListKey(txOrigin),
     );
-    return result === 'blacklisted';
+    return result === BLACKLISTED;
   }
 
   getBlackListKey(address: Address) {
@@ -512,7 +517,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       this.network,
       this.getBlackListKey(txOrigin),
       ttl,
-      'blacklisted',
+      BLACKLISTED,
     );
     return true;
   }
