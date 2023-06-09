@@ -11,6 +11,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import solidlyPairABI from '../../abi/solidly/SolidlyPair.json';
 import { SpiritSwapV2 } from './forks-override/spiritSwapV2';
 import { Cone } from './forks-override/cone';
+import { Chronos } from './forks-override/chronos';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
 const amounts6 = [0n, BI_POWS[6], 2000000n];
@@ -636,7 +637,7 @@ describe('Solidly integration tests', () => {
 
     describe('Chronos', function () {
       const dexKey = 'Chronos';
-      const cone = new Cone(network, dexKey, dexHelper);
+      const chronos = new Chronos(network, dexKey, dexHelper);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'USDC';
@@ -648,7 +649,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await cone.getPoolIdentifiers(
+          const pools = await chronos.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -661,7 +662,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await cone.getPricesVolume(
+          const poolPrices = await chronos.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -681,7 +682,7 @@ describe('Solidly integration tests', () => {
 
           for (const i in poolPrices || []) {
             await checkOnChainPricing(
-              cone,
+              chronos,
               'getAmountOut',
               blocknumber,
               poolPrices![i].prices,
@@ -693,7 +694,7 @@ describe('Solidly integration tests', () => {
         });
 
         it('getTopPoolsForToken', async function () {
-          const poolLiquidity = await cone.getTopPoolsForToken(
+          const poolLiquidity = await chronos.getTopPoolsForToken(
             tokenA.address,
             10,
           );
@@ -713,7 +714,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await cone.getPoolIdentifiers(
+          const pools = await chronos.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -726,7 +727,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await cone.getPricesVolume(
+          const poolPrices = await chronos.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -745,7 +746,7 @@ describe('Solidly integration tests', () => {
           // Check if onchain pricing equals to calculated ones
           for (const i in poolPrices || []) {
             await checkOnChainPricing(
-              cone,
+              chronos,
               'getAmountOut',
               blocknumber,
               poolPrices![i].prices,
@@ -757,7 +758,7 @@ describe('Solidly integration tests', () => {
         });
 
         it('getTopPoolsForToken', async function () {
-          const poolLiquidity = await cone.getTopPoolsForToken(
+          const poolLiquidity = await chronos.getTopPoolsForToken(
             tokenA.address,
             10,
           );
