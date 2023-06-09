@@ -83,8 +83,6 @@ export type SwaapV2APIParameters = {
   method?: Method;
 };
 
-export class SlippageCheckError extends Error {}
-
 export type TokensMap = {
   [address: string]: Token,
 };

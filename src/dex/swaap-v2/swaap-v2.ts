@@ -22,7 +22,8 @@ import {
   SwaapV2PriceLevels,
   SwaapV2APIParameters,
   SwaapV2QuoteError,
-  SlippageCheckError, TokensMap, SwaapV2TokensResponse,
+  TokensMap,
+  SwaapV2TokensResponse,
 } from './types';
 import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
@@ -53,6 +54,7 @@ import {
 import { Method } from '../../dex-helper/irequest-wrapper';
 import { validateAndCast } from '../../lib/validators';
 import { getTokensResponseValidator } from './validators';
+import { SlippageCheckError } from '../generic-rfq/types';
 
 const BLACKLISTED = 'blacklisted';
 
