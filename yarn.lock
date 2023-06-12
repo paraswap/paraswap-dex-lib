@@ -1390,22 +1390,17 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.8.1.tgz#709cfc4bbb3ca9f4460d60101f15dac6b7a2d5e4"
   integrity sha512-xQ6eUZl+RDyb/FiZe1h+U7qr/f4p/SrTSQcTPH2bjur3C5DbuW/zFgCU/b1P/xcIaEqJep+9ju4xDRi3rmChdQ==
 
-"@paraswap/core@1.0.5-new-direct-methods.0":
-  version "1.0.5-new-direct-methods.0"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.5-new-direct-methods.0.tgz#2ed9750ca225741b1095676cbdd290656636d5d9"
-  integrity sha512-o1NKM5h6Ejikz3ddEbsfxeYhu/7dpT1bU/zvbUEyM9kWYKlMIfisAzxZ179LjMtqbpj8uNzRb51yJybM2hLzFA==
+"@paraswap/core@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.1.0.tgz#5ec7415be69dc657a9d82b0fde4e20f632cca1b6"
+  integrity sha512-ecnX8ezlhYWFwolZxYEz+K+RfLr8xaxQqiJKlxJ8Yf00tXTGxDGn6/Acy00t4+9Kv0apewd7++J33eJt9yNfwg==
 
-"@paraswap/core@1.0.5-new-direct-methods.2":
-  version "1.0.5-new-direct-methods.2"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.5-new-direct-methods.2.tgz#3b118fd8b8dcd668b2c89299573ab12cada7a205"
-  integrity sha512-kv1ni8wnfDLaU2FjIErzC3mikIoQI5dj/MYWfIeIlpdFMW3xRj4er2gz6T0DiBSIb9o3vRJTSbKGqvsiTULWHw==
-
-"@paraswap/sdk@6.2.1-new-direct-methods.0":
-  version "6.2.1-new-direct-methods.0"
-  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.1-new-direct-methods.0.tgz#e822d0bc27b1e3494614aa0bdada9a533b7ede19"
-  integrity sha512-lkxG3YcYWTnFnNPlVJEfBa5ErEodBZbsjAuAHOvQvDbMRICQXA2kXpZbrJe8YuaAwcz5T5b7aRrOHuf/wN2Hxw==
+"@paraswap/sdk@6.2.1":
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.1.tgz#cbac091ae1a8f080edd64234465ef127fdbd21f6"
+  integrity sha512-PW0pw676Oyy6129gqLKU/o7JNFVurCnA6AJ3NAKmZ6zAbPrYLWJV+zl/pWqja5MZkst2QzbDhd40gGjIeEKaPg==
   dependencies:
-    "@paraswap/core" "1.0.5-new-direct-methods.0"
+    "@paraswap/core" "1.1.0"
     bignumber.js "^9.0.2"
     ts-essentials "^9.1.2"
 
