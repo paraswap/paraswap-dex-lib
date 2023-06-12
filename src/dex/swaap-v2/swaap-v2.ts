@@ -13,7 +13,7 @@ import {
 } from '../../types';
 import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, isAxiosError } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -58,7 +58,6 @@ import { validateAndCast } from '../../lib/validators';
 import { getTokensResponseValidator } from './validators';
 import { SlippageCheckError } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
-import { isFetcherError } from '@paraswap/sdk';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -501,8 +500,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       ];
     } catch (e) {
       if (
-        isFetcherError(e) &&
-        (e.status === 403 || e.status === 429)
+        isAxiosError(e) &&
+        (e.response?.status === 403 || e.response?.status === 429)
       ) {
         await this.setBlacklist(options.txOrigin);
         this.logger.warn(
@@ -514,8 +513,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         );
         await this.restrict();
       }
-
-      this.logger.error(`${this.dexKey}-${this.network}: ${e}`);
 
       throw e;
     }
