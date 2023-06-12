@@ -497,6 +497,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         }
       }
 
+      const expiryAsBigInt = BigInt(quote.expiration);
+      const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
+
       return [
         {
           ...optimalSwapExchange,
@@ -505,7 +508,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
             callData: quote.calldata,
           },
         },
-        { deadline: BI_MAX_UINT256 },
+        { deadline: minDeadline },
       ];
     } catch (e) {
       if (
