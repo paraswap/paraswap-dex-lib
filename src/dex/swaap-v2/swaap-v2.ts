@@ -58,6 +58,7 @@ import { validateAndCast } from '../../lib/validators';
 import { getTokensResponseValidator } from './validators';
 import { SlippageCheckError } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { isFetcherError } from '@paraswap/sdk';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -500,8 +501,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       ];
     } catch (e) {
       if (
-        e instanceof Error &&
-        e.message.endsWith('Request failed with status code 403')
+        isFetcherError(e) &&
+        (e.status === 403 || e.status === 429)
       ) {
         await this.setBlacklist(options.txOrigin);
         this.logger.warn(
