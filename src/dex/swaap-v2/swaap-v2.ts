@@ -13,7 +13,7 @@ import {
 } from '../../types';
 import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -390,18 +390,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<SwaapV2Data>, ExchangeTxInfo]> {
-
-    if(await this.isRestricted()) {
-      this.logger.warn(
-        `${this.dexKey}-${this.network}: protocol is restricted.`,
-      );
-      throw new Error(
-        `${this.dexKey}-${
-          this.network
-        }: protocol is restricted`,
-      );
-    }
-
     if (await this.isBlacklisted(options.txOrigin)) {
       this.logger.warn(
         `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
