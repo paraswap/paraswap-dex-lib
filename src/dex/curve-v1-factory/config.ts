@@ -150,14 +150,14 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           coinsInputType: 'int128',
           balancesInputType: 'int128',
         },
-        '': {
-          name: '',
-          address: '',
-          lpTokenAddress: '',
-          liquidityApiSlug: '',
-          coinsInputType: '',
-          balancesInputType: '',
-        },
+        // '0xf253f83aca21aabd2a20553ae0bf7f65c755a07f': {
+        //   name: '',
+        //   address: '',
+        //   lpTokenAddress: '',
+        //   liquidityApiSlug: '',
+        //   coinsInputType: '',
+        //   balancesInputType: '',
+        // },
       },
     },
     [Network.POLYGON]: {
