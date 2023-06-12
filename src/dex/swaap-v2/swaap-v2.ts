@@ -25,7 +25,7 @@ import {
   TokensMap,
   SwaapV2TokensResponse,
 } from './types';
-import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange } from '../simple-exchange';
+import { SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
 import { RateFetcher } from './rate-fetcher';
 import routerAbi from '../../abi/swaap-v2/vault.json';
