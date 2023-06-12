@@ -890,6 +890,91 @@ describe('Solidly E2E', () => {
         });
       });
     });
+
+    describe('Thena', () => {
+      const dexKey = 'Thena';
+
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+      ]);
+
+      const pairs: { name: string; sellAmount: string }[][] = [
+        [
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'ETH',
+            sellAmount: '5000000000000000000',
+          },
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+        ],
+      ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    pair[0].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    pair[1].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
   });
 
   describe('Avalanche', () => {
