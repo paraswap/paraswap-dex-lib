@@ -57,6 +57,7 @@ import { Method } from '../../dex-helper/irequest-wrapper';
 import { validateAndCast } from '../../lib/validators';
 import { getTokensResponseValidator } from './validators';
 import { SlippageCheckError } from '../generic-rfq/types';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -504,7 +505,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
             callData: quote.calldata,
           },
         },
-        { deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()) },
+        { deadline: BI_MAX_UINT256 },
       ];
     } catch (e) {
       if (
