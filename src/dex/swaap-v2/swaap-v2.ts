@@ -509,8 +509,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
         );
       } else {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: protocol is restricted`,
+        );
         await this.restrict();
       }
+
+      this.logger.error(`${this.dexKey}-${this.network}: ${e}`);
 
       throw e;
     }
