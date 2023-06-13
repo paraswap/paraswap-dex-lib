@@ -50,7 +50,8 @@ export function encodeFeePercent(
   if (positiveSlippageToUser) fee |= OneShift14;
 
   // Set 15th bit to take fee from srcToken
-  if (side === SwapSide.BUY) fee |= OneShift15;
+  if (side === SwapSide.BUY && !isNoFeeAndPositiveSlippageToPartner)
+    fee |= OneShift15;
 
   // Bits 248 - 255 is used for version;
   // Set version = 1;
