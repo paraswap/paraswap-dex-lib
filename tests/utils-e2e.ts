@@ -267,6 +267,7 @@ export async function testE2E(
   transferFees?: TransferFeeParams,
   // Specified in BPS: part of 10000
   slippage?: number,
+  sleepMs?: number,
 ) {
   const amount = BigInt(_amount);
   const ts = new TenderlySimulation(network);
@@ -346,6 +347,10 @@ export async function testE2E(
     : new LocalParaswapSDK(network, dexKey, '', limitOrderProvider);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
+
+  if (sleepMs) {
+    await sleep(sleepMs);
+  }
 
   if (paraswap.dexHelper?.replaceProviderWithRPC) {
     paraswap.dexHelper?.replaceProviderWithRPC(
