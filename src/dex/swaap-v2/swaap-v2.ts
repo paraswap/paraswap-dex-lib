@@ -116,10 +116,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       getTokensResponseValidator,
     );
 
-    this.tokensMap = Object.keys(tokensResp.tokens).reduce((acc, key: string) => {
-      acc[key.toLowerCase()] = tokensResp.tokens[key];
-      return acc;
-    }, {} as TokensMap);
+    this.tokensMap = Object.keys(tokensResp.tokens).reduce(
+      (acc, key: string) => {
+        acc[key.toLowerCase()] = tokensResp.tokens[key];
+        return acc;
+      },
+      {} as TokensMap,
+    );
 
     if (!this.dexHelper.config.isSlave) {
       await this.rateFetcher.start();
@@ -281,7 +284,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SwaapV2Data>> {
     try {
-      if(await this.isRestricted()) {
+      if (await this.isRestricted()) {
         return null;
       }
 
@@ -332,7 +335,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       );
 
       const prices = levelEntries.map((askAndBids: SwaapV2PriceLevels) => {
-
         const unitPrice = this.computePricesFromLevelsBids(
           [unitVolume],
           askAndBids,
@@ -361,7 +363,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       return prices;
     } catch (e) {
       this.logger.error(
-        `Error_getPrices ${srcToken}, ${destToken}, ${side}:`, e,
+        `Error_getPrices ${srcToken}, ${destToken}, ${side}:`,
+        e,
       );
       return null;
     }
@@ -459,7 +462,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       const quoteTokenAmount = BigInt(quote.amount);
       const slippageFactor = options.slippageFactor;
 
-      if(side === SwapSide.SELL) {
+      if (side === SwapSide.SELL) {
         if (
           quoteTokenAmount <
           BigInt(
@@ -798,8 +801,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-
-    if(await this.isRestricted()) {
+    if (await this.isRestricted()) {
       return [];
     }
 
@@ -821,7 +823,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       .map((pair: string) => {
         return {
           exchange: this.dexKey,
-          connectorTokens: [this.getTokenFromAddress(normalizedTokenAddress === pLevels[pair].base ? pLevels[pair].quote : pLevels[pair].base)],
+          connectorTokens: [
+            this.getTokenFromAddress(
+              normalizedTokenAddress === pLevels[pair].base
+                ? pLevels[pair].quote
+                : pLevels[pair].base,
+            ),
+          ],
           liquidityUSD: this.computeMaxLiquidity(pLevels[pair], tokenAddress),
         } as PoolLiquidity;
       })

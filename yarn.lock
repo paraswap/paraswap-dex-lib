@@ -1390,18 +1390,18 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.8.1.tgz#709cfc4bbb3ca9f4460d60101f15dac6b7a2d5e4"
   integrity sha512-xQ6eUZl+RDyb/FiZe1h+U7qr/f4p/SrTSQcTPH2bjur3C5DbuW/zFgCU/b1P/xcIaEqJep+9ju4xDRi3rmChdQ==
 
-"@paraswap/core@1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.3.tgz#a1de0536a061f71cdc66de8ffda8da8464ec0a36"
-  integrity sha512-V3Lc6hmSvGIy+VwngCWNU4yW6lv4yRASxj7gO3NLol7chX4WjaLYp/lwh4O4kjJnfl36WMEQhbT7lwuVxXVwKA==
+"@paraswap/core@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.1.0.tgz#5ec7415be69dc657a9d82b0fde4e20f632cca1b6"
+  integrity sha512-ecnX8ezlhYWFwolZxYEz+K+RfLr8xaxQqiJKlxJ8Yf00tXTGxDGn6/Acy00t4+9Kv0apewd7++J33eJt9yNfwg==
 
-"@paraswap/sdk@^6.1.0":
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.1.0.tgz#d27728b0fb27c063cb7c8c3b01ae4039d2205430"
-  integrity sha512-/WYE0wAIw361MM415dPXtS7hKGmPzR/zSwIaRIG1Dp55aErYcU0kOTT1y+JBldZKT5DS5pvMIfVEL02mPasLyQ==
+"@paraswap/sdk@6.2.1":
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.1.tgz#cbac091ae1a8f080edd64234465ef127fdbd21f6"
+  integrity sha512-PW0pw676Oyy6129gqLKU/o7JNFVurCnA6AJ3NAKmZ6zAbPrYLWJV+zl/pWqja5MZkst2QzbDhd40gGjIeEKaPg==
   dependencies:
+    "@paraswap/core" "1.1.0"
     bignumber.js "^9.0.2"
-    paraswap-core "^1.0.2"
     ts-essentials "^9.1.2"
 
 "@scure/base@~1.1.0":
@@ -1845,6 +1845,11 @@
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-2.0.1.tgz#20f18294f797f2209b5f65c8e3b5c8e8261d127c"
   integrity sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==
+
+"@types/uuid@^9.0.1":
+  version "9.0.1"
+  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-9.0.1.tgz#98586dc36aee8dacc98cc396dbca8d0429647aa6"
+  integrity sha512-rFT3ak0/2trgvp4yYZo5iKFEPsET7vKydKF+VRCxlQ9bpheehyAJH89dAkaLEq/j/RZXJIqcgsmPJKUP1Z28HA==
 
 "@types/yargs-parser@*":
   version "21.0.0"
@@ -6288,11 +6293,6 @@ param-case@^3.0.4:
     dot-case "^3.0.4"
     tslib "^2.0.3"
 
-paraswap-core@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/paraswap-core/-/paraswap-core-1.0.2.tgz#9e2ae35bc393b6f3bb9407bd097f21d498abb5a7"
-  integrity sha512-/PyonrjBsv9xOsFk4mVr0rh7BENrQtYYvvZMwu6QFN4qcca2VgmqOgpNWZPvfyBpKY+fUqmbBNlhqlaMQ3TMzQ==
-
 parent-module@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/parent-module/-/parent-module-1.0.1.tgz#691d2709e78c79fae3a156622452d00762caaaa2"
@@ -7585,6 +7585,11 @@ uuid@^8.3.2:
   version "8.3.2"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
   integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
+
+uuid@^9.0.0:
+  version "9.0.0"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.0.tgz#592f550650024a38ceb0c562f2f6aa435761efb5"
+  integrity sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==
 
 v8-compile-cache-lib@^3.0.1:
   version "3.0.1"

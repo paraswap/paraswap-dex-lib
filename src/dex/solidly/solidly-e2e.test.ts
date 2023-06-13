@@ -905,39 +905,38 @@ describe('Solidly E2E', () => {
         ],
       ]);
 
-      const pairs: { name: string; sellAmount: string; }[][] =
+      const pairs: { name: string; sellAmount: string }[][] = [
         [
-          [
-            {
-              name: 'BNB',
-              sellAmount: '1000000000000000000',
-            },
-            {
-              name: 'USDT',
-              sellAmount: '10000000000000000000',
-            },
-          ],
-          [
-            {
-              name: 'USDT',
-              sellAmount: '10000000000000000000',
-            },
-            {
-              name: 'USDC',
-              sellAmount: '10000000000000000000',
-            },
-          ],
-          [
-            {
-              name: 'ETH',
-              sellAmount: '5000000000000000000',
-            },
-            {
-              name: 'BNB',
-              sellAmount: '1000000000000000000',
-            },
-          ]
-        ];
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'ETH',
+            sellAmount: '5000000000000000000',
+          },
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+        ],
+      ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {

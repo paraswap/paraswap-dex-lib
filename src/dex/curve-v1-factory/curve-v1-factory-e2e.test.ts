@@ -29,6 +29,7 @@ function testForNetwork(
         ContractMethod.simpleSwap,
         ContractMethod.multiSwap,
         ContractMethod.megaSwap,
+        ContractMethod.directCurveV1Swap,
       ],
     ],
   ]);

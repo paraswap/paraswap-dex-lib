@@ -12,7 +12,7 @@ import { AxiosError } from 'axios';
 
 export const isAxiosError = (e: any): e is AxiosError => {
   return e.isAxiosError === true;
-}
+};
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();

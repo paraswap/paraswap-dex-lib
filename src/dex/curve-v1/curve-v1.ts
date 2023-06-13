@@ -1,17 +1,24 @@
 import { Interface, AbiCoder, JsonFragment } from '@ethersproject/abi';
+import _ from 'lodash';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { assert } from 'ts-essentials';
 import BigNumber from 'bignumber.js';
 import CurveABI from '../../abi/Curve.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import { Adapters, CurveV1Config } from './config';
 
 import {
   AdapterExchangeParam,
   Address,
   ExchangePrices,
+  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
   TransferFeeParams,
+  TxInfo,
 } from '../../types';
 import {
   Network,
@@ -48,8 +55,6 @@ import { TBTCPool, address as TBTCPoolAddress } from './pools/tBTCpool';
 import { USDKPool, address as USDKPoolAddress } from './pools/usdkpool';
 import { USTPool, address as USTPoolAddress } from './pools/ustpool';
 import { SLINKPool, address as SLINKPoolAddress } from './pools/sLinkpool';
-
-import * as _ from 'lodash';
 import {
   getBigIntPow,
   getDexKeysWithNetwork,
@@ -57,9 +62,13 @@ import {
   isDestTokenTransferFeeToBeExchanged,
   isSrcTokenTransferFeeToBeExchanged,
   Utils,
+  uuidToBytes16,
 } from '../../utils';
 import { BN_0 } from '../../bignumber-constants';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
@@ -71,9 +80,12 @@ import {
   CurveV1Data,
   TokenWithReasonableVolume,
   CurveSwapFunctions,
+  CurveV1SwapType,
+  DirectCurveV1Param,
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { DIRECT_METHOD_NAME } from './constants';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -82,7 +94,10 @@ const CURVE_POOL_GAS = 200 * 1000;
 
 const coder = new AbiCoder();
 
-export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
+export class CurveV1
+  extends SimpleExchange
+  implements IDex<CurveV1Data, DirectCurveV1Param>
+{
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
@@ -101,6 +116,8 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
   protected baseTokens: Record<string, TokenWithReasonableVolume>;
 
   protected disableFeeOnTransferTokenAddresses: Set<string>;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
@@ -840,6 +857,128 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
     return this.adapters[side];
   }
 
+  static getDirectFunctionName(): string[] {
+    return [DIRECT_METHOD_NAME];
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<CurveV1Data>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<CurveV1Data>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
+        .call(undefined, 'latest');
+      isApproved =
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: CurveV1Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<DirectCurveV1Param> {
+    if (contractMethod !== DIRECT_METHOD_NAME) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const swapParams: DirectCurveV1Param = [
+      srcToken,
+      destToken,
+      data.exchange,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      data.i.toString(),
+      data.j.toString(),
+      partner,
+      isApproved,
+      data.underlyingSwap
+        ? CurveV1SwapType.EXCHANGE_UNDERLYING
+        : CurveV1SwapType.EXCHANGE,
+      beneficiary,
+      // For CurveV1 we work as it is, without wrapping and unwrapping
+      false,
+      permit,
+      uuidToBytes16(uuid),
+    ];
+
+    const encoder = (...params: DirectCurveV1Param) => {
+      return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
+        params,
+      ]);
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -943,7 +1082,7 @@ export class CurveV1 extends SimpleExchange implements IDex<CurveV1Data> {
       // the balances array in the pool as it was a mess to have each curve abi
       // Some have balances[uint128] some have balances[uint256]
       // One of the consequence for such a hack is below for ETH Pools
-      // TODO: below can be highly optimised
+      // TODO: below can be highly optimized
       // * we don't need to query token decimals every iteration
       // * we can use the decimals from the tokens list using the api
 

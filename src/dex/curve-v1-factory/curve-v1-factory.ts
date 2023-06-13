@@ -1,5 +1,7 @@
 import _ from 'lodash';
-import { AsyncOrSync } from 'ts-essentials';
+import { AbiItem } from 'web3-utils';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
   Token,
@@ -11,6 +13,9 @@ import {
   PoolLiquidity,
   Logger,
   TransferFeeParams,
+  TxInfo,
+  PreprocessTransactionOptions,
+  ExchangeTxInfo,
 } from '../../types';
 import {
   SwapSide,
@@ -23,6 +28,7 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   isSrcTokenTransferFeeToBeExchanged,
+  uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -30,13 +36,19 @@ import {
   CurveSwapFunctions,
   CurveV1FactoryData,
   CurveV1FactoryIfaces,
+  CurveV1SwapType,
   CustomImplementationNames,
   ImplementationNames,
   PoolConstants,
+  DirectCurveV1Param,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { CurveV1FactoryConfig, Adapters } from './config';
 import {
+  DIRECT_METHOD_NAME,
   FACTORY_MAX_PLAIN_COINS,
   FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN,
   MIN_AMOUNT_TO_RECEIVE,
@@ -44,6 +56,7 @@ import {
 } from './constants';
 import { CurveV1FactoryPoolManager } from './curve-v1-pool-manager';
 import CurveABI from '../../abi/Curve.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import FactoryCurveV1ABI from '../../abi/curve-v1-factory/FactoryCurveV1.json';
 import ThreePoolABI from '../../abi/curve-v1-factory/ThreePool.json';
 import ERC20ABI from '../../abi/erc20.json';
@@ -61,7 +74,6 @@ import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-poll
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
-import { AbiItem } from 'web3-utils';
 
 const DefaultCoinsABI: AbiItem = {
   type: 'function',
@@ -82,7 +94,7 @@ const DefaultCoinsABI: AbiItem = {
 
 export class CurveV1Factory
   extends SimpleExchange
-  implements IDex<CurveV1FactoryData>
+  implements IDex<CurveV1FactoryData, DirectCurveV1Param>
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
@@ -97,6 +109,8 @@ export class CurveV1Factory
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
@@ -812,6 +826,128 @@ export class CurveV1Factory
       payload,
       networkFee: '0',
     };
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<CurveV1FactoryData>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<CurveV1FactoryData>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
+        .call(undefined, 'latest');
+      isApproved =
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: CurveV1FactoryData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<DirectCurveV1Param> {
+    if (contractMethod !== DIRECT_METHOD_NAME) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const swapParams: DirectCurveV1Param = [
+      srcToken,
+      destToken,
+      data.exchange,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      data.i.toString(),
+      data.j.toString(),
+      partner,
+      isApproved,
+      data.underlyingSwap
+        ? CurveV1SwapType.EXCHANGE_UNDERLYING
+        : CurveV1SwapType.EXCHANGE,
+      beneficiary,
+      // For CurveV1 we work as it is, without wrapping and unwrapping
+      false,
+      permit,
+      uuidToBytes16(uuid),
+    ];
+
+    const encoder = (...params: DirectCurveV1Param) => {
+      return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
+        params,
+      ]);
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DIRECT_METHOD_NAME];
   }
 
   async getSimpleParam(

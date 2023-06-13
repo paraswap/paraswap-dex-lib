@@ -42,10 +42,10 @@ export type SwaapV2TokensResponse = {
       symbol: string;
       address: string;
       decimals: number;
-    },
-  },
+    };
+  };
   success: boolean;
-}
+};
 
 export type SwaapV2QuoteResponse = {
   id: string;
@@ -84,5 +84,5 @@ export type SwaapV2APIParameters = {
 };
 
 export type TokensMap = {
-  [address: string]: Token,
+  [address: string]: Token;
 };

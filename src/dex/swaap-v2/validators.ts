@@ -3,7 +3,6 @@ import joi, { CustomHelpers, ErrorReport } from 'joi';
 import * as ethers from 'ethers';
 import { SwaapV2PriceLevel } from './types';
 
-
 const priceLevelsValidator = joi.array().items(
   joi.object({
     level: joi.number().required(),
@@ -107,12 +106,10 @@ const mustBeAugustusSwapper = (
       });
 };
 
-export const getTokensResponseValidator = joi
-  .object({
-    tokens: joi.object().required(),
-    success: joi.boolean().required(),
-  });
-
+export const getTokensResponseValidator = joi.object({
+  tokens: joi.object().required(),
+  success: joi.boolean().required(),
+});
 
 export const getQuoteResponseValidator = joi
   .object({

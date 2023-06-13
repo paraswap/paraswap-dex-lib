@@ -11,11 +11,11 @@ export const getIdentifierPrefix = (
 
 export const getPairName = (srcAddress: Address, destAddress: Address) => {
   const sortedAddresses =
-  srcAddress < destAddress
-    ? [srcAddress, destAddress]
-    : [destAddress, srcAddress];
+    srcAddress < destAddress
+      ? [srcAddress, destAddress]
+      : [destAddress, srcAddress];
   return `${sortedAddresses[0]}_${sortedAddresses[1]}`.toLowerCase();
-}
+};
 
 export const getCacheKey = (dexKey: string, cacheType: string) => {
   return `${CACHE_PREFIX}_${dexKey}_${cacheType}`.toLowerCase();

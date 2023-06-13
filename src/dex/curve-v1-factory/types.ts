@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import { NumberAsString } from '@paraswap/core';
 import { Address } from '../../types';
 
 // The difference between PoolContextConstants and PoolConstants lies in the fact
@@ -69,6 +70,7 @@ export type CurveV1FactoryData = {
   i: number;
   j: number;
   underlyingSwap: boolean;
+  isApproved?: boolean;
 };
 
 export enum FactoryImplementationNames {
@@ -181,3 +183,27 @@ export type CurveV1FactoryIfaces = {
 };
 
 export type LiquidityInCache = Record<string, number>;
+
+export enum CurveV1SwapType {
+  EXCHANGE,
+  EXCHANGE_UNDERLYING,
+}
+
+export type DirectCurveV1Param = [
+  fromToken: Address,
+  toToken: Address,
+  exchange: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  feePercent: NumberAsString,
+  i: NumberAsString,
+  j: NumberAsString,
+  partner: Address,
+  isApproved: boolean,
+  swapType: CurveV1SwapType,
+  beneficiary: Address,
+  needWrapNative: boolean,
+  permit: string,
+  uuid: string,
+];
