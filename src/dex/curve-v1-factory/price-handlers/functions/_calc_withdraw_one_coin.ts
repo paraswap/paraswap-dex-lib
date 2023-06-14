@@ -238,6 +238,12 @@ const implementations: Record<ImplementationNames, _calc_withdraw_one_coin> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: ,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: ,
 };
 
 export default implementations;

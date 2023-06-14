@@ -279,6 +279,12 @@ const implementations: Record<ImplementationNames, get_dy_underlying> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notExist,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: ,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
 };
 
 export default implementations;

@@ -89,6 +89,12 @@ const implementations: Record<ImplementationNames, _xp_mem> = {
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_4_BALANCES]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: factoryPlain2Basic,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2Basic,
 };
 
 export default implementations;

@@ -84,6 +84,9 @@ export enum FactoryImplementationNames {
   FACTORY_META_BTC = 'factory_meta_btc',
   FACTORY_META_BTC_BALANCES = 'factory_meta_btc_balances',
 
+  FACTORY_META_BTC_SBTC2 = 'factory_meta_btc_sbtc2',
+  FACTORY_META_BTC_BALANCES_SBTC2 = 'factory_meta_btc_balances_sbtc2',
+
   FACTORY_META_BTC_REN = 'factory_meta_btc_ren',
   FACTORY_META_BTC_BALANCES_REN = 'factory_meta_btc_balances_ren',
 
@@ -95,7 +98,10 @@ export enum FactoryImplementationNames {
 
   FACTORY_PLAIN_2_BALANCES = 'factory_plain_2_balances',
   FACTORY_PLAIN_2_BASIC = 'factory_plain_2_basic',
+  FACTORY_PLAIN_2_BASIC_EMA = 'factory_plain_2_basic_ema',
   FACTORY_PLAIN_2_ETH = 'factory_plain_2_eth',
+  FACTORY_PLAIN_2_ETH_EMA = 'factory_plain_2_eth_ema',
+  FACTORY_PLAIN_2_ETH_EMA2 = 'factory_plain_2_eth_ema2',
   FACTORY_PLAIN_2_OPTIMIZED = 'factory_plain_2_optimized',
 
   FACTORY_PLAIN_3_BALANCES = 'factory_plain_3_balances',

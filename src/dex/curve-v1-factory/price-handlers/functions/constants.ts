@@ -517,6 +517,68 @@ const implementationConstants: Record<
 
     A_PRECISION: 100n,
   },
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    MAX_COIN: 2 - 1,
+
+    BASE_N_COINS: 2,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: true,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    MAX_COIN: 2 - 1,
+
+    BASE_N_COINS: 2,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
 };
 
 export default implementationConstants;

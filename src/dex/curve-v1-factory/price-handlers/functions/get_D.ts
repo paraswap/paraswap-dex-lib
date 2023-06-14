@@ -310,6 +310,17 @@ const implementations: Record<ImplementationNames, get_D> = {
     makeFuncCacheable(customPlain2CoinFrax),
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]:
     makeFuncCacheable(customPlain2CoinFrax),
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]:
+    makeFuncCacheable(customPlain2CoinFrax),
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]:
+    makeFuncCacheable(factoryPlain2Basic),
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]:
+    makeFuncCacheable(factoryPlain2Basic),
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]:
+    makeFuncCacheable(factoryPlain2Basic),
 };
 
 export default implementations;

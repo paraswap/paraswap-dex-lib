@@ -68,6 +68,32 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x2eb24483ef551da247ab87cf18e1cc980073032d',
           basePoolAddress: '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2',
         },
+        '0x008cfa89df5b0c780ca3462fc2602d7f8c7ac315': {
+          name: ImplementationNames.FACTORY_META_BTC_SBTC2,
+          address: '0x008cfa89df5b0c780ca3462fc2602d7f8c7ac315',
+          basePoolAddress: '0xf253f83AcA21aAbD2A20553AE0BF7F65C755A07F',
+        },
+        '0xabc533ebcdded41215c46ee078c5818b5b0a252f': {
+          name: ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2,
+          address: '0xabc533ebcdded41215c46ee078c5818b5b0a252f',
+          basePoolAddress: '0xf253f83AcA21aAbD2A20553AE0BF7F65C755A07F',
+        },
+        '0xc629a01ec23ab04e1050500a3717a2a5c0701497': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA,
+          address: '0xc629a01ec23ab04e1050500a3717a2a5c0701497',
+        },
+        '0x94b4dfd9ba5865cc931195c99a2db42f3fc5d45b': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH_EMA,
+          address: '0x94b4dfd9ba5865cc931195c99a2db42f3fc5d45b',
+        },
+        '0x847ee1227a9900b73aeeb3a47fac92c52fd54ed9': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2,
+          address: '0x847ee1227a9900b73aeeb3a47fac92c52fd54ed9',
+        },
+        '0x1713141278648a4edd5b027fdbd448bb4a13ac0f': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2,
+          address: '0x1713141278648a4edd5b027fdbd448bb4a13ac0f',
+        },
         '0x24d937143d3f5cf04c72ba112735151a8cae2262': {
           name: ImplementationNames.FACTORY_PLAIN_2_BALANCES,
           address: '0x24d937143d3f5cf04c72ba112735151a8cae2262',
@@ -366,14 +392,14 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           coinsInputType: 'uint256',
           balancesInputType: 'uint256',
         },
-        // '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
-        //   name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
-        //   address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
-        //   lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
-        //   liquidityApiSlug: '/main',
-        //   coinsInputType: 'uint256',
-        //   balancesInputType: 'uint256',
-        // },
+        '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f': {
+          name: CustomImplementationNames.CUSTOM_FANTOM_3COIN_LENDING,
+          address: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
+          lpTokenAddress: '0xD02a30d33153877BC20e5721ee53DeDEE0422B2F',
+          liquidityApiSlug: '/main',
+          coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
+        },
       },
     },
     [Network.AVALANCHE]: {
@@ -557,6 +583,14 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xF1f85a74AD6c64315F85af52d3d46bF715236ADc',
           basePoolAddress: '0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb',
         },
+        '0x73ec37618683c274d0bbf5f5726aa856b2bdab81': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA,
+          address: '0x73ec37618683c274d0bbf5f5726aa856b2bdab81',
+        },
+        '0x6f9fb833501f46cbe6f6a4b6cf32c834e5a5e8c5': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2,
+          address: '0x6f9fb833501f46cbe6f6a4b6cf32c834e5a5e8c5',
+        },
       },
       customPools: {
         '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
@@ -658,6 +692,14 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0x114C4042B11a2b16F58Fe1BFe847589a122F678a',
           basePoolAddress: '0x29A3d66B30Bc4AD674A4FDAF27578B64f6afbFe7',
+        },
+        '0x73ec37618683c274d0bbf5f5726aa856b2bdab81': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA,
+          address: '0x73ec37618683c274d0bbf5f5726aa856b2bdab81',
+        },
+        '0x6f9fb833501f46cbe6f6a4b6cf32c834e5a5e8c5': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2,
+          address: '0x6f9fb833501f46cbe6f6a4b6cf32c834e5a5e8c5',
         },
       },
       customPools: {

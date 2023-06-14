@@ -218,6 +218,12 @@ const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: factoryPlain2Optimized,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: ,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: ,
 };
 
 export default implementations;
