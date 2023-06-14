@@ -40,7 +40,7 @@ describe('SwaapV2 E2E', () => {
       [
         {
           name: 'USDC',
-          sellAmount: '100000000',
+          sellAmount: '45410357',
           buyAmount: '1000000000000000000',
         },
         {
@@ -52,7 +52,7 @@ describe('SwaapV2 E2E', () => {
       [
         {
           name: 'MATIC',
-          sellAmount: '150000000000000000000',
+          sellAmount: '45000000000000000000',
           buyAmount: '100000000',
         },
         {

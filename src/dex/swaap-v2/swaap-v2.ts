@@ -191,6 +191,14 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         levels = this.invertPrices(asksAndBids.asks);
       }
     }
+
+    const firstLevelRaw = levels[0];
+    const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
+
+    if(amounts[amounts.length - 1].lt(firstLevelAmountBN)) {
+      return [];
+    }
+
     return this.computeLevelsQuote(amounts, levels, srcToken, destToken, side);
   }
 
@@ -216,8 +224,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     if (size === 0) {
       return amounts.map(_ => BigInt(0));
     }
+
     return amounts.map((amount: BigNumber) => {
-      if (amount.isZero() || amount.lt(BigNumber(levels[0].level))) {
+      if (amount.isZero()) {
         return BigInt(0);
       }
 
@@ -335,6 +344,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       );
 
       const prices = levelEntries.map((askAndBids: SwaapV2PriceLevels) => {
+
         const unitPrice = this.computePricesFromLevelsBids(
           [unitVolume],
           askAndBids,
@@ -342,6 +352,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           normalizedDestToken,
           side,
         )[0];
+
         const prices = this.computePricesFromLevelsBids(
           amountsFloat,
           askAndBids,
@@ -815,9 +826,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
     return Object.keys(pLevels)
       .filter((pair: string) => {
+        const { base, quote } = pLevels[pair];
+
         return (
-          normalizedTokenAddress === pLevels[pair].base ||
-          normalizedTokenAddress === pLevels[pair].quote
+          normalizedTokenAddress === base ||
+          normalizedTokenAddress === quote
         );
       })
       .map((pair: string) => {
