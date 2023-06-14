@@ -107,6 +107,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
+    await this.initializeTokensMap();
+
+    if (!this.dexHelper.config.isSlave) {
+      await this.rateFetcher.start();
+    }
+
+    return;
+  }
+
+  async initializeTokensMap() {
     const { data } = await this.dexHelper.httpRequest.request<unknown>(
       this.getTokensReqParams(),
     );
@@ -123,12 +133,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       },
       {} as TokensMap,
     );
-
-    if (!this.dexHelper.config.isSlave) {
-      await this.rateFetcher.start();
-    }
-
-    return;
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -818,6 +822,10 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   ): Promise<PoolLiquidity[]> {
     if (await this.isRestricted()) {
       return [];
+    }
+
+    if(Object.keys(this.tokensMap).length === 0) {
+      await this.initializeTokensMap();
     }
 
     const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
