@@ -353,6 +353,94 @@ describe('QuickSwap', () => {
         });
       });
     });
+
+    describe('CamelotV3', () => {
+      const dexKey = 'camelotv3';
+
+      describe('Simpleswap', () => {
+        it('WETH -> USDC', async () => {
+          await testE2E(
+            tokens.WETH,
+            tokens.USDC,
+            holders.WETH,
+            '7000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+        it('USDC -> WETH', async () => {
+          await testE2E(
+            tokens.USDC,
+            tokens.WETH,
+            holders.USDC,
+            '100000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+        it('WBTC -> USDC', async () => {
+          await testE2E(
+            tokens.WBTC,
+            tokens.USDC,
+            holders.WBTC,
+            '10000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+      });
+
+      describe('Multiswap', () => {
+        it('WETH -> USDC', async () => {
+          await testE2E(
+            tokens.WETH,
+            tokens.USDC,
+            holders.WETH,
+            '7000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+        it('USDC -> WETH', async () => {
+          await testE2E(
+            tokens.USDC,
+            tokens.WETH,
+            holders.USDC,
+            '100000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+        it('WBTC -> USDC', async () => {
+          await testE2E(
+            tokens.WBTC,
+            tokens.USDC,
+            holders.WBTC,
+            '10000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+      });
+    });
   });
 
   describe('Fantom', () => {
