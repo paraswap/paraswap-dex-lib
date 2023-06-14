@@ -97,7 +97,7 @@ export class RateFetcher {
       this.dexKey,
       this.dexHelper.config.data.network,
       `${getTokensCacheKey(this.dexKey)}`,
-      this.pricesCacheTTL,
+      this.tokensCacheTTL,
       JSON.stringify(tokensMap),
     );
   }
