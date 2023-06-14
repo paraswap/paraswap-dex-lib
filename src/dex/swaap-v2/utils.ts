@@ -38,7 +38,7 @@ export const getPoolIdentifier = (
 };
 
 export const normalizeTokenAddress = (address: string): string => {
-  return address.toLowerCase() === ETHER_ADDRESS
+  return address.toLowerCase() === ETHER_ADDRESS.toLowerCase()
     ? NULL_ADDRESS
     : address.toLowerCase();
 };

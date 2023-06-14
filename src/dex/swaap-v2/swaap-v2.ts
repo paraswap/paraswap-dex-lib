@@ -310,20 +310,20 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         return null;
       }
 
-      const poolIdentifier = getPoolIdentifier(
-        this.dexKey,
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      );
-
       const levelEntries: SwaapV2PriceLevels[] = Object.keys(levels)
-        .map((pair: string) => {
-          if (pools.includes(poolIdentifier)) {
-            return levels[pair];
+        .filter((pair) => {
+          const { base, quote } = levels[pair];
+          if(
+            pools.includes(getPoolIdentifier(this.dexKey, quote, base))
+            || pools.includes(getPoolIdentifier(this.dexKey, base, quote))
+          ) {
+            return true;
           }
-          return undefined;
-        })
-        .filter((o): o is SwaapV2PriceLevels => o !== undefined);
+
+          return false;
+        }).map((pair) => {
+          return levels[pair];
+        });
 
       const unitVolume = getBigNumberPow(
         (side === SwapSide.SELL ? normalizedSrcToken : normalizedDestToken)
@@ -840,7 +840,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   getTokenFromAddress(address: Address): Token {
-    return this.tokensMap[address];
+    return this.tokensMap[normalizeTokenAddress(address)];
   }
 
   releaseResources(): void {
