@@ -361,6 +361,10 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           side,
         );
 
+        if(!prices.length) {
+          return null;
+        }
+
         return {
           gasCost: GAS_COST_ESTIMATION,
           exchange: this.dexKey,
@@ -371,7 +375,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         } as PoolPrices<SwaapV2Data>;
       });
 
-      return prices;
+      return prices.filter((p): p is PoolPrices<SwaapV2Data> => !!p);;
     } catch (e) {
       this.logger.error(
         `Error_getPrices ${srcToken}, ${destToken}, ${side}:`,
