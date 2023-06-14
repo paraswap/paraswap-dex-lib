@@ -225,6 +225,8 @@ const implementations: Record<ImplementationNames, get_D> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: makeFuncCacheable(
     customPlain3CoinThree,
   ),
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]:
+    makeFuncCacheable(customPlain2CoinFrax),
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: makeFuncCacheable(
     customPlain3CoinThree,
   ),

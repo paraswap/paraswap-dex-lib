@@ -167,6 +167,7 @@ const customAvalanche3CoinLending: get_dy = (
 const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinBtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 

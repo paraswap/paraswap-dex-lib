@@ -55,6 +55,7 @@ const notExist: _rates = (self: IPoolContext, state: PoolState) => {
 const implementations: Record<ImplementationNames, _rates> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 

@@ -231,6 +231,7 @@ const notExist: get_dy_underlying = (
 const implementations: Record<ImplementationNames, get_dy_underlying> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 

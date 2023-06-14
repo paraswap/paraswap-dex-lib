@@ -150,14 +150,14 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           coinsInputType: 'int128',
           balancesInputType: 'int128',
         },
-        // '0xf253f83aca21aabd2a20553ae0bf7f65c755a07f': {
-        //   name: '',
-        //   address: '',
-        //   lpTokenAddress: '',
-        //   liquidityApiSlug: '',
-        //   coinsInputType: '',
-        //   balancesInputType: '',
-        // },
+        '0xf253f83aca21aabd2a20553ae0bf7f65c755a07f': {
+          name: CustomImplementationNames.CUSTOM_PLAIN_2COIN_WBTC,
+          address: '0xf253f83aca21aabd2a20553ae0bf7f65c755a07f',
+          lpTokenAddress: '0x051d7e5609917Bd9b73f04BAc0DED8Dd46a74301',
+          liquidityApiSlug: '/main',
+          coinsInputType: 'uint256',
+          balancesInputType: 'uint256',
+        },
       },
     },
     [Network.POLYGON]: {

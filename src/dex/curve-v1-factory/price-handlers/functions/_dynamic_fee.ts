@@ -36,6 +36,7 @@ const notExist: _dynamic_fee = (
 const implementations: Record<ImplementationNames, _dynamic_fee> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 

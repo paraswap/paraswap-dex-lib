@@ -51,6 +51,7 @@ const makeFuncCacheable = (func: get_D_precisions): get_D_precisions => {
 const implementations: Record<ImplementationNames, get_D_precisions> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 

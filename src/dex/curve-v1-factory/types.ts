@@ -114,6 +114,7 @@ export enum CustomImplementationNames {
   CUSTOM_PLAIN_2COIN_RENBTC = 'custom_plain_2coin_renbtc',
   CUSTOM_PLAIN_3COIN_SBTC = 'custom_plain_3coin_sbtc',
   CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
+  CUSTOM_PLAIN_2COIN_WBTC = 'custom_plain_2coin_wbtc',
 
   CUSTOM_ARBITRUM_2COIN_USD = 'custom_arbitrum_2coin_usd',
   CUSTOM_ARBITRUM_2COIN_BTC = 'custom_arbitrum_2coin_btc',

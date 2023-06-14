@@ -1,5 +1,6 @@
 import {} from 'ts-essentials';
 import { BI_POWS } from '../../../../bigint-constants';
+import { PRECISION } from '../../../kyberdmm/fee-formula';
 import { ImplementationNames, PoolContextConstants } from '../../types';
 
 const implementationConstants: Record<
@@ -34,6 +35,21 @@ const implementationConstants: Record<
     PRECISION_MUL: [10000000000n, 10000000000n],
     LENDING_PRECISION: BI_POWS[18],
     USE_LENDING: [true, false],
+  },
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+
+    FEE_DENOMINATOR: BI_POWS[10],
+    PRECISION: BI_POWS[18],
+
+    PRECISION_MUL: [10000000000n, 1n],
+    RATES: [10000000000000000000000000000n, 1000000000000000000n],
+    A_PRECISION: 100n,
   },
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: {
     isWrapNative: false,

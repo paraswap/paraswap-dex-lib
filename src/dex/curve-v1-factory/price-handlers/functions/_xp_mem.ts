@@ -42,6 +42,7 @@ const notExist: _xp_mem = (
 const implementations: Record<ImplementationNames, _xp_mem> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: factoryPlain2Basic,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: factoryPlain2Basic,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
