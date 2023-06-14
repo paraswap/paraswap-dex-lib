@@ -45,17 +45,16 @@ import {
   SWAAP_BLACKLIST_TTL_S,
   SWAAP_RFQ_TOKENS_ENDPOINT,
   SWAAP_RESTRICT_TTL_S,
-  SWAAP_RESTRICTED_CACHE_KEY,
+  SWAAP_RESTRICTED_CACHE_KEY, SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS, SWAAP_RFQ_TOKENS_CACHES_TTL_S,
 } from './constants';
 import {
   getPoolIdentifier,
   getPriceLevelsCacheKey,
   normalizeTokenAddress,
   getPairName,
+  getTokensCacheKey,
 } from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
-import { validateAndCast } from '../../lib/validators';
-import { getTokensResponseValidator } from './validators';
 import { SlippageCheckError } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
@@ -67,8 +66,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
   private rateFetcher: RateFetcher;
-  private tokensMap: TokensMap = {};
   private swaapV2AuthToken: string;
+  private tokensMap: TokensMap = {};
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SwaapV2Config);
@@ -102,37 +101,21 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           pricesReqParams: this.getPriceLevelsReqParams(),
           pricesCacheTTLSecs: SWAAP_RFQ_PRICES_CACHES_TTL_S,
         },
+        tokensConfig: {
+          tokensIntervalMs: SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS,
+          tokensReqParams: this.getTokensReqParams(),
+          tokensCacheTTLSecs: SWAAP_RFQ_TOKENS_CACHES_TTL_S,
+        },
       },
     );
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
-    await this.initializeTokensMap();
-
     if (!this.dexHelper.config.isSlave) {
       await this.rateFetcher.start();
     }
 
     return;
-  }
-
-  async initializeTokensMap() {
-    const { data } = await this.dexHelper.httpRequest.request<unknown>(
-      this.getTokensReqParams(),
-    );
-
-    const tokensResp = validateAndCast<SwaapV2TokensResponse>(
-      data,
-      getTokensResponseValidator,
-    );
-
-    this.tokensMap = Object.keys(tokensResp.tokens).reduce(
-      (acc, key: string) => {
-        acc[key.toLowerCase()] = tokensResp.tokens[key];
-        return acc;
-      },
-      {} as TokensMap,
-    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -267,6 +250,20 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     });
   }
 
+  async getCachedTokens(): Promise<TokensMap | null> {
+    const cachedTokens = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      getTokensCacheKey(this.dexKey),
+    );
+
+    if (cachedTokens) {
+      return JSON.parse(cachedTokens) as TokensMap;
+    }
+
+    return null;
+  }
+
   async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
     const cachedLevels = await this.dexHelper.cache.get(
       this.dexKey,
@@ -300,6 +297,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       if (await this.isRestricted()) {
         return null;
       }
+
+      this.tokensMap = await this.getCachedTokens() || {};
 
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
@@ -824,10 +823,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       return [];
     }
 
-    if(Object.keys(this.tokensMap).length === 0) {
-      await this.initializeTokensMap();
-    }
-
+    this.tokensMap = await this.getCachedTokens() || {};
     const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
 
     const pLevels = await this.getCachedLevels();

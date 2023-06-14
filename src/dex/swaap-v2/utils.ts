@@ -25,6 +25,10 @@ export const getPriceLevelsCacheKey = (dexKey: string) => {
   return getCacheKey(dexKey, 'price_levels');
 };
 
+export const getTokensCacheKey = (dexKey: string) => {
+  return getCacheKey(dexKey, 'tokens');
+}
+
 export const getPoolIdentifier = (
   dexKey: string,
   srcAddress: Address,

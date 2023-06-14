@@ -34,6 +34,11 @@ export type SwaapV2RateFetcherConfig = {
     pricesIntervalMs: number;
     pricesCacheTTLSecs: number;
   };
+  tokensConfig: {
+    tokensReqParams: SwaapV2APIParameters;
+    tokensIntervalMs: number;
+    tokensCacheTTLSecs: number;
+  };
 };
 
 export type SwaapV2TokensResponse = {
