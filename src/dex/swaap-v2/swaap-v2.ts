@@ -23,7 +23,6 @@ import {
   SwaapV2APIParameters,
   SwaapV2QuoteError,
   TokensMap,
-  SwaapV2TokensResponse,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
@@ -45,14 +44,18 @@ import {
   SWAAP_BLACKLIST_TTL_S,
   SWAAP_RFQ_TOKENS_ENDPOINT,
   SWAAP_RESTRICT_TTL_S,
-  SWAAP_RESTRICTED_CACHE_KEY, SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS, SWAAP_RFQ_TOKENS_CACHES_TTL_S,
+  SWAAP_RESTRICTED_CACHE_KEY,
+  SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS,
+  SWAAP_RFQ_TOKENS_CACHES_TTL_S,
+  SWAAP_PRICES_CACHE_KEY,
+  SWAAP_TOKENS_CACHE_KEY,
+  SWAAP_ORDER_TYPE_SELL,
+  SWAAP_ORDER_TYPE_BUY,
 } from './constants';
 import {
   getPoolIdentifier,
-  getPriceLevelsCacheKey,
   normalizeTokenAddress,
   getPairName,
-  getTokensCacheKey,
 } from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
 import { SlippageCheckError } from '../generic-rfq/types';
@@ -100,11 +103,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           pricesIntervalMs: SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS,
           pricesReqParams: this.getPriceLevelsReqParams(),
           pricesCacheTTLSecs: SWAAP_RFQ_PRICES_CACHES_TTL_S,
+          pricesCacheKey: SWAAP_PRICES_CACHE_KEY,
         },
         tokensConfig: {
           tokensIntervalMs: SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS,
           tokensReqParams: this.getTokensReqParams(),
           tokensCacheTTLSecs: SWAAP_RFQ_TOKENS_CACHES_TTL_S,
+          tokensCacheKey: SWAAP_TOKENS_CACHE_KEY,
         },
       },
     );
@@ -254,7 +259,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     const cachedTokens = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
-      getTokensCacheKey(this.dexKey),
+      SWAAP_TOKENS_CACHE_KEY,
     );
 
     if (cachedTokens) {
@@ -268,7 +273,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     const cachedLevels = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
-      getPriceLevelsCacheKey(this.dexKey),
+      SWAAP_PRICES_CACHE_KEY,
     );
 
     if (cachedLevels) {
@@ -317,8 +322,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         limitPools ??
         (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
+      if(pools.length === 0) {
+        return null;
+      }
+
       const levels = await this.getCachedLevels();
-      if (levels === null) {
+
+      if(levels === null) {
         return null;
       }
 
@@ -392,18 +402,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     return poolIdentifier.split('_')[1];
   }
 
-  getLevels(
-    askAndBids: SwaapV2PriceLevels,
-    side: SwapSide,
-    poolIdentifier: string,
-  ) {
-    const baseToken: string = this.getBaseToken(poolIdentifier);
-    if (side === SwapSide.SELL) {
-      return askAndBids.asks;
-    }
-    return askAndBids.asks;
-  }
-
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<SwaapV2Data>,
     srcToken: Token,
@@ -439,7 +437,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         normalizedSrcToken,
         normalizedDestToken,
         isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
-        isSell ? 1 : 2,
+        isSell ? SWAAP_ORDER_TYPE_SELL : SWAAP_ORDER_TYPE_BUY,
         options.txOrigin,
         this.augustusAddress,
         tolerance,

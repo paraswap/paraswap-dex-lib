@@ -14,7 +14,7 @@ import {
   priceLevelsResponseValidator,
   getQuoteResponseValidator, getTokensResponseValidator,
 } from './validators';
-import { getPriceLevelsCacheKey, getTokensCacheKey, normalizeTokenAddress } from './utils';
+import { normalizeTokenAddress } from './utils';
 import { SWAAP_RFQ_QUOTE_TIMEOUT_MS } from './constants';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 
@@ -23,6 +23,8 @@ export class RateFetcher {
   private tokensFetcher: Fetcher<SwaapV2TokensResponse>;
   private pricesCacheTTL: number;
   private tokensCacheTTL: number;
+  private tokenCacheKey: string;
+  private pricesCacheKey: string;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -32,6 +34,8 @@ export class RateFetcher {
   ) {
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
     this.tokensCacheTTL = config.tokensConfig.tokensCacheTTLSecs;
+    this.pricesCacheKey = config.rateConfig.pricesCacheKey;
+    this.tokenCacheKey = config.tokensConfig.tokensCacheKey;
 
     this.rateFetcher = new Fetcher<SwaapV2PriceLevelsResponse>(
       dexHelper.httpRequest,
@@ -96,7 +100,7 @@ export class RateFetcher {
     this.dexHelper.cache.setex(
       this.dexKey,
       this.dexHelper.config.data.network,
-      `${getTokensCacheKey(this.dexKey)}`,
+      this.tokenCacheKey,
       this.tokensCacheTTL,
       JSON.stringify(tokensMap),
     );
@@ -132,7 +136,7 @@ export class RateFetcher {
     this.dexHelper.cache.setex(
       this.dexKey,
       this.dexHelper.config.data.network,
-      `${getPriceLevelsCacheKey(this.dexKey)}`,
+      this.pricesCacheKey,
       this.pricesCacheTTL,
       JSON.stringify(levels),
     );
