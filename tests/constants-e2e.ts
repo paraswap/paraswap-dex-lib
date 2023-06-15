@@ -275,10 +275,6 @@ export const Tokens: {
       address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
       decimals: 18,
     },
-    sBTC: {
-      address: '0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6',
-      decimals: 18,
-    },
     sETH: {
       address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
       decimals: 18,
@@ -800,10 +796,6 @@ export const Tokens: {
       address: '0x4200000000000000000000000000000000000042',
       decimals: 18,
     },
-    sBTC: {
-      address: '0x298B9B95708152ff6968aafd889c6586e9169f1D',
-      decimals: 18,
-    },
     sETH: {
       address: '0xE405de8F52ba7559f9df3C368500B6E6ae6Cee49',
       decimals: 18,
@@ -883,7 +875,6 @@ export const Holders: {
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x4361b7425cff39b1be9bf12cee2ef32f89656cda',
-    sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
     sETH: '0x5fe009d78afabc1b04abd2d4361f8e95cd402648',
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',

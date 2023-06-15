@@ -115,7 +115,7 @@ describe('CurveV1Factory E2E', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'ETH';
-    const tokenBSymbol: string = 'stETH';
+    const tokenBSymbol: string = 'STETH';
 
     const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '1000000000000000000';

@@ -856,6 +856,7 @@ const configAddressesNormalizer = (
             basePoolAddress: implementationConfig.basePoolAddress
               ? normalizeAddress(implementationConfig.basePoolAddress)
               : undefined,
+            isStoreRateSupported: implementationConfig.isStoreRateSupported,
           };
           acc[normalizeAddress(implementationAddress)] =
             normalizedImplementation;
