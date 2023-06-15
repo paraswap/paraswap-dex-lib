@@ -45,14 +45,14 @@ export class FactoryStateHandler extends PoolPollingBase {
     readonly poolContextConstants: PoolContextConstants,
     readonly isSrcFeeOnTransferSupported: boolean,
     baseStatePoolPolling?: PoolPollingBase,
+    customGasCost?: number,
+    readonly isStoredRatesSupported: boolean = false,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
     private additionalFuncsIface: Interface = new Interface([
       getStoredRatesABI(poolContextConstants.N_COINS),
     ]),
-
-    readonly isStoredRatesSupported: boolean = false,
   ) {
     super(
       logger,
@@ -69,6 +69,7 @@ export class FactoryStateHandler extends PoolPollingBase {
       false,
       baseStatePoolPolling,
       isSrcFeeOnTransferSupported,
+      customGasCost,
     );
 
     if (this.isMetaPool && this.baseStatePoolPolling === undefined) {

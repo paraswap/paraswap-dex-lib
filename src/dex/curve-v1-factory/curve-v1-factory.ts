@@ -274,6 +274,7 @@ export class CurveV1Factory
             isLending,
             customPool.balancesInputType,
             useLending,
+            customPool.useForPricing,
           );
         } else {
           // Use for pricing pools from factory
@@ -580,6 +581,8 @@ export class CurveV1Factory
         factoryImplementationConstants,
         factoryImplementationConstants.isFeeOnTransferSupported,
         basePoolStateFetcher,
+        factoryImplementationFromConfig.customGasCost,
+        factoryImplementationFromConfig.isStoreRateSupported,
       );
 
       this.poolManager.initializeNewPool(poolIdentifier, newPool);

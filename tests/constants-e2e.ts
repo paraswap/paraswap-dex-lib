@@ -43,6 +43,10 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
+    sBTC: {
+      address: '0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6',
+      decimals: 18,
+    },
     BADGER: {
       address: '0x3472A5A71965499acd81997a54BBA8D852C6E53d',
       decimals: 18,
@@ -833,7 +837,8 @@ export const Holders: {
   [Network.MAINNET]: {
     ETH: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
     USDC: '0x79E2Ba942B0e8fDB6ff3d406e930289d10B49ADe',
-    WBTC: '0x1Cb17a66DC606a52785f69F08F4256526aBd4943',
+    WBTC: '0x1cb17a66dc606a52785f69f08f4256526abd4943',
+    sBTC: '0xA2e3475D13776C6E42ff37B47286827d959B2195',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
     wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',

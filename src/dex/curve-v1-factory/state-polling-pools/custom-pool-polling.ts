@@ -114,6 +114,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly useLending?: boolean[],
     readonly isUsedForPricing: boolean = false,
     readonly contractABIs = ContractABIs,
+    customGasCost?: number,
   ) {
     // Current custom pools are always plain
     super(
@@ -131,6 +132,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       isLendingPool,
       undefined,
       CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
+      customGasCost,
     );
   }
 

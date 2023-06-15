@@ -111,6 +111,42 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
+  describe('Mainnet ng pool', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'ETH';
+    const tokenBSymbol: string = 'stETH';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Mainnet SBTC2 pool', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'WBTC';
+    const tokenBSymbol: string = 'sBTC';
+
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
   describe('Polygon', () => {
     const network = Network.POLYGON;
 

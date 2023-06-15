@@ -152,6 +152,8 @@ export type FactoryPoolImplementations = {
   name: FactoryImplementationNames;
   address: Address;
   basePoolAddress?: Address;
+  customGasCost?: number;
+  isStoreRateSupported?: boolean;
 };
 
 export type CustomPoolConfig = {
@@ -165,6 +167,10 @@ export type CustomPoolConfig = {
   // You must specify what typ must be encoded/decoded for coins request
   coinsInputType: string;
   balancesInputType: string;
+  // Because we have legacy event based implementation and new one, we don't want to use all
+  // pools for pricing. Only the ones that are explicitly specified. After legacy is fully moved to this implementation
+  // we can remove this flag
+  useForPricing: boolean;
 };
 
 export type DexParams = {
