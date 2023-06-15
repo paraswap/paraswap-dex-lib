@@ -57,6 +57,7 @@ export type PoolState = {
   exchangeRateCurrent?: (bigint | undefined)[]; // from cToken -> exchangeRateCurrent()
   offpeg_fee_multiplier?: bigint; // from pool
   basePoolState?: PoolState;
+  storedRates?: bigint[]; // from pool, but only for oracle ones
 };
 
 export type PoolStateWithUpdateInfo<T> = {

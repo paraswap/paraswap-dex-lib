@@ -52,22 +52,21 @@ const customPlain3CoinThree: _calc_withdraw_one_coin = (
   return [dy, dy_0 - dy, undefined];
 };
 
-const customArbitrum2CoinBtc: _calc_withdraw_one_coin = (
+const _genericCustomArbitrum2CoinBtc = (
   self: IPoolContext,
   state: PoolState,
   _token_amount: bigint,
   i: number,
-) => {
+  rates: bigint[],
+): [bigint, bigint, undefined] => {
   const { N_COINS, BI_N_COINS, FEE_DENOMINATOR, PRECISION } = self.constants;
+
   if (state.totalSupply === undefined) {
     throw new Error(
-      `${self.IMPLEMENTATION_NAME} customArbitrum2CoinBtc: totalSupply is not provided`,
+      `${self.IMPLEMENTATION_NAME} _genericCustomArbitrum2CoinBtc: totalSupply is not provided`,
     );
   }
-
   const amp = state.A;
-  const rates = [...state.constants.rate_multipliers];
-
   const xp = self._xp_mem(self, rates, state.balances);
   const D0 = self.get_D(self, xp, amp);
 
@@ -94,6 +93,46 @@ const customArbitrum2CoinBtc: _calc_withdraw_one_coin = (
   dy = ((dy - 1n) * PRECISION) / rates[i]; // Withdraw less to account for rounding errors
 
   return [dy, dy_0 - dy, undefined];
+};
+
+const customArbitrum2CoinBtc: _calc_withdraw_one_coin = (
+  self: IPoolContext,
+  state: PoolState,
+  _token_amount: bigint,
+  i: number,
+) => {
+  const rates = [...state.constants.rate_multipliers];
+  return _genericCustomArbitrum2CoinBtc(self, state, _token_amount, i, rates);
+};
+
+const factoryPlain2EthEma2: _calc_withdraw_one_coin = (
+  self: IPoolContext,
+  state: PoolState,
+  _token_amount: bigint,
+  i: number,
+) => {
+  if (state.storedRates === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} factoryPlain2EthEma2: storedRates is not provided`,
+    );
+  }
+  const rates = [...state.storedRates];
+  return _genericCustomArbitrum2CoinBtc(self, state, _token_amount, i, rates);
+};
+
+const factoryMetaBtcSbtc2: _calc_withdraw_one_coin = (
+  self: IPoolContext,
+  state: PoolState,
+  _token_amount: bigint,
+  i: number,
+) => {
+  if (state.virtualPrice === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} factoryMetaBtcSbtc2: virtualPrice is not provided`,
+    );
+  }
+  const rates = [state.constants.rate_multipliers[0], state.virtualPrice];
+  return _genericCustomArbitrum2CoinBtc(self, state, _token_amount, i, rates);
 };
 
 const customAvalanche3CoinLending: _calc_withdraw_one_coin = (
@@ -239,11 +278,12 @@ const implementations: Record<ImplementationNames, _calc_withdraw_one_coin> = {
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
 
-  [ImplementationNames.FACTORY_META_BTC_SBTC2]: ,
-  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: ,
-  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: ,
-  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: ,
-  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: ,
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: factoryMetaBtcSbtc2,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: factoryMetaBtcSbtc2,
+  // Keep in mind: these 2 are not 100% correct, because I don't calculate last "last_p" entry, because it doesn't affect pricing
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customArbitrum2CoinBtc,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customArbitrum2CoinBtc,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2EthEma2,
 };
 
 export default implementations;

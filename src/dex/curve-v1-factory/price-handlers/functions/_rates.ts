@@ -107,7 +107,7 @@ const implementations: Record<ImplementationNames, _rates> = {
   [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: ,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
 };
 
 export default implementations;

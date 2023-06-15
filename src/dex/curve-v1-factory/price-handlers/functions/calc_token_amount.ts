@@ -128,11 +128,11 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
 
-  [ImplementationNames.FACTORY_META_BTC_SBTC2]: ,
-  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: ,
-  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: ,
-  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: ,
-  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: ,
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain3CoinThree,
 };
 
 export default implementations;
