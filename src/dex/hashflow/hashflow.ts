@@ -432,10 +432,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       );
 
       const pools =
-        limitPools
-        ? limitPools.filter((p) => p.includes(`${normalizedSrcToken}_${normalizedDestToken}`))
-        : (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
-
+        limitPools ??
+        (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
       const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
 
