@@ -1,5 +1,5 @@
 import { Token } from '../../types';
-import { InvestPoolLiquidityDirection, stablePoolTokens } from './config';
+import { InvestPoolLiquidityDirection } from './config';
 import { IInvestPoolProps } from './types';
 import { BigNumber, constants } from 'ethers';
 import {
@@ -19,20 +19,59 @@ export class InvestPoolEntities {
     this.props = props;
   }
 
-  public static _isStableToken(tokenAddress: string): boolean {
-    for (const stablePoolToken of Object.keys(
-      stablePoolTokens.stablePoolTokens,
-    )) {
-      if (
-        compareAddress(
-          tokenAddress,
-          stablePoolTokens.stablePoolTokens[stablePoolToken],
-        )
-      ) {
-        return true;
-      }
+  public estimateSwapAmountOut(
+    srcToken: Token,
+    destToken: Token,
+    amount: bigint,
+  ): BigNumber {
+    const matchedTokenIn: IInvestPoolProps | undefined = this.props.find(
+      investPool => {
+        return compareAddress(investPool.tokenAddress, srcToken.address);
+      },
+    );
+    const matchedTokenOut: IInvestPoolProps | undefined = this.props.find(
+      investPool => {
+        return compareAddress(investPool.tokenAddress, destToken.address);
+      },
+    );
+
+    if (
+      !matchedTokenIn ||
+      !matchedTokenOut ||
+      matchedTokenOut.maxPrice.isZero()
+    ) {
+      return constants.Zero;
     }
-    return false;
+
+    const amountIn = BigNumber.from(amount);
+
+    const feeAmount = this.estimateSwapFeeAmount(
+      matchedTokenIn.isDynamicFeeEnable,
+      matchedTokenIn.stableSwapFeeRate,
+      matchedTokenIn.stableTaxRate,
+      matchedTokenIn.swapFeeRate,
+      matchedTokenIn.taxRate,
+      matchedTokenIn,
+      this._getCurrentValueOf(matchedTokenIn, true),
+      this._getTargetValueOf(matchedTokenIn, false),
+      matchedTokenOut,
+      this._getCurrentValueOf(matchedTokenOut, true),
+      this._getTargetValueOf(matchedTokenOut, false),
+      amountIn,
+    );
+
+    const amountInAfterFee: BigNumber = amountIn.sub(feeAmount);
+
+    // NOTE: for same token no exchange rate
+    const exchangeRate = compareAddress(
+      matchedTokenIn.tokenAddress,
+      matchedTokenOut.tokenAddress,
+    )
+      ? constants.WeiPerEther
+      : divScaleBN(matchedTokenIn.minPrice, matchedTokenOut.maxPrice);
+    const amountOut = mulTruncateBN(amountInAfterFee, exchangeRate);
+
+    return amountOut;
   }
 
   public swapFeeRate(
@@ -90,7 +129,7 @@ export class InvestPoolEntities {
       liquidity = liquidity.sub(matchedTokenIn.strategyDelta);
     }
 
-    if (matchedTokenIn.isStableToken) {
+    if (matchedTokenIn.tokenMetas.isStable) {
       // Handing value if it is stable coin
       // If token is a stable coin, try to find
       // best-effort value due to we compressed PnL to one variable.
@@ -100,7 +139,7 @@ export class InvestPoolEntities {
       let totalStableReserved: BigNumber = constants.Zero;
       let shortPnlE30: BigNumber = constants.Zero;
       for (const investPool of this.props) {
-        if (investPool.isStableToken) {
+        if (investPool.tokenMetas.isStable) {
           // If it is a stablecoin then sum to totalStableReserved normalized in token's decimals
           totalStableReserved = totalStableReserved.add(investPool.reservedOf);
         } else {
@@ -201,7 +240,7 @@ export class InvestPoolEntities {
         : tokenPool.liquidity.sub(tokenPool.strategyDelta);
       const decimals: BigNumber = BigNumber.from('10').pow(18);
 
-      if (tokenPool.isStableToken) {
+      if (tokenPool.tokenMetas.isStable) {
         aum = aum.add(liquidity.mul(priceE30).div(decimals));
       } else {
         const shortSizeE30: BigNumber = tokenPool.shortSizeOfE30;
@@ -333,7 +372,8 @@ export class InvestPoolEntities {
     tokenOutTargetValue: BigNumber,
     usdValue: BigNumber,
   ): BigNumber {
-    const isStableSwap = tokenIn.isStableToken && tokenOut.isStableToken;
+    const isStableSwap =
+      tokenIn.tokenMetas.isStable && tokenOut.tokenMetas.isStable;
     const feeBps = isStableSwap ? stableSwapFeeRate : swapFeeRate;
     const taxBps = isStableSwap ? stableTaxRate : taxRate;
     const feeBpsIn = this._estimateFeeRate(

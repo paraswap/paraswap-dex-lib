@@ -65,7 +65,7 @@ describe('Alpaca EventPool BSC', function () {
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    '0x18a15bf2aa1e514dc660cc4b08d05f9f6f0fdc4e': {
+    [AlpacaConfig[dexKey][network].poolDiamond]: {
       SWAP_NATIVE: [28695095, 29007167],
       SWAP: [28654939, 29008736],
     },

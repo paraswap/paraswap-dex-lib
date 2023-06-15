@@ -91,7 +91,7 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
   ): Promise<string[]> {
     const supportTokens = this._getSupportToken(srcToken, destToken);
 
-    if (supportTokens.length === 0) return [];
+    if (supportTokens.length !== 2) return [];
 
     return supportTokens.map(token => {
       return this.dexKey + '_' + token.address;
@@ -121,7 +121,7 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
     );
 
     const prices = amounts.map(amount => {
-      return pools.swapFeeRate(srcToken, destToken, amount);
+      return pools.estimateSwapAmountOut(srcToken, destToken, amount);
     });
 
     return [
@@ -177,7 +177,7 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const investPools: IInvestPoolProps[] =
-      await AlpacaEventPool._getInvestPools(this.dexHelper, this.config);
+      await this.eventPools.getInvestPools();
 
     return {
       callees: [srcToken, this.config.poolRouter],
@@ -198,7 +198,7 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
         ]),
       ],
       values: ['0', '0'],
-      networkFee: '5',
+      networkFee: investPools.length.toString(),
     };
   }
 
@@ -220,7 +220,7 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
     }
 
     const investPools: IInvestPoolProps[] =
-      await AlpacaEventPool._getInvestPools(this.dexHelper, this.config);
+      await this.eventPools.getInvestPools();
 
     this.vaultUSDBalance = investPools.reduce(
       (acc: number, cur: IInvestPoolProps) => {
@@ -262,8 +262,8 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
   }
 
   private _getSupportToken(srcToken: Token, destToken: Token): Token[] {
-    let srcAddress = '';
-    let destAddress = '';
+    let srcAddress = undefined;
+    let destAddress = undefined;
     for (const token of Object.values(alpacaPoolTokens.poolTokens)) {
       if (compareAddress(srcToken.address, token.Address)) {
         srcAddress = srcToken.address.toLowerCase();
@@ -273,12 +273,12 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
       }
     }
     if (
-      srcAddress !== '' &&
-      destAddress !== '' &&
-      !compareAddress(srcAddress, destAddress)
+      !srcAddress ||
+      !destAddress ||
+      compareAddress(srcAddress, destAddress)
     ) {
-      return [srcToken, destToken];
+      return [];
     }
-    return [];
+    return [srcToken, destToken];
   }
 }

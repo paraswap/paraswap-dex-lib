@@ -94,8 +94,7 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
     const evenState = this.getState(blockNumber);
     if (evenState) return evenState;
 
-    const investPools: IInvestPoolProps[] =
-      await AlpacaEventPool._getInvestPools(this.dexHelper, this.config);
+    const investPools: IInvestPoolProps[] = await this.getInvestPools();
 
     const priceFeedState = this._getPriceFeedState(investPools);
 
@@ -159,7 +158,7 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
     return vaultState;
   }
 
-  private static async _getInvestPoolCalldata(
+  private async _getInvestPoolCalldata(
     tokenAddress: string,
     params: DexParams,
   ): Promise<callData[]> {
@@ -266,8 +265,8 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
     return calls;
   }
 
-  private static _genLatestPriceFeedsURL(config: DexParams): string {
-    let url = config.latestPriceFeedsURL + '?';
+  private _genLatestPriceFeedsURL(): string {
+    let url = this.config.latestPriceFeedsURL + '?';
     let pythIds = '';
     for (const token of Object.values(alpacaPoolTokens.poolTokens)) {
       pythIds += 'ids[]=' + token.PriceId + '&';
@@ -276,28 +275,22 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
     return url;
   }
 
-  public static async _getPrices(
-    dexHelper: IDexHelper,
-    config: DexParams,
-  ): Promise<PriceFeed[]> {
-    const url = this._genLatestPriceFeedsURL(config);
-    const priceFeeds = await dexHelper.httpRequest.get<PriceFeed[]>(
+  private async _getPrices(): Promise<PriceFeed[]> {
+    const url = this._genLatestPriceFeedsURL();
+    const priceFeeds = await this.dexHelper.httpRequest.get<PriceFeed[]>(
       url,
       FETCH_TIMEOUT,
     );
     return priceFeeds;
   }
 
-  public static async _getInvestPools(
-    dexHelper: IDexHelper,
-    config: DexParams,
-  ): Promise<IInvestPoolProps[]> {
+  public async getInvestPools(): Promise<IInvestPoolProps[]> {
     const investPoolCallDatas: callData[] = [];
     let callLength = 0;
     for (const token of Object.values(alpacaPoolTokens.poolTokens)) {
       const investPoolCallData = await this._getInvestPoolCalldata(
         token.Address,
-        config,
+        this.config,
       );
 
       investPoolCallDatas.push(...investPoolCallData);
@@ -305,12 +298,12 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
     }
 
     const res = (
-      await dexHelper.multiContract.methods
+      await this.dexHelper.multiContract.methods
         .aggregate(investPoolCallDatas)
         .call()
     ).returnData;
 
-    const prices = await this._getPrices(dexHelper, config);
+    const prices = await this._getPrices();
 
     const investPools: IInvestPoolProps[] = [];
 
@@ -420,16 +413,15 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
         },
         maxPrice: changeDecimalUnit(
           BigNumber.from(prices[i].price.price),
-          10,
+          Math.abs(prices[i].ema_price.expo),
           18,
         ),
         minPrice: changeDecimalUnit(
           BigNumber.from(prices[i].price.price),
-          10,
+          Math.abs(prices[i].ema_price.expo),
           18,
         ),
         priceUpdateData: hexlify(base64.decode(prices[i].vaa)),
-        isStableToken: InvestPoolEntities._isStableToken(poolToken.Address),
         isDynamicFeeEnable:
           AlpacaEventPool.getterFacetInterface.decodeFunctionResult(
             'isDynamicFeeEnable',

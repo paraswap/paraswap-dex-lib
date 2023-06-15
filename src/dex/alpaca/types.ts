@@ -74,7 +74,7 @@ export type PriceFeedMetadata = {
 };
 
 export type PriceFeed = {
-  emaPrice: Price;
+  ema_price: Price;
   id: string;
   metadata?: PriceFeedMetadata;
   vaa: string;
@@ -104,7 +104,6 @@ export type IInvestPoolProps = {
   tokenAddress: string;
   maxPrice: BigNumber;
   minPrice: BigNumber;
-  isStableToken: boolean;
   isDynamicFeeEnable: boolean;
   additionalAum: BigNumber;
   discountedAum: BigNumber;
