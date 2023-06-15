@@ -704,7 +704,7 @@ export const Tokens: {
     },
     GMX: {
       address: '0x62edc0692BD897D2295872a9FFCac5425011c661',
-      decimals: 6,
+      decimals: 18,
     },
   },
   [Network.ARBITRUM]: {
