@@ -319,14 +319,14 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       }
 
       const pools =
-        limitPools ??
-        (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+        limitPools ?
+        limitPools.filter((p) =>
+          p === getPoolIdentifier(this.dexKey, normalizedSrcToken.address, normalizedDestToken.address)
+          || p === getPoolIdentifier(this.dexKey, normalizedSrcToken.address, normalizedDestToken.address)
+        )
+        : (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
-      const filteredPools = pools.filter((p) => {
-        return p === getPoolIdentifier(this.dexKey, normalizedSrcToken.address, normalizedDestToken.address) ||
-          p === getPoolIdentifier(this.dexKey, normalizedSrcToken.address, normalizedDestToken.address);
-      });
-      if(filteredPools.length === 0) {
+      if(pools.length === 0) {
         return null;
       }
 
@@ -339,8 +339,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         .filter((pair) => {
           const { base, quote } = levels[pair];
           if(
-            filteredPools.includes(getPoolIdentifier(this.dexKey, quote, base))
-            || filteredPools.includes(getPoolIdentifier(this.dexKey, base, quote))
+            pools.includes(getPoolIdentifier(this.dexKey, quote, base))
+            || pools.includes(getPoolIdentifier(this.dexKey, base, quote))
           ) {
             return true;
           }
