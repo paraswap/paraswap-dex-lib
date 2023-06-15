@@ -7,22 +7,22 @@ export type PoolState = {
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
-  prices: FastPriceFeedState;
-  vault: VaultState;
+  prices: IPriceFeedState;
+  vault: IVaultState;
   investPool: IInvestPoolProps[];
-  log?: LogState;
+  log?: ISwapLogEvent;
 };
 
-export type FastPriceFeedState = {
+export type IPriceFeedState = {
   lastUpdatedAt: number;
   prices: { [tokenAddress: string]: bigint };
 };
 
-export type VaultState = {
+export type IVaultState = {
   alpAmounts: { [tokenAddress: string]: bigint };
 };
 
-export type LogState = {
+export type ISwapLogEvent = {
   account: string;
   tokenIn: string;
   tokenOut: string;
@@ -32,7 +32,7 @@ export type LogState = {
   swapFeeBps: bigint;
 };
 
-export interface callData {
+export interface ICallData {
   target: string;
   callData: string;
 }
@@ -47,16 +47,11 @@ export type AlpacaData = {
 export type DexParams = {
   poolRouter: string;
   Pyth: string;
-  latestPriceFeedsURL: string;
   poolDiamond: string;
 };
 
-export type AlpacaPoolConfigs = {
-  poolTokens: Record<string, PoolToken>;
-};
-
-export type StablePoolTokens = {
-  stablePoolTokens: Record<string, string>;
+export type IAlpacaPoolConfigs = {
+  poolTokens: Record<string, IPoolToken>;
 };
 
 export type Price = {
@@ -81,11 +76,11 @@ export type PriceFeed = {
   price: Price;
 };
 
-export type PoolToken = {
-  Symbol: string;
-  Address: string;
-  PriceId: string;
-  Decimal: number;
+export type IPoolToken = {
+  symbol: string;
+  address: string;
+  priceId: string;
+  decimal: number;
 };
 
 export type IInvestPoolProps = {
@@ -100,7 +95,7 @@ export type IInvestPoolProps = {
   guaranteedUsdOfE30: BigNumber;
   shortSizeOfE30: BigNumber;
   shortAveragePriceOfE30: BigNumber;
-  tokenMetas: TokenConfigStructOutput;
+  tokenMetas: ITokenConfigStructOutput;
   tokenAddress: string;
   maxPrice: BigNumber;
   minPrice: BigNumber;
@@ -112,7 +107,7 @@ export type IInvestPoolProps = {
   priceUpdateData: string;
 };
 
-export type TokenConfigStructOutput = {
+export type ITokenConfigStructOutput = {
   accept: boolean;
   isStable: boolean;
   isShortable: boolean;

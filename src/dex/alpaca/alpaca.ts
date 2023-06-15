@@ -197,8 +197,8 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
           }),
         ]),
       ],
-      values: ['0', '0'],
-      networkFee: investPools.length.toString(),
+      values: ['0', investPools.length.toString()],
+      networkFee: '0',
     };
   }
 
@@ -212,8 +212,8 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
       this.supportedTokens = Object.values(alpacaPoolTokens.poolTokens).map(
         poolToken => {
           return {
-            address: poolToken.Address,
-            decimals: poolToken.Decimal,
+            address: poolToken.address,
+            decimals: poolToken.decimal,
           };
         },
       );
@@ -265,10 +265,10 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
     let srcAddress = undefined;
     let destAddress = undefined;
     for (const token of Object.values(alpacaPoolTokens.poolTokens)) {
-      if (compareAddress(srcToken.address, token.Address)) {
+      if (compareAddress(srcToken.address, token.address)) {
         srcAddress = srcToken.address.toLowerCase();
       }
-      if (compareAddress(destToken.address, token.Address)) {
+      if (compareAddress(destToken.address, token.address)) {
         destAddress = destToken.address.toLowerCase();
       }
     }

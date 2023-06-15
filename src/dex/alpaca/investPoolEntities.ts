@@ -45,7 +45,7 @@ export class InvestPoolEntities {
 
     const amountIn = BigNumber.from(amount);
 
-    const feeAmount = this.estimateSwapFeeAmount(
+    const feeAmount = this._estimateSwapFeeAmount(
       matchedTokenIn.isDynamicFeeEnable,
       matchedTokenIn.stableSwapFeeRate,
       matchedTokenIn.stableTaxRate,
@@ -94,7 +94,7 @@ export class InvestPoolEntities {
       return constants.Zero;
     }
 
-    const feeRate: BigNumber = this.estimateSwapFeeRate(
+    const feeRate: BigNumber = this._estimateSwapFeeRate(
       matchedTokenIn.isDynamicFeeEnable,
       matchedTokenIn.stableSwapFeeRate,
       matchedTokenIn.stableTaxRate,
@@ -289,7 +289,7 @@ export class InvestPoolEntities {
           .add(this.props[0].fundingFeeReceivableE30);
   }
 
-  public estimateSwapFeeAmount(
+  private _estimateSwapFeeAmount(
     isDynamicFeeEnable: boolean,
     stableSwapFeeRate: BigNumber,
     stableTaxRate: BigNumber,
@@ -303,7 +303,7 @@ export class InvestPoolEntities {
     tokenOutTargetValue: BigNumber,
     amount: BigNumber,
   ): BigNumber {
-    const feeRate: BigNumber = this.estimateSwapFeeRate(
+    const feeRate: BigNumber = this._estimateSwapFeeRate(
       isDynamicFeeEnable,
       stableSwapFeeRate,
       stableTaxRate,
@@ -322,7 +322,7 @@ export class InvestPoolEntities {
     return feeAmount;
   }
 
-  public estimateSwapFeeRate(
+  private _estimateSwapFeeRate(
     isDynamicFeeEnable: boolean,
     stableSwapFeeRate: BigNumber,
     stableTaxRate: BigNumber,
@@ -352,7 +352,7 @@ export class InvestPoolEntities {
       tokenOut,
       tokenOutCurrentValue,
       tokenOutTargetValue,
-      this.estimateAddTokenValue(tokenIn, amount),
+      this._estimateAddTokenValue(tokenIn, amount),
     );
 
     return feeRate;
@@ -454,7 +454,7 @@ export class InvestPoolEntities {
     return toAbsoluteBPSRate(baseFeeRate.add(newTaxRate));
   }
 
-  public estimateAddTokenValue(
+  private _estimateAddTokenValue(
     tokenIn: IInvestPoolProps,
     tokenAmount: BigNumber,
   ): BigNumber {
