@@ -6,7 +6,7 @@ export const SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS = 1000;
 
 export const SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS = 1000 * 60 * 60; // 1 hour
 
-export const SWAAP_RFQ_TOKENS_CACHES_TTL_S = 3650;
+export const SWAAP_RFQ_TOKENS_CACHES_TTL_S = 7200; // 2 hours
 
 export const SWAAP_RFQ_API_URL = 'https://api.swaap.finance/v1/rfq';
 
