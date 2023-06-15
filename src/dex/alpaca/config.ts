@@ -5,26 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const ALPACA_SWAP_GAS_COST = 0;
 export const FETCH_TIMEOUT = 10000;
 
-export const AlpacaConfig: DexConfigMap<DexParams> = {
-  Alpaca: {
-    [Network.BSC]: {
-      poolRouter: '0x5E8466ed06f7Acaa78Ab21b0F5FEc6810afcC199',
-      Pyth: '0x4D7E825f80bDf85e913E0DD2A2D54927e9dE1594',
-      poolDiamond: '0x18A15bF2Aa1E514dc660Cc4B08d05f9f6f0FdC4e',
-    },
-  },
-};
-
-export const Adapters: Record<number, AdapterMappings> = {
-  [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter01', index: 1 }],
-  },
-};
-
-export const LatestPriceFeedsURL: string =
-  'https://xc-mainnet.pyth.network/api/latest_price_feeds';
-
-export const alpacaPoolTokens: IAlpacaPoolConfigs = {
+export const AlpacaPoolTokens: IAlpacaPoolConfigs = {
   poolTokens: {
     BTCB: {
       symbol: 'BTCB',
@@ -63,6 +44,26 @@ export const alpacaPoolTokens: IAlpacaPoolConfigs = {
     },
   },
 };
+
+export const AlpacaConfig: DexConfigMap<DexParams> = {
+  Alpaca: {
+    [Network.BSC]: {
+      poolRouter: '0x5E8466ed06f7Acaa78Ab21b0F5FEc6810afcC199',
+      Pyth: '0x4D7E825f80bDf85e913E0DD2A2D54927e9dE1594',
+      poolDiamond: '0x18A15bF2Aa1E514dc660Cc4B08d05f9f6f0FdC4e',
+      alpacaPoolTokens: AlpacaPoolTokens.poolTokens,
+    },
+  },
+};
+
+export const Adapters: Record<number, AdapterMappings> = {
+  [Network.BSC]: {
+    [SwapSide.SELL]: [{ name: 'BscAdapter01', index: 1 }],
+  },
+};
+
+export const LatestPriceFeedsURL: string =
+  'https://xc-mainnet.pyth.network/api/latest_price_feeds';
 
 export enum InvestPoolLiquidityDirection {
   ADD = 'add',

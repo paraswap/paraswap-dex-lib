@@ -74,7 +74,7 @@ export class InvestPoolEntities {
     return amountOut;
   }
 
-  public swapFeeRate(
+  private swapFeeRate(
     srcToken: Token,
     destToken: Token,
     amounts: bigint,

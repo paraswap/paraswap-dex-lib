@@ -1,3 +1,4 @@
+import { AlpacaPoolTokens } from './config';
 import { Result } from '@ethersproject/abi';
 import { Address } from '../../types';
 import { BigNumber } from 'ethers';
@@ -48,6 +49,7 @@ export type DexParams = {
   poolRouter: string;
   Pyth: string;
   poolDiamond: string;
+  alpacaPoolTokens: Record<string, IPoolToken>;
 };
 
 export type IAlpacaPoolConfigs = {

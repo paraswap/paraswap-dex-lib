@@ -13,12 +13,7 @@ import {
   IVaultState,
   ICallData,
 } from './types';
-import {
-  AlpacaConfig,
-  FETCH_TIMEOUT,
-  LatestPriceFeedsURL,
-  alpacaPoolTokens,
-} from './config';
+import { AlpacaConfig, FETCH_TIMEOUT, LatestPriceFeedsURL } from './config';
 import LiquidityFacetABI from '../../abi/alpaca/LiquidityFacet.json';
 import { BigNumber, constants } from 'ethers';
 import { changeDecimalUnit, mulTruncateBN } from './utils';
@@ -271,7 +266,7 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
   private _genLatestPriceFeedsURL(): string {
     let url = LatestPriceFeedsURL + '?';
     let pythIds = '';
-    for (const token of Object.values(alpacaPoolTokens.poolTokens)) {
+    for (const token of Object.values(this.config.alpacaPoolTokens)) {
       pythIds += 'ids[]=' + token.priceId + '&';
     }
     url += pythIds + 'verbose=false&binary=true';
@@ -290,7 +285,7 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
   public async getInvestPools(): Promise<IInvestPoolProps[]> {
     const investPoolCallDatas: ICallData[] = [];
     let callLength = 0;
-    for (const token of Object.values(alpacaPoolTokens.poolTokens)) {
+    for (const token of Object.values(this.config.alpacaPoolTokens)) {
       const investPoolCallData = await this._getInvestPoolCalldata(
         token.address,
         this.config,
@@ -311,7 +306,7 @@ export class AlpacaEventPool extends StatefulEventSubscriber<PoolState> {
     const investPools: IInvestPoolProps[] = [];
 
     for (const [i, poolToken] of Object.values(
-      alpacaPoolTokens.poolTokens,
+      this.config.alpacaPoolTokens,
     ).entries()) {
       investPools.push({
         tokenAddress: poolToken.address,

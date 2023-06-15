@@ -17,7 +17,7 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AlpacaData, DexParams, IInvestPoolProps } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { AlpacaConfig, Adapters, alpacaPoolTokens } from './config';
+import { AlpacaConfig, Adapters } from './config';
 import { AlpacaEventPool } from './alpaca-pool';
 import { InvestPoolEntities } from './investPoolEntities';
 import ERC20ABI from '../../abi/erc20.json';
@@ -209,7 +209,7 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
   // to implement this
   async updatePoolState(): Promise<void> {
     if (!this.supportedTokens.length) {
-      this.supportedTokens = Object.values(alpacaPoolTokens.poolTokens).map(
+      this.supportedTokens = Object.values(this.config.alpacaPoolTokens).map(
         poolToken => {
           return {
             address: poolToken.address,
@@ -264,7 +264,7 @@ export class Alpaca extends SimpleExchange implements IDex<AlpacaData> {
   private _getSupportToken(srcToken: Token, destToken: Token): Token[] {
     let srcAddress = undefined;
     let destAddress = undefined;
-    for (const token of Object.values(alpacaPoolTokens.poolTokens)) {
+    for (const token of Object.values(this.config.alpacaPoolTokens)) {
       if (compareAddress(srcToken.address, token.address)) {
         srcAddress = srcToken.address.toLowerCase();
       }
