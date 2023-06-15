@@ -698,6 +698,14 @@ export const Tokens: {
       address: '0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46',
       decimals: 18,
     },
+    EUROC: {
+      address: '0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD',
+      decimals: 6,
+    },
+    GMX: {
+      address: '0x62edc0692BD897D2295872a9FFCac5425011c661',
+      decimals: 6,
+    },
   },
   [Network.ARBITRUM]: {
     DAI: {
@@ -898,10 +906,10 @@ export const Holders: {
   [Network.POLYGON]: {
     MATIC: '0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245',
     DAI: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
-    WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
+    WETH: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     WMATIC: '0xFffbCD322cEace527C8ec6Da8de2461C6D9d4e6e',
     AMWMATIC: '0x8832924854e3Cedb0a6Abf372e6CCFF9F7654332',
-    USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
+    USDC: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
     POPS: '0x2693b57ee51f4e2a26dfb339a911fa8731061f49',
     MUST: '0x9f2a409848fb9b7bd058b24a23e8dbf1e166a109',
     AMDAI: '0xFA0DCe8280FCDf369a4cbFc1830d3302789307a6',
@@ -917,8 +925,8 @@ export const Holders: {
     RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
-    stMATIC: '0x6725b8cd3cdbc82a6044689a8bbc64a915d200e7',
-    axlUSDC: '0xe743a49f04f2f77eb2d3b753ae3ad599de8cea84',
+    stMATIC: '0x3b39669766fe815aa91834b3bd258dea3edbb6d5',
+    axlUSDC: '0x42875ae5766dfd4d70772a3a956842e4b708d59a',
     deUSDC: '0x94d5ead1f80cf0b4d3480ab59dff16d47c93e9fe',
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
@@ -989,6 +997,8 @@ export const Holders: {
     nETH: '0xcf2ef00e75558512ae735679ea5df62ad2056786',
     avWETH: '0x92d78e32b990d10aeca0875dc5585f1a6f958179',
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
+    EUROC: '0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD',
+    GMX: '0x62edc0692BD897D2295872a9FFCac5425011c661',
   },
   [Network.ARBITRUM]: {
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
