@@ -23,11 +23,11 @@ export const QuickSwapConfig: DexConfigMap<DexParams> = {
   },
   SpiritSwapV3: {
     [Network.FANTOM]: {
-      factoryAddress: '0xC58A98644fCeee73bc2B6d349B3102627e2Ec58e',
-      router: '0x03108EDEd4902e89781839c885496c6de9D21956',
-      quoteAddress: '0xc4D1310D60A36c7d849A332Be8Dcff29603fe907',
+      factoryAddress: '0x7c1864d96A1AeD6F171BE1880CA9c2c51846E502',
+      router: '0x940438cEd3062E3F7aE311c789FA9dDd3a5eA951',
+      quoteAddress: '0x2E0e6a11609003Ca596F143d40e6b62eE92c501A',
       initCode:
-        '0xa360004fb86ddf4cd7fe9aa67d0c6a7f7812d9069142659003dc503e1d7d241f',
+        '0xbce37a54eab2fcd71913a0d40723e04238970e7fc1159bfd58ad5b79531697e7',
     },
   },
 };
