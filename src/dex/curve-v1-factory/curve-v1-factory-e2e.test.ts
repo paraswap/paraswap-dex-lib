@@ -135,8 +135,8 @@ describe('CurveV1Factory E2E', () => {
     const tokenASymbol: string = 'WBTC';
     const tokenBSymbol: string = 'sBTC';
 
-    const tokenAAmount: string = '1000000000';
-    const tokenBAmount: string = '1000000000';
+    const tokenAAmount: string = '100000000';
+    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,

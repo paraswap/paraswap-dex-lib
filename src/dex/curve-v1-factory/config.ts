@@ -15,7 +15,9 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       factoryAddress: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
       stateUpdatePeriodMs: 5 * 1000,
-      disabledPools: new Set([]),
+      disabledPools: new Set([
+        '0x28B0Cf1baFB707F2c6826d10caf6DD901a6540C5', // It is rug pool token
+      ]),
       disabledImplementations: new Set([]),
       factoryPoolImplementations: {
         '0x2f956eee002b0debd468cf2e0490d1aec65e027f': {
