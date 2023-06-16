@@ -14,12 +14,10 @@ import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '@paraswap/core';
 import { BigNumber } from 'ethers';
 import { _require } from '../../../utils';
-import { AbiItem } from 'web3-utils';
+import { IDexHelper } from '../../../dex-helper';
 
 const DEFAULT_2_ZERO_ARRAY = [0n, 0n];
 const DEFAULT_4_ZERO_ARRAY = [0n, 0n, 0n, 0n];
-
-type AdditionalContractFunctions = 'stored_rates';
 
 const getStoredRatesABI = (n: number) => ({
   name: 'stored_rates',
@@ -33,7 +31,7 @@ export class FactoryStateHandler extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
-    network: number,
+    dexHelper: IDexHelper,
     cacheStateKey: string,
     readonly implementationName: FactoryImplementationNames,
     implementationAddress: Address,
@@ -57,7 +55,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     super(
       logger,
       dexKey,
-      network,
+      dexHelper,
       cacheStateKey,
       implementationName,
       implementationAddress,
@@ -79,7 +77,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     }
   }
 
-  getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {
+  protected _getFetchStateMultiCalls(): MultiCallParams<MulticallReturnedTypes>[] {
     const calls = [
       {
         target: this.factoryAddress,
@@ -131,11 +129,9 @@ export class FactoryStateHandler extends PoolPollingBase {
     return calls;
   }
 
-  parseMultiResultsToStateValues(
+  protected async _parseStateFromMultiResults(
     multiOutputs: MulticallReturnedTypes[],
-    blockNumber: number,
-    updatedAtMs: number,
-  ): PoolState {
+  ): Promise<PoolState> {
     const [A, fees, balances, storedRates] = multiOutputs as [
       bigint,
       bigint[],
@@ -146,14 +142,15 @@ export class FactoryStateHandler extends PoolPollingBase {
     let basePoolState: PoolState | undefined;
     if (this.isMetaPool) {
       // Check for undefined done in constructor
-      const retrievedBasePoolState = this.baseStatePoolPolling!.getState();
+      const retrievedBasePoolState =
+        await this.baseStatePoolPolling!.getState();
 
       if (retrievedBasePoolState === null) {
         throw new Error(
           `${this.CLASS_NAME} ${this.dexKey} ${this.address}: Can not retrieve base pool state`,
         );
       }
-      basePoolState = retrievedBasePoolState;
+      basePoolState = retrievedBasePoolState.value;
     }
 
     return {
@@ -164,8 +161,6 @@ export class FactoryStateHandler extends PoolPollingBase {
       balances: balances,
       constants: this.poolConstants,
       basePoolState,
-      updatedAtMs,
-      blockNumber,
       storedRates,
     };
   }

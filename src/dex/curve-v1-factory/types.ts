@@ -46,8 +46,6 @@ export type PoolConstants = {
 };
 
 export type PoolState = {
-  blockNumber: number;
-  updatedAtMs: number;
   A: bigint; // factory get_A()
   balances: bigint[]; // factory get_balances()
   fee: bigint; // factory get_fees()

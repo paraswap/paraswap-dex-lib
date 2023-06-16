@@ -4,18 +4,20 @@ export const MIN_AMOUNT_TO_RECEIVE = 1;
 
 export const STATE_UPDATE_PERIOD_MS = 5 * 1000;
 
-export const STATE_UPDATE_RETRY_PERIOD_MS = 1000;
+export const LIQUIDITY_UPDATE_RETRY_PERIOD_MS = 1000;
 
 export const LIQUIDITY_UPDATE_PERIOD_MS = 2 * 60 * 1000;
 
-export const MAX_ALLOWED_STATE_DELAY_FACTOR = 3;
+export const LIQUIDITY_ALLOWED_DELAY_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export const POOL_EXCHANGE_GAS_COST = 200 * 1000;
 
 // This is a liquidity threshold used for pool state update
 export const MIN_LIQUIDITY_IN_USD = 50;
 
-export const LIQUIDITY_FETCH_TIMEOUT_MS = 1_500;
+export const IS_LIQUIDITY_TRACKED = true;
+
+export const LIQUIDITY_FETCH_TIMEOUT_MS = 2_000;
 
 export const CONVERGENCE_ERROR_PREFIX = 'didnt_converge';
 

@@ -1,16 +1,23 @@
 import Web3EthAbi, { AbiCoder } from 'web3-eth-abi';
 import { Logger } from 'log4js';
-import { MultiCallParams } from '../../../lib/multi-wrapper';
 import {
-  MAX_ALLOWED_STATE_DELAY_FACTOR,
   MIN_LIQUIDITY_IN_USD,
+  IS_LIQUIDITY_TRACKED,
+  LIQUIDITY_ALLOWED_DELAY_PERIOD_MS,
 } from '../constants';
 import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
 import { Address } from '@paraswap/core';
+import { StatefulRpcPoller } from '../../../lib/stateful-rpc-poller/stateful-rpc-poller';
+import { IDexHelper } from '../../../dex-helper';
+import { pollingManagerCbExtractor } from '../../../lib/stateful-rpc-poller/utils';
+import { StatePollingManager } from '../../../lib/stateful-rpc-poller/state-polling-manager';
 
 export type MulticallReturnedTypes = bigint | bigint[];
 
-export abstract class PoolPollingBase {
+export abstract class PoolPollingBase extends StatefulRpcPoller<
+  PoolState,
+  MulticallReturnedTypes
+> {
   // Used for logger. Better to have which class is failing
   readonly CLASS_NAME = this.constructor.name;
 
@@ -36,7 +43,7 @@ export abstract class PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
-    readonly network: number,
+    dexHelper: IDexHelper,
     readonly cacheStateKey: string,
     readonly implementationName: string,
     readonly implementationAddress: Address,
@@ -49,8 +56,25 @@ export abstract class PoolPollingBase {
     readonly baseStatePoolPolling: PoolPollingBase | undefined,
     readonly isSrcFeeOnTransferSupported: boolean,
     readonly customGasCost: number | undefined,
+    liquidityThresholdForUpdate: number = MIN_LIQUIDITY_IN_USD,
+    liquidityUpdateAllowedDelayMs: number = LIQUIDITY_ALLOWED_DELAY_PERIOD_MS,
+    isLiquidityTracked: boolean = IS_LIQUIDITY_TRACKED,
   ) {
-    this.fullName = `${dexKey}-${network}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
+    const callbacks = pollingManagerCbExtractor(
+      StatePollingManager.getInstance(dexHelper),
+    );
+
+    super(
+      dexKey,
+      poolIdentifier,
+      dexHelper,
+      liquidityThresholdForUpdate,
+      liquidityUpdateAllowedDelayMs,
+      isLiquidityTracked,
+      callbacks,
+    );
+
+    this.fullName = `${dexKey}-${this.network}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
     this.isMetaPool = baseStatePoolPolling !== undefined;
     this.coinsToIndices = this._reduceToIndexMapping(poolConstants.COINS);
     this.underlyingCoinsToIndices = baseStatePoolPolling
@@ -65,49 +89,6 @@ export abstract class PoolPollingBase {
           ...baseStatePoolPolling.poolConstants.coins_decimals,
         ]
       : [];
-  }
-
-  async setState(newState: PoolState): Promise<void> {
-    // If we need more fancy handling for state replacement, it is a good place for that
-    this._poolState = newState;
-  }
-
-  // Each type of implementation: currently two (Factory and Custom) may have different
-  // set of multicall requests. It is useful to make calls that shouldn't fail
-  abstract getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[];
-
-  abstract parseMultiResultsToStateValues(
-    multiOutputs: MulticallReturnedTypes[],
-    blockNumber: number,
-    updatedAtMs: number,
-  ): PoolState;
-
-  isStateUpToDate(state: PoolState | null): boolean {
-    return (
-      state !== null &&
-      Date.now() - state.updatedAtMs <
-        this.stateUpdatePeriodMs * MAX_ALLOWED_STATE_DELAY_FACTOR
-    );
-  }
-
-  getState(): PoolState | null {
-    if (this.isStateUpToDate(this._poolState)) {
-      return this._poolState;
-    } else if (this._poolState) {
-      this.logger.error(
-        `${this.fullName} getState: state is older than max allowed time`,
-      );
-    } else {
-      this.logger.error(
-        `${this.fullName} getState: state was not initialized properly`,
-      );
-    }
-
-    return null;
-  }
-
-  hasEnoughLiquidity(): boolean {
-    return this.liquidityUSD > MIN_LIQUIDITY_IN_USD;
   }
 
   getPoolData(

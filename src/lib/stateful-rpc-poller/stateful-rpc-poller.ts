@@ -9,7 +9,7 @@ import {
 import { MultiCallParams, MultiResult } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
-import { assert } from 'ts-essentials';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import { LogMessagesSuppressor, MessageInfo } from '../log-messages-suppressor';
 import { Utils } from '../../utils';
 import { getIdentifierKeyForRpcPoller } from './utils';
@@ -394,6 +394,10 @@ export abstract class StatefulRpcPoller<State, M>
   // Later we may consider having more complicated generateState mechanism.
   protected abstract _getFetchStateMultiCalls(): MultiCallParams<M>[];
 
+  protected abstract _parseStateFromMultiResults(
+    multiOutputs: M[],
+  ): AsyncOrSync<State>;
+
   getFetchStateWithBlockInfoMultiCalls(): [
     MultiCallParams<number>,
     ...MultiCallParams<M>[],
@@ -408,8 +412,6 @@ export abstract class StatefulRpcPoller<State, M>
 
     return this._cachedMultiCallData;
   }
-
-  protected abstract _parseStateFromMultiResults(multiOutputs: M[]): State;
 
   parseStateFromMultiResultsWithBlockInfo(
     multiOutputs: [MultiResult<number>, ...MultiResult<M>[]],

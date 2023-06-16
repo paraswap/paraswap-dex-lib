@@ -179,7 +179,7 @@ export class CurveV1Factory
 
   async initializePricing(blockNumber: number) {
     // This is only to start timer, each pool is initialized with updated state
-    this.poolManager.initializePollingPools();
+    this.poolManager.initializeTaskScheduler();
     await this.fetchFactoryPools(blockNumber);
     this.logger.info(`${this.dexKey}: successfully initialized`);
   }

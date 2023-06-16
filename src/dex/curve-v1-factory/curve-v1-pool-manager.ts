@@ -7,6 +7,7 @@ import {
   CURVE_API_URL,
   LIQUIDITY_FETCH_TIMEOUT_MS,
   LIQUIDITY_UPDATE_PERIOD_MS,
+  LIQUIDITY_UPDATE_RETRY_PERIOD_MS,
   NETWORK_ID_TO_NAME,
   STATE_UPDATE_PERIOD_MS,
   STATE_UPDATE_RETRY_PERIOD_MS,
@@ -57,15 +58,15 @@ export class CurveV1FactoryPoolManager {
     private logger: Logger,
     private dexHelper: IDexHelper,
     private allPriceHandlers: Record<string, PriceHandler>,
-    stateUpdatePeriodMs: number = STATE_UPDATE_PERIOD_MS,
-    stateUpdateRetryPeriodMs: number = STATE_UPDATE_RETRY_PERIOD_MS,
+    private liquidityUpdatePeriodMs: number = LIQUIDITY_UPDATE_PERIOD_MS,
+    liquidityUpdateRetryPeriodMs: number = LIQUIDITY_UPDATE_RETRY_PERIOD_MS,
   ) {
     this.taskScheduler = new TaskScheduler(
       this.name,
       this.logger,
-      this.updatePollingPoolsInBatch.bind(this),
-      stateUpdatePeriodMs,
-      stateUpdateRetryPeriodMs,
+      this.updateLiquidityForPools.bind(this),
+      this.liquidityUpdatePeriodMs,
+      liquidityUpdateRetryPeriodMs,
     );
     this.liquidityCacheKey = `${CACHE_PREFIX}_liquidity_in_usd`.toLowerCase();
 
@@ -73,33 +74,19 @@ export class CurveV1FactoryPoolManager {
     this.liquidityLastUpdateInfoKey = `liquidityUpdatedAtMs`;
   }
 
-  initializePollingPools() {
+  initializeTaskScheduler() {
     this.taskScheduler.reinitializeTaskScheduler();
     // Execute and start timer
     this.taskScheduler.setTimer(0);
   }
 
-  updatePollingPoolsInBatch() {
-    // This is the sorted array of pools to update. Main point is - first are pools
-    // from non-meta pools and only after that meta pools.
-    // It may be optimized preparing this pools before hand
-    const filteredPoolsByLiquidity = Object.values(
-      this.statePollingPoolsFromId,
-    ).filter(p => p.hasEnoughLiquidity());
-
-    const pools = Object.values(this.poolsForOnlyState).concat(
-      filteredPoolsByLiquidity.sort((a, b) => +a.isMetaPool - +b.isMetaPool),
-    );
-
-    this.statePollingManager.updatePoolsInBatch(
-      this.logger,
-      this.dexHelper,
-      pools,
-      undefined,
-      Date.now() - this.liquidityUpdatedAtMs > LIQUIDITY_UPDATE_PERIOD_MS
-        ? this.fetchLiquiditiesFromApi.bind(this)
-        : undefined,
-    );
+  async updateLiquidityForPools() {
+    if (
+      this.liquidityUpdatedAtMs === 0 ||
+      Date.now() - this.liquidityUpdatedAtMs > this.liquidityUpdatePeriodMs
+    ) {
+      await this.fetchLiquiditiesFromApi();
+    }
   }
 
   async initializeIndividualPollingPoolState(
@@ -192,11 +179,11 @@ export class CurveV1FactoryPoolManager {
     this.poolsForOnlyState[identifier] = pool;
   }
 
-  getPoolsForPair(
+  async getPoolsForPair(
     srcTokenAddress: string,
     destTokenAddress: string,
     isSrcFeeOnTransferToBeExchanged?: boolean,
-  ): PoolPollingBase[] {
+  ): Promise<PoolPollingBase[]> {
     const inSrcTokenIdentifiers =
       this.coinAddressesToPoolIdentifiers[srcTokenAddress];
     const inDestTokenIdentifiers =
@@ -230,7 +217,7 @@ export class CurveV1FactoryPoolManager {
           return false;
         }
 
-        const currentState = p.getState();
+        const currentState = await p.getState();
         if (
           currentState === null ||
           // Pool has no liquidity
