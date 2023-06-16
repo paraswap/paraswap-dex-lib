@@ -570,7 +570,7 @@ const implementationConstants: Record<
   },
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: {
     isWrapNative: false,
-    isFeeOnTransferSupported: false,
+    isFeeOnTransferSupported: true,
     isLending: false,
 
     N_COINS: 2,
