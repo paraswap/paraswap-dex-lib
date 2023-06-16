@@ -17,14 +17,6 @@ export const getPairName = (srcAddress: Address, destAddress: Address) => {
   return `${sortedAddresses[0]}_${sortedAddresses[1]}`.toLowerCase();
 };
 
-export const getCacheKey = (dexKey: string, cacheType: string) => {
-  return `${CACHE_PREFIX}_${dexKey}_${cacheType}`.toLowerCase();
-};
-
-export const getPriceLevelsCacheKey = (dexKey: string) => {
-  return getCacheKey(dexKey, 'price_levels');
-};
-
 export const getPoolIdentifier = (
   dexKey: string,
   srcAddress: Address,
@@ -38,7 +30,7 @@ export const getPoolIdentifier = (
 };
 
 export const normalizeTokenAddress = (address: string): string => {
-  return address.toLowerCase() === ETHER_ADDRESS
+  return address.toLowerCase() === ETHER_ADDRESS.toLowerCase()
     ? NULL_ADDRESS
     : address.toLowerCase();
 };
