@@ -3,6 +3,15 @@ import { Network } from '../../constants';
 import { DexParams } from './types';
 
 export const QuickSwapConfig: DexConfigMap<DexParams> = {
+  CamelotV3: {
+    [Network.ARBITRUM]: {
+      factoryAddress: '0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B',
+      router: '0x1F721E2E82F6676FCE4eA07A5958cF098D339e18',
+      quoteAddress: '0x0Fc73040b26E9bC8514fA028D998E73A254Fa76E',
+      initCode:
+        '0x6c1bebd370ba84753516bc1393c0d0a6c645856da55f5393ac8ab3d6dbc861d3',
+    },
+  },
   ZyberSwapV3: {
     [Network.ARBITRUM]: {
       factoryAddress: '0x9C2ABD632771b433E5E7507BcaA41cA3b25D8544',
@@ -28,15 +37,6 @@ export const QuickSwapConfig: DexConfigMap<DexParams> = {
       quoteAddress: '0xc4D1310D60A36c7d849A332Be8Dcff29603fe907',
       initCode:
         '0xa360004fb86ddf4cd7fe9aa67d0c6a7f7812d9069142659003dc503e1d7d241f',
-    },
-  },
-  CamelotV3: {
-    [Network.ARBITRUM]: {
-      factoryAddress: '0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B',
-      router: '0x1F721E2E82F6676FCE4eA07A5958cF098D339e18',
-      quoteAddress: '0x0Fc73040b26E9bC8514fA028D998E73A254Fa76E',
-      initCode:
-        '0x6c1bebd370ba84753516bc1393c0d0a6c645856da55f5393ac8ab3d6dbc861d3',
     },
   },
 };
