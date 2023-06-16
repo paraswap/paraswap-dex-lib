@@ -355,7 +355,7 @@ describe('QuickSwap', () => {
     });
 
     describe('CamelotV3', () => {
-      const dexKey = 'camelotv3';
+      const dexKey = 'CamelotV3';
 
       const sideToContractMethods = new Map([
         [
