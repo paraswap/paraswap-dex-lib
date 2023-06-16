@@ -370,7 +370,31 @@ describe('QuickSwap', () => {
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
-         [
+        [
+          [
+            {
+              name: 'WBTC',
+              sellAmount: '1000',
+              buyAmount: '1050000000000',
+            },
+            {
+              name: 'WETH',
+              sellAmount: '1050000000000',
+              buyAmount: '1000',
+            },
+          ],
+          [
+            {
+              name: 'WBTC',
+              sellAmount: '1000',
+              buyAmount: '10000000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '10500000',
+              buyAmount: '1000',
+            },
+          ],
           [
             {
               name: 'WETH',
@@ -383,19 +407,19 @@ describe('QuickSwap', () => {
               buyAmount: '10000000000',
             },
           ],
-        [
-          {
-            name: 'ETH',
-            sellAmount: '10000000000',
-            buyAmount: '10000000',
-          },
-          {
-            name: 'USDC',
-            sellAmount: '10000000',
-            buyAmount: '10000000000',
-          },
-        ],
-      ];
+          [
+            {
+              name: 'ETH',
+              sellAmount: '10000000000',
+              buyAmount: '10000000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '10000000',
+              buyAmount: '10000000000',
+            },
+          ],
+        ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
