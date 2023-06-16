@@ -264,7 +264,7 @@ export class CurveV1Factory
             CustomImplementationNames,
           ).includes(customPool.name)
         ) {
-          // We don't want custom pools to be used for pricing
+          // We don't want custom pools to be used for pricing, unless explicitly specified
           newPool = new CustomBasePoolForFactory(
             this.logger,
             this.dexKey,
