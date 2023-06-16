@@ -160,6 +160,14 @@ export class CurveV1Factory
       return acc;
     }, {});
 
+    Object.values(this.config.customPools).reduce((acc, curr) => {
+      if (curr.useForPricing) {
+        acc[curr.address] = new PriceHandler(this.logger, curr.name);
+      }
+
+      return acc;
+    }, allPriceHandlers);
+
     this.poolManager = new CurveV1FactoryPoolManager(
       this.dexKey,
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
