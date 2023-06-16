@@ -52,11 +52,7 @@ import {
   SWAAP_ORDER_TYPE_SELL,
   SWAAP_ORDER_TYPE_BUY,
 } from './constants';
-import {
-  getPoolIdentifier,
-  normalizeTokenAddress,
-  getPairName,
-} from './utils';
+import { getPoolIdentifier, normalizeTokenAddress, getPairName } from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
 import { SlippageCheckError } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
@@ -187,7 +183,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     const firstLevelRaw = levels[0];
     const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
 
-    if(amounts[amounts.length - 1].lt(firstLevelAmountBN)) {
+    if (amounts[amounts.length - 1].lt(firstLevelAmountBN)) {
       return [];
     }
 
@@ -303,7 +299,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         return null;
       }
 
-      this.tokensMap = await this.getCachedTokens() || {};
+      this.tokensMap = (await this.getCachedTokens()) || {};
 
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
@@ -318,35 +314,46 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         return null;
       }
 
-      const pools =
-        limitPools ?
-        limitPools.filter((p) =>
-          p === getPoolIdentifier(this.dexKey, normalizedSrcToken.address, normalizedDestToken.address)
-          || p === getPoolIdentifier(this.dexKey, normalizedSrcToken.address, normalizedDestToken.address)
-        )
-        : (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+      const pools = limitPools
+        ? limitPools.filter(
+            p =>
+              p ===
+                getPoolIdentifier(
+                  this.dexKey,
+                  normalizedSrcToken.address,
+                  normalizedDestToken.address,
+                ) ||
+              p ===
+                getPoolIdentifier(
+                  this.dexKey,
+                  normalizedDestToken.address,
+                  normalizedSrcToken.address,
+                ),
+          )
+        : await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber);
 
-      if(pools.length === 0) {
+      if (pools.length === 0) {
         return null;
       }
 
       const levels = await this.getCachedLevels();
-      if(levels === null) {
+      if (levels === null) {
         return null;
       }
 
       const levelEntries: SwaapV2PriceLevels[] = Object.keys(levels)
-        .filter((pair) => {
+        .filter(pair => {
           const { base, quote } = levels[pair];
-          if(
-            pools.includes(getPoolIdentifier(this.dexKey, quote, base))
-            || pools.includes(getPoolIdentifier(this.dexKey, base, quote))
+          if (
+            pools.includes(getPoolIdentifier(this.dexKey, quote, base)) ||
+            pools.includes(getPoolIdentifier(this.dexKey, base, quote))
           ) {
             return true;
           }
 
           return false;
-        }).map((pair) => {
+        })
+        .map(pair => {
           return levels[pair];
         });
 
@@ -360,8 +367,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       );
 
       const prices = levelEntries.map((askAndBids: SwaapV2PriceLevels) => {
-
-        const unitPrice = this.computePricesFromLevelsBids(
+        const unitPrice: bigint | undefined = this.computePricesFromLevelsBids(
           [unitVolume],
           askAndBids,
           normalizedSrcToken,
@@ -377,7 +383,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           side,
         );
 
-        if(!prices.length) {
+        if (!prices.length) {
           return null;
         }
 
@@ -386,12 +392,12 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           exchange: this.dexKey,
           data: {},
           prices,
-          unit: unitPrice,
+          unit: unitPrice === undefined ? 0n : unitPrice,
           poolIdentifier: requestedPoolIdentifier,
         } as PoolPrices<SwaapV2Data>;
       });
 
-      return prices.filter((p): p is PoolPrices<SwaapV2Data> => !!p);;
+      return prices.filter((p): p is PoolPrices<SwaapV2Data> => !!p);
     } catch (e) {
       this.logger.error(
         `Error_getPrices ${srcToken}, ${destToken}, ${side}:`,
@@ -824,7 +830,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       return [];
     }
 
-    this.tokensMap = await this.getCachedTokens() || {};
+    this.tokensMap = (await this.getCachedTokens()) || {};
     const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
 
     const pLevels = await this.getCachedLevels();
@@ -838,8 +844,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         const { base, quote } = pLevels[pair];
 
         return (
-          normalizedTokenAddress === base ||
-          normalizedTokenAddress === quote
+          normalizedTokenAddress === base || normalizedTokenAddress === quote
         );
       })
       .map((pair: string) => {
