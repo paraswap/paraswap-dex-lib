@@ -2,14 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import { generateConfig } from '../../config';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network, SwapSide } from '../../constants';
+import { getRpcProvider } from '../../web3-provider';
 
 describe('MakerPsm E2E', () => {
   const dexKey = 'MakerPsm';
@@ -18,10 +13,7 @@ describe('MakerPsm E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAI';

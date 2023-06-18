@@ -6,15 +6,14 @@ import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
+import * as net from 'net';
 
 describe('UniswapV2 E2E Fantom', () => {
   const network = Network.FANTOM;
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
+  const provider = getRpcProvider(network);
 
   describe('SpookySwap', () => {
     const dexKey = 'SpookySwap';

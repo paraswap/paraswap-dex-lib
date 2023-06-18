@@ -5,14 +5,13 @@ import { Interface } from '@ethersproject/abi';
 import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { getTokenFromASymbol, setTokensOnNetwork } from './tokens';
-import { generateConfig } from '../../config';
 import { fetchTokenList } from './utils';
 import { DummyDexHelper } from '../../dex-helper';
 import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
 import ERC20ABI from '../../abi/erc20.json';
 import { Config } from './config';
+import { getRpcProvider } from '../../web3-provider';
 
 jest.setTimeout(1000 * 60 * 3);
 
@@ -58,10 +57,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const pairs = [
       {
@@ -134,10 +130,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const pairs = [
       {
@@ -210,10 +203,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const pairs = [
       {
@@ -286,10 +276,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const pairs = [
       {
@@ -362,10 +349,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.OPTIMISM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const pairs = [
       {
@@ -438,10 +422,7 @@ describe('AaveV3 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const pairs = [
       {

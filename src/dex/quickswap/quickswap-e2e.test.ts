@@ -4,18 +4,14 @@ dotenv.config();
 import { testE2E } from '../../../tests/utils-e2e';
 import { Holders, Tokens } from '../../../tests/constants-e2e';
 import { ContractMethod, Network, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
 
 describe('QuickSwap', () => {
   describe('Polygon', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
     describe('QuickSwapV3', () => {
       const dexKey = 'QuickSwap';
 
@@ -262,10 +258,7 @@ describe('QuickSwap', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
     describe('Zyberswapv3', () => {
       const dexKey = 'Zyberswapv3';
 
@@ -359,10 +352,7 @@ describe('QuickSwap', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
     describe('SpiritSwapV3', () => {
       const dexKey = 'SpiritSwapV3';
 

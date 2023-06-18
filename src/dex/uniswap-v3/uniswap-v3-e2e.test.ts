@@ -10,6 +10,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { getRpcProvider } from '../../web3-provider';
 
 describe('UniswapV3 E2E', () => {
   const dexKey = 'UniswapV3';
@@ -18,10 +19,7 @@ describe('UniswapV3 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     it('BUY DAI -> USDC', async () => {
       await testE2E(
@@ -69,10 +67,7 @@ describe('UniswapV3 E2E', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'WETH';
@@ -153,10 +148,7 @@ describe('UniswapV3 E2E', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+    const provider = getRpcProvider(network);
 
     const tokenASymbol: string = 'BUSD';
     const tokenBSymbol: string = 'WBNB';
