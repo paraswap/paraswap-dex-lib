@@ -1047,7 +1047,7 @@ describe('Solidly E2E', () => {
       describe('multiSwap', () => {
         it('NATIVE -> TOKEN', async () => {
           await testE2E(
-            tokens.AVAX,
+            tokens.ETH,
             tokens.USDC,
             holders.ETH,
             '3000000000000000000',
