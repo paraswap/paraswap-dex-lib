@@ -546,10 +546,7 @@ export class CurveV1Factory
 
       let isMeta: boolean = false;
       let basePoolStateFetcher: PoolPollingBase | undefined;
-      if (
-        initializeInitialState &&
-        factoryImplementationFromConfig.basePoolAddress !== undefined
-      ) {
+      if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
         isMeta = true;
         const basePoolIdentifier = this.getPoolIdentifier(
           factoryImplementationFromConfig.basePoolAddress,
