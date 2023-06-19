@@ -375,7 +375,7 @@ describe('QuickSwap', () => {
             {
               name: 'WBTC',
               sellAmount: '1000',
-              buyAmount: '1050000000000',
+              buyAmount: '151080000000000',
             },
             {
               name: 'WETH',
@@ -387,11 +387,11 @@ describe('QuickSwap', () => {
             {
               name: 'WBTC',
               sellAmount: '1000',
-              buyAmount: '10000000',
+              buyAmount: '1300000',
             },
             {
               name: 'USDC',
-              sellAmount: '10500000',
+              sellAmount: '1000000',
               buyAmount: '1000',
             },
           ],
