@@ -192,7 +192,7 @@ export class StatePollingManager {
         const pool = poolsToBeUpdated[index];
         try {
           const parsedStateResult =
-            pool.parseStateFromMultiResultsWithBlockInfo(
+            await pool.parseStateFromMultiResultsWithBlockInfo(
               result,
               lastUpdatedAtMs,
             );

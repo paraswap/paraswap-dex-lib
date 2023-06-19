@@ -9,12 +9,9 @@ import {
   LIQUIDITY_UPDATE_PERIOD_MS,
   LIQUIDITY_UPDATE_RETRY_PERIOD_MS,
   NETWORK_ID_TO_NAME,
-  STATE_UPDATE_PERIOD_MS,
-  STATE_UPDATE_RETRY_PERIOD_MS,
 } from './constants';
 import { PriceHandler } from './price-handlers/price-handler';
 import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
-import { StatePollingManager } from './state-polling-pools/polling-manager';
 import { CACHE_PREFIX, NULL_ADDRESS } from '../../constants';
 import { LiquidityInCache } from './types';
 import { assert } from 'ts-essentials';
@@ -45,7 +42,6 @@ export class CurveV1FactoryPoolManager {
 
   private allCurveLiquidityApiSlugs: Set<string> = new Set(['/factory']);
 
-  private statePollingManager = StatePollingManager;
   private taskScheduler: TaskScheduler;
 
   private liquidityUpdatedAtMs: number = 0;
@@ -101,13 +97,6 @@ export class CurveV1FactoryPoolManager {
       );
       return;
     }
-
-    await this.statePollingManager.updatePoolsInBatch(
-      this.logger,
-      this.dexHelper,
-      [pool],
-      blockNumber,
-    );
   }
 
   getPriceHandler(implementationAddress: string): PriceHandler {
@@ -203,36 +192,38 @@ export class CurveV1FactoryPoolManager {
       );
     }
 
-    const pools = intersectedPoolIdentifiersSubset
-      .map(identifier =>
-        this.getPool(
+    const pools: PoolPollingBase[] = [];
+
+    await Promise.all(
+      intersectedPoolIdentifiersSubset.map(async identifier => {
+        const p = this.getPool(
           identifier,
           isSrcFeeOnTransferToBeExchanged
             ? isSrcFeeOnTransferToBeExchanged
             : false,
-        ),
-      )
-      .filter((p): p is PoolPollingBase => {
-        if (p === null || !p.hasEnoughLiquidity()) {
-          return false;
+        );
+
+        if (p === null || !p.hasEnoughLiquidityForUpdate()) {
+          return;
         }
 
         const currentState = await p.getState();
         if (
           currentState === null ||
           // Pool has no liquidity
-          currentState.balances.every(b => b === 0n)
+          currentState.value.balances.every(b => b === 0n)
         ) {
-          return false;
+          return;
         }
 
         const poolData = p.getPoolData(srcTokenAddress, destTokenAddress);
         if (poolData === null) {
-          return false;
+          return;
         }
 
-        return true;
-      });
+        pools.push(p);
+      }),
+    );
 
     return pools;
   }
@@ -293,13 +284,20 @@ export class CurveV1FactoryPoolManager {
 
         this.liquidityUpdatedAtMs =
           liquiditiesParsed[this.liquidityLastUpdateInfoKey];
-        for (const pool of Object.values(this.statePollingPoolsFromId)) {
-          if (liquiditiesParsed[pool.address] !== undefined) {
-            pool.liquidityUSD = liquiditiesParsed[pool.address];
-          } else {
-            pool.liquidityUSD = 0;
-          }
-        }
+
+        await Promise.all(
+          Object.values(this.statePollingPoolsFromId).map(async pool => {
+            if (liquiditiesParsed[pool.address] !== undefined) {
+              await pool.setLiquidity(
+                liquiditiesParsed[pool.address],
+                this.liquidityUpdatedAtMs,
+              );
+            } else {
+              await pool.setLiquidity(0, this.liquidityUpdatedAtMs);
+            }
+          }),
+        );
+
         this.logger.trace(
           `${this.name} ${this.dexHelper.config.data.network}: pools liquidity successfully updated from cache`,
         );
@@ -351,16 +349,18 @@ export class CurveV1FactoryPoolManager {
         return;
       }
 
-      Object.values(this.statePollingPoolsFromId).map(pool => {
-        const poolLiquidity = addressToLiquidity[pool.address];
-        if (poolLiquidity === undefined) {
-          pool.liquidityUSD = 0;
-        } else {
-          pool.liquidityUSD = poolLiquidity;
-        }
-      });
-
       this.liquidityUpdatedAtMs = Date.now();
+
+      await Promise.all(
+        Object.values(this.statePollingPoolsFromId).map(async pool => {
+          const poolLiquidity = addressToLiquidity[pool.address];
+          if (poolLiquidity === undefined) {
+            await pool.setLiquidity(0, this.liquidityUpdatedAtMs);
+          } else {
+            await pool.setLiquidity(poolLiquidity, this.liquidityUpdatedAtMs);
+          }
+        }),
+      );
 
       this.logger.info(
         `${this.name} ${this.dexHelper.config.data.network}: successfully fetched liquidity updates`,

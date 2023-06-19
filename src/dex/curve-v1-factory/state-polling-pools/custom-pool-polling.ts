@@ -100,7 +100,6 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly logger: Logger,
     readonly dexKey: string,
     dexHelper: IDexHelper,
-    network: number,
     cacheStateKey: string,
     implementationName: ImplementationNames,
     implementationAddress: Address,
