@@ -2,34 +2,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
 const sleepMs: number = 5000;
 
-function testForNetwork(
-  network: Network,
-  dexKey: string,
-  tokenASymbol: string,
-  tokenBSymbol: string,
-  tokenAAmount: string,
-  tokenBAmount: string,
-  nativeTokenAmount: string,
-  excludeNativeTokenTests: boolean = true,
-) {
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
+describe('SwaapV2 E2E', () => {
+  const dexKey = 'SwaapV2';
 
   const sideToContractMethods = new Map([
     [
@@ -43,18 +24,67 @@ function testForNetwork(
     [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
-  describe(`${network}`, () => {
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [
+        {
+          name: 'USDC',
+          sellAmount: '45410357',
+          buyAmount: '1000000000000000000',
+        },
+        {
+          name: 'WETH',
+          sellAmount: '1000000000000000000',
+          buyAmount: '100000000',
+        },
+      ],
+      [
+        {
+          name: 'MATIC',
+          sellAmount: '45000000000000000000',
+          buyAmount: '100000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '100000000',
+          buyAmount: '150000000000000000000',
+        },
+      ],
+      [
+        {
+          name: 'WMATIC',
+          sellAmount: '150000000000000000000',
+          buyAmount: '100000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '100000000',
+          buyAmount: '150000000000000000000',
+        },
+      ],
+    ];
+
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
-          describe(`${contractMethod}`, () => {
-            if (excludeNativeTokenTests) {
-              it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          pairs.forEach(pair => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
                 await testE2E(
-                  tokens[tokenASymbol],
-                  tokens[tokenBSymbol],
-                  holders[tokenASymbol],
-                  side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
                   side,
                   dexKey,
                   contractMethod,
@@ -67,12 +97,14 @@ function testForNetwork(
                   sleepMs,
                 );
               });
-              it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
                 await testE2E(
-                  tokens[tokenBSymbol],
-                  tokens[tokenASymbol],
-                  holders[tokenBSymbol],
-                  side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
                   side,
                   dexKey,
                   contractMethod,
@@ -85,72 +117,10 @@ function testForNetwork(
                   sleepMs,
                 );
               });
-            } else {
-              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-                await testE2E(
-                  tokens[nativeTokenSymbol],
-                  tokens[tokenASymbol],
-                  holders[nativeTokenSymbol],
-                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  undefined,
-                  sleepMs,
-                );
-              });
-              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-                await testE2E(
-                  tokens[tokenASymbol],
-                  tokens[nativeTokenSymbol],
-                  holders[tokenASymbol],
-                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  undefined,
-                  sleepMs,
-                );
-              });
-            }
+            });
           });
         });
       }),
-    );
-  });
-}
-
-describe('SwaapV2 E2E', () => {
-  const dexKey = 'SwaapV2';
-
-  describe('Polygon', () => {
-    const network = Network.POLYGON;
-
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'WETH';
-
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
     );
   });
 

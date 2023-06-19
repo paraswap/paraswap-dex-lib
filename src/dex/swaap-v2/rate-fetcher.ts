@@ -9,18 +9,25 @@ import {
   SwaapV2PriceLevels,
   SwaapV2QuoteRequest,
   SwaapV2OrderType,
+  SwaapV2TokensResponse,
+  TokensMap,
 } from './types';
 import {
   priceLevelsResponseValidator,
   getQuoteResponseValidator,
+  getTokensResponseValidator,
 } from './validators';
-import { getPriceLevelsCacheKey, normalizeTokenAddress } from './utils';
+import { normalizeTokenAddress } from './utils';
 import { SWAAP_RFQ_QUOTE_TIMEOUT_MS } from './constants';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<SwaapV2PriceLevelsResponse>;
+  private tokensFetcher: Fetcher<SwaapV2TokensResponse>;
   private pricesCacheTTL: number;
+  private tokensCacheTTL: number;
+  private tokenCacheKey: string;
+  private pricesCacheKey: string;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -29,6 +36,9 @@ export class RateFetcher {
     config: SwaapV2RateFetcherConfig,
   ) {
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
+    this.tokensCacheTTL = config.tokensConfig.tokensCacheTTLSecs;
+    this.pricesCacheKey = config.rateConfig.pricesCacheKey;
+    this.tokenCacheKey = config.tokensConfig.tokensCacheKey;
 
     this.rateFetcher = new Fetcher<SwaapV2PriceLevelsResponse>(
       dexHelper.httpRequest,
@@ -47,14 +57,53 @@ export class RateFetcher {
       config.rateConfig.pricesIntervalMs,
       logger,
     );
+
+    this.tokensFetcher = new Fetcher<SwaapV2TokensResponse>(
+      dexHelper.httpRequest,
+      {
+        info: {
+          requestOptions: config.tokensConfig.tokensReqParams,
+          caster: (data: unknown) => {
+            return validateAndCast<SwaapV2TokensResponse>(
+              data,
+              getTokensResponseValidator,
+            );
+          },
+        },
+        handler: this.handleTokensResponse.bind(this),
+      },
+      config.tokensConfig.tokensIntervalMs,
+      logger,
+    );
   }
 
   start() {
     this.rateFetcher.startPolling();
+    this.tokensFetcher.startPolling();
   }
 
   stop() {
     this.rateFetcher.stopPolling();
+    this.tokensFetcher.startPolling();
+  }
+
+  private handleTokensResponse(resp: SwaapV2TokensResponse): void {
+    if (!resp.success) {
+      return;
+    }
+
+    const tokensMap = Object.keys(resp.tokens).reduce((acc, key: string) => {
+      acc[key.toLowerCase()] = resp.tokens[key];
+      return acc;
+    }, {} as TokensMap);
+
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.dexHelper.config.data.network,
+      this.tokenCacheKey,
+      this.tokensCacheTTL,
+      JSON.stringify(tokensMap),
+    );
   }
 
   private handleRatesResponse(resp: SwaapV2PriceLevelsResponse): void {
@@ -82,12 +131,12 @@ export class RateFetcher {
         pair.quote = normalizeTokenAddress(quoteAddress);
         return pair;
       })
-      .filter((p: SwaapV2PriceLevels | undefined) => p != null);
+      .filter((p: SwaapV2PriceLevels | undefined) => p !== null);
 
     this.dexHelper.cache.setex(
       this.dexKey,
       this.dexHelper.config.data.network,
-      `${getPriceLevelsCacheKey(this.dexKey)}`,
+      this.pricesCacheKey,
       this.pricesCacheTTL,
       JSON.stringify(levels),
     );

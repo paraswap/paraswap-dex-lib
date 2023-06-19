@@ -64,7 +64,7 @@ export function encodeFeePercentForReferrer(side: SwapSide) {
   let fee = REFERRER_FEE;
 
   // Set 15th bit to take fee from srcToken
-  if (side === SwapSide.BUY) fee |= OneShift15;
+  // if (side === SwapSide.BUY) fee |= OneShift15; // stop setting this flag to take right circuit
 
   return fee.toString();
 }
