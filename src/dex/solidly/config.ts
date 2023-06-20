@@ -104,7 +104,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   Ramses: {
     [Network.ARBITRUM]: {
       subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sullivany/ramses-v2',
+        'https://api.thegraph.com/subgraphs/name/ramsesexchange/api-subgraph',
       factoryAddress: '0xAAA20D08e59F6561f242b08513D36266C5A29415',
       router: '0xAAA87963EFeB6f7E0a2711F397663105Acb1805e',
       initCode:
