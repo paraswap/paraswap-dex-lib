@@ -51,6 +51,7 @@ import {
   SWAAP_TOKENS_CACHE_KEY,
   SWAAP_ORDER_TYPE_SELL,
   SWAAP_ORDER_TYPE_BUY,
+  SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
 } from './constants';
 import { getPoolIdentifier, normalizeTokenAddress, getPairName } from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
@@ -487,6 +488,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       const quoteTokenAmount = BigInt(quote.amount);
       const slippageFactor = options.slippageFactor;
 
+      let isFailOnSlippage = false;
+      let slippageErrorMessage = '';
+
       if (side === SwapSide.SELL) {
         if (
           quoteTokenAmount <
@@ -496,21 +500,50 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
               .toFixed(0),
           )
         ) {
-          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          isFailOnSlippage = true;
+          const message = `${this.dexKey}-${
+            this.network
+          }: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          slippageErrorMessage = message;
           this.logger.warn(message);
-          throw new SlippageCheckError(message);
         }
       } else {
         if (
           quoteTokenAmount >
           BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
         ) {
+          isFailOnSlippage = true;
           const message = `${this.dexKey}-${
             this.network
           }: too much slippage on quote ${side} baseTokenAmount ${srcAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+          slippageErrorMessage = message;
           this.logger.warn(message);
-          throw new SlippageCheckError(message);
         }
+      }
+
+      let isTooStrictSlippage = false;
+      if(
+        isFailOnSlippage &&
+        side === SwapSide.SELL &&
+        new BigNumber(1)
+          .minus(slippageFactor)
+          .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      } else if (
+        isFailOnSlippage &&
+        side === SwapSide.BUY &&
+        slippageFactor.minus(1).lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      }
+
+      if(isFailOnSlippage && isTooStrictSlippage) {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
+        );
+      } else if(isFailOnSlippage && ! isTooStrictSlippage) {
+        throw new SlippageCheckError(slippageErrorMessage);
       }
 
       const expiryAsBigInt = BigInt(quote.expiration);

@@ -52,6 +52,8 @@ import {
   HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
   HASHFLOW_PRICES_CACHES_TTL_S,
   HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
+  HASHFLOW_GAS_COST,
+  HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
@@ -512,7 +514,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
 
         return {
-          gasCost: 100_000,
+          gasCost: HASHFLOW_GAS_COST,
           exchange: this.dexKey,
           data: { mm },
           prices,
@@ -648,6 +650,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
       const slippageFactor = options.slippageFactor;
 
+      let isFailOnSlippage = false;
+      let slippageErrorMessage = '';
+
       if (side === SwapSide.SELL) {
         if (
           quoteTokenAmount <
@@ -657,28 +662,56 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
               .toFixed(0),
           )
         ) {
+          isFailOnSlippage = true;
           const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          slippageErrorMessage = message;
           this.logger.warn(message);
-          throw new SlippageCheckError(message);
         }
       } else {
         if (quoteTokenAmount < destAmount) {
+          isFailOnSlippage = true;
           // Won't receive enough assets
           const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
+          slippageErrorMessage = message;
           this.logger.warn(message);
-          throw new SlippageCheckError(message);
         } else {
           if (
             baseTokenAmount >
             BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
           ) {
+            isFailOnSlippage = true;
             const message = `${this.dexKey}-${
               this.network
             }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+            slippageErrorMessage = message;
             this.logger.warn(message);
-            throw new SlippageCheckError(message);
           }
         }
+      }
+
+      let isTooStrictSlippage = false;
+      if(
+        isFailOnSlippage &&
+        side === SwapSide.SELL &&
+        new BigNumber(1)
+          .minus(slippageFactor)
+          .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      } else if (
+        isFailOnSlippage &&
+        side === SwapSide.BUY &&
+        slippageFactor.minus(1).lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      }
+
+      if(isFailOnSlippage && isTooStrictSlippage) {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
+        );
+      } else if(isFailOnSlippage && ! isTooStrictSlippage) {
+        throw new SlippageCheckError(slippageErrorMessage);
       }
 
       return [

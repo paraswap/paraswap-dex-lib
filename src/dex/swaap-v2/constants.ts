@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 export const SWAAP_RFQ_PRICES_CACHES_TTL_S = 3;
 
 export const SWAAP_RFQ_QUOTE_TIMEOUT_MS = 2000;
@@ -35,3 +37,6 @@ export const CALLER_SLOT = 160;
 export const SWAAP_ORDER_TYPE_SELL = 1;
 
 export const SWAAP_ORDER_TYPE_BUY = 2;
+
+export const SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION = new BigNumber('0.001');
+
