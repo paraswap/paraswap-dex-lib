@@ -8,11 +8,14 @@ import {
   SwaapV2QuoteResponse,
   SwaapV2PriceLevels,
   SwaapV2QuoteRequest,
-  SwaapV2OrderType, SwaapV2TokensResponse, TokensMap,
+  SwaapV2OrderType,
+  SwaapV2TokensResponse,
+  TokensMap,
 } from './types';
 import {
   priceLevelsResponseValidator,
-  getQuoteResponseValidator, getTokensResponseValidator,
+  getQuoteResponseValidator,
+  getTokensResponseValidator,
 } from './validators';
 import { normalizeTokenAddress } from './utils';
 import { SWAAP_RFQ_QUOTE_TIMEOUT_MS } from './constants';
@@ -71,7 +74,7 @@ export class RateFetcher {
       },
       config.tokensConfig.tokensIntervalMs,
       logger,
-    )
+    );
   }
 
   start() {
@@ -89,13 +92,10 @@ export class RateFetcher {
       return;
     }
 
-    const tokensMap = Object.keys(resp.tokens).reduce(
-      (acc, key: string) => {
-        acc[key.toLowerCase()] = resp.tokens[key];
-        return acc;
-      },
-      {} as TokensMap,
-    );
+    const tokensMap = Object.keys(resp.tokens).reduce((acc, key: string) => {
+      acc[key.toLowerCase()] = resp.tokens[key];
+      return acc;
+    }, {} as TokensMap);
 
     this.dexHelper.cache.setex(
       this.dexKey,

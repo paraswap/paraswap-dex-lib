@@ -160,6 +160,14 @@ export class CurveV1Factory
       return acc;
     }, {});
 
+    Object.values(this.config.customPools).reduce((acc, curr) => {
+      if (curr.useForPricing) {
+        acc[curr.address] = new PriceHandler(this.logger, curr.name);
+      }
+
+      return acc;
+    }, allPriceHandlers);
+
     this.poolManager = new CurveV1FactoryPoolManager(
       this.dexKey,
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
@@ -256,7 +264,7 @@ export class CurveV1Factory
             CustomImplementationNames,
           ).includes(customPool.name)
         ) {
-          // We don't want custom pools to be used for pricing
+          // We don't want custom pools to be used for pricing, unless explicitly specified
           newPool = new CustomBasePoolForFactory(
             this.logger,
             this.dexKey,
@@ -274,6 +282,7 @@ export class CurveV1Factory
             isLending,
             customPool.balancesInputType,
             useLending,
+            customPool.useForPricing,
           );
         } else {
           // Use for pricing pools from factory
@@ -537,10 +546,7 @@ export class CurveV1Factory
 
       let isMeta: boolean = false;
       let basePoolStateFetcher: PoolPollingBase | undefined;
-      if (
-        initializeInitialState &&
-        factoryImplementationFromConfig.basePoolAddress !== undefined
-      ) {
+      if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
         isMeta = true;
         const basePoolIdentifier = this.getPoolIdentifier(
           factoryImplementationFromConfig.basePoolAddress,
@@ -580,6 +586,8 @@ export class CurveV1Factory
         factoryImplementationConstants,
         factoryImplementationConstants.isFeeOnTransferSupported,
         basePoolStateFetcher,
+        factoryImplementationFromConfig.customGasCost,
+        factoryImplementationFromConfig.isStoreRateSupported,
       );
 
       this.poolManager.initializeNewPool(poolIdentifier, newPool);

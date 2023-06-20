@@ -43,6 +43,10 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
+    sBTC: {
+      address: '0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6',
+      decimals: 18,
+    },
     BADGER: {
       address: '0x3472A5A71965499acd81997a54BBA8D852C6E53d',
       decimals: 18,
@@ -269,10 +273,6 @@ export const Tokens: {
     },
     newFRAX: {
       address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
-      decimals: 18,
-    },
-    sBTC: {
-      address: '0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6',
       decimals: 18,
     },
     sETH: {
@@ -796,10 +796,6 @@ export const Tokens: {
       address: '0x4200000000000000000000000000000000000042',
       decimals: 18,
     },
-    sBTC: {
-      address: '0x298B9B95708152ff6968aafd889c6586e9169f1D',
-      decimals: 18,
-    },
     sETH: {
       address: '0xE405de8F52ba7559f9df3C368500B6E6ae6Cee49',
       decimals: 18,
@@ -833,7 +829,8 @@ export const Holders: {
   [Network.MAINNET]: {
     ETH: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
     USDC: '0x79E2Ba942B0e8fDB6ff3d406e930289d10B49ADe',
-    WBTC: '0x1Cb17a66DC606a52785f69F08F4256526aBd4943',
+    WBTC: '0x1cb17a66dc606a52785f69f08f4256526abd4943',
+    sBTC: '0xA2e3475D13776C6E42ff37B47286827d959B2195',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
     wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',
@@ -878,7 +875,6 @@ export const Holders: {
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x4361b7425cff39b1be9bf12cee2ef32f89656cda',
-    sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
     sETH: '0x5fe009d78afabc1b04abd2d4361f8e95cd402648',
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',

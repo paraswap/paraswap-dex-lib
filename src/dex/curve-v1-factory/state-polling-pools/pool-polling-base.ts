@@ -48,6 +48,7 @@ export abstract class PoolPollingBase {
     readonly isLendingPool: boolean,
     readonly baseStatePoolPolling: PoolPollingBase | undefined,
     readonly isSrcFeeOnTransferSupported: boolean,
+    readonly customGasCost: number | undefined,
   ) {
     this.fullName = `${dexKey}-${network}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
     this.isMetaPool = baseStatePoolPolling !== undefined;

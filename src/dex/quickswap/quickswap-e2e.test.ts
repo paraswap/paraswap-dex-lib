@@ -366,7 +366,7 @@ describe('QuickSwap', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [ SwapSide.BUY, [ ContractMethod.simpleBuy, ContractMethod.buy ] ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
