@@ -126,7 +126,7 @@ export class Chronos extends Solidly {
           decimals: decimals1,
         },
       ],
-      liquidityUSD: parseFloat((liquidityUSDToken0 + liquidityUSDToken1).toFixed()),
+      liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
     }));
 
     const pools1 = await this.prepareSubgraphPools(data.pools1, (pool,{
@@ -141,7 +141,7 @@ export class Chronos extends Solidly {
           decimals: decimals0,
         },
       ],
-      liquidityUSD: parseFloat((liquidityUSDToken0 + liquidityUSDToken1).toFixed()),
+      liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
     }));
 
     return _.slice(
