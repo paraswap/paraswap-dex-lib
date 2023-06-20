@@ -704,6 +704,10 @@ export const Tokens: {
       address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
       decimals: 18,
     },
+    ARB: {
+      address: '0x912ce59144191c1204e64559fe8253a0e49e6548',
+      decimals: 18,
+    },
     WETH: {
       address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
       decimals: 18,
@@ -987,6 +991,7 @@ export const Holders: {
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
   },
   [Network.ARBITRUM]: {
+    ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',

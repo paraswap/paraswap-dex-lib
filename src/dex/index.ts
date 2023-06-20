@@ -43,6 +43,7 @@ import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orde
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
 import { Thena } from './solidly/forks-override/thena';
+import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
@@ -124,6 +125,7 @@ const Dexes = [
   SolidlyEthereum,
   SpiritSwapV2,
   Thena,
+  Chronos,
   Velodrome,
   Cone,
   SoliSnek,
