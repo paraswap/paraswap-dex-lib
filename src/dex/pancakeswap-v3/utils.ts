@@ -2,10 +2,7 @@ import { BytesLike, ethers } from 'ethers';
 import { assert } from 'ts-essentials';
 import { extractSuccessAndValue } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
-import {
-  DecodedStateMultiCallResultWithRelativeBitmaps,
-} from '../uniswap-v3/types';
-
+import { DecodedStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/types';
 
 export function decodeStateMultiCallResultWithRelativeBitmaps(
   result: MultiResult<BytesLike> | BytesLike,

@@ -8,6 +8,11 @@ import _ from 'lodash';
 import { MultiResult } from './lib/multi-wrapper';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
+import { AxiosError } from 'axios';
+
+export const isAxiosError = (e: any): e is AxiosError => {
+  return e.isAxiosError === true;
+};
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();

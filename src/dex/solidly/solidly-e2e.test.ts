@@ -905,39 +905,38 @@ describe('Solidly E2E', () => {
         ],
       ]);
 
-      const pairs: { name: string; sellAmount: string; }[][] =
+      const pairs: { name: string; sellAmount: string }[][] = [
         [
-          [
-            {
-              name: 'BNB',
-              sellAmount: '1000000000000000000',
-            },
-            {
-              name: 'USDT',
-              sellAmount: '10000000000000000000',
-            },
-          ],
-          [
-            {
-              name: 'USDT',
-              sellAmount: '10000000000000000000',
-            },
-            {
-              name: 'USDC',
-              sellAmount: '10000000000000000000',
-            },
-          ],
-          [
-            {
-              name: 'ETH',
-              sellAmount: '5000000000000000000',
-            },
-            {
-              name: 'BNB',
-              sellAmount: '1000000000000000000',
-            },
-          ]
-        ];
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'ETH',
+            sellAmount: '5000000000000000000',
+          },
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+        ],
+      ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
@@ -1100,49 +1099,48 @@ describe('Solidly E2E', () => {
         ],
       ]);
 
-      const pairs: { name: string; sellAmount: string; }[][] =
+      const pairs: { name: string; sellAmount: string }[][] = [
         [
-          [
-            {
-              name: 'ETH',
-              sellAmount: '1000000000000000000',
-            },
-            {
-              name: 'USDC',
-              sellAmount: '100000000',
-            },
-          ],
-          [
-            {
-              name: 'USDT',
-              sellAmount: '100000000',
-            },
-            {
-              name: 'USDC',
-              sellAmount: '100000000',
-            },
-          ],
-          [
-            {
-              name: 'USDC',
-              sellAmount: '100000000',
-            },
-            {
-              name: 'DAI',
-              sellAmount: '100000000000000000000',
-            },
-          ],
-          [
-            {
-              name: 'ARB',
-              sellAmount: '100000000',
-            },
-            {
-              name: 'ETH',
-              sellAmount: '100000000000000000000',
-            },
-          ]
-        ];
+          {
+            name: 'ETH',
+            sellAmount: '1000000000000000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '100000000',
+          },
+        ],
+        [
+          {
+            name: 'USDT',
+            sellAmount: '100000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '100000000',
+          },
+        ],
+        [
+          {
+            name: 'USDC',
+            sellAmount: '100000000',
+          },
+          {
+            name: 'DAI',
+            sellAmount: '100000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'ARB',
+            sellAmount: '100000000',
+          },
+          {
+            name: 'ETH',
+            sellAmount: '100000000000000000000',
+          },
+        ],
+      ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
@@ -1182,71 +1180,71 @@ describe('Solidly E2E', () => {
       );
     });
 
-  //     describe(`simpleSwap`, () => {
-  //       describe(`Volatile`, () => {
-  //         it('ETH -> USDC', async () => {
-  //           await testE2E(
-  //             tokens.ETH,
-  //             tokens.USDC,
-  //             holders.ETH,
-  //             '1000000000000000000',
-  //             SwapSide.SELL,
-  //             dexKey,
-  //             ContractMethod.simpleSwap,
-  //             network,
-  //             provider,
-  //           );
-  //         });
-  //       });
-  //       describe(`Stable`, () => {
-  //         it('USDC -> USDT', async () => {
-  //           await testE2E(
-  //             tokens.USDC,
-  //             tokens.USDT,
-  //             holders.USDC,
-  //             '10000000',
-  //             SwapSide.SELL,
-  //             dexKey,
-  //             ContractMethod.simpleSwap,
-  //             network,
-  //             provider,
-  //           );
-  //         });
-  //       });
-  //     });
-  //
-  //     describe(`multiSwap`, () => {
-  //       describe(`Volatile`, () => {
-  //         it('ETH -> USDC', async () => {
-  //           await testE2E(
-  //             tokens.ETH,
-  //             tokens.USDC,
-  //             holders.ETH,
-  //             '1000000000000000000',
-  //             SwapSide.SELL,
-  //             dexKey,
-  //             ContractMethod.multiSwap,
-  //             network,
-  //             provider,
-  //           );
-  //         });
-  //       });
-  //       describe(`Stable`, () => {
-  //         it('USDC -> USDT', async () => {
-  //           await testE2E(
-  //             tokens.USDC,
-  //             tokens.USDT,
-  //             holders.USDC,
-  //             '10000000',
-  //             SwapSide.SELL,
-  //             dexKey,
-  //             ContractMethod.multiSwap,
-  //             network,
-  //             provider,
-  //           );
-  //         });
-  //       });
-  //     });
-  //   });
+    //     describe(`simpleSwap`, () => {
+    //       describe(`Volatile`, () => {
+    //         it('ETH -> USDC', async () => {
+    //           await testE2E(
+    //             tokens.ETH,
+    //             tokens.USDC,
+    //             holders.ETH,
+    //             '1000000000000000000',
+    //             SwapSide.SELL,
+    //             dexKey,
+    //             ContractMethod.simpleSwap,
+    //             network,
+    //             provider,
+    //           );
+    //         });
+    //       });
+    //       describe(`Stable`, () => {
+    //         it('USDC -> USDT', async () => {
+    //           await testE2E(
+    //             tokens.USDC,
+    //             tokens.USDT,
+    //             holders.USDC,
+    //             '10000000',
+    //             SwapSide.SELL,
+    //             dexKey,
+    //             ContractMethod.simpleSwap,
+    //             network,
+    //             provider,
+    //           );
+    //         });
+    //       });
+    //     });
+    //
+    //     describe(`multiSwap`, () => {
+    //       describe(`Volatile`, () => {
+    //         it('ETH -> USDC', async () => {
+    //           await testE2E(
+    //             tokens.ETH,
+    //             tokens.USDC,
+    //             holders.ETH,
+    //             '1000000000000000000',
+    //             SwapSide.SELL,
+    //             dexKey,
+    //             ContractMethod.multiSwap,
+    //             network,
+    //             provider,
+    //           );
+    //         });
+    //       });
+    //       describe(`Stable`, () => {
+    //         it('USDC -> USDT', async () => {
+    //           await testE2E(
+    //             tokens.USDC,
+    //             tokens.USDT,
+    //             holders.USDC,
+    //             '10000000',
+    //             SwapSide.SELL,
+    //             dexKey,
+    //             ContractMethod.multiSwap,
+    //             network,
+    //             provider,
+    //           );
+    //         });
+    //       });
+    //     });
+    //   });
   });
 });

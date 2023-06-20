@@ -7,6 +7,9 @@ import {
   ExchangePrices,
   Log,
   Logger,
+  TxInfo,
+  PreprocessTransactionOptions,
+  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
   SimpleExchangeParam,
@@ -27,8 +30,13 @@ import { WeightedPool } from './pools/weighted/WeightedPool';
 import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
 import { LinearPool } from './pools/linear/LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -41,11 +49,15 @@ import {
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
+  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
-import { Adapters, BalancerConfig } from './config';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
+import { BalancerConfig, Adapters } from './config';
 import {
   getAllPoolsUsedInPaths,
   isSameAddress,
@@ -53,10 +65,12 @@ import {
   poolGetPathForTokenInOut,
 } from './utils';
 import {
+  DirectMethods,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -493,12 +507,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements
+    IDex<BalancerV2Data, BalancerV2DirectParam, OptimizedBalancerV2Data>
 {
   public eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -1017,6 +1034,138 @@ export class BalancerV2
     ];
 
     return params;
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<OptimizedBalancerV2Data>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<OptimizedBalancerV2Data>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, this.vaultAddress)
+        .call(undefined, 'latest');
+      isApproved =
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<BalancerV2DirectParam> {
+    if (
+      contractMethod !== DirectMethods.directSell &&
+      contractMethod !== DirectMethods.directBuy
+    ) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    const swapParams: BalancerV2DirectParam = [
+      swaps,
+      assets,
+      funds,
+      limits,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      _deadline,
+      feePercent,
+      this.vaultAddress,
+      partner,
+      isApproved,
+      beneficiary,
+      permit,
+      uuidToBytes16(uuid),
+    ];
+
+    const encoder = (...params: BalancerV2DirectParam) => {
+      return this.directSwapIface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethods.directSell
+          : DirectMethods.directBuy,
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
   }
 
   async getSimpleParam(

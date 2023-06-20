@@ -32,10 +32,7 @@ describe('PancakeswapV3 E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [
-        ContractMethod.simpleBuy,
-        ContractMethod.buy,
-      ]],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     ]);
 
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
@@ -98,8 +95,8 @@ describe('PancakeswapV3 E2E', () => {
           sellAmount: '10000000000',
           buyAmount: '500000000000000000000',
         },
-      ]
-    ]
+      ],
+    ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
