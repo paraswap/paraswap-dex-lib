@@ -38,5 +38,5 @@ export const SWAAP_ORDER_TYPE_SELL = 1;
 
 export const SWAAP_ORDER_TYPE_BUY = 2;
 
-export const SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION = new BigNumber('0.001');
-
+export const SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION =
+  new BigNumber('0.001');

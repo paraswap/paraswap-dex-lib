@@ -690,7 +690,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       }
 
       let isTooStrictSlippage = false;
-      if(
+      if (
         isFailOnSlippage &&
         side === SwapSide.SELL &&
         new BigNumber(1)
@@ -701,16 +701,18 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       } else if (
         isFailOnSlippage &&
         side === SwapSide.BUY &&
-        slippageFactor.minus(1).lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+        slippageFactor
+          .minus(1)
+          .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
       ) {
         isTooStrictSlippage = true;
       }
 
-      if(isFailOnSlippage && isTooStrictSlippage) {
+      if (isFailOnSlippage && isTooStrictSlippage) {
         this.logger.warn(
           `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
         );
-      } else if(isFailOnSlippage && ! isTooStrictSlippage) {
+      } else if (isFailOnSlippage && !isTooStrictSlippage) {
         throw new SlippageCheckError(slippageErrorMessage);
       }
 

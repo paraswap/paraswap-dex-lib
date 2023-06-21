@@ -501,9 +501,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           )
         ) {
           isFailOnSlippage = true;
-          const message = `${this.dexKey}-${
-            this.network
-          }: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
           slippageErrorMessage = message;
           this.logger.warn(message);
         }
@@ -522,7 +520,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       }
 
       let isTooStrictSlippage = false;
-      if(
+      if (
         isFailOnSlippage &&
         side === SwapSide.SELL &&
         new BigNumber(1)
@@ -533,16 +531,18 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       } else if (
         isFailOnSlippage &&
         side === SwapSide.BUY &&
-        slippageFactor.minus(1).lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+        slippageFactor
+          .minus(1)
+          .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
       ) {
         isTooStrictSlippage = true;
       }
 
-      if(isFailOnSlippage && isTooStrictSlippage) {
+      if (isFailOnSlippage && isTooStrictSlippage) {
         this.logger.warn(
           `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
         );
-      } else if(isFailOnSlippage && ! isTooStrictSlippage) {
+      } else if (isFailOnSlippage && !isTooStrictSlippage) {
         throw new SlippageCheckError(slippageErrorMessage);
       }
 
