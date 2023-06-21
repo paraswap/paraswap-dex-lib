@@ -33,6 +33,13 @@ export type SwaapV2RateFetcherConfig = {
     pricesReqParams: SwaapV2APIParameters;
     pricesIntervalMs: number;
     pricesCacheTTLSecs: number;
+    pricesCacheKey: string;
+  };
+  tokensConfig: {
+    tokensReqParams: SwaapV2APIParameters;
+    tokensIntervalMs: number;
+    tokensCacheTTLSecs: number;
+    tokensCacheKey: string;
   };
 };
 

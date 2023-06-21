@@ -15,6 +15,7 @@ const ext: joi.Extension = {
   base: joi.object({
     bids: priceLevelsValidator,
     asks: priceLevelsValidator,
+    liquidityUSD: joi.number(),
   }),
   rules: {
     bidsLowerThanAsks: {
