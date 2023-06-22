@@ -76,7 +76,6 @@ const testingData: Partial<{ [key in Network]: any }> = {
 };
 
 describe('PancakeswapV3', function () {
-
   describe('BSC', () => {
     describe('WBNB -> USDT', () => {
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -88,11 +87,7 @@ describe('PancakeswapV3', function () {
         const WBNB = Tokens[network]['WBNB'];
         const USDT = Tokens[network]['USDT'];
 
-        const amounts = [
-          0n,
-          1n * BI_POWS[18],
-          2n * BI_POWS[18],
-        ];
+        const amounts = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18]];
 
         const pools = await pancakeswapV3.getPoolIdentifiers(
           WBNB,
@@ -100,10 +95,7 @@ describe('PancakeswapV3', function () {
           SwapSide.SELL,
           blockNumber,
         );
-        console.log(
-          `WBNB <> USDT Pool Identifiers: `,
-          pools,
-        );
+        console.log(`WBNB <> USDT Pool Identifiers: `, pools);
 
         expect(pools.length).toBeGreaterThan(0);
 
@@ -115,10 +107,7 @@ describe('PancakeswapV3', function () {
           blockNumber,
           pools,
         );
-        console.log(
-          `WBNB <> USDT Pool Prices: `,
-          poolPrices,
-        );
+        console.log(`WBNB <> USDT Pool Prices: `, poolPrices);
 
         expect(poolPrices).not.toBeNull();
         checkPoolPrices(

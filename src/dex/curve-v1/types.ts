@@ -1,3 +1,4 @@
+import { NumberAsString } from '@paraswap/core';
 import { Address, Token } from '../../types';
 
 export type CurveV1Data = {
@@ -6,6 +7,7 @@ export type CurveV1Data = {
   j: number;
   underlyingSwap: boolean;
   deadline: number;
+  isApproved?: boolean;
 };
 
 export type PoolConfig = {
@@ -42,3 +44,27 @@ export enum CurveSwapFunctions {
   exchange = 'exchange',
   exchange_underlying = 'exchange_underlying',
 }
+
+export enum CurveV1SwapType {
+  EXCHANGE,
+  EXCHANGE_UNDERLYING,
+}
+
+export type DirectCurveV1Param = [
+  fromToken: Address,
+  toToken: Address,
+  exchange: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  feePercent: NumberAsString,
+  i: NumberAsString,
+  j: NumberAsString,
+  partner: Address,
+  isApproved: boolean,
+  swapType: CurveV1SwapType,
+  beneficiary: Address,
+  needWrapNative: boolean,
+  permit: string,
+  uuid: string,
+];

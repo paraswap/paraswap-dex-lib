@@ -43,6 +43,7 @@ import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orde
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
 import { Thena } from './solidly/forks-override/thena';
+import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
@@ -64,7 +65,9 @@ import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
+import { CamelotV3 } from './quickswap/camelot-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
+import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
@@ -86,6 +89,7 @@ const LegacyDexes = [
   QuickSwapV3,
   ThenaFusion,
   ZyberSwapV3,
+  CamelotV3,
   SpiritSwapV3,
   TraderJoeV2,
   TraderJoeV21,
@@ -123,6 +127,7 @@ const Dexes = [
   SolidlyEthereum,
   SpiritSwapV2,
   Thena,
+  Chronos,
   Velodrome,
   Cone,
   SoliSnek,
@@ -133,6 +138,7 @@ const Dexes = [
   Hashflow,
   MaverickV1,
   Camelot,
+  SwaapV2,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

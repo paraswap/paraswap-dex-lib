@@ -122,6 +122,7 @@ const notImplemented: get_y_D = (
 const implementations: Record<ImplementationNames, get_y_D> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
@@ -168,6 +169,12 @@ const implementations: Record<ImplementationNames, get_y_D> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain2CoinFrax,
 };
 
 export default implementations;
