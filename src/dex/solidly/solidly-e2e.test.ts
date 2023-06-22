@@ -1179,5 +1179,93 @@ describe('Solidly E2E', () => {
         }),
       );
     });
+    describe('Ramses', () => {
+      const dexKey = 'Ramses';
+
+      describe('simpleSwap', () => {
+        it('NATIVE -> TOKEN', async () => {
+          await testE2E(
+            tokens.ETH,
+            tokens.USDC,
+            holders.ETH,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> NATIVE', async () => {
+          await testE2E(
+            tokens.USDC,
+            tokens.ETH,
+            holders.USDC,
+            '9900000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> TOKEN', async () => {
+          await testE2E(
+            tokens.WETH,
+            tokens.USDC,
+            holders.WETH,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+
+            network,
+            provider,
+          );
+        });
+      });
+      describe('multiSwap', () => {
+        it('NATIVE -> TOKEN', async () => {
+          await testE2E(
+            tokens.ETH,
+            tokens.USDC,
+            holders.ETH,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> NATIVE', async () => {
+          await testE2E(
+            tokens.USDC,
+            tokens.ETH,
+            holders.USDC,
+            '9900000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> TOKEN', async () => {
+          await testE2E(
+            tokens.WETH,
+            tokens.USDC,
+            holders.WETH,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+      });
+    });
   });
 });
