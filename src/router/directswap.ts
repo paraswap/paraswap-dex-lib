@@ -70,13 +70,20 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
         ? priceRoute.destAmount
         : priceRoute.srcAmount;
 
-    const partner =
-      referrerAddress ||
-      encodePartnerAddressForFeeLogic({
-        partnerAddress,
-        partnerFeePercent,
-        positiveSlippageToUser,
-      });
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            priceRoute.side,
+          ),
+        ];
 
     return dex.getDirectParam!(
       priceRoute.srcToken,
@@ -88,13 +95,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.side,
       permit,
       uuid,
-      referrerAddress
-        ? encodeFeePercentForReferrer(priceRoute.side)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            priceRoute.side,
-          ),
+      feePercent,
       deadline,
       partner,
       beneficiary,

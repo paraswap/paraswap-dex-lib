@@ -60,13 +60,20 @@ export class MultiSwap
       priceRoute.bestRoute[0].swaps,
     );
 
-    const partner =
-      referrerAddress ||
-      encodePartnerAddressForFeeLogic({
-        partnerAddress,
-        partnerFeePercent,
-        positiveSlippageToUser,
-      });
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(SwapSide.SELL)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.SELL,
+          ),
+        ];
 
     const sellData: ContractSellData = {
       fromToken: priceRoute.srcToken,
@@ -76,13 +83,7 @@ export class MultiSwap
       beneficiary,
       path: paths,
       partner,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(SwapSide.SELL)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.SELL,
-          ),
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),
