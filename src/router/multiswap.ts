@@ -3,6 +3,7 @@ import {
   PayloadEncoder,
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 import {
   Address,
@@ -15,7 +16,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
 import { uuidToBytes16 } from '../utils';
-import { NULL_ADDRESS, SwapSide } from '../constants';
+import { SwapSide } from '../constants';
 
 type MultiSwapParam = [ContractSellData];
 
@@ -58,11 +59,13 @@ export class MultiSwap
     const { paths, networkFee } = this.getContractPathsWithNetworkFee(
       priceRoute.bestRoute[0].swaps,
     );
-    const isPartnerTakeNoFeeNoPos =
-      +partnerFeePercent === 0 && positiveSlippageToUser == true;
-    const partner = isPartnerTakeNoFeeNoPos
-      ? NULL_ADDRESS // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
-      : referrerAddress || partnerAddress;
+
+    const partner = encodePartnerAddressForFeeLogic({
+      partnerAddress,
+      referrerAddress,
+      partnerFeePercent,
+      positiveSlippageToUser,
+    });
 
     const sellData: ContractSellData = {
       fromToken: priceRoute.srcToken,

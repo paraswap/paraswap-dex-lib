@@ -3,6 +3,7 @@ import {
   PayloadEncoder,
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 import {
   Address,
@@ -15,7 +16,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
 import { uuidToBytes16 } from '../utils';
-import { NULL_ADDRESS, SwapSide } from '../constants';
+import { SwapSide } from '../constants';
 
 type MegaSwapParam = [ContractMegaSwapSellData];
 
@@ -51,11 +52,12 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       priceRoute.bestRoute,
     );
 
-    const isPartnerTakeNoFeeNoPos =
-      +partnerFeePercent === 0 && positiveSlippageToUser == true;
-    const partner = isPartnerTakeNoFeeNoPos
-      ? NULL_ADDRESS // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
-      : referrerAddress || partnerAddress;
+    const partner = encodePartnerAddressForFeeLogic({
+      partnerAddress,
+      referrerAddress,
+      partnerFeePercent,
+      positiveSlippageToUser,
+    });
 
     const sellData: ContractMegaSwapSellData = {
       fromToken: priceRoute.srcToken,

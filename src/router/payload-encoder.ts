@@ -9,9 +9,10 @@ import {
   Address,
   Adapters,
 } from '../types';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
+import { assert } from 'ts-essentials';
 
 const OneShift14 = 1n << 14n;
 const OneShift15 = 1n << 15n;
@@ -24,6 +25,39 @@ const OneShift248 = 1n << 248n;
 const REFERRER_FEE = 2500n | OneShift14 | OneShift16 | OneShift248;
 
 const HALF_SPLIT = '5000';
+
+export function encodePartnerAddressForFeeLogic({
+  partnerAddress,
+  referrerAddress,
+  partnerFeePercent,
+  positiveSlippageToUser,
+}: {
+  partnerAddress: string;
+  referrerAddress?: string;
+  partnerFeePercent: string;
+  positiveSlippageToUser: boolean;
+}): string {
+  const isPartnerTakeNoFeeNoPos =
+    +partnerFeePercent === 0 && positiveSlippageToUser == true;
+  const partner = isPartnerTakeNoFeeNoPos
+    ? NULL_ADDRESS // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
+    : referrerAddress || partnerAddress;
+
+  // invariant checks
+  if (referrerAddress) {
+    if (partner !== referrerAddress) {
+      throw new Error('logic error: referrer address be set ');
+    }
+  } else {
+    if (+partnerFeePercent > 0 && partner !== partnerAddress) {
+      throw new Error(
+        'logic error: should return partner address if fee is set',
+      );
+    }
+  }
+
+  return partner;
+}
 
 export function encodeFeePercent(
   partnerFeePercent: string,

@@ -5,12 +5,13 @@ import {
   TxInfo,
   ContractSimpleBuyNFTData,
 } from '../types';
-import { NULL_ADDRESS, SwapSide } from '../constants';
+import { SwapSide } from '../constants';
 import { uuidToBytes16 } from '../utils';
 import { DexAdapterService } from '../dex';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 import { PartialContractSimpleData, SimpleRouterBase } from './simpleswap';
 import { BI_ADDR_MASK } from '../bigint-constants';
@@ -95,11 +96,12 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
       };
     };
 
-    const isPartnerTakeNoFeeNoPos =
-      +partnerFeePercent === 0 && positiveSlippageToUser == true;
-    const partner = isPartnerTakeNoFeeNoPos
-      ? NULL_ADDRESS // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
-      : referrerAddress || partnerAddress;
+    const partner = encodePartnerAddressForFeeLogic({
+      partnerAddress,
+      referrerAddress,
+      partnerFeePercent,
+      positiveSlippageToUser,
+    });
 
     const buyData: ContractSimpleBuyNFTData = {
       ...partialContractSimpleData,
