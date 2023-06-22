@@ -46,6 +46,7 @@ export function encodeFeePercent(
     fee |= OneShift17;
   }
 
+  // Upd: not used anymore but better to keep to prevent collisions and ensure continuity of analytics
   // Set 14th bit if positiveSlippageToUser is true
   if (positiveSlippageToUser) fee |= OneShift14;
 

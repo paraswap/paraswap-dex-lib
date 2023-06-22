@@ -15,7 +15,7 @@ import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { DexAdapterService } from '../dex';
 import { uuidToBytes16 } from '../utils';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 
 type BuyParam = [ContractBuyData];
 
@@ -61,6 +61,24 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       minMaxAmount,
       priceRoute.srcAmount,
     );
+
+    const isPartnerTakeNoFeeNoPos =
+      +partnerFeePercent === 0 && positiveSlippageToUser == true;
+
+    const feePercent = isPartnerTakeNoFeeNoPos
+      ? '0'
+      : referrerAddress
+      ? encodeFeePercentForReferrer(SwapSide.BUY)
+      : encodeFeePercent(
+          partnerFeePercent,
+          positiveSlippageToUser,
+          SwapSide.BUY,
+        );
+
+    const partner = isPartnerTakeNoFeeNoPos
+      ? NULL_ADDRESS
+      : referrerAddress || partnerAddress;
+
     const buyData: ContractBuyData = {
       adapter,
       fromToken: priceRoute.srcToken,
@@ -70,14 +88,8 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       expectedAmount: priceRoute.srcAmount,
       beneficiary,
       route,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(SwapSide.BUY)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.BUY,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

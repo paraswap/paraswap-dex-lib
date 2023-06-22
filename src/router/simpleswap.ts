@@ -6,7 +6,7 @@ import {
   TxInfo,
   SimpleExchangeParam,
 } from '../types';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress, uuidToBytes16 } from '../utils';
@@ -285,6 +285,19 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
       minMaxAmount,
     );
 
+    const isPartnerTakeNoFeeNoPos =
+      +partnerFeePercent === 0 && positiveSlippageToUser == true;
+
+    const feePercent = isPartnerTakeNoFeeNoPos
+      ? '0'
+      : referrerAddress
+      ? encodeFeePercentForReferrer(this.side)
+      : encodeFeePercent(partnerFeePercent, positiveSlippageToUser, this.side);
+
+    const partner = isPartnerTakeNoFeeNoPos
+      ? NULL_ADDRESS
+      : referrerAddress || partnerAddress;
+
     const sellData: ConstractSimpleData = {
       ...partialContractSimpleData,
       fromToken: priceRoute.srcToken,
@@ -298,14 +311,8 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
           ? priceRoute.destAmount
           : priceRoute.srcAmount,
       beneficiary,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(this.side)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            this.side,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),
