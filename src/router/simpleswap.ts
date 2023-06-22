@@ -286,12 +286,13 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
       minMaxAmount,
     );
 
-    const partner = encodePartnerAddressForFeeLogic({
-      partnerAddress,
-      referrerAddress,
-      partnerFeePercent,
-      positiveSlippageToUser,
-    });
+    const partner =
+      referrerAddress ||
+      encodePartnerAddressForFeeLogic({
+        partnerAddress,
+        partnerFeePercent,
+        positiveSlippageToUser,
+      });
 
     const sellData: ConstractSimpleData = {
       ...partialContractSimpleData,

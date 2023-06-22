@@ -28,32 +28,22 @@ const HALF_SPLIT = '5000';
 
 export function encodePartnerAddressForFeeLogic({
   partnerAddress,
-  referrerAddress,
   partnerFeePercent,
   positiveSlippageToUser,
 }: {
   partnerAddress: string;
-  referrerAddress?: string;
   partnerFeePercent: string;
   positiveSlippageToUser: boolean;
 }): string {
   const isPartnerTakeNoFeeNoPos =
     +partnerFeePercent === 0 && positiveSlippageToUser == true;
-  const partner = isPartnerTakeNoFeeNoPos
-    ? NULL_ADDRESS // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
-    : referrerAddress || partnerAddress;
+
+  // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
+  const partner = isPartnerTakeNoFeeNoPos ? NULL_ADDRESS : partnerAddress;
 
   // invariant checks
-  if (referrerAddress) {
-    if (partner !== referrerAddress) {
-      throw new Error('logic error: referrer address be set ');
-    }
-  } else {
-    if (+partnerFeePercent > 0 && partner !== partnerAddress) {
-      throw new Error(
-        'logic error: should return partner address if fee is set',
-      );
-    }
+  if (+partnerFeePercent > 0 && partner !== partnerAddress) {
+    throw new Error('logic error: should return partner address if fee is set');
   }
 
   return partner;

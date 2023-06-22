@@ -60,12 +60,13 @@ export class MultiSwap
       priceRoute.bestRoute[0].swaps,
     );
 
-    const partner = encodePartnerAddressForFeeLogic({
-      partnerAddress,
-      referrerAddress,
-      partnerFeePercent,
-      positiveSlippageToUser,
-    });
+    const partner =
+      referrerAddress ||
+      encodePartnerAddressForFeeLogic({
+        partnerAddress,
+        partnerFeePercent,
+        positiveSlippageToUser,
+      });
 
     const sellData: ContractSellData = {
       fromToken: priceRoute.srcToken,

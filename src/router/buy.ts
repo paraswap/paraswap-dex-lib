@@ -63,12 +63,13 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       priceRoute.srcAmount,
     );
 
-    const partner = encodePartnerAddressForFeeLogic({
-      partnerAddress,
-      referrerAddress,
-      partnerFeePercent,
-      positiveSlippageToUser,
-    });
+    const partner =
+      referrerAddress ||
+      encodePartnerAddressForFeeLogic({
+        partnerAddress,
+        partnerFeePercent,
+        positiveSlippageToUser,
+      });
 
     const buyData: ContractBuyData = {
       adapter,

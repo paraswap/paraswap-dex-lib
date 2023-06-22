@@ -96,12 +96,13 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
       };
     };
 
-    const partner = encodePartnerAddressForFeeLogic({
-      partnerAddress,
-      referrerAddress,
-      partnerFeePercent,
-      positiveSlippageToUser,
-    });
+    const partner =
+      referrerAddress ||
+      encodePartnerAddressForFeeLogic({
+        partnerAddress,
+        partnerFeePercent,
+        positiveSlippageToUser,
+      });
 
     const buyData: ContractSimpleBuyNFTData = {
       ...partialContractSimpleData,

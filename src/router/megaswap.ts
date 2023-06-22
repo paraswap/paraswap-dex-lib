@@ -52,12 +52,13 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       priceRoute.bestRoute,
     );
 
-    const partner = encodePartnerAddressForFeeLogic({
-      partnerAddress,
-      referrerAddress,
-      partnerFeePercent,
-      positiveSlippageToUser,
-    });
+    const partner =
+      referrerAddress ||
+      encodePartnerAddressForFeeLogic({
+        partnerAddress,
+        partnerFeePercent,
+        positiveSlippageToUser,
+      });
 
     const sellData: ContractMegaSwapSellData = {
       fromToken: priceRoute.srcToken,
