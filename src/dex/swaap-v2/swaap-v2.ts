@@ -55,7 +55,7 @@ import {
 } from './constants';
 import { getPoolIdentifier, normalizeTokenAddress, getPairName } from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
-import { SlippageCheckError } from '../generic-rfq/types';
+import { SlippageCheckError, TooStrictSlippageCheckError } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
 const BLACKLISTED = 'blacklisted';
@@ -539,9 +539,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       }
 
       if (isFailOnSlippage && isTooStrictSlippage) {
-        this.logger.warn(
-          `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
-        );
+        throw new TooStrictSlippageCheckError(slippageErrorMessage);
       } else if (isFailOnSlippage && !isTooStrictSlippage) {
         throw new SlippageCheckError(slippageErrorMessage);
       }
@@ -569,10 +567,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
         );
       } else {
-        this.logger.warn(
-          `${this.dexKey}-${this.network}: protocol is restricted`,
-        );
-        await this.restrict();
+        if(e instanceof TooStrictSlippageCheckError) {
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
+          );
+        } else {
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: protocol is restricted`,
+          );
+          await this.restrict();
+        }
       }
 
       throw e;

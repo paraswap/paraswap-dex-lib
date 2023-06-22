@@ -56,6 +56,7 @@ import {
   HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { TooStrictSlippageCheckError } from '../generic-rfq/types';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly isStatePollingDex = true;
@@ -709,9 +710,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       }
 
       if (isFailOnSlippage && isTooStrictSlippage) {
-        this.logger.warn(
-          `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
-        );
+        throw new TooStrictSlippageCheckError(slippageErrorMessage);
       } else if (isFailOnSlippage && !isTooStrictSlippage) {
         throw new SlippageCheckError(slippageErrorMessage);
       }
@@ -738,7 +737,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
         await this.setBlacklist(options.txOrigin);
       } else {
-        await this.restrictMM(mm);
+        if(e instanceof TooStrictSlippageCheckError) {
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
+          );
+        } else {
+          await this.restrictMM(mm);
+        }
       }
 
       throw e;
