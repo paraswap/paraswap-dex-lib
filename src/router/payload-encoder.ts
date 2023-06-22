@@ -47,6 +47,7 @@ export function encodeFeePercent(
   }
 
   // Set 14th bit if positiveSlippageToUser is true
+  // Upd: not used onchain anymore but better to keep to prevent collisions and ensure continuity of analytics
   if (positiveSlippageToUser) fee |= OneShift14;
 
   // Set 15th bit to take fee from srcToken

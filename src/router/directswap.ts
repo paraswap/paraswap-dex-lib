@@ -1,7 +1,7 @@
 import { IRouter } from './irouter';
 import { IDex } from '../dex/idex';
 import { Address, OptimalRate, TxInfo, Adapters } from '../types';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { assert } from 'ts-essentials';
 import {
@@ -69,6 +69,12 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
         ? priceRoute.destAmount
         : priceRoute.srcAmount;
 
+    const isPartnerTakeNoFeeNoPos =
+      +partnerFeePercent === 0 && positiveSlippageToUser == true;
+    const partner = isPartnerTakeNoFeeNoPos
+      ? NULL_ADDRESS // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
+      : referrerAddress || partnerAddress;
+
     return dex.getDirectParam!(
       priceRoute.srcToken,
       priceRoute.destToken,
@@ -87,7 +93,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
             priceRoute.side,
           ),
       deadline,
-      referrerAddress || partnerAddress,
+      partner,
       beneficiary,
       priceRoute.contractMethod,
     );
