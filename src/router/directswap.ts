@@ -7,6 +7,7 @@ import { assert } from 'ts-essentials';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 
 export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
@@ -69,6 +70,21 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
         ? priceRoute.destAmount
         : priceRoute.srcAmount;
 
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            priceRoute.side,
+          ),
+        ];
+
     return dex.getDirectParam!(
       priceRoute.srcToken,
       priceRoute.destToken,
@@ -79,15 +95,9 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       priceRoute.side,
       permit,
       uuid,
-      referrerAddress
-        ? encodeFeePercentForReferrer(priceRoute.side)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            priceRoute.side,
-          ),
+      feePercent,
       deadline,
-      referrerAddress || partnerAddress,
+      partner,
       beneficiary,
       priceRoute.contractMethod,
     );

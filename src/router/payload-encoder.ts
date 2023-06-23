@@ -9,9 +9,10 @@ import {
   Address,
   Adapters,
 } from '../types';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
+import { assert } from 'ts-essentials';
 
 const OneShift14 = 1n << 14n;
 const OneShift15 = 1n << 15n;
@@ -24,6 +25,29 @@ const OneShift248 = 1n << 248n;
 const REFERRER_FEE = 2500n | OneShift14 | OneShift16 | OneShift248;
 
 const HALF_SPLIT = '5000';
+
+export function encodePartnerAddressForFeeLogic({
+  partnerAddress,
+  partnerFeePercent,
+  positiveSlippageToUser,
+}: {
+  partnerAddress: string;
+  partnerFeePercent: string;
+  positiveSlippageToUser: boolean;
+}): string {
+  const isPartnerTakeNoFeeNoPos =
+    +partnerFeePercent === 0 && positiveSlippageToUser == true;
+
+  // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
+  const partner = isPartnerTakeNoFeeNoPos ? NULL_ADDRESS : partnerAddress;
+
+  // invariant checks
+  if (+partnerFeePercent > 0 && partner !== partnerAddress) {
+    throw new Error('logic error: should return partner address if fee is set');
+  }
+
+  return partner;
+}
 
 export function encodeFeePercent(
   partnerFeePercent: string,
@@ -47,6 +71,7 @@ export function encodeFeePercent(
   }
 
   // Set 14th bit if positiveSlippageToUser is true
+  // Upd: not used onchain anymore but better to keep to prevent collisions and ensure continuity of analytics
   if (positiveSlippageToUser) fee |= OneShift14;
 
   // Set 15th bit to take fee from srcToken
