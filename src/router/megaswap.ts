@@ -3,6 +3,7 @@ import {
   PayloadEncoder,
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 import {
   Address,
@@ -50,6 +51,22 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     const { megaSwapPaths, networkFee } = this.getMegaSwapPathsWithNetworkFee(
       priceRoute.bestRoute,
     );
+
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(SwapSide.SELL)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.SELL,
+          ),
+        ];
+
     const sellData: ContractMegaSwapSellData = {
       fromToken: priceRoute.srcToken,
       fromAmount: priceRoute.srcAmount,
@@ -57,14 +74,8 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
       expectedAmount: priceRoute.destAmount,
       beneficiary,
       path: megaSwapPaths,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(SwapSide.SELL)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.SELL,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),
