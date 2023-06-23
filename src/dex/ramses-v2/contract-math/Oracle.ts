@@ -2,7 +2,7 @@ import {
   OracleObservation,
   OracleObservationCandidates,
   PoolState,
-} from '../../uniswap-v3/types';
+} from '../types';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import { ZERO_ORACLE_OBSERVATION } from '../constants';

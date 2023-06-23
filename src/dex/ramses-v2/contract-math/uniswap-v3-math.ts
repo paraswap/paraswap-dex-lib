@@ -1,10 +1,5 @@
 import _ from 'lodash';
-import {
-  OutputResult,
-  PoolState,
-  Slot0,
-  TickInfo,
-} from '../../uniswap-v3/types';
+import { OutputResult, PoolState, Slot0, TickInfo } from '../types';
 import { LiquidityMath } from './LiquidityMath';
 import { Oracle } from './Oracle';
 import { SqrtPriceMath } from './SqrtPriceMath';

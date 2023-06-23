@@ -1,5 +1,5 @@
 import { BI_MAX_UINT8 } from '../../../bigint-constants';
-import { PoolState } from '../../uniswap-v3/types';
+import { PoolState } from '../types';
 import { BitMath } from './BitMath';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
