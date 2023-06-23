@@ -1,4 +1,4 @@
-import { PoolState, TickInfo } from '../types';
+import { PoolState, TickInfo } from '../../uniswap-v3/types';
 import { LiquidityMath } from './LiquidityMath';
 import { _require } from '../../../utils';
 import { NumberAsString } from '@paraswap/core';
