@@ -130,7 +130,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ramsesexchange/api-subgraph',
       factoryAddress: '0xAAA20D08e59F6561f242b08513D36266C5A29415',
-      router: '0xAAA87963EFeB6f7E0a2711F397663105Acb1805e',
+      router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
       initCode:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       poolGasCost: 180 * 1000,
