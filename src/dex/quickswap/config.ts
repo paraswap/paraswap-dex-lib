@@ -27,7 +27,7 @@ export const QuickSwapConfig: DexConfigMap<DexParams> = {
       router: '0x327Dd3208f0bCF590A66110aCB6e5e6941A4EfA0',
       quoteAddress: '0xeA68020D6A9532EeC42D4dB0f92B83580c39b2cA',
       initCode:
-        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+        '0xd61302e7691f3169f5ebeca3a0a4ab8f7f998c01e55ec944e62cfb1109fd2736',
     },
   },
   QuickSwapV3: {
@@ -36,7 +36,7 @@ export const QuickSwapConfig: DexConfigMap<DexParams> = {
       router: '0xf5b509bb0909a69b1c207e495f687a596c168e12',
       quoteAddress: '0xa15f0d7377b2a0c0c10db057f641bed21028fc89',
       initCode:
-        '0xfa2ad44b9e39d38a7d396bb44a41ea957ac7b622c5c6afdc285728c300b3382a',
+        '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
     },
   },
   SpiritSwapV3: {
