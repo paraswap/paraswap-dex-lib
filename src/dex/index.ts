@@ -63,6 +63,7 @@ import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
+import { ThenaFusion } from './quickswap/thena-fusion';
 import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
 import { CamelotV3 } from './quickswap/camelot-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
@@ -86,6 +87,7 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   QuickSwapV3,
+  ThenaFusion,
   ZyberSwapV3,
   CamelotV3,
   SpiritSwapV3,
