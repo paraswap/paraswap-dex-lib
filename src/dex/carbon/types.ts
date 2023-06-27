@@ -1,10 +1,13 @@
+import { ChainCache } from './sdk/chain-cache';
 import { Address } from '../../types';
+import { TradeActionBNStr } from './sdk';
 
 export type PoolState = {
   // TODO: poolState is the state of event
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
+  sdkCache: ChainCache;
 };
 
 export type CarbonData = {
@@ -12,7 +15,7 @@ export type CarbonData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
-  exchange: Address;
+  tradeActions: TradeActionBNStr[][];
 };
 
 export type DexParams = {
