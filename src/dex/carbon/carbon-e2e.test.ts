@@ -140,11 +140,11 @@ describe('Carbon E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'DAI';
+    const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '2340000000000000000';
+    const tokenBAmount: string = '1265000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -156,7 +156,5 @@ describe('Carbon E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // TODO: Add any additional test cases required to test Carbon
   });
 });

@@ -8,6 +8,8 @@ import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
+import { CarbonConfig } from './config';
+import { DeepReadonly } from 'ts-essentials';
 
 /*
   README
@@ -43,14 +45,22 @@ import { PoolState } from './types';
 */
 
 jest.setTimeout(50 * 1000);
+const dexKey = 'Carbon';
+const network = Network.MAINNET;
+const config = CarbonConfig[dexKey][network];
 
 async function fetchPoolState(
   carbonPools: CarbonEventPool,
   blockNumber: number,
   poolAddress: string,
-): Promise<PoolState> {
-  // TODO: complete me!
-  return {};
+): Promise<DeepReadonly<PoolState>> {
+  const message = `Carbon: ${poolAddress} blockNumber ${blockNumber}`;
+  console.log(`Fetching state ${message}`);
+
+  const state = await carbonPools.generateState(blockNumber);
+
+  console.log(`Done ${message}`);
+  return state;
 }
 
 // eventName -> blockNumbers
@@ -66,16 +76,19 @@ describe('Carbon EventPool Mainnet', function () {
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     // TODO: complete me!
+    '0xC537e898CD774e2dCBa3B14Ea6f34C93d5eA45e1': {
+      StrategyCreated: [
+        17423908, 17424211, 17431166, 17434428, 17465333, 17465426, 17432734,
+      ],
+      StrategyUpdated: [17464816, 17465170, 17465350],
+      StrategyDeleted: [
+        17415410, 17416581, 17441070, 17448138, 17449924, 17451375,
+      ],
+    },
   };
 
   beforeEach(async () => {
-    carbonPool = new CarbonEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      /* TODO: Put here additional constructor arguments if needed */
-    );
+    carbonPool = new CarbonEventPool(dexKey, network, dexHelper, logger);
   });
 
   Object.entries(eventsToTest).forEach(
@@ -86,6 +99,12 @@ describe('Carbon EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
+                  const carbonPool = new CarbonEventPool(
+                    dexKey,
+                    network,
+                    dexHelper,
+                    logger,
+                  );
                   await testEventSubscriber(
                     carbonPool,
                     carbonPool.addressesSubscribed,

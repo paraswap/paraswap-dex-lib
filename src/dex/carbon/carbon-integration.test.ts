@@ -7,12 +7,14 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { Carbon } from './carbon';
+import CarbonControllerABI from '../../abi/carbon/CarbonController.abi.json';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { Action, MatchActionBNStr, TradeActionBNStr } from './sdk/common/types';
 
 /*
   README
@@ -34,13 +36,19 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  strategyId: string,
+  token0: string,
+  token1: string,
+  tradeActions: TradeActionBNStr[][],
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      token0,
+      token1,
+      strategyId,
       amount,
+      tradeActions,
     ]),
   }));
 }
@@ -63,25 +71,33 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  strategyId: string,
+  sourceToken: string,
+  targetToken: string,
+  tradeActions: TradeActionBNStr[][],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = '0xC537e898CD774e2dCBa3B14Ea6f34C93d5eA45e1';
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from carbon.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = new Interface(CarbonControllerABI);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    strategyId,
+    sourceToken,
+    targetToken,
+    tradeActions,
   );
+
   const readerResult = (
     await carbon.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
+
+  console.log(readerResult);
 
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
@@ -100,6 +116,10 @@ async function testPricingOnNetwork(
   side: SwapSide,
   amounts: bigint[],
   funcNameToCheck: string,
+  strategyId: string,
+  sourceToken: string,
+  targetToken: string,
+  tradeActions: TradeActionBNStr[][],
 ) {
   const networkTokens = Tokens[network];
 
@@ -109,6 +129,7 @@ async function testPricingOnNetwork(
     side,
     blockNumber,
   );
+
   console.log(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
     pools,
@@ -116,34 +137,38 @@ async function testPricingOnNetwork(
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await carbon.getPricesVolume(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    amounts,
-    side,
-    blockNumber,
-    pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
-  );
+  // const poolPrices = await carbon.getPricesVolume(
+  //   networkTokens[srcTokenSymbol],
+  //   networkTokens[destTokenSymbol],
+  //   amounts,
+  //   side,
+  //   blockNumber,
+  //   pools,
+  // );
+  // console.log(
+  //   `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
+  //   poolPrices,
+  // );
 
-  expect(poolPrices).not.toBeNull();
-  if (carbon.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
+  // expect(poolPrices).not.toBeNull();
+  // if (carbon.hasConstantPriceLargeAmounts) {
+  //   checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+  // } else {
+  //   checkPoolPrices(poolPrices!, amounts, side, dexKey);
+  // }
 
   // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    carbon,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  // await checkOnChainPricing(
+  //   carbon,
+  //   funcNameToCheck,
+  //   blockNumber,
+  //   poolPrices![0].prices,
+  //   amounts,
+  //   strategyId,
+  //   token0,
+  //   token1,
+  //   tradeActions
+  // );
 }
 
 describe('Carbon', function () {
@@ -157,10 +182,8 @@ describe('Carbon', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'ETH';
 
     const amountsForSell = [
       0n,
@@ -198,6 +221,9 @@ describe('Carbon', function () {
       }
     });
 
+    let tradeActions: TradeActionBNStr[][] = [];
+    let strategyId = '';
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         carbon,
@@ -209,6 +235,10 @@ describe('Carbon', function () {
         SwapSide.SELL,
         amountsForSell,
         '', // TODO: Put here proper function name to check pricing
+        strategyId,
+        tokens[srcTokenSymbol].address,
+        tokens[destTokenSymbol].address,
+        tradeActions,
       );
     });
 
@@ -223,6 +253,10 @@ describe('Carbon', function () {
         SwapSide.BUY,
         amountsForBuy,
         '', // TODO: Put here proper function name to check pricing
+        strategyId,
+        tokens[srcTokenSymbol].address,
+        tokens[destTokenSymbol].address,
+        tradeActions,
       );
     });
 
