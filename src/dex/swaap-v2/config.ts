@@ -5,7 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const SwaapV2Config: DexConfigMap<DexParams> = {
   SwaapV2: {
     // Mainnet and Arbitrum will be supported later
-    // [Network.MAINNET]: {},
+    [Network.MAINNET]: {},
     // [Network.ARBITRUM]: {},
     [Network.POLYGON]: {},
   },
