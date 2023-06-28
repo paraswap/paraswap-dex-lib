@@ -8,6 +8,11 @@ import { Address } from '../src/types';
 import { generateConfig } from '../src/config';
 // TODO: Import correct ABI
 import ABI from '../src/abi/erc20.json';
+import ReaderABI from '../src/abi/minerva/reader.json';
+import FastPriceFeedABI from '../src/abi/minerva/fast-price-feed.json';
+import FastPriceEventABI from '../src/abi/minerva/fast-price-events.json';
+import VaultPriceFeedABI from '../src/abi/minerva/vault-price-feed.json';
+import VaultABI from '../src/abi/minerva/vault.json';
 
 // This is a helper script to fetch blockNumbers where a certain
 // event was released by a certain contract
@@ -40,9 +45,9 @@ async function getBlockNumbersForEvents(
 }
 
 // TODO: Set your values here
-const network = Network.AVALANCHE;
+const network = Network.OPTIMISM;
 const eventNames = ['Transfer'];
-const address = '0xc0253c3cc6aa5ab407b5795a04c28fb063273894';
+const address = '0x6CdC00A448fB093575f82279c85fc99db00A74A4';
 const provider = new StaticJsonRpcProvider(
   generateConfig(network).privateHttpProvider,
   network,
