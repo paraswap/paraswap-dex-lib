@@ -12,11 +12,11 @@ export const RamsesV2Config: DexConfigMap<DexParams> = {
       quoter: '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
       router: '0xAA23611badAFB62D37E7295A682D21960ac85A90',
       supportedFees: RAMSES_SUPPORTED_FEES,
-      stateMulticall: '0x80898f80cFA3Fa3AbF410d90e69aDc432AE5D4c2',
-      uniswapMulticall: '0xac1cE734566f390A94b00eb9bf561c2625BF44ea',
+      stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initHash:
-        '0x6ce8eb472fa82df5469c6ab6d485f17c3ad13c8cd7af59b3d4a8026c5ce0f7e2',
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ramsesexchange/concentrated-liquidity-graph',
     },

@@ -23,9 +23,9 @@ describe('RamsesV2 E2E', () => {
       network,
     );
 
-    it('BUY DAI -> USDC', async () => {
+    it('BUY USDT -> USDC', async () => {
       await testE2E(
-        tokens['DAI'],
+        tokens['USDT'],
         tokens['USDC'],
         holders['DAI'],
         '100000000000',
@@ -36,10 +36,10 @@ describe('RamsesV2 E2E', () => {
         provider,
       );
     });
-    it('SELL WETH -> SHIBA', async () => {
+    it('SELL WETH -> RDNT', async () => {
       await testE2E(
         tokens['WETH'],
-        tokens['SHIBA'],
+        tokens['RDNT'],
         holders['WETH'],
         '1000000000000000000',
         SwapSide.SELL,

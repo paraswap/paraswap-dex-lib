@@ -7,40 +7,49 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { RamsesV2 } from './ramses-v2';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
+import { Address } from '@paraswap/core';
 
-/*
-  README
-  ======
+const network = Network.ARBITRUM;
+const TokenASymbol = 'USDC';
+const TokenA = Tokens[network][TokenASymbol];
 
-  This test script adds tests for RamsesV2 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover RamsesV2 specific
-  logic.
+const TokenBSymbol = 'WETH';
+const TokenB = Tokens[network][TokenBSymbol];
 
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
+const amounts = [
+  0n,
+  10_000n * BI_POWS[6],
+  20_000n * BI_POWS[6],
+  30_000n * BI_POWS[6],
+];
 
-  (This comment should be removed from the final implementation)
-*/
+const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
+
+const dexHelper = new DummyDexHelper(network);
+const dexKey = 'RamsesV2';
+
+const quoterIface = new Interface(UniswapV3QuoterABI);
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  tokenIn: Address,
+  tokenOut: Address,
+  fee: bigint,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      tokenIn,
+      tokenOut,
+      fee,
       amount,
+      0n,
     ]),
   }));
 }
@@ -50,7 +59,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -58,194 +66,397 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  ramsesV2: RamsesV2,
+  uniswapV3: RamsesV2,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
-  amounts: bigint[],
+  tokenIn: Address,
+  tokenOut: Address,
+  fee: bigint,
+  _amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  // Quoter address
+  const exchangeAddress = '0xAA2f0eb52db02650959463F9801442f5dF7D5CBe';
+  const readerIface = quoterIface;
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from ramsesV2.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
+
+  if (sum === 0n) {
+    console.log(
+      `Prices were not calculated for tokenIn=${tokenIn}, tokenOut=${tokenOut}, fee=${fee.toString()}. Most likely price impact is too big for requested amount`,
+    );
+    return false;
+  }
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
-    amounts.slice(1),
+    _amounts.slice(1),
     funcName,
+    tokenIn,
+    tokenOut,
+    fee,
   );
-  const readerResult = (
-    await ramsesV2.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
+
+  let readerResult;
+  try {
+    readerResult = (
+      await dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+  } catch (e) {
+    console.log(
+      `Can not fetch on-chain pricing for fee ${fee}. It happens for low liquidity pools`,
+      e,
+    );
+    return false;
+  }
 
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
 
-  expect(prices).toEqual(expectedPrices);
-}
+  let firstZeroIndex = prices.slice(1).indexOf(0n);
 
-async function testPricingOnNetwork(
-  ramsesV2: RamsesV2,
-  network: Network,
-  dexKey: string,
-  blockNumber: number,
-  srcTokenSymbol: string,
-  destTokenSymbol: string,
-  side: SwapSide,
-  amounts: bigint[],
-  funcNameToCheck: string,
-) {
-  const networkTokens = Tokens[network];
+  // we skipped first, so add +1 on result
+  firstZeroIndex = firstZeroIndex === -1 ? prices.length : firstZeroIndex;
 
-  const pools = await ramsesV2.getPoolIdentifiers(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    side,
-    blockNumber,
+  // Compare only the ones for which we were able to calculate prices
+  expect(prices.slice(0, firstZeroIndex)).toEqual(
+    expectedPrices.slice(0, firstZeroIndex),
   );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
-    pools,
-  );
-
-  expect(pools.length).toBeGreaterThan(0);
-
-  const poolPrices = await ramsesV2.getPricesVolume(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    amounts,
-    side,
-    blockNumber,
-    pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
-  );
-
-  expect(poolPrices).not.toBeNull();
-  if (ramsesV2.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
-
-  // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    ramsesV2,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  return true;
 }
 
 describe('RamsesV2', function () {
-  const dexKey = 'RamsesV2';
   let blockNumber: number;
-  let ramsesV2: RamsesV2;
+  let uniswapV3: RamsesV2;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-    const dexHelper = new DummyDexHelper(network);
+  beforeEach(async () => {
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    uniswapV3 = new RamsesV2(network, dexKey, dexHelper);
+  });
 
-    const tokens = Tokens[network];
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    expect(pools.length).toBeGreaterThan(0);
 
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      ramsesV2 = new RamsesV2(network, dexKey, dexHelper);
-      if (ramsesV2.initializePricing) {
-        await ramsesV2.initializePricing(blockNumber);
-      }
-    });
-
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        ramsesV2,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        ramsesV2,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newRamsesV2 = new RamsesV2(network, dexKey, dexHelper);
-      if (newRamsesV2.updatePoolState) {
-        await newRamsesV2.updatePoolState();
-      }
-      const poolLiquidity = await newRamsesV2.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newRamsesV2.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          uniswapV3,
+          'quoteExactInputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
         );
-      }
-    });
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amountsBuy,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
+
+    // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          uniswapV3,
+          'quoteExactOutputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amountsBuy,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
+    const TokenASymbol = 'USDT';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDC';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    const amounts = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+      48000000n,
+      54000000n,
+      60000000n,
+      66000000n,
+      72000000n,
+      78000000n,
+      84000000n,
+      90000000n,
+      96000000n,
+      102000000n,
+      108000000n,
+      114000000n,
+      120000000n,
+      126000000n,
+      132000000n,
+      138000000n,
+      144000000n,
+      150000000n,
+      156000000n,
+      162000000n,
+      168000000n,
+      174000000n,
+      180000000n,
+      186000000n,
+      192000000n,
+      198000000n,
+      204000000n,
+      210000000n,
+      216000000n,
+      222000000n,
+      228000000n,
+      234000000n,
+      240000000n,
+      246000000n,
+      252000000n,
+      258000000n,
+      264000000n,
+      270000000n,
+      276000000n,
+      282000000n,
+      288000000n,
+      294000000n,
+      300000000n,
+    ];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(
+      poolPrices!.filter(pp => pp.unit !== 0n),
+      amounts,
+      SwapSide.SELL,
+      dexKey,
+    );
+
+    // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          uniswapV3,
+          'quoteExactInputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
+    const TokenASymbol = 'USDC';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDT';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    const amountsBuy = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+      48000000n,
+      54000000n,
+      60000000n,
+      66000000n,
+      72000000n,
+      78000000n,
+      84000000n,
+      90000000n,
+      96000000n,
+      102000000n,
+      108000000n,
+      114000000n,
+      120000000n,
+      126000000n,
+      132000000n,
+      138000000n,
+      144000000n,
+      150000000n,
+      156000000n,
+      162000000n,
+      168000000n,
+      174000000n,
+      180000000n,
+      186000000n,
+      192000000n,
+      198000000n,
+      204000000n,
+      210000000n,
+      216000000n,
+      222000000n,
+      228000000n,
+      234000000n,
+      240000000n,
+      246000000n,
+      252000000n,
+      258000000n,
+      264000000n,
+      270000000n,
+      276000000n,
+      282000000n,
+      288000000n,
+      294000000n,
+      300000000n,
+    ];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amountsBuy,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(
+      poolPrices!.filter(pp => pp.unit !== 0n),
+      amountsBuy,
+      SwapSide.BUY,
+      dexKey,
+    );
+
+    // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          uniswapV3,
+          'quoteExactOutputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amountsBuy,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getTopPoolsForToken', async function () {
+    const poolLiquidity = await uniswapV3.getTopPoolsForToken(
+      Tokens[Network.ARBITRUM]['USDC'].address,
+      10,
+    );
+    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+    if (!uniswapV3.hasConstantPriceLargeAmounts) {
+      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+    }
   });
 });
