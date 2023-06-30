@@ -61,6 +61,18 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon',
     },
+    [Network.ZKEVM]: {
+      factory: '0xD9a2AD9E927Bd7014116CC5c7328f028D4318178',
+      quoter: '0xc2f30976cebf6b7400fe1300540a342411340d29',
+      router: '0x1e7e4c855520b2106320952a570a3e5e3e618101',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x983ab0171159b7e17835cc6aec70c72b8aadb133',
+      uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
+      chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon',
+    },
     [Network.ARBITRUM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
