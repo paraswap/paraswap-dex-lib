@@ -90,7 +90,9 @@ export class UniswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(UniswapV3Config, ['UniswapV3']));
+    getDexKeysWithNetwork(
+      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1']),
+    );
 
   logger: Logger;
 
