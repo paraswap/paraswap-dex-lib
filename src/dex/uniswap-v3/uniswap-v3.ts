@@ -109,7 +109,7 @@ export class UniswapV3
     readonly routerIface = new Interface(UniswapV3RouterABI),
     readonly quoterIface = new Interface(UniswapV3QuoterABI),
     protected config = UniswapV3Config[dexKey][network],
-    protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
+    protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
