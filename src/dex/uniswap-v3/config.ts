@@ -127,4 +127,8 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 11 }],
     [SwapSide.BUY]: [{ name: 'FantomBuyAdapter', index: 3 }],
   },
+  [Network.ZKEVM]: {
+    [SwapSide.SELL]: [{ name: 'PolygonZkEvmAdapter01', index: 1 }],
+    [SwapSide.BUY]: [{ name: 'PolygonZkEvmBuyAdapter', index: 1 }],
+  },
 };
