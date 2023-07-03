@@ -1,10 +1,13 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Log, Logger } from '../../types';
+import { Address, Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
+import { ethers } from 'ethers';
+import { Contract } from 'web3-eth-contract';
+import AlgebraABI from '../../abi/algebra/AlgebraPool.abi.json';
 
 export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -19,37 +22,44 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   addressesSubscribed: string[];
 
+  private _poolAddress?: Address;
+  readonly token0: Address;
+  readonly token1: Address;
+
+  public readonly poolIface = new Interface(AlgebraABI);
+
   constructor(
-    readonly parentName: string,
-    protected network: number,
-    protected dexHelper: IDexHelper,
+    readonly dexHelper: IDexHelper,
+    parentName: string,
+    readonly stateMultiContract: Contract,
+    readonly erc20Interface: Interface,
+    protected readonly factoryAddress: Address,
+    token0: Address,
+    token1: Address,
     logger: Logger,
-    protected algebraIface = new Interface(
-      '' /* TODO: Import and put here Algebra ABI */,
-    ), // TODO: add any additional params required for event subscriber
+    mapKey: string = '',
+    readonly poolInitCodeHash: string,
+    readonly poolDeployer: string,
   ) {
-    // TODO: Add pool name
-    super(parentName, 'POOL_NAME', dexHelper, logger);
+    super(parentName, `${token0}_${token1}`, dexHelper, logger, true, mapKey);
+    this.token0 = token0.toLowerCase();
+    this.token1 = token1.toLowerCase();
 
-    // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.algebraIface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
-
-    // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
+    this.addressesSubscribed = new Array<Address>(1);
   }
 
-  /**
-   * The function is called every time any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
+  get poolAddress() {
+    if (this._poolAddress === undefined) {
+      this._poolAddress = this._computePoolAddress(this.token0, this.token1);
+    }
+    return this._poolAddress;
+  }
+
+  set poolAddress(address: Address) {
+    this._poolAddress = address.toLowerCase();
+  }
+
   protected processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
@@ -66,26 +76,26 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     return null;
   }
 
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenerate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subscriber at blocknumber
-   */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     // TODO: complete me!
-    return {};
+    return {} as any;
   }
 
-  // Its just a dummy example
-  handleMyEvent(
-    event: any,
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    return null;
+  private _computePoolAddress(token0: Address, token1: Address): Address {
+    // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/PoolAddress.sol
+    if (token0 > token1) [token0, token1] = [token1, token0];
+
+    const encodedKey = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ['address', 'address'],
+        [token0, token1],
+      ),
+    );
+
+    return ethers.utils.getCreate2Address(
+      this.poolDeployer,
+      encodedKey,
+      this.poolInitCodeHash,
+    );
   }
 }
