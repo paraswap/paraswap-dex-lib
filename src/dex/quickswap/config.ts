@@ -2,6 +2,7 @@ import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
 import { DexParams } from './types';
 
+// TODO: move all algebraV1 powered dexes to event based
 export const QuickSwapConfig: DexConfigMap<DexParams> = {
   CamelotV3: {
     [Network.ARBITRUM]: {
@@ -28,22 +29,6 @@ export const QuickSwapConfig: DexConfigMap<DexParams> = {
       quoteAddress: '0xeA68020D6A9532EeC42D4dB0f92B83580c39b2cA',
       initCode:
         '0xd61302e7691f3169f5ebeca3a0a4ab8f7f998c01e55ec944e62cfb1109fd2736',
-    },
-  },
-  QuickSwapV3: {
-    [Network.POLYGON]: {
-      factoryAddress: '0x411b0fAcC3489691f28ad58c47006AF5E3Ab3A28',
-      router: '0xf5b509bb0909a69b1c207e495f687a596c168e12',
-      quoteAddress: '0xa15f0d7377b2a0c0c10db057f641bed21028fc89',
-      initCode:
-        '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
-    },
-    [Network.ZKEVM]: {
-      factoryAddress: '0x4B9f4d2435Ef65559567e5DbFC1BbB37abC43B57',
-      router: '0xF6Ad3CcF71Abb3E12beCf6b3D2a74C963859ADCd',
-      quoteAddress: '0x55BeE1bD3Eb9986f6d2d963278de09eE92a3eF1D',
-      initCode:
-        '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
     },
   },
   SpiritSwapV3: {
