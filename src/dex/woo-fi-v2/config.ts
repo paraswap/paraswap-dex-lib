@@ -64,6 +64,16 @@ export const WooFiV2Config: DexConfigMap<DexParams> = {
         decimals: 6,
       },
     },
+    [Network.ZKEVM]: {
+      wooPPV2Address: '0xF5d215d9C84778F85746D15762DaF39B9E83a2d6',
+      wooOracleV2Address: '0x924128fc2CDA777A6B5e0A9Ad3EF1A8CDF73967e',
+      integrationHelperAddress: '0x044c08639bD59BEB4F6ec52c0da6CD47283534E8',
+      // USDC
+      quoteToken: {
+        address: '0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035',
+        decimals: 6,
+      },
+    },
   },
 };
 
