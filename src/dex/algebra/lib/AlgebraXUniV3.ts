@@ -69,14 +69,13 @@ export const getSingleTimepoint = (
     tick,
     index,
     liquidity,
-    oldestIndex,
+    0, // FIXME
   );
 };
 
 // FIXME
 export const _writeTimepoint = (
   state: PoolState,
-
   timepointIndex: number,
   blockTimestamp: bigint,
   tick: bigint,
