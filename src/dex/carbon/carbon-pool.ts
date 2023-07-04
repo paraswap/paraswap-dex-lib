@@ -11,22 +11,21 @@ import CarbonControllerABI from '../../abi/carbon/CarbonController.abi.json';
 import { EncodedStrategy, EncodedOrder } from './sdk/';
 import { ChainCache } from './sdk/chain-cache';
 import { BigNumber } from './sdk/utils';
+import { toPairKey } from './sdk/chain-cache/utils';
 
 export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
-      state: DeepReadonly<PoolState>,
+      state: PoolState,
       log: Readonly<Log>,
       blockHeader: Readonly<BlockHeader>,
-    ) => DeepReadonly<PoolState> | null;
+    ) => PoolState;
   } = {};
 
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
-
-  sdkCache: ChainCache;
 
   public readonly carbonIface = new Interface(CarbonControllerABI);
 
@@ -36,17 +35,18 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, 'Carbon Event Cache', dexHelper, logger);
+    super(
+      parentName,
+      CarbonConfig[parentName][network].carbonController,
+      dexHelper,
+      logger,
+    );
 
-    // TODO: make logDecoder decode logs that CarbonController emits
     this.logDecoder = (log: Log) => this.carbonIface.parseLog(log);
     this.addressesSubscribed = [
       /* subscribed addresses */
       CarbonConfig[parentName][network].carbonController,
     ];
-
-    // Cache that holds all strategy data
-    this.sdkCache = new ChainCache();
 
     // Add handlers
     this.handlers['StrategyCreated'] = this.handleStrategyChanges.bind(this);
@@ -67,18 +67,21 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
-  ): DeepReadonly<PoolState> | null {
-    // TODO consider batching events and processing them in one go
+  ): PoolState | null {
     try {
+      let _state = _.cloneDeep(state) as PoolState;
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log, blockHeader);
+        _state = _.cloneDeep(
+          this.handlers[event.name](event, _state, log, blockHeader),
+        );
+        return _state;
       }
     } catch (e) {
       catchParseLogError(e, this.logger);
     }
 
-    return state;
+    return null;
   }
 
   /**
@@ -90,8 +93,13 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+  async generateState(
+    blockNumber: number | 'latest',
+  ): Promise<DeepReadonly<PoolState>> {
     // Get list of pairs and strategies from subgraph and add to cache
+    if (blockNumber === 'latest' || blockNumber === undefined) {
+      blockNumber = await this.dexHelper.provider.getBlockNumber();
+    }
 
     const strategiesForAllPairs = `
     query ($block_number: Int) {
@@ -135,7 +143,6 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
         `Error_${this.parentName}_Subgraph: couldn't fetch the pools from the subgraph.
          Output: ${allStrategiesPerPair}`,
       );
-      return { sdkCache: new ChainCache() };
     }
 
     const strategiesList = _.map(allStrategiesPerPair.pairs, pair => {
@@ -165,12 +172,12 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       };
     });
 
-    let newCache = new ChainCache();
+    const newCache = new ChainCache();
 
     newCache.applyBatchedUpdates(blockNumber, [], [], [], []);
 
     strategiesList.forEach(pair => {
-      newCache.addPair(pair.token0, pair.token1, pair.strategies);
+      newCache.addPair(pair.token0, pair.token1, pair.strategies, true);
     });
 
     // Get TradingFeePPM
@@ -194,22 +201,25 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       this.logger.error(
         `Error_${this.parentName}_Subgraph: couldn't fetch the trading fee from the subgraph`,
       );
-      return { sdkCache: new ChainCache() };
     }
 
-    // newCache.tradingFeePPM = feeData.tradingFeePPMUpdateds[0].newFeePPM;
+    newCache.tradingFeePPM = feeData.tradingFeePPMUpdateds[0].newFeePPM;
 
-    newCache.tradingFeePPM = 2000;
+    const newState: PoolState = {
+      sdkCache: newCache,
+    };
 
-    return { sdkCache: newCache };
+    this.setState(newState, blockNumber);
+
+    return newState;
   }
 
   handleStrategyChanges(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
     blockHeader: BlockHeader,
-  ): DeepReadonly<PoolState> | null {
+  ): PoolState {
     let encodedOrder0: EncodedOrder = {
       y: BigNumber.from(event.args.order0.y),
       z: BigNumber.from(event.args.order0.z),
@@ -232,14 +242,31 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       order1: encodedOrder1,
     };
 
+    this.logger.info(
+      `Updating with event ${event.name} at block ${blockHeader.number}`,
+    );
+
+    // this.logger.info(`handleStrategyChanges - state: ${JSON.stringify(state)}`);
+
     if (event.name === 'StrategyCreated') {
-      state.sdkCache.applyBatchedUpdates(
-        blockHeader.number,
-        [],
-        [encodedStrategy],
-        [],
-        [],
-      );
+      if (
+        !state.sdkCache.hasCachedPair(
+          encodedStrategy.token0,
+          encodedStrategy.token1,
+        )
+      ) {
+        state.sdkCache.addPair(encodedStrategy.token0, encodedStrategy.token1, [
+          encodedStrategy,
+        ]);
+      } else {
+        state.sdkCache.applyBatchedUpdates(
+          blockHeader.number,
+          [],
+          [encodedStrategy],
+          [],
+          [],
+        );
+      }
     } else if (event.name === 'StrategyUpdated') {
       state.sdkCache.applyBatchedUpdates(
         blockHeader.number,
@@ -258,7 +285,7 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       );
     }
 
-    return state;
+    return { sdkCache: state.sdkCache };
   }
 
   async _querySubgraph(

@@ -1,5 +1,4 @@
 import { ChainCache } from './sdk/chain-cache';
-import { Address } from '../../types';
 import { TradeActionBNStr } from './sdk';
 
 export type PoolState = {
@@ -7,6 +6,7 @@ export type PoolState = {
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
+
   sdkCache: ChainCache;
 };
 
@@ -16,6 +16,8 @@ export type CarbonData = {
   // tx building. The data structure should be minimal.
   // Complete me!
   tradeActions: TradeActionBNStr[][];
+  cache: ChainCache;
+  decimals: { [token: string]: number };
 };
 
 export type DexParams = {

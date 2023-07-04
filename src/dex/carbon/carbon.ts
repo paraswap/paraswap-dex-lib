@@ -19,16 +19,14 @@ import { CarbonData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CarbonConfig, Adapters } from './config';
 import { CarbonEventPool } from './carbon-pool';
-import { PopulatedTransaction } from '@ethersproject/contracts';
 import { getBigIntPow } from '../../utils';
 import { getBigNumberPow } from '../../bignumber-constants';
-import { AbiItem } from 'web3-utils';
 import BigNumber from 'bignumber.js';
 import { Action, MatchActionBNStr, TradeActionBNStr } from './sdk/common/types';
 import { formatUnits } from './sdk/utils';
 import { Toolkit } from './sdk/strategy-management';
 import { ContractsApi } from './sdk/contracts-api';
-import CarbonControllerABI from '../../abi/carbon/CarbonController.abi.json';
+import { ChainCache } from './sdk/chain-cache';
 
 const GAS_COST_SWAP_YINT_TKN_TKN = 90666;
 const GAS_COST_SWAP_YINT_TKN_ETH = 80892;
@@ -36,12 +34,10 @@ const GAS_COST_SWAP_YINT_ETH_TKN = 66538;
 const GAS_COST_SWAP_SLOPE = 23400;
 
 export class Carbon extends SimpleExchange implements IDex<CarbonData> {
-  protected eventPools: CarbonEventPool;
+  protected mainPool: CarbonEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = false;
-
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -49,7 +45,6 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
 
   logger: Logger;
 
-  toolkit: Toolkit;
   api: ContractsApi;
 
   constructor(
@@ -61,15 +56,14 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new CarbonEventPool(
+    this.mainPool = new CarbonEventPool(
       dexKey,
       network,
       dexHelper,
       this.logger,
     );
 
-    this.api = new ContractsApi(this.dexHelper.provider, {});
-    this.toolkit = new Toolkit(this.api, this.eventPools.sdkCache);
+    this.api = new ContractsApi(dexHelper.provider, {});
   }
 
   // Initialize pricing is called once in the start of
@@ -79,7 +73,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
   async initializePricing(blockNumber: number) {
     // Initialize state
     try {
-      await this.eventPools.initialize(blockNumber);
+      await this.mainPool.initialize(blockNumber);
     } catch (e) {
       this.logger.error(`Error ${this.dexKey} initializing pricing: `, e);
     }
@@ -110,28 +104,30 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       ? srcToken.address.toLowerCase()
       : destToken.address.toLowerCase();
 
-    return [`${this.dexKey}_${tokenSell}_${tokenBuy}`];
+    const state = this.mainPool.getState(blockNumber);
 
-    // // If pair has no liquidity, return no identifiers
-    // const hasLiquidity: boolean = await this.toolkit.hasLiquidityByPair(
-    //   tokenSell,
-    //   tokenBuy,
-    // );
+    const cache = state?.sdkCache as ChainCache;
 
-    // if (!hasLiquidity) return [];
+    if (!cache) return [];
 
-    // // Get strategies with tradeable orders that sell target for source
-    // const strategiesForPair =
-    //   await this.eventPools.sdkCache.getStrategiesByPair(tokenSell, tokenBuy);
+    const orders = await cache.getOrdersByPair(tokenSell, tokenBuy);
 
-    // if (strategiesForPair === undefined) return [];
+    this.logger.info(
+      `getPoolIdentifiers: Number of tradeable orders for the pair ${tokenSell}-${tokenBuy}: ${
+        Object.keys(orders).length
+      }`,
+    );
 
-    // let orderIds: string[] = strategiesForPair.map(strategy => {
-    //   const suffix: string = strategy.token0 == tokenSell ? '_0' : '_1';
-    //   return this.dexKey + '_' + strategy.id + suffix;
-    // });
+    if (Object.keys(orders).length == 0) {
+      this.logger.error(`No Liquidity for pair ${tokenSell} - ${tokenBuy}`);
+      return [];
+    }
 
-    // return orderIds;
+    let orderIds: string[] = Object.entries(orders).map(([orderId, _]) => {
+      return `${this.dexKey}_${orderId}`;
+    });
+
+    return orderIds;
   }
 
   // Returns pool prices for amounts.
@@ -146,17 +142,17 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<CarbonData>> {
-    // prices = output from amounts
-    // 1. getTradeData()
-    // 2. Pass to composeTradeByTarget or composeTradeBySource
-    // 3. Use ethers provider to estimate gas on transaction
     // if side is BUY, amount numeraire is destToken, destToken -> srcToken (tradeByTarget == true)
     // if side is SELL, amount numeraire is srcToken, srcToken -> destToken (tradeByTarget == false)
 
-    // TODO: blockNumber dependant?
-    // TODO: Use limitPools
+    if (srcToken.address.toLowerCase() === destToken.address.toLowerCase()) {
+      return null;
+    }
 
-    // this.eventPools.sdkCache.tradingFeePPM = 2000;
+    const state = this.mainPool.getState(blockNumber);
+    const cache = state?.sdkCache as ChainCache;
+
+    if (!cache) return null;
 
     let tradeDataPerAmount: {
       tradeActions: TradeActionBNStr[];
@@ -167,9 +163,10 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       actionsWei: MatchActionBNStr[];
     };
 
-    let outputs: bigint[] = [];
+    let tradeActions: TradeActionBNStr[][] = [];
+    let prices: bigint[] = [];
     let gasCosts: number[] = [];
-    let tradeActionsForAmounts: TradeActionBNStr[][] = [];
+
     const tradeByTargetAmount: boolean = side === SwapSide.BUY;
 
     const gas_cost_yint =
@@ -181,66 +178,76 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
           : GAS_COST_SWAP_YINT_ETH_TKN
         : GAS_COST_SWAP_YINT_TKN_TKN;
 
+    const toolkit = new Toolkit(this.api, cache);
+
+    // Get trade data for amounts
     for (let amount of amounts) {
       // Get trade route
-      tradeDataPerAmount = await this.toolkit.getTradeData(
+      tradeDataPerAmount = await toolkit.getTradeData(
         srcToken.address.toLowerCase(),
         destToken.address.toLowerCase(),
         amount.toString(),
         tradeByTargetAmount,
       );
 
-      // Try different amount if route is not available
       if (!tradeDataPerAmount) continue;
 
-      outputs.push(
-        BigInt(
-          tradeByTargetAmount
-            ? tradeDataPerAmount.totalSourceAmount
-            : tradeDataPerAmount.totalTargetAmount,
-        ),
+      tradeActions.push(tradeDataPerAmount.tradeActions);
+
+      const price = BigInt(
+        tradeByTargetAmount
+          ? Number(tradeDataPerAmount.totalSourceAmount) *
+              10 ** srcToken.decimals
+          : Number(tradeDataPerAmount.totalTargetAmount) *
+              10 ** destToken.decimals,
       );
 
-      tradeActionsForAmounts.push(tradeDataPerAmount.tradeActions);
+      prices.push(price);
 
-      const gasCost =
-        gas_cost_yint +
-        tradeDataPerAmount.tradeActions.length * GAS_COST_SWAP_SLOPE;
-
-      gasCosts.push(gasCost);
+      gasCosts.push(
+        price === 0n
+          ? 0
+          : gas_cost_yint +
+              tradeDataPerAmount.tradeActions.length * GAS_COST_SWAP_SLOPE,
+      );
     }
 
     // Get unit amount
     const unitAmount = getBigIntPow(
-      tradeByTargetAmount ? srcToken.decimals : destToken.decimals,
+      tradeByTargetAmount ? destToken.decimals : srcToken.decimals,
     );
 
-    let unitTradeData: typeof tradeDataPerAmount =
-      await this.toolkit.getTradeData(
-        srcToken.address.toLowerCase(),
-        destToken.address.toLowerCase(),
-        unitAmount.toString(),
-        tradeByTargetAmount,
-      );
+    let unitTradeData: typeof tradeDataPerAmount = await toolkit.getTradeData(
+      srcToken.address.toLowerCase(),
+      destToken.address.toLowerCase(),
+      unitAmount.toString(),
+      tradeByTargetAmount,
+    );
 
     let unit: bigint = BigInt(
       tradeByTargetAmount
-        ? unitTradeData.totalSourceAmount
-        : unitTradeData.totalTargetAmount,
+        ? Number(unitTradeData.totalSourceAmount) * 10 ** srcToken.decimals
+        : Number(unitTradeData.totalTargetAmount) * 10 ** destToken.decimals,
     );
 
     return [
       {
         unit: unit,
-        prices: outputs,
+        prices: prices,
         data: {
-          tradeActions: tradeActionsForAmounts,
+          tradeActions: tradeActions,
+          cache: cache,
+          decimals: {
+            [srcToken.address]: srcToken.decimals,
+            [destToken.address]: destToken.decimals,
+          },
         },
         exchange: this.dexKey,
         gasCost: gasCosts,
       },
     ];
   }
+
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<CarbonData>): number | number[] {
     // TODO: update if there is any payload in getAdapterParam
@@ -285,43 +292,54 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
   ): Promise<SimpleExchangeParam> {
     const tradeByTargetAmount: boolean = side === SwapSide.BUY;
 
-    // Get trade route and expected output
-    const tradeDataPerAmount = await this.toolkit.getTradeData(
-      srcToken.toLowerCase(),
-      destToken.toLowerCase(),
-      tradeByTargetAmount ? destAmount.toString() : srcAmount.toString(),
-      tradeByTargetAmount,
+    this.logger.info(
+      `getSimpleParam: length of trade actions ${
+        Object.keys(data.tradeActions).length
+      }`,
     );
 
-    const output = BigInt(
-      tradeByTargetAmount
-        ? tradeDataPerAmount.totalSourceAmount
-        : tradeDataPerAmount.totalTargetAmount,
-    );
+    const output = BigInt(tradeByTargetAmount ? srcAmount : destAmount);
+    const amount = BigInt(tradeByTargetAmount ? destAmount : srcAmount);
 
     // Set deadline in ms
     const deadline = 10; // mins
     const delta_deadline = new BigNumber(deadline).times(60).times(1000); // MS
     const deadlineInMs = delta_deadline.plus(Date.now()).toString(); // MS
 
-    const unsignedTx: PopulatedTransaction = await (tradeByTargetAmount
-      ? this.toolkit.composeTradeByTargetTransaction
-      : this.toolkit.composeTradeBySourceTransaction)(
-      srcToken.toLowerCase(),
-      destToken.toLowerCase(),
-      tradeDataPerAmount.tradeActions,
-      deadlineInMs,
-      output.toString(),
+    const api = new ContractsApi(this.dexHelper.provider);
+
+    const toolkit = new Toolkit(
+      api,
+      data.cache,
+      address => data.decimals[address],
     );
 
-    const swapData = unsignedTx.data || '';
+    // this.logger.info(`getSimpleParam: toolkit: ${JSON.stringify(toolkit)}`);
+    this.logger.info(`getSimpleParam: this.api: ${JSON.stringify(this.api)}`);
+
+    const tradeData = await toolkit.getTradeData(
+      srcToken.toLowerCase(),
+      destToken.toLowerCase(),
+      amount.toString(),
+      tradeByTargetAmount,
+    );
+
+    const encodedData = await (tradeByTargetAmount
+      ? toolkit.composeTradeByTargetTransaction
+      : toolkit.composeTradeBySourceTransaction)(
+      srcToken.toLowerCase(),
+      destToken.toLowerCase(),
+      tradeData.tradeActions,
+      deadlineInMs,
+      output.toString(),
+    ).then(unsignedTx => unsignedTx.data || '');
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken.toLowerCase(),
       srcAmount,
       destToken.toLowerCase(),
       destAmount,
-      swapData,
+      encodedData,
       this.config.carbonController,
     );
   }
@@ -380,7 +398,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     }
     `;
 
-    const data = await this.eventPools._querySubgraph(
+    const data = await this.mainPool._querySubgraph(
       query,
       {
         token: _tokenAddress.toLowerCase(),

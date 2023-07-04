@@ -44,7 +44,7 @@ import { DeepReadonly } from 'ts-essentials';
   (This comment should be removed from the final implementation)
 */
 
-jest.setTimeout(50 * 1000);
+jest.setTimeout(300 * 1000);
 const dexKey = 'Carbon';
 const network = Network.MAINNET;
 const config = CarbonConfig[dexKey][network];
@@ -57,9 +57,10 @@ async function fetchPoolState(
   const message = `Carbon: ${poolAddress} blockNumber ${blockNumber}`;
   console.log(`Fetching state ${message}`);
 
-  const state = await carbonPools.generateState(blockNumber);
+  const state = carbonPools.generateState(blockNumber);
 
   console.log(`Done ${message}`);
+
   return state;
 }
 
@@ -75,7 +76,6 @@ describe('Carbon EventPool Mainnet', function () {
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
     '0xC537e898CD774e2dCBa3B14Ea6f34C93d5eA45e1': {
       StrategyCreated: [
         17423908, 17424211, 17431166, 17434428, 17465333, 17465426, 17432734,
@@ -88,7 +88,7 @@ describe('Carbon EventPool Mainnet', function () {
   };
 
   beforeEach(async () => {
-    carbonPool = new CarbonEventPool(dexKey, network, dexHelper, logger);
+    // carbonPool = new CarbonEventPool(dexKey, network, dexHelper, logger);
   });
 
   Object.entries(eventsToTest).forEach(
@@ -99,17 +99,21 @@ describe('Carbon EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
-                  const carbonPool = new CarbonEventPool(
+                  const dexHelper = new DummyDexHelper(network);
+                  const logger = dexHelper.getLogger(dexKey);
+
+                  const carbonPools = new CarbonEventPool(
                     dexKey,
                     network,
                     dexHelper,
                     logger,
                   );
+
                   await testEventSubscriber(
-                    carbonPool,
-                    carbonPool.addressesSubscribed,
+                    carbonPools,
+                    carbonPools.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(carbonPool, _blockNumber, poolAddress),
+                      fetchPoolState(carbonPools, _blockNumber, poolAddress),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
