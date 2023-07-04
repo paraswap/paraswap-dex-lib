@@ -35,7 +35,7 @@ import {
   UniswapV3Functions,
   UniswapV3SimpleSwapParams,
 } from '../uniswap-v3/types';
-import * as AlgebraMath from './lib/AlgebraMath';
+import { AlgebraMath } from './lib/AlgebraMath';
 
 type PoolPairsInfo = {
   token0: Address;

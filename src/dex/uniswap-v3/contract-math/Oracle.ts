@@ -15,7 +15,7 @@ function replaceUndefinedObservationWithZero(state: PoolState, index: number) {
 
 export class Oracle {
   static transform(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<Pick<PoolState, 'blockTimestamp'>>,
     last: OracleObservation,
     blockTimestamp: bigint,
     tick: bigint,
@@ -34,7 +34,7 @@ export class Oracle {
   }
 
   static write(
-    state: PoolState,
+    state: Pick<PoolState, 'observations' | 'blockTimestamp'>,
     index: number,
     blockTimestamp: bigint,
     tick: bigint,
@@ -80,7 +80,7 @@ export class Oracle {
   }
 
   static binarySearch(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<Pick<PoolState, 'observations'>>,
     time: bigint,
     target: bigint,
     index: number,
@@ -122,7 +122,7 @@ export class Oracle {
   }
 
   static getSurroundingObservations(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<Pick<PoolState, 'observations' | 'blockTimestamp'>>,
     time: bigint,
     target: bigint,
     tick: bigint,
@@ -163,7 +163,7 @@ export class Oracle {
   }
 
   static observeSingle(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<Pick<PoolState, 'observations' | 'blockTimestamp'>>,
     time: bigint,
     secondsAgo: bigint,
     tick: bigint,

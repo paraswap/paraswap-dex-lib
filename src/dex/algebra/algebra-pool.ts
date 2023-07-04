@@ -26,7 +26,9 @@ import {
 import { uint256ToBigInt } from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/utils';
-import { mutateStateOnLP } from './lib/AlgebraMath';
+import { AlgebraMath } from './lib/AlgebraMath';
+import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
+import { TICK_SPACING } from './lib/Constants';
 
 export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -219,27 +221,32 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     this._reduceTickBitmap(tickTable, _state.tickBitmap);
     this._reduceTicks(ticks, _state.ticks);
 
+    const globalState = {
+      communityFeeToken0: 0n,
+      communityFeeToken1: 0n,
+      fee: 0n,
+      price: 0n,
+      tick: 0n,
+      timepointIndex: 0,
+      unlocked: true,
+    };
+
+    const currentTick = globalState.tick;
+    const startTickBitmap = TickBitMap.position(currentTick / TICK_SPACING)[0];
+
     return {
       // TODO FILL
       pool: _state.pool,
       blockTimestamp: 0n,
-      globalState: {
-        communityFeeToken0: 0n,
-        communityFeeToken1: 0n,
-        fee: 0n,
-        price: 0n,
-        tick: 0n,
-        timepointIndex: 0n,
-        unlocked: true,
-      },
+      timepoints: {},
+      globalState,
       liquidity: bigIntify(_state.liquidity),
       activeIncentive: '0x',
       liquidityCooldown: 0n,
-      totalFeeGrowth0Token: 0n,
-      totalFeeGrowth1Token: 0n,
       volumePerLiquidityInBlock: 0n,
       tickTable,
       ticks,
+      startTickBitmap,
       isValid: true,
       balance0,
       balance1,
@@ -259,11 +266,12 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     const amount1 = bigIntify(event.args.amount1);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    mutateStateOnLP(pool, {
+    AlgebraMath._updatePositionTicksAndFees(
+      pool,
       bottomTick,
       topTick,
       liquidityActual,
-    });
+    );
 
     pool.balance0 += amount0;
     pool.balance1 += amount1;
