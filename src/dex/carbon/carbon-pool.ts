@@ -246,8 +246,6 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       `Updating with event ${event.name} at block ${blockHeader.number}`,
     );
 
-    // this.logger.info(`handleStrategyChanges - state: ${JSON.stringify(state)}`);
-
     if (event.name === 'StrategyCreated') {
       if (
         !state.sdkCache.hasCachedPair(

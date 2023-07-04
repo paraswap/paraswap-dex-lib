@@ -27,6 +27,7 @@ import { formatUnits } from './sdk/utils';
 import { Toolkit } from './sdk/strategy-management';
 import { ContractsApi } from './sdk/contracts-api';
 import { ChainCache } from './sdk/chain-cache';
+import { PopulatedTransaction } from '@ethersproject/contracts';
 
 const GAS_COST_SWAP_YINT_TKN_TKN = 90666;
 const GAS_COST_SWAP_YINT_TKN_ETH = 80892;
@@ -314,9 +315,6 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       address => data.decimals[address],
     );
 
-    // this.logger.info(`getSimpleParam: toolkit: ${JSON.stringify(toolkit)}`);
-    this.logger.info(`getSimpleParam: this.api: ${JSON.stringify(this.api)}`);
-
     const tradeData = await toolkit.getTradeData(
       srcToken.toLowerCase(),
       destToken.toLowerCase(),
@@ -324,22 +322,31 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       tradeByTargetAmount,
     );
 
-    const encodedData = await (tradeByTargetAmount
-      ? toolkit.composeTradeByTargetTransaction
-      : toolkit.composeTradeBySourceTransaction)(
-      srcToken.toLowerCase(),
-      destToken.toLowerCase(),
-      tradeData.tradeActions,
-      deadlineInMs,
-      output.toString(),
-    ).then(unsignedTx => unsignedTx.data || '');
+    let encodedData: PopulatedTransaction;
+    if (tradeByTargetAmount) {
+      encodedData = await toolkit.composeTradeByTargetTransaction(
+        srcToken.toLowerCase(),
+        destToken.toLowerCase(),
+        tradeData.tradeActions,
+        deadlineInMs,
+        output.toString(),
+      );
+    } else {
+      encodedData = await toolkit.composeTradeBySourceTransaction(
+        srcToken.toLowerCase(),
+        destToken.toLowerCase(),
+        tradeData.tradeActions,
+        deadlineInMs,
+        output.toString(),
+      );
+    }
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken.toLowerCase(),
       srcAmount,
       destToken.toLowerCase(),
       destAmount,
-      encodedData,
+      encodedData.data || '',
       this.config.carbonController,
     );
   }
