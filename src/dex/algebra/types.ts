@@ -33,6 +33,10 @@ export type PoolState = {
 
   balance0: bigint;
   balance1: bigint;
+
+  isValid: boolean;
+
+  blockTimestamp: bigint;
 };
 
 export type AlgebraData = {

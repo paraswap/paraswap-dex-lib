@@ -1,13 +1,32 @@
+import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
-import { Address, Log, Logger } from '../../types';
-import { catchParseLogError } from '../../utils';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import { DeepReadonly, assert } from 'ts-essentials';
+import { Address, BlockHeader, Log, Logger, NumberAsString } from '../../types';
+import { bigIntify, catchParseLogError } from '../../utils';
+import {
+  InitializeStateOptions,
+  StatefulEventSubscriber,
+} from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 import { ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import AlgebraABI from '../../abi/algebra/AlgebraPool.abi.json';
+import {
+  DecodedStateMultiCallResultWithRelativeBitmaps,
+  TickBitMapMappingsWithBigNumber,
+  TickInfo,
+  TickInfoMappingsWithBigNumber,
+} from '../uniswap-v3/types';
+import {
+  OUT_OF_RANGE_ERROR_POSTFIX,
+  TICK_BITMAP_BUFFER,
+  TICK_BITMAP_TO_USE,
+} from '../uniswap-v3/constants';
+import { uint256ToBigInt } from '../../lib/decoders';
+import { MultiCallParams } from '../../lib/multi-wrapper';
+import { decodeStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/utils';
+import { mutateStateOnLP } from './lib/AlgebraMath';
 
 export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -15,6 +34,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       event: any,
       state: DeepReadonly<PoolState>,
       log: Readonly<Log>,
+      blockHeader: BlockHeader,
     ) => DeepReadonly<PoolState> | null;
   } = {};
 
@@ -47,6 +67,10 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = new Array<Address>(1);
+
+    this.handlers['Mint'] = this.handleMintEvent.bind(this);
+
+    // TODO ADD More handlers
   }
 
   get poolAddress() {
@@ -60,25 +84,227 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     this._poolAddress = address.toLowerCase();
   }
 
+  async initialize(
+    blockNumber: number,
+    options?: InitializeStateOptions<PoolState>,
+  ) {
+    await super.initialize(blockNumber, options);
+  }
+
+  protected async processBlockLogs(
+    state: DeepReadonly<PoolState>,
+    logs: Readonly<Log>[],
+    blockHeader: Readonly<BlockHeader>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const newState = await super.processBlockLogs(state, logs, blockHeader);
+    if (newState && !newState.isValid) {
+      return await this.generateState(blockHeader.number);
+    }
+    return newState;
+  }
+
   protected processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
+    blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<PoolState> | null {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
+        // Because we have observations in array which is mutable by nature, there is a
+        // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
+        // And there is no good workaround, so turn off the type checker for this line
+        const _state = _.cloneDeep(state) as PoolState;
+        try {
+          return this.handlers[event.name](event, _state, log, blockHeader);
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            e.message.endsWith(OUT_OF_RANGE_ERROR_POSTFIX)
+          ) {
+            this.logger.warn(
+              `${this.parentName}: Pool ${this.poolAddress} on ${
+                this.dexHelper.config.data.network
+              } is out of TickBitmap requested range. Re-query the state. ${JSON.stringify(
+                event,
+              )}`,
+              e,
+            );
+          } else {
+            this.logger.error(
+              `${this.parentName}: Pool ${this.poolAddress}, ` +
+                `network=${this.dexHelper.config.data.network}: Unexpected ` +
+                `error while handling event on blockNumber=${blockHeader.number}, ` +
+                `blockHash=${blockHeader.hash} and parentHash=${
+                  blockHeader.parentHash
+                } for UniswapV3, ${JSON.stringify(event)}`,
+              e,
+            );
+          }
+          _state.isValid = false;
+          return _state;
+        }
       }
     } catch (e) {
       catchParseLogError(e, this.logger);
     }
-
-    return null;
+    return null; // ignore unrecognized event
   }
 
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // TODO: complete me!
-    return {} as any;
+  private _getStateRequestCallData() {
+    const callData: MultiCallParams<
+      bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+    >[] = [
+      {
+        target: this.token0,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.token1,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.stateMultiContract.options.address,
+        callData: this.stateMultiContract.methods
+          .getFullStateWithRelativeBitmaps(
+            this.factoryAddress,
+            this.token0,
+            this.token1,
+            this.getBitmapRangeToRequest(),
+            this.getBitmapRangeToRequest(),
+          )
+          .encodeABI(),
+        decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+      },
+    ];
+
+    return callData;
+  }
+
+  getBitmapRangeToRequest() {
+    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER; // TODO: validate
+  }
+
+  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    const callData = this._getStateRequestCallData();
+
+    const [resBalance0, resBalance1, resState] =
+      await this.dexHelper.multiWrapper.tryAggregate<
+        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      >(
+        false,
+        callData,
+        blockNumber,
+        this.dexHelper.multiWrapper.defaultBatchSize,
+        false,
+      );
+
+    assert(resState.success, 'Pool does not exist');
+
+    const [balance0, balance1, _state] = [
+      resBalance0.returnData,
+      resBalance1.returnData,
+      resState.returnData,
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
+
+    const tickTable = {};
+    const ticks = {};
+
+    this._reduceTickBitmap(tickTable, _state.tickBitmap);
+    this._reduceTicks(ticks, _state.ticks);
+
+    return {
+      // TODO FILL
+      pool: _state.pool,
+      blockTimestamp: 0n,
+      globalState: {
+        communityFeeToken0: 0n,
+        communityFeeToken1: 0n,
+        fee: 0n,
+        price: 0n,
+        tick: 0n,
+        timepointIndex: 0n,
+        unlocked: true,
+      },
+      liquidity: bigIntify(_state.liquidity),
+      activeIncentive: '0x',
+      liquidityCooldown: 0n,
+      totalFeeGrowth0Token: 0n,
+      totalFeeGrowth1Token: 0n,
+      volumePerLiquidityInBlock: 0n,
+      tickTable,
+      ticks,
+      isValid: true,
+      balance0,
+      balance1,
+    };
+  }
+
+  handleMintEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const bottomTick = bigIntify(event.args.bottomTick);
+    const topTick = bigIntify(event.args.topTick);
+    const liquidityActual = bigIntify(event.args.liquidityActual);
+    const amount0 = bigIntify(event.args.amount0);
+    const amount1 = bigIntify(event.args.amount1);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    mutateStateOnLP(pool, {
+      bottomTick,
+      topTick,
+      liquidityActual,
+    });
+
+    pool.balance0 += amount0;
+    pool.balance1 += amount1;
+
+    return pool;
+  }
+
+  // FIXME
+  private _reduceTickBitmap(
+    tickBitmap: Record<NumberAsString, bigint>,
+    tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
+  ) {
+    return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
+      (acc, curr) => {
+        const { index, value } = curr;
+        acc[index] = bigIntify(value);
+        return acc;
+      },
+      tickBitmap,
+    );
+  }
+
+  // FIXME
+  private _reduceTicks(
+    ticks: Record<NumberAsString, TickInfo>,
+    ticksToReduce: TickInfoMappingsWithBigNumber[],
+  ) {
+    return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
+      const { index, value } = curr;
+      acc[index] = {
+        liquidityGross: bigIntify(value.liquidityGross),
+        liquidityNet: bigIntify(value.liquidityNet),
+        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
+        secondsPerLiquidityOutsideX128: bigIntify(
+          value.secondsPerLiquidityOutsideX128,
+        ),
+        secondsOutside: bigIntify(value.secondsOutside),
+        initialized: value.initialized,
+      };
+      return acc;
+    }, ticks);
   }
 
   private _computePoolAddress(token0: Address, token1: Address): Address {

@@ -21,6 +21,17 @@ export function mutateStateOnSwap() {
   // TODO
 }
 
-export function mutateStateOnLP() {
+export function mutateStateOnLP(
+  state: DeepReadonly<PoolState>,
+  {
+    bottomTick,
+    topTick,
+    liquidityActual,
+  }: {
+    bottomTick: bigint;
+    topTick: bigint;
+    liquidityActual: bigint;
+  },
+) {
   // TODO
 }
