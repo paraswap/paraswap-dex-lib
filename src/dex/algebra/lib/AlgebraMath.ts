@@ -13,6 +13,7 @@ import { MAX_LIQUIDITY_PER_TICK, TICK_SPACING } from './Constants';
 import { SqrtPriceMath } from '../../uniswap-v3/contract-math/SqrtPriceMath';
 import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
 import { LiquidityMath } from '../../uniswap-v3/contract-math/LiquidityMath';
+import { uniswapV3Math } from '../../uniswap-v3/contract-math/uniswap-v3-math';
 
 type UpdatePositionCache = {
   price: bigint;
@@ -185,6 +186,28 @@ class AlgebraMathClass {
         );
       }
     }
+
+    // TODO mutate poolState
+  }
+
+  swapFromEvent(
+    poolState: PoolState,
+    newSqrtPriceX96: bigint,
+    newTick: bigint,
+    newLiquidity: bigint,
+    zeroForOne: boolean,
+  ) {
+    const univ3Likestate = transformAlgebraToMinUniv3PoolState(poolState);
+
+    uniswapV3Math.swapFromEvent(
+      univ3Likestate,
+      newSqrtPriceX96,
+      newTick,
+      newLiquidity,
+      zeroForOne,
+    );
+
+    // TODO mutate poolState
   }
 
   _blockTimestamp(state: DeepReadonly<PoolState>) {

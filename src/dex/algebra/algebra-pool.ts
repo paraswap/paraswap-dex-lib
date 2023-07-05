@@ -258,6 +258,64 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     };
   }
 
+  handleSwapEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const newSqrtPriceX96 = bigIntify(event.args.price);
+    const amount0 = bigIntify(event.args.amount0);
+    const amount1 = bigIntify(event.args.amount1);
+    const newTick = bigIntify(event.args.tick);
+    const newLiquidity = bigIntify(event.args.liquidity);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    if (amount0 <= 0n && amount1 <= 0n) {
+      this.logger.error(
+        `${this.parentName}: amount0 <= 0n && amount1 <= 0n for ` +
+          `${this.poolAddress} and ${blockHeader.number}. Check why it happened`,
+      );
+      pool.isValid = false;
+      return pool;
+    } else {
+      const zeroForOne = amount0 > 0n;
+
+      AlgebraMath.swapFromEvent(
+        pool,
+        newSqrtPriceX96,
+        newTick,
+        newLiquidity,
+        zeroForOne,
+      );
+
+      if (zeroForOne) {
+        if (amount1 < 0n) {
+          pool.balance1 -= BigInt.asUintN(256, -amount1);
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
+          );
+          pool.isValid = false;
+        }
+        // This is not correct fully, because pool may get more tokens then it needs, but
+        // it is not accounted in internal state, it should be good enough
+        pool.balance0 += BigInt.asUintN(256, amount0);
+      } else {
+        if (amount0 < 0n) {
+          pool.balance0 -= BigInt.asUintN(256, -amount0);
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
+          );
+          pool.isValid = false;
+        }
+        pool.balance1 += BigInt.asUintN(256, amount1);
+      }
+
+      return pool;
+    }
+  }
   handleMintEvent(
     event: any,
     pool: PoolState,

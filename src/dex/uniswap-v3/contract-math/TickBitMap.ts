@@ -69,7 +69,7 @@ export class TickBitMap {
   }
 
   static nextInitializedTickWithinOneWord(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<Pick<PoolState, 'startTickBitmap' | 'tickBitmap'>>,
     tick: bigint,
     tickSpacing: bigint,
     lte: boolean,
