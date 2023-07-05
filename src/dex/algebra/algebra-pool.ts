@@ -75,6 +75,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['Burn'] = this.handleBurnEvent.bind(this);
     this.handlers['Flash'] = this.handleFlashEvent.bind(this);
     this.handlers['Collect'] = this.handleCollectEvent.bind(this);
+    this.handlers['CommunityFee'] = this.handleCommunityFee.bind(this);
 
     // TODO ADD More handlers
   }
@@ -315,6 +316,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     const fee = bigIntify(event.args.fee);
 
     pool.globalState.fee = fee;
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
   }
@@ -344,6 +346,23 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     const paid1 = bigIntify(event.args.paid1);
     pool.balance0 += paid0;
     pool.balance1 += paid1;
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleCommunityFee(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const communityFeeToken0 = bigIntify(event.ags.communityFeeToken0);
+    const communityFeeToken1 = bigIntify(event.ags.communityFeeToken1);
+
+    pool.globalState.communityFeeToken0 = communityFeeToken0;
+    pool.globalState.communityFeeToken1 = communityFeeToken1;
+
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
