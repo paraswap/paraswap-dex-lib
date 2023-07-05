@@ -12,6 +12,7 @@ import { EncodedStrategy, EncodedOrder } from './sdk/';
 import { ChainCache } from './sdk/chain-cache';
 import { BigNumber } from './sdk/utils';
 import { toPairKey } from './sdk/chain-cache/utils';
+import { Contract } from 'web3-eth-contract';
 
 export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -26,6 +27,8 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
+
+  carbonController: Contract;
 
   public readonly carbonIface = new Interface(CarbonControllerABI);
 
@@ -47,6 +50,11 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       /* subscribed addresses */
       CarbonConfig[parentName][network].carbonController,
     ];
+
+    this.carbonController = new this.dexHelper.web3Provider.eth.Contract(
+      CarbonControllerABI as any,
+      CarbonConfig[parentName][network].carbonController,
+    );
 
     // Add handlers
     this.handlers['StrategyCreated'] = this.handleStrategyChanges.bind(this);
@@ -180,30 +188,11 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       newCache.addPair(pair.token0, pair.token1, pair.strategies, true);
     });
 
-    // Get TradingFeePPM
-    const tradingFeeQuery: string = `
-    query ($block_number: Int) {
-      tradingFeePPMUpdateds(block: {number: $block_number}, first:1, orderBy: createdAtTimestamp, orderDirection: desc) {
-        newFeePPM
-      }
-    }
-    `;
+    newCache.tradingFeePPM = await this.carbonController.methods
+      .tradingFeePPM()
+      .call();
 
-    const feeData = await this._querySubgraph(
-      tradingFeeQuery,
-      {
-        block_number: blockNumber,
-      },
-      CarbonConfig[this.parentName][this.network].subgraphURL,
-    );
-
-    if (!(feeData && feeData.tradingFeePPMUpdateds)) {
-      this.logger.error(
-        `Error_${this.parentName}_Subgraph: couldn't fetch the trading fee from the subgraph`,
-      );
-    }
-
-    newCache.tradingFeePPM = feeData.tradingFeePPMUpdateds[0].newFeePPM;
+    this.logger.info(`Read tradingFeePPM: ${newCache.tradingFeePPM}`);
 
     const newState: PoolState = {
       sdkCache: newCache,
