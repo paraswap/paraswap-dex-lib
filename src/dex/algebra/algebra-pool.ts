@@ -71,13 +71,12 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     this.addressesSubscribed = new Array<Address>(1);
 
     this.handlers['Fee'] = this.handleNewFee.bind(this);
+    this.handlers['Swap'] = this.handleSwapEvent.bind(this);
     this.handlers['Mint'] = this.handleMintEvent.bind(this);
     this.handlers['Burn'] = this.handleBurnEvent.bind(this);
     this.handlers['Flash'] = this.handleFlashEvent.bind(this);
     this.handlers['Collect'] = this.handleCollectEvent.bind(this);
     this.handlers['CommunityFee'] = this.handleCommunityFee.bind(this);
-
-    // TODO ADD More handlers
   }
 
   get poolAddress() {
