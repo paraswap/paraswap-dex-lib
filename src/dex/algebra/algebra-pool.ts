@@ -70,7 +70,11 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = new Array<Address>(1);
 
+    this.handlers['Fee'] = this.handleNewFee.bind(this);
     this.handlers['Mint'] = this.handleMintEvent.bind(this);
+    this.handlers['Burn'] = this.handleBurnEvent.bind(this);
+    this.handlers['Flash'] = this.handleFlashEvent.bind(this);
+    this.handlers['Collect'] = this.handleCollectEvent.bind(this);
 
     // TODO ADD More handlers
   }
@@ -275,6 +279,72 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
     pool.balance0 += amount0;
     pool.balance1 += amount1;
+
+    return pool;
+  }
+
+  handleBurnEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const bottomTick = bigIntify(event.args.bottomTick);
+    const topTick = bigIntify(event.args.topTick);
+    const amount = bigIntify(event.args.amount);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    AlgebraMath._updatePositionTicksAndFees(
+      pool,
+      bottomTick,
+      topTick,
+      -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
+    );
+
+    // no balance change
+
+    return pool;
+  }
+
+  handleNewFee(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const fee = bigIntify(event.args.fee);
+
+    pool.globalState.fee = fee;
+
+    return pool;
+  }
+
+  handleCollectEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const amount0 = bigIntify(event.args.amount0);
+    const amount1 = bigIntify(event.args.amount1);
+    pool.balance0 -= amount0;
+    pool.balance1 -= amount1;
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleFlashEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const paid0 = bigIntify(event.args.paid0);
+    const paid1 = bigIntify(event.args.paid1);
+    pool.balance0 += paid0;
+    pool.balance1 += paid1;
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
   }
