@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import { Address, NumberAsString } from '../../types';
 import { TickInfo } from '../uniswap-v3/types';
 
@@ -59,4 +60,60 @@ export type DexParams = {
   deployer: Address;
   subgraphURL: string;
   initHash: string;
+};
+
+export type TickInfo = {
+  liquidityGross: bigint;
+  liquidityNet: bigint;
+  tickCumulativeOutside: bigint;
+  secondsPerLiquidityOutsideX128: bigint;
+  secondsOutside: bigint;
+  initialized: boolean;
+};
+
+export type TickBitMapMappingsWithBigNumber = {
+  index: number;
+  value: BigNumber;
+};
+
+export type TickInfoWithBigNumber = {
+  initialized: boolean;
+  liquidityGross: BigNumber;
+  liquidityNet: BigNumber;
+  secondsOutside: number;
+  secondsPerLiquidityOutsideX128: BigNumber;
+  tickCumulativeOutside: BigNumber;
+};
+
+export type TickInfoMappingsWithBigNumber = {
+  index: number;
+  value: TickInfoWithBigNumber;
+};
+
+export type DecodedStateMultiCallResultWithRelativeBitmaps = {
+  pool: Address;
+  blockTimestamp: BigNumber;
+  globalState: {
+    price: BigNumber;
+    tick: number;
+    fee: number;
+    timepointIndex: number;
+    communityFeeToken1: number;
+    communityFeeToken0: number;
+    unlocked: boolean;
+  };
+  liquidity: BigNumber;
+  tickSpacing: number;
+  maxLiquidityPerTick: BigNumber;
+  timepoints: {
+    initialized: boolean;
+    blockTimestamp: number;
+    tickCumulative: BigNumber;
+    secondsPerLiquidityCumulative: BigNumber;
+    volatilityCumulative: BigNumber;
+    averageTick: number;
+    volumePerLiquidityCumulative: BigNumber;
+  };
+  tickBitmap: TickBitMapMappingsWithBigNumber[];
+  ticks: TickInfoMappingsWithBigNumber[];
 };

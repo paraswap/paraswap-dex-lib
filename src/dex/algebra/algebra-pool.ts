@@ -12,7 +12,7 @@ import { PoolState } from './types';
 import { ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import AlgebraABI from '../../abi/algebra/AlgebraPool.abi.json';
-import { DecodedStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/types';
+import { DecodedStateMultiCallResultWithRelativeBitmaps } from './types';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
@@ -20,7 +20,7 @@ import {
 } from '../uniswap-v3/constants';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/utils';
+import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 import { AlgebraMath } from './lib/AlgebraMath';
 import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
 import { TICK_SPACING } from './lib/Constants';
