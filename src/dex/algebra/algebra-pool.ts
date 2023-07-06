@@ -12,12 +12,7 @@ import { PoolState } from './types';
 import { ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import AlgebraABI from '../../abi/algebra/AlgebraPool.abi.json';
-import {
-  DecodedStateMultiCallResultWithRelativeBitmaps,
-  TickBitMapMappingsWithBigNumber,
-  TickInfo,
-  TickInfoMappingsWithBigNumber,
-} from '../uniswap-v3/types';
+import { DecodedStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/types';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
@@ -29,6 +24,10 @@ import { decodeStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/uti
 import { AlgebraMath } from './lib/AlgebraMath';
 import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
 import { TICK_SPACING } from './lib/Constants';
+import {
+  _reduceTickBitmap,
+  _reduceTicks,
+} from '../uniswap-v3/contract-math/utils';
 
 export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -219,11 +218,11 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       resState.returnData,
     ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
 
-    const tickTable = {};
+    const tickBitmap = {};
     const ticks = {};
 
-    this._reduceTickBitmap(tickTable, _state.tickBitmap);
-    this._reduceTicks(ticks, _state.ticks);
+    _reduceTickBitmap(tickBitmap, _state.tickBitmap);
+    _reduceTicks(ticks, _state.ticks);
 
     const globalState = {
       communityFeeToken0: 0n,
@@ -245,10 +244,10 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       timepoints: {},
       globalState,
       liquidity: bigIntify(_state.liquidity),
-      activeIncentive: '0x',
-      liquidityCooldown: 0n,
+      tickSpacing: 0n,
+      maxLiquidityPerTick: 0n,
       volumePerLiquidityInBlock: 0n,
-      tickTable,
+      tickBitmap,
       ticks,
       startTickBitmap,
       isValid: true,
@@ -423,42 +422,6 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
-  }
-
-  // FIXME
-  private _reduceTickBitmap(
-    tickBitmap: Record<NumberAsString, bigint>,
-    tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
-  ) {
-    return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
-      (acc, curr) => {
-        const { index, value } = curr;
-        acc[index] = bigIntify(value);
-        return acc;
-      },
-      tickBitmap,
-    );
-  }
-
-  // FIXME
-  private _reduceTicks(
-    ticks: Record<NumberAsString, TickInfo>,
-    ticksToReduce: TickInfoMappingsWithBigNumber[],
-  ) {
-    return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
-      const { index, value } = curr;
-      acc[index] = {
-        liquidityGross: bigIntify(value.liquidityGross),
-        liquidityNet: bigIntify(value.liquidityNet),
-        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
-        secondsPerLiquidityOutsideX128: bigIntify(
-          value.secondsPerLiquidityOutsideX128,
-        ),
-        secondsOutside: bigIntify(value.secondsOutside),
-        initialized: value.initialized,
-      };
-      return acc;
-    }, ticks);
   }
 
   private _computePoolAddress(token0: Address, token1: Address): Address {

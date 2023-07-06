@@ -1,5 +1,5 @@
 import { Address, NumberAsString } from '../../types';
-import { Tick } from './lib/TickManager';
+import { TickInfo } from '../uniswap-v3/types';
 
 type Timepoint = {
   initialized: boolean;
@@ -22,19 +22,19 @@ type GlobalState = {
 };
 
 export type PoolState = {
-  pool: Address;
+  pool: string;
   blockTimestamp: bigint;
-  // no tickSpacing
-  // no fee here ?
+  tickSpacing: bigint; // is actually constant
+  // no constant fee on pool in global state
   globalState: GlobalState; // eq slot0
   liquidity: bigint;
-  // no maxLiquidityPerTick
-  tickTable: Record<NumberAsString, bigint>; // eq tickBitmap
-  ticks: Record<NumberAsString, Tick>;
+  maxLiquidityPerTick: bigint; // is actually constant
+  tickBitmap: Record<NumberAsString, bigint>; // actually called tickTable in contract-
+  ticks: Record<NumberAsString, TickInfo>; // although variable names are different in contracts but matches UniswapV3 TickInfo struct 1:1
   timepoints: Record<number, Timepoint>; // timepoints is eq observations
   volumePerLiquidityInBlock: bigint; // oracle stuff skip does not participate in getSingleTimepoint https://github.com/cryptoalgebra/Algebra/blob/d4c1a57accf5e14d542c534c6c724a620565c176/src/core/contracts/AlgebraPool.sol#L299
-  liquidityCooldown: bigint;
-  activeIncentive: Address;
+  // liquidityCooldown: bigint; play no role in pricing
+  // activeIncentive: Address; play no role in pricing
   isValid: boolean;
   startTickBitmap: bigint;
   balance0: bigint;

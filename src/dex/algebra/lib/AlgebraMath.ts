@@ -2,14 +2,12 @@ import { DeepReadonly } from 'ts-essentials';
 import { PoolState } from '../types';
 import { SwapSide } from '@paraswap/core';
 import { OutputResult } from '../../uniswap-v3/types';
-import { transformAlgebraToMinUniv3PoolState } from './AlgebraXUniV3';
 import { Tick } from '../../uniswap-v3/contract-math/Tick';
 import { TickBitMap } from '../../uniswap-v3/contract-math/TickBitMap';
 import { MAX_LIQUIDITY_PER_TICK, TICK_SPACING } from './Constants';
 import { SqrtPriceMath } from '../../uniswap-v3/contract-math/SqrtPriceMath';
 import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
 import { LiquidityMath } from '../../uniswap-v3/contract-math/LiquidityMath';
-import { uniswapV3Math } from '../../uniswap-v3/contract-math/uniswap-v3-math';
 import { uint32 } from '../../../utils';
 import { DataStorageOperator } from './DataStorageOperator';
 
@@ -88,7 +86,6 @@ class AlgebraMathClass {
     const { globalState, liquidity, volumePerLiquidityInBlock } = state;
     let toggledBottom: boolean = false;
     let toggledTop: boolean = false;
-    const univ3LikeState = transformAlgebraToMinUniv3PoolState(state);
     const cache: UpdatePositionCache = {
       price: globalState.price,
       tick: globalState.tick,
@@ -110,7 +107,7 @@ class AlgebraMathClass {
         );
       if (
         Tick.update(
-          univ3LikeState,
+          state,
           bottomTick,
           cache.tick,
           liquidityDelta,
@@ -122,11 +119,11 @@ class AlgebraMathClass {
         )
       ) {
         toggledBottom = true;
-        TickBitMap.flipTick(univ3LikeState, bottomTick, TICK_SPACING);
+        TickBitMap.flipTick(state, bottomTick, TICK_SPACING);
       }
       if (
         Tick.update(
-          univ3LikeState,
+          state,
           topTick,
           cache.tick,
           liquidityDelta,
@@ -138,7 +135,7 @@ class AlgebraMathClass {
         )
       ) {
         toggledTop = true;
-        TickBitMap.flipTick(univ3LikeState, topTick, TICK_SPACING);
+        TickBitMap.flipTick(state, topTick, TICK_SPACING);
       }
     }
 
@@ -148,8 +145,8 @@ class AlgebraMathClass {
     if (liquidityDelta !== 0n) {
       // if liquidityDelta is negative and the tick was toggled, it means that it should not be initialized anymore, so we delete it
       if (liquidityDelta < 0) {
-        if (toggledBottom) Tick.clear(univ3LikeState, bottomTick);
-        if (toggledTop) Tick.clear(univ3LikeState, topTick);
+        if (toggledBottom) Tick.clear(state, bottomTick);
+        if (toggledTop) Tick.clear(state, topTick);
       }
       // same as UniswapV3Pool.sol line 331 ? -> amount0 = SqrtPriceMath.getAmount0Delta(
       // skip amount0 and amount1 as already read from event
@@ -195,16 +192,13 @@ class AlgebraMathClass {
     newLiquidity: bigint,
     zeroForOne: boolean,
   ) {
-    const univ3Likestate = transformAlgebraToMinUniv3PoolState(poolState);
-
-    uniswapV3Math.swapFromEvent(
-      univ3Likestate,
-      newSqrtPriceX96,
-      newTick,
-      newLiquidity,
-      zeroForOne,
-    );
-
+    // uniswapV3Math.swapFromEvent(
+    //   poolState,
+    //   newSqrtPriceX96,
+    //   newTick,
+    //   newLiquidity,
+    //   zeroForOne,
+    // );
     // TODO mutate poolState
   }
 
