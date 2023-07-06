@@ -29,7 +29,7 @@ import { Interface } from 'ethers/lib/utils';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import AlgebraQuoterABI from '../../abi/algebra/AlgebraQuoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
-import AlgebraStateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
+import AlgebraStateMulticallABI from '../../abi/algebra/AlgebraStateMulticall.abi.json';
 import {
   OutputResult,
   UniswapV3Functions,
