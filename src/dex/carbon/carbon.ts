@@ -192,7 +192,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
           : GAS_COST_SWAP_YINT_ETH_TKN
         : GAS_COST_SWAP_YINT_TKN_TKN;
 
-    let decimalMap: { [tokenAddress: string]: number } = {
+    const decimalMap: { [tokenAddress: string]: number } = {
       [srcToken.address.toLowerCase()]: srcToken.decimals,
       [destToken.address.toLowerCase()]: destToken.decimals,
     };

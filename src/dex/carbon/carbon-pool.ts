@@ -11,7 +11,6 @@ import CarbonControllerABI from '../../abi/carbon/CarbonController.abi.json';
 import { EncodedStrategy, EncodedOrder } from './sdk/';
 import { ChainCache } from './sdk/chain-cache';
 import { BigNumber } from './sdk/utils';
-import { toPairKey } from './sdk/chain-cache/utils';
 import { Contract } from 'web3-eth-contract';
 
 export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
@@ -155,12 +154,12 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
 
     const strategiesList = _.map(allStrategiesPerPair.pairs, pair => {
       return {
-        id: pair.id.toLowerCase(),
+        id: pair.id,
         token0: pair.token0.id.toLowerCase(),
         token1: pair.token1.id.toLowerCase(),
         strategies: _.map(pair.strategies, strategy => {
           return {
-            id: strategy.id.toLowerCase(),
+            id: strategy.id,
             token0: pair.token0.id.toLowerCase(),
             token1: pair.token1.id.toLowerCase(),
             order0: {
@@ -192,8 +191,6 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       .tradingFeePPM()
       .call();
 
-    this.logger.info(`Read tradingFeePPM: ${newCache.tradingFeePPM}`);
-
     const newState: PoolState = {
       sdkCache: newCache,
     };
@@ -209,21 +206,21 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
     log: Readonly<Log>,
     blockHeader: BlockHeader,
   ): PoolState {
-    let encodedOrder0: EncodedOrder = {
+    const encodedOrder0: EncodedOrder = {
       y: BigNumber.from(event.args.order0.y),
       z: BigNumber.from(event.args.order0.z),
       A: BigNumber.from(event.args.order0.A),
       B: BigNumber.from(event.args.order0.B),
     };
 
-    let encodedOrder1: EncodedOrder = {
+    const encodedOrder1: EncodedOrder = {
       y: BigNumber.from(event.args.order1.y),
       z: BigNumber.from(event.args.order1.z),
       A: BigNumber.from(event.args.order1.A),
       B: BigNumber.from(event.args.order1.B),
     };
 
-    let encodedStrategy: EncodedStrategy = {
+    const encodedStrategy: EncodedStrategy = {
       id: BigNumber.from(event.args.id),
       token0: event.args.token0.toLowerCase(),
       token1: event.args.token1.toLowerCase(),
