@@ -53,7 +53,7 @@ export const transformAlgebraToMinUniv3PoolState = (
       globalState.communityFeeToken0 + (globalState.communityFeeToken1 << 4n),
     observationCardinality: 0,
     observationCardinalityNext: 0,
-    observationIndex: state.globalState.timepointIndex,
+    observationIndex: Number(state.globalState.timepointIndex),
     sqrtPriceX96: state.globalState.price,
     tick: globalState.tick,
   };
@@ -67,58 +67,4 @@ export const transformAlgebraToMinUniv3PoolState = (
     ticks,
     tickBitmap: state.tickTable,
   };
-};
-
-export const getSingleTimepoint = (
-  state: PoolState,
-  time: bigint,
-  secondsAgo: bigint,
-  tick: bigint,
-  index: number,
-  liquidity: bigint,
-) => {
-  const { timepoints } = state;
-
-  let oldestIndex = 0;
-  // check if we have overflow in the past
-  let nextIndex = index + 1; // considering overflow
-  if (timepoints[nextIndex].initialized) {
-    oldestIndex = nextIndex;
-  }
-
-  const univ3LikeState = transformAlgebraToMinUniv3PoolState(state);
-
-  return Oracle.observeSingle(
-    univ3LikeState,
-    time,
-    secondsAgo,
-    tick,
-    index,
-    liquidity,
-    0, // FIXME
-  );
-};
-
-// FIXME
-export const _writeTimepoint = (
-  state: PoolState,
-  timepointIndex: number,
-  blockTimestamp: bigint,
-  tick: bigint,
-  liquidity: bigint,
-  volumePerLiquidityInBlock: bigint,
-): number => {
-  const { globalState } = state;
-  const univ3LikeState = transformAlgebraToMinUniv3PoolState(state);
-
-  const [newTimepointIndex] = Oracle.write(
-    univ3LikeState,
-    globalState.timepointIndex,
-    BigInt.asUintN(32, state.blockTimestamp),
-    globalState.tick,
-    0n, // FIXME
-    0, // FIXME
-    0, // FIXME
-  );
-  return newTimepointIndex;
 };

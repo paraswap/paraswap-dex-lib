@@ -391,3 +391,18 @@ export const isContractAddress = async (web3: Web3, addr: string) => {
 
   return contractCode !== '0x';
 };
+
+const toUintN = (n: number) => (x: bigint) => BigInt.asUintN(n, x);
+const toIntN = (n: number) => (x: bigint) => BigInt.asIntN(n, x);
+
+// INT
+export const int56 = toIntN(56);
+export const int24 = toIntN(24);
+
+// UINT
+export const uint16 = toUintN(16);
+export const uint32 = toUintN(32);
+export const uint88 = toUintN(88);
+export const uint128 = toUintN(128);
+export const uint160 = toUintN(160);
+export const uint256 = toUintN(256);

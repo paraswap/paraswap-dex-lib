@@ -231,7 +231,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       fee: 0n,
       price: 0n,
       tick: 0n,
-      timepointIndex: 0,
+      timepointIndex: 0n,
       unlocked: true,
     };
 

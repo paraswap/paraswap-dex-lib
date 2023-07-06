@@ -2,11 +2,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { PoolState } from '../types';
 import { SwapSide } from '@paraswap/core';
 import { OutputResult } from '../../uniswap-v3/types';
-import {
-  _writeTimepoint,
-  getSingleTimepoint,
-  transformAlgebraToMinUniv3PoolState,
-} from './AlgebraXUniV3';
+import { transformAlgebraToMinUniv3PoolState } from './AlgebraXUniV3';
 import { Tick } from '../../uniswap-v3/contract-math/Tick';
 import { TickBitMap } from '../../uniswap-v3/contract-math/TickBitMap';
 import { MAX_LIQUIDITY_PER_TICK, TICK_SPACING } from './Constants';
@@ -14,11 +10,13 @@ import { SqrtPriceMath } from '../../uniswap-v3/contract-math/SqrtPriceMath';
 import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
 import { LiquidityMath } from '../../uniswap-v3/contract-math/LiquidityMath';
 import { uniswapV3Math } from '../../uniswap-v3/contract-math/uniswap-v3-math';
+import { uint32 } from '../../../utils';
+import { DataStorageOperator } from './DataStorageOperator';
 
 type UpdatePositionCache = {
   price: bigint;
   tick: bigint;
-  timepointIndex: number;
+  timepointIndex: bigint;
 };
 
 class AlgebraMathClass {
@@ -102,7 +100,7 @@ class AlgebraMathClass {
     if (liquidityDelta !== 0n) {
       const time = this._blockTimestamp(state);
       const [tickCumulative, secondsPerLiquidityCumulative] =
-        getSingleTimepoint(
+        DataStorageOperator.getSingleTimepoint(
           state,
           time,
           0n,
@@ -165,7 +163,7 @@ class AlgebraMathClass {
       if (globalLiquidityDelta != 0n) {
         let liquidityBefore = liquidity;
         // same as UniswapV3Pool line 340 -> (slot0.observationIndex, slot0.observationCardinality) = observations.write(
-        let newTimepointIndex = _writeTimepoint(
+        let newTimepointIndex = DataStorageOperator.write(
           state,
           cache.timepointIndex,
           this._blockTimestamp(state),
@@ -211,7 +209,7 @@ class AlgebraMathClass {
   }
 
   _blockTimestamp(state: DeepReadonly<PoolState>) {
-    return BigInt.asUintN(32, state.blockTimestamp);
+    return uint32(state.blockTimestamp);
   }
 }
 

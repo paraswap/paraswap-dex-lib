@@ -15,7 +15,7 @@ type GlobalState = {
   price: bigint; // The square root of the current price in Q64.96 format
   tick: bigint; // The current tick
   fee: bigint; // The current fee in hundredths of a bip, i.e. 1e-6
-  timepointIndex: number; // The index of the last written timepoint
+  timepointIndex: bigint; // The index of the last written timepoint
   communityFeeToken0: bigint; // The community fee represented as a percent of all collected fee in thousandths (1e-3)
   communityFeeToken1: bigint;
   unlocked: boolean; // True if the contract is unlocked, otherwise - false
