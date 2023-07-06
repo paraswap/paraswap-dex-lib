@@ -1,5 +1,5 @@
 import { ChainCache } from './sdk/chain-cache';
-import { TradeActionBNStr } from './sdk';
+import { Action, MatchActionBNStr, TradeActionBNStr } from './sdk';
 
 export type PoolState = {
   // TODO: poolState is the state of event
@@ -15,8 +15,16 @@ export type CarbonData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
-  tradeActions: TradeActionBNStr[][];
-  cache: ChainCache;
+  tradeDataMap: {
+    [amount: string]: {
+      tradeActions: TradeActionBNStr[];
+      actionsTokenRes: Action[];
+      totalSourceAmount: string;
+      totalTargetAmount: string;
+      effectiveRate: string;
+      actionsWei: MatchActionBNStr[];
+    };
+  };
   decimals: { [token: string]: number };
 };
 

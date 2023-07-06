@@ -19,7 +19,6 @@ import { CarbonData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { CarbonConfig, Adapters } from './config';
 import { CarbonEventPool } from './carbon-pool';
-import { getBigIntPow } from '../../utils';
 import { getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
 import { Action, MatchActionBNStr, TradeActionBNStr } from './sdk/common/types';
@@ -76,7 +75,10 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     try {
       await this.mainPool.initialize(blockNumber);
     } catch (e) {
-      this.logger.error(`Error ${this.dexKey} initializing pricing: `, e);
+      this.logger.error(
+        `${this.dexKey} - initializePricing: Error ${this.dexKey} initializing pricing: `,
+        e,
+      );
     }
   }
 
@@ -109,22 +111,29 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
 
     const cache = state?.sdkCache as ChainCache;
 
-    if (!cache) return [];
+    if (!cache) {
+      this.logger.error(`${this.dexKey} - getPoolIdentifiers: Can't get cache`);
+      return [];
+    }
 
     const orders = await cache.getOrdersByPair(tokenSell, tokenBuy);
 
     this.logger.info(
-      `getPoolIdentifiers: Number of tradeable orders for the pair ${tokenSell}-${tokenBuy}: ${
+      `${
+        this.dexKey
+      } - getPoolIdentifiers: Number of tradeable orders for the pair ${tokenSell}-${tokenBuy}: ${
         Object.keys(orders).length
       }`,
     );
 
     if (Object.keys(orders).length == 0) {
-      this.logger.error(`No Liquidity for pair ${tokenSell} - ${tokenBuy}`);
+      this.logger.error(
+        `${this.dexKey} - getPoolIdentifiers: No Liquidity for pair ${tokenSell} - ${tokenBuy}`,
+      );
       return [];
     }
 
-    let orderIds: string[] = Object.entries(orders).map(([orderId, _]) => {
+    const orderIds: string[] = Object.entries(orders).map(([orderId, _]) => {
       return `${this.dexKey}_${orderId}`;
     });
 
@@ -143,9 +152,6 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<CarbonData>> {
-    // if side is BUY, amount numeraire is destToken, destToken -> srcToken (tradeByTarget == true)
-    // if side is SELL, amount numeraire is srcToken, srcToken -> destToken (tradeByTarget == false)
-
     if (srcToken.address.toLowerCase() === destToken.address.toLowerCase()) {
       return null;
     }
@@ -153,7 +159,10 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     const state = this.mainPool.getState(blockNumber);
     const cache = state?.sdkCache as ChainCache;
 
-    if (!cache) return null;
+    if (!cache) {
+      this.logger.error(`${this.dexKey} - getPricesVolume: Can't get cache`);
+      return null;
+    }
 
     let tradeDataPerAmount: {
       tradeActions: TradeActionBNStr[];
@@ -164,45 +173,69 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       actionsWei: MatchActionBNStr[];
     };
 
-    let tradeActions: TradeActionBNStr[][] = [];
+    let tradeDataMap: {
+      [amount: string]: typeof tradeDataPerAmount;
+    } = {};
+
     let prices: bigint[] = [];
     let gasCosts: number[] = [];
 
-    const tradeByTargetAmount: boolean = side === SwapSide.BUY;
+    // if side is BUY, amount numeraire is destToken, srcToken -> destToken (tradeByTarget == true)
+    // if side is SELL, amount numeraire is srcToken, srcToken -> destToken (tradeByTarget == false)
+    const isBuy: boolean = side === SwapSide.BUY;
 
     const gas_cost_yint =
       srcToken.address.toLowerCase() === ETHER_ADDRESS ||
       destToken.address.toLowerCase() === ETHER_ADDRESS
-        ? tradeByTargetAmount &&
-          srcToken.address.toLowerCase() === ETHER_ADDRESS
+        ? isBuy && srcToken.address.toLowerCase() === ETHER_ADDRESS
           ? GAS_COST_SWAP_YINT_TKN_ETH
           : GAS_COST_SWAP_YINT_ETH_TKN
         : GAS_COST_SWAP_YINT_TKN_TKN;
 
-    const toolkit = new Toolkit(this.api, cache);
+    let decimalMap: { [tokenAddress: string]: number } = {
+      [srcToken.address.toLowerCase()]: srcToken.decimals,
+      [destToken.address.toLowerCase()]: destToken.decimals,
+    };
 
-    // Get trade data for amounts
-    for (let amount of amounts) {
-      // Get trade route
+    const toolkit = new Toolkit(
+      this.api,
+      cache,
+      address => decimalMap[address.toLowerCase()] ?? undefined,
+    );
+
+    let _amount: string;
+    let price: bigint;
+
+    for (const amount of amounts) {
+      // Because the toolkit expects floating point amounts
+      _amount = isBuy
+        ? BigNumber(amount.toString())
+            .dividedBy(BigNumber(10).pow(destToken.decimals))
+            .toString()
+        : BigNumber(amount.toString())
+            .dividedBy(BigNumber(10).pow(srcToken.decimals))
+            .toString();
+
       tradeDataPerAmount = await toolkit.getTradeData(
         srcToken.address.toLowerCase(),
         destToken.address.toLowerCase(),
-        amount.toString(),
-        tradeByTargetAmount,
+        _amount,
+        isBuy,
       );
 
       if (!tradeDataPerAmount) continue;
 
-      tradeActions.push(tradeDataPerAmount.tradeActions);
+      tradeDataMap[amount.toString()] = tradeDataPerAmount;
 
-      const price = BigInt(
-        tradeByTargetAmount
-          ? Number(tradeDataPerAmount.totalSourceAmount) *
-              10 ** srcToken.decimals
-          : Number(tradeDataPerAmount.totalTargetAmount) *
-              10 ** destToken.decimals,
+      price = BigInt(
+        isBuy
+          ? BigNumber(tradeDataPerAmount.totalSourceAmount)
+              .multipliedBy(BigNumber(10).pow(srcToken.decimals))
+              .toFixed(0)
+          : BigNumber(tradeDataPerAmount.totalTargetAmount)
+              .multipliedBy(BigNumber(10).pow(destToken.decimals))
+              .toFixed(0),
       );
-
       prices.push(price);
 
       gasCosts.push(
@@ -213,22 +246,21 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       );
     }
 
-    // Get unit amount
-    const unitAmount = getBigIntPow(
-      tradeByTargetAmount ? destToken.decimals : srcToken.decimals,
-    );
-
-    let unitTradeData: typeof tradeDataPerAmount = await toolkit.getTradeData(
+    const unitTradeData: typeof tradeDataPerAmount = await toolkit.getTradeData(
       srcToken.address.toLowerCase(),
       destToken.address.toLowerCase(),
-      unitAmount.toString(),
-      tradeByTargetAmount,
+      1n.toString(),
+      isBuy,
     );
 
-    let unit: bigint = BigInt(
-      tradeByTargetAmount
-        ? Number(unitTradeData.totalSourceAmount) * 10 ** srcToken.decimals
-        : Number(unitTradeData.totalTargetAmount) * 10 ** destToken.decimals,
+    const unit = BigInt(
+      isBuy
+        ? BigNumber(unitTradeData.totalSourceAmount)
+            .multipliedBy(BigNumber(10).pow(srcToken.decimals))
+            .toFixed(0)
+        : BigNumber(unitTradeData.totalTargetAmount)
+            .multipliedBy(BigNumber(10).pow(destToken.decimals))
+            .toFixed(0),
     );
 
     return [
@@ -236,12 +268,8 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
         unit: unit,
         prices: prices,
         data: {
-          tradeActions: tradeActions,
-          cache: cache,
-          decimals: {
-            [srcToken.address]: srcToken.decimals,
-            [destToken.address]: destToken.decimals,
-          },
+          tradeDataMap: tradeDataMap,
+          decimals: decimalMap,
         },
         exchange: this.dexKey,
         gasCost: gasCosts,
@@ -267,7 +295,6 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     side: SwapSide,
   ): AdapterExchangeParam {
     // TODO: complete me!
-    // const { exchange } = data;
 
     // Encode here the payload for adapter
     const payload = '';
@@ -291,64 +318,85 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     data: CarbonData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const tradeByTargetAmount: boolean = side === SwapSide.BUY;
-
-    this.logger.info(
-      `getSimpleParam: length of trade actions ${
-        Object.keys(data.tradeActions).length
-      }`,
-    );
-
-    const output = BigInt(tradeByTargetAmount ? srcAmount : destAmount);
-    const amount = BigInt(tradeByTargetAmount ? destAmount : srcAmount);
-
-    // Set deadline in ms
-    const deadline = 10; // mins
+    // Set to max possible deadline
+    const deadline = 30; // mins
     const delta_deadline = new BigNumber(deadline).times(60).times(1000); // MS
     const deadlineInMs = delta_deadline.plus(Date.now()).toString(); // MS
 
-    const api = new ContractsApi(this.dexHelper.provider);
-
+    // Recalculating trade path as srcAmount/destAmount influence which orders to go through
     const toolkit = new Toolkit(
-      api,
-      data.cache,
-      address => data.decimals[address],
+      this.api,
+      new ChainCache(),
+      address => data.decimals[address.toLowerCase()] ?? undefined,
     );
 
-    const tradeData = await toolkit.getTradeData(
-      srcToken.toLowerCase(),
-      destToken.toLowerCase(),
-      amount.toString(),
-      tradeByTargetAmount,
-    );
+    const max_slippage = 5; // Max possible setting
+    const slippageBn = new BigNumber(max_slippage).div(100);
 
     let encodedData: PopulatedTransaction;
+
+    const tradeByTargetAmount: boolean = side === SwapSide.BUY;
+
+    const tradeData: {
+      tradeActions: TradeActionBNStr[];
+      actionsTokenRes: Action[];
+      totalSourceAmount: string;
+      totalTargetAmount: string;
+      effectiveRate: string;
+      actionsWei: MatchActionBNStr[];
+    } = data.tradeDataMap[tradeByTargetAmount ? destAmount : srcAmount];
+
+    let _srcAmount: string;
+    let _destAmount: string;
+
     if (tradeByTargetAmount) {
+      const maxInput = BigNumber(1)
+        .plus(slippageBn)
+        .times(BigNumber(tradeData.totalSourceAmount));
+
       encodedData = await toolkit.composeTradeByTargetTransaction(
         srcToken.toLowerCase(),
         destToken.toLowerCase(),
         tradeData.tradeActions,
         deadlineInMs,
-        output.toString(),
+        maxInput.toString(),
       );
+
+      _srcAmount = maxInput
+        .multipliedBy(BigNumber(10).pow(data.decimals[srcToken.toLowerCase()]))
+        .minus(BigNumber(1))
+        .toFixed(0);
+      _destAmount = destAmount;
     } else {
+      const minReturn = BigNumber(1)
+        .minus(slippageBn)
+        .times(BigNumber(tradeData.totalTargetAmount));
+
       encodedData = await toolkit.composeTradeBySourceTransaction(
         srcToken.toLowerCase(),
         destToken.toLowerCase(),
         tradeData.tradeActions,
         deadlineInMs,
-        output.toString(),
+        minReturn.toString(),
       );
+
+      _srcAmount = srcAmount;
+      _destAmount = minReturn
+        .multipliedBy(BigNumber(10).pow(data.decimals[destToken.toLowerCase()]))
+        .plus(BigNumber(1))
+        .toFixed(0);
     }
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken.toLowerCase(),
-      srcAmount,
-      destToken.toLowerCase(),
-      destAmount,
+    const simpleExchangeParam = this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      _srcAmount,
+      destToken,
+      _destAmount,
       encodedData.data || '',
       this.config.carbonController,
     );
+
+    return simpleExchangeParam;
   }
 
   // This is called once before getTopPoolsForToken is
@@ -356,9 +404,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
   // update common state required for calculating
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
+  async updatePoolState(): Promise<void> {}
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
@@ -370,7 +416,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
 
     const _tokenAddress = tokenAddress.toLowerCase();
 
-    const query = `
+    const topPairsQuery = `
     query ($token: Bytes!, $count: Int) {
       orders0: orders(first: $count, orderBy: y, orderDirection: desc, where: {type: "order0", y_gt: 0, strategy_: {token0: $token}}) {
         pair {
@@ -406,7 +452,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     `;
 
     const data = await this.mainPool._querySubgraph(
-      query,
+      topPairsQuery,
       {
         token: _tokenAddress.toLowerCase(),
         count: limit,
@@ -421,7 +467,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       return [];
     }
 
-    let tokenDecimals: number =
+    const tokenDecimals: number =
       data.orders0[0].strategy.token0.decimals ||
       data.orders1[0].strategy.token1.decimals;
 
@@ -438,7 +484,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       address: order.strategy.id,
       connectorTokens: [
         {
-          address: order.strategy.token1.id,
+          address: order.strategy.token1.id.toLowerCase(),
           decimals: order.strategy.token0.decimals,
         },
       ],
@@ -450,7 +496,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       address: order.strategy.id,
       connectorTokens: [
         {
-          address: order.strategy.token0.id,
+          address: order.strategy.token0.id.toLowerCase(),
           decimals: order.strategy.token1.decimals,
         },
       ],
