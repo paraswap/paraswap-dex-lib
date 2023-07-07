@@ -165,26 +165,26 @@ describe('Airswap E2E', () => {
       );
     });
 
-    // describe('USDC/USDC', () => {
-    //   const tokenASymbol: string = 'USDT';
-    //   const tokenBSymbol: string = 'USDC';
-    //   const nativeTokenSymbol: string = 'WETH';
+    describe('USDC/USDC', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDC';
+      const nativeTokenSymbol: string = 'WETH';
 
-    //   const tokenAAmount: string = '1000000000';
-    //   const tokenBAmount: string = '1000000000';
-    //   const nativeTokenAmount = '1000000000000000000';
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000';
+      const nativeTokenAmount = '1000000000000000000';
 
-    //   testForNetwork(
-    //     network,
-    //     dexKey,
-    //     tokenASymbol,
-    //     tokenBSymbol,
-    //     tokenAAmount,
-    //     tokenBAmount,
-    //     nativeTokenAmount,
-    //     nativeTokenSymbol,
-    //   );
-    // });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        nativeTokenSymbol,
+      );
+    });
 
     describe('USDT/WBTC', () => {
       const tokenASymbol: string = 'USDT';
@@ -194,6 +194,72 @@ describe('Airswap E2E', () => {
       const tokenAAmount: string = '1000000000';
       const tokenBAmount: string = '100000000';
       const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        nativeTokenSymbol,
+      );
+    });
+  });
+
+  describe('POLYGON', () => {
+    const network = Network.POLYGON;
+
+    describe('USDT/USDC', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDC';
+      const nativeTokenSymbol: string = 'WMATIC';
+
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '1000000';
+      const nativeTokenAmount = '1000000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        nativeTokenSymbol,
+      );
+    });
+    describe('USDC/USDT', () => {
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+      const nativeTokenSymbol: string = 'WMATIC';
+
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '1000000';
+      const nativeTokenAmount = '1000000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        nativeTokenSymbol,
+      );
+    });
+
+    describe('WETH/USDT', () => {
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDT';
+      const nativeTokenSymbol: string = 'WMATIC';
+
+      const tokenAAmount: string = '1000000000000000000000';
+      const tokenBAmount: string = '1000000';
+      const nativeTokenAmount = '1000000000000000000000';
 
       testForNetwork(
         network,
