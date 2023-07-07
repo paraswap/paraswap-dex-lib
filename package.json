@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
-    "@airswap/libraries": "4.0.10",
+    "@airswap/libraries": "4.0.13",
     "@airswap/types": "4.0.4",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.0.2",

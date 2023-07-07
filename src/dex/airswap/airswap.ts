@@ -26,14 +26,15 @@ import { AddressZero } from '@ethersproject/constants';
 
 import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
 import {
+  fulfilledWithinTimeout,
   getAvailableMakersForRFQ,
   getPricingErc20,
   getServersUrl,
   makeRFQ,
   priceFromThreshold,
 } from './airswap-tools';
-import { getBigNumberPow } from '../../bignumber-constants';
 import BigNumber from 'bignumber.js';
+import { getBigNumberPow } from '../../bignumber-constants';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -295,7 +296,6 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): Promise<void> {
-    // this.localProvider.websocket.close();
     return Promise.resolve();
   }
 
@@ -346,31 +346,29 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       normalizedDestToken,
       this.network,
     );
-    let responses = {} as PromiseFulfilledResult<QuoteResponse>[];
+    let responses = {} as Promise<QuoteResponse>[];
     try {
       responses =
         makers.length > 0
-          ? await Promise.allSettled(
-              makers.map(maker => {
-                return makeRFQ(
-                  maker,
-                  this.augustusAddress.toLocaleLowerCase(),
-                  normalizedSrcToken,
-                  normalizedDestToken,
-                  amount,
-                );
-              }),
-            )
+          ? makers.map(maker => {
+              return makeRFQ(
+                maker,
+                this.augustusAddress.toLocaleLowerCase(),
+                normalizedSrcToken,
+                normalizedDestToken,
+                amount,
+              );
+            })
           : ({} as unknown as any);
     } catch (error) {
       console.error(error);
     }
 
-    const firstResponse = responses
-      .filter(promise => promise.status === 'fulfilled')
-      .map(
-        (promise: PromiseFulfilledResult<QuoteResponse>) => promise.value,
-      )[0];
+    const fulfilledResponses = await fulfilledWithinTimeout<QuoteResponse>(
+      responses,
+      3000,
+    );
+    const firstResponse = fulfilledResponses[0];
 
     console.log('firstResponse', firstResponse);
     return [

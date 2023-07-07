@@ -7,7 +7,7 @@ import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
 import { SwapSide } from '@paraswap/core';
 import { FullOrderERC20 } from '@airswap/types';
-import { Protocols } from '@airswap/constants';
+// import { Protocols } from '@airswap/constants';
 
 export async function getAvailableMakersForRFQ(
   provider: providers.Provider,
@@ -22,7 +22,10 @@ export async function getAvailableMakersForRFQ(
       provider,
       chainId,
     );
-    const servers = await getServers(urls, chainId);
+    const servers = (await connectToServers(urls, chainId)).filter(s =>
+      s.locator.includes('altono'),
+    );
+    console.log('server:', servers);
     return Promise.resolve(servers);
   } catch (err) {
     return Promise.resolve([]);
@@ -36,29 +39,49 @@ export async function getServersUrl(
   chainId: number,
 ) {
   try {
+    // const urls = await RegistryV4.getServerURLs(provider, chainId, Protocols.PricingERC20, baseToken, quoteToken);
     const urls = await Registry.getServerURLs(
       provider,
       chainId,
       baseToken,
       quoteToken,
     );
-    return Promise.resolve(urls);
+    return Promise.resolve(
+      urls.filter(url => url.includes('altono') && !isWebsocket(url)),
+    );
   } catch (err) {
     console.error(err);
     return Promise.resolve([]);
   }
 }
 
-async function getServers(
+const isWebsocket = (url: string) => url.includes('wss');
+
+const rejectAfterDelay = (ms: number) =>
+  new Promise((_, reject) => {
+    setTimeout(reject, ms, new Error('timeout'));
+  });
+export const fulfilledWithinTimeout = async <T>(
+  promises: Promise<T>[],
+  timeout: number,
+): Promise<T[]> => {
+  promises = Array.isArray(promises) ? promises : [...promises];
+  const availblesMakers = (await Promise.allSettled(
+    promises.map(promise => Promise.race([promise, rejectAfterDelay(timeout)])),
+  )) as PromiseFulfilledResult<T>[];
+  const fulfilled = availblesMakers.filter(
+    ({ status }) => status === 'fulfilled',
+  );
+  return fulfilled.map(promise => promise.value);
+};
+
+async function connectToServers(
   serversUrl: string[],
   chainId: number,
 ): Promise<Array<Server>> {
-  const serverPromises = (await Promise.allSettled(
-    serversUrl.map(url => Server.at(url, { chainId })),
-  )) as PromiseFulfilledResult<Server>[];
-  return serverPromises
-    .filter(promise => promise.status === 'fulfilled')
-    .map((promise: PromiseFulfilledResult<Server>) => promise.value);
+  const promises = serversUrl.map(url => Server.at(url, { chainId }));
+  const servers = await fulfilledWithinTimeout<Server>(promises, 3000);
+  return servers;
 }
 
 export async function makeRFQ(
@@ -68,6 +91,8 @@ export async function makeRFQ(
   destToken: Token,
   amount: string,
 ): Promise<QuoteResponse> {
+  // senderWallet = '0xe4064498e11797e377a170b3d5974d38861fdabf'
+  // senderWallet = '0x4F67220b0329312c24ab97086011e7503aE955FE'
   try {
     console.log(
       'getSignerSideOrderERC20',
@@ -120,7 +145,7 @@ export async function getPricingErc20(
   let config = {
     method: 'POST' as Method,
     maxBodyLength: Infinity,
-    url: 'https://kehr54rr.altono.xyz/airswap/polygon/',
+    url,
     headers: {
       'Content-Type': 'application/json',
     },
@@ -131,11 +156,13 @@ export async function getPricingErc20(
 
   try {
     const response = await axios.request(config);
-    return swapSide === SwapSide.SELL
-      ? mapMakerSELLResponse(response.data.result[0].bid)
-      : mapMakerBUYResponse(response.data.result[0].ask);
+    const result =
+      swapSide === SwapSide.SELL
+        ? mapMakerSELLResponse(response.data.result[0].bid)
+        : mapMakerBUYResponse(response.data.result[0].ask);
+    console.log('getting answer from', url);
+    return result;
   } catch (err) {
-    console.log('response', err);
     return [];
   }
 }
@@ -209,11 +236,6 @@ export function priceFromThreshold(
     prices.push(totalPriceForAmount);
     indexAmount++;
   }
-
-  const decimals =
-    side === SwapSide.SELL ? destToken.decimals : srcToken.decimals;
-  const exp = getBigNumberPow(decimals);
-
   return {
     unitPrice: BigInt(unitPrice.toFixed(0)),
     prices: prices.map(price => BigInt(price.toFixed(0))),

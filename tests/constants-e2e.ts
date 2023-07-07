@@ -27,6 +27,11 @@ export const Tokens: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
     },
+    APE: {
+      address: '0x4d224452801aced8b2f0aebe155379bb5d594381',
+      decimals: 18,
+      symbol: 'APE',
+    },
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
@@ -43,6 +48,7 @@ export const Tokens: {
       decimals: 8,
       addBalance: balancesFn,
       addAllowance: allowedFn,
+      symbol: 'WBTC',
     },
     sBTC: {
       address: '0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6',
@@ -191,6 +197,7 @@ export const Tokens: {
     BUSD: {
       address: '0x4fabb145d64652a948d72533023f6e7a623c7c53',
       decimals: 18,
+      symbol: 'BUSD',
     },
     GUSD: {
       address: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd',
