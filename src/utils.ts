@@ -398,6 +398,7 @@ const toIntN = (n: number) => (x: bigint) => BigInt.asIntN(n, x);
 // INT
 export const int56 = toIntN(56);
 export const int24 = toIntN(24);
+export const int256 = toIntN(256);
 
 // UINT
 export const uint16 = toUintN(16);

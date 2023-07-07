@@ -23,11 +23,11 @@ import { MultiCallParams } from '../../lib/multi-wrapper';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 import { AlgebraMath } from './lib/AlgebraMath';
 import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
-import { TICK_SPACING } from './lib/Constants';
 import {
   _reduceTickBitmap,
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
+import { Constants } from './lib/Constants';
 
 export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -235,7 +235,9 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     };
 
     const currentTick = globalState.tick;
-    const startTickBitmap = TickBitMap.position(currentTick / TICK_SPACING)[0];
+    const startTickBitmap = TickBitMap.position(
+      currentTick / Constants.TICK_SPACING,
+    )[0];
 
     return {
       // TODO FILL
@@ -279,12 +281,12 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     } else {
       const zeroForOne = amount0 > 0n;
 
-      AlgebraMath.swapFromEvent(
+      AlgebraMath._calculateSwapAndLock(
         pool,
+        zeroForOne,
         newSqrtPriceX96,
         newTick,
         newLiquidity,
-        zeroForOne,
       );
 
       if (zeroForOne) {
