@@ -5,6 +5,8 @@ import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
 
+export const UNISWAP_V2_PAIRS_CACHE_TTL_S = 60 * 60 * 24; // 24 hours
+
 // BakerySwap and Dystopia were removed from AllUniswapForks and UniswapForksWithNetwork
 // as they have a modified pool implementation which are not compatible with
 // standard contract methods

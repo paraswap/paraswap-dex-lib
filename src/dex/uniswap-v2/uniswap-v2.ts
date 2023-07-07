@@ -52,6 +52,7 @@ import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { UNISWAP_V2_PAIRS_CACHE_TTL_S } from './constants';
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -186,7 +187,6 @@ export class UniswapV2
   extends SimpleExchange
   implements IDex<UniswapV2Data, UniswapParam>
 {
-  pairs: { [key: string]: UniswapV2Pair } = {};
   feeFactor = 10000;
   factory: Contract;
 
@@ -322,7 +322,7 @@ export class UniswapV2
     return price;
   }
 
-  async findPair(from: Token, to: Token) {
+  async findPair(from: Token, to: Token): Promise<UniswapV2Pair | null> {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
@@ -330,8 +330,17 @@ export class UniswapV2
         : [to, from];
 
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
-    let pair = this.pairs[key];
-    if (pair) return pair;
+
+    const cachedPair = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.network,
+      key,
+      UNISWAP_V2_PAIRS_CACHE_TTL_S,
+    );
+
+    if (cachedPair) return JSON.parse(cachedPair);
+
+    let pair: UniswapV2Pair;
     const exchange = await this.factory.methods
       .getPair(token0.address, token1.address)
       .call();
@@ -340,7 +349,15 @@ export class UniswapV2
     } else {
       pair = { token0, token1, exchange };
     }
-    this.pairs[key] = pair;
+
+    this.dexHelper.cache.setexAndCacheLocally(
+      this.dexKey,
+      this.network,
+      key,
+      UNISWAP_V2_PAIRS_CACHE_TTL_S,
+      JSON.stringify(pair),
+    );
+
     return pair;
   }
 
