@@ -120,13 +120,22 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
         }
         strategies {
           id,
+          owner {
+            id
+          },
           order0 {
+            outputToken {
+              id
+            },
             y,
             z,
             A,
             B
           },
           order1 {
+            outputToken {
+              id
+            },
             y,
             z,
             A,
@@ -160,8 +169,9 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
         strategies: _.map(pair.strategies, strategy => {
           return {
             id: strategy.id,
-            token0: pair.token0.id.toLowerCase(),
-            token1: pair.token1.id.toLowerCase(),
+            owner: strategy.owner.id.toLowerCase(),
+            token0: strategy.order0.outputToken.id.toLowerCase(),
+            token1: strategy.order1.outputToken.id.toLowerCase(),
             order0: {
               y: BigNumber.from(strategy.order0.y),
               z: BigNumber.from(strategy.order0.z),
@@ -181,11 +191,11 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
 
     const newCache = new ChainCache();
 
-    newCache.applyBatchedUpdates(blockNumber, [], [], [], []);
-
     strategiesList.forEach(pair => {
       newCache.addPair(pair.token0, pair.token1, pair.strategies, true);
     });
+
+    newCache.applyBatchedUpdates(blockNumber, [], [], [], []);
 
     newCache.tradingFeePPM = await this.carbonController.methods
       .tradingFeePPM()
@@ -194,6 +204,9 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
     const newState: PoolState = {
       sdkCache: newCache,
     };
+
+    this.logger.info(`generateState: 
+    BlockNumber: ${blockNumber} newCache: ${JSON.stringify(newCache)}`);
 
     this.setState(newState, blockNumber);
 
