@@ -11,8 +11,7 @@ import { _require, int256, uint32 } from '../../../utils';
 import { DataStorageOperator } from './DataStorageOperator';
 import { SwapMath } from '../../uniswap-v3/contract-math/SwapMath';
 import { Constants } from './Constants';
-import { FullMath } from '../../uniswap-v3/contract-math/FullMath';
-import { FixedPoint128 } from '../../uniswap-v3/contract-math/FixedPoint128';
+import { BI_MAX_INT } from '../../../bigint-constants';
 
 type UpdatePositionCache = {
   price: bigint;
@@ -34,13 +33,13 @@ interface SwapCalculationCache {
   computedLatestTimepoint: boolean; //  if we have already fetched _tickCumulative_ and _secondPerLiquidity_ from the DataOperator
   amountRequiredInitial: bigint; // The initial value of the exact input\output amount
   amountCalculated: bigint; // The additive amount of total output\input calculated trough the swap
-  totalFeeGrowth: bigint; // The initial totalFeeGrowth + the fee growth during a swap
-  totalFeeGrowthB: bigint;
+
   incentiveStatus: Status; // If there is an active incentive at the moment
   exactInput: boolean; // Whether the exact input or output is specified
   fee: bigint; // The current dynamic fee
   startTick: bigint; // The tick at the start of a swap
   timepointIndex: bigint; // The index of last written timepoint
+  isFirstCycleState: boolean;
 }
 
 interface PriceMovementCache {
@@ -51,6 +50,15 @@ interface PriceMovementCache {
   input: bigint; // The additive amount of tokens that have been provided
   output: bigint; // The additive amount of token that have been withdrawn
   feeAmount: bigint; // The total amount of fee earned within a current step
+  tickCount: number;
+}
+
+function _updatePriceComputationObjects<
+  T extends SwapCalculationCache | PriceMovementCache,
+>(toUpdate: T, updateBy: T) {
+  for (const k of Object.keys(updateBy) as (keyof T)[]) {
+    toUpdate[k] = updateBy[k];
+  }
 }
 
 class AlgebraMathClass {
@@ -222,16 +230,16 @@ class AlgebraMathClass {
   _calculateSwapAndLock(
     poolState: PoolState,
     zeroToOne: boolean,
-    amountRequired: bigint,
-    newTick: bigint, // ?
-    limitSqrtPrice: bigint,
+    newSqrtPriceX96: bigint,
+    newTick: bigint,
+    newLiquidity: bigint,
   ) {
     const { globalState, liquidity, volumePerLiquidityInBlock } = poolState;
 
     let blockTimestamp;
     let cache: SwapCalculationCache = {
       amountCalculated: 0n,
-      amountRequiredInitial: 0n,
+      amountRequiredInitial: BI_MAX_INT, // similarly to waht we did for uniswap
       communityFee: 0n,
       computedLatestTimepoint: false,
       exactInput: false,
@@ -241,9 +249,8 @@ class AlgebraMathClass {
       startTick: 0n,
       tickCumulative: 0n,
       timepointIndex: 0n,
-      totalFeeGrowth: 0n,
-      totalFeeGrowthB: 0n,
       volumePerLiquidityInBlock: 0n,
+      isFirstCycleState: true,
     };
     let communityFeeAmount = 0n;
 
@@ -258,6 +265,8 @@ class AlgebraMathClass {
 
     globalState.unlocked = false; // lock will not be released in this function
     _require(unlocked, 'LOK');
+
+    let amountRequired = cache.amountRequiredInitial; // to revalidate
 
     _require(amountRequired != 0n, 'AS');
     [cache.amountRequiredInitial, cache.exactInput] = [
@@ -274,16 +283,16 @@ class AlgebraMathClass {
 
     if (zeroToOne) {
       _require(
-        limitSqrtPrice < currentPrice &&
-          limitSqrtPrice > TickMath.MIN_SQRT_RATIO,
+        newSqrtPriceX96 < currentPrice &&
+          newSqrtPriceX96 > TickMath.MIN_SQRT_RATIO,
         'SPL',
       );
       // cache.totalFeeGrowth = totalFeeGrowth0Token;
       cache.communityFee = _communityFeeToken0;
     } else {
       _require(
-        limitSqrtPrice > currentPrice &&
-          limitSqrtPrice < TickMath.MAX_SQRT_RATIO,
+        newSqrtPriceX96 > currentPrice &&
+          newSqrtPriceX96 < TickMath.MAX_SQRT_RATIO,
         'SPL',
       );
       // cache.totalFeeGrowth = totalFeeGrowth1Token;
@@ -294,7 +303,9 @@ class AlgebraMathClass {
 
     blockTimestamp = this._blockTimestamp(poolState);
 
-    let newTimepointIndex = DataStorageOperator.write(
+    // skip incentive related stuff
+
+    const newTimepointIndex = DataStorageOperator.write(
       poolState,
       cache.timepointIndex,
       blockTimestamp,
@@ -310,7 +321,7 @@ class AlgebraMathClass {
       cache.fee = poolState.globalState.fee; // safe to take as updated just before// _getNewFee(blockTimestamp, currentTick, newTimepointIndex, currentLiquidity);
     }
 
-    let step: PriceMovementCache = {
+    const step: PriceMovementCache = {
       feeAmount: 0n,
       initialized: true,
       input: 0n,
@@ -318,6 +329,7 @@ class AlgebraMathClass {
       nextTickPrice: 0n,
       output: 0n,
       stepSqrtPrice: 0n,
+      tickCount: 0,
     };
     // swap until there is remaining input or output tokens or we reach the price limit
     while (true) {
@@ -338,15 +350,15 @@ class AlgebraMathClass {
       // equivalent of  PriceMovementMath.movePriceTowardsTarget
       const result = SwapMath.computeSwapStep(
         poolState.globalState.price,
-        zeroToOne == step.nextTickPrice < limitSqrtPrice
-          ? limitSqrtPrice
+        zeroToOne == step.nextTickPrice < newSqrtPriceX96
+          ? newSqrtPriceX96
           : step.nextTickPrice,
         currentLiquidity,
         amountRequired,
         cache.fee,
       );
       [currentPrice, step.input, step.output, step.feeAmount] = [
-        result.sqrtRatioNextX96,
+        result.sqrtRatioNextX96, // TODO validate
         result.amountIn,
         result.amountOut,
         result.feeAmount,
@@ -369,12 +381,7 @@ class AlgebraMathClass {
         communityFeeAmount += delta;
       }
 
-      if (currentLiquidity > 0n)
-        cache.totalFeeGrowth += FullMath.mulDiv(
-          step.feeAmount,
-          FixedPoint128.Q128,
-          currentLiquidity,
-        );
+      // skip totalFeeGrowth fee logic
 
       if (currentPrice == step.nextTickPrice) {
         // if the reached tick is initialized then we need to cross it
@@ -434,7 +441,11 @@ class AlgebraMathClass {
       }
 
       // check stop condition
-      if (amountRequired == 0n || currentPrice == limitSqrtPrice) {
+      if (
+        amountRequired == 0n ||
+        currentPrice == newSqrtPriceX96 ||
+        currentTick === newTick // deviation from contract
+      ) {
         break;
       }
     }
@@ -467,6 +478,10 @@ class AlgebraMathClass {
     ];
 
     // no need to update fees
+
+    if (poolState.liquidity !== newLiquidity)
+      // prefer assert ?
+      poolState.liquidity = newLiquidity;
   }
 
   _blockTimestamp(state: DeepReadonly<PoolState>) {
