@@ -33,6 +33,8 @@ export const deserialize = (value: any): any => {
 
   if (typeof value === 'object' && value !== null) {
     const deserializedObj: { [key: string]: any } = {};
+    // Not used for the carbon deployment
+    // eslint-disable-next-line no-restricted-syntax
     for (const key in value) {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
         deserializedObj[key] = deserialize(value[key]);
@@ -54,6 +56,8 @@ export const replaceBigNumbersWithStrings = <T>(
 
     if (typeof obj === 'object' && obj !== null) {
       const newObj: any = Array.isArray(obj) ? [] : {};
+      // Not used for the carbon deployment
+      // eslint-disable-next-line no-restricted-syntax
       for (const key in obj) {
         newObj[key] = replace(obj[key]);
       }
