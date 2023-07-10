@@ -13,20 +13,20 @@ import type {
   PopulatedTransaction,
   Signer,
   utils,
-} from "ethers";
+} from 'ethers';
 import type {
   FunctionFragment,
   Result,
   EventFragment,
-} from "@ethersproject/abi";
-import type { Listener, Provider } from "@ethersproject/providers";
+} from '@ethersproject/abi';
+import type { Listener, Provider } from '@ethersproject/providers';
 import type {
   TypedEventFilter,
   TypedEvent,
   TypedListener,
   OnEvent,
   PromiseOrValue,
-} from "./common";
+} from './common';
 
 export type OrderStruct = {
   y: PromiseOrValue<BigNumberish>;
@@ -73,7 +73,7 @@ export type StrategyStructOutput = [
   BigNumber,
   string,
   [string, string],
-  [OrderStructOutput, OrderStructOutput]
+  [OrderStructOutput, OrderStructOutput],
 ] & {
   id: BigNumber;
   owner: string;
@@ -83,420 +83,420 @@ export type StrategyStructOutput = [
 
 export interface CarbonControllerInterface extends utils.Interface {
   functions: {
-    "admin()": FunctionFragment;
-    "implementation()": FunctionFragment;
-    "upgradeTo(address)": FunctionFragment;
-    "upgradeToAndCall(address,bytes)": FunctionFragment;
-    "DEFAULT_ADMIN_ROLE()": FunctionFragment;
-    "accumulatedFees(address)": FunctionFragment;
-    "calculateTradeSourceAmount(address,address,(uint256,uint128)[])": FunctionFragment;
-    "calculateTradeTargetAmount(address,address,(uint256,uint128)[])": FunctionFragment;
-    "controllerType()": FunctionFragment;
-    "createPair(address,address)": FunctionFragment;
-    "createStrategy(address,address,tuple[2])": FunctionFragment;
-    "deleteStrategy(uint256)": FunctionFragment;
-    "getRoleAdmin(bytes32)": FunctionFragment;
-    "getRoleMember(bytes32,uint256)": FunctionFragment;
-    "getRoleMemberCount(bytes32)": FunctionFragment;
-    "grantRole(bytes32,address)": FunctionFragment;
-    "hasRole(bytes32,address)": FunctionFragment;
-    "initialize()": FunctionFragment;
-    "pair(address,address)": FunctionFragment;
-    "pairs()": FunctionFragment;
-    "pause()": FunctionFragment;
-    "paused()": FunctionFragment;
-    "postUpgrade(bytes)": FunctionFragment;
-    "renounceRole(bytes32,address)": FunctionFragment;
-    "revokeRole(bytes32,address)": FunctionFragment;
-    "roleAdmin()": FunctionFragment;
-    "roleEmergencyStopper()": FunctionFragment;
-    "roleFeesManager()": FunctionFragment;
-    "setTradingFeePPM(uint32)": FunctionFragment;
-    "strategiesByPair(address,address,uint256,uint256)": FunctionFragment;
-    "strategiesByPairCount(address,address)": FunctionFragment;
-    "strategy(uint256)": FunctionFragment;
-    "supportsInterface(bytes4)": FunctionFragment;
-    "tradeBySourceAmount(address,address,(uint256,uint128)[],uint256,uint128)": FunctionFragment;
-    "tradeByTargetAmount(address,address,(uint256,uint128)[],uint256,uint128)": FunctionFragment;
-    "tradingFeePPM()": FunctionFragment;
-    "unpause()": FunctionFragment;
-    "updateStrategy(uint256,tuple[2],tuple[2])": FunctionFragment;
-    "version()": FunctionFragment;
-    "withdrawFees(address,uint256,address)": FunctionFragment;
+    'admin()': FunctionFragment;
+    'implementation()': FunctionFragment;
+    'upgradeTo(address)': FunctionFragment;
+    'upgradeToAndCall(address,bytes)': FunctionFragment;
+    'DEFAULT_ADMIN_ROLE()': FunctionFragment;
+    'accumulatedFees(address)': FunctionFragment;
+    'calculateTradeSourceAmount(address,address,(uint256,uint128)[])': FunctionFragment;
+    'calculateTradeTargetAmount(address,address,(uint256,uint128)[])': FunctionFragment;
+    'controllerType()': FunctionFragment;
+    'createPair(address,address)': FunctionFragment;
+    'createStrategy(address,address,tuple[2])': FunctionFragment;
+    'deleteStrategy(uint256)': FunctionFragment;
+    'getRoleAdmin(bytes32)': FunctionFragment;
+    'getRoleMember(bytes32,uint256)': FunctionFragment;
+    'getRoleMemberCount(bytes32)': FunctionFragment;
+    'grantRole(bytes32,address)': FunctionFragment;
+    'hasRole(bytes32,address)': FunctionFragment;
+    'initialize()': FunctionFragment;
+    'pair(address,address)': FunctionFragment;
+    'pairs()': FunctionFragment;
+    'pause()': FunctionFragment;
+    'paused()': FunctionFragment;
+    'postUpgrade(bytes)': FunctionFragment;
+    'renounceRole(bytes32,address)': FunctionFragment;
+    'revokeRole(bytes32,address)': FunctionFragment;
+    'roleAdmin()': FunctionFragment;
+    'roleEmergencyStopper()': FunctionFragment;
+    'roleFeesManager()': FunctionFragment;
+    'setTradingFeePPM(uint32)': FunctionFragment;
+    'strategiesByPair(address,address,uint256,uint256)': FunctionFragment;
+    'strategiesByPairCount(address,address)': FunctionFragment;
+    'strategy(uint256)': FunctionFragment;
+    'supportsInterface(bytes4)': FunctionFragment;
+    'tradeBySourceAmount(address,address,(uint256,uint128)[],uint256,uint128)': FunctionFragment;
+    'tradeByTargetAmount(address,address,(uint256,uint128)[],uint256,uint128)': FunctionFragment;
+    'tradingFeePPM()': FunctionFragment;
+    'unpause()': FunctionFragment;
+    'updateStrategy(uint256,tuple[2],tuple[2])': FunctionFragment;
+    'version()': FunctionFragment;
+    'withdrawFees(address,uint256,address)': FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
-      | "admin"
-      | "implementation"
-      | "upgradeTo"
-      | "upgradeToAndCall"
-      | "DEFAULT_ADMIN_ROLE"
-      | "accumulatedFees"
-      | "calculateTradeSourceAmount"
-      | "calculateTradeTargetAmount"
-      | "controllerType"
-      | "createPair"
-      | "createStrategy"
-      | "deleteStrategy"
-      | "getRoleAdmin"
-      | "getRoleMember"
-      | "getRoleMemberCount"
-      | "grantRole"
-      | "hasRole"
-      | "initialize"
-      | "pair"
-      | "pairs"
-      | "pause"
-      | "paused"
-      | "postUpgrade"
-      | "renounceRole"
-      | "revokeRole"
-      | "roleAdmin"
-      | "roleEmergencyStopper"
-      | "roleFeesManager"
-      | "setTradingFeePPM"
-      | "strategiesByPair"
-      | "strategiesByPairCount"
-      | "strategy"
-      | "supportsInterface"
-      | "tradeBySourceAmount"
-      | "tradeByTargetAmount"
-      | "tradingFeePPM"
-      | "unpause"
-      | "updateStrategy"
-      | "version"
-      | "withdrawFees"
+      | 'admin'
+      | 'implementation'
+      | 'upgradeTo'
+      | 'upgradeToAndCall'
+      | 'DEFAULT_ADMIN_ROLE'
+      | 'accumulatedFees'
+      | 'calculateTradeSourceAmount'
+      | 'calculateTradeTargetAmount'
+      | 'controllerType'
+      | 'createPair'
+      | 'createStrategy'
+      | 'deleteStrategy'
+      | 'getRoleAdmin'
+      | 'getRoleMember'
+      | 'getRoleMemberCount'
+      | 'grantRole'
+      | 'hasRole'
+      | 'initialize'
+      | 'pair'
+      | 'pairs'
+      | 'pause'
+      | 'paused'
+      | 'postUpgrade'
+      | 'renounceRole'
+      | 'revokeRole'
+      | 'roleAdmin'
+      | 'roleEmergencyStopper'
+      | 'roleFeesManager'
+      | 'setTradingFeePPM'
+      | 'strategiesByPair'
+      | 'strategiesByPairCount'
+      | 'strategy'
+      | 'supportsInterface'
+      | 'tradeBySourceAmount'
+      | 'tradeByTargetAmount'
+      | 'tradingFeePPM'
+      | 'unpause'
+      | 'updateStrategy'
+      | 'version'
+      | 'withdrawFees',
   ): FunctionFragment;
 
-  encodeFunctionData(functionFragment: "admin", values?: undefined): string;
+  encodeFunctionData(functionFragment: 'admin', values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "implementation",
-    values?: undefined
+    functionFragment: 'implementation',
+    values?: undefined,
   ): string;
   encodeFunctionData(
-    functionFragment: "upgradeTo",
-    values: [PromiseOrValue<string>]
+    functionFragment: 'upgradeTo',
+    values: [PromiseOrValue<string>],
   ): string;
   encodeFunctionData(
-    functionFragment: "upgradeToAndCall",
-    values: [PromiseOrValue<string>, PromiseOrValue<BytesLike>]
+    functionFragment: 'upgradeToAndCall',
+    values: [PromiseOrValue<string>, PromiseOrValue<BytesLike>],
   ): string;
   encodeFunctionData(
-    functionFragment: "DEFAULT_ADMIN_ROLE",
-    values?: undefined
+    functionFragment: 'DEFAULT_ADMIN_ROLE',
+    values?: undefined,
   ): string;
   encodeFunctionData(
-    functionFragment: "accumulatedFees",
-    values: [PromiseOrValue<string>]
+    functionFragment: 'accumulatedFees',
+    values: [PromiseOrValue<string>],
   ): string;
   encodeFunctionData(
-    functionFragment: "calculateTradeSourceAmount",
+    functionFragment: 'calculateTradeSourceAmount',
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
-      TradeActionStruct[]
-    ]
+      TradeActionStruct[],
+    ],
   ): string;
   encodeFunctionData(
-    functionFragment: "calculateTradeTargetAmount",
+    functionFragment: 'calculateTradeTargetAmount',
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
-      TradeActionStruct[]
-    ]
+      TradeActionStruct[],
+    ],
   ): string;
   encodeFunctionData(
-    functionFragment: "controllerType",
-    values?: undefined
+    functionFragment: 'controllerType',
+    values?: undefined,
   ): string;
   encodeFunctionData(
-    functionFragment: "createPair",
-    values: [PromiseOrValue<string>, PromiseOrValue<string>]
+    functionFragment: 'createPair',
+    values: [PromiseOrValue<string>, PromiseOrValue<string>],
   ): string;
   encodeFunctionData(
-    functionFragment: "createStrategy",
+    functionFragment: 'createStrategy',
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
-      [OrderStruct, OrderStruct]
-    ]
+      [OrderStruct, OrderStruct],
+    ],
   ): string;
   encodeFunctionData(
-    functionFragment: "deleteStrategy",
-    values: [PromiseOrValue<BigNumberish>]
+    functionFragment: 'deleteStrategy',
+    values: [PromiseOrValue<BigNumberish>],
   ): string;
   encodeFunctionData(
-    functionFragment: "getRoleAdmin",
-    values: [PromiseOrValue<BytesLike>]
+    functionFragment: 'getRoleAdmin',
+    values: [PromiseOrValue<BytesLike>],
   ): string;
   encodeFunctionData(
-    functionFragment: "getRoleMember",
-    values: [PromiseOrValue<BytesLike>, PromiseOrValue<BigNumberish>]
+    functionFragment: 'getRoleMember',
+    values: [PromiseOrValue<BytesLike>, PromiseOrValue<BigNumberish>],
   ): string;
   encodeFunctionData(
-    functionFragment: "getRoleMemberCount",
-    values: [PromiseOrValue<BytesLike>]
+    functionFragment: 'getRoleMemberCount',
+    values: [PromiseOrValue<BytesLike>],
   ): string;
   encodeFunctionData(
-    functionFragment: "grantRole",
-    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>]
+    functionFragment: 'grantRole',
+    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>],
   ): string;
   encodeFunctionData(
-    functionFragment: "hasRole",
-    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>]
+    functionFragment: 'hasRole',
+    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>],
   ): string;
   encodeFunctionData(
-    functionFragment: "initialize",
-    values?: undefined
+    functionFragment: 'initialize',
+    values?: undefined,
   ): string;
   encodeFunctionData(
-    functionFragment: "pair",
-    values: [PromiseOrValue<string>, PromiseOrValue<string>]
+    functionFragment: 'pair',
+    values: [PromiseOrValue<string>, PromiseOrValue<string>],
   ): string;
-  encodeFunctionData(functionFragment: "pairs", values?: undefined): string;
-  encodeFunctionData(functionFragment: "pause", values?: undefined): string;
-  encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(functionFragment: 'pairs', values?: undefined): string;
+  encodeFunctionData(functionFragment: 'pause', values?: undefined): string;
+  encodeFunctionData(functionFragment: 'paused', values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "postUpgrade",
-    values: [PromiseOrValue<BytesLike>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "renounceRole",
-    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>]
+    functionFragment: 'postUpgrade',
+    values: [PromiseOrValue<BytesLike>],
   ): string;
   encodeFunctionData(
-    functionFragment: "revokeRole",
-    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(functionFragment: "roleAdmin", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "roleEmergencyStopper",
-    values?: undefined
+    functionFragment: 'renounceRole',
+    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>],
   ): string;
   encodeFunctionData(
-    functionFragment: "roleFeesManager",
-    values?: undefined
+    functionFragment: 'revokeRole',
+    values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>],
+  ): string;
+  encodeFunctionData(functionFragment: 'roleAdmin', values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: 'roleEmergencyStopper',
+    values?: undefined,
   ): string;
   encodeFunctionData(
-    functionFragment: "setTradingFeePPM",
-    values: [PromiseOrValue<BigNumberish>]
+    functionFragment: 'roleFeesManager',
+    values?: undefined,
   ): string;
   encodeFunctionData(
-    functionFragment: "strategiesByPair",
+    functionFragment: 'setTradingFeePPM',
+    values: [PromiseOrValue<BigNumberish>],
+  ): string;
+  encodeFunctionData(
+    functionFragment: 'strategiesByPair',
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
       PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>
-    ]
+      PromiseOrValue<BigNumberish>,
+    ],
   ): string;
   encodeFunctionData(
-    functionFragment: "strategiesByPairCount",
-    values: [PromiseOrValue<string>, PromiseOrValue<string>]
+    functionFragment: 'strategiesByPairCount',
+    values: [PromiseOrValue<string>, PromiseOrValue<string>],
   ): string;
   encodeFunctionData(
-    functionFragment: "strategy",
-    values: [PromiseOrValue<BigNumberish>]
+    functionFragment: 'strategy',
+    values: [PromiseOrValue<BigNumberish>],
   ): string;
   encodeFunctionData(
-    functionFragment: "supportsInterface",
-    values: [PromiseOrValue<BytesLike>]
+    functionFragment: 'supportsInterface',
+    values: [PromiseOrValue<BytesLike>],
   ): string;
   encodeFunctionData(
-    functionFragment: "tradeBySourceAmount",
+    functionFragment: 'tradeBySourceAmount',
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
       TradeActionStruct[],
       PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>
-    ]
+      PromiseOrValue<BigNumberish>,
+    ],
   ): string;
   encodeFunctionData(
-    functionFragment: "tradeByTargetAmount",
+    functionFragment: 'tradeByTargetAmount',
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
       TradeActionStruct[],
       PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>
-    ]
+      PromiseOrValue<BigNumberish>,
+    ],
   ): string;
   encodeFunctionData(
-    functionFragment: "tradingFeePPM",
-    values?: undefined
+    functionFragment: 'tradingFeePPM',
+    values?: undefined,
   ): string;
-  encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
+  encodeFunctionData(functionFragment: 'unpause', values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "updateStrategy",
+    functionFragment: 'updateStrategy',
     values: [
       PromiseOrValue<BigNumberish>,
       [OrderStruct, OrderStruct],
-      [OrderStruct, OrderStruct]
-    ]
+      [OrderStruct, OrderStruct],
+    ],
   ): string;
-  encodeFunctionData(functionFragment: "version", values?: undefined): string;
+  encodeFunctionData(functionFragment: 'version', values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "withdrawFees",
+    functionFragment: 'withdrawFees',
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<BigNumberish>,
-      PromiseOrValue<string>
-    ]
+      PromiseOrValue<string>,
+    ],
   ): string;
 
-  decodeFunctionResult(functionFragment: "admin", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'admin', data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "implementation",
-    data: BytesLike
+    functionFragment: 'implementation',
+    data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "upgradeTo", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'upgradeTo', data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "upgradeToAndCall",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "DEFAULT_ADMIN_ROLE",
-    data: BytesLike
+    functionFragment: 'upgradeToAndCall',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "accumulatedFees",
-    data: BytesLike
+    functionFragment: 'DEFAULT_ADMIN_ROLE',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "calculateTradeSourceAmount",
-    data: BytesLike
+    functionFragment: 'accumulatedFees',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "calculateTradeTargetAmount",
-    data: BytesLike
+    functionFragment: 'calculateTradeSourceAmount',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "controllerType",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "createPair", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "createStrategy",
-    data: BytesLike
+    functionFragment: 'calculateTradeTargetAmount',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "deleteStrategy",
-    data: BytesLike
+    functionFragment: 'controllerType',
+    data: BytesLike,
+  ): Result;
+  decodeFunctionResult(functionFragment: 'createPair', data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: 'createStrategy',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getRoleAdmin",
-    data: BytesLike
+    functionFragment: 'deleteStrategy',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getRoleMember",
-    data: BytesLike
+    functionFragment: 'getRoleAdmin',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getRoleMemberCount",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pairs", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "postUpgrade",
-    data: BytesLike
+    functionFragment: 'getRoleMember',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "renounceRole",
-    data: BytesLike
+    functionFragment: 'getRoleMemberCount',
+    data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "roleAdmin", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'grantRole', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'hasRole', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'initialize', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'pair', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'pairs', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'pause', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'paused', data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "roleEmergencyStopper",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "roleFeesManager",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "setTradingFeePPM",
-    data: BytesLike
+    functionFragment: 'postUpgrade',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "strategiesByPair",
-    data: BytesLike
+    functionFragment: 'renounceRole',
+    data: BytesLike,
+  ): Result;
+  decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'roleAdmin', data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: 'roleEmergencyStopper',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "strategiesByPairCount",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "strategy", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "supportsInterface",
-    data: BytesLike
+    functionFragment: 'roleFeesManager',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "tradeBySourceAmount",
-    data: BytesLike
+    functionFragment: 'setTradingFeePPM',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "tradeByTargetAmount",
-    data: BytesLike
+    functionFragment: 'strategiesByPair',
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(
-    functionFragment: "tradingFeePPM",
-    data: BytesLike
+    functionFragment: 'strategiesByPairCount',
+    data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'strategy', data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "updateStrategy",
-    data: BytesLike
+    functionFragment: 'supportsInterface',
+    data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "version", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "withdrawFees",
-    data: BytesLike
+    functionFragment: 'tradeBySourceAmount',
+    data: BytesLike,
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: 'tradeByTargetAmount',
+    data: BytesLike,
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: 'tradingFeePPM',
+    data: BytesLike,
+  ): Result;
+  decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: 'updateStrategy',
+    data: BytesLike,
+  ): Result;
+  decodeFunctionResult(functionFragment: 'version', data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: 'withdrawFees',
+    data: BytesLike,
   ): Result;
 
   events: {
-    "AdminChanged(address,address)": EventFragment;
-    "BeaconUpgraded(address)": EventFragment;
-    "Upgraded(address)": EventFragment;
-    "FeesWithdrawn(address,address,uint256,address)": EventFragment;
-    "Initialized(uint8)": EventFragment;
-    "PairCreated(uint128,address,address)": EventFragment;
-    "Paused(address)": EventFragment;
-    "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
-    "RoleGranted(bytes32,address,address)": EventFragment;
-    "RoleRevoked(bytes32,address,address)": EventFragment;
-    "StrategyCreated(uint256,address,address,address,tuple,tuple)": EventFragment;
-    "StrategyDeleted(uint256,address,address,address,tuple,tuple)": EventFragment;
-    "StrategyUpdated(uint256,address,address,tuple,tuple,uint8)": EventFragment;
-    "TokensTraded(address,address,address,uint256,uint256,uint128,bool)": EventFragment;
-    "TradingFeePPMUpdated(uint32,uint32)": EventFragment;
-    "Unpaused(address)": EventFragment;
+    'AdminChanged(address,address)': EventFragment;
+    'BeaconUpgraded(address)': EventFragment;
+    'Upgraded(address)': EventFragment;
+    'FeesWithdrawn(address,address,uint256,address)': EventFragment;
+    'Initialized(uint8)': EventFragment;
+    'PairCreated(uint128,address,address)': EventFragment;
+    'Paused(address)': EventFragment;
+    'RoleAdminChanged(bytes32,bytes32,bytes32)': EventFragment;
+    'RoleGranted(bytes32,address,address)': EventFragment;
+    'RoleRevoked(bytes32,address,address)': EventFragment;
+    'StrategyCreated(uint256,address,address,address,tuple,tuple)': EventFragment;
+    'StrategyDeleted(uint256,address,address,address,tuple,tuple)': EventFragment;
+    'StrategyUpdated(uint256,address,address,tuple,tuple,uint8)': EventFragment;
+    'TokensTraded(address,address,address,uint256,uint256,uint128,bool)': EventFragment;
+    'TradingFeePPMUpdated(uint32,uint32)': EventFragment;
+    'Unpaused(address)': EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "AdminChanged"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "BeaconUpgraded"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Upgraded"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "FeesWithdrawn"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Initialized"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "PairCreated"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "StrategyCreated"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "StrategyDeleted"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "StrategyUpdated"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "TokensTraded"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "TradingFeePPMUpdated"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'AdminChanged'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'BeaconUpgraded'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'Upgraded'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'FeesWithdrawn'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'Initialized'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'PairCreated'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'Paused'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'RoleAdminChanged'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'RoleGranted'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'RoleRevoked'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'StrategyCreated'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'StrategyDeleted'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'StrategyUpdated'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'TokensTraded'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'TradingFeePPMUpdated'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'Unpaused'): EventFragment;
 }
 
 export interface AdminChangedEventObject {
@@ -693,15 +693,15 @@ export interface CarbonController extends BaseContract {
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
     fromBlockOrBlockhash?: string | number | undefined,
-    toBlock?: string | number | undefined
+    toBlock?: string | number | undefined,
   ): Promise<Array<TEvent>>;
 
   listeners<TEvent extends TypedEvent>(
-    eventFilter?: TypedEventFilter<TEvent>
+    eventFilter?: TypedEventFilter<TEvent>,
   ): Array<TypedListener<TEvent>>;
   listeners(eventName?: string): Array<Listener>;
   removeAllListeners<TEvent extends TypedEvent>(
-    eventFilter: TypedEventFilter<TEvent>
+    eventFilter: TypedEventFilter<TEvent>,
   ): this;
   removeAllListeners(eventName?: string): this;
   off: OnEvent<this>;
@@ -711,43 +711,43 @@ export interface CarbonController extends BaseContract {
 
   functions: {
     admin(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     implementation(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     upgradeTo(
       newImplementation: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     upgradeToAndCall(
       newImplementation: PromiseOrValue<string>,
       data: PromiseOrValue<BytesLike>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<[string]>;
 
     accumulatedFees(
       token: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[BigNumber]>;
 
     calculateTradeSourceAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[BigNumber]>;
 
     calculateTradeTargetAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[BigNumber]>;
 
     controllerType(overrides?: CallOverrides): Promise<[number]>;
@@ -755,82 +755,82 @@ export interface CarbonController extends BaseContract {
     createPair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     createStrategy(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
       orders: [OrderStruct, OrderStruct],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     deleteStrategy(
       strategyId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     getRoleAdmin(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[string]>;
 
     getRoleMember(
       role: PromiseOrValue<BytesLike>,
       index: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[string]>;
 
     getRoleMemberCount(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[BigNumber]>;
 
     grantRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     hasRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[boolean]>;
 
     initialize(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     pair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[PairStructOutput]>;
 
     pairs(overrides?: CallOverrides): Promise<[[string, string][]]>;
 
     pause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
 
     postUpgrade(
       data: PromiseOrValue<BytesLike>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     roleAdmin(overrides?: CallOverrides): Promise<[string]>;
@@ -841,7 +841,7 @@ export interface CarbonController extends BaseContract {
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     strategiesByPair(
@@ -849,23 +849,23 @@ export interface CarbonController extends BaseContract {
       token1: PromiseOrValue<string>,
       startIndex: PromiseOrValue<BigNumberish>,
       endIndex: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[StrategyStructOutput[]]>;
 
     strategiesByPairCount(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[BigNumber]>;
 
     strategy(
       id: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[StrategyStructOutput]>;
 
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<[boolean]>;
 
     tradeBySourceAmount(
@@ -874,7 +874,7 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       minReturn: PromiseOrValue<BigNumberish>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     tradeByTargetAmount(
@@ -883,20 +883,20 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       maxInput: PromiseOrValue<BigNumberish>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     tradingFeePPM(overrides?: CallOverrides): Promise<[number]>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     updateStrategy(
       strategyId: PromiseOrValue<BigNumberish>,
       currentOrders: [OrderStruct, OrderStruct],
       newOrders: [OrderStruct, OrderStruct],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
 
     version(overrides?: CallOverrides): Promise<[number]>;
@@ -905,48 +905,48 @@ export interface CarbonController extends BaseContract {
       token: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       recipient: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<ContractTransaction>;
   };
 
   admin(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   implementation(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   upgradeTo(
     newImplementation: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   upgradeToAndCall(
     newImplementation: PromiseOrValue<string>,
     data: PromiseOrValue<BytesLike>,
-    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
 
   accumulatedFees(
     token: PromiseOrValue<string>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<BigNumber>;
 
   calculateTradeSourceAmount(
     sourceToken: PromiseOrValue<string>,
     targetToken: PromiseOrValue<string>,
     tradeActions: TradeActionStruct[],
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<BigNumber>;
 
   calculateTradeTargetAmount(
     sourceToken: PromiseOrValue<string>,
     targetToken: PromiseOrValue<string>,
     tradeActions: TradeActionStruct[],
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<BigNumber>;
 
   controllerType(overrides?: CallOverrides): Promise<number>;
@@ -954,82 +954,82 @@ export interface CarbonController extends BaseContract {
   createPair(
     token0: PromiseOrValue<string>,
     token1: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   createStrategy(
     token0: PromiseOrValue<string>,
     token1: PromiseOrValue<string>,
     orders: [OrderStruct, OrderStruct],
-    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   deleteStrategy(
     strategyId: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   getRoleAdmin(
     role: PromiseOrValue<BytesLike>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<string>;
 
   getRoleMember(
     role: PromiseOrValue<BytesLike>,
     index: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<string>;
 
   getRoleMemberCount(
     role: PromiseOrValue<BytesLike>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<BigNumber>;
 
   grantRole(
     role: PromiseOrValue<BytesLike>,
     account: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   hasRole(
     role: PromiseOrValue<BytesLike>,
     account: PromiseOrValue<string>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<boolean>;
 
   initialize(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   pair(
     token0: PromiseOrValue<string>,
     token1: PromiseOrValue<string>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<PairStructOutput>;
 
   pairs(overrides?: CallOverrides): Promise<[string, string][]>;
 
   pause(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
   postUpgrade(
     data: PromiseOrValue<BytesLike>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   renounceRole(
     role: PromiseOrValue<BytesLike>,
     account: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   revokeRole(
     role: PromiseOrValue<BytesLike>,
     account: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   roleAdmin(overrides?: CallOverrides): Promise<string>;
@@ -1040,7 +1040,7 @@ export interface CarbonController extends BaseContract {
 
   setTradingFeePPM(
     newTradingFeePPM: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   strategiesByPair(
@@ -1048,23 +1048,23 @@ export interface CarbonController extends BaseContract {
     token1: PromiseOrValue<string>,
     startIndex: PromiseOrValue<BigNumberish>,
     endIndex: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<StrategyStructOutput[]>;
 
   strategiesByPairCount(
     token0: PromiseOrValue<string>,
     token1: PromiseOrValue<string>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<BigNumber>;
 
   strategy(
     id: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<StrategyStructOutput>;
 
   supportsInterface(
     interfaceId: PromiseOrValue<BytesLike>,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<boolean>;
 
   tradeBySourceAmount(
@@ -1073,7 +1073,7 @@ export interface CarbonController extends BaseContract {
     tradeActions: TradeActionStruct[],
     deadline: PromiseOrValue<BigNumberish>,
     minReturn: PromiseOrValue<BigNumberish>,
-    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   tradeByTargetAmount(
@@ -1082,20 +1082,20 @@ export interface CarbonController extends BaseContract {
     tradeActions: TradeActionStruct[],
     deadline: PromiseOrValue<BigNumberish>,
     maxInput: PromiseOrValue<BigNumberish>,
-    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   tradingFeePPM(overrides?: CallOverrides): Promise<number>;
 
   unpause(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   updateStrategy(
     strategyId: PromiseOrValue<BigNumberish>,
     currentOrders: [OrderStruct, OrderStruct],
     newOrders: [OrderStruct, OrderStruct],
-    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   version(overrides?: CallOverrides): Promise<number>;
@@ -1104,7 +1104,7 @@ export interface CarbonController extends BaseContract {
     token: PromiseOrValue<string>,
     amount: PromiseOrValue<BigNumberish>,
     recipient: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
   ): Promise<ContractTransaction>;
 
   callStatic: {
@@ -1114,34 +1114,34 @@ export interface CarbonController extends BaseContract {
 
     upgradeTo(
       newImplementation: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     upgradeToAndCall(
       newImplementation: PromiseOrValue<string>,
       data: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
 
     accumulatedFees(
       token: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     calculateTradeSourceAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     calculateTradeTargetAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     controllerType(overrides?: CallOverrides): Promise<number>;
@@ -1149,47 +1149,47 @@ export interface CarbonController extends BaseContract {
     createPair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PairStructOutput>;
 
     createStrategy(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
       orders: [OrderStruct, OrderStruct],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     deleteStrategy(
       strategyId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     getRoleAdmin(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<string>;
 
     getRoleMember(
       role: PromiseOrValue<BytesLike>,
       index: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<string>;
 
     getRoleMemberCount(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     grantRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     hasRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     initialize(overrides?: CallOverrides): Promise<void>;
@@ -1197,7 +1197,7 @@ export interface CarbonController extends BaseContract {
     pair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PairStructOutput>;
 
     pairs(overrides?: CallOverrides): Promise<[string, string][]>;
@@ -1208,19 +1208,19 @@ export interface CarbonController extends BaseContract {
 
     postUpgrade(
       data: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     roleAdmin(overrides?: CallOverrides): Promise<string>;
@@ -1231,7 +1231,7 @@ export interface CarbonController extends BaseContract {
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     strategiesByPair(
@@ -1239,23 +1239,23 @@ export interface CarbonController extends BaseContract {
       token1: PromiseOrValue<string>,
       startIndex: PromiseOrValue<BigNumberish>,
       endIndex: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<StrategyStructOutput[]>;
 
     strategiesByPairCount(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     strategy(
       id: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<StrategyStructOutput>;
 
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     tradeBySourceAmount(
@@ -1264,7 +1264,7 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       minReturn: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     tradeByTargetAmount(
@@ -1273,7 +1273,7 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       maxInput: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     tradingFeePPM(overrides?: CallOverrides): Promise<number>;
@@ -1284,7 +1284,7 @@ export interface CarbonController extends BaseContract {
       strategyId: PromiseOrValue<BigNumberish>,
       currentOrders: [OrderStruct, OrderStruct],
       newOrders: [OrderStruct, OrderStruct],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     version(overrides?: CallOverrides): Promise<number>;
@@ -1293,104 +1293,104 @@ export interface CarbonController extends BaseContract {
       token: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       recipient: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
   };
 
   filters: {
-    "AdminChanged(address,address)"(
+    'AdminChanged(address,address)'(
       previousAdmin?: null,
-      newAdmin?: null
+      newAdmin?: null,
     ): AdminChangedEventFilter;
     AdminChanged(
       previousAdmin?: null,
-      newAdmin?: null
+      newAdmin?: null,
     ): AdminChangedEventFilter;
 
-    "BeaconUpgraded(address)"(
-      beacon?: PromiseOrValue<string> | null
+    'BeaconUpgraded(address)'(
+      beacon?: PromiseOrValue<string> | null,
     ): BeaconUpgradedEventFilter;
     BeaconUpgraded(
-      beacon?: PromiseOrValue<string> | null
+      beacon?: PromiseOrValue<string> | null,
     ): BeaconUpgradedEventFilter;
 
-    "Upgraded(address)"(
-      implementation?: PromiseOrValue<string> | null
+    'Upgraded(address)'(
+      implementation?: PromiseOrValue<string> | null,
     ): UpgradedEventFilter;
     Upgraded(
-      implementation?: PromiseOrValue<string> | null
+      implementation?: PromiseOrValue<string> | null,
     ): UpgradedEventFilter;
 
-    "FeesWithdrawn(address,address,uint256,address)"(
+    'FeesWithdrawn(address,address,uint256,address)'(
       token?: PromiseOrValue<string> | null,
       recipient?: PromiseOrValue<string> | null,
       amount?: PromiseOrValue<BigNumberish> | null,
-      sender?: null
+      sender?: null,
     ): FeesWithdrawnEventFilter;
     FeesWithdrawn(
       token?: PromiseOrValue<string> | null,
       recipient?: PromiseOrValue<string> | null,
       amount?: PromiseOrValue<BigNumberish> | null,
-      sender?: null
+      sender?: null,
     ): FeesWithdrawnEventFilter;
 
-    "Initialized(uint8)"(version?: null): InitializedEventFilter;
+    'Initialized(uint8)'(version?: null): InitializedEventFilter;
     Initialized(version?: null): InitializedEventFilter;
 
-    "PairCreated(uint128,address,address)"(
+    'PairCreated(uint128,address,address)'(
       pairId?: PromiseOrValue<BigNumberish> | null,
       token0?: PromiseOrValue<string> | null,
-      token1?: PromiseOrValue<string> | null
+      token1?: PromiseOrValue<string> | null,
     ): PairCreatedEventFilter;
     PairCreated(
       pairId?: PromiseOrValue<BigNumberish> | null,
       token0?: PromiseOrValue<string> | null,
-      token1?: PromiseOrValue<string> | null
+      token1?: PromiseOrValue<string> | null,
     ): PairCreatedEventFilter;
 
-    "Paused(address)"(account?: null): PausedEventFilter;
+    'Paused(address)'(account?: null): PausedEventFilter;
     Paused(account?: null): PausedEventFilter;
 
-    "RoleAdminChanged(bytes32,bytes32,bytes32)"(
+    'RoleAdminChanged(bytes32,bytes32,bytes32)'(
       role?: PromiseOrValue<BytesLike> | null,
       previousAdminRole?: PromiseOrValue<BytesLike> | null,
-      newAdminRole?: PromiseOrValue<BytesLike> | null
+      newAdminRole?: PromiseOrValue<BytesLike> | null,
     ): RoleAdminChangedEventFilter;
     RoleAdminChanged(
       role?: PromiseOrValue<BytesLike> | null,
       previousAdminRole?: PromiseOrValue<BytesLike> | null,
-      newAdminRole?: PromiseOrValue<BytesLike> | null
+      newAdminRole?: PromiseOrValue<BytesLike> | null,
     ): RoleAdminChangedEventFilter;
 
-    "RoleGranted(bytes32,address,address)"(
+    'RoleGranted(bytes32,address,address)'(
       role?: PromiseOrValue<BytesLike> | null,
       account?: PromiseOrValue<string> | null,
-      sender?: PromiseOrValue<string> | null
+      sender?: PromiseOrValue<string> | null,
     ): RoleGrantedEventFilter;
     RoleGranted(
       role?: PromiseOrValue<BytesLike> | null,
       account?: PromiseOrValue<string> | null,
-      sender?: PromiseOrValue<string> | null
+      sender?: PromiseOrValue<string> | null,
     ): RoleGrantedEventFilter;
 
-    "RoleRevoked(bytes32,address,address)"(
+    'RoleRevoked(bytes32,address,address)'(
       role?: PromiseOrValue<BytesLike> | null,
       account?: PromiseOrValue<string> | null,
-      sender?: PromiseOrValue<string> | null
+      sender?: PromiseOrValue<string> | null,
     ): RoleRevokedEventFilter;
     RoleRevoked(
       role?: PromiseOrValue<BytesLike> | null,
       account?: PromiseOrValue<string> | null,
-      sender?: PromiseOrValue<string> | null
+      sender?: PromiseOrValue<string> | null,
     ): RoleRevokedEventFilter;
 
-    "StrategyCreated(uint256,address,address,address,tuple,tuple)"(
+    'StrategyCreated(uint256,address,address,address,tuple,tuple)'(
       id?: null,
       owner?: PromiseOrValue<string> | null,
       token0?: PromiseOrValue<string> | null,
       token1?: PromiseOrValue<string> | null,
       order0?: null,
-      order1?: null
+      order1?: null,
     ): StrategyCreatedEventFilter;
     StrategyCreated(
       id?: null,
@@ -1398,16 +1398,16 @@ export interface CarbonController extends BaseContract {
       token0?: PromiseOrValue<string> | null,
       token1?: PromiseOrValue<string> | null,
       order0?: null,
-      order1?: null
+      order1?: null,
     ): StrategyCreatedEventFilter;
 
-    "StrategyDeleted(uint256,address,address,address,tuple,tuple)"(
+    'StrategyDeleted(uint256,address,address,address,tuple,tuple)'(
       id?: null,
       owner?: PromiseOrValue<string> | null,
       token0?: PromiseOrValue<string> | null,
       token1?: PromiseOrValue<string> | null,
       order0?: null,
-      order1?: null
+      order1?: null,
     ): StrategyDeletedEventFilter;
     StrategyDeleted(
       id?: null,
@@ -1415,16 +1415,16 @@ export interface CarbonController extends BaseContract {
       token0?: PromiseOrValue<string> | null,
       token1?: PromiseOrValue<string> | null,
       order0?: null,
-      order1?: null
+      order1?: null,
     ): StrategyDeletedEventFilter;
 
-    "StrategyUpdated(uint256,address,address,tuple,tuple,uint8)"(
+    'StrategyUpdated(uint256,address,address,tuple,tuple,uint8)'(
       id?: PromiseOrValue<BigNumberish> | null,
       token0?: PromiseOrValue<string> | null,
       token1?: PromiseOrValue<string> | null,
       order0?: null,
       order1?: null,
-      reason?: null
+      reason?: null,
     ): StrategyUpdatedEventFilter;
     StrategyUpdated(
       id?: PromiseOrValue<BigNumberish> | null,
@@ -1432,17 +1432,17 @@ export interface CarbonController extends BaseContract {
       token1?: PromiseOrValue<string> | null,
       order0?: null,
       order1?: null,
-      reason?: null
+      reason?: null,
     ): StrategyUpdatedEventFilter;
 
-    "TokensTraded(address,address,address,uint256,uint256,uint128,bool)"(
+    'TokensTraded(address,address,address,uint256,uint256,uint128,bool)'(
       trader?: PromiseOrValue<string> | null,
       sourceToken?: PromiseOrValue<string> | null,
       targetToken?: PromiseOrValue<string> | null,
       sourceAmount?: null,
       targetAmount?: null,
       tradingFeeAmount?: null,
-      byTargetAmount?: null
+      byTargetAmount?: null,
     ): TokensTradedEventFilter;
     TokensTraded(
       trader?: PromiseOrValue<string> | null,
@@ -1451,61 +1451,61 @@ export interface CarbonController extends BaseContract {
       sourceAmount?: null,
       targetAmount?: null,
       tradingFeeAmount?: null,
-      byTargetAmount?: null
+      byTargetAmount?: null,
     ): TokensTradedEventFilter;
 
-    "TradingFeePPMUpdated(uint32,uint32)"(
+    'TradingFeePPMUpdated(uint32,uint32)'(
       prevFeePPM?: null,
-      newFeePPM?: null
+      newFeePPM?: null,
     ): TradingFeePPMUpdatedEventFilter;
     TradingFeePPMUpdated(
       prevFeePPM?: null,
-      newFeePPM?: null
+      newFeePPM?: null,
     ): TradingFeePPMUpdatedEventFilter;
 
-    "Unpaused(address)"(account?: null): UnpausedEventFilter;
+    'Unpaused(address)'(account?: null): UnpausedEventFilter;
     Unpaused(account?: null): UnpausedEventFilter;
   };
 
   estimateGas: {
     admin(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     implementation(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     upgradeTo(
       newImplementation: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     upgradeToAndCall(
       newImplementation: PromiseOrValue<string>,
       data: PromiseOrValue<BytesLike>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
 
     accumulatedFees(
       token: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     calculateTradeSourceAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     calculateTradeTargetAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     controllerType(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1513,82 +1513,82 @@ export interface CarbonController extends BaseContract {
     createPair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     createStrategy(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
       orders: [OrderStruct, OrderStruct],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     deleteStrategy(
       strategyId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     getRoleAdmin(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     getRoleMember(
       role: PromiseOrValue<BytesLike>,
       index: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     getRoleMemberCount(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     grantRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     hasRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     initialize(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     pair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     pairs(overrides?: CallOverrides): Promise<BigNumber>;
 
     pause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
     postUpgrade(
       data: PromiseOrValue<BytesLike>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     roleAdmin(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1599,7 +1599,7 @@ export interface CarbonController extends BaseContract {
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     strategiesByPair(
@@ -1607,23 +1607,23 @@ export interface CarbonController extends BaseContract {
       token1: PromiseOrValue<string>,
       startIndex: PromiseOrValue<BigNumberish>,
       endIndex: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     strategiesByPairCount(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     strategy(
       id: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     tradeBySourceAmount(
@@ -1632,7 +1632,7 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       minReturn: PromiseOrValue<BigNumberish>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     tradeByTargetAmount(
@@ -1641,20 +1641,20 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       maxInput: PromiseOrValue<BigNumberish>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     tradingFeePPM(overrides?: CallOverrides): Promise<BigNumber>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     updateStrategy(
       strategyId: PromiseOrValue<BigNumberish>,
       currentOrders: [OrderStruct, OrderStruct],
       newOrders: [OrderStruct, OrderStruct],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
 
     version(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1663,51 +1663,51 @@ export interface CarbonController extends BaseContract {
       token: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       recipient: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
     admin(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     implementation(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     upgradeTo(
       newImplementation: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     upgradeToAndCall(
       newImplementation: PromiseOrValue<string>,
       data: PromiseOrValue<BytesLike>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     DEFAULT_ADMIN_ROLE(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     accumulatedFees(
       token: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     calculateTradeSourceAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     calculateTradeTargetAmount(
       sourceToken: PromiseOrValue<string>,
       targetToken: PromiseOrValue<string>,
       tradeActions: TradeActionStruct[],
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     controllerType(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -1715,95 +1715,95 @@ export interface CarbonController extends BaseContract {
     createPair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     createStrategy(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
       orders: [OrderStruct, OrderStruct],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     deleteStrategy(
       strategyId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     getRoleAdmin(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     getRoleMember(
       role: PromiseOrValue<BytesLike>,
       index: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     getRoleMemberCount(
       role: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     grantRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     hasRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     initialize(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     pair(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     pairs(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     pause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     postUpgrade(
       data: PromiseOrValue<BytesLike>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     roleAdmin(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     roleEmergencyStopper(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     roleFeesManager(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     strategiesByPair(
@@ -1811,23 +1811,23 @@ export interface CarbonController extends BaseContract {
       token1: PromiseOrValue<string>,
       startIndex: PromiseOrValue<BigNumberish>,
       endIndex: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     strategiesByPairCount(
       token0: PromiseOrValue<string>,
       token1: PromiseOrValue<string>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     strategy(
       id: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     tradeBySourceAmount(
@@ -1836,7 +1836,7 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       minReturn: PromiseOrValue<BigNumberish>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     tradeByTargetAmount(
@@ -1845,20 +1845,20 @@ export interface CarbonController extends BaseContract {
       tradeActions: TradeActionStruct[],
       deadline: PromiseOrValue<BigNumberish>,
       maxInput: PromiseOrValue<BigNumberish>,
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     tradingFeePPM(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     updateStrategy(
       strategyId: PromiseOrValue<BigNumberish>,
       currentOrders: [OrderStruct, OrderStruct],
       newOrders: [OrderStruct, OrderStruct],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
 
     version(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -1867,7 +1867,7 @@ export interface CarbonController extends BaseContract {
       token: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       recipient: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
     ): Promise<PopulatedTransaction>;
   };
 }
