@@ -11,6 +11,9 @@ import {
   Logger,
   NumberAsString,
   PoolPrices,
+  TxInfo,
+  PreprocessTransactionOptions,
+  ExchangeTxInfo,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -19,6 +22,7 @@ import {
   getDexKeysWithNetwork,
   interpolate,
   isTruthy,
+  uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -29,6 +33,7 @@ import {
   UniswapV3Data,
   UniswapV3Functions,
   UniswapV3Param,
+  UniswapV3SimpleSwapParams,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -39,14 +44,16 @@ import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
+  DirectMethods,
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_POOL_SEARCH_OVERHEAD,
   UNISWAPV3_TICK_BASE_OVERHEAD,
   UNISWAPV3_TICK_GAS_COST,
 } from './constants';
-import { DeepReadonly } from 'ts-essentials';
+import { assert, DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
@@ -56,6 +63,7 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
+import { OptimalSwapExchange } from '@paraswap/core';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -76,6 +84,8 @@ export class UniswapV3
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   intervalTask?: NodeJS.Timeout;
 
@@ -113,7 +123,7 @@ export class UniswapV3
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
-    // Normalise once all config addresses and use across all scenarios
+    // Normalize once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
     this.notExistingPoolSetKey =
@@ -449,6 +459,7 @@ export class UniswapV3
               fee: pool.feeCodeAsString,
             },
           ],
+          exchange: pool.poolAddress,
         },
         poolIdentifier: this.getPoolIdentifier(
           pool.token0,
@@ -731,6 +742,130 @@ export class UniswapV3
     return arr;
   }
 
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<UniswapV3Data>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<UniswapV3Data>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, this.config.router)
+        .call(undefined, 'latest');
+      isApproved =
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: UniswapV3Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<UniswapV3Param> {
+    if (
+      contractMethod !== DirectMethods.directSell &&
+      contractMethod !== DirectMethods.directBuy
+    ) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const path = this._encodePath(data.path, side);
+
+    const swapParams: UniswapV3Param = [
+      srcToken,
+      destToken,
+      this.config.router,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      deadline,
+      partner,
+      isApproved,
+      beneficiary,
+      path,
+      permit,
+      uuidToBytes16(uuid),
+    ];
+
+    const encoder = (...params: UniswapV3Param) => {
+      return this.directSwapIface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethods.directSell
+          : DirectMethods.directBuy,
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -745,7 +880,7 @@ export class UniswapV3
         : UniswapV3Functions.exactOutput;
 
     const path = this._encodePath(data.path, side);
-    const swapFunctionParams: UniswapV3Param =
+    const swapFunctionParams: UniswapV3SimpleSwapParams =
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,

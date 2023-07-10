@@ -5,9 +5,7 @@ import { Buy } from './buy';
 import { SimpleSwap, SimpleBuy } from './simpleswap';
 import { SimpleBuyNFT } from './simpleswapnft';
 import { DirectSwap } from './directswap';
-import { Adapters } from '../types';
 import { DexAdapterService } from '../dex';
-import { SwapSide } from '../constants';
 
 export class RouterService {
   hybridRouters = [

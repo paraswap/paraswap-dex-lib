@@ -76,6 +76,7 @@ const notImplemented: calc_token_amount = (
 const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
@@ -126,6 +127,12 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain3CoinThree,
 };
 
 export default implementations;

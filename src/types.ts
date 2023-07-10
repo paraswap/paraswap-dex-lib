@@ -275,6 +275,7 @@ export type Config = {
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   uniswapV3EventLoggingSampleRate?: number;
+  swaapV2AuthToken?: string;
 };
 
 export type BigIntAsString = string;
@@ -288,6 +289,7 @@ export type PreprocessTransactionOptions = {
   txOrigin: Address;
   hmac?: string;
   mockRfqAndLO?: boolean;
+  isDirectMethod?: boolean;
 };
 
 export type TransferFeeParams = {

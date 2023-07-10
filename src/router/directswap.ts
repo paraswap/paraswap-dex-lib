@@ -3,6 +3,12 @@ import { IDex } from '../dex/idex';
 import { Address, OptimalRate, TxInfo, Adapters } from '../types';
 import { SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
+import { assert } from 'ts-essentials';
+import {
+  encodeFeePercent,
+  encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
+} from './payload-encoder';
 
 export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
   // This is just psuedo name as the DirectSwap
@@ -51,6 +57,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
       );
 
     const swapExchange = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
+
     const srcAmount =
       priceRoute.side === SwapSide.SELL ? swapExchange.srcAmount : minMaxAmount;
     const destAmount =
@@ -58,14 +65,40 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
         ? minMaxAmount
         : swapExchange.destAmount;
 
+    const expectedAmount =
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount;
+
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            priceRoute.side,
+          ),
+        ];
+
     return dex.getDirectParam!(
       priceRoute.srcToken,
       priceRoute.destToken,
       srcAmount,
       destAmount,
+      expectedAmount,
       swapExchange.data,
       priceRoute.side,
       permit,
+      uuid,
+      feePercent,
+      deadline,
+      partner,
+      beneficiary,
       priceRoute.contractMethod,
     );
   }

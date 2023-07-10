@@ -133,6 +133,63 @@ describe('CurveV1 E2E', () => {
     });
   });
 
+  describe('CurveV1 POLYGON', () => {
+    const network = Network.POLYGON;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokensToTest = [
+      [
+        {
+          symbol: 'USDT',
+          amount: (10 ** 8).toString(),
+        },
+        {
+          symbol: 'DAI',
+          amount: (10 ** 8).toString(),
+        },
+      ],
+    ];
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+          ContractMethod.directCurveV1Swap,
+        ],
+      ],
+    ]);
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      contractMethods.forEach((contractMethod: ContractMethod) => {
+        tokensToTest.forEach(pair => {
+          describe(`${contractMethod}`, () => {
+            it(`${pair[0].symbol} -> ${pair[1].symbol}`, async () => {
+              await testE2E(
+                tokens[pair[0].symbol],
+                tokens[pair[1].symbol],
+                holders[pair[0].symbol],
+                side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
+
   describe('FANTOM', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
