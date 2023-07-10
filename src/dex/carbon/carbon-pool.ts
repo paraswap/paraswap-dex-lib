@@ -205,9 +205,6 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       sdkCache: newCache,
     };
 
-    this.logger.info(`generateState: 
-    BlockNumber: ${blockNumber} newCache: ${JSON.stringify(newCache)}`);
-
     this.setState(newState, blockNumber);
 
     return newState;
