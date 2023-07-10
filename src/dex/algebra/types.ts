@@ -62,15 +62,6 @@ export type DexParams = {
   initHash: string;
 };
 
-export type TickInfo = {
-  liquidityGross: bigint;
-  liquidityNet: bigint;
-  tickCumulativeOutside: bigint;
-  secondsPerLiquidityOutsideX128: bigint;
-  secondsOutside: bigint;
-  initialized: boolean;
-};
-
 export type TickBitMapMappingsWithBigNumber = {
   index: number;
   value: BigNumber;

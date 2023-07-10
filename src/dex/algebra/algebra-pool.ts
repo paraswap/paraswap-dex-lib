@@ -224,31 +224,44 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     _reduceTickBitmap(tickBitmap, _state.tickBitmap);
     _reduceTicks(ticks, _state.ticks);
 
-    const globalState = {
-      communityFeeToken0: 0n,
-      communityFeeToken1: 0n,
-      fee: 0n,
-      price: 0n,
-      tick: 0n,
-      timepointIndex: 0n,
-      unlocked: true,
+    const timepoints = {
+      [_state.globalState.timepointIndex]: {
+        blockTimestamp: bigIntify(_state.timepoints.blockTimestamp),
+        tickCumulative: bigIntify(_state.timepoints.tickCumulative),
+        secondsPerLiquidityCumulative: bigIntify(
+          _state.timepoints.secondsPerLiquidityCumulative,
+        ),
+        volatilityCumulative: bigIntify(_state.timepoints.volatilityCumulative),
+        volumePerLiquidityCumulative: bigIntify(
+          _state.timepoints.volumePerLiquidityCumulative,
+        ),
+        averageTick: bigIntify(_state.timepoints.averageTick),
+        initialized: _state.timepoints.initialized,
+      },
     };
-
+    const globalState: PoolState['globalState'] = {
+      communityFeeToken0: bigIntify(_state.globalState.communityFeeToken0),
+      communityFeeToken1: bigIntify(_state.globalState.communityFeeToken1),
+      fee: bigIntify(_state.globalState.fee),
+      price: bigIntify(_state.globalState.price),
+      tick: bigIntify(_state.globalState.tick),
+      timepointIndex: bigIntify(_state.globalState.timepointIndex),
+      unlocked: _state.globalState.unlocked,
+    };
     const currentTick = globalState.tick;
     const startTickBitmap = TickBitMap.position(
-      currentTick / Constants.TICK_SPACING,
+      BigInt(currentTick) / Constants.TICK_SPACING,
     )[0];
 
     return {
-      // TODO FILL
       pool: _state.pool,
-      blockTimestamp: 0n,
-      timepoints: {},
+      blockTimestamp: bigIntify(_state.blockTimestamp),
+      timepoints,
       globalState,
       liquidity: bigIntify(_state.liquidity),
-      tickSpacing: 0n,
-      maxLiquidityPerTick: 0n,
-      volumePerLiquidityInBlock: 0n,
+      tickSpacing: Constants.TICK_SPACING,
+      maxLiquidityPerTick: Constants.MAX_LIQUIDITY_PER_TICK,
+      volumePerLiquidityInBlock: 0n, // FIXME where to retrieve
       tickBitmap,
       ticks,
       startTickBitmap,
