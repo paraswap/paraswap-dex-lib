@@ -236,7 +236,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       prices.push(price);
 
       gasCosts.push(
-        price === 0n
+        amount === 0n
           ? 0
           : gas_cost_yint +
               tradeDataPerAmount.tradeActions.length * GAS_COST_SWAP_SLOPE,
