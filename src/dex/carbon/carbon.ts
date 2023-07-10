@@ -182,12 +182,12 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
 
     // if side is BUY, amount numeraire is destToken, srcToken -> destToken (tradeByTarget == true)
     // if side is SELL, amount numeraire is srcToken, srcToken -> destToken (tradeByTarget == false)
-    const isBuy: boolean = side === SwapSide.BUY;
+    const tradeByTarget: boolean = side === SwapSide.BUY;
 
     const gas_cost_yint =
       srcToken.address.toLowerCase() === ETHER_ADDRESS ||
       destToken.address.toLowerCase() === ETHER_ADDRESS
-        ? isBuy && srcToken.address.toLowerCase() === ETHER_ADDRESS
+        ? tradeByTarget && srcToken.address.toLowerCase() === ETHER_ADDRESS
           ? GAS_COST_SWAP_YINT_TKN_ETH
           : GAS_COST_SWAP_YINT_ETH_TKN
         : GAS_COST_SWAP_YINT_TKN_TKN;
@@ -203,12 +203,9 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       address => decimalMap[address.toLowerCase()] ?? undefined,
     );
 
-    let _amount: string;
-    let price: bigint;
-
     for (const amount of amounts) {
       // Because the toolkit expects floating point amounts
-      _amount = isBuy
+      const _amount = tradeByTarget
         ? BigNumber(amount.toString())
             .dividedBy(BigNumber(10).pow(destToken.decimals))
             .toString()
@@ -220,21 +217,21 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
         srcToken.address.toLowerCase(),
         destToken.address.toLowerCase(),
         _amount,
-        isBuy,
+        tradeByTarget,
       );
 
       if (!tradeDataPerAmount) continue;
 
       tradeDataMap[amount.toString()] = tradeDataPerAmount;
 
-      price = BigInt(
-        isBuy
+      const price = BigInt(
+        tradeByTarget
           ? BigNumber(tradeDataPerAmount.totalSourceAmount)
               .multipliedBy(BigNumber(10).pow(srcToken.decimals))
-              .toFixed(0)
+              .toFixed(0, BigNumber.ROUND_DOWN)
           : BigNumber(tradeDataPerAmount.totalTargetAmount)
               .multipliedBy(BigNumber(10).pow(destToken.decimals))
-              .toFixed(0),
+              .toFixed(0, BigNumber.ROUND_DOWN),
       );
       prices.push(price);
 
@@ -250,17 +247,17 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       srcToken.address.toLowerCase(),
       destToken.address.toLowerCase(),
       1n.toString(),
-      isBuy,
+      tradeByTarget,
     );
 
     const unit = BigInt(
-      isBuy
+      tradeByTarget
         ? BigNumber(unitTradeData.totalSourceAmount)
             .multipliedBy(BigNumber(10).pow(srcToken.decimals))
-            .toFixed(0)
+            .toFixed(0, BigNumber.ROUND_DOWN)
         : BigNumber(unitTradeData.totalTargetAmount)
             .multipliedBy(BigNumber(10).pow(destToken.decimals))
-            .toFixed(0),
+            .toFixed(0, BigNumber.ROUND_DOWN),
     );
 
     return [
@@ -323,15 +320,12 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     const delta_deadline = new BigNumber(deadline).times(60).times(1000); // MS
     const deadlineInMs = delta_deadline.plus(Date.now()).toString(); // MS
 
-    // Recalculating trade path as srcAmount/destAmount influence which orders to go through
+    // Toolkit doesn't need cache to encode transaction data
     const toolkit = new Toolkit(
       this.api,
       new ChainCache(),
       address => data.decimals[address.toLowerCase()] ?? undefined,
     );
-
-    const max_slippage = 5; // Max possible setting
-    const slippageBn = new BigNumber(max_slippage).div(100);
 
     let encodedData: PopulatedTransaction;
 
@@ -350,9 +344,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
     let _destAmount: string;
 
     if (tradeByTargetAmount) {
-      const maxInput = BigNumber(1)
-        .plus(slippageBn)
-        .times(BigNumber(tradeData.totalSourceAmount));
+      const maxInput = BigNumber(tradeData.totalSourceAmount);
 
       encodedData = await toolkit.composeTradeByTargetTransaction(
         srcToken.toLowerCase(),
@@ -364,13 +356,10 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
 
       _srcAmount = maxInput
         .multipliedBy(BigNumber(10).pow(data.decimals[srcToken.toLowerCase()]))
-        .minus(BigNumber(1))
-        .toFixed(0);
+        .toFixed(0, BigNumber.ROUND_DOWN);
       _destAmount = destAmount;
     } else {
-      const minReturn = BigNumber(1)
-        .minus(slippageBn)
-        .times(BigNumber(tradeData.totalTargetAmount));
+      const minReturn = BigNumber(tradeData.totalTargetAmount);
 
       encodedData = await toolkit.composeTradeBySourceTransaction(
         srcToken.toLowerCase(),
@@ -383,8 +372,7 @@ export class Carbon extends SimpleExchange implements IDex<CarbonData> {
       _srcAmount = srcAmount;
       _destAmount = minReturn
         .multipliedBy(BigNumber(10).pow(data.decimals[destToken.toLowerCase()]))
-        .plus(BigNumber(1))
-        .toFixed(0);
+        .toFixed(0, BigNumber.ROUND_DOWN);
     }
 
     const simpleExchangeParam = this.buildSimpleParamWithoutWETHConversion(
