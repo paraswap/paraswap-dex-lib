@@ -22,7 +22,7 @@ type ModifyPositionParams = {
   liquidityDelta: bigint;
 };
 
-type PriceComputationState = {
+export type PriceComputationState = {
   amountSpecifiedRemaining: bigint;
   amountCalculated: bigint;
   sqrtPriceX96: bigint;
@@ -32,7 +32,7 @@ type PriceComputationState = {
   isFirstCycleState: boolean;
 };
 
-type PriceComputationCache = {
+export type PriceComputationCache = {
   liquidityStart: bigint;
   blockTimestamp: bigint;
   feeProtocol: bigint;
@@ -42,7 +42,7 @@ type PriceComputationCache = {
   tickCount: number;
 };
 
-function _updatePriceComputationObjects<
+export function _updatePriceComputationObjects<
   T extends PriceComputationState | PriceComputationCache,
 >(toUpdate: T, updateBy: T) {
   for (const k of Object.keys(updateBy) as (keyof T)[]) {
