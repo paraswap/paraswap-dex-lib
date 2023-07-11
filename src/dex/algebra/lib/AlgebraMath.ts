@@ -589,7 +589,7 @@ class AlgebraMathClass {
     let unlocked = globalState.unlocked;
 
     globalState.unlocked = false; // lock will not be released in this function
-    _require(unlocked, 'LOK');
+    //_require(unlocked, 'LOK');
 
     let amountRequired = cache.amountRequiredInitial; // to revalidate
 

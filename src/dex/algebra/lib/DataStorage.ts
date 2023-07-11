@@ -27,6 +27,15 @@ interface Timepoint {
   volumePerLiquidityCumulative: bigint; // the gmean(volumes)/liquidity accumulator
 }
 
+const TIMEPOINT_ZERO: Timepoint = {
+  averageTick: 0n,
+  blockTimestamp: 0n,
+  initialized: false,
+  secondsPerLiquidityCumulative: 0n,
+  tickCumulative: 0n,
+  volatilityCumulative: 0n,
+  volumePerLiquidityCumulative: 0n,
+};
 const WINDOW = 24n * 60n;
 const UINT16_MODULO = 65536n;
 
@@ -140,8 +149,9 @@ export class DataStorage {
     lastTimestamp: bigint,
     lastTickCumulative: bigint,
   ): bigint {
-    const oldestTimestamp = self[Number(oldestIndex)].blockTimestamp;
-    const oldestTickCumulative = self[Number(oldestIndex)].tickCumulative;
+    const oldestTimestamp = self[Number(oldestIndex)]?.blockTimestamp || 0n;
+    const oldestTickCumulative =
+      self[Number(oldestIndex)]?.tickCumulative || 0n;
 
     let avgTick;
 
@@ -286,6 +296,9 @@ export class DataStorage {
       )
     ) {
       let last = self[Number(index)];
+      if (!last) {
+        last = TIMEPOINT_ZERO;
+      }
       if (last.blockTimestamp == target) {
         return last;
       } else {
@@ -561,6 +574,10 @@ export class DataStorage {
     volumePerLiquidity: bigint,
   ): bigint {
     let _last: Timepoint = self[Number(index)];
+
+    if (!_last) {
+      _last = TIMEPOINT_ZERO;
+    }
     // early return if we've already written an timepoint this block
     if (_last.blockTimestamp == blockTimestamp) {
       return index;
@@ -570,13 +587,12 @@ export class DataStorage {
     // get next index considering overflow
     let indexUpdated = index + 1n;
 
-    let oldestIndex;
+    let oldestIndex = 0n; // default in evm
+
     // check if we have overflow in the past
-    if (self[Number(indexUpdated)].initialized) {
+    if (self[Number(indexUpdated)]?.initialized) {
       oldestIndex = indexUpdated;
     }
-
-    assert(oldestIndex); // FIXME ?
 
     let avgTick = int24(
       this._getAverageTick(
@@ -609,6 +625,10 @@ export class DataStorage {
       avgTick,
       volumePerLiquidity,
     );
+
+    
+    // FIXME should delete ?
+    // delete self[Number(index)];
 
     return indexUpdated;
   }
