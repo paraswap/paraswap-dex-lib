@@ -24,7 +24,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       initHash:
         '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
       chunksCount: 10,
-      algebraStateMulticall: '0x', // TODO
+      algebraStateMulticall: '0xa6bc273A238867dD74F2bBbD5fBbA3c941C939B9',
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/quickswap-v3-02/0.0.7',
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
