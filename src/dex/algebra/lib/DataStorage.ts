@@ -626,7 +626,6 @@ export class DataStorage {
       volumePerLiquidity,
     );
 
-    
     // FIXME should delete ?
     // delete self[Number(index)];
 
