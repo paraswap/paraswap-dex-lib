@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
-import { DummyDexHelper } from '../../dex-helper/index';
+import { DummyDexHelper, IDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { Algebra } from './algebra';
@@ -13,6 +13,7 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { Address } from '@paraswap/core';
 
 /*
   README
@@ -34,13 +35,16 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  tokenIn: Address,
+  tokenOut: Address,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      tokenIn,
+      tokenOut,
       amount,
+      0n,
     ]),
   }));
 }
@@ -50,7 +54,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -59,26 +62,28 @@ function decodeReaderResult(
 
 async function checkOnChainPricing(
   algebra: Algebra,
+  dexHelper: IDexHelper,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
+  tokenIn: Address,
+  tokenOut: Address,
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = '0xa15f0d7377b2a0c0c10db057f641bed21028fc89'; // Quoter address
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from algebra.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = algebra.quoterIface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    tokenIn,
+    tokenOut,
   );
   const readerResult = (
-    await algebra.dexHelper.multiContract.methods
+    await dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -94,6 +99,7 @@ async function testPricingOnNetwork(
   algebra: Algebra,
   network: Network,
   dexKey: string,
+  dexHelper: IDexHelper,
   blockNumber: number,
   srcTokenSymbol: string,
   destTokenSymbol: string,
@@ -139,28 +145,29 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     algebra,
+    dexHelper,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
+    networkTokens[srcTokenSymbol].address,
+    networkTokens[destTokenSymbol].address,
     amounts,
   );
 }
 
 describe('Algebra', function () {
-  const dexKey = 'Algebra';
+  const dexKey = 'QuickSwapV3';
   let blockNumber: number;
   let algebra: Algebra;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'WMATIC';
 
     const amountsForSell = [
       0n,
@@ -203,12 +210,13 @@ describe('Algebra', function () {
         algebra,
         network,
         dexKey,
+        dexHelper,
         blockNumber,
         srcTokenSymbol,
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'quoteExactInputSingle',
       );
     });
 
@@ -217,12 +225,13 @@ describe('Algebra', function () {
         algebra,
         network,
         dexKey,
+        dexHelper,
         blockNumber,
         srcTokenSymbol,
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'quoteExactOutputSingle',
       );
     });
 
@@ -230,9 +239,6 @@ describe('Algebra', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAlgebra = new Algebra(network, dexKey, dexHelper);
-      if (newAlgebra.updatePoolState) {
-        await newAlgebra.updatePoolState();
-      }
       const poolLiquidity = await newAlgebra.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
