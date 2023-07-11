@@ -11,7 +11,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       initHash:
         '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
       chunksCount: 10,
-      algebraStateMulticall: '0x', // TODO
+      algebraStateMulticall: '0xfb948e6e23eb58ec7320ddb60df9115de07141ec',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap-v3',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
