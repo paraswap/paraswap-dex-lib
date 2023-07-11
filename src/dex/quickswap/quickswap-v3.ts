@@ -7,7 +7,7 @@ import { IDexHelper } from '../../dex-helper';
 import _ from 'lodash';
 import { QuickSwapConfig } from './config';
 
-const config = _.pick(QuickSwapConfig, ['QuickSwapV3']).QuickSwapV3;
+const config = _.pick(QuickSwapConfig, ['CamelotV3']).CamelotV3;
 
 export type QuickSwapV3Data = {
   // ExactInputSingleParams
@@ -18,6 +18,7 @@ export type QuickSwapV3Data = {
   }[];
 };
 
+// Naming is deprecated, this is stands for AlgebraV1 (rpc)
 export class QuickSwapV3
   extends UniswapV3
   implements IDexTxBuilder<QuickSwapV3Data, UniswapV3Param>
