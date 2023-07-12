@@ -333,12 +333,12 @@ export class UniswapV2
 
   getSortedPair(from: Token, to: Token): [ Token, Token ] {
     return from.address.toLowerCase() < to.address.toLowerCase()
-        ? [from, to]
-        : [to, from];
+      ? [from, to]
+      : [to, from];
   }
 
-  getKeyForPair(token0: Token, token1: Token) {
-    return `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`
+  getKeyForPair(token0: Token, token1: Token): string {
+    return `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
   }
 
   async findPair(from: Token, to: Token): Promise<UniswapV2Pair | null> {
