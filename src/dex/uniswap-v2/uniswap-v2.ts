@@ -52,6 +52,7 @@ import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { UNISWAP_V2_PAIRS_CACHE_TTL_S } from './constants';
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -186,7 +187,7 @@ export class UniswapV2
   extends SimpleExchange
   implements IDex<UniswapV2Data, UniswapParam>
 {
-  pairs: { [key: string]: UniswapV2Pair } = {};
+  pairToPoolMap: { [key: string]: UniswapV2EventPool } = {};
   feeFactor = 10000;
   factory: Contract;
 
@@ -258,7 +259,10 @@ export class UniswapV2
     blockNumber: number,
   ) {
     const { callEntry, callDecoder } = this.getFeesMultiCallData(pair) || {};
-    pair.pool = new UniswapV2EventPool(
+
+    const [ token0, token1 ] = this.getSortedPair(pair.token0, pair.token1);
+    const key = this.getKeyForPair(token0, token1);
+    this.pairToPoolMap[key] = new UniswapV2EventPool(
       this.dexKey,
       this.dexHelper,
       pair.exchange!,
@@ -271,11 +275,17 @@ export class UniswapV2
       callDecoder,
       this.decoderIface,
     );
-    pair.pool.addressesSubscribed.push(pair.exchange!);
+    this.pairToPoolMap[key].addressesSubscribed.push(pair.exchange!);
 
-    await pair.pool.initialize(blockNumber, {
+    await this.pairToPoolMap[key].initialize(blockNumber, {
       state: { reserves0, reserves1, feeCode },
     });
+  }
+
+  protected getPool(pair: UniswapV2Pair): UniswapV2EventPool {
+    const [ token0, token1 ] = this.getSortedPair(pair.token0, pair.token1);
+
+    return this.pairToPoolMap[this.getKeyForPair(token0, token1)];
   }
 
   async getBuyPrice(
@@ -322,25 +332,56 @@ export class UniswapV2
     return price;
   }
 
-  async findPair(from: Token, to: Token) {
-    if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
-    const [token0, token1] =
-      from.address.toLowerCase() < to.address.toLowerCase()
-        ? [from, to]
-        : [to, from];
+  getSortedPair(from: Token, to: Token): [ Token, Token ] {
+    return from.address.toLowerCase() < to.address.toLowerCase()
+      ? [from, to]
+      : [to, from];
+  }
 
-    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
-    let pair = this.pairs[key];
-    if (pair) return pair;
-    const exchange = await this.factory.methods
-      .getPair(token0.address, token1.address)
-      .call();
+  getKeyForPair(token0: Token, token1: Token): string {
+    return `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
+  }
+
+  async findPair(from: Token, to: Token): Promise<UniswapV2Pair | null> {
+    if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
+    const [token0, token1] = this.getSortedPair(from, to);
+
+    const key = this.getKeyForPair(token0, token1);
+
+    const cachedExchange = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.network,
+      key,
+      UNISWAP_V2_PAIRS_CACHE_TTL_S,
+    );
+
+    let pair: UniswapV2Pair;
+    let exchange: string;
+
+    if(cachedExchange) {
+      exchange = cachedExchange;
+    } else {
+      exchange = await this.factory.methods
+        .getPair(token0.address, token1.address)
+        .call();
+    }
+
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
     } else {
       pair = { token0, token1, exchange };
     }
-    this.pairs[key] = pair;
+
+    if(!cachedExchange) {
+      this.dexHelper.cache.setexAndCacheLocally(
+        this.dexKey,
+        this.network,
+        key,
+        UNISWAP_V2_PAIRS_CACHE_TTL_S,
+        exchange,
+      );
+    }
+
     return pair;
   }
 
@@ -406,9 +447,10 @@ export class UniswapV2
     for (const _pair of pairs) {
       const pair = await this.findPair(_pair[0], _pair[1]);
       if (!(pair && pair.exchange)) continue;
-      if (!pair.pool) {
+      const pool = this.getPool(pair);
+      if (!pool) {
         pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
+      } else if (!pool.getState(blockNumber)) {
         pairsToFetch.push(pair);
       }
     }
@@ -426,7 +468,8 @@ export class UniswapV2
     for (let i = 0; i < pairsToFetch.length; i++) {
       const pairState = reserves[i];
       const pair = pairsToFetch[i];
-      if (!pair.pool) {
+      const pool = this.getPool(pair);
+      if (!pool) {
         await this.addPool(
           pair,
           pairState.reserves0,
@@ -434,7 +477,7 @@ export class UniswapV2
           pairState.feeCode,
           blockNumber,
         );
-      } else pair.pool.setState(pairState, blockNumber);
+      } else pool.setState(pairState, blockNumber);
     }
   }
 
@@ -445,8 +488,10 @@ export class UniswapV2
     tokenDexTransferFee: number,
   ): Promise<UniswapV2PoolOrderedParams | null> {
     const pair = await this.findPair(from, to);
-    if (!(pair && pair.pool && pair.exchange)) return null;
-    const pairState = pair.pool.getState(blockNumber);
+    let pool: UniswapV2EventPool | null = null;
+    if(pair) pool = this.getPool(pair);
+    if (!(pair && pool && pair.exchange)) return null;
+    const pairState = pool.getState(blockNumber);
     if (!pairState) {
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
