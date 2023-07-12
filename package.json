@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.23.3-uniswap-v2-pairs-distant-cache.4",
+  "version": "2.23.3-uniswap-v2-pairs-distant-cache.5",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
