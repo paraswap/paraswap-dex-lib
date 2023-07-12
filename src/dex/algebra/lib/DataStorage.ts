@@ -27,7 +27,7 @@ interface Timepoint {
   volumePerLiquidityCumulative: bigint; // the gmean(volumes)/liquidity accumulator
 }
 
-const TIMEPOINT_ZERO: Timepoint = {
+export const TIMEPOINT_ZERO: Timepoint = {
   averageTick: 0n,
   blockTimestamp: 0n,
   initialized: false,
@@ -149,7 +149,8 @@ export class DataStorage {
     lastTimestamp: bigint,
     lastTickCumulative: bigint,
   ): bigint {
-    const oldestTimestamp = self[Number(oldestIndex)]?.blockTimestamp || 0n;
+    const oldestTimestamp = (self[Number(oldestIndex)] || TIMEPOINT_ZERO)
+      .blockTimestamp;
     const oldestTickCumulative =
       self[Number(oldestIndex)]?.tickCumulative || 0n;
 
@@ -158,7 +159,7 @@ export class DataStorage {
     if (this.lteConsideringOverflow(oldestTimestamp, time - WINDOW, time)) {
       if (this.lteConsideringOverflow(lastTimestamp, time - WINDOW, time)) {
         index -= 1n; // considering underflow
-        const startTimepoint = self[Number(index)];
+        const startTimepoint = self[Number(index)] || TIMEPOINT_ZERO;
         avgTick = startTimepoint.initialized
           ? (lastTickCumulative - startTimepoint.tickCumulative) /
             (lastTimestamp - startTimepoint.blockTimestamp)
@@ -221,7 +222,7 @@ export class DataStorage {
     let timestampAfter;
 
     do {
-      beforeOrAt = self[Number(uint16(current))]; // checking the "middle" point between the boundaries
+      beforeOrAt = self[Number(uint16(current))] || TIMEPOINT_ZERO; // checking the "middle" point between the boundaries
       let [initializedBefore, timestampBefore] = [
         beforeOrAt.initialized,
         beforeOrAt.blockTimestamp,
@@ -229,7 +230,7 @@ export class DataStorage {
       if (initializedBefore) {
         if (this.lteConsideringOverflow(timestampBefore, target, time)) {
           // is current point before or at `target`?
-          atOrAfter = self[Number(uint16(current + 1n))]; // checking the next point after "middle"
+          atOrAfter = self[Number(uint16(current + 1n))] || TIMEPOINT_ZERO; // checking the next point after "middle"
           [initializedAfter, timestampAfter] = [
             atOrAfter.initialized,
             atOrAfter.blockTimestamp,
@@ -290,15 +291,13 @@ export class DataStorage {
     if (
       secondsAgo == 0n ||
       this.lteConsideringOverflow(
-        self[Number(index)].blockTimestamp,
+        (self[Number(index)] || TIMEPOINT_ZERO).blockTimestamp,
         target,
         time,
       )
     ) {
-      let last = self[Number(index)];
-      if (!last) {
-        last = TIMEPOINT_ZERO;
-      }
+      let last = self[Number(index)] || TIMEPOINT_ZERO;
+
       if (last.blockTimestamp == target) {
         return last;
       } else {
@@ -327,7 +326,7 @@ export class DataStorage {
               volatilityCumulative: 0n,
               volumePerLiquidityCumulative: 0n,
             };
-            let _prevLast = self[Number(index - 1n)]; // considering index underflow
+            let _prevLast = self[Number(index - 1n)] || TIMEPOINT_ZERO; // considering index underflow
             prevLast.blockTimestamp = _prevLast.blockTimestamp;
             prevLast.tickCumulative = _prevLast.tickCumulative;
             prevTick = int24(
@@ -350,7 +349,7 @@ export class DataStorage {
 
     _require(
       this.lteConsideringOverflow(
-        self[Number(oldestIndex)].blockTimestamp,
+        (self[Number(oldestIndex)] || TIMEPOINT_ZERO).blockTimestamp,
         target,
         time,
       ),
@@ -427,14 +426,12 @@ export class DataStorage {
     let volatilityCumulatives = new Array<bigint>(secondsAgos.length);
     let volumePerAvgLiquiditys = new Array<bigint>(secondsAgos.length);
 
-    let oldestIndex;
+    let oldestIndex = 0n; // solidity default
     // check if we have overflow in the past
     let nextIndex = index + 1n; // considering overflow
-    if (self[Number(nextIndex)].initialized) {
+    if ((self[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
       oldestIndex = nextIndex;
     }
-
-    assert(oldestIndex); // FIXME ?
 
     let current: Timepoint;
     for (let i = 0; i < secondsAgos.length; i++) {
@@ -487,8 +484,8 @@ export class DataStorage {
 
     let oldest = self[0];
     let nextIndex = index + 1n; // considering overflow
-    if (self[Number(nextIndex)].initialized) {
-      oldest = self[Number(nextIndex)];
+    if ((self[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
+      oldest = self[Number(nextIndex)] || TIMEPOINT_ZERO;
       oldestIndex = nextIndex;
     }
 
@@ -573,11 +570,8 @@ export class DataStorage {
     liquidity: bigint,
     volumePerLiquidity: bigint,
   ): bigint {
-    let _last: Timepoint = self[Number(index)];
+    let _last: Timepoint = self[Number(index)] || TIMEPOINT_ZERO;
 
-    if (!_last) {
-      _last = TIMEPOINT_ZERO;
-    }
     // early return if we've already written an timepoint this block
     if (_last.blockTimestamp == blockTimestamp) {
       return index;
@@ -590,7 +584,7 @@ export class DataStorage {
     let oldestIndex = 0n; // default in evm
 
     // check if we have overflow in the past
-    if (self[Number(indexUpdated)]?.initialized) {
+    if ((self[Number(indexUpdated)] || TIMEPOINT_ZERO).initialized) {
       oldestIndex = indexUpdated;
     }
 
@@ -607,7 +601,7 @@ export class DataStorage {
     );
     let prevTick = tick;
     if (index != oldestIndex) {
-      let _prevLast = self[Number(index - 1n)]; // considering index underflow
+      let _prevLast = self[Number(index - 1n)] || TIMEPOINT_ZERO; // considering index underflow
       let _prevLastBlockTimestamp = _prevLast.blockTimestamp;
       let _prevLastTickCumulative = _prevLast.tickCumulative;
       prevTick = int24(

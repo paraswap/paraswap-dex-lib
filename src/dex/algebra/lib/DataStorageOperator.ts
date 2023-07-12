@@ -1,6 +1,6 @@
 import { assert } from 'ts-essentials';
 import { PoolState } from '../types';
-import { DataStorage } from './DataStorage';
+import { DataStorage, TIMEPOINT_ZERO } from './DataStorage';
 import { BI_MAX_UINT256 } from '../../../bigint-constants';
 import { uint128 } from '../../../utils';
 import { Sqrt } from './Sqrt';
@@ -22,7 +22,7 @@ export class DataStorageOperator {
     let oldestIndex;
     // check if we have overflow in the past
     let nextIndex = index + 1n; // considering overflow
-    if (state.timepoints[Number(nextIndex)].initialized) {
+    if ((state.timepoints[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
       oldestIndex = nextIndex;
     }
 
