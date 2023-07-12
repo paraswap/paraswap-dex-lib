@@ -35,6 +35,7 @@ import {
 } from './types';
 import { SolidlyConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { UNISWAP_V2_PAIRS_CACHE_TTL_S } from '../uniswap-v2/constants';
 
 const erc20Iface = new Interface(erc20ABI);
 const solidlyPairIface = new Interface(solidlyPair);
@@ -131,16 +132,21 @@ export class Solidly extends UniswapV2 {
 
   async findSolidlyPair(from: Token, to: Token, stable: boolean) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
-    const [token0, token1] =
-      from.address.toLowerCase() < to.address.toLowerCase()
-        ? [from, to]
-        : [to, from];
 
+    const [token0, token1] = this.getSortedPair(from, to);
     const typePostfix = this.poolPostfix(stable);
-    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}-${typePostfix}`;
-    let pair = this.pairs[key];
-    if (pair) return pair;
+    const key = `${this.getKeyForPair(token0, token1)}-${typePostfix}`;
 
+    const cachedPair = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.network,
+      key,
+      UNISWAP_V2_PAIRS_CACHE_TTL_S,
+    );
+
+    if (cachedPair) return JSON.parse(cachedPair);
+
+    let pair: SolidlyPair;
     let exchange = await this.factory.methods
       // Solidly has additional boolean parameter "StablePool"
       // At first we look for uniswap-like volatile pool
@@ -152,7 +158,15 @@ export class Solidly extends UniswapV2 {
     } else {
       pair = { token0, token1, exchange, stable };
     }
-    this.pairs[key] = pair;
+
+    this.dexHelper.cache.setexAndCacheLocally(
+      this.dexKey,
+      this.network,
+      key,
+      UNISWAP_V2_PAIRS_CACHE_TTL_S,
+      JSON.stringify(pair),
+    );
+
     return pair;
   }
 
