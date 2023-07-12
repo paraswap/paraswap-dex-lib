@@ -261,7 +261,8 @@ export class UniswapV2
     const { callEntry, callDecoder } = this.getFeesMultiCallData(pair) || {};
 
     const [ token0, token1 ] = this.getSortedPair(pair.token0, pair.token1);
-    this.pairToPoolMap[this.getKeyForPair(token0, token1)] = new UniswapV2EventPool(
+    const key = this.getKeyForPair(token0, token1);
+    this.pairToPoolMap[key] = new UniswapV2EventPool(
       this.dexKey,
       this.dexHelper,
       pair.exchange!,
@@ -274,9 +275,9 @@ export class UniswapV2
       callDecoder,
       this.decoderIface,
     );
-    this.pairToPoolMap[this.getKeyForPair(token0, token1)].addressesSubscribed.push(pair.exchange!);
+    this.pairToPoolMap[key].addressesSubscribed.push(pair.exchange!);
 
-    await this.pairToPoolMap[this.getKeyForPair(token0, token1)].initialize(blockNumber, {
+    await this.pairToPoolMap[key].initialize(blockNumber, {
       state: { reserves0, reserves1, feeCode },
     });
   }
