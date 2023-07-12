@@ -1,4 +1,4 @@
-import { UniswapV2 } from '../uniswap-v2/uniswap-v2';
+import { UniswapV2, UniswapV2EventPool } from '../uniswap-v2/uniswap-v2';
 import {
   Network,
   NULL_ADDRESS,
@@ -130,6 +130,47 @@ export class Solidly extends UniswapV2 {
     this.feeFactor = SolidlyConfig[dexKey][network].feeFactor || this.feeFactor;
   }
 
+  protected getPool(pair: SolidlyPair): UniswapV2EventPool {
+    const [ token0, token1 ] = this.getSortedPair(pair.token0, pair.token1);
+    const typePostfix = this.poolPostfix(pair.stable);
+    const key = `${this.getKeyForPair(token0, token1)}-${typePostfix}`;
+
+    return this.pairToPoolMap[key];
+  }
+
+  protected async addPool(
+    pair: SolidlyPair,
+    reserves0: string,
+    reserves1: string,
+    feeCode: number,
+    blockNumber: number,
+  ) {
+    const { callEntry, callDecoder } = this.getFeesMultiCallData(pair) || {};
+
+    const [ token0, token1 ] = this.getSortedPair(pair.token0, pair.token1);
+    const typePostfix = this.poolPostfix(pair.stable);
+    const key = `${this.getKeyForPair(token0, token1)}-${typePostfix}`;
+
+    this.pairToPoolMap[key] = new UniswapV2EventPool(
+      this.dexKey,
+      this.dexHelper,
+      pair.exchange!,
+      pair.token0,
+      pair.token1,
+      feeCode,
+      this.logger,
+      this.isDynamicFees,
+      callEntry,
+      callDecoder,
+      this.decoderIface,
+    );
+    this.pairToPoolMap[key].addressesSubscribed.push(pair.exchange!);
+
+    await this.pairToPoolMap[key].initialize(blockNumber, {
+      state: { reserves0, reserves1, feeCode },
+    });
+  }
+
   async findSolidlyPair(from: Token, to: Token, stable: boolean) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
 
@@ -177,9 +218,10 @@ export class Solidly extends UniswapV2 {
       for (const stable of [false, true]) {
         const pair = await this.findSolidlyPair(_pair[0], _pair[1], stable);
         if (!(pair && pair.exchange)) continue;
-        if (!pair.pool) {
+        const pool = this.getPool(pair);
+        if (!pool) {
           pairsToFetch.push(pair);
-        } else if (!pair.pool.getState(blockNumber)) {
+        } else if (!pool.getState(blockNumber)) {
           pairsToFetch.push(pair);
         }
       }
@@ -198,7 +240,8 @@ export class Solidly extends UniswapV2 {
     for (let i = 0; i < pairsToFetch.length; i++) {
       const pairState = reserves[i];
       const pair = pairsToFetch[i];
-      if (!pair.pool) {
+      const pool = this.getPool(pair);
+      if (!pool) {
         await this.addPool(
           pair,
           pairState.reserves0,
@@ -206,7 +249,7 @@ export class Solidly extends UniswapV2 {
           pairState.feeCode,
           blockNumber,
         );
-      } else pair.pool.setState(pairState, blockNumber);
+      } else pool.setState(pairState, blockNumber);
     }
   }
 
@@ -532,8 +575,10 @@ export class Solidly extends UniswapV2 {
     tokenDexTransferFee: number,
   ): Promise<SolidlyPoolOrderedParams | null> {
     const pair = await this.findSolidlyPair(from, to, stable);
-    if (!(pair && pair.pool && pair.exchange)) return null;
-    const pairState = pair.pool.getState(blockNumber);
+    let pool: UniswapV2EventPool | null = null;
+    if(pair) pool = this.getPool(pair);
+    if (!(pair && pool && pair.exchange)) return null;
+    const pairState = pool.getState(blockNumber);
     if (!pairState) {
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
