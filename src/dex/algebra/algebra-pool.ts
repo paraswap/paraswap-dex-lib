@@ -121,7 +121,21 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
         // And there is no good workaround, so turn off the type checker for this line
         const _state = _.cloneDeep(state) as PoolState;
         try {
-          return this.handlers[event.name](event, _state, log, blockHeader);
+          /**************
+           FIXME remove loggers
+          **************/
+          this.logger.info(`on hanlding event=${event.name}`);
+          const newState = this.handlers[event.name](
+            event,
+            _state,
+            log,
+            blockHeader,
+          );
+          /**************
+           FIXME remove loggers
+          **************/
+          this.logger.info(`finished treating event=${event.name}`);
+          return newState;
         } catch (e) {
           if (
             e instanceof Error &&
