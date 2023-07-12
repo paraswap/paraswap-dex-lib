@@ -125,7 +125,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
            FIXME remove loggers
           **************/
           this.logger.info(
-            `on hanlding event=${event.name} on block=${log.blockNumber} logIndex=${log.logIndex}`,
+            `on hanlding event=${event.name} on block=${log.blockNumber} transactionHash=${log.transactionHash} transactionIndex=${log.transactionIndex} logIndex=${log.logIndex}`,
           );
           const newState = this.handlers[event.name](
             event,
@@ -137,7 +137,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
            FIXME remove loggers
           **************/
           this.logger.info(
-            `finished treating event=${event.name} on block=${log.blockNumber} logIndex=${log.logIndex}`,
+            `finished treating event=${event.name} on block=${log.blockNumber} transactionHash=${log.transactionHash} transactionIndex=${log.transactionIndex} logIndex=${log.logIndex}`,
           );
           return newState;
         } catch (e) {
