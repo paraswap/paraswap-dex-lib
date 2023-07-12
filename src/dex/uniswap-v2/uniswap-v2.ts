@@ -348,32 +348,37 @@ export class UniswapV2
 
     const key = this.getKeyForPair(token0, token1);
 
-    const cachedPair = await this.dexHelper.cache.getAndCacheLocally(
+    const cachedExchange = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       key,
       UNISWAP_V2_PAIRS_CACHE_TTL_S,
     );
 
-    if (cachedPair) return JSON.parse(cachedPair);
-
     let pair: UniswapV2Pair;
-    const exchange = await this.factory.methods
-      .getPair(token0.address, token1.address)
-      .call();
+    let exchange: string;
+
+    if(cachedExchange) {
+      exchange = cachedExchange;
+    } else {
+      exchange = await this.factory.methods
+        .getPair(token0.address, token1.address)
+        .call();
+    }
+
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
     } else {
       pair = { token0, token1, exchange };
-    }
 
-    this.dexHelper.cache.setexAndCacheLocally(
-      this.dexKey,
-      this.network,
-      key,
-      UNISWAP_V2_PAIRS_CACHE_TTL_S,
-      JSON.stringify(pair),
-    );
+      this.dexHelper.cache.setexAndCacheLocally(
+        this.dexKey,
+        this.network,
+        key,
+        UNISWAP_V2_PAIRS_CACHE_TTL_S,
+        exchange,
+      );
+    }
 
     return pair;
   }

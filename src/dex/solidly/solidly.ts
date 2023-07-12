@@ -178,35 +178,38 @@ export class Solidly extends UniswapV2 {
     const typePostfix = this.poolPostfix(stable);
     const key = `${this.getKeyForPair(token0, token1)}-${typePostfix}`;
 
-    const cachedPair = await this.dexHelper.cache.getAndCacheLocally(
+    const cachedExchange = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       key,
       UNISWAP_V2_PAIRS_CACHE_TTL_S,
     );
 
-    if (cachedPair) return JSON.parse(cachedPair);
-
+    let exchange: string;
     let pair: SolidlyPair;
-    let exchange = await this.factory.methods
-      // Solidly has additional boolean parameter "StablePool"
-      // At first we look for uniswap-like volatile pool
-      .getPair(token0.address, token1.address, stable)
-      .call();
+    if(cachedExchange) {
+      exchange = cachedExchange;
+    } else {
+      exchange = await this.factory.methods
+        // Solidly has additional boolean parameter "StablePool"
+        // At first we look for uniswap-like volatile pool
+        .getPair(token0.address, token1.address, stable)
+        .call();
+    }
 
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1, stable };
     } else {
       pair = { token0, token1, exchange, stable };
-    }
 
-    this.dexHelper.cache.setexAndCacheLocally(
-      this.dexKey,
-      this.network,
-      key,
-      UNISWAP_V2_PAIRS_CACHE_TTL_S,
-      JSON.stringify(pair),
-    );
+      this.dexHelper.cache.setexAndCacheLocally(
+        this.dexKey,
+        this.network,
+        key,
+        UNISWAP_V2_PAIRS_CACHE_TTL_S,
+        exchange,
+      );
+    }
 
     return pair;
   }
