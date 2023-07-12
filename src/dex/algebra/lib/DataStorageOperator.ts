@@ -19,14 +19,12 @@ export class DataStorageOperator {
     index: bigint,
     liquidity: bigint,
   ): [bigint, bigint, bigint, bigint] {
-    let oldestIndex;
+    let oldestIndex = 0n;
     // check if we have overflow in the past
     let nextIndex = index + 1n; // considering overflow
     if ((state.timepoints[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
       oldestIndex = nextIndex;
     }
-
-    assert(oldestIndex); //
 
     let result = DataStorage.getSingleTimepoint(
       state.timepoints,

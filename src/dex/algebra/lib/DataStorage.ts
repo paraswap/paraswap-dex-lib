@@ -149,6 +149,8 @@ export class DataStorage {
     lastTimestamp: bigint,
     lastTickCumulative: bigint,
   ): bigint {
+    if (Object.keys(self).length < 2) return tick; // MITIGATIONS OFF CONTRACT
+
     const oldestTimestamp = (self[Number(oldestIndex)] || TIMEPOINT_ZERO)
       .blockTimestamp;
     const oldestTickCumulative =

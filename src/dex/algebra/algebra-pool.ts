@@ -142,7 +142,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
                 `error while handling event on blockNumber=${blockHeader.number}, ` +
                 `blockHash=${blockHeader.hash} and parentHash=${
                   blockHeader.parentHash
-                } for UniswapV3, ${JSON.stringify(event)}`,
+                } for QuickSwapV3, ${JSON.stringify(event)}`,
               e,
             );
           }
