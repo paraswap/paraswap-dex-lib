@@ -203,13 +203,15 @@ export class Solidly extends UniswapV2 {
       pair = { token0, token1, exchange, stable };
     }
 
-    this.dexHelper.cache.setexAndCacheLocally(
-      this.dexKey,
-      this.network,
-      key,
-      UNISWAP_V2_PAIRS_CACHE_TTL_S,
-      exchange,
-    );
+    if(!cachedExchange) {
+      this.dexHelper.cache.setexAndCacheLocally(
+        this.dexKey,
+        this.network,
+        key,
+        UNISWAP_V2_PAIRS_CACHE_TTL_S,
+        exchange,
+      );
+    }
 
     return pair;
   }
