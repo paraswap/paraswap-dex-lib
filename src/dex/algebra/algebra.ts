@@ -265,7 +265,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     const pool = await this.getPool(_srcAddress, _destAddress, blockNumber);
     if (!pool) return [];
-    return [this.getPoolIdentifier(srcToken.address, destToken.address)];
+    return [this.getPoolIdentifier(_srcAddress, _destAddress)];
   }
 
   async getPricesVolume(
