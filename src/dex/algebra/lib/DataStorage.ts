@@ -218,13 +218,8 @@ export class DataStorage {
       lastIndex >= oldestIndex ? lastIndex : lastIndex + UINT16_MODULO; // newest timepoint considering one index overflow
     let current = (left + right) >> 1n; // "middle" point between the boundaries
 
-    let beforeOrAt;
-    let atOrAfter;
-    let initializedAfter;
-    let timestampAfter;
-
     do {
-      beforeOrAt = self[Number(uint16(current))] || TIMEPOINT_ZERO; // checking the "middle" point between the boundaries
+      let beforeOrAt = self[Number(uint16(current))] || TIMEPOINT_ZERO; // checking the "middle" point between the boundaries
       let [initializedBefore, timestampBefore] = [
         beforeOrAt.initialized,
         beforeOrAt.blockTimestamp,
@@ -232,8 +227,8 @@ export class DataStorage {
       if (initializedBefore) {
         if (this.lteConsideringOverflow(timestampBefore, target, time)) {
           // is current point before or at `target`?
-          atOrAfter = self[Number(uint16(current + 1n))] || TIMEPOINT_ZERO; // checking the next point after "middle"
-          [initializedAfter, timestampAfter] = [
+          let atOrAfter = self[Number(uint16(current + 1n))] || TIMEPOINT_ZERO; // checking the next point after "middle"
+          let [initializedAfter, timestampAfter] = [
             atOrAfter.initialized,
             atOrAfter.blockTimestamp,
           ];
