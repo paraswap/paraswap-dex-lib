@@ -38,8 +38,8 @@ async function fetchPoolStateFromContract(
 
 describe('Algebra Event', function () {
   const poolAddress = '0x5b41eedcfc8e0ae47493d4945aa1ae4fe05430ff';
-  const token0 = '0xc2132d05d31c914a87c6611c10748aeb04b58e8f';
-  const token1 = '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270';
+  const token0 = '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270';
+  const token1 = '0xc2132d05d31c914a87c6611c10748aeb04b58e8f';
 
   const blockNumbers: { [eventName: string]: number[] } = {
     // topic0 - 0x598b9f043c813aa6be3426ca60d1c65d17256312890be5118dab55b0775ebe2a
