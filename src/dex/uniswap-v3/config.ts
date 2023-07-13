@@ -85,6 +85,18 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis',
     },
+    [Network.AVALANCHE]: {
+      factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
+      quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+      router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x4FF0dEC5f9a763Aa1E5C2a962aa6f4eDFeE4f9eA',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis',
+    },
   },
 };
 
@@ -113,4 +125,8 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 11 }],
     [SwapSide.BUY]: [{ name: 'FantomBuyAdapter', index: 3 }],
   },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'AvalancheBuyAdapter', index: 6 }],
+  }
 };
