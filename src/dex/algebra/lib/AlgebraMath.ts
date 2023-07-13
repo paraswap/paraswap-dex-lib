@@ -22,6 +22,7 @@ import {
   MAX_PRICING_COMPUTATION_STEPS_ALLOWED,
   OUT_OF_RANGE_ERROR_POSTFIX,
 } from '../../uniswap-v3/constants';
+import { Logger } from '../../../types';
 
 type UpdatePositionCache = {
   price: bigint;
@@ -553,6 +554,7 @@ class AlgebraMathClass {
   }
 
   _calculateSwapAndLock(
+    logger: Logger,
     poolState: PoolState,
     zeroToOne: boolean,
     newSqrtPriceX96: bigint,
@@ -630,6 +632,7 @@ class AlgebraMathClass {
 
     // skip incentive related stuff
 
+    logger.info('_calculateSwapAndLock: start write timepoint');
     const newTimepointIndex = DataStorageOperator.write(
       poolState,
       cache.timepointIndex,
@@ -638,6 +641,7 @@ class AlgebraMathClass {
       currentLiquidity,
       cache.volumePerLiquidityInBlock,
     );
+    logger.info('_calculateSwapAndLock: finished write timepoint');
 
     // new timepoint appears only for first swap in block
     if (newTimepointIndex != cache.timepointIndex) {
@@ -656,8 +660,11 @@ class AlgebraMathClass {
       stepSqrtPrice: 0n,
       tickCount: 0,
     };
+    let i = 0;
     // swap until there is remaining input or output tokens or we reach the price limit
     while (true) {
+      logger.info(`_calculateSwapAndLock: loop integration ${++i}`);
+
       step.stepSqrtPrice = currentPrice;
 
       //equivalent of tickTable.nextTickInTheSameRow(currentTick, zeroToOne);
@@ -713,6 +720,7 @@ class AlgebraMathClass {
         if (step.initialized) {
           // once at a swap we have to get the last timepoint of the observation
           if (!cache.computedLatestTimepoint) {
+            logger.info(`_calculateSwapAndLock: before getting timepoint`);
             [cache.tickCumulative, cache.secondsPerLiquidityCumulative, ,] =
               DataStorageOperator.getSingleTimepoint(
                 poolState,
@@ -730,6 +738,8 @@ class AlgebraMathClass {
           //   IAlgebraVirtualPool(activeIncentive).cross(step.nextTick, zeroToOne);
           // }
           let liquidityDelta;
+          logger.info(`_calculateSwapAndLock: before tick cross`);
+
           if (zeroToOne) {
             liquidityDelta = -Tick.cross(
               poolState.ticks,
@@ -751,6 +761,7 @@ class AlgebraMathClass {
               blockTimestamp,
             );
           }
+          logger.info(`_calculateSwapAndLock: after tick cross`);
 
           currentLiquidity = LiquidityMath.addDelta(
             currentLiquidity,

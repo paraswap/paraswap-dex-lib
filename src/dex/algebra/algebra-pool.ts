@@ -313,6 +313,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       const zeroForOne = amount0 > 0n;
 
       AlgebraMath._calculateSwapAndLock(
+        this.logger,
         pool,
         zeroForOne,
         newSqrtPriceX96,
