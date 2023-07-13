@@ -6,7 +6,6 @@ import {
   uint16,
   uint160,
   uint256,
-  uint88,
 } from '../../../utils';
 
 // TO COMPARE WITH https://github.com/cryptoalgebra/Algebra/blob/d4c1a57accf5e14d542c534c6c724a620565c176/src/core/contracts/libraries/DataStorage.sol#L9
@@ -299,7 +298,7 @@ export class DataStorage {
         return last;
       } else {
         // otherwise, we need to add new timepoint
-        let avgTick = 0n;
+        // let avgTick = 0n;
         // int24(
         //   this._getAverageTick(
         //     self,
@@ -327,6 +326,9 @@ export class DataStorage {
             let _prevLast = self[Number(index - 1n)] || TIMEPOINT_ZERO; // considering index underflow
             prevLast.blockTimestamp = _prevLast.blockTimestamp;
             prevLast.tickCumulative = _prevLast.tickCumulative;
+            console.log(
+              `QuickSwapV3 denom ${JSON.stringify({ last, prevLast })}`,
+            );
             prevTick = int24(
               (last.tickCumulative - prevLast.tickCumulative) /
                 (last.blockTimestamp - prevLast.blockTimestamp),

@@ -1,4 +1,3 @@
-import { assert } from 'ts-essentials';
 import { PoolState } from '../types';
 import { DataStorage, TIMEPOINT_ZERO } from './DataStorage';
 import { BI_MAX_UINT256 } from '../../../bigint-constants';

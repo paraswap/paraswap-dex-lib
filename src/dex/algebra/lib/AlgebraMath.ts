@@ -620,19 +620,12 @@ class AlgebraMathClass {
     ];
 
     if (zeroToOne) {
-      _require(
-        newSqrtPriceX96 < currentPrice &&
-          newSqrtPriceX96 > TickMath.MIN_SQRT_RATIO,
-        'SPL',
-      );
+      // require(limitSqrtPrice < currentPrice && limitSqrtPrice > TickMath.MIN_SQRT_RATIO, 'SPL');
+
       // cache.totalFeeGrowth = totalFeeGrowth0Token;
       cache.communityFee = _communityFeeToken0;
     } else {
-      _require(
-        newSqrtPriceX96 > currentPrice &&
-          newSqrtPriceX96 < TickMath.MAX_SQRT_RATIO,
-        'SPL',
-      );
+      // require(limitSqrtPrice > currentPrice && limitSqrtPrice < TickMath.MAX_SQRT_RATIO, 'SPL')
       // cache.totalFeeGrowth = totalFeeGrowth1Token;
       cache.communityFee = _communityFeeToken1;
     }
