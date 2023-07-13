@@ -162,7 +162,6 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
                   blockHeader.parentHash
                 } for QuickSwapV3, ${JSON.stringify(event)}`,
               e,
-              (e as Error).stack,
             );
           }
           _state.isValid = false;

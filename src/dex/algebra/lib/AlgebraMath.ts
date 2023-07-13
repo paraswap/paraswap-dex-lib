@@ -636,23 +636,23 @@ class AlgebraMathClass {
 
     // skip incentive related stuff
 
-    logger.info('_calculateSwapAndLock: start write timepoint');
-    const newTimepointIndex = DataStorageOperator.write(
-      poolState,
-      cache.timepointIndex,
-      blockTimestamp,
-      cache.startTick,
-      currentLiquidity,
-      // cache.volumePerLiquidityInBlock,
-    );
-    logger.info('_calculateSwapAndLock: finished write timepoint');
+    // logger.info('_calculateSwapAndLock: start write timepoint');
+    // const newTimepointIndex = DataStorageOperator.write(
+    //   poolState,
+    //   cache.timepointIndex,
+    //   blockTimestamp,
+    //   cache.startTick,
+    //   currentLiquidity,
+    //   // cache.volumePerLiquidityInBlock,
+    // );
+    // logger.info('_calculateSwapAndLock: finished write timepoint');
 
     // new timepoint appears only for first swap in block
-    if (newTimepointIndex != cache.timepointIndex) {
-      cache.timepointIndex = newTimepointIndex;
-      // cache.volumePerLiquidityInBlock = 0n;
-      cache.fee = poolState.globalState.fee; // safe to take as updated just before// _getNewFee(blockTimestamp, currentTick, newTimepointIndex, currentLiquidity);
-    }
+    // if (newTimepointIndex != cache.timepointIndex) {
+    // cache.timepointIndex = newTimepointIndex;
+    // cache.volumePerLiquidityInBlock = 0n;
+    cache.fee = poolState.globalState.fee; // safe to take as updated just before// _getNewFee(blockTimestamp, currentTick, newTimepointIndex, currentLiquidity);
+    // }
 
     const step: PriceMovementCache = {
       feeAmount: 0n,
@@ -723,48 +723,52 @@ class AlgebraMathClass {
         // if the reached tick is initialized then we need to cross it
         if (step.initialized) {
           // once at a swap we have to get the last timepoint of the observation
-          if (!cache.computedLatestTimepoint) {
-            logger.info(`_calculateSwapAndLock: before getting timepoint`);
-            [cache.tickCumulative, cache.secondsPerLiquidityCumulative, ,] =
-              DataStorageOperator.getSingleTimepoint(
-                poolState,
-                blockTimestamp,
-                0n,
-                cache.startTick,
-                cache.timepointIndex,
-                currentLiquidity, // currentLiquidity can be changed only after computedLatestTimepoint
-              );
-            cache.computedLatestTimepoint = true;
-            // cache.totalFeeGrowthB = zeroToOne ? totalFeeGrowth1Token : totalFeeGrowth0Token;
-          }
+          // if (!cache.computedLatestTimepoint) {
+          //   logger.info(`_calculateSwapAndLock: before getting timepoint`);
+          //   [cache.tickCumulative, cache.secondsPerLiquidityCumulative, ,] =
+          //     DataStorageOperator.getSingleTimepoint(
+          //       poolState,
+          //       blockTimestamp,
+          //       0n,
+          //       cache.startTick,
+          //       cache.timepointIndex,
+          //       currentLiquidity, // currentLiquidity can be changed only after computedLatestTimepoint
+          //     );
+          //   cache.computedLatestTimepoint = true;
+          //   // cache.totalFeeGrowthB = zeroToOne ? totalFeeGrowth1Token : totalFeeGrowth0Token;
+          // }
           // // every tick cross is needed to be duplicated in a virtual pool
           // if (cache.incentiveStatus != IAlgebraVirtualPool.Status.NOT_EXIST) {
           //   IAlgebraVirtualPool(activeIncentive).cross(step.nextTick, zeroToOne);
           // }
           let liquidityDelta;
-          logger.info(`_calculateSwapAndLock: before tick cross`);
+          // logger.info(`_calculateSwapAndLock: before tick cross`);
 
-          if (zeroToOne) {
-            liquidityDelta = -Tick.cross(
-              poolState.ticks,
-              step.nextTick,
-              // cache.totalFeeGrowth, // A == 0
-              // cache.totalFeeGrowthB, // B == 1
-              cache.secondsPerLiquidityCumulative,
-              cache.tickCumulative,
-              blockTimestamp,
-            );
-          } else {
-            liquidityDelta = Tick.cross(
-              poolState.ticks,
-              step.nextTick,
-              // cache.totalFeeGrowthB, // B == 0
-              // cache.totalFeeGrowth, // A == 1
-              cache.secondsPerLiquidityCumulative,
-              cache.tickCumulative,
-              blockTimestamp,
-            );
-          }
+          // minimal logic for calc of liquidity
+          const info = poolState.ticks[Number(step.nextTick)];
+          liquidityDelta = info.liquidityNet * (zeroToOne ? -1n : 1n);
+
+          // if (zeroToOne) {
+          //   liquidityDelta = -Tick.cross(
+          //     poolState.ticks,
+          //     step.nextTick,
+          //     // cache.totalFeeGrowth, // A == 0
+          //     // cache.totalFeeGrowthB, // B == 1
+          //     cache.secondsPerLiquidityCumulative,
+          //     cache.tickCumulative,
+          //     blockTimestamp,
+          //   );
+          // } else {
+          //   liquidityDelta = Tick.cross(
+          //     poolState.ticks,
+          //     step.nextTick,
+          //     // cache.totalFeeGrowthB, // B == 0
+          //     // cache.totalFeeGrowth, // A == 1
+          //     cache.secondsPerLiquidityCumulative,
+          //     cache.tickCumulative,
+          //     blockTimestamp,
+          //   );
+          // }
           logger.info(`_calculateSwapAndLock: after tick cross`);
 
           currentLiquidity = LiquidityMath.addDelta(
