@@ -312,7 +312,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     } else {
       const zeroForOne = amount0 > 0n;
 
-      AlgebraMath._calculateSwapAndLock(
+      const [, , , , , communityFee] = AlgebraMath._calculateSwapAndLock(
         this.logger,
         pool,
         zeroForOne,
@@ -343,6 +343,15 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
           pool.isValid = false;
         }
         pool.balance1 += BigInt.asUintN(256, amount1);
+      }
+
+      if (communityFee > 0n) {
+        // _payCommunityFee
+        if (zeroForOne) {
+          pool.balance0 -= communityFee;
+        } else {
+          pool.balance1 -= communityFee;
+        }
       }
 
       return pool;

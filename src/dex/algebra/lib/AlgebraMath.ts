@@ -560,7 +560,7 @@ class AlgebraMathClass {
     newSqrtPriceX96: bigint,
     newTick: bigint,
     newLiquidity: bigint,
-  ) {
+  ): [bigint, bigint, bigint, bigint, bigint, bigint] {
     const { globalState, liquidity, volumePerLiquidityInBlock } = poolState;
 
     let blockTimestamp;
@@ -818,6 +818,15 @@ class AlgebraMathClass {
     if (poolState.liquidity !== newLiquidity)
       // prefer assert ?
       poolState.liquidity = newLiquidity;
+
+    return [
+      amount0,
+      amount1,
+      currentPrice,
+      currentTick,
+      currentLiquidity,
+      communityFeeAmount,
+    ];
   }
 
   _blockTimestamp(state: DeepReadonly<PoolState>) {
