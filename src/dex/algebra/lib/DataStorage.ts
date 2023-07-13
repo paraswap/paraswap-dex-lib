@@ -299,17 +299,18 @@ export class DataStorage {
         return last;
       } else {
         // otherwise, we need to add new timepoint
-        let avgTick = int24(
-          this._getAverageTick(
-            self,
-            time,
-            tick,
-            index,
-            oldestIndex,
-            last.blockTimestamp,
-            last.tickCumulative,
-          ),
-        );
+        let avgTick = 0n;
+        // int24(
+        //   this._getAverageTick(
+        //     self,
+        //     time,
+        //     tick,
+        //     index,
+        //     oldestIndex,
+        //     last.blockTimestamp,
+        //     last.tickCumulative,
+        //   ),
+        // );
         let prevTick = tick;
         {
           if (index != oldestIndex) {
@@ -585,17 +586,18 @@ export class DataStorage {
       oldestIndex = indexUpdated;
     }
 
-    let avgTick = int24(
-      this._getAverageTick(
-        self,
-        blockTimestamp,
-        tick,
-        index,
-        oldestIndex,
-        last.blockTimestamp,
-        last.tickCumulative,
-      ),
-    );
+    let avgTick = 0n;
+    // int24(
+    //   this._getAverageTick(
+    //     self,
+    //     blockTimestamp,
+    //     tick,
+    //     index,
+    //     oldestIndex,
+    //     last.blockTimestamp,
+    //     last.tickCumulative,
+    //   ),
+    // );
     let prevTick = tick;
     if (index != oldestIndex) {
       let _prevLast = self[Number(index - 1n)] || TIMEPOINT_ZERO; // considering index underflow
