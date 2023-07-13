@@ -18,7 +18,11 @@ export class DataStorageOperator {
     tick: bigint,
     index: bigint,
     liquidity: bigint,
-  ): [bigint, bigint, bigint, bigint] {
+  ): [
+    bigint,
+    bigint,
+    //  bigint, bigint
+  ] {
     let oldestIndex = 0n;
     // check if we have overflow in the past
     let nextIndex = index + 1n; // considering overflow
@@ -38,58 +42,58 @@ export class DataStorageOperator {
     let [
       tickCumulative,
       secondsPerLiquidityCumulative,
-      volatilityCumulative,
-      volumePerAvgLiquidity,
+      // volatilityCumulative,
+      // volumePerAvgLiquidity,
     ] = [
       result.tickCumulative,
       result.secondsPerLiquidityCumulative,
-      result.volatilityCumulative,
-      result.volumePerLiquidityCumulative,
+      // result.volatilityCumulative,
+      // result.volumePerLiquidityCumulative,
     ];
 
     return [
       tickCumulative,
       secondsPerLiquidityCumulative,
-      volatilityCumulative,
-      volumePerAvgLiquidity,
+      // volatilityCumulative,
+      // volumePerAvgLiquidity,
     ];
   }
 
   /// @inheritdoc IDataStorageOperator
-  static getTimepoints(
-    state: PoolState,
-    time: bigint,
-    secondsAgos: bigint[],
-    tick: bigint,
-    index: bigint,
-    liquidity: bigint,
-  ): [bigint[], bigint[], bigint[], bigint[]] {
-    return DataStorage.getTimepoints(
-      state.timepoints,
-      time,
-      secondsAgos,
-      tick,
-      index,
-      liquidity,
-    );
-  }
+  // static getTimepoints(
+  //   state: PoolState,
+  //   time: bigint,
+  //   secondsAgos: bigint[],
+  //   tick: bigint,
+  //   index: bigint,
+  //   liquidity: bigint,
+  // ): [bigint[], bigint[], bigint[], bigint[]] {
+  //   return DataStorage.getTimepoints(
+  //     state.timepoints,
+  //     time,
+  //     secondsAgos,
+  //     tick,
+  //     index,
+  //     liquidity,
+  //   );
+  // }
 
-  /// @inheritdoc IDataStorageOperator
-  static getAverages(
-    state: PoolState,
-    time: bigint,
-    tick: bigint,
-    index: bigint,
-    liquidity: bigint,
-  ): [bigint, bigint] {
-    return DataStorage.getAverages(
-      state.timepoints,
-      time,
-      tick,
-      index,
-      liquidity,
-    );
-  }
+  // /// @inheritdoc IDataStorageOperator
+  // static getAverages(
+  //   state: PoolState,
+  //   time: bigint,
+  //   tick: bigint,
+  //   index: bigint,
+  //   liquidity: bigint,
+  // ): [bigint, bigint] {
+  //   return DataStorage.getAverages(
+  //     state.timepoints,
+  //     time,
+  //     tick,
+  //     index,
+  //     liquidity,
+  //   );
+  // }
 
   /// @inheritdoc IDataStorageOperator
   static write(
@@ -98,7 +102,7 @@ export class DataStorageOperator {
     blockTimestamp: bigint,
     tick: bigint,
     liquidity: bigint,
-    volumePerLiquidity: bigint,
+    // volumePerLiquidity: bigint,
   ): bigint {
     return DataStorage.write(
       state.timepoints,
@@ -106,7 +110,7 @@ export class DataStorageOperator {
       blockTimestamp,
       tick,
       liquidity,
-      volumePerLiquidity,
+      // volumePerLiquidity,
     );
   }
 

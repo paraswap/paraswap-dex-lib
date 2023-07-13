@@ -7,9 +7,9 @@ type Timepoint = {
   blockTimestamp: bigint;
   tickCumulative: bigint;
   secondsPerLiquidityCumulative: bigint;
-  volatilityCumulative: bigint;
-  averageTick: bigint;
-  volumePerLiquidityCumulative: bigint;
+  // volatilityCumulative: bigint;
+  // averageTick: bigint;
+  // volumePerLiquidityCumulative: bigint;
 };
 
 type GlobalState = {
@@ -19,7 +19,7 @@ type GlobalState = {
   timepointIndex: bigint; // The index of the last written timepoint
   communityFeeToken0: bigint; // The community fee represented as a percent of all collected fee in thousandths (1e-3)
   communityFeeToken1: bigint;
-  unlocked: boolean; // True if the contract is unlocked, otherwise - false
+  // unlocked: boolean; // True if the contract is unlocked, otherwise - false
 };
 
 export type PoolState = {
@@ -33,7 +33,7 @@ export type PoolState = {
   tickBitmap: Record<NumberAsString, bigint>; // actually called tickTable in contract-
   ticks: Record<NumberAsString, TickInfo>; // although variable names are different in contracts but matches UniswapV3 TickInfo struct 1:1
   timepoints: Record<number, Timepoint>; // timepoints is eq observations
-  volumePerLiquidityInBlock: bigint; // oracle stuff skip does not participate in getSingleTimepoint https://github.com/cryptoalgebra/Algebra/blob/d4c1a57accf5e14d542c534c6c724a620565c176/src/core/contracts/AlgebraPool.sol#L299
+  // volumePerLiquidityInBlock: bigint; // oracle stuff skip does not participate in getSingleTimepoint https://github.com/cryptoalgebra/Algebra/blob/d4c1a57accf5e14d542c534c6c724a620565c176/src/core/contracts/AlgebraPool.sol#L299
   // liquidityCooldown: bigint; play no role in pricing
   // activeIncentive: Address; play no role in pricing
   isValid: boolean;
@@ -91,7 +91,7 @@ export type DecodedStateMultiCallResultWithRelativeBitmaps = {
     timepointIndex: number;
     communityFeeToken1: number;
     communityFeeToken0: number;
-    unlocked: boolean;
+    // unlocked: boolean;
   };
   liquidity: BigNumber;
   tickSpacing: number;
@@ -101,9 +101,9 @@ export type DecodedStateMultiCallResultWithRelativeBitmaps = {
     blockTimestamp: number;
     tickCumulative: BigNumber;
     secondsPerLiquidityCumulative: BigNumber;
-    volatilityCumulative: BigNumber;
-    averageTick: number;
-    volumePerLiquidityCumulative: BigNumber;
+    // volatilityCumulative: BigNumber;
+    // averageTick: number;
+    // volumePerLiquidityCumulative: BigNumber;
   };
   tickBitmap: TickBitMapMappingsWithBigNumber[];
   ticks: TickInfoMappingsWithBigNumber[];

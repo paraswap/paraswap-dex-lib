@@ -38,7 +38,7 @@ enum Status {
 
 interface SwapCalculationCache {
   communityFee: bigint; // The community fee of the selling token, uint256 to minimize casts
-  volumePerLiquidityInBlock: bigint;
+  //volumePerLiquidityInBlock: bigint;
   tickCumulative: bigint; // The global tickCumulative at the moment
   secondsPerLiquidityCumulative: bigint; // The global secondPerLiquidity at the moment
   computedLatestTimepoint: boolean; //  if we have already fetched _tickCumulative_ and _secondPerLiquidity_ from the DataOperator
@@ -451,7 +451,11 @@ class AlgebraMathClass {
     topTick: bigint,
     liquidityDelta: bigint,
   ) {
-    const { globalState, liquidity, volumePerLiquidityInBlock } = state;
+    const {
+      globalState,
+      liquidity,
+      // volumePerLiquidityInBlock
+    } = state;
     let toggledBottom: boolean = false;
     let toggledTop: boolean = false;
     const cache: UpdatePositionCache = {
@@ -534,13 +538,13 @@ class AlgebraMathClass {
           this._blockTimestamp(state),
           cache.tick,
           liquidityBefore,
-          volumePerLiquidityInBlock,
+          //, volumePerLiquidityInBlock,
         );
         if (cache.timepointIndex != newTimepointIndex) {
           // skip fee, updated via another handler
           //globalState.fee = _getNewFee(_blockTimestamp(), cache.tick, newTimepointIndex, liquidityBefore);
           globalState.timepointIndex = newTimepointIndex;
-          state.volumePerLiquidityInBlock = 0n;
+          // state.volumePerLiquidityInBlock = 0n;
         }
         // same as UniswapV3Pool line 361 ->  liquidity = LiquidityMath.addDelta(liquidityBefore, params.liquidityDelta);
         state.liquidity = LiquidityMath.addDelta(
@@ -561,7 +565,11 @@ class AlgebraMathClass {
     newTick: bigint,
     newLiquidity: bigint,
   ): [bigint, bigint, bigint, bigint, bigint, bigint] {
-    const { globalState, liquidity, volumePerLiquidityInBlock } = poolState;
+    const {
+      globalState,
+      liquidity,
+      // volumePerLiquidityInBlock
+    } = poolState;
 
     let blockTimestamp;
     let cache: SwapCalculationCache = {
@@ -576,7 +584,7 @@ class AlgebraMathClass {
       startTick: 0n,
       tickCumulative: 0n,
       timepointIndex: 0n,
-      volumePerLiquidityInBlock: 0n,
+      //volumePerLiquidityInBlock: 0n,
       isFirstCycleState: true,
     };
     let communityFeeAmount = 0n;
@@ -588,9 +596,9 @@ class AlgebraMathClass {
     cache.timepointIndex = globalState.timepointIndex;
     let _communityFeeToken0 = globalState.communityFeeToken0;
     let _communityFeeToken1 = globalState.communityFeeToken1;
-    let unlocked = globalState.unlocked;
+    // let unlocked = globalState.unlocked;
 
-    globalState.unlocked = false; // lock will not be released in this function
+    // globalState.unlocked = false; // lock will not be released in this function
     //_require(unlocked, 'LOK');
 
     let amountRequired = cache.amountRequiredInitial; // to revalidate
@@ -603,9 +611,12 @@ class AlgebraMathClass {
 
     let currentLiquidity;
 
-    [currentLiquidity, cache.volumePerLiquidityInBlock] = [
+    [
+      currentLiquidity,
+      // cache.volumePerLiquidityInBlock
+    ] = [
       liquidity,
-      volumePerLiquidityInBlock,
+      //volumePerLiquidityInBlock,
     ];
 
     if (zeroToOne) {
@@ -639,14 +650,14 @@ class AlgebraMathClass {
       blockTimestamp,
       cache.startTick,
       currentLiquidity,
-      cache.volumePerLiquidityInBlock,
+      // cache.volumePerLiquidityInBlock,
     );
     logger.info('_calculateSwapAndLock: finished write timepoint');
 
     // new timepoint appears only for first swap in block
     if (newTimepointIndex != cache.timepointIndex) {
       cache.timepointIndex = newTimepointIndex;
-      cache.volumePerLiquidityInBlock = 0n;
+      // cache.volumePerLiquidityInBlock = 0n;
       cache.fee = poolState.globalState.fee; // safe to take as updated just before// _getNewFee(blockTimestamp, currentTick, newTimepointIndex, currentLiquidity);
     }
 
@@ -803,14 +814,17 @@ class AlgebraMathClass {
       globalState.timepointIndex,
     ] = [currentPrice, currentTick, cache.fee, cache.timepointIndex];
 
-    [poolState.liquidity, poolState.volumePerLiquidityInBlock] = [
+    [
+      poolState.liquidity,
+      // poolState.volumePerLiquidityInBlock
+    ] = [
       currentLiquidity,
-      cache.volumePerLiquidityInBlock +
-        DataStorageOperator.calculateVolumePerLiquidity(
-          currentLiquidity,
-          amount0,
-          amount1,
-        ),
+      // cache.volumePerLiquidityInBlock +
+      //   DataStorageOperator.calculateVolumePerLiquidity(
+      //     currentLiquidity,
+      //     amount0,
+      //     amount1,
+      //   ),
     ];
 
     // no need to update fees

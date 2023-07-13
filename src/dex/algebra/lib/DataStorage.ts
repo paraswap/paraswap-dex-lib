@@ -22,19 +22,19 @@ interface Timepoint {
   blockTimestamp: bigint; // the block timestamp of the timepoint
   tickCumulative: bigint; // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
   secondsPerLiquidityCumulative: bigint; // the seconds per liquidity since the pool was first initialized
-  volatilityCumulative: bigint; // the volatility accumulator; overflow after ~34800 years is desired :)
-  averageTick: bigint; // average tick at this blockTimestamp
-  volumePerLiquidityCumulative: bigint; // the gmean(volumes)/liquidity accumulator
+  // volatilityCumulative: bigint; // the volatility accumulator; overflow after ~34800 years is desired :)
+  // averageTick: bigint; // average tick at this blockTimestamp
+  // volumePerLiquidityCumulative: bigint; // the gmean(volumes)/liquidity accumulator
 }
 
 export const TIMEPOINT_ZERO: Timepoint = {
-  averageTick: 0n,
+  // averageTick: 0n,
   blockTimestamp: 0n,
   initialized: false,
   secondsPerLiquidityCumulative: 0n,
   tickCumulative: 0n,
-  volatilityCumulative: 0n,
-  volumePerLiquidityCumulative: 0n,
+  // volatilityCumulative: 0n,
+  // volumePerLiquidityCumulative: 0n,
 };
 const WINDOW = 24n * 60n;
 const UINT16_MODULO = 65536n;
@@ -97,8 +97,8 @@ export class DataStorage {
     tick: bigint,
     prevTick: bigint,
     liquidity: bigint,
-    averageTick: bigint,
-    volumePerLiquidity: bigint,
+    // averageTick: bigint,
+    // volumePerLiquidity: bigint,
   ): Timepoint {
     const delta = blockTimestamp - last.blockTimestamp;
 
@@ -107,17 +107,17 @@ export class DataStorage {
     last.tickCumulative += int56(tick) * delta;
     last.secondsPerLiquidityCumulative +=
       (uint160(delta) << 128n) / (liquidity > 0n ? liquidity : 1n); // just timedelta if liquidity == 0
-    last.volatilityCumulative += uint88(
-      this._volatilityOnRange(
-        delta,
-        prevTick,
-        tick,
-        last.averageTick,
-        averageTick,
-      ),
-    ); // always fits 88 bits
-    last.averageTick = averageTick;
-    last.volumePerLiquidityCumulative += volumePerLiquidity;
+    // last.volatilityCumulative += uint88(
+    //   this._volatilityOnRange(
+    //     delta,
+    //     prevTick,
+    //     tick,
+    //     last.averageTick,
+    //     averageTick,
+    //   ),
+    // ); // always fits 88 bits
+    // last.averageTick = averageTick;
+    // last.volumePerLiquidityCumulative += volumePerLiquidity;
 
     return last;
   }
@@ -316,13 +316,13 @@ export class DataStorage {
           if (index != oldestIndex) {
             // FIXME?
             let prevLast: Timepoint = {
-              averageTick: 0n,
+              // averageTick: 0n,
               blockTimestamp: 0n,
               initialized: false,
               secondsPerLiquidityCumulative: 0n,
               tickCumulative: 0n,
-              volatilityCumulative: 0n,
-              volumePerLiquidityCumulative: 0n,
+              // volatilityCumulative: 0n,
+              // volumePerLiquidityCumulative: 0n,
             };
             let _prevLast = self[Number(index - 1n)] || TIMEPOINT_ZERO; // considering index underflow
             prevLast.blockTimestamp = _prevLast.blockTimestamp;
@@ -339,8 +339,8 @@ export class DataStorage {
           tick,
           prevTick,
           liquidity,
-          avgTick,
-          0n,
+          //avgTick,
+          // 0n,
         );
       }
     }
@@ -384,15 +384,15 @@ export class DataStorage {
           targetDelta) /
           timepointTimeDelta,
       );
-      beforeOrAt.volatilityCumulative +=
-        ((atOrAfter.volatilityCumulative - beforeOrAt.volatilityCumulative) /
-          timepointTimeDelta) *
-        targetDelta;
-      beforeOrAt.volumePerLiquidityCumulative +=
-        ((atOrAfter.volumePerLiquidityCumulative -
-          beforeOrAt.volumePerLiquidityCumulative) /
-          timepointTimeDelta) *
-        targetDelta;
+      // beforeOrAt.volatilityCumulative +=
+      //   ((atOrAfter.volatilityCumulative - beforeOrAt.volatilityCumulative) /
+      //     timepointTimeDelta) *
+      //   targetDelta;
+      // beforeOrAt.volumePerLiquidityCumulative +=
+      //   ((atOrAfter.volumePerLiquidityCumulative -
+      //     beforeOrAt.volumePerLiquidityCumulative) /
+      //     timepointTimeDelta) *
+      //   targetDelta;
     }
 
     // we're at the left boundary or at the middle
@@ -411,57 +411,57 @@ export class DataStorage {
   /// @return secondsPerLiquidityCumulatives The cumulative seconds / max(1, liquidity) since the pool was first initialized, as of each `secondsAgo`
   /// @return volatilityCumulatives The cumulative volatility values since the pool was first initialized, as of each `secondsAgo`
   /// @return volumePerAvgLiquiditys The cumulative volume per liquidity values since the pool was first initialized, as of each `secondsAgo`
-  static getTimepoints(
-    self: Record<number, Timepoint>,
-    time: bigint,
-    secondsAgos: bigint[],
-    tick: bigint,
-    index: bigint,
-    liquidity: bigint,
-  ): [bigint[], bigint[], bigint[], bigint[]] {
-    let tickCumulatives = new Array<bigint>(secondsAgos.length);
-    let secondsPerLiquidityCumulatives = new Array<bigint>(secondsAgos.length);
-    let volatilityCumulatives = new Array<bigint>(secondsAgos.length);
-    let volumePerAvgLiquiditys = new Array<bigint>(secondsAgos.length);
+  // static getTimepoints(
+  //   self: Record<number, Timepoint>,
+  //   time: bigint,
+  //   secondsAgos: bigint[],
+  //   tick: bigint,
+  //   index: bigint,
+  //   liquidity: bigint,
+  // ): [bigint[], bigint[], bigint[], bigint[]] {
+  //   let tickCumulatives = new Array<bigint>(secondsAgos.length);
+  //   let secondsPerLiquidityCumulatives = new Array<bigint>(secondsAgos.length);
+  //   let volatilityCumulatives = new Array<bigint>(secondsAgos.length);
+  //   let volumePerAvgLiquiditys = new Array<bigint>(secondsAgos.length);
 
-    let oldestIndex = 0n; // solidity default
-    // check if we have overflow in the past
-    let nextIndex = index + 1n; // considering overflow
-    if ((self[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
-      oldestIndex = nextIndex;
-    }
+  //   let oldestIndex = 0n; // solidity default
+  //   // check if we have overflow in the past
+  //   let nextIndex = index + 1n; // considering overflow
+  //   if ((self[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
+  //     oldestIndex = nextIndex;
+  //   }
 
-    let current: Timepoint;
-    for (let i = 0; i < secondsAgos.length; i++) {
-      current = this.getSingleTimepoint(
-        self,
-        time,
-        secondsAgos[i],
-        tick,
-        index,
-        oldestIndex,
-        liquidity,
-      );
-      [
-        tickCumulatives[i],
-        secondsPerLiquidityCumulatives[i],
-        volatilityCumulatives[i],
-        volumePerAvgLiquiditys[i],
-      ] = [
-        current.tickCumulative,
-        current.secondsPerLiquidityCumulative,
-        current.volatilityCumulative,
-        current.volumePerLiquidityCumulative,
-      ];
-    }
+  //   let current: Timepoint;
+  //   for (let i = 0; i < secondsAgos.length; i++) {
+  //     current = this.getSingleTimepoint(
+  //       self,
+  //       time,
+  //       secondsAgos[i],
+  //       tick,
+  //       index,
+  //       oldestIndex,
+  //       liquidity,
+  //     );
+  //     [
+  //       tickCumulatives[i],
+  //       secondsPerLiquidityCumulatives[i],
+  //       // volatilityCumulatives[i],
+  //       // volumePerAvgLiquiditys[i],
+  //     ] = [
+  //       current.tickCumulative,
+  //       current.secondsPerLiquidityCumulative,
+  //       // current.volatilityCumulative,
+  //       // current.volumePerLiquidityCumulative,
+  //     ];
+  //   }
 
-    return [
-      tickCumulatives,
-      secondsPerLiquidityCumulatives,
-      volatilityCumulatives,
-      volumePerAvgLiquiditys,
-    ];
-  }
+  //   return [
+  //     tickCumulatives,
+  //     secondsPerLiquidityCumulatives,
+  //     volatilityCumulatives,
+  //     volumePerAvgLiquiditys,
+  //   ];
+  // }
 
   /// @notice Returns average volatility in the range from time-WINDOW to time
   /// @param self The stored dataStorage array
@@ -471,70 +471,70 @@ export class DataStorage {
   /// @param liquidity The current in-range pool liquidity
   /// @return volatilityAverage The average volatility in the recent range
   /// @return volumePerLiqAverage The average volume per liquidity in the recent range
-  static getAverages(
-    self: Record<number, Timepoint>,
-    time: bigint,
-    tick: bigint,
-    index: bigint,
-    liquidity: bigint,
-  ): [bigint, bigint] {
-    let oldestIndex;
+  // static getAverages(
+  //   self: Record<number, Timepoint>,
+  //   time: bigint,
+  //   tick: bigint,
+  //   index: bigint,
+  //   liquidity: bigint,
+  // ): [bigint, bigint] {
+  //   let oldestIndex;
 
-    let oldest = self[0];
-    let nextIndex = index + 1n; // considering overflow
-    if ((self[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
-      oldest = self[Number(nextIndex)] || TIMEPOINT_ZERO;
-      oldestIndex = nextIndex;
-    }
+  //   let oldest = self[0];
+  //   let nextIndex = index + 1n; // considering overflow
+  //   if ((self[Number(nextIndex)] || TIMEPOINT_ZERO).initialized) {
+  //     oldest = self[Number(nextIndex)] || TIMEPOINT_ZERO;
+  //     oldestIndex = nextIndex;
+  //   }
 
-    assert(oldestIndex); // FIXME ?
+  //   assert(oldestIndex); // FIXME ?
 
-    let endOfWindow = this.getSingleTimepoint(
-      self,
-      time,
-      0n,
-      tick,
-      index,
-      oldestIndex,
-      liquidity,
-    );
+  //   let endOfWindow = this.getSingleTimepoint(
+  //     self,
+  //     time,
+  //     0n,
+  //     tick,
+  //     index,
+  //     oldestIndex,
+  //     liquidity,
+  //   );
 
-    let oldestTimestamp = oldest.blockTimestamp;
-    if (this.lteConsideringOverflow(oldestTimestamp, time - WINDOW, time)) {
-      let startOfWindow = this.getSingleTimepoint(
-        self,
-        time,
-        WINDOW,
-        tick,
-        index,
-        oldestIndex,
-        liquidity,
-      );
-      return [
-        (endOfWindow.volatilityCumulative -
-          startOfWindow.volatilityCumulative) /
-          WINDOW,
-        uint256(
-          endOfWindow.volumePerLiquidityCumulative -
-            startOfWindow.volumePerLiquidityCumulative,
-        ) >> 57n,
-      ];
-    } else if (time != oldestTimestamp) {
-      let _oldestVolatilityCumulative = oldest.volatilityCumulative;
-      let _oldestVolumePerLiquidityCumulative =
-        oldest.volumePerLiquidityCumulative;
-      return [
-        (endOfWindow.volatilityCumulative - _oldestVolatilityCumulative) /
-          (time - oldestTimestamp),
-        uint256(
-          endOfWindow.volumePerLiquidityCumulative -
-            _oldestVolumePerLiquidityCumulative,
-        ) >> 57n,
-      ];
-    }
+  //   let oldestTimestamp = oldest.blockTimestamp;
+  //   if (this.lteConsideringOverflow(oldestTimestamp, time - WINDOW, time)) {
+  //     let startOfWindow = this.getSingleTimepoint(
+  //       self,
+  //       time,
+  //       WINDOW,
+  //       tick,
+  //       index,
+  //       oldestIndex,
+  //       liquidity,
+  //     );
+  //     return [
+  //       (endOfWindow.volatilityCumulative -
+  //         startOfWindow.volatilityCumulative) /
+  //         WINDOW,
+  //       uint256(
+  //         endOfWindow.volumePerLiquidityCumulative -
+  //           startOfWindow.volumePerLiquidityCumulative,
+  //       ) >> 57n,
+  //     ];
+  //   } else if (time != oldestTimestamp) {
+  //     let _oldestVolatilityCumulative = oldest.volatilityCumulative;
+  //     let _oldestVolumePerLiquidityCumulative =
+  //       oldest.volumePerLiquidityCumulative;
+  //     return [
+  //       (endOfWindow.volatilityCumulative - _oldestVolatilityCumulative) /
+  //         (time - oldestTimestamp),
+  //       uint256(
+  //         endOfWindow.volumePerLiquidityCumulative -
+  //           _oldestVolumePerLiquidityCumulative,
+  //       ) >> 57n,
+  //     ];
+  //   }
 
-    return [0n, 0n]; // should not enter here ?
-  }
+  //   return [0n, 0n]; // should not enter here ?
+  // }
 
   /// @notice Initialize the dataStorage array by writing the first slot. Called once for the lifecycle of the timepoints array
   /// @param self The stored dataStorage array
@@ -566,7 +566,7 @@ export class DataStorage {
     blockTimestamp: bigint,
     tick: bigint,
     liquidity: bigint,
-    volumePerLiquidity: bigint,
+    // volumePerLiquidity: bigint,
   ): bigint {
     let _last: Timepoint = self[Number(index)] || TIMEPOINT_ZERO;
 
@@ -586,7 +586,7 @@ export class DataStorage {
       oldestIndex = indexUpdated;
     }
 
-    let avgTick = 0n;
+    // let avgTick = 0n;
     // int24(
     //   this._getAverageTick(
     //     self,
@@ -615,8 +615,8 @@ export class DataStorage {
       tick,
       prevTick,
       liquidity,
-      avgTick,
-      volumePerLiquidity,
+      // avgTick,
+      // volumePerLiquidity,
     );
 
     // FIXME should delete ?

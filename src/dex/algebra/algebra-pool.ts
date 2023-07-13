@@ -249,11 +249,11 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
         secondsPerLiquidityCumulative: bigIntify(
           _state.timepoints.secondsPerLiquidityCumulative,
         ),
-        volatilityCumulative: bigIntify(_state.timepoints.volatilityCumulative),
-        volumePerLiquidityCumulative: bigIntify(
-          _state.timepoints.volumePerLiquidityCumulative,
-        ),
-        averageTick: bigIntify(_state.timepoints.averageTick),
+        // volatilityCumulative: bigIntify(_state.timepoints.volatilityCumulative),
+        // volumePerLiquidityCumulative: bigIntify(
+        //   _state.timepoints.volumePerLiquidityCumulative,
+        // ),
+        // averageTick: bigIntify(_state.timepoints.averageTick),
         initialized: _state.timepoints.initialized,
       },
     };
@@ -264,7 +264,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       price: bigIntify(_state.globalState.price),
       tick: bigIntify(_state.globalState.tick),
       timepointIndex: bigIntify(_state.globalState.timepointIndex),
-      unlocked: _state.globalState.unlocked,
+      // unlocked: _state.globalState.unlocked,
     };
     const currentTick = globalState.tick;
     const startTickBitmap = TickBitMap.position(
@@ -279,7 +279,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       liquidity: bigIntify(_state.liquidity),
       tickSpacing: Constants.TICK_SPACING,
       maxLiquidityPerTick: Constants.MAX_LIQUIDITY_PER_TICK,
-      volumePerLiquidityInBlock: 0n, // FIXME where to retrieve
+      //volumePerLiquidityInBlock: 0n, // FIXME where to retrieve
       tickBitmap,
       ticks,
       startTickBitmap,
@@ -365,7 +365,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const bottomTick = bigIntify(event.args.bottomTick);
     const topTick = bigIntify(event.args.topTick);
-    const liquidityActual = bigIntify(event.args.liquidityActual);
+    const liquidityActual = bigIntify(event.args.liquidityAmount);
     const amount0 = bigIntify(event.args.amount0);
     const amount1 = bigIntify(event.args.amount1);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
@@ -391,7 +391,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const bottomTick = bigIntify(event.args.bottomTick);
     const topTick = bigIntify(event.args.topTick);
-    const amount = bigIntify(event.args.amount);
+    const amount = bigIntify(event.args.liquidityAmount);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     AlgebraMath._updatePositionTicksAndFees(
@@ -456,8 +456,8 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     log: Log,
     blockHeader: BlockHeader,
   ) {
-    const communityFeeToken0 = bigIntify(event.ags.communityFeeToken0);
-    const communityFeeToken1 = bigIntify(event.ags.communityFeeToken1);
+    const communityFeeToken0 = bigIntify(event.ags.communityFee0New);
+    const communityFeeToken1 = bigIntify(event.ags.communityFee1New);
 
     pool.globalState.communityFeeToken0 = communityFeeToken0;
     pool.globalState.communityFeeToken1 = communityFeeToken1;
