@@ -324,19 +324,19 @@ describe('UniswapV3 E2E', () => {
 
     const pairs: { name: string; sellAmount: string, buyAmount: string }[][] = [
       [
-        { name: 'AVAX', sellAmount: '1000000', buyAmount: '500000', },
-        { name: 'USDT', sellAmount: '1000000', buyAmount: '200000000000000', },
+        { name: 'AVAX', sellAmount: '1000000000000000000', buyAmount: '500000', },
+        { name: 'USDT', sellAmount: '1000000', buyAmount: '10000000000000000000', },
       ],
       [
-        { name: 'AVAX', sellAmount: '1000000', buyAmount: '500000', },
-        { name: 'USDC', sellAmount: '1000000', buyAmount: '200000000000000', },
+        { name: 'AVAX', sellAmount: '1000000000000000000', buyAmount: '500000', },
+        { name: 'USDC', sellAmount: '1000000', buyAmount: '1000000000000000000', },
       ],
       [
-        { name: 'WAVAX', sellAmount: '1000000', buyAmount: '500000', },
-        { name: 'USDC', sellAmount: '1000000', buyAmount: '200000000000000', },
+        { name: 'WAVAX', sellAmount: '1000000000000000000', buyAmount: '500000', },
+        { name: 'USDC', sellAmount: '1000000', buyAmount: '1000000000000000000', },
       ],
       [
-        { name: 'WAVAX', sellAmount: '1000000', buyAmount: '500000', },
+        { name: 'WAVAX', sellAmount: '1000000000000000000', buyAmount: '500000', },
         { name: 'USDT', sellAmount: '1000000', buyAmount: '200000000000000', },
       ],
       [
