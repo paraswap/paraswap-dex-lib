@@ -11,6 +11,13 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import { Address } from '@paraswap/core';
+import { uint256ToBigInt } from '../../lib/decoders';
+import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
+import ERC20ABI from '../../abi/erc20.json';
+import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
+import { AbiItem } from 'web3-utils';
+import { MultiCallParams } from '../../lib/multi-wrapper';
+import { DecodedStateMultiCallResultWithRelativeBitmaps } from './types';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
@@ -142,6 +149,69 @@ describe('UniswapV3', function () {
       dexKey,
       new DummyDexHelper(Network.MAINNET),
     );
+  });
+
+  it('test multiwrap', async () => {
+
+    const dexHelper =  new DummyDexHelper(Network.AVALANCHE);
+    const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const erc20Interface = new Interface(ERC20ABI);
+    const stateMultiContract = new dexHelper.web3Provider.eth.Contract(
+      UniswapV3StateMulticallABI as AbiItem[],
+      '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
+    );
+
+    const calldata: MultiCallParams<
+      bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      >[] = [
+      {
+        target: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
+        callData: erc20Interface.encodeFunctionData('balanceOf', [
+          '0xfAe3f424a0a47706811521E3ee268f00cFb5c45E',
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
+        callData: erc20Interface.encodeFunctionData('balanceOf', [
+          '0xfAe3f424a0a47706811521E3ee268f00cFb5c45E',
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: stateMultiContract.options.address,
+        callData: stateMultiContract.methods
+          .getFullStateWithRelativeBitmaps(
+            '0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD',
+            '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
+            '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
+            500n,
+            12n,
+            12n,
+          )
+          .encodeABI(),
+        decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+      },
+    ];
+
+    let readerResult;
+    try {
+      console.log('ADDRES: ', dexHelper.multiContract.options.address);
+      console.log('CALLDATA: ', JSON.stringify(calldata));
+      readerResult = (
+        await dexHelper.multiContract.methods
+            .tryAggregate(false, calldata)
+            .call(undefined, blockNumber)
+      );
+    } catch (e) {
+      console.log(
+        e,
+      );
+      return false;
+    }
+
+    console.log('READER RESULT: ', readerResult);
+
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
