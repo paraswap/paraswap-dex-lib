@@ -11,13 +11,6 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import { Address } from '@paraswap/core';
-import { uint256ToBigInt } from '../../lib/decoders';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
-import ERC20ABI from '../../abi/erc20.json';
-import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
-import { AbiItem } from 'web3-utils';
-import { MultiCallParams } from '../../lib/multi-wrapper';
-import { DecodedStateMultiCallResultWithRelativeBitmaps } from './types';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
