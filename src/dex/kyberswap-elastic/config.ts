@@ -3,15 +3,15 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
 const KS_ELASTIC_CONFIG: DexParams = {
-  factory: '0x5F1dddbf348aC2fbe22a163e30F99F9ECE3DD50a',
-  router: '0xC1e7dFE73E1598E3910EF4C7845B68A9Ab6F4c83',
-  positionManager: '0x2B1c7b41f6A8F2b2bc45C3233a5d5FB3cD6dC9A8',
-  quoter: '0x0D125c15D54cA1F8a813C74A81aEe34ebB508C1f',
-  ticksFeesReader: '0x165c68077ac06c83800d19200e6E2B08D02dE75D',
-  tokenPositionDescriptor: '0x8abd8c92F1901cf204590c16b5EF690a35b3741E',
+  factory: '0xC7a590291e07B9fe9E64b86c58fD8fC764308C4A',
+  router: '0xF9c2b5746c946EF883ab2660BbbB1f10A5bdeAb4',
+  positionManager: '0xe222fBE074A436145b255442D919E4E3A6c6a480',
+  quoter: '0x4d47fd5a29904Dae0Ef51b1c450C9750F15D7856',
+  ticksFeesReader: '0x8Fd8Cb948965d9305999D767A02bf79833EADbB3',
+  tokenPositionDescriptor: '0x98565FcAD2080C5c19C3136fa367cE371cD40bD6',
   supportedFees: [1000n, 300n, 40n, 10n, 8n],
-  initHash:
-    '0xc597aba1bb02db42ba24a8878837965718c032f8b46be94a6e46452a9f89ca01',
+  poolInitHash:
+    '0x00e263aaa3a2c06a89b53217a9e7aad7e15613490a72e0f95f303c4de2dc7045',
   chunksCount: 10,
 };
 

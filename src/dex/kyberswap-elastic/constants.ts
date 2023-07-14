@@ -1,0 +1,2 @@
+export const KS_ELASTIC_QUOTE_GASLIMIT = 200_000;
+export const BI_MAX_UINT128;
