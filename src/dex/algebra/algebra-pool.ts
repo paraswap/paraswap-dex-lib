@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly, assert } from 'ts-essentials';
-import { Address, BlockHeader, Log, Logger, NumberAsString } from '../../types';
+import { Address, BlockHeader, Log, Logger } from '../../types';
 import { bigIntify, catchParseLogError } from '../../utils';
 import {
   InitializeStateOptions,
@@ -121,23 +121,11 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
         // And there is no good workaround, so turn off the type checker for this line
         const _state = _.cloneDeep(state) as PoolState;
         try {
-          /**************
-           FIXME remove loggers
-          **************/
-          this.logger.info(
-            `on hanlding event=${event.name} on block=${log.blockNumber} transactionHash=${log.transactionHash} transactionIndex=${log.transactionIndex} logIndex=${log.logIndex}`,
-          );
           const newState = this.handlers[event.name](
             event,
             _state,
             log,
             blockHeader,
-          );
-          /**************
-           FIXME remove loggers
-          **************/
-          this.logger.info(
-            `finished treating event=${event.name} on block=${log.blockNumber} transactionHash=${log.transactionHash} transactionIndex=${log.transactionIndex} logIndex=${log.logIndex}`,
           );
           return newState;
         } catch (e) {
@@ -211,7 +199,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   getBitmapRangeToRequest() {
-    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER; // TODO: validate
+    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
@@ -241,30 +229,12 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
     _reduceTickBitmap(tickBitmap, _state.tickBitmap);
     _reduceTicks(ticks, _state.ticks);
-
-    const timepoints = {
-      [_state.globalState.timepointIndex]: {
-        blockTimestamp: bigIntify(_state.timepoints.blockTimestamp),
-        tickCumulative: bigIntify(_state.timepoints.tickCumulative),
-        secondsPerLiquidityCumulative: bigIntify(
-          _state.timepoints.secondsPerLiquidityCumulative,
-        ),
-        // volatilityCumulative: bigIntify(_state.timepoints.volatilityCumulative),
-        // volumePerLiquidityCumulative: bigIntify(
-        //   _state.timepoints.volumePerLiquidityCumulative,
-        // ),
-        // averageTick: bigIntify(_state.timepoints.averageTick),
-        initialized: _state.timepoints.initialized,
-      },
-    };
     const globalState: PoolState['globalState'] = {
       communityFeeToken0: bigIntify(_state.globalState.communityFeeToken0),
       communityFeeToken1: bigIntify(_state.globalState.communityFeeToken1),
       fee: bigIntify(_state.globalState.fee),
       price: bigIntify(_state.globalState.price),
       tick: bigIntify(_state.globalState.tick),
-      timepointIndex: bigIntify(_state.globalState.timepointIndex),
-      // unlocked: _state.globalState.unlocked,
     };
     const currentTick = globalState.tick;
     const startTickBitmap = TickBitMap.position(
@@ -274,12 +244,10 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     return {
       pool: _state.pool,
       blockTimestamp: bigIntify(_state.blockTimestamp),
-      timepoints,
       globalState,
       liquidity: bigIntify(_state.liquidity),
       tickSpacing: Constants.TICK_SPACING,
       maxLiquidityPerTick: Constants.MAX_LIQUIDITY_PER_TICK,
-      //volumePerLiquidityInBlock: 0n, // FIXME where to retrieve
       tickBitmap,
       ticks,
       startTickBitmap,
@@ -313,7 +281,6 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       const zeroForOne = amount0 > 0n;
 
       const [, , , , , communityFee] = AlgebraMath._calculateSwapAndLock(
-        this.logger,
         pool,
         zeroForOne,
         newSqrtPriceX96,
