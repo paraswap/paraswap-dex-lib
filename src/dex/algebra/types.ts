@@ -2,23 +2,12 @@ import { BigNumber } from 'ethers';
 import { Address, NumberAsString } from '../../types';
 import { TickInfo } from '../uniswap-v3/types';
 
-type Timepoint = {
-  initialized: boolean;
-  blockTimestamp: bigint;
-  tickCumulative: bigint;
-  secondsPerLiquidityCumulative: bigint;
-  // volatilityCumulative: bigint;
-  // averageTick: bigint;
-  // volumePerLiquidityCumulative: bigint;
-};
-
 type GlobalState = {
   price: bigint; // The square root of the current price in Q64.96 format
   tick: bigint; // The current tick
   fee: bigint; // The current fee in hundredths of a bip, i.e. 1e-6
   communityFeeToken0: bigint; // The community fee represented as a percent of all collected fee in thousandths (1e-3)
   communityFeeToken1: bigint;
-  // unlocked: boolean; // True if the contract is unlocked, otherwise - false
 };
 
 export type PoolState = {
@@ -84,20 +73,10 @@ export type DecodedStateMultiCallResultWithRelativeBitmaps = {
     fee: number;
     communityFeeToken1: number;
     communityFeeToken0: number;
-    // unlocked: boolean;
   };
   liquidity: BigNumber;
   tickSpacing: number;
   maxLiquidityPerTick: BigNumber;
-  timepoints: {
-    initialized: boolean;
-    blockTimestamp: number;
-    tickCumulative: BigNumber;
-    secondsPerLiquidityCumulative: BigNumber;
-    // volatilityCumulative: BigNumber;
-    // averageTick: number;
-    // volumePerLiquidityCumulative: BigNumber;
-  };
   tickBitmap: TickBitMapMappingsWithBigNumber[];
   ticks: TickInfoMappingsWithBigNumber[];
 };
