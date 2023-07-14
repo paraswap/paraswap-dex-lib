@@ -379,18 +379,7 @@ class UniswapV3Math {
   }
 
   swapFromEvent(
-    poolState: Pick<
-      PoolState,
-      | 'slot0'
-      | 'liquidity'
-      | 'blockTimestamp'
-      | 'startTickBitmap'
-      | 'tickBitmap'
-      | 'tickSpacing'
-      | 'fee'
-      | 'observations'
-      | 'ticks'
-    >,
+    poolState: PoolState,
     newSqrtPriceX96: bigint,
     newTick: bigint,
     newLiquidity: bigint,
@@ -669,9 +658,7 @@ class UniswapV3Math {
     }
   }
 
-  private _blockTimestamp(
-    state: DeepReadonly<Pick<PoolState, 'blockTimestamp'>>,
-  ) {
+  private _blockTimestamp(state: DeepReadonly<PoolState>) {
     return BigInt.asUintN(32, state.blockTimestamp);
   }
 }
