@@ -158,7 +158,7 @@ describe('UniswapV3', function () {
     const erc20Interface = new Interface(ERC20ABI);
     const stateMultiContract = new dexHelper.web3Provider.eth.Contract(
       UniswapV3StateMulticallABI as AbiItem[],
-      '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
+      '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
     );
 
     const calldata: MultiCallParams<
@@ -196,7 +196,8 @@ describe('UniswapV3', function () {
 
     let readerResult;
     try {
-      console.log('ADDRES: ', dexHelper.multiContract.options.address);
+      console.log('MUTLTO CALL V2 ADDRES: ', dexHelper.multiContract.options.address);
+      console.log('STATE UNI V3 MULTI CALL: ', stateMultiContract.options.address);
       console.log('CALLDATA: ', JSON.stringify(calldata));
       readerResult = (
         await dexHelper.multiContract.methods
