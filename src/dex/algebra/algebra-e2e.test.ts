@@ -133,18 +133,16 @@ function testForNetwork(
   });
 }
 
-describe('Algebra E2E', () => {
-  const dexKey = 'Algebra';
+describe('QuickSwapV3 E2E', () => {
+  const dexKey = 'QuickSwapV3';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'DAI';
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
-
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -156,7 +154,5 @@ describe('Algebra E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // TODO: Add any additional test cases required to test Algebra
   });
 });
