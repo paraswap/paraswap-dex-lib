@@ -44,6 +44,16 @@ describe('CurveV1 E2E', () => {
           amount: (10 ** 8).toString(),
         },
       ],
+      [
+        {
+          symbol: 'ETH',
+          amount: '5000000000000000000',
+        },
+        {
+          symbol: 'WBETH',
+          amount: '1000000000000000',
+        },
+      ]
     ];
 
     const sideToContractMethods = new Map([
@@ -66,6 +76,19 @@ describe('CurveV1 E2E', () => {
                 tokens[pair[0].symbol],
                 tokens[pair[1].symbol],
                 holders[pair[0].symbol],
+                side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${pair[1].symbol} -> ${pair[0].symbol}`, async () => {
+              await testE2E(
+                tokens[pair[1].symbol],
+                tokens[pair[0].symbol],
+                holders[pair[1].symbol],
                 side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
                 side,
                 dexKey,
