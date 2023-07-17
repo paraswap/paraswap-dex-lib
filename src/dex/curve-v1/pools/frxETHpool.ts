@@ -1,8 +1,10 @@
-import { Address } from '../../../types';
+import { Address, Log } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
 import { bigNumberify } from '../../../utils';
-import { CurvePool } from './curve-pool';
-import StableSwap3Pool from '../../../abi/curve-v1/StableSwap3Pool.json';
+import { PoolState } from './curve-pool';
+import { SETHPool } from './sETHpool';
+import StableSwapSTETH from '../../../abi/curve-v1/StableSwapSTETH.json';
+import { DeepReadonly } from 'ts-essentials';
 
 const pool = 'frxETH';
 export const address: Address =
@@ -16,35 +18,36 @@ const COINS = [
   '0x5e8422345238f34275888049021821e8e08caa1f',
 ];
 const trackCoins = true;
+const ignoreLogsWithTopic0 = [
+  // Submitted (index_topic_1 address sender, uint256 amount, address referral)
+  '0x96a25c8ce0baabc1fdefd93e9ed25d8e092a3332f3aa9a41722b5697231d1d1a',
+];
 
-export class FRXETHPool extends CurvePool {
-  constructor(
-    parentName: string,
-    dexHelper: IDexHelper,
-    _pool = pool,
-    _address = address,
-    _tokenAddress = tokenAddress,
-    _trackCoins = trackCoins,
-    _abi: any = StableSwap3Pool,
-    _N_COINS = N_COINS,
-    _PRECISION_MUL = PRECISION_MUL,
-    _USE_LENDING = USE_LENDING,
-    _COINS = COINS,
-    prefix = 'frxETH',
-  ) {
+export class FRXETHPool extends SETHPool {
+  constructor(parentName: string, dexHelper: IDexHelper) {
     super(
       parentName,
       dexHelper,
-      dexHelper.getLogger(prefix),
-      _pool,
-      _address,
-      _tokenAddress,
-      _trackCoins,
-      _abi,
-      _N_COINS,
-      _PRECISION_MUL,
-      _USE_LENDING,
-      _COINS,
+      pool,
+      address,
+      tokenAddress,
+      trackCoins,
+      StableSwapSTETH,
+      N_COINS,
+      PRECISION_MUL,
+      USE_LENDING,
+      COINS,
+      'FRXETHPool',
     );
   }
+
+  public processLog(
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    if (ignoreLogsWithTopic0.includes(log.topics[0].toLowerCase()))
+      return state;
+    return super.processLog(state, log);
+  }
 }
+
