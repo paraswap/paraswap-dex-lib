@@ -85,6 +85,18 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis',
     },
+    [Network.AVALANCHE]: {
+      factory: '0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD',
+      quoter: '0xbe0F5544EC67e9B3b2D979aaA43f18Fd87E6257F',
+      router: '0x33895c09a0ec0718ce66ab35dfd0b656d77cd053',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
+      uniswapMulticall: '0x0139141Cd4Ee88dF3Cdb65881D411bAE271Ef0C2',
+      chunksCount: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/lynnshaoyu/uniswap-v3-avax',
+    },
   },
   'QuickSwapV3.1': {
     [Network.ZKEVM]: {
@@ -130,5 +142,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.ZKEVM]: {
     [SwapSide.SELL]: [{ name: 'PolygonZkEvmAdapter01', index: 1 }],
     [SwapSide.BUY]: [{ name: 'PolygonZkEvmBuyAdapter', index: 1 }],
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'AvalancheBuyAdapter', index: 6 }],
   },
 };
