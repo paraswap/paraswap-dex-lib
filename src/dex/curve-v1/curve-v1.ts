@@ -43,7 +43,8 @@ import { DUSDPool, address as DUSDPoolAddress } from './pools/DUSDpool';
 import { BBTCPool, address as BBTCPoolAddress } from './pools/bBTCpool';
 import { GUSDPool, address as GUSDPoolAddress } from './pools/GUSDpool';
 import { HUSDPool, address as HUSDPoolAddress } from './pools/HUSDpool';
-import { WBETHpool, address as WbETHpoolAddress } from './pools/wbETHpool';
+import { WBETHPool, address as WBETHPoolAddress } from './pools/wbETHpool';
+import { FRXETHPool, address as FRXPoolAddress } from './pools/frxETHpool';
 import {
   LinkUSDPool,
   address as LinkUSDPoolAddress,
@@ -295,8 +296,10 @@ export class CurveV1
         return new SETHPool(this.dexKey, this.dexHelper);
       case STETHPoolAddress:
         return new STETHPool(this.dexKey, this.dexHelper);
-      case WbETHpoolAddress:
-        return new WBETHpool(this.dexKey, this.dexHelper);
+      case WBETHPoolAddress:
+        return new WBETHPool(this.dexKey, this.dexHelper);
+      case FRXPoolAddress:
+        return new FRXETHPool(this.dexKey, this.dexHelper);
       case EURSPoolAddress:
         return new EURSPool(this.dexKey, this.dexHelper);
       case DUSDPoolAddress:

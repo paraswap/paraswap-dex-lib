@@ -4,20 +4,20 @@ import { bigNumberify } from '../../../utils';
 import { CurvePool } from './curve-pool';
 import StableSwap3Pool from '../../../abi/curve-v1/StableSwap3Pool.json';
 
-const pool = 'wbETH';
+const pool = 'frxETH';
 export const address: Address =
-  '0xbfab6fa95e0091ed66058ad493189d2cb29385e6'.toLowerCase();
-const tokenAddress: Address = '0xbfab6fa95e0091ed66058ad493189d2cb29385e6';
+  '0xa1f8a6807c402e4a15ef4eba36528a3fed24e577'.toLowerCase();
+const tokenAddress: Address = '0xf43211935c781d5ca1a41d2041f397b8a7366c7a';
 const N_COINS: number = 2;
 const PRECISION_MUL = ['1', '1'].map(bigNumberify);
 const USE_LENDING = [false, false];
 const COINS = [
   '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-  '0xa2e3356610840701bdf5611a53974510ae27e2e1',
+  '0x5e8422345238f34275888049021821e8e08caa1f',
 ];
 const trackCoins = true;
 
-export class WBETHPool extends CurvePool {
+export class FRXETHPool extends CurvePool {
   constructor(
     parentName: string,
     dexHelper: IDexHelper,
@@ -30,7 +30,7 @@ export class WBETHPool extends CurvePool {
     _PRECISION_MUL = PRECISION_MUL,
     _USE_LENDING = USE_LENDING,
     _COINS = COINS,
-    prefix = 'wbETH',
+    prefix = 'frxETH',
   ) {
     super(
       parentName,

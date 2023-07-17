@@ -47,8 +47,12 @@ export const Tokens: {
       address: '0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6',
       decimals: 18,
     },
-    WBETH: {
+    wBETH: {
       address: '0xa2e3356610840701bdf5611a53974510ae27e2e1',
+      decimals: 18
+    },
+    frxETH: {
+      address: '0x5e8422345238f34275888049021821e8e08caa1f',
       decimals: 18
     },
     BADGER: {
@@ -841,7 +845,8 @@ export const Holders: {
     sBTC: '0xA2e3475D13776C6E42ff37B47286827d959B2195',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
-    WBETH: '0xAAcd84176D37FbC52FBd5DFc2EdD84cf22Bc5FBF',
+    wBETH: '0xAAcd84176D37FbC52FBd5DFc2EdD84cf22Bc5FBF',
+    frxETH: '0x605d36F54546eaC8318deA61670e48db3A071A36',
     wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',
     WETH: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
     USDT: '0x8A446971dbB112f3be15bc38C14D44B94D9E94b9',

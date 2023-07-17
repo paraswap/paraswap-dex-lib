@@ -50,7 +50,17 @@ describe('CurveV1 E2E', () => {
           amount: '5000000000000000000',
         },
         {
-          symbol: 'WBETH',
+          symbol: 'wBETH',
+          amount: '1000000000000000',
+        },
+      ],
+      [
+        {
+          symbol: 'ETH',
+          amount: '5000000000000000000',
+        },
+        {
+          symbol: 'frxETH',
           amount: '1000000000000000',
         },
       ]

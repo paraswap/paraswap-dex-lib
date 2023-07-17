@@ -19,7 +19,8 @@ import { address as TBTCPoolAddress } from './pools/tBTCpool';
 import { address as USDKPoolAddress } from './pools/usdkpool';
 import { address as USTPoolAddress } from './pools/ustpool';
 import { address as SLINKPoolAddress } from './pools/sLinkpool';
-import { address as WBETHPoolAddess } from './pools/wbETHpool';
+import { address as WBETHPoolAddress } from './pools/wbETHpool';
+import { address as FRXETHPoolAddress  } from './pools/frxETHpool';
 
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
@@ -102,7 +103,8 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
         USDKPoolAddress,
         USTPoolAddress,
         SLINKPoolAddress,
-        WBETHPoolAddess,
+        WBETHPoolAddress,
+        FRXETHPoolAddress,
       ],
       pools: {
         Compound: {
@@ -268,6 +270,20 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
             '0xa2e3356610840701bdf5611a53974510ae27e2e1',
           ],
           address: '0xbfab6fa95e0091ed66058ad493189d2cb29385e6',
+          name: 'wbETH',
+          type: 2,
+          version: 3,
+          isLending: false,
+          isMetapool: false,
+          baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        },
+        frxETH: {
+          underlying: [],
+          coins: [
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            '0x5e8422345238f34275888049021821e8e08caa1f',
+          ],
+          address: '0xa1f8a6807c402e4a15ef4eba36528a3fed24e577',
           name: 'wbETH',
           type: 2,
           version: 3,
