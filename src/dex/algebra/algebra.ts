@@ -1,3 +1,4 @@
+import { defaultAbiCoder } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { AbiItem } from 'web3-utils';
 import { pack } from '@ethersproject/solidity';
@@ -14,7 +15,7 @@ import {
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AlgebraData, DexParams, PoolState } from './types';
@@ -48,6 +49,7 @@ const ALGEBRA_EFFICIENCY_FACTOR = 3;
 const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
 const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
 const ALGEBRA_POOL_SEARCH_OVERHEAD = 10_000;
+const ALGEBRA_QUOTE_GASLIMIT = 2_000_000;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   readonly isFeeOnTransferSupported: boolean = false;
@@ -272,6 +274,102 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     return [this.getPoolIdentifier(_srcAddress, _destAddress)];
   }
 
+  async getPricingFromRpc(
+    from: Token,
+    to: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    pool: AlgebraEventPool,
+  ): Promise<ExchangePrices<AlgebraData> | null> {
+    this.logger.warn(
+      `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
+    );
+
+    const unitVolume = getBigIntPow(
+      (side === SwapSide.SELL ? from : to).decimals,
+    );
+
+    const chunks = amounts.length - 1;
+
+    const _width = Math.floor(chunks / this.config.chunksCount);
+
+    const _amounts = [unitVolume].concat(
+      Array.from(Array(this.config.chunksCount).keys()).map(
+        i => amounts[(i + 1) * _width],
+      ),
+    );
+
+    const calldata = _amounts.map(_amount => ({
+      target: this.config.quoter,
+      gasLimit: ALGEBRA_QUOTE_GASLIMIT,
+      callData:
+        side === SwapSide.SELL
+          ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
+              from.address,
+              to.address,
+              _amount.toString(),
+              0, //sqrtPriceLimitX96
+            ])
+          : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
+              from.address,
+              to.address,
+              _amount.toString(),
+              0, //sqrtPriceLimitX96
+            ]),
+    }));
+
+    const data = await this.uniswapMulti.methods.multicall(calldata).call();
+
+    let totalGasCost = 0;
+    let totalSuccessFullSwaps = 0;
+    const decode = (j: number): bigint => {
+      const { success, gasUsed, returnData } = data.returnData[j];
+
+      if (!success) {
+        return 0n;
+      }
+      const decoded = defaultAbiCoder.decode(['uint256'], returnData);
+      totalGasCost += +gasUsed;
+      totalSuccessFullSwaps++;
+
+      return BigInt(decoded[0].toString());
+    };
+
+    const averageGasCost = !totalSuccessFullSwaps
+      ? ALGEBRA_QUOTE_GASLIMIT
+      : Math.round(totalGasCost / totalSuccessFullSwaps);
+
+    let i = 0;
+    const _rates = _amounts.map(() => decode(i++));
+    const unit: bigint = _rates[0];
+
+    const prices = interpolate(
+      _amounts.slice(1),
+      _rates.slice(1),
+      amounts,
+      side,
+    );
+
+    return [
+      {
+        prices,
+        unit,
+        data: {
+          path: [
+            {
+              tokenIn: from.address,
+              tokenOut: to.address,
+            },
+          ],
+        },
+        poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
+        exchange: this.dexKey,
+        gasCost: prices.map(p => (p === 0n ? 0 : averageGasCost)),
+        poolAddresses: [pool.poolAddress],
+      },
+    ];
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -299,11 +397,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const pool = await this.getPool(_srcAddress, _destAddress, blockNumber);
 
       if (!pool) return null;
-      // TODO handle fallack to rpc
 
       const state = pool.getState(blockNumber);
 
-      if (!state) return null;
+      if (state === null) {
+        const rpcPrice = await this.getPricingFromRpc(
+          _srcToken,
+          _destToken,
+          amounts,
+          side,
+          pool,
+        );
+
+        return rpcPrice;
+      }
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
