@@ -1,10 +1,8 @@
-import { Address, Log } from '../../../types';
+import { Address } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
 import { bigNumberify } from '../../../utils';
-import { PoolState } from './curve-pool';
-import { SETHPool } from './sETHpool';
 import StableSwapSTETH from '../../../abi/curve-v1/StableSwapSTETH.json';
-import { DeepReadonly } from 'ts-essentials';
+import { ThreePool } from './3pool';
 
 const pool = 'frxETH';
 export const address: Address =
@@ -18,12 +16,8 @@ const COINS = [
   '0x5e8422345238f34275888049021821e8e08caa1f',
 ];
 const trackCoins = true;
-const ignoreLogsWithTopic0 = [
-  // Submitted (index_topic_1 address sender, uint256 amount, address referral)
-  '0x96a25c8ce0baabc1fdefd93e9ed25d8e092a3332f3aa9a41722b5697231d1d1a',
-];
 
-export class FRXETHPool extends SETHPool {
+export class FRXETHPool extends ThreePool {
   constructor(parentName: string, dexHelper: IDexHelper) {
     super(
       parentName,
@@ -39,15 +33,6 @@ export class FRXETHPool extends SETHPool {
       COINS,
       'FRXETHPool',
     );
-  }
-
-  public processLog(
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    if (ignoreLogsWithTopic0.includes(log.topics[0].toLowerCase()))
-      return state;
-    return super.processLog(state, log);
   }
 }
 

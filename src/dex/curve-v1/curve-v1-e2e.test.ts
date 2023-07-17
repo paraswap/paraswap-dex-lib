@@ -99,7 +99,7 @@ describe('CurveV1 E2E', () => {
                 tokens[pair[1].symbol],
                 tokens[pair[0].symbol],
                 holders[pair[1].symbol],
-                side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
+                side === SwapSide.SELL ? pair[1].amount : pair[0].amount,
                 side,
                 dexKey,
                 contractMethod,
