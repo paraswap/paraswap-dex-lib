@@ -68,6 +68,7 @@ export type DexParams = {
   uniswapMulticall: Address;
   supportedFees: bigint[];
   chunksCount: number;
+  initRetryFrequency: number;
   deployer?: Address;
   subgraphURL: string;
   initHash: string;

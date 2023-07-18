@@ -160,6 +160,15 @@ export class PancakeswapV3
     let pool =
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
 
+    if (
+      pool &&
+      pool.initFailed &&
+      pool.initRetryCount % this.config.initRetryFrequency === 0
+    ) {
+      // if init failed then prefer to early return pool with empty state to fallback to rpc call
+      return pool;
+    }
+
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
@@ -873,6 +882,7 @@ export class PancakeswapV3
       supportedFees: this.config.supportedFees,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
+      initRetryFrequency: this.config.initRetryFrequency,
       uniswapMulticall: this.config.uniswapMulticall,
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
