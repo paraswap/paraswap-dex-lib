@@ -559,7 +559,7 @@ export class PancakeswapV3
         _destToken,
         amounts,
         side,
-        poolsToUse.poolWithoutState,
+        this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
       );
 
       const states = poolsToUse.poolWithState.map(
