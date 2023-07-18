@@ -183,11 +183,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           },
         });
       } catch (e) {
-        if (
-          // most zkEVM rpcs fails with "cannot execute unsigned transaction" issue. Prefer to flag pool as non existing instaed of trying to generateState on earch round
-          this.network === Network.ZKEVM ||
-          (e instanceof Error && e.message.endsWith('Pool does not exist'))
-        ) {
+        if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
           // no need to await we want the set to have the pool key but it's not blocking
           this.dexHelper.cache.zadd(
             this.notExistingPoolSetKey,

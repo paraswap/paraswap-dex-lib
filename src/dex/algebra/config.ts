@@ -23,7 +23,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       quoter: '0x55BeE1bD3Eb9986f6d2d963278de09eE92a3eF1D',
       initHash:
         '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
-      chunksCount: 10,
+      chunksCount: 5,
       algebraStateMulticall: '0xa6bc273A238867dD74F2bBbD5fBbA3c941C939B9',
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/quickswap-v3-02/0.0.7',

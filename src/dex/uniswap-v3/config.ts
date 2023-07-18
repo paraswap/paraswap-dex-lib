@@ -106,7 +106,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x983ab0171159b7e17835cc6aec70c72b8aadb133',
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
-      chunksCount: 10,
+      chunksCount: 5,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/uniswap-v3/version/latest',
