@@ -142,34 +142,37 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       return pool;
     }
 
-    if (pool === undefined) {
-      const [token0, token1] = this._sortTokens(srcAddress, destAddress);
+    if (pool === null) return null;
 
-      const key = `${token0}_${token1}`.toLowerCase();
+    const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
-      const notExistingPoolScore = await this.dexHelper.cache.zscore(
-        this.notExistingPoolSetKey,
-        key,
-      );
+    const key = `${token0}_${token1}`.toLowerCase();
 
-      const poolDoesNotExist = notExistingPoolScore !== null;
+    const notExistingPoolScore = await this.dexHelper.cache.zscore(
+      this.notExistingPoolSetKey,
+      key,
+    );
 
-      if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
-        return null;
-      }
+    const poolDoesNotExist = notExistingPoolScore !== null;
 
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-        }),
-      );
+    if (poolDoesNotExist) {
+      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
+      return null;
+    }
 
-      this.logger.trace(`starting to listen to new pool: ${key}`);
-      pool = new AlgebraEventPool(
+    await this.dexHelper.cache.hset(
+      this.dexmapKey,
+      key,
+      JSON.stringify({
+        token0,
+        token1,
+      }),
+    );
+
+    this.logger.trace(`starting to listen to new pool: ${key}`);
+    pool =
+      pool ||
+      new AlgebraEventPool(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
@@ -183,58 +186,57 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.config.deployer,
       );
 
-      try {
-        await pool.initialize(blockNumber, {
-          initCallback: (state: DeepReadonly<PoolState>) => {
-            //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
-            pool!.addressesSubscribed[0] = state.pool;
-            pool!.poolAddress = state.pool;
-            pool!.initFailed = false;
-            pool!.initRetryCount = 0;
-          },
-        });
-      } catch (e) {
-        if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-          // no need to await we want the set to have the pool key but it's not blocking
-          this.dexHelper.cache.zadd(
-            this.notExistingPoolSetKey,
-            [Date.now(), key],
-            'NX',
-          );
-
-          // Pool does not exist for this pair, so we can set it to null
-          // to prevent more requests for this pool
-          pool = null;
-          this.logger.trace(
-            `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
-            e,
-          );
-        } else {
-          // on unkown error mark as failed and increase retryCount for retry init strategy
-          // note: state would be null by default which allows to fallback
-          this.logger.warn(
-            `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryCount=${pool.initRetryCount}`,
-            e,
-          );
-          pool.initFailed = true;
-          pool.initRetryCount++;
-        }
-      }
-
-      if (pool !== null) {
-        const allEventPools = Object.values(this.eventPools);
-        this.logger.info(
-          `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
-            // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
-            .reduce(
-              (acc, curr) => (curr !== null ? ++acc : acc),
-              0,
-            )} non-null pools or ${allEventPools.length} total pools`,
+    try {
+      await pool.initialize(blockNumber, {
+        initCallback: (state: DeepReadonly<PoolState>) => {
+          //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
+          pool!.addressesSubscribed[0] = state.pool;
+          pool!.poolAddress = state.pool;
+          pool!.initFailed = false;
+          pool!.initRetryCount = 0;
+        },
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+        // no need to await we want the set to have the pool key but it's not blocking
+        this.dexHelper.cache.zadd(
+          this.notExistingPoolSetKey,
+          [Date.now(), key],
+          'NX',
         );
-      }
 
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = pool;
+        // Pool does not exist for this pair, so we can set it to null
+        // to prevent more requests for this pool
+        pool = null;
+        this.logger.trace(
+          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
+          e,
+        );
+      } else {
+        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // note: state would be null by default which allows to fallback
+        this.logger.warn(
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryCount=${pool.initRetryCount}`,
+          e,
+        );
+        pool.initFailed = true;
+        pool.initRetryCount++;
+      }
     }
+
+    if (pool !== null) {
+      const allEventPools = Object.values(this.eventPools);
+      this.logger.info(
+        `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
+          // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
+          .reduce(
+            (acc, curr) => (curr !== null ? ++acc : acc),
+            0,
+          )} non-null pools or ${allEventPools.length} total pools`,
+      );
+    }
+
+    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = pool;
     return pool;
   }
 
