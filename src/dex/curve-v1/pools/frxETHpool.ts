@@ -1,7 +1,7 @@
 import { Address } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
 import { bigNumberify } from '../../../utils';
-import StableSwapSTETH from '../../../abi/curve-v1/StableSwapSTETH.json';
+import StableSwapFRXETH from '../../../abi/curve-v1/StableSwapFRXETH.json';
 import { ThreePool } from './3pool';
 
 const pool = 'frxETH';
@@ -26,7 +26,7 @@ export class FRXETHPool extends ThreePool {
       address,
       tokenAddress,
       trackCoins,
-      StableSwapSTETH,
+      StableSwapFRXETH,
       N_COINS,
       PRECISION_MUL,
       USE_LENDING,

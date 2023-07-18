@@ -8,7 +8,6 @@ import { DeepReadonly } from 'ts-essentials';
 import { PoolState as BasepoolState } from './curve-pool';
 import { ThreePool } from './3pool';
 import { BlockHeader } from 'web3-eth';
-// import { getManyPoolStates } from './getstate-multicall';
 
 import { BN_0, BN_600, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';

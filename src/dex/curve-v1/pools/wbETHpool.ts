@@ -1,10 +1,8 @@
-import { Address, Log } from '../../../types';
+import { Address } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
 import { bigNumberify } from '../../../utils';
-import { PoolState } from './curve-pool';
-import { SETHPool } from './sETHpool';
-import StableSwapSTETH from '../../../abi/curve-v1/StableSwapSTETH.json';
-import { DeepReadonly } from 'ts-essentials';
+import { ThreePool } from './3pool';
+import StableSwapWBETH from '../../../abi/curve-v1/StableSwapWBETH.json';
 
 const pool = 'wbETH';
 export const address: Address =
@@ -18,12 +16,8 @@ const COINS = [
   '0xa2e3356610840701bdf5611a53974510ae27e2e1',
 ];
 const trackCoins = true;
-const ignoreLogsWithTopic0 = [
-  // Submitted (index_topic_1 address sender, uint256 amount, address referral)
-  '0x96a25c8ce0baabc1fdefd93e9ed25d8e092a3332f3aa9a41722b5697231d1d1a',
-];
 
-export class WBETHPool extends SETHPool {
+export class WBETHPool extends ThreePool {
   constructor(parentName: string, dexHelper: IDexHelper) {
     super(
       parentName,
@@ -32,22 +26,13 @@ export class WBETHPool extends SETHPool {
       address,
       tokenAddress,
       trackCoins,
-      StableSwapSTETH,
+      StableSwapWBETH,
       N_COINS,
       PRECISION_MUL,
       USE_LENDING,
       COINS,
       'WBETHPool',
     );
-  }
-
-  public processLog(
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    if (ignoreLogsWithTopic0.includes(log.topics[0].toLowerCase()))
-      return state;
-    return super.processLog(state, log);
   }
 }
 
