@@ -719,7 +719,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           return null;
         }
 
+        // TODO buy
+        let lastNonZeroOutput = 0n;
+        let lastNonZeroTickCountsOutputs = 0;
+
         for (let i = 0; i < outputsResult.outputs.length; i++) {
+          // local pricing algo may output 0s at the tail for some out of range amounts, prefer to propagating last amount to appease top algo
+          if (outputsResult.outputs[i] > 0n) {
+            lastNonZeroOutput = outputsResult.outputs[i];
+            lastNonZeroTickCountsOutputs = outputsResult.tickCounts[i];
+          } else {
+            outputsResult.outputs[i] = lastNonZeroOutput;
+            outputsResult.tickCounts[i] = lastNonZeroTickCountsOutputs;
+          }
+
           if (outputsResult.outputs[i] > destTokenBalance) {
             outputsResult.outputs[i] = 0n;
             outputsResult.tickCounts[i] = 0;
