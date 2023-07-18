@@ -243,6 +243,8 @@ export class UniswapV3
             //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
             pool!.addressesSubscribed[0] = state.pool;
             pool!.poolAddress = state.pool;
+            pool!.initFailed = false;
+            pool!.initRetryCount = 0;
           },
         });
       } catch (e) {
