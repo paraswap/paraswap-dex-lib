@@ -133,6 +133,15 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   ): Promise<AlgebraEventPool | null> {
     let pool = this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)];
 
+    if (
+      pool &&
+      pool.initFailed &&
+      pool.initRetryCount % this.config.initRetryFrequency === 0
+    ) {
+      // if init failed then prefer to early return pool with empty state to fallback to rpc call
+      return pool;
+    }
+
     if (pool === undefined) {
       const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
@@ -180,6 +189,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
             //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
             pool!.addressesSubscribed[0] = state.pool;
             pool!.poolAddress = state.pool;
+            pool!.initFailed = false;
+            pool!.initRetryCount = 0;
           },
         });
       } catch (e) {
@@ -200,11 +211,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           );
         } else {
           // Unexpected Error. Break execution. Do not save the pool in this.eventPools
-          this.logger.error(
-            `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool`,
+          // note: state would be null by default which allows to fallback
+          this.logger.warn(
+            `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times`,
             e,
           );
-          throw new Error('Cannot generate pool state');
+          pool.initFailed = true;
+          pool.initRetryCount++;
         }
       }
 
@@ -687,6 +700,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       factory: this.config.factory.toLowerCase(),
       algebraStateMulticall: this.config.algebraStateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
+      initRetryFrequency: this.config.initRetryFrequency,
       uniswapMulticall: this.config.uniswapMulticall,
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,

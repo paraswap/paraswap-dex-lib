@@ -49,6 +49,9 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   public readonly poolIface = new Interface(AlgebraABI);
 
+  public initFailed = false;
+  public initRetryCount = 0;
+
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
