@@ -153,19 +153,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     const key = `${token0}_${token1}`.toLowerCase();
 
-    const notExistingPoolScore = await this.dexHelper.cache.zscore(
-      this.notExistingPoolSetKey,
-      key,
-    );
-
-    const poolDoesNotExist = notExistingPoolScore !== null;
-
-    if (poolDoesNotExist) {
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
-      return null;
-    }
-
+    // no need to run this logic on retry initialisation scenario
     if (!pool) {
+      const notExistingPoolScore = await this.dexHelper.cache.zscore(
+        this.notExistingPoolSetKey,
+        key,
+      );
+
+      const poolDoesNotExist = notExistingPoolScore !== null;
+
+      if (poolDoesNotExist) {
+        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
+        return null;
+      }
+
       await this.dexHelper.cache.hset(
         this.dexmapKey,
         key,
