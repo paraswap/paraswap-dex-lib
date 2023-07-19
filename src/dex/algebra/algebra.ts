@@ -133,16 +133,19 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   ): Promise<AlgebraEventPool | null> {
     let pool = this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)];
 
-    if (
-      pool &&
-      pool.initFailed &&
-      pool.initRetryCount % this.config.initRetryFrequency === 0
-    ) {
-      // if init failed then prefer to early return pool with empty state to fallback to rpc call
-      return pool;
-    }
-
     if (pool === null) return null;
+
+    if (pool) {
+      if (!pool.initFailed) {
+        return pool;
+      } else {
+        // if init failed then prefer to early return pool with empty state to fallback to rpc call
+        if (++pool.initRetryCount % this.config.initRetryFrequency === 0) {
+          return pool;
+        }
+        // else pursue with re-try initialization
+      }
+    }
 
     const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
@@ -220,7 +223,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           e,
         );
         pool.initFailed = true;
-        pool.initRetryCount++;
       }
     }
 
