@@ -131,7 +131,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     destAddress: Address,
     blockNumber: number,
   ): Promise<AlgebraEventPool | null> {
-    let pool = this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)];
+    let pool = this.eventPools[
+      this.getPoolIdentifier(srcAddress, destAddress)
+    ] as AlgebraEventPool | null | undefined;
 
     if (pool === null) return null;
 
@@ -163,14 +165,16 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       return null;
     }
 
-    await this.dexHelper.cache.hset(
-      this.dexmapKey,
-      key,
-      JSON.stringify({
-        token0,
-        token1,
-      }),
-    );
+    if (!pool) {
+      await this.dexHelper.cache.hset(
+        this.dexmapKey,
+        key,
+        JSON.stringify({
+          token0,
+          token1,
+        }),
+      );
+    }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
     pool =
