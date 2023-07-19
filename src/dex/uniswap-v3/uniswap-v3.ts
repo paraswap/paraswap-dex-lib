@@ -193,7 +193,7 @@ export class UniswapV3
         return pool;
       } else {
         // if init failed then prefer to early return pool with empty state to fallback to rpc call
-        if (++pool.initRetryCount % this.config.initRetryFrequency === 0) {
+        if (++pool.initRetryCount % this.config.initRetryFrequency !== 0) {
           return pool;
         }
         // else pursue with re-try initialization
