@@ -1,7 +1,7 @@
 import { providers } from 'ethers';
 import { Token } from '../../types';
 import { Registry, Server } from '@airswap/libraries';
-import { PriceLevel, QuoteResponse } from './types';
+import { PriceLevel, PricingResponse, QuoteResponse } from './types';
 import axios, { Method } from 'axios';
 import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
@@ -16,16 +16,13 @@ export async function getAvailableMakersForRFQ(
   chainId: number,
 ): Promise<Server[]> {
   try {
-    const urls = await getServersUrl(
-      from.address,
-      to.address,
-      provider,
-      chainId,
+    const urls = (
+      await getServersUrl(from.address, to.address, provider, chainId)
+    ).filter(
+      url => !isWebsocket(url), ///&& url.includes("altono")
     );
-    const servers = (await connectToServers(urls, chainId)).filter(s =>
-      s.locator.includes('altono'),
-    );
-    console.log('server:', servers);
+    const servers = await connectToServers(urls, chainId);
+    // console.log('server:', servers);
     return Promise.resolve(servers);
   } catch (err) {
     return Promise.resolve([]);
@@ -47,10 +44,12 @@ export async function getServersUrl(
       quoteToken,
     );
     return Promise.resolve(
-      urls.filter(url => url.includes('altono') && !isWebsocket(url)),
+      urls.filter(
+        url => !isWebsocket(url), //&& url.includes("altono")
+      ),
     );
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     return Promise.resolve([]);
   }
 }
@@ -80,9 +79,37 @@ async function connectToServers(
   chainId: number,
 ): Promise<Array<Server>> {
   const promises = serversUrl.map(url => Server.at(url, { chainId }));
-  const servers = await fulfilledWithinTimeout<Server>(promises, 3000);
+  const servers = await fulfilledWithinTimeout<Server>(promises, 1000);
   return servers;
 }
+
+export const getThresholdsFromMaker = async (
+  marketMakersUris: string[],
+  srcToken: Token,
+  destToken: Token,
+  side: SwapSide,
+): Promise<PricingResponse[]> => {
+  const requests = marketMakersUris.map(
+    async (url): Promise<PricingResponse | undefined> => {
+      try {
+        const levels = await getPricingErc20(url!, srcToken, destToken, side);
+        const resp: PricingResponse = {
+          maker: url,
+          levels,
+        };
+        return resp;
+      } catch (error) {
+        return undefined;
+      }
+    },
+  );
+
+  const result = await fulfilledWithinTimeout<PricingResponse | undefined>(
+    requests,
+    1000,
+  );
+  return result.filter(r => r !== undefined) as PricingResponse[];
+};
 
 export async function makeRFQ(
   maker: Server,
@@ -94,30 +121,30 @@ export async function makeRFQ(
   // senderWallet = '0xe4064498e11797e377a170b3d5974d38861fdabf'
   // senderWallet = '0x4F67220b0329312c24ab97086011e7503aE955FE'
   try {
-    console.log(
-      'getSignerSideOrderERC20',
-      maker.locator,
-      amount.toString(),
-      destToken.address,
-      srcToken.address,
-      senderWallet,
-    );
+    // console.log(
+    //   'getSignerSideOrderERC20',
+    //   maker.locator,
+    //   amount.toString(),
+    //   destToken.address,
+    //   srcToken.address,
+    //   senderWallet,
+    // );
     const response = await maker.getSignerSideOrderERC20(
       amount.toString(),
       destToken.address,
       srcToken.address,
       senderWallet,
     );
-    console.log('[AIRSWAP]', 'getTx', {
-      //@ts-ignore
-      swapContract: maker.swapContract,
-      senderWallet,
-      maker: maker.locator,
-      signedOrder: response,
-    });
+    // console.log('[AIRSWAP]', 'getTx', {
+    //   //@ts-ignore
+    //   swapContract: maker.swapContract,
+    //   senderWallet,
+    //   maker: maker.locator,
+    //   signedOrder: response,
+    // });
     return Promise.resolve({ maker: maker.locator, signedOrder: response });
   } catch (e) {
-    console.error(e);
+    // console.error(e);
     return Promise.resolve({
       maker: maker.locator,
       signedOrder: {} as FullOrderERC20,
@@ -151,8 +178,8 @@ export async function getPricingErc20(
     },
     data: data,
   };
-  console.log('swapSide', swapSide === SwapSide.SELL ? 'SELL' : 'BUY');
-  console.log('data', config);
+  // console.log('swapSide', swapSide === SwapSide.SELL ? 'SELL' : 'BUY');
+  // console.log('data', config);
 
   try {
     const response = await axios.request(config);
@@ -160,7 +187,7 @@ export async function getPricingErc20(
       swapSide === SwapSide.SELL
         ? mapMakerSELLResponse(response.data.result[0].bid)
         : mapMakerBUYResponse(response.data.result[0].ask);
-    console.log('getting answer from', url);
+    // console.log('getting answer from', url);
     return result;
   } catch (err) {
     return [];

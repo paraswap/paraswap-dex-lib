@@ -27,3 +27,8 @@ export type QuoteResponse = {
   maker: string;
   signedOrder: OrderERC20;
 };
+
+export type PricingResponse = {
+  maker: string;
+  levels: PriceLevel[];
+};

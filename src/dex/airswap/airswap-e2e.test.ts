@@ -92,19 +92,19 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            //   it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-            //     await testE2E(
-            //       tokens[nativeTokenSymbol],
-            //       tokens[tokenASymbol],
-            //       holders[nativeTokenSymbol],
-            //       side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-            //       side,
-            //       dexKey,
-            //       contractMethod,
-            //       network,
-            //       provider,
-            //     );
-            //   });
+            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
             // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
             //   await testE2E(
             //     tokens[tokenASymbol],
@@ -118,19 +118,19 @@ function testForNetwork(
             //     provider,
             //   );
             // });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenASymbol],
+            //     tokens[tokenBSymbol],
+            //     holders[tokenASymbol],
+            //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
           });
         });
       }),

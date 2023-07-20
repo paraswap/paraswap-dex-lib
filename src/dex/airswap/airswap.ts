@@ -30,6 +30,7 @@ import {
   getAvailableMakersForRFQ,
   getPricingErc20,
   getServersUrl,
+  getThresholdsFromMaker,
   makeRFQ,
   priceFromThreshold,
 } from './airswap-tools';
@@ -172,16 +173,16 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     if (normalizedSrcToken.address === normalizedDestToken.address) {
       return null;
     }
-
+    console.log('===================== will use pool =====>', limitPools);
     const pools =
       limitPools ??
       (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
-    const marketMakersUris = pools.map(this.getMakerUrlFromKey);
-    const levelRequests = marketMakersUris.map(async url => ({
-      maker: url,
-      levels: await getPricingErc20(url!, srcToken, destToken, side),
-    }));
-    const levels = await Promise.all(levelRequests);
+    const marketMakersUris = pools
+      .map(this.getMakerUrlFromKey)
+      .filter(maker => maker != undefined) as string[];
+    const levels = (
+      await getThresholdsFromMaker(marketMakersUris, srcToken, destToken, side)
+    ).filter(l => l != undefined);
     const prices = levels.map(({ maker, levels }) => {
       const amountsRaw = amounts.map(
         amount => new BigNumber(amount.toString()),
@@ -195,13 +196,13 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         side,
       );
 
-      console.log(
-        'computePricesFromLevels prices',
-        amounts,
-        amountsRaw,
-        prices,
-        levels,
-      );
+      // console.log(
+      //   'computePricesFromLevels prices',
+      //   amounts,
+      //   amountsRaw,
+      //   prices,
+      //   levels,
+      // );
       return {
         gasCost: 100 * 1000, // estimated fees
         exchange: this.dexKey,
@@ -216,8 +217,12 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
         poolAddresses: [this.routerAddress],
       };
     });
-    console.log('prices', prices);
-    return prices;
+    const pricesWithout0n = prices.filter(price => {
+      const prices = price.prices.filter(p => p > 0n);
+      return prices.length > 0;
+    });
+    // console.log("pricesWithout0n", pricesWithout0n)
+    return pricesWithout0n;
   }
 
   // @TODO Heeeeelp
@@ -361,16 +366,22 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
             })
           : ({} as unknown as any);
     } catch (error) {
-      console.error(error);
+      // console.error(error);
     }
 
-    const fulfilledResponses = await fulfilledWithinTimeout<QuoteResponse>(
-      responses,
-      3000,
+    const fulfilledResponses = (
+      await fulfilledWithinTimeout<QuoteResponse>(responses, 3000)
+    ).filter(
+      r => r.signedOrder != undefined && Object.keys(r.signedOrder).length > 0,
     );
-    const firstResponse = fulfilledResponses[0];
 
-    console.log('firstResponse', firstResponse);
+    const firstResponse = fulfilledResponses[0];
+    console.log('fulfilledResponses', fulfilledResponses);
+
+    if (!firstResponse || !firstResponse.signedOrder) {
+      throw new Error('No responses from maker');
+    }
+
     return [
       {
         ...optimalSwapExchange,
