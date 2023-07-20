@@ -552,7 +552,10 @@ export class PancakeswapV3
 
       const poolsToUse = selectedPools.reduce(
         (acc, pool) => {
-          let state = pool.getState(blockNumber);
+          const state =
+            this.network === Network.ZKEVM
+              ? pool.getStaleState()
+              : pool.getState(blockNumber);
           if (state === null) {
             this.logger.trace(
               `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,

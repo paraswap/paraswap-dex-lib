@@ -419,7 +419,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       if (!pool) return null;
 
-      const state = pool.getState(blockNumber);
+      const state =
+        this.network === Network.ZKEVM
+          ? pool.getStaleState()
+          : pool.getState(blockNumber);
 
       if (state === null) {
         if (this.network === Network.ZKEVM) {
