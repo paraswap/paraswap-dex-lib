@@ -55,7 +55,7 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   public readonly poolIface = new Interface(PancakeswapV3PoolABI);
 
   public initFailed = false;
-  public initRetryCount = 0;
+  public initRetryAttemptCount = 0;
 
   public readonly feeCodeAsString;
 

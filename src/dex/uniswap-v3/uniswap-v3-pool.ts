@@ -52,7 +52,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   public readonly poolIface = new Interface(UniswapV3PoolABI);
 
   public initFailed = false;
-  public initRetryCount = 0;
+  public initRetryAttemptCount = 0;
 
   public readonly feeCodeAsString;
 

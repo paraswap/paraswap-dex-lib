@@ -142,7 +142,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         return pool;
       } else {
         // if init failed then prefer to early return pool with empty state to fallback to rpc call
-        if (++pool.initRetryCount % this.config.initRetryFrequency !== 0) {
+        if (
+          ++pool.initRetryAttemptCount % this.config.initRetryFrequency !==
+          0
+        ) {
           return pool;
         }
         // else pursue with re-try initialization
@@ -201,7 +204,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           pool!.addressesSubscribed[0] = state.pool;
           pool!.poolAddress = state.pool;
           pool!.initFailed = false;
-          pool!.initRetryCount = 0;
+          pool!.initRetryAttemptCount = 0;
         },
       });
     } catch (e) {
@@ -224,7 +227,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         // on unkown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryCount=${pool.initRetryCount}`,
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
