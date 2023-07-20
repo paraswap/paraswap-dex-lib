@@ -49,11 +49,11 @@ export const Tokens: {
     },
     wBETH: {
       address: '0xa2e3356610840701bdf5611a53974510ae27e2e1',
-      decimals: 18
+      decimals: 18,
     },
     frxETH: {
       address: '0x5e8422345238f34275888049021821e8e08caa1f',
-      decimals: 18
+      decimals: 18,
     },
     BADGER: {
       address: '0x3472A5A71965499acd81997a54BBA8D852C6E53d',
@@ -877,7 +877,7 @@ export const Holders: {
     LINK: '0x98c63b7b319dfbdf3d811530f2ab9dfe4983af9d',
     ADAIv1: '0x3021026e4ff227571a5a563ad19ea657c7027e59',
     CETH: '0x712d0f306956a6a4b4f9319ad9b9de48c5345996',
-    CDAI: '0xab4ce310054a11328685ece1043211b68ba5d082',
+    CDAI: '0xE0E484Dfa7F3aA36733A915D6f07EB5a57A74a11',
     CUSDC: '0xC2F61a6eEEC48d686901D325CDE9233b81c793F3',
     EURS: '0xC1056Adeb61a01964Ea265cA95EffB7016f9Ed78',
     EURT: '0x6914FC70fAC4caB20a8922E900C4BA57fEECf8E1',

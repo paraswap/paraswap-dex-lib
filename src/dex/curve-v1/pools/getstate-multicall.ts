@@ -51,6 +51,14 @@ async function _getManyPoolStates(
             },
           ]
         : null,
+      (pool as CurvePool).isStoredRatesSupported === true
+        ? [
+            {
+              target: pool.address,
+              callData: pool.poolIface.encodeFunctionData('stored_rates', []),
+            },
+          ]
+        : null,
     ])
     .flattenDeep()
     .filter(a => !!a)
@@ -85,7 +93,8 @@ async function _getManyPoolStates(
         ),
       ),
     };
-    return (pool as CurveMetapool).basepool
+
+    const state = (pool as CurveMetapool).basepool
       ? {
           ..._state,
           base_cache_updated: strbnify(
@@ -102,6 +111,18 @@ async function _getManyPoolStates(
           ),
         }
       : _state;
+
+    const stateWithStoredRates =
+      (pool as CurvePool).isStoredRatesSupported === true
+        ? {
+            ...state,
+            stored_rates: pool.poolIface
+              .decodeFunctionResult('stored_rates', data.returnData[p++])[0]
+              .map(strbnify),
+          }
+        : state;
+
+    return stateWithStoredRates;
   });
 }
 

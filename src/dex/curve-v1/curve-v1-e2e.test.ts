@@ -27,21 +27,21 @@ describe('CurveV1 E2E', () => {
       [
         {
           symbol: 'USDT',
-          amount: (10 ** 8).toString(),
+          amount: '1000000000000',
         },
         {
           symbol: 'DAI',
-          amount: (10 ** 8).toString(),
+          amount: '10000000000000000000',
         },
       ],
       [
         {
           symbol: 'CUSDC',
-          amount: (10 ** 8).toString(),
+          amount: '1000000000000',
         },
         {
           symbol: 'CDAI',
-          amount: (10 ** 8).toString(),
+          amount: '1000000000',
         },
       ],
       [
@@ -51,7 +51,7 @@ describe('CurveV1 E2E', () => {
         },
         {
           symbol: 'wBETH',
-          amount: '1000000000000000',
+          amount: '5000000000000000000',
         },
       ],
       [
@@ -63,7 +63,7 @@ describe('CurveV1 E2E', () => {
           symbol: 'frxETH',
           amount: '10000000000000000',
         },
-      ]
+      ],
     ];
 
     const sideToContractMethods = new Map([
