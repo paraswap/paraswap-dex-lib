@@ -421,9 +421,16 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       const state = pool.getState(blockNumber);
 
-      if (state === null && this.network === Network.ZKEVM) return null; // never fallback as takes more time
-
       if (state === null) {
+        if (this.network === Network.ZKEVM) {
+          if (!pool.initFailed) {
+            this.logger.warn(
+              `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state is unhealthy, cannot compute price (no fallback on this chain)`,
+            );
+          }
+
+          return null; // never fallback as takes more time
+        }
         const rpcPrice = await this.getPricingFromRpc(
           _srcToken,
           _destToken,
