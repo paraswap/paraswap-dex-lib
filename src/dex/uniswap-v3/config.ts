@@ -34,6 +34,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x9c764D2e92dA68E4CDfD784B902283A095ff8b63',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
     },
@@ -45,6 +46,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x593F39A4Ba26A9c8ed2128ac95D109E8e403C485',
       uniswapMulticall: '0x963Df249eD09c358A4819E39d9Cd5736c3087184',
       chunksCount: 10,
+      initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-bsc',
@@ -57,6 +59,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x6Dc993Fe1e945A640576B4Dca81281d8e998DF71',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon',
@@ -69,6 +72,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal',
@@ -81,6 +85,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x4FF0dEC5f9a763Aa1E5C2a962aa6f4eDFeE4f9eA',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
+      initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis',
@@ -93,6 +98,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
       uniswapMulticall: '0x0139141Cd4Ee88dF3Cdb65881D411bAE271Ef0C2',
       chunksCount: 10,
+      initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/lynnshaoyu/uniswap-v3-avax',
@@ -106,7 +112,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       supportedFees: SUPPORTED_FEES,
       stateMulticall: '0x983ab0171159b7e17835cc6aec70c72b8aadb133',
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
-      chunksCount: 10,
+      chunksCount: 5,
+      initRetryFrequency: 30,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/uniswap-v3/version/latest',

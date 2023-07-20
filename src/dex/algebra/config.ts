@@ -11,6 +11,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       initHash:
         '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
       chunksCount: 10,
+      initRetryFrequency: 10,
       algebraStateMulticall: '0xfb948e6e23eb58ec7320ddb60df9115de07141ec',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap-v3',
@@ -23,7 +24,8 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       quoter: '0x55BeE1bD3Eb9986f6d2d963278de09eE92a3eF1D',
       initHash:
         '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
-      chunksCount: 10,
+      chunksCount: 3,
+      initRetryFrequency: 30,
       algebraStateMulticall: '0xa6bc273A238867dD74F2bBbD5fBbA3c941C939B9',
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/quickswap-v3-02/0.0.7',

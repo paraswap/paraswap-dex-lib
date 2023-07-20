@@ -40,6 +40,7 @@ export type DexParams = {
   algebraStateMulticall: Address;
   uniswapMulticall: Address;
   chunksCount: number;
+  initRetryFrequency: number;
   deployer: Address;
   subgraphURL: string;
   initHash: string;

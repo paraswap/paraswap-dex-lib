@@ -131,13 +131,33 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     destAddress: Address,
     blockNumber: number,
   ): Promise<AlgebraEventPool | null> {
-    let pool = this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)];
+    let pool = this.eventPools[
+      this.getPoolIdentifier(srcAddress, destAddress)
+    ] as AlgebraEventPool | null | undefined;
 
-    if (pool === undefined) {
-      const [token0, token1] = this._sortTokens(srcAddress, destAddress);
+    if (pool === null) return null;
 
-      const key = `${token0}_${token1}`.toLowerCase();
+    if (pool) {
+      if (!pool.initFailed) {
+        return pool;
+      } else {
+        // if init failed then prefer to early return pool with empty state to fallback to rpc call
+        if (
+          ++pool.initRetryAttemptCount % this.config.initRetryFrequency !==
+          0
+        ) {
+          return pool;
+        }
+        // else pursue with re-try initialization
+      }
+    }
 
+    const [token0, token1] = this._sortTokens(srcAddress, destAddress);
+
+    const key = `${token0}_${token1}`.toLowerCase();
+
+    // no need to run this logic on retry initialisation scenario
+    if (!pool) {
       const notExistingPoolScore = await this.dexHelper.cache.zscore(
         this.notExistingPoolSetKey,
         key,
@@ -158,9 +178,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           token1,
         }),
       );
+    }
 
-      this.logger.trace(`starting to listen to new pool: ${key}`);
-      pool = new AlgebraEventPool(
+    this.logger.trace(`starting to listen to new pool: ${key}`);
+    pool =
+      pool ||
+      new AlgebraEventPool(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
@@ -174,58 +197,56 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.config.deployer,
       );
 
-      try {
-        await pool.initialize(blockNumber, {
-          initCallback: (state: DeepReadonly<PoolState>) => {
-            //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
-            pool!.addressesSubscribed[0] = state.pool;
-            pool!.poolAddress = state.pool;
-          },
-        });
-      } catch (e) {
-        if (
-          // most zkEVM rpcs fails with "cannot execute unsigned transaction" issue. Prefer to flag pool as non existing instaed of trying to generateState on earch round
-          this.network === Network.ZKEVM ||
-          (e instanceof Error && e.message.endsWith('Pool does not exist'))
-        ) {
-          // no need to await we want the set to have the pool key but it's not blocking
-          this.dexHelper.cache.zadd(
-            this.notExistingPoolSetKey,
-            [Date.now(), key],
-            'NX',
-          );
-
-          // Pool does not exist for this pair, so we can set it to null
-          // to prevent more requests for this pool
-          pool = null;
-          this.logger.trace(
-            `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
-            e,
-          );
-        } else {
-          // Unexpected Error. Break execution. Do not save the pool in this.eventPools
-          this.logger.error(
-            `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool`,
-            e,
-          );
-          throw new Error('Cannot generate pool state');
-        }
-      }
-
-      if (pool !== null) {
-        const allEventPools = Object.values(this.eventPools);
-        this.logger.info(
-          `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
-            // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
-            .reduce(
-              (acc, curr) => (curr !== null ? ++acc : acc),
-              0,
-            )} non-null pools or ${allEventPools.length} total pools`,
+    try {
+      await pool.initialize(blockNumber, {
+        initCallback: (state: DeepReadonly<PoolState>) => {
+          //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
+          pool!.addressesSubscribed[0] = state.pool;
+          pool!.poolAddress = state.pool;
+          pool!.initFailed = false;
+          pool!.initRetryAttemptCount = 0;
+        },
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+        // no need to await we want the set to have the pool key but it's not blocking
+        this.dexHelper.cache.zadd(
+          this.notExistingPoolSetKey,
+          [Date.now(), key],
+          'NX',
         );
-      }
 
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = pool;
+        // Pool does not exist for this pair, so we can set it to null
+        // to prevent more requests for this pool
+        pool = null;
+        this.logger.trace(
+          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
+          e,
+        );
+      } else {
+        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // note: state would be null by default which allows to fallback
+        this.logger.warn(
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          e,
+        );
+        pool.initFailed = true;
+      }
     }
+
+    if (pool !== null) {
+      const allEventPools = Object.values(this.eventPools);
+      this.logger.info(
+        `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
+          // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
+          .reduce(
+            (acc, curr) => (curr !== null ? ++acc : acc),
+            0,
+          )} non-null pools or ${allEventPools.length} total pools`,
+      );
+    }
+
+    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = pool;
     return pool;
   }
 
@@ -401,6 +422,15 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const state = pool.getState(blockNumber);
 
       if (state === null) {
+        if (this.network === Network.ZKEVM) {
+          if (!pool.initFailed) {
+            this.logger.warn(
+              `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state is unhealthy, cannot compute price (no fallback on this chain)`,
+            );
+          }
+
+          return null; // never fallback as takes more time
+        }
         const rpcPrice = await this.getPricingFromRpc(
           _srcToken,
           _destToken,
@@ -691,6 +721,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       factory: this.config.factory.toLowerCase(),
       algebraStateMulticall: this.config.algebraStateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
+      initRetryFrequency: this.config.initRetryFrequency,
       uniswapMulticall: this.config.uniswapMulticall,
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
@@ -719,7 +750,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           return null;
         }
 
+        // TODO buy
+        let lastNonZeroOutput = 0n;
+        let lastNonZeroTickCountsOutputs = 0;
+
         for (let i = 0; i < outputsResult.outputs.length; i++) {
+          // local pricing algo may output 0s at the tail for some out of range amounts, prefer to propagating last amount to appease top algo
+          if (outputsResult.outputs[i] > 0n) {
+            lastNonZeroOutput = outputsResult.outputs[i];
+            lastNonZeroTickCountsOutputs = outputsResult.tickCounts[i];
+          } else {
+            outputsResult.outputs[i] = lastNonZeroOutput;
+            outputsResult.tickCounts[i] = lastNonZeroTickCountsOutputs;
+          }
+
           if (outputsResult.outputs[i] > destTokenBalance) {
             outputsResult.outputs[i] = 0n;
             outputsResult.tickCounts[i] = 0;
