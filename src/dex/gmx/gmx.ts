@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -34,7 +35,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(GMXConfig);
+    getDexKeysWithNetwork(_.pick(GMXConfig, ['GMX', 'QuickPerps']));
 
   public static erc20Interface = new Interface(ERC20ABI);
 
