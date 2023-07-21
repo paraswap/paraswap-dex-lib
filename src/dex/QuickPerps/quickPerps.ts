@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -12,19 +13,19 @@ import {
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { GMXData, DexParams } from './types';
-import { GMXEventPool } from './pool';
+import { QuickPerpsData, DexParams } from './types';
+import { QuickPerpsEventPool } from './pool';
 import { SimpleExchange } from '../simple-exchange';
-import { GMXConfig, Adapters } from './config';
+import { QuickPerpsConfig, Adapters } from './config';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
 
-const GMXGasCost = 300 * 1000;
+const QuickPerpsGasCost = 300 * 1000;
 
-export class GMX extends SimpleExchange implements IDex<GMXData> {
-  protected pool: GMXEventPool | null = null;
+export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
+  protected pool: QuickPerpsEventPool | null = null;
   protected supportedTokensMap: { [address: string]: boolean } = {};
   // supportedTokens is only used by the pooltracker
   protected supportedTokens: Token[] = [];
@@ -34,7 +35,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(GMXConfig);
+    getDexKeysWithNetwork(QuickPerpsConfig);
 
   public static erc20Interface = new Interface(ERC20ABI);
 
@@ -47,7 +48,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network],
-    protected params: DexParams = GMXConfig[dexKey][network],
+    protected params: DexParams = QuickPerpsConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -57,7 +58,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   // pricing service. It is intended to setup the integration
   // for pricing requests.
   async initializePricing(blockNumber: number) {
-    const config = await GMXEventPool.getConfig(
+    const config = await QuickPerpsEventPool.getConfig(
       this.params,
       blockNumber,
       this.dexHelper.multiContract,
@@ -65,7 +66,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     config.tokenAddresses.forEach(
       (token: Address) => (this.supportedTokensMap[token] = true),
     );
-    this.pool = new GMXEventPool(
+    this.pool = new QuickPerpsEventPool(
       this.dexKey,
       this.network,
       this.dexHelper,
@@ -118,7 +119,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<GMXData>> {
+  ): Promise<null | ExchangePrices<QuickPerpsData>> {
     if (side === SwapSide.BUY || !this.pool) return null;
     const srcAddress = this.dexHelper.config
       .wrapETH(srcToken)
@@ -153,7 +154,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       {
         prices: prices.slice(1),
         unit: prices[0],
-        gasCost: GMXGasCost,
+        gasCost: QuickPerpsGasCost,
         exchange: this.dexKey,
         data: {},
         poolAddresses: [this.params.vault],
@@ -162,7 +163,9 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(poolPrices: PoolPrices<GMXData>): number | number[] {
+  getCalldataGasCost(
+    poolPrices: PoolPrices<QuickPerpsData>,
+  ): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -171,7 +174,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: GMXData,
+    data: QuickPerpsData,
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
@@ -186,13 +189,13 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: GMXData,
+    data: QuickPerpsData,
     side: SwapSide,
   ): SimpleExchangeParam {
     return {
       callees: [srcToken, this.params.vault],
       calldata: [
-        GMX.erc20Interface.encodeFunctionData('transfer', [
+        QuickPerps.erc20Interface.encodeFunctionData('transfer', [
           this.params.vault,
           srcAmount,
         ]),
@@ -209,14 +212,14 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
   async updatePoolState(): Promise<void> {
     if (!this.supportedTokens.length) {
-      const tokenAddresses = await GMXEventPool.getWhitelistedTokens(
+      const tokenAddresses = await QuickPerpsEventPool.getWhitelistedTokens(
         this.params.vault,
         'latest',
         this.dexHelper.multiContract,
       );
 
       const decimalsCallData =
-        GMX.erc20Interface.encodeFunctionData('decimals');
+        QuickPerps.erc20Interface.encodeFunctionData('decimals');
       const tokenBalanceMultiCall = tokenAddresses.map(t => ({
         target: t,
         callData: decimalsCallData,
@@ -229,7 +232,9 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
 
       const tokenDecimals = res.map((r: any) =>
         parseInt(
-          GMX.erc20Interface.decodeFunctionResult('decimals', r)[0].toString(),
+          QuickPerps.erc20Interface
+            .decodeFunctionResult('decimals', r)[0]
+            .toString(),
         ),
       );
 
@@ -239,7 +244,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       }));
     }
 
-    const erc20BalanceCalldata = GMX.erc20Interface.encodeFunctionData(
+    const erc20BalanceCalldata = QuickPerps.erc20Interface.encodeFunctionData(
       'balanceOf',
       [this.params.vault],
     );
@@ -254,7 +259,9 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     ).returnData;
     const tokenBalances = res.map((r: any) =>
       BigInt(
-        GMX.erc20Interface.decodeFunctionResult('balanceOf', r)[0].toString(),
+        QuickPerps.erc20Interface
+          .decodeFunctionResult('balanceOf', r)[0]
+          .toString(),
       ),
     );
     const tokenBalancesUSD = await Promise.all(
