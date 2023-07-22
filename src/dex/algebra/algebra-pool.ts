@@ -174,7 +174,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
-  private async _fetchStateSingleStep(
+  private async _fetchPoolStateSingleStep(
     blockNumber: number,
   ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
     const callData: MultiCallParams<
@@ -231,7 +231,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     return [balance0, balance1, _state];
   }
 
-  private async _getStateRequestCallDataMultiStep(
+  private async _fetchPoolStateMultiStep(
     blockNumber: number,
   ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
     const balancesAndGlobalStateCalldata: MultiCallParams<
@@ -330,14 +330,14 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     blockNumber: number,
   ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
     try {
-      return await this._fetchStateSingleStep(blockNumber);
+      return await this._fetchPoolStateSingleStep(blockNumber);
     } catch (e) {
       if (e instanceof Error && e.message.includes('Pool does not exist'))
         throw e;
 
       if (this.dexHelper.config.data.network != Network.ZKEVM) throw e;
 
-      return this._getStateRequestCallDataMultiStep(blockNumber);
+      return this._fetchPoolStateMultiStep(blockNumber);
     }
   }
 
