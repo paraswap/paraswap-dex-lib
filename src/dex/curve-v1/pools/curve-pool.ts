@@ -19,6 +19,9 @@ export interface PoolState {
   supply: BigNumber;
   balances: BigNumber[];
   stored_rates?: BigNumber[];
+  admin_balances?: BigNumber[];
+  eth_balance?: BigNumber;
+  token_balance?: BigNumber;
 }
 
 export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
@@ -27,7 +30,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   protected LENDING_PRECISION: BigNumber = BN_POWS[18];
   protected PRECISION: BigNumber = BN_POWS[18];
 
-  public isStoredRatesSupported: boolean = false;
+  public isAdminBalancesSupported: boolean = false;
 
   public handlers: {
     [event: string]: (event: any, state: PoolState, log: Log) => PoolState;

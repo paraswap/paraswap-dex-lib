@@ -3,12 +3,14 @@ import { CurvePool, PoolState } from './curve-pool';
 import _ from 'lodash';
 import { erc20Iface } from '../../../lib/utils-interfaces';
 import { bigNumberify, stringify } from '../../../utils';
+import { uin256DecodeToBigNumber } from '../../../lib/decoders';
+import { Contract } from 'web3-eth-contract';
 
 const strbnify = (val: any) => bigNumberify(stringify(val));
 
 async function _getManyPoolStates(
   pools: (CurvePool | CurveMetapool)[],
-  multi: any,
+  multi: Contract,
   blockNumber: number | 'latest' = 'latest',
 ): Promise<(PoolState | Partial<MetapoolState>)[]> {
   const calldata = _(pools)
@@ -51,13 +53,30 @@ async function _getManyPoolStates(
             },
           ]
         : null,
-      (pool as CurvePool).isStoredRatesSupported === true
+      (pool as CurvePool).isAdminBalancesSupported === true
         ? [
             {
               target: pool.address,
               callData: pool.poolIface.encodeFunctionData('stored_rates', []),
             },
-          ]
+            {
+              target: multi.options.address,
+              callData: multi.methods
+                .getEthBalance(pool.address.toLowerCase())
+                .encodeABI(),
+            },
+            {
+              target: pool.COINS[1].toLowerCase(),
+              callData: erc20Iface.encodeFunctionData('balanceOf', [
+                pool.address,
+              ]),
+            },
+          ].concat(
+            _.range(0, pool.N_COINS).map(poolIndex => ({
+              target: pool.address,
+              callData: pool.poolIface.encodeFunctionData('admin_balances', [poolIndex]),
+            }))
+        )
         : null,
     ])
     .flattenDeep()
@@ -112,17 +131,28 @@ async function _getManyPoolStates(
         }
       : _state;
 
-    const stateWithStoredRates =
-      (pool as CurvePool).isStoredRatesSupported === true
+
+    const stateWithBalances =
+      (pool as CurvePool).isAdminBalancesSupported === true
         ? {
-            ...state,
-            stored_rates: pool.poolIface
-              .decodeFunctionResult('stored_rates', data.returnData[p++])[0]
-              .map(strbnify),
-          }
+          ...state,
+          stored_rates: pool.poolIface
+            .decodeFunctionResult('stored_rates', data.returnData[p++])[0]
+            .map(strbnify),
+          eth_balance: uin256DecodeToBigNumber(data.returnData[p++]),
+          token_balance: strbnify(erc20Iface.decodeFunctionResult('balanceOf', data.returnData[p++])[0]),
+          admin_balances: _.range(0, pool.N_COINS).map(i =>
+            strbnify(
+              pool.poolIface.decodeFunctionResult(
+                'admin_balances',
+                data.returnData[p++],
+              )[0],
+            ),
+          ),
+        }
         : state;
 
-    return stateWithStoredRates;
+    return stateWithBalances;
   });
 }
 
