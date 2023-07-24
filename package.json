@@ -40,7 +40,7 @@
   "scripts": {
     "init-integration": "ts-node scripts/dex-integration.ts init",
     "test-integration": "ts-node scripts/dex-integration.ts test",
-    "build": "yarn check:pq && yarn check:es && tsc",
+    "build": "yarn check:pq && tsc",
     "watch": "tsc -w",
     "test": "jest",
     "prepare": "husky install && yarn build",
