@@ -17,6 +17,7 @@ export const PancakeswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x80898f80cFA3Fa3AbF410d90e69aDc432AE5D4c2',
       uniswapMulticall: '0xac1cE734566f390A94b00eb9bf561c2625BF44ea',
       chunksCount: 10,
+      initRetryFrequency: 10,
       initHash:
         '0x6ce8eb472fa82df5469c6ab6d485f17c3ad13c8cd7af59b3d4a8026c5ce0f7e2',
       subgraphURL:
@@ -31,6 +32,7 @@ export const PancakeswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x9DAd2ED7ADc6eaacf81589Cd043579c9684E5C81',
       uniswapMulticall: '0xac1cE734566f390A94b00eb9bf561c2625BF44ea',
       chunksCount: 10,
+      initRetryFrequency: 30,
       initHash:
         '0x6ce8eb472fa82df5469c6ab6d485f17c3ad13c8cd7af59b3d4a8026c5ce0f7e2',
       subgraphURL:

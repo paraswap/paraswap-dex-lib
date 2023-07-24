@@ -90,7 +90,9 @@ export class UniswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(UniswapV3Config, ['UniswapV3']));
+    getDexKeysWithNetwork(
+      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1']),
+    );
 
   logger: Logger;
 
@@ -107,7 +109,7 @@ export class UniswapV3
     readonly routerIface = new Interface(UniswapV3RouterABI),
     readonly quoterIface = new Interface(UniswapV3QuoterABI),
     protected config = UniswapV3Config[dexKey][network],
-    protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
+    protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
@@ -180,14 +182,32 @@ export class UniswapV3
     fee: bigint,
     blockNumber: number,
   ): Promise<UniswapV3EventPool | null> {
-    let pool =
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
+    let pool = this.eventPools[
+      this.getPoolIdentifier(srcAddress, destAddress, fee)
+    ] as UniswapV3EventPool | null | undefined;
 
-    if (pool === undefined) {
-      const [token0, token1] = this._sortTokens(srcAddress, destAddress);
+    if (pool === null) return null;
 
-      const key = `${token0}_${token1}_${fee}`.toLowerCase();
+    if (pool) {
+      if (!pool.initFailed) {
+        return pool;
+      } else {
+        // if init failed then prefer to early return pool with empty state to fallback to rpc call
+        if (
+          ++pool.initRetryAttemptCount % this.config.initRetryFrequency !==
+          0
+        ) {
+          return pool;
+        }
+        // else pursue with re-try initialization
+      }
+    }
 
+    const [token0, token1] = this._sortTokens(srcAddress, destAddress);
+
+    const key = `${token0}_${token1}_${fee}`.toLowerCase();
+
+    if (!pool) {
       const notExistingPoolScore = await this.dexHelper.cache.zscore(
         this.notExistingPoolSetKey,
         key,
@@ -210,9 +230,12 @@ export class UniswapV3
           fee: fee.toString(),
         }),
       );
+    }
 
-      this.logger.trace(`starting to listen to new pool: ${key}`);
-      pool = new UniswapV3EventPool(
+    this.logger.trace(`starting to listen to new pool: ${key}`);
+    pool =
+      pool ||
+      new UniswapV3EventPool(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
@@ -226,55 +249,57 @@ export class UniswapV3
         this.config.initHash,
       );
 
-      try {
-        await pool.initialize(blockNumber, {
-          initCallback: (state: DeepReadonly<PoolState>) => {
-            //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
-            pool!.addressesSubscribed[0] = state.pool;
-            pool!.poolAddress = state.pool;
-          },
-        });
-      } catch (e) {
-        if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-          // no need to await we want the set to have the pool key but it's not blocking
-          this.dexHelper.cache.zadd(
-            this.notExistingPoolSetKey,
-            [Date.now(), key],
-            'NX',
-          );
-
-          // Pool does not exist for this feeCode, so we can set it to null
-          // to prevent more requests for this pool
-          pool = null;
-          this.logger.trace(
-            `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
-            e,
-          );
-        } else {
-          // Unexpected Error. Break execution. Do not save the pool in this.eventPools
-          this.logger.error(
-            `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool`,
-            e,
-          );
-          throw new Error('Cannot generate pool state');
-        }
-      }
-
-      if (pool !== null) {
-        const allEventPools = Object.values(this.eventPools);
-        this.logger.info(
-          `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
-            // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
-            .reduce(
-              (acc, curr) => (curr !== null ? ++acc : acc),
-              0,
-            )} non-null pools or ${allEventPools.length} total pools`,
+    try {
+      await pool.initialize(blockNumber, {
+        initCallback: (state: DeepReadonly<PoolState>) => {
+          //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
+          pool!.addressesSubscribed[0] = state.pool;
+          pool!.poolAddress = state.pool;
+          pool!.initFailed = false;
+          pool!.initRetryAttemptCount = 0;
+        },
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+        // no need to await we want the set to have the pool key but it's not blocking
+        this.dexHelper.cache.zadd(
+          this.notExistingPoolSetKey,
+          [Date.now(), key],
+          'NX',
         );
-      }
 
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-        pool;
+        // Pool does not exist for this feeCode, so we can set it to null
+        // to prevent more requests for this pool
+        pool = null;
+        this.logger.trace(
+          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
+          e,
+        );
+      } else {
+        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // note: state would be null by default which allows to fallback
+        this.logger.warn(
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          e,
+        );
+        pool.initFailed = true;
+      }
     }
+
+    if (pool !== null) {
+      const allEventPools = Object.values(this.eventPools);
+      this.logger.info(
+        `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
+          // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
+          .reduce(
+            (acc, curr) => (curr !== null ? ++acc : acc),
+            0,
+          )} non-null pools or ${allEventPools.length} total pools`,
+      );
+    }
+
+    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
+      pool;
     return pool;
   }
 
@@ -573,7 +598,7 @@ export class UniswapV3
         _destToken,
         amounts,
         side,
-        poolsToUse.poolWithoutState,
+        this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
       );
 
       const states = poolsToUse.poolWithState.map(
@@ -1020,6 +1045,7 @@ export class UniswapV3
       supportedFees: this.config.supportedFees,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
+      initRetryFrequency: this.config.initRetryFrequency,
       uniswapMulticall: this.config.uniswapMulticall,
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,

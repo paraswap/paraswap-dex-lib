@@ -1,78 +1,59 @@
-import { defaultAbiCoder, Interface } from '@ethersproject/abi';
-import _ from 'lodash';
+import { defaultAbiCoder } from '@ethersproject/abi';
+import { DeepReadonly } from 'ts-essentials';
+import { AbiItem } from 'web3-utils';
 import { pack } from '@ethersproject/solidity';
+import _ from 'lodash';
 import {
   Token,
   Address,
   ExchangePrices,
+  PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
-  NumberAsString,
-  PoolPrices,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import {
-  getBigIntPow,
-  getDexKeysWithNetwork,
-  interpolate,
-  isTruthy,
-} from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
+import { AlgebraData, DexParams, PoolState } from './types';
 import {
-  DexParams,
+  SimpleExchange,
+  getLocalDeadlineAsFriendlyPlaceholder,
+} from '../simple-exchange';
+import { AlgebraConfig, Adapters } from './config';
+import { AlgebraEventPool } from './algebra-pool';
+import { Contract } from 'web3-eth-contract';
+import { Interface } from 'ethers/lib/utils';
+import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
+import AlgebraQuoterABI from '../../abi/algebra/AlgebraQuoter.abi.json';
+import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
+import AlgebraStateMulticallABI from '../../abi/algebra/AlgebraStateMulticall.abi.json';
+import {
   OutputResult,
-  PoolState,
-  UniswapV3Data,
   UniswapV3Functions,
   UniswapV3SimpleSwapParams,
 } from '../uniswap-v3/types';
-import {
-  getLocalDeadlineAsFriendlyPlaceholder,
-  SimpleExchange,
-} from '../simple-exchange';
-import { PancakeswapV3Config, Adapters } from './config';
-import { PancakeSwapV3EventPool } from './pancakeswap-v3-pool';
-import PancakeswapV3RouterABI from '../../abi/pancakeswap-v3/PancakeswapV3Router.abi.json';
-import PancakeswapV3QuoterABI from '../../abi/pancakeswap-v3/PancakeswapV3Quoter.abi.json';
-import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
-import PancakeswapV3StateMulticallABI from '../../abi/pancakeswap-v3/PancakeV3StateMulticall.abi.json';
-import {
-  PANCAKESWAPV3_EFFICIENCY_FACTOR,
-  PANCAKESWAPV3_TICK_BASE_OVERHEAD,
-  PANCAKESWAPV3_POOL_SEARCH_OVERHEAD,
-  PANCAKESWAPV3_TICK_GAS_COST,
-} from './constants';
-import { DeepReadonly } from 'ts-essentials';
-import { pancakeswapV3Math } from './contract-math/pancakeswap-v3-math';
-import { Contract } from 'web3-eth-contract';
-import { AbiItem } from 'web3-utils';
-import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import {
-  AssetType,
-  DEFAULT_ID_ERC20,
-  DEFAULT_ID_ERC20_AS_STRING,
-} from '../../lib/tokens/types';
+import { AlgebraMath } from './lib/AlgebraMath';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
-  fee: string;
 };
 
-const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
-const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
-const PANCAKESWAPV3_QUOTE_GASLIMIT = 200_000;
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 60 * 60 * 1000; // 3 hours
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const ALGEBRA_EFFICIENCY_FACTOR = 3;
+const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
+const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
+const ALGEBRA_POOL_SEARCH_OVERHEAD = 10_000;
+const ALGEBRA_QUOTE_GASLIMIT = 2_000_000;
 
-export class PancakeswapV3
-  extends SimpleExchange
-  implements IDex<UniswapV3Data>
-{
+export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   readonly isFeeOnTransferSupported: boolean = false;
-  readonly eventPools: Record<string, PancakeSwapV3EventPool | null> = {};
+  protected eventPools: Record<string, AlgebraEventPool | null> = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -80,7 +61,7 @@ export class PancakeswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(PancakeswapV3Config, ['PancakeswapV3']));
+    getDexKeysWithNetwork(AlgebraConfig);
 
   logger: Logger;
 
@@ -94,9 +75,9 @@ export class PancakeswapV3
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerIface = new Interface(PancakeswapV3RouterABI),
-    readonly quoterIface = new Interface(PancakeswapV3QuoterABI),
-    protected config = PancakeswapV3Config[dexKey][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
+    readonly routerIface = new Interface(UniswapV3RouterABI), // same abi as uniswapV3
+    readonly quoterIface = new Interface(AlgebraQuoterABI),
+    protected config = AlgebraConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
@@ -105,38 +86,32 @@ export class PancakeswapV3
       this.config.uniswapMulticall,
     );
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      PancakeswapV3StateMulticallABI as AbiItem[],
-      this.config.stateMulticall,
+      AlgebraStateMulticallABI as AbiItem[],
+      this.config.algebraStateMulticall,
     );
 
-    // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
-    // Normalise once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
   }
 
-  get supportedFees() {
-    return this.config.supportedFees;
-  }
-
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  getPoolIdentifier(srcAddress: Address, destAddress: Address, fee: bigint) {
+  getPoolIdentifier(srcAddress: Address, destAddress: Address) {
     const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
-    return `${this.dexKey}_${tokenAddresses}_${fee}`;
+    return `${this.dexKey}_${tokenAddresses}`;
   }
 
   async initializePricing(blockNumber: number) {
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
         const maxTimestamp =
-          Date.now() - PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+          Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
         await this.dexHelper.cache.zremrangebyscore(
           this.notExistingPoolSetKey,
           0,
@@ -146,7 +121,7 @@ export class PancakeswapV3
 
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
-        PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+        ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
       );
     }
   }
@@ -154,12 +129,11 @@ export class PancakeswapV3
   async getPool(
     srcAddress: Address,
     destAddress: Address,
-    fee: bigint,
     blockNumber: number,
-  ): Promise<PancakeSwapV3EventPool | null> {
+  ): Promise<AlgebraEventPool | null> {
     let pool = this.eventPools[
-      this.getPoolIdentifier(srcAddress, destAddress, fee)
-    ] as PancakeSwapV3EventPool | null | undefined;
+      this.getPoolIdentifier(srcAddress, destAddress)
+    ] as AlgebraEventPool | null | undefined;
 
     if (pool === null) return null;
 
@@ -180,7 +154,7 @@ export class PancakeswapV3
 
     const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
-    const key = `${token0}_${token1}_${fee}`.toLowerCase();
+    const key = `${token0}_${token1}`.toLowerCase();
 
     // no need to run this logic on retry initialisation scenario
     if (!pool) {
@@ -192,8 +166,7 @@ export class PancakeswapV3
       const poolDoesNotExist = notExistingPoolScore !== null;
 
       if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-          null;
+        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
         return null;
       }
 
@@ -203,7 +176,6 @@ export class PancakeswapV3
         JSON.stringify({
           token0,
           token1,
-          fee: fee.toString(),
         }),
       );
     }
@@ -211,13 +183,12 @@ export class PancakeswapV3
     this.logger.trace(`starting to listen to new pool: ${key}`);
     pool =
       pool ||
-      new PancakeSwapV3EventPool(
+      new AlgebraEventPool(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
         this.erc20Interface,
         this.config.factory,
-        fee,
         token0,
         token1,
         this.logger,
@@ -245,18 +216,18 @@ export class PancakeswapV3
           'NX',
         );
 
-        // Pool does not exist for this feeCode, so we can set it to null
+        // Pool does not exist for this pair, so we can set it to null
         // to prevent more requests for this pool
         pool = null;
         this.logger.trace(
-          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
+          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
           e,
         );
       } else {
         // on unkown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
@@ -275,8 +246,7 @@ export class PancakeswapV3
       );
     }
 
-    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-      pool;
+    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = pool;
     return pool;
   }
 
@@ -294,7 +264,6 @@ export class PancakeswapV3
     const pool = await this.getPool(
       poolInfo.token0,
       poolInfo.token1,
-      BigInt(poolInfo.fee),
       blockNumber,
     );
 
@@ -321,19 +290,9 @@ export class PancakeswapV3
 
     if (_srcAddress === _destAddress) return [];
 
-    const pools = (
-      await Promise.all(
-        this.supportedFees.map(async fee =>
-          this.getPool(_srcAddress, _destAddress, fee, blockNumber),
-        ),
-      )
-    ).filter(pool => pool);
-
-    if (pools.length === 0) return [];
-
-    return pools.map(pool =>
-      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
-    );
+    const pool = await this.getPool(_srcAddress, _destAddress, blockNumber);
+    if (!pool) return [];
+    return [this.getPoolIdentifier(_srcAddress, _destAddress)];
   }
 
   async getPricingFromRpc(
@@ -341,46 +300,11 @@ export class PancakeswapV3
     to: Token,
     amounts: bigint[],
     side: SwapSide,
-    pools: PancakeSwapV3EventPool[],
-  ): Promise<ExchangePrices<UniswapV3Data> | null> {
-    if (pools.length === 0) {
-      return null;
-    }
-    this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
-
-    const requests = pools.map<BalanceRequest>(
-      pool => ({
-        owner: pool.poolAddress,
-        asset: side == SwapSide.SELL ? from.address : to.address,
-        assetType: AssetType.ERC20,
-        ids: [
-          {
-            id: DEFAULT_ID_ERC20,
-            spenders: [],
-          },
-        ],
-      }),
-      [],
+    pool: AlgebraEventPool,
+  ): Promise<ExchangePrices<AlgebraData> | null> {
+    this.logger.warn(
+      `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
     );
-
-    const balances = await getBalances(this.dexHelper.multiWrapper, requests);
-
-    pools = pools.filter((pool, index) => {
-      const balance = balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
-      if (balance >= amounts[amounts.length - 1]) {
-        return true;
-      }
-      this.logger.warn(
-        `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-      );
-      return false;
-    });
-
-    pools.forEach(pool => {
-      this.logger.warn(
-        `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
-      );
-    });
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
@@ -396,61 +320,59 @@ export class PancakeswapV3
       ),
     );
 
-    const calldata = pools.map(pool =>
-      _amounts.map(_amount => ({
-        target: this.config.quoter,
-        gasLimit: PANCAKESWAPV3_QUOTE_GASLIMIT,
-        callData:
-          side === SwapSide.SELL
-            ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
-                [
-                  from.address,
-                  to.address,
-                  _amount.toString(),
-                  pool.feeCodeAsString,
-                  0, //sqrtPriceLimitX96
-                ],
-              ])
-            : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
-                [
-                  from.address,
-                  to.address,
-                  _amount.toString(),
-                  pool.feeCodeAsString,
-                  0, //sqrtPriceLimitX96
-                ],
-              ]),
-      })),
-    );
+    const calldata = _amounts.map(_amount => ({
+      target: this.config.quoter,
+      gasLimit: ALGEBRA_QUOTE_GASLIMIT,
+      callData:
+        side === SwapSide.SELL
+          ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
+              from.address,
+              to.address,
+              _amount.toString(),
+              0, //sqrtPriceLimitX96
+            ])
+          : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
+              from.address,
+              to.address,
+              _amount.toString(),
+              0, //sqrtPriceLimitX96
+            ]),
+    }));
 
-    const data = await this.uniswapMulti.methods
-      .multicall(calldata.flat())
-      .call();
+    const data = await this.uniswapMulti.methods.multicall(calldata).call();
 
+    let totalGasCost = 0;
+    let totalSuccessFullSwaps = 0;
     const decode = (j: number): bigint => {
-      if (!data.returnData[j].success) {
+      const { success, gasUsed, returnData } = data.returnData[j];
+
+      if (!success) {
         return 0n;
       }
-      const decoded = defaultAbiCoder.decode(
-        ['uint256'],
-        data.returnData[j].returnData,
-      );
+      const decoded = defaultAbiCoder.decode(['uint256'], returnData);
+      totalGasCost += +gasUsed;
+      totalSuccessFullSwaps++;
+
       return BigInt(decoded[0].toString());
     };
 
+    const averageGasCost = !totalSuccessFullSwaps
+      ? ALGEBRA_QUOTE_GASLIMIT
+      : Math.round(totalGasCost / totalSuccessFullSwaps);
+
     let i = 0;
-    const result = pools.map(pool => {
-      const _rates = _amounts.map(() => decode(i++));
-      const unit: bigint = _rates[0];
+    const _rates = _amounts.map(() => decode(i++));
+    const unit: bigint = _rates[0];
 
-      const prices = interpolate(
-        _amounts.slice(1),
-        _rates.slice(1),
-        amounts,
-        side,
-      );
+    const prices = interpolate(
+      _amounts.slice(1),
+      _rates.slice(1),
+      amounts,
+      side,
+    );
 
-      return {
+    return [
+      {
         prices,
         unit,
         data: {
@@ -458,22 +380,15 @@ export class PancakeswapV3
             {
               tokenIn: from.address,
               tokenOut: to.address,
-              fee: pool.feeCodeAsString,
             },
           ],
         },
-        poolIdentifier: this.getPoolIdentifier(
-          pool.token0,
-          pool.token1,
-          pool.feeCode,
-        ),
+        poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
         exchange: this.dexKey,
-        gasCost: prices.map(p => (p === 0n ? 0 : PANCAKESWAPV3_QUOTE_GASLIMIT)),
+        gasCost: prices.map(p => (p === 0n ? 0 : averageGasCost)),
         poolAddresses: [pool.poolAddress],
-      };
-    });
-
-    return result;
+      },
+    ];
   }
 
   async getPricesVolume(
@@ -483,7 +398,7 @@ export class PancakeswapV3
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<UniswapV3Data>> {
+  ): Promise<null | ExchangePrices<AlgebraData>> {
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
       const _destToken = this.dexHelper.config.wrapETH(destToken);
@@ -495,91 +410,37 @@ export class PancakeswapV3
 
       if (_srcAddress === _destAddress) return null;
 
-      let selectedPools: PancakeSwapV3EventPool[] = [];
+      if (
+        !limitPools?.includes(this.getPoolIdentifier(_srcAddress, _destAddress))
+      )
+        return null;
 
-      if (!limitPools) {
-        selectedPools = (
-          await Promise.all(
-            this.supportedFees.map(async fee => {
-              const locallyFoundPool =
-                this.eventPools[
-                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-                ];
-              if (locallyFoundPool) return locallyFoundPool;
+      const pool = await this.getPool(_srcAddress, _destAddress, blockNumber);
 
-              const newlyFetchedPool = await this.getPool(
-                _srcAddress,
-                _destAddress,
-                fee,
-                blockNumber,
-              );
-              return newlyFetchedPool;
-            }),
-          )
-        ).filter(isTruthy);
-      } else {
-        const pairIdentifierWithoutFee = this.getPoolIdentifier(
-          _srcAddress,
-          _destAddress,
-          0n,
-          // Trim from 0 fee postfix, so it become comparable
-        ).slice(0, -1);
+      if (!pool) return null;
 
-        const poolIdentifiers = limitPools.filter(identifier =>
-          identifier.startsWith(pairIdentifierWithoutFee),
+      const state = pool.getState(blockNumber);
+
+      if (state === null) {
+        if (this.network === Network.ZKEVM) {
+          if (!pool.initFailed) {
+            this.logger.warn(
+              `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state is unhealthy, cannot compute price (no fallback on this chain)`,
+            );
+          }
+
+          return null; // never fallback as takes more time
+        }
+        const rpcPrice = await this.getPricingFromRpc(
+          _srcToken,
+          _destToken,
+          amounts,
+          side,
+          pool,
         );
 
-        selectedPools = (
-          await Promise.all(
-            poolIdentifiers.map(async identifier => {
-              let locallyFoundPool = this.eventPools[identifier];
-              if (locallyFoundPool) return locallyFoundPool;
-
-              const [, srcAddress, destAddress, fee] = identifier.split('_');
-              const newlyFetchedPool = await this.getPool(
-                srcAddress,
-                destAddress,
-                BigInt(fee),
-                blockNumber,
-              );
-              return newlyFetchedPool;
-            }),
-          )
-        ).filter(isTruthy);
+        return rpcPrice;
       }
-
-      if (selectedPools.length === 0) return null;
-
-      const poolsToUse = selectedPools.reduce(
-        (acc, pool) => {
-          let state = pool.getState(blockNumber);
-          if (state === null) {
-            this.logger.trace(
-              `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
-            );
-            acc.poolWithoutState.push(pool);
-          } else {
-            acc.poolWithState.push(pool);
-          }
-          return acc;
-        },
-        {
-          poolWithState: [] as PancakeSwapV3EventPool[],
-          poolWithoutState: [] as PancakeSwapV3EventPool[],
-        },
-      );
-
-      const rpcResultsPromise = this.getPricingFromRpc(
-        _srcToken,
-        _destToken,
-        amounts,
-        side,
-        this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
-      );
-
-      const states = poolsToUse.poolWithState.map(
-        p => p.getState(blockNumber)!,
-      );
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
@@ -591,91 +452,68 @@ export class PancakeswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      const result = await Promise.all(
-        poolsToUse.poolWithState.map(async (pool, i) => {
-          const state = states[i];
-
-          if (state.liquidity <= 0n) {
-            this.logger.trace(`pool have 0 liquidity`);
-            return null;
-          }
-
-          const balanceDestToken =
-            _destAddress === pool.token0 ? state.balance0 : state.balance1;
-
-          const unitResult = this._getOutputs(
-            state,
-            [unitAmount],
-            zeroForOne,
-            side,
-            balanceDestToken,
-          );
-          const pricesResult = this._getOutputs(
-            state,
-            _amounts,
-            zeroForOne,
-            side,
-            balanceDestToken,
-          );
-
-          if (!unitResult || !pricesResult) {
-            this.logger.debug('Prices or unit is not calculated');
-            return null;
-          }
-
-          const prices = [0n, ...pricesResult.outputs];
-          const gasCost = [
-            0,
-            ...pricesResult.outputs.map((p, index) => {
-              if (p == 0n) {
-                return 0;
-              } else {
-                return (
-                  PANCAKESWAPV3_POOL_SEARCH_OVERHEAD +
-                  PANCAKESWAPV3_TICK_BASE_OVERHEAD +
-                  pricesResult.tickCounts[index] * PANCAKESWAPV3_TICK_GAS_COST
-                );
-              }
-            }),
-          ];
-          return {
-            unit: unitResult.outputs[0],
-            prices,
-            data: {
-              path: [
-                {
-                  tokenIn: _srcAddress,
-                  tokenOut: _destAddress,
-                  fee: pool.feeCode.toString(),
-                },
-              ],
-            },
-            poolIdentifier: this.getPoolIdentifier(
-              pool.token0,
-              pool.token1,
-              pool.feeCode,
-            ),
-            exchange: this.dexKey,
-            gasCost: gasCost,
-            poolAddresses: [pool.poolAddress],
-          };
-        }),
-      );
-      const rpcResults = await rpcResultsPromise;
-
-      const notNullResult = result.filter(
-        res => res !== null,
-      ) as ExchangePrices<UniswapV3Data>;
-
-      if (rpcResults) {
-        rpcResults.forEach(r => {
-          if (r) {
-            notNullResult.push(r);
-          }
-        });
+      if (state.liquidity <= 0n) {
+        this.logger.trace(`pool have 0 liquidity`);
+        return null;
       }
 
-      return notNullResult;
+      const balanceDestToken =
+        _destAddress === pool.token0 ? state.balance0 : state.balance1;
+
+      const unitResult = this._getOutputs(
+        state,
+        [unitAmount],
+        zeroForOne,
+        side,
+        balanceDestToken,
+      );
+      const pricesResult = this._getOutputs(
+        state,
+        _amounts,
+        zeroForOne,
+        side,
+        balanceDestToken,
+      );
+
+      if (!unitResult || !pricesResult) {
+        this.logger.debug('Prices or unit is not calculated');
+        return null;
+      }
+
+      const prices = [0n, ...pricesResult.outputs];
+      const gasCost = [
+        0,
+        ...pricesResult.outputs.map((p, index) => {
+          if (p == 0n) {
+            return 0;
+          } else {
+            return (
+              ALGEBRA_POOL_SEARCH_OVERHEAD +
+              ALGEBRA_TICK_BASE_OVERHEAD +
+              pricesResult.tickCounts[index] * ALGEBRA_TICK_GAS_COST
+            );
+          }
+        }),
+      ];
+
+      return [
+        {
+          unit: unitResult.outputs[0],
+          prices,
+          data: {
+            path: [
+              {
+                tokenIn: _srcAddress,
+                tokenOut: _destAddress,
+              },
+            ],
+          },
+          poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
+          exchange: this.dexKey,
+          gasCost: gasCost,
+          poolAddresses: [pool.poolAddress],
+        },
+      ];
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -692,7 +530,7 @@ export class PancakeswapV3
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: UniswapV3Data,
+    data: AlgebraData,
     side: SwapSide,
   ): AdapterExchangeParam {
     const { path: rawPath } = data;
@@ -718,7 +556,7 @@ export class PancakeswapV3
     };
   }
 
-  getCalldataGasCost(poolPrices: PoolPrices<UniswapV3Data>): number | number[] {
+  getCalldataGasCost(poolPrices: PoolPrices<AlgebraData>): number | number[] {
     const gasCost =
       CALLDATA_GAS_COST.DEX_OVERHEAD +
       CALLDATA_GAS_COST.LENGTH_SMALL +
@@ -748,7 +586,7 @@ export class PancakeswapV3
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: UniswapV3Data,
+    data: AlgebraData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const swapFunction =
@@ -843,7 +681,7 @@ export class PancakeswapV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * PANCAKESWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.totalValueLockedUSD) * ALGEBRA_EFFICIENCY_FACTOR,
     }));
 
     const pools1 = _.map(res.pools1, pool => ({
@@ -856,7 +694,7 @@ export class PancakeswapV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * PANCAKESWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.totalValueLockedUSD) * ALGEBRA_EFFICIENCY_FACTOR,
     }));
 
     const pools = _.slice(
@@ -865,19 +703,6 @@ export class PancakeswapV3
       limit,
     );
     return pools;
-  }
-
-  private async _getPoolsFromIdentifiers(
-    poolIdentifiers: string[],
-    blockNumber: number,
-  ): Promise<PancakeSwapV3EventPool[]> {
-    const pools = await Promise.all(
-      poolIdentifiers.map(async identifier => {
-        const [, srcAddress, destAddress, fee] = identifier.split('_');
-        return this.getPool(srcAddress, destAddress, BigInt(fee), blockNumber);
-      }),
-    );
-    return pools.filter(pool => pool) as PancakeSwapV3EventPool[];
   }
 
   private _getLoweredAddresses(srcToken: Token, destToken: Token) {
@@ -894,8 +719,7 @@ export class PancakeswapV3
       router: this.config.router.toLowerCase(),
       quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
-      supportedFees: this.config.supportedFees,
-      stateMulticall: this.config.stateMulticall.toLowerCase(),
+      algebraStateMulticall: this.config.algebraStateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
       initRetryFrequency: this.config.initRetryFrequency,
       uniswapMulticall: this.config.uniswapMulticall,
@@ -914,7 +738,7 @@ export class PancakeswapV3
     destTokenBalance: bigint,
   ): OutputResult | null {
     try {
-      const outputsResult = pancakeswapV3Math.queryOutputs(
+      const outputsResult = AlgebraMath.queryOutputs(
         state,
         amounts,
         zeroForOne,
@@ -926,7 +750,20 @@ export class PancakeswapV3
           return null;
         }
 
+        // TODO buy
+        let lastNonZeroOutput = 0n;
+        let lastNonZeroTickCountsOutputs = 0;
+
         for (let i = 0; i < outputsResult.outputs.length; i++) {
+          // local pricing algo may output 0s at the tail for some out of range amounts, prefer to propagating last amount to appease top algo
+          if (outputsResult.outputs[i] > 0n) {
+            lastNonZeroOutput = outputsResult.outputs[i];
+            lastNonZeroTickCountsOutputs = outputsResult.tickCounts[i];
+          } else {
+            outputsResult.outputs[i] = lastNonZeroOutput;
+            outputsResult.tickCounts[i] = lastNonZeroTickCountsOutputs;
+          }
+
           if (outputsResult.outputs[i] > destTokenBalance) {
             outputsResult.outputs[i] = 0n;
             outputsResult.tickCounts[i] = 0;
@@ -981,14 +818,10 @@ export class PancakeswapV3
     path: {
       tokenIn: Address;
       tokenOut: Address;
-      fee: NumberAsString;
     }[],
     side: SwapSide,
   ): string {
     if (path.length === 0) {
-      this.logger.error(
-        `${this.dexKey}: Received invalid path=${path} for side=${side} to encode`,
-      );
       return '0x';
     }
 
@@ -1000,13 +833,13 @@ export class PancakeswapV3
       ): { _path: string[]; types: string[] } => {
         if (index === 0) {
           return {
-            types: ['address', 'uint24', 'address'],
-            _path: [curr.tokenIn, curr.fee, curr.tokenOut],
+            types: ['address', 'address'],
+            _path: [curr.tokenIn, curr.tokenOut],
           };
         } else {
           return {
-            types: [...types, 'uint24', 'address'],
-            _path: [..._path, curr.fee, curr.tokenOut],
+            types: [...types, 'address'],
+            _path: [..._path, curr.tokenOut],
           };
         }
       },
