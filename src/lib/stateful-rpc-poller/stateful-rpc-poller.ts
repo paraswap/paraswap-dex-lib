@@ -9,7 +9,7 @@ import {
 import { MultiCallParams, MultiResult } from '../multi-wrapper';
 import { CACHE_PREFIX } from '../../constants';
 import { uint256DecodeToNumber } from '../decoders';
-import { assert } from 'ts-essentials';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import { LogMessagesSuppressor, MessageInfo } from '../log-messages-suppressor';
 import { Utils } from '../../utils';
 import { getIdentifierKeyForRpcPoller } from './utils';
@@ -394,6 +394,10 @@ export abstract class StatefulRpcPoller<State, M>
   // Later we may consider having more complicated generateState mechanism.
   protected abstract _getFetchStateMultiCalls(): MultiCallParams<M>[];
 
+  protected abstract _parseStateFromMultiResults(
+    multiOutputs: M[],
+  ): AsyncOrSync<State>;
+
   getFetchStateWithBlockInfoMultiCalls(): [
     MultiCallParams<number>,
     ...MultiCallParams<M>[],
@@ -409,12 +413,10 @@ export abstract class StatefulRpcPoller<State, M>
     return this._cachedMultiCallData;
   }
 
-  protected abstract _parseStateFromMultiResults(multiOutputs: M[]): State;
-
-  parseStateFromMultiResultsWithBlockInfo(
+  async parseStateFromMultiResultsWithBlockInfo(
     multiOutputs: [MultiResult<number>, ...MultiResult<M>[]],
     lastUpdatedAtMs: number,
-  ): ObjWithUpdateInfo<State> {
+  ): Promise<ObjWithUpdateInfo<State>> {
     // By abstract I mean for abstract method which must be implemented
     const [blockNumber, ...outputsForAbstract] = multiOutputs.map((m, i) => {
       if (!m.success) {
@@ -427,7 +429,7 @@ export abstract class StatefulRpcPoller<State, M>
     }) as [number, ...M[]];
 
     return {
-      value: this._parseStateFromMultiResults(outputsForAbstract),
+      value: await this._parseStateFromMultiResults(outputsForAbstract),
       blockNumber,
       lastUpdatedAtMs,
     };
@@ -525,7 +527,7 @@ export abstract class StatefulRpcPoller<State, M>
     return null;
   }
 
-  protected async _fetchLiquidityFromCache(): Promise<ObjWithUpdateInfo<number> | null> {
+  async fetchLiquidityFromCache(): Promise<ObjWithUpdateInfo<number> | null> {
     const resultUnparsed = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
@@ -567,9 +569,7 @@ export abstract class StatefulRpcPoller<State, M>
         );
         this.isPoolParticipateInUpdates = true;
       } else {
-        this.isPoolParticipateInUpdates =
-          this._liquidityInUSDWithUpdateInfo.value >=
-          this.liquidityThresholdForUpdate;
+        this.isPoolParticipateInUpdates = this.hasEnoughLiquidityForUpdate();
       }
     }
   }
@@ -600,5 +600,12 @@ export abstract class StatefulRpcPoller<State, M>
     }
 
     setTimeout(() => this.initializeState(), DEFAULT_STATE_INIT_RETRY_MS);
+  }
+
+  hasEnoughLiquidityForUpdate(): boolean {
+    return (
+      this._liquidityInUSDWithUpdateInfo.value >=
+      this.liquidityThresholdForUpdate
+    );
   }
 }

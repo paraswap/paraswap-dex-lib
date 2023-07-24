@@ -27,7 +27,7 @@ export interface IStatefulRpcPoller<State, M> {
   parseStateFromMultiResultsWithBlockInfo(
     multiOutputs: [MultiResult<number>, ...MultiResult<M>[]],
     lastUpdatedAtMs: number,
-  ): ObjWithUpdateInfo<State>;
+  ): Promise<ObjWithUpdateInfo<State>>;
 
   setState(
     state: State,
@@ -36,6 +36,8 @@ export interface IStatefulRpcPoller<State, M> {
   ): Promise<void>;
 
   fetchStateFromCache(): Promise<ObjWithUpdateInfo<State> | null>;
+
+  fetchLiquidityFromCache(): Promise<ObjWithUpdateInfo<number> | null>;
 
   fetchLatestStateFromRpc(): Promise<ObjWithUpdateInfo<State> | null>;
 
@@ -49,6 +51,8 @@ export interface IStatefulRpcPoller<State, M> {
     lastUpdatedAtMs: number,
     blockNumber?: number,
   ): Promise<void>;
+
+  hasEnoughLiquidityForUpdate(): boolean;
 }
 
 export type PollingManagerControllersCb = {

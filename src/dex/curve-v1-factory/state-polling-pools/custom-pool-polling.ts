@@ -13,6 +13,7 @@ import { _require } from '../../../utils';
 import { Address } from '@paraswap/core';
 import { AbiItem } from 'web3-utils';
 import { NULL_ADDRESS } from '../../../constants';
+import { IDexHelper } from '../../../dex-helper';
 
 type FunctionToCall =
   | 'A'
@@ -98,7 +99,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
   constructor(
     readonly logger: Logger,
     readonly dexKey: string,
-    network: number,
+    dexHelper: IDexHelper,
     cacheStateKey: string,
     implementationName: ImplementationNames,
     implementationAddress: Address,
@@ -120,7 +121,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     super(
       logger,
       dexKey,
-      network,
+      dexHelper,
       cacheStateKey,
       implementationName,
       implementationAddress === NULL_ADDRESS ? address : implementationAddress,
@@ -136,7 +137,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     );
   }
 
-  getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {
+  protected _getFetchStateMultiCalls(): MultiCallParams<MulticallReturnedTypes>[] {
     let calls: MultiCallParams<MulticallReturnedTypes>[] = [
       {
         target: this.address,
@@ -209,10 +210,8 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     return calls;
   }
 
-  parseMultiResultsToStateValues(
+  protected _parseStateFromMultiResults(
     multiOutputs: MulticallReturnedTypes[],
-    blockNumber: number,
-    updatedAtMs: number,
   ): PoolState {
     const A = multiOutputs[0] as bigint;
     const fee = multiOutputs[1] as bigint;
@@ -279,8 +278,6 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       virtualPrice,
       totalSupply,
       offpeg_fee_multiplier,
-      blockNumber,
-      updatedAtMs,
     };
   }
 
