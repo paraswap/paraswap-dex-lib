@@ -67,7 +67,7 @@ export class WBETHPool extends CurvePool {
     const from = event.args.src;
     const coin = log.address;
 
-    if (from.toLowerCase() == this.address.toLowerCase())
+    if (from.toLowerCase() === this.address.toLowerCase())
       this.lastTransferredCoin = coin.toLowerCase();
     return state;
   }
