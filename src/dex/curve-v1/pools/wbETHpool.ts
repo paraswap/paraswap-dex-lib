@@ -1,11 +1,12 @@
 import { Address, Log } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
-import { bigNumberify, stringify } from '../../../utils';
+import { bigNumberify, catchParseLogError, stringify } from '../../../utils';
 import StableSwapWBETH from '../../../abi/curve-v1/StableSwapWBETH.json';
 import BigNumber from 'bignumber.js';
 import { BN_0, BN_1, BN_2 } from '../../../bignumber-constants';
 import _ from 'lodash';
 import { CurvePool, PoolState } from './curve-pool';
+import { DeepReadonly } from 'ts-essentials';
 
 const pool = 'wbETH';
 export const address: Address =
@@ -56,14 +57,6 @@ export class WBETHPool extends CurvePool {
       _COINS,
     );
 
-    this.handlers['AddLiquidity'] = this.handleAddLiquidity.bind(this);
-    this.handlers['RemoveLiquidity'] = this.handleRemoveLiquidity.bind(this);
-    this.handlers['TokenExchange'] = this.handleTokenExchange.bind(this);
-    this.handlers['RemoveLiquidityImbalance'] =
-      this.handleRemoveLiquidityImbalances.bind(this);
-    this.handlers['NewParameters'] = this.handleNewParameters.bind(this);
-
-
     // Add pool specific handlers or overloaded handlers
     this.handlers['RemoveLiquidityOne'] =
       this.handleRemoveLiquidityOne.bind(this);
@@ -71,35 +64,32 @@ export class WBETHPool extends CurvePool {
     this.handlers['Transfer'] = this.handleCoinTransfer.bind(this);
   }
 
-  handleNewParameters(event: any, state: PoolState, log: Log): PoolState {
-    const A = bigNumberify(stringify(event.args.A));
-    const fee = bigNumberify(stringify(event.args.fee));
-    const admin_fee = bigNumberify(stringify(event.args.admin_fee));
+  public processLog(
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    let _state: PoolState = {
+      A: bigNumberify(state.A),
+      fee: bigNumberify(state.fee),
+      admin_fee: bigNumberify(state.admin_fee),
+      supply: bigNumberify(state.supply),
+      balances: state.balances.map(bigNumberify),
+      eth_balance: bigNumberify(state.eth_balance),
+      token_balance: bigNumberify(state.token_balance),
+      stored_rates: state.stored_rates!.map(bigNumberify),
+      admin_balances: state.admin_balances!.map(bigNumberify),
+    };
+    try {
+      const event = this.decoder(log);
 
-    state.A = A;
-    state.fee = fee;
-    state.admin_fee = admin_fee;
-    console.log('HANDLE NEW PARAMETERS: ', state);
-
-    return state;
-  }
-
-  handleTokenExchange(event: any, state: PoolState, log: Log): PoolState {
-    const i = event.args.sold_id.toNumber();
-    const j = event.args.bought_id.toNumber();
-    const dx = bigNumberify(stringify(event.args.tokens_sold));
-    this.exchange(i, j, dx, state);
-    console.log('HANDLE TOKEN EXCHANGE: ', state);
-
-    return state;
-  }
-
-  handleAddLiquidity(event: any, state: PoolState, log: Log): PoolState {
-    const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
-    this.add_liquidity(amounts, state);
-    console.log('HANDLE ADD LUQUIDITY: ', state);
-
-    return state;
+      if (event.name in this.handlers) {
+        return this.handlers[event.name](event, _state, log);
+      }
+      return _state;
+    } catch (e) {
+      catchParseLogError(e, this.logger);
+    }
+    return _state;
   }
 
   handleCoinTransfer(event: any, state: PoolState, log: Log): PoolState {
@@ -108,8 +98,6 @@ export class WBETHPool extends CurvePool {
 
     if (from.toLowerCase() === this.address.toLowerCase())
       this.lastTransferredCoin = coin.toLowerCase();
-
-    console.log('HANDLE COIN TRANSFER: ', state);
     return state;
   }
 
@@ -126,7 +114,6 @@ export class WBETHPool extends CurvePool {
       return state;
     }
     this.remove_liquidity_one_coin(_token_amount, i, state);
-    console.log('HANDLE REMOVE LUQUIDITY ONE: ', state);
     return state;
   }
 
@@ -134,7 +121,6 @@ export class WBETHPool extends CurvePool {
     const fee = bigNumberify(stringify(event.args.new_fee));
 
     state.fee = fee;
-    console.log('HANDLE NEW FEE: ', state);
     return state;
   }
 
@@ -153,7 +139,6 @@ export class WBETHPool extends CurvePool {
     }
 
     state.supply = token_supply;
-    console.log('HANDLE REMOVE LIQUIDITY: ', state);
     return state;
   }
 
@@ -206,8 +191,6 @@ export class WBETHPool extends CurvePool {
       state.token_balance = state.token_balance!.minus(amounts[1]);
     }
 
-    console.log('HANDLE REMOVE LIQUIDITY IMBALANCE: ', state);
-
     return state;
   }
 
@@ -252,8 +235,6 @@ export class WBETHPool extends CurvePool {
   private _balances(state: PoolState, value: BigNumber = BN_0): BigNumber[] {
     const { admin_balances, eth_balance, token_balance } = state;
 
-    console.log('_balances state ', state);
-
     state.balances = [
       eth_balance!.minus(admin_balances![0]).minus(value),
       token_balance!.minus(admin_balances![1]),
@@ -269,8 +250,7 @@ export class WBETHPool extends CurvePool {
     state: Readonly<PoolState>,
   ): BigNumber {
     const { stored_rates: rates } = state;
-    console.log('WBETH get_dy');
-    console.log('STATE: ', JSON.stringify(state));
+    this.logger.info(`CurveV1: wbETH pool get_dy state: ${JSON.stringify(state)}`)
     return this._get_dy(
       i,
       j,

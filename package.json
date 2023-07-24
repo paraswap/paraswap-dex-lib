@@ -40,14 +40,14 @@
   "scripts": {
     "init-integration": "ts-node scripts/dex-integration.ts init",
     "test-integration": "ts-node scripts/dex-integration.ts test",
-    "build": "yarn check:pq && tsc",
+    "build": "yarn check:pq && yarn check:es && tsc",
     "watch": "tsc -w",
     "test": "jest",
     "prepare": "husky install && yarn build",
     "check:pq": "pretty-quick --staged",
     "check:tsc": "tsc",
     "check:es": "eslint \"src/**/*.ts\" --ignore-pattern=\"*.test.ts\"",
-    "checks": "yarn check:pq && yarn check:tsc"
+    "checks": "yarn check:pq && yarn check:tsc && yarn check:es"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
