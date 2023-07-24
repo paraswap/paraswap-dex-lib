@@ -18,6 +18,7 @@ export type PoolData = {
   feeGrowthGlobal: bigint;
   secondsPerLiquidityGlobal: bigint;
   secondsPerLiquidityUpdateTime: number;
+  rTokenSupply: bigint;
 };
 
 export type ObservationData = {
@@ -118,6 +119,11 @@ export type FeeGrowthGlobalResponse = bigint;
 export type SecondsPerLiquidityResponse = {
   secondsPerLiquidityGlobal: bigint;
   lastUpdateTime: number;
+};
+
+export type OutputResult = {
+  outputs: bigint[];
+  tickCounts: number[];
 };
 
 export type KyberElasticStateResponses =
