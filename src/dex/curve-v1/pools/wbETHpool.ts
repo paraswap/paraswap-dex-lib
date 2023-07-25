@@ -198,7 +198,7 @@ export class WBETHPool extends CurvePool {
     const rates = state.stored_rates;
 
     let msgValue;
-    if(i == 0) {
+    if(i === 0) {
       msgValue = bigNumberify(dx);
     } else {
       msgValue = BN_0;
@@ -226,7 +226,7 @@ export class WBETHPool extends CurvePool {
     if(i === 0) {
       state.eth_balance = state.eth_balance!.minus(dy);
     } else {
-      state.token_balance = state.token_balance!.minus(dy);
+      state.token_balance = state.token_balance!.minus(dx);
     }
 
     return dy;
