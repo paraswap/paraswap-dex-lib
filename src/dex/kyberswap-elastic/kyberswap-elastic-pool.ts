@@ -181,6 +181,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       feeGrowthGlobal: _feeGrowthGlobal,
       secondsPerLiquidityGlobal: _secondsPerLiquidity.secondsPerLiquidityGlobal,
       secondsPerLiquidityUpdateTime: _secondsPerLiquidity.lastUpdateTime,
+      rTokenSupply: 0n, // @note TODO
     };
 
     // const _ticks = this._getAllTicks(this.poolAddress, blockNumber),

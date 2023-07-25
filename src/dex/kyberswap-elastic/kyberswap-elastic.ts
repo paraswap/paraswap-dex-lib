@@ -47,10 +47,12 @@ import {
   PoolState,
   KyberElasticParam,
   KyberElasticFunctions,
+  OutputResult,
 } from './types';
 import { KyberswapElasticConfig, Adapters } from './config';
 import { KS_ELASTIC_QUOTE_GASLIMIT } from './constants';
 import { KyberswapElasticEventPool } from './kyberswap-elastic-pool';
+import { ksElasticMath } from './contract-math/kyberswap-elastic-math';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -374,7 +376,7 @@ export class KyberswapElastic
                 {
                   tokenIn: _srcAddress,
                   tokenOut: _destAddress,
-                  fee: pool.swapFeeUnits.toString(),
+                  swapFeeUnits: pool.swapFeeUnits.toString(),
                 },
               ],
             },
@@ -846,5 +848,57 @@ export class KyberswapElastic
     return side === SwapSide.BUY
       ? pack(types.reverse(), _path.reverse())
       : pack(types, _path);
+  }
+
+  private _getOutputs(
+    state: DeepReadonly<PoolState>,
+    amounts: bigint[],
+    zeroForOne: boolean,
+    side: SwapSide,
+    destTokenBalance: bigint,
+  ): OutputResult | null {
+    try {
+      const outputsResult = ksElasticMath.queryOutputs(
+        state,
+        amounts,
+        zeroForOne,
+        side,
+      );
+
+      if (side === SwapSide.SELL) {
+        if (outputsResult.outputs[0] > destTokenBalance) {
+          return null;
+        }
+
+        for (let i = 0; i < outputsResult.outputs.length; i++) {
+          if (outputsResult.outputs[i] > destTokenBalance) {
+            outputsResult.outputs[i] = 0n;
+            outputsResult.tickCounts[i] = 0;
+          }
+        }
+      } else {
+        if (amounts[0] > destTokenBalance) {
+          return null;
+        }
+
+        // This may be improved by first checking outputs and requesting outputs
+        // only for amounts that makes more sense, but I don't think this is really
+        // important now
+        for (let i = 0; i < amounts.length; i++) {
+          if (amounts[i] > destTokenBalance) {
+            outputsResult.outputs[i] = 0n;
+            outputsResult.tickCounts[i] = 0;
+          }
+        }
+      }
+
+      return outputsResult;
+    } catch (e) {
+      this.logger.debug(
+        `${this.dexKey}: received error in _getOutputs while calculating outputs`,
+        e,
+      );
+      return null;
+    }
   }
 }
