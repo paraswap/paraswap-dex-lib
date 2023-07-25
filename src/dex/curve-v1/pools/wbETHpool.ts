@@ -195,6 +195,8 @@ export class WBETHPool extends CurvePool {
   }
 
   exchange(i: number, j: number, dx: BigNumber, state: PoolState): BigNumber {
+    this.logger.info(`CurveV1: wbETH pool exchange before state: ${JSON.stringify(state)}`);
+
     const rates = state.stored_rates;
 
     let msgValue;
@@ -203,6 +205,8 @@ export class WBETHPool extends CurvePool {
     } else {
       msgValue = BN_0;
     }
+
+    this.logger.info(`CurveV1: wbETH pool exchange msg value: ${msgValue}`);
 
     const old_balances: BigNumber[] = this._balances(state, msgValue);
     const xp: BigNumber[] = this._xp_mem(rates!, old_balances);
@@ -229,6 +233,8 @@ export class WBETHPool extends CurvePool {
       state.token_balance = state.token_balance!.minus(dx);
     }
 
+    this.logger.info(`CurveV1: wbETH pool exchange after state: ${JSON.stringify(state)}`);
+
     return dy;
   }
 
@@ -250,7 +256,7 @@ export class WBETHPool extends CurvePool {
     state: Readonly<PoolState>,
   ): BigNumber {
     const { stored_rates: rates } = state;
-    this.logger.info(`CurveV1: wbETH pool get_dy state: ${JSON.stringify(state)}`)
+    this.logger.info(`CurveV1: wbETH pool get_dy state: ${JSON.stringify(state)}`);
     return this._get_dy(
       i,
       j,
@@ -398,8 +404,6 @@ export class WBETHPool extends CurvePool {
     i: number,
     state: PoolState,
   ): BigNumber {
-    const { stored_rates: rates } = state;
-
     let { dy } = this._calc_withdraw_one_coin(
       token_amount,
       i,
