@@ -51,6 +51,10 @@ const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
 const ALGEBRA_POOL_SEARCH_OVERHEAD = 10_000;
 const ALGEBRA_QUOTE_GASLIMIT = 2_000_000;
 
+const MAX_ACCEPTABLE_BLOCK_DELAY_FOR_STALE_STATE = {
+  [Network.ZKEVM]: 130, // approximately 3min
+};
+
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   readonly isFeeOnTransferSupported: boolean = false;
   protected eventPools: Record<string, AlgebraEventPool | null> = {};
@@ -139,6 +143,19 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (pool) {
       if (!pool.initFailed) {
+        if (this.network !== Network.ZKEVM) return pool;
+
+        if (
+          pool.getState(blockNumber) === null &&
+          blockNumber - pool.getStateBlockNumber() >
+            MAX_ACCEPTABLE_BLOCK_DELAY_FOR_STALE_STATE[this.network]
+        ) {
+          /* reload state, on zkEVM this would most likely timeout during request life
+           * but would allow to rely on staleState for couple of min for next requests
+           */
+          await pool.initialize(blockNumber);
+        }
+
         return pool;
       } else {
         // if init failed then prefer to early return pool with empty state to fallback to rpc call
@@ -419,28 +436,40 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       if (!pool) return null;
 
-      const state = pool.getState(blockNumber);
+      let state = pool.getState(blockNumber);
 
       if (state === null) {
         if (this.network === Network.ZKEVM) {
-          if (!pool.initFailed) {
+          if (pool.initFailed) return null;
+
+          if (
+            blockNumber - pool.getStateBlockNumber() <
+            MAX_ACCEPTABLE_BLOCK_DELAY_FOR_STALE_STATE[this.network]
+          ) {
+            this.logger.warn(
+              `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state fallback to latest early enough state`,
+            );
+            state = pool.getStaleState();
+          } else {
             this.logger.warn(
               `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state is unhealthy, cannot compute price (no fallback on this chain)`,
             );
+            return null; // never fallback as takes more time
           }
+        } else {
+          const rpcPrice = await this.getPricingFromRpc(
+            _srcToken,
+            _destToken,
+            amounts,
+            side,
+            pool,
+          );
 
-          return null; // never fallback as takes more time
+          return rpcPrice;
         }
-        const rpcPrice = await this.getPricingFromRpc(
-          _srcToken,
-          _destToken,
-          amounts,
-          side,
-          pool,
-        );
-
-        return rpcPrice;
       }
+
+      if (!state) return null;
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,
