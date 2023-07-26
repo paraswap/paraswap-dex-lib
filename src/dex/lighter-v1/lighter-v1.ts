@@ -73,10 +73,6 @@ export class LighterV1 extends SimpleExchange implements IDex<LighterV1Data> {
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
     await this.updatePoolState(blockNumber);
   }
@@ -87,10 +83,6 @@ export class LighterV1 extends SimpleExchange implements IDex<LighterV1Data> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -122,10 +114,6 @@ export class LighterV1 extends SimpleExchange implements IDex<LighterV1Data> {
     return [];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -359,11 +347,6 @@ export class LighterV1 extends SimpleExchange implements IDex<LighterV1Data> {
     return amountOut;
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(blockNumber?: number): Promise<void> {
     const helper = new ethers.Contract(
       this.config.orderBookHelper,

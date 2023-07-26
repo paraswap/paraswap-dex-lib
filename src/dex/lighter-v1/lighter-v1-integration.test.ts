@@ -117,7 +117,6 @@ describe('LighterV1', function () {
   let lighterV1: LighterV1;
 
   describe('Arbitrum', () => {
-    console.log('here we are');
     const network = Network.ARBITRUM;
     const dexHelper = new DummyDexHelper(network);
 

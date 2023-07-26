@@ -153,11 +153,17 @@ export class LighterV1EventPool extends StatefulEventSubscriber<PoolState> {
   async getOrderBook(blockNumber: number): Promise<OrderBook> {
     const router = new ethers.Contract(this.routerAddress, this.routerIface);
 
+    const currentBlockNumber = await this.dexHelper.provider.getBlockNumber();
+
+    if (currentBlockNumber < blockNumber) {
+      blockNumber = currentBlockNumber;
+    }
+
     const data = await this.dexHelper.provider.call(
       {
         to: router.address,
         data: router.interface.encodeFunctionData('getLimitOrders', [
-          this.orderBookId,
+          Number(this.orderBookId),
         ]),
       },
       blockNumber,
@@ -167,6 +173,7 @@ export class LighterV1EventPool extends StatefulEventSubscriber<PoolState> {
       'getLimitOrders',
       data,
     );
+
     const [ids, _, amounts0, amounts1, isAsks] = result;
 
     const orders: LimitOrder[] = ids.map((id: bigint, index: number) => ({
