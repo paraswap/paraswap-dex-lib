@@ -155,7 +155,8 @@ export function getSavedState<SubscriberState>(
   if (_state) {
     const checker = (obj: any) => _.isString(obj) && obj.includes('bi@');
     const caster = (obj: string) => bigintify(obj.slice(3));
-    return deepTypecast<string>(_.cloneDeep(_state), checker, caster);
+    const x = deepTypecast<string>(_.cloneDeep(_state), checker, caster);
+    return x;
   }
   return undefined;
 }
