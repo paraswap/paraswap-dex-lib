@@ -51,8 +51,8 @@ const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
 const ALGEBRA_POOL_SEARCH_OVERHEAD = 10_000;
 const ALGEBRA_QUOTE_GASLIMIT = 2_000_000;
 
-const MAX_ACCEPTABLE_BLOCK_DELAY_FOR_STALE_STATE = {
-  [Network.ZKEVM]: 130, // approximately 3min
+const MAX_STALE_STALE_BLOCK_AGE = {
+  [Network.ZKEVM]: 150, // approximately 3min
 };
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
@@ -148,7 +148,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         if (
           pool.getState(blockNumber) === null &&
           blockNumber - pool.getStateBlockNumber() >
-            MAX_ACCEPTABLE_BLOCK_DELAY_FOR_STALE_STATE[this.network]
+            MAX_STALE_STALE_BLOCK_AGE[this.network]
         ) {
           /* reload state, on zkEVM this would most likely timeout during request life
            * but would allow to rely on staleState for couple of min for next requests
@@ -443,8 +443,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           if (pool.initFailed) return null;
 
           if (
-            blockNumber - pool.getStateBlockNumber() <
-            MAX_ACCEPTABLE_BLOCK_DELAY_FOR_STALE_STATE[this.network]
+            blockNumber - pool.getStateBlockNumber() <=
+            MAX_STALE_STALE_BLOCK_AGE[this.network]
           ) {
             this.logger.warn(
               `${_srcAddress}_${_destAddress}_${pool.name}_${
