@@ -447,7 +447,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
             MAX_ACCEPTABLE_BLOCK_DELAY_FOR_STALE_STATE[this.network]
           ) {
             this.logger.warn(
-              `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state fallback to latest early enough state`,
+              `${_srcAddress}_${_destAddress}_${pool.name}_${
+                pool.poolAddress
+              } state fallback to latest early enough state. Current blockNumber=${blockNumber}, stateBlockNumber=${pool.getStateBlockNumber()}`,
             );
             state = pool.getStaleState();
           } else {
