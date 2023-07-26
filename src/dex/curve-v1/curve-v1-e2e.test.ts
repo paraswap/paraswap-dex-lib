@@ -5,7 +5,6 @@ import { testE2E } from '../../../tests/utils-e2e';
 import {
   Tokens,
   Holders,
-  NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';

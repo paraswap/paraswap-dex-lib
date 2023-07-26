@@ -62,6 +62,7 @@ export class WBETHPool extends CurvePool {
       this.handleRemoveLiquidityOne.bind(this);
     this.handlers['CommitNewFee'] = this.handleNewFee.bind(this);
     this.handlers['Transfer'] = this.handleCoinTransfer.bind(this);
+    this.handlers['ExchangeRateUpdated'] = this.handleExchangeRateUpdated.bind(this);
   }
 
   public processLog(
@@ -90,6 +91,19 @@ export class WBETHPool extends CurvePool {
       catchParseLogError(e, this.logger);
     }
     return _state;
+  }
+
+  handleExchangeRateUpdated(event: any, state: PoolState) {
+    this.logger.info(`CurveV1: wbETH pool handle exchange rate updated state before: ${JSON.stringify(state)}`);
+
+    const newExchangeRateUpdated = bigNumberify(event.args.newExchangeRate);
+    this.logger.info(`CurveV1: wbETH pool handle exchange rate updated: ${newExchangeRateUpdated}`);
+
+    state.stored_rates![1] = newExchangeRateUpdated;
+
+    this.logger.info(`CurveV1: wbETH pool handle exchange rate updated state after: ${JSON.stringify(state)}`);
+
+    return state;
   }
 
   handleCoinTransfer(event: any, state: PoolState, log: Log): PoolState {
@@ -148,7 +162,7 @@ export class WBETHPool extends CurvePool {
     log: Log,
   ): PoolState {
     const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
-    const { A, stored_rates: rates, balances, fee, supply: total_supply } = state;
+    const { A, stored_rates: rates, fee, supply: total_supply } = state;
     const amp = A.times(A_PRECISION);
 
     const old_balances = this._balances(state);
@@ -211,7 +225,7 @@ export class WBETHPool extends CurvePool {
     const old_balances: BigNumber[] = this._balances(state, msgValue);
     const xp: BigNumber[] = this._xp_mem(rates!, old_balances);
 
-    const x: BigNumber = xp[i].plus(dx.times(rates![i]).idiv(this.PRECISION));
+    const x = xp[i].plus(dx.times(rates![i]).idiv(this.PRECISION));
     const y = this._get_y(i, j, x, xp, state.A);
 
     let dy = xp[j].minus(y).minus(1);
@@ -228,9 +242,11 @@ export class WBETHPool extends CurvePool {
     }
 
     if(i === 0) {
-      state.eth_balance = state.eth_balance!.minus(dy);
+      state.eth_balance = state.eth_balance!.plus(dx);
+      state.token_balance = state.token_balance!.minus(dy);
     } else {
-      state.token_balance = state.token_balance!.minus(dx);
+      state.token_balance = state.token_balance!.plus(dx);
+      state.eth_balance = state.eth_balance?.minus(dy);
     }
 
     this.logger.info(`CurveV1: wbETH pool exchange after state: ${JSON.stringify(state)}`);
@@ -415,12 +431,12 @@ export class WBETHPool extends CurvePool {
     state.supply = total_supply;
 
     if(i === 0) {
-      state.eth_balance = state.eth_balance!.minus(dy[0]);
+      state.eth_balance = state.eth_balance!.minus(dy);
     } else {
-      state.token_balance = state.token_balance!.minus(dy[0]);
+      state.token_balance = state.token_balance!.minus(dy);
     }
 
-    return dy[0];
+    return dy;
   }
 
   private _calc_withdraw_one_coin(
