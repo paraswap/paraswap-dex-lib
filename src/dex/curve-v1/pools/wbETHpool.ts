@@ -125,15 +125,24 @@ export class WBETHPool extends CurvePool {
   }
 
   handleCoinTransfer(event: any, state: PoolState, log: Log): PoolState {
+    this.logger.info(`CurveV1: wbETH pool handle coin transfer before lastTransferredCoin: ${this.lastTransferredCoin}`);
+
     const from = event.args.src;
     const coin = log.address;
 
+    this.logger.info(`CurveV1: wbETH pool handle coin transfer coin: ${coin}`);
+
     if (from.toLowerCase() === this.address.toLowerCase())
       this.lastTransferredCoin = coin.toLowerCase();
+
+    this.logger.info(`CurveV1: wbETH pool handle coin transfer after lastTransferredCoin: ${this.lastTransferredCoin}`);
+
     return state;
   }
 
   handleRemoveLiquidityOne(event: any, state: PoolState, log: Log): PoolState {
+    this.logger.info(`CurveV1: wbETH pool handle remove liquidity one before state: ${JSON.stringify(state)}`);
+
     const _token_amount = bigNumberify(stringify(event.args.token_amount));
     const i = _.findIndex(
       this.COINS,
@@ -146,17 +155,27 @@ export class WBETHPool extends CurvePool {
       return state;
     }
     this.remove_liquidity_one_coin(_token_amount, i, state);
+
+    this.logger.info(`CurveV1: wbETH pool handle remove liquidity one after state: ${JSON.stringify(state)}`);
+
     return state;
   }
 
   handleNewFee(event: any, state: PoolState, log: Log): PoolState {
+    this.logger.info(`CurveV1: wbETH pool handle new fee before state: ${JSON.stringify(state)}`);
+
     const fee = bigNumberify(stringify(event.args.new_fee));
 
     state.fee = fee;
+
+    this.logger.info(`CurveV1: wbETH pool handle new fee after state: ${JSON.stringify(state)}`);
+
     return state;
   }
 
   handleRemoveLiquidity(event: any, state: PoolState, log: Log): PoolState {
+    this.logger.info(`CurveV1: wbETH pool handle remove liquidity before state: ${JSON.stringify(state)}`);
+
     const token_supply = bigNumberify(stringify(event.args.token_supply));
     const amounts = event.args.token_amounts
       .map(stringify)
@@ -171,6 +190,9 @@ export class WBETHPool extends CurvePool {
     }
 
     state.supply = token_supply;
+
+    this.logger.info(`CurveV1: wbETH pool handle remove liquidity after state: ${JSON.stringify(state)}`);
+
     return state;
   }
 
@@ -179,6 +201,8 @@ export class WBETHPool extends CurvePool {
     state: PoolState,
     log: Log,
   ): PoolState {
+    this.logger.info(`CurveV1: wbETH pool handle remove liquidity imbalances before state: ${JSON.stringify(state)}`);
+
     const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
     const { A, stored_rates: rates, fee, supply: total_supply } = state;
     const amp = A.times(A_PRECISION);
@@ -222,6 +246,19 @@ export class WBETHPool extends CurvePool {
     if(! amounts[1].eq(BN_0)) {
       state.token_balance = state.token_balance!.minus(amounts[1]);
     }
+
+    this.logger.info(`CurveV1: wbETH pool handle remove liquidity imbalances after state: ${JSON.stringify(state)}`);
+
+    return state;
+  }
+
+  handleAddLiquidity(event: any, state: PoolState, log: Log): PoolState {
+    this.logger.info(`CurveV1: wbETH pool handle add liquidity before state: ${JSON.stringify(state)}`);
+
+    const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
+    this.add_liquidity(amounts, state);
+
+    this.logger.info(`CurveV1: wbETH pool handle add liquidity after state: ${JSON.stringify(state)}`);
 
     return state;
   }
@@ -438,13 +475,13 @@ export class WBETHPool extends CurvePool {
     i: number,
     state: PoolState,
   ): BigNumber {
-    let { dy } = this._calc_withdraw_one_coin(
+    let { dy, dy_fee } = this._calc_withdraw_one_coin(
       token_amount,
       i,
       state,
     );
 
-    state.admin_balances![i] = state.admin_balances![i].plus(dy[1].times(ADMIN_FEE).idiv(this.FEE_DENOMINATOR));
+    state.admin_balances![i] = state.admin_balances![i].plus(dy_fee.times(ADMIN_FEE).idiv(this.FEE_DENOMINATOR));
     const total_supply = state.supply.minus(token_amount);
     state.supply = total_supply;
 
@@ -486,7 +523,7 @@ export class WBETHPool extends CurvePool {
       xp_reduced[j] = xp_j.minus(base_fee.times(dx_expected).idiv(this.FEE_DENOMINATOR));
     }
 
-    let dy = xp_reduced[i].minus(this.get_y_D(amp, i, xp_reduced, D1));
+    let dy: BigNumber = xp_reduced[i].minus(this.get_y_D(amp, i, xp_reduced, D1));
     const dy_0 = xp[i].minus(new_y).times(this.PRECISION).idiv(rates![i]);
     dy = dy.minus(1).times(this.PRECISION).idiv(rates![i]);
 
