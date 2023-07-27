@@ -2,11 +2,15 @@ import { Address, Log } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
 import { bigNumberify, catchParseLogError, stringify } from '../../../utils';
 import StableSwapWBETH from '../../../abi/curve-v1/StableSwapWBETH.json';
+import wBETHAbi from '../../../abi/wBETH.json';
 import BigNumber from 'bignumber.js';
 import { BN_0, BN_1, BN_2 } from '../../../bignumber-constants';
 import _ from 'lodash';
 import { CurvePool, PoolState } from './curve-pool';
 import { DeepReadonly } from 'ts-essentials';
+import { Interface } from '@ethersproject/abi';
+
+const wBETHInterface = new Interface(wBETHAbi);
 
 const pool = 'wbETH';
 export const address: Address =
@@ -22,6 +26,7 @@ const COINS = [
   '0xa2e3356610840701bdf5611a53974510ae27e2e1',
 ];
 const trackCoins = true;
+
 
 export class WBETHPool extends CurvePool {
   public isAdminBalancesSupported: boolean = true;
@@ -56,6 +61,19 @@ export class WBETHPool extends CurvePool {
       _USE_LENDING,
       _COINS,
     );
+
+    this.decoder = (log: Log) => {
+      if (
+        this.trackCoins &&
+        _.findIndex(
+          this.COINS,
+          c => c.toLowerCase() === log.address.toLowerCase(),
+        ) != -1
+      )
+        return wBETHInterface.parseLog(log);
+
+      return this.poolIface.parseLog(log);
+    };
 
     // Add pool specific handlers or overloaded handlers
     this.handlers['RemoveLiquidityOne'] =
