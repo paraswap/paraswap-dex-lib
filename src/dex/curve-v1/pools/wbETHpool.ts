@@ -127,7 +127,7 @@ export class WBETHPool extends CurvePool {
   handleCoinTransfer(event: any, state: PoolState, log: Log): PoolState {
     this.logger.info(`CurveV1: wbETH pool handle coin transfer before lastTransferredCoin: ${this.lastTransferredCoin}`);
 
-    const from = event.args.src;
+    const from = event.args.from;
     const coin = log.address;
 
     this.logger.info(`CurveV1: wbETH pool handle coin transfer coin: ${coin}`);
