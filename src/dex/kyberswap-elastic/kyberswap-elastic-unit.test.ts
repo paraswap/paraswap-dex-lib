@@ -36,7 +36,7 @@ describe('KyberswapElastic', function () {
   let blockNumber: number;
   let kyberswapElastic: KyberswapElastic;
 
-  describe('Mainnet', () => {
+  describe('kyberswap-elastic-pool', () => {
     const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
 

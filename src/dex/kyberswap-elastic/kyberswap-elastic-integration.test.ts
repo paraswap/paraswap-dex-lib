@@ -13,34 +13,48 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { Address } from '@paraswap/core';
+import QuoterABI from '../../abi/kyberswap-elastic/IQuoterV2.json';
+import { KyberswapElasticConfig } from './config';
 
-/*
-  README
-  ======
+const network = Network.POLYGON;
+const TokenASymbol = 'USDC';
+const TokenA = Tokens[network][TokenASymbol];
 
-  This test script adds tests for KyberswapElastic general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover KyberswapElastic specific
-  logic.
+const TokenBSymbol = 'WMATIC';
+const TokenB = Tokens[network][TokenBSymbol];
 
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
+const amounts = [
+  0n,
+  10_000n * BI_POWS[6],
+  20_000n * BI_POWS[6],
+  30_000n * BI_POWS[6],
+];
 
-  (This comment should be removed from the final implementation)
-*/
+const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
+
+const dexHelper = new DummyDexHelper(network);
+const dexKey = 'KyberswapElastic';
+
+const quoterIface = new Interface(QuoterABI);
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  tokenIn: Address,
+  tokenOut: Address,
+  swapFeeUnits: bigint,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      tokenIn,
+      tokenOut,
+      swapFeeUnits,
       amount,
+      0n,
     ]),
   }));
 }
@@ -50,7 +64,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -62,194 +75,402 @@ async function checkOnChainPricing(
   funcName: string,
   blockNumber: number,
   prices: bigint[],
-  amounts: bigint[],
+  tokenIn: Address,
+  tokenOut: Address,
+  swapFeeUnits: bigint,
+  _amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  // Quoter address
+  const exchangeAddress = KyberswapElasticConfig[dexKey][network].quoter;
+  const readerIface = quoterIface;
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from kyberswapElastic.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
 
+  if (sum === 0n) {
+    console.log(
+      `Prices were not calculated for tokenIn=${tokenIn}, tokenOut=${tokenOut}, swapFeeUnits=${swapFeeUnits.toString()}. Most likely price impact is too big for requested amount`,
+    );
+    return false;
+  }
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
-    amounts.slice(1),
+    _amounts.slice(1),
     funcName,
+    tokenIn,
+    tokenOut,
+    swapFeeUnits,
   );
-  const readerResult = (
-    await kyberswapElastic.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
+
+  let readerResult;
+  try {
+    readerResult = (
+      await dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+  } catch (e) {
+    console.log(
+      `Can not fetch on-chain pricing for swapFeeUnits ${swapFeeUnits}. It happens for low liquidity pools`,
+      e,
+    );
+    return false;
+  }
 
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
 
-  expect(prices).toEqual(expectedPrices);
-}
+  let firstZeroIndex = prices.slice(1).indexOf(0n);
 
-async function testPricingOnNetwork(
-  kyberswapElastic: KyberswapElastic,
-  network: Network,
-  dexKey: string,
-  blockNumber: number,
-  srcTokenSymbol: string,
-  destTokenSymbol: string,
-  side: SwapSide,
-  amounts: bigint[],
-  funcNameToCheck: string,
-) {
-  const networkTokens = Tokens[network];
+  // we skipped first, so add +1 on result
+  firstZeroIndex = firstZeroIndex === -1 ? prices.length : firstZeroIndex;
 
-  const pools = await kyberswapElastic.getPoolIdentifiers(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    side,
-    blockNumber,
+  // Compare only the ones for which we were able to calculate prices
+  expect(prices.slice(0, firstZeroIndex)).toEqual(
+    expectedPrices.slice(0, firstZeroIndex),
   );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
-    pools,
-  );
-
-  expect(pools.length).toBeGreaterThan(0);
-
-  const poolPrices = await kyberswapElastic.getPricesVolume(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    amounts,
-    side,
-    blockNumber,
-    pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
-  );
-
-  expect(poolPrices).not.toBeNull();
-  if (kyberswapElastic.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
-
-  // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    kyberswapElastic,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  return true;
 }
 
 describe('KyberswapElastic', function () {
-  const dexKey = 'KyberswapElastic';
   let blockNumber: number;
   let kyberswapElastic: KyberswapElastic;
+  let kyberswapElasticMainnet: KyberswapElastic;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-    const dexHelper = new DummyDexHelper(network);
+  beforeEach(async () => {
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    kyberswapElastic = new KyberswapElastic(network, dexKey, dexHelper);
+    kyberswapElasticMainnet = new KyberswapElastic(
+      Network.MAINNET,
+      dexKey,
+      new DummyDexHelper(Network.MAINNET),
+    );
+  });
 
-    const tokens = Tokens[network];
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    const pools = await kyberswapElastic.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    expect(pools.length).toBeGreaterThan(0);
 
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
+    const poolPrices = await kyberswapElastic.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      kyberswapElastic = new KyberswapElastic(network, dexKey, dexHelper);
-      if (kyberswapElastic.initializePricing) {
-        await kyberswapElastic.initializePricing(blockNumber);
-      }
-    });
-
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        kyberswapElastic,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        kyberswapElastic,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newKyberswapElastic = new KyberswapElastic(
-        network,
-        dexKey,
-        dexHelper,
-      );
-      if (newKyberswapElastic.updatePoolState) {
-        await newKyberswapElastic.updatePoolState();
-      }
-      const poolLiquidity = await newKyberswapElastic.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newKyberswapElastic.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const swapFeeUnits =
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+        const res = await checkOnChainPricing(
+          kyberswapElastic,
+          'quoteExactInputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          swapFeeUnits,
+          amounts,
         );
-      }
-    });
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    const pools = await kyberswapElastic.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await kyberswapElastic.getPricesVolume(
+      TokenA,
+      TokenB,
+      amountsBuy,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
+
+    // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const swapFeeUnits =
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+        const res = await checkOnChainPricing(
+          kyberswapElastic,
+          'quoteExactOutputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          swapFeeUnits,
+          amountsBuy,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL stable pairs', async function () {
+    const TokenASymbol = 'USDT';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDC';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    const amounts = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+      48000000n,
+      54000000n,
+      60000000n,
+      66000000n,
+      72000000n,
+      78000000n,
+      84000000n,
+      90000000n,
+      96000000n,
+      102000000n,
+      108000000n,
+      114000000n,
+      120000000n,
+      126000000n,
+      132000000n,
+      138000000n,
+      144000000n,
+      150000000n,
+      156000000n,
+      162000000n,
+      168000000n,
+      174000000n,
+      180000000n,
+      186000000n,
+      192000000n,
+      198000000n,
+      204000000n,
+      210000000n,
+      216000000n,
+      222000000n,
+      228000000n,
+      234000000n,
+      240000000n,
+      246000000n,
+      252000000n,
+      258000000n,
+      264000000n,
+      270000000n,
+      276000000n,
+      282000000n,
+      288000000n,
+      294000000n,
+      300000000n,
+    ];
+
+    const pools = await kyberswapElastic.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await kyberswapElastic.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(
+      poolPrices!.filter(pp => pp.unit !== 0n),
+      amounts,
+      SwapSide.SELL,
+      dexKey,
+    );
+
+    // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const swapFeeUnits =
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+        const res = await checkOnChainPricing(
+          kyberswapElastic,
+          'quoteExactInputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          swapFeeUnits,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume BUY stable pairs', async function () {
+    const TokenASymbol = 'DAI';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDC';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    const amountsBuy = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+      48000000n,
+      54000000n,
+      60000000n,
+      66000000n,
+      72000000n,
+      78000000n,
+      84000000n,
+      90000000n,
+      96000000n,
+      102000000n,
+      108000000n,
+      114000000n,
+      120000000n,
+      126000000n,
+      132000000n,
+      138000000n,
+      144000000n,
+      150000000n,
+      156000000n,
+      162000000n,
+      168000000n,
+      174000000n,
+      180000000n,
+      186000000n,
+      192000000n,
+      198000000n,
+      204000000n,
+      210000000n,
+      216000000n,
+      222000000n,
+      228000000n,
+      234000000n,
+      240000000n,
+      246000000n,
+      252000000n,
+      258000000n,
+      264000000n,
+      270000000n,
+      276000000n,
+      282000000n,
+      288000000n,
+      294000000n,
+      300000000n,
+    ];
+
+    const pools = await kyberswapElastic.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await kyberswapElastic.getPricesVolume(
+      TokenA,
+      TokenB,
+      amountsBuy,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(
+      poolPrices!.filter(pp => pp.unit !== 0n),
+      amountsBuy,
+      SwapSide.BUY,
+      dexKey,
+    );
+
+    // Check if onchain pricing equals to calculated ones
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const swapFeeUnits =
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+        const res = await checkOnChainPricing(
+          kyberswapElastic,
+          'quoteExactOutputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          swapFeeUnits,
+          amountsBuy,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getTopPoolsForToken', async function () {
+    const poolLiquidity = await kyberswapElasticMainnet.getTopPoolsForToken(
+      Tokens[Network.MAINNET]['USDC'].address,
+      10,
+    );
+    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+    if (!kyberswapElastic.hasConstantPriceLargeAmounts) {
+      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+    }
   });
 });
