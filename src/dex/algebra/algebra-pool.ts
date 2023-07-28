@@ -2,13 +2,17 @@ import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly, assert } from 'ts-essentials';
 import { Address, BlockHeader, Log, Logger } from '../../types';
-import { bigIntify, catchParseLogError } from '../../utils';
+import { bigIntify, catchParseLogError, int16 } from '../../utils';
 import {
   InitializeStateOptions,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState } from './types';
+import {
+  PoolState,
+  TickBitMapMappingsWithBigNumber,
+  TickInfoMappingsWithBigNumber,
+} from './types';
 import { ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import AlgebraABI from '../../abi/algebra/AlgebraPool.abi.json';
@@ -28,6 +32,7 @@ import {
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
 import { Constants } from './lib/Constants';
+import { Network } from '../../constants';
 
 export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -165,7 +170,13 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     return null; // ignore unrecognized event
   }
 
-  private _getStateRequestCallData() {
+  getBitmapRangeToRequest() {
+    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
+  }
+
+  private async _fetchPoolStateSingleStep(
+    blockNumber: number,
+  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
     const callData: MultiCallParams<
       bigint | DecodedStateMultiCallResultWithRelativeBitmaps
     >[] = [
@@ -198,16 +209,6 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       },
     ];
 
-    return callData;
-  }
-
-  getBitmapRangeToRequest() {
-    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
-  }
-
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    const callData = this._getStateRequestCallData();
-
     const [resBalance0, resBalance1, resState] =
       await this.dexHelper.multiWrapper.tryAggregate<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
@@ -226,6 +227,123 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       resBalance1.returnData,
       resState.returnData,
     ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
+
+    return [balance0, balance1, _state];
+  }
+
+  private async _fetchPoolStateMultiStep(
+    blockNumber: number,
+  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+    const balancesAndGlobalStateCalldata: MultiCallParams<
+      bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+    >[] = [
+      {
+        target: this.token0,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.token1,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.stateMultiContract.options.address,
+        callData: this.stateMultiContract.methods
+          .getFullStateWithoutTicks(
+            this.factoryAddress,
+            this.token0,
+            this.token1,
+            0,
+            0,
+          )
+          .encodeABI(),
+        decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+      },
+    ];
+
+    const [resBalance0, resBalance1, stateWithoutTicksAndTickBitmap] =
+      await this.dexHelper.multiWrapper.tryAggregate<
+        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      >(
+        false,
+        balancesAndGlobalStateCalldata,
+        blockNumber,
+        this.dexHelper.multiWrapper.defaultBatchSize,
+        false,
+      );
+
+    assert(stateWithoutTicksAndTickBitmap.success, 'Pool does not exist');
+
+    const [balance0, balance1, _stateWithoutTicksAndTickBitmap] = [
+      resBalance0.returnData,
+      resBalance1.returnData,
+      stateWithoutTicksAndTickBitmap.returnData,
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
+
+    const {
+      globalState: { tick },
+    } = _stateWithoutTicksAndTickBitmap;
+    const currentBitmapIndex = int16(
+      (BigInt(tick) / Constants.TICK_SPACING) >> 8n,
+    );
+
+    const buffer = this.getBitmapRangeToRequest();
+    const startBitMapIndex = currentBitmapIndex - buffer;
+    const endBitMapIndex = currentBitmapIndex + buffer;
+    const allBitMapIndices = Array.from(
+      { length: 2 * Number(buffer) + 1 },
+      () => startBitMapIndex + endBitMapIndex,
+    );
+
+    const ticksAndBitMaps = await Promise.all(
+      allBitMapIndices.map(relativeTick => {
+        return this.stateMultiContract.methods
+          .getAdditionalBitmapWithTicks(
+            this.factoryAddress,
+            this.token0,
+            this.token1,
+            relativeTick,
+            relativeTick,
+          )
+          .call() as [
+          TickBitMapMappingsWithBigNumber[],
+          TickInfoMappingsWithBigNumber[],
+        ];
+      }),
+    );
+
+    const _state: DecodedStateMultiCallResultWithRelativeBitmaps = {
+      ..._stateWithoutTicksAndTickBitmap,
+      tickBitmap: ticksAndBitMaps.flatMap(v => v[0]),
+      ticks: ticksAndBitMaps.flatMap(v => v[1]),
+    };
+
+    return [balance0, balance1, _state];
+  }
+
+  async _fetchInitStateMultiStrategies(
+    blockNumber: number,
+  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+    try {
+      return await this._fetchPoolStateSingleStep(blockNumber);
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('Pool does not exist'))
+        throw e;
+
+      if (this.dexHelper.config.data.network != Network.ZKEVM) throw e;
+
+      return this._fetchPoolStateMultiStep(blockNumber);
+    }
+  }
+
+  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    const [balance0, balance1, _state] =
+      await this._fetchInitStateMultiStrategies(blockNumber);
 
     const tickBitmap = {};
     const ticks = {};
