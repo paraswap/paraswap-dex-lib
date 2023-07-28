@@ -260,7 +260,22 @@ export class WBETHPool extends CurvePool {
     this.logger.info(`CurveV1: wbETH pool handle add liquidity before state: ${JSON.stringify(state)}`);
 
     const amounts = event.args.token_amounts.map(stringify).map(bigNumberify);
-    this.add_liquidity(amounts, state);
+    const fees = event.args.fees.map(stringify).map(bigNumberify);
+    const total_supply = bigNumberify(stringify(event.args.token_supply));
+
+    for (let i = 0; i < this.N_COINS; i++) {
+      state.admin_balances![i] = state.admin_balances![i].plus(fees[i].times(ADMIN_FEE).idiv(this.FEE_DENOMINATOR));
+    }
+
+    if(amounts[0].gt(0)) {
+      state.eth_balance = state.eth_balance!.plus(amounts[0]);
+    }
+
+    if(amounts[1].gt(0)) {
+      state.token_balance = state.token_balance!.plus(amounts[1]);
+    }
+
+    state.supply = total_supply;
 
     this.logger.info(`CurveV1: wbETH pool handle add liquidity after state: ${JSON.stringify(state)}`);
 
@@ -419,59 +434,6 @@ export class WBETHPool extends CurvePool {
     }
 
     throw Error('Error when calculate y');
-  }
-
-  add_liquidity(amounts: BigNumber[], state: PoolState): BigNumber {
-    const { stored_rates: rates, A, supply, fee } = state;
-
-    const msgValue = amounts[0];
-
-    const old_balances = this._balances(state, msgValue);
-    const amp = A.times(A_PRECISION);
-
-    const D0 = this.get_D_mem(rates!, old_balances, amp);
-    let total_supply = supply;
-    const new_balances = old_balances.slice(0);
-
-    for (let i = 0; i < this.N_COINS; i++) {
-      const amount: BigNumber = amounts[i];
-      new_balances[i] = new_balances[i].plus(amount);
-    }
-
-    const D1 = this.get_D_mem(rates!, new_balances, amp);
-    const fees = new Array(N_COINS).fill(0n);
-    let mint_amount = BN_0;
-
-    if (total_supply.gt(BN_0)) {
-      const base_fee = fee.times(this.N_COINS).idiv(4 * (this.N_COINS - 1));
-      for (let i = 0; i < this.N_COINS; i++) {
-        const ideal_balance: BigNumber = D1.times(old_balances[i]).idiv(D0);
-        let difference = BN_0;
-        const new_balance = new_balances[i];
-        if(ideal_balance.gt(new_balance)) {
-          difference = ideal_balance.minus(new_balance);
-        } else {
-          difference = new_balance.minus(ideal_balance);
-        }
-        fees[i] = base_fee.times(difference).idiv(this.FEE_DENOMINATOR);
-        state.admin_balances![i] = state.admin_balances![i].plus(fees[i].times(ADMIN_FEE).idiv(this.FEE_DENOMINATOR));
-        new_balances[i] = new_balances[i].minus(fees[i]);
-      }
-      const xp = this._xp_mem(rates!, new_balances);
-      const D2 = this.get_D(xp, amp);
-      mint_amount = total_supply.times(D2.minus(D0)).idiv(D0);
-    } else {
-      mint_amount = D1;
-    }
-
-    if(amounts[1].gt(0)) {
-      state.token_balance = state.token_balance!.plus(amounts[1]);
-    }
-
-    total_supply = total_supply.plus(mint_amount);
-    state.supply = total_supply;
-
-    return mint_amount;
   }
 
   remove_liquidity_one_coin(
