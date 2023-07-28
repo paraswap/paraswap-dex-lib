@@ -114,7 +114,11 @@ export class WBETHPool extends CurvePool {
   handleExchangeRateUpdated(event: any, state: PoolState) {
     this.logger.info(`CurveV1: wbETH pool handle exchange rate updated state before: ${JSON.stringify(state)}`);
 
-    const newExchangeRateUpdated = bigNumberify(event.args.newExchangeRate);
+    this.logger.info(`CurveV1: wbETH pool handle exchange rate updated event args: ${JSON.stringify(event.args)}`);
+    this.logger.info(`CurveV1: wbETH pool handle exchange rate updated newExchangeRate: ${event.args.newExchangeRate}`);
+    this.logger.info(`CurveV1: wbETH pool handle exchange rate updated newExchangeRate big number: ${bigNumberify(stringify(event.args.newExchangeRate))}`);
+
+    const newExchangeRateUpdated = bigNumberify(stringify(event.args.newExchangeRate));
     this.logger.info(`CurveV1: wbETH pool handle exchange rate updated: ${newExchangeRateUpdated}`);
 
     state.stored_rates![1] = newExchangeRateUpdated;
