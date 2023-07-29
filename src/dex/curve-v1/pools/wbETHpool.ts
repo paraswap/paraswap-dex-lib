@@ -148,6 +148,8 @@ export class WBETHPool extends CurvePool {
     this.logger.info(`CurveV1: wbETH pool handle remove liquidity one before state: ${JSON.stringify(state)}`);
 
     const _token_amount = bigNumberify(stringify(event.args.token_amount));
+    const token_supply = bigNumberify(stringify(event.args.token_supply));
+
     const i = _.findIndex(
       this.COINS,
       c => c.toLowerCase() === this.lastTransferredCoin?.toLowerCase(),
@@ -158,7 +160,7 @@ export class WBETHPool extends CurvePool {
       );
       return state;
     }
-    this.remove_liquidity_one_coin(_token_amount, i, state);
+    this.remove_liquidity_one_coin(_token_amount, token_supply, i, state);
 
     this.logger.info(`CurveV1: wbETH pool handle remove liquidity one after state: ${JSON.stringify(state)}`);
 
@@ -438,6 +440,7 @@ export class WBETHPool extends CurvePool {
 
   remove_liquidity_one_coin(
     token_amount: BigNumber,
+    token_supply: BigNumber,
     i: number,
     state: PoolState,
   ): BigNumber {
@@ -448,8 +451,7 @@ export class WBETHPool extends CurvePool {
     );
 
     state.admin_balances![i] = state.admin_balances![i].plus(dy_fee.times(ADMIN_FEE).idiv(this.FEE_DENOMINATOR));
-    const total_supply = state.supply.minus(token_amount);
-    state.supply = total_supply;
+    state.supply = token_supply;
 
     if(i === 0) {
       state.eth_balance = state.eth_balance!.minus(dy);
@@ -471,8 +473,8 @@ export class WBETHPool extends CurvePool {
     const xp = this._xp_mem(rates!, this._balances(state));
     const D0 = this._get_D(xp, amp);
 
-    const total_supply = supply;
-    const D1 = D0.minus(_token_amount).idiv(total_supply);
+    const total_supply = bigNumberify(supply);
+    const D1 = D0.minus(_token_amount.idiv(total_supply));
     const new_y = this.get_y_D(amp, i, xp, D1);
 
     const base_fee = fee.times(this.N_COINS).idiv(4 * (this.N_COINS - 1));
@@ -480,8 +482,8 @@ export class WBETHPool extends CurvePool {
 
     for (const j of _.range(N_COINS)) {
       let dx_expected = BN_0;
-      const xp_j = xp[j];
-      if(j == i) {
+      const xp_j = bigNumberify(xp[j]);
+      if(j === i) {
         dx_expected = xp_j.times(D1).idiv(D0).minus(new_y);
       } else {
         dx_expected = xp_j.minus(xp_j.times(D1).idiv(D0));
