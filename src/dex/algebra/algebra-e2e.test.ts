@@ -133,26 +133,52 @@ function testForNetwork(
   });
 }
 
-describe('QuickSwapV3 E2E', () => {
-  const dexKey = 'QuickSwapV3';
+describe('Algebra', () => {
+  describe('QuickSwapV3 E2E', () => {
+    const dexKey = 'QuickSwapV3';
 
-  describe('Polygon', () => {
-    const network = Network.POLYGON;
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'DAI';
+    describe('Polygon', () => {
+      const network = Network.POLYGON;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'DAI';
 
-    const tokenAAmount: string = '1000000000';
-    const tokenBAmount: string = '1000000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
+
+  describe('ZyberSwapV3', () => {
+    const dexKey = 'ZyberSwapV3';
+
+    describe('Arbitrum', () => {
+      const network = Network.ARBITRUM;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
   });
 });

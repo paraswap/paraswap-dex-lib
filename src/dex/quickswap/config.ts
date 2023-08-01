@@ -13,15 +13,6 @@ export const QuickSwapConfig: DexConfigMap<DexParams> = {
         '0x6c1bebd370ba84753516bc1393c0d0a6c645856da55f5393ac8ab3d6dbc861d3',
     },
   },
-  ZyberSwapV3: {
-    [Network.ARBITRUM]: {
-      factoryAddress: '0x9C2ABD632771b433E5E7507BcaA41cA3b25D8544',
-      router: '0xFa58b8024B49836772180f2Df902f231ba712F72',
-      quoteAddress: '0xAeD211346Fa2E6A5063b4f273BCf7DDbD0368d62',
-      initCode:
-        '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
-    },
-  },
   ThenaFusion: {
     [Network.BSC]: {
       factoryAddress: '0x306F06C147f064A010530292A1EB6737c3e378e4',
