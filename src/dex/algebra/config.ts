@@ -33,6 +33,22 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       deployer: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270', // validate
     },
   },
+  ZyberSwapV3: {
+    [Network.ARBITRUM]: {
+      factory: '0x9C2ABD632771b433E5E7507BcaA41cA3b25D8544',
+      router: '0xFa58b8024B49836772180f2Df902f231ba712F72',
+      quoter: '0xAeD211346Fa2E6A5063b4f273BCf7DDbD0368d62',
+      initHash:
+        '0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      algebraStateMulticall: '0xcd7C50ba57136b6B461168D1f634E2CffA4c298D',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      deployer: '0x24e85f5f94c6017d2d87b434394e87df4e4d56e3',
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -43,5 +59,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.ZKEVM]: {
     [SwapSide.SELL]: [{ name: 'PolygonZkEvmAdapter01', index: 1 }],
     [SwapSide.BUY]: [{ name: 'PolygonZkEvmBuyAdapter', index: 1 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 3 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 2 }],
   },
 };
