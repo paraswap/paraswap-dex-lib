@@ -59,7 +59,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       algebraStateMulticall: '0xcd7C50ba57136b6B461168D1f634E2CffA4c298D',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info-optimism-pp',
-      uniswapMulticall: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0xc0d4323426c709e8d04b5b130e7f059523464a91',
     },
   },
