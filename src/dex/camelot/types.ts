@@ -1,11 +1,5 @@
-import {
-  UniswapV2Data,
-  UniswapV2PoolOrderedParams,
-  DexParams as UniswapV2DexParams,
-} from '../uniswap-v2/types';
+import { DexParams as UniswapV2DexParams } from '../uniswap-v2/types';
 import { SolidlyPoolOrderedParams } from '../solidly/types';
-
-export type CamelotData = UniswapV2Data;
 
 export type CamelotPoolState = {
   reserve0: string;
