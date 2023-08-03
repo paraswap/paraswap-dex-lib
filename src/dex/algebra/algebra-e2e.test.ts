@@ -180,5 +180,25 @@ describe('Algebra', () => {
         nativeTokenAmount,
       );
     });
+
+    describe('Optimism', () => {
+      const network = Network.OPTIMISM;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '50000';
+      const nativeTokenAmount = '100000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      )
+    });
   });
 });

@@ -139,6 +139,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       this.getPoolIdentifier(srcAddress, destAddress)
     ] as AlgebraEventPool | null | undefined;
 
+    console.log('POOL : ', pool);
     if (pool === null) return null;
 
     if (pool) {
@@ -438,6 +439,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       let state = pool.getState(blockNumber);
 
+      console.log('STATE: ', state);
       if (state === null) {
         if (this.network === Network.ZKEVM) {
           if (pool.initFailed) return null;
