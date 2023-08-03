@@ -96,6 +96,7 @@ export function decodeStateMultiCallResultWithRelativeBitmapsV1_9(
             uint16 timepointIndex,
             uint8 communityFeeToken0,
             uint8 communityFeeToken1,
+            bool unlocked,
           ) globalState,
           uint128 liquidity,
           int24 tickSpacing,
