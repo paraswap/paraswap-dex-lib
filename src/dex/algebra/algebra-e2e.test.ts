@@ -183,7 +183,7 @@ describe('Algebra', () => {
   });
 
   describe('CamelotV3', () => {
-    const dexKey = 'ZyberSwapV3';
+    const dexKey = 'CamelotV3';
 
     describe('Arbitrum', () => {
       const network = Network.ARBITRUM;
