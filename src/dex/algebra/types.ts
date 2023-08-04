@@ -69,6 +69,7 @@ export type DexParams = {
   subgraphURL: string;
   initHash: string;
   version: 'v1.1' | 'v1.9';
+  forceRPC?: boolean;
 };
 
 export type TickBitMapMappingsWithBigNumber = {
