@@ -698,6 +698,14 @@ export const Tokens: {
       address: '0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46',
       decimals: 18,
     },
+    EUROC: {
+      address: '0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD',
+      decimals: 6,
+    },
+    GMX: {
+      address: '0x62edc0692BD897D2295872a9FFCac5425011c661',
+      decimals: 18,
+    },
   },
   [Network.ARBITRUM]: {
     DAI: {
