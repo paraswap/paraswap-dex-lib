@@ -9,14 +9,14 @@ import {
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  PoolState,
+  DecodedStateMultiCallResultWithRelativeBitmapsV1_9,
+  PoolState_v1_9,
   TickBitMapMappingsWithBigNumber,
   TickInfoMappingsWithBigNumber,
 } from './types';
 import { ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
-import AlgebraABI from '../../abi/algebra/AlgebraPool.abi.json';
-import { DecodedStateMultiCallResultWithRelativeBitmaps } from './types';
+import AlgebraV1_9ABI from '../../abi/algebra/AlgebraPool-v1_9.abi.json';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
@@ -24,7 +24,7 @@ import {
 } from '../uniswap-v3/constants';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
+import { decodeStateMultiCallResultWithRelativeBitmapsV1_9 } from './utils';
 import { AlgebraMath } from './lib/AlgebraMath';
 import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
 import {
@@ -34,14 +34,14 @@ import {
 import { Constants } from './lib/Constants';
 import { Network } from '../../constants';
 
-export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
+export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9> {
   handlers: {
     [event: string]: (
       event: any,
-      state: DeepReadonly<PoolState>,
+      state: DeepReadonly<PoolState_v1_9>,
       log: Readonly<Log>,
       blockHeader: BlockHeader,
-    ) => DeepReadonly<PoolState> | null;
+    ) => DeepReadonly<PoolState_v1_9> | null;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -52,7 +52,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   readonly token0: Address;
   readonly token1: Address;
 
-  public readonly poolIface = new Interface(AlgebraABI);
+  public readonly poolIface = new Interface(AlgebraV1_9ABI);
 
   public initFailed = false;
   public initRetryAttemptCount = 0;
@@ -84,6 +84,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['Flash'] = this.handleFlashEvent.bind(this);
     this.handlers['Collect'] = this.handleCollectEvent.bind(this);
     this.handlers['CommunityFee'] = this.handleCommunityFee.bind(this);
+    this.handlers['TickSpacing'] = this.handleTickSpacing.bind(this);
   }
 
   get poolAddress() {
@@ -99,16 +100,16 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   async initialize(
     blockNumber: number,
-    options?: InitializeStateOptions<PoolState>,
+    options?: InitializeStateOptions<PoolState_v1_9>,
   ) {
     await super.initialize(blockNumber, options);
   }
 
   protected async processBlockLogs(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<PoolState_v1_9>,
     logs: Readonly<Log>[],
     blockHeader: Readonly<BlockHeader>,
-  ): Promise<DeepReadonly<PoolState> | null> {
+  ): Promise<DeepReadonly<PoolState_v1_9> | null> {
     const newState = await super.processBlockLogs(state, logs, blockHeader);
     if (newState && !newState.isValid) {
       return await this.generateState(blockHeader.number);
@@ -117,17 +118,17 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   protected processLog(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<PoolState_v1_9>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
-  ): DeepReadonly<PoolState> | null {
+  ): DeepReadonly<PoolState_v1_9> | null {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
         // Because we have observations in array which is mutable by nature, there is a
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
         // And there is no good workaround, so turn off the type checker for this line
-        const _state = _.cloneDeep(state) as PoolState;
+        const _state = _.cloneDeep(state) as PoolState_v1_9;
         try {
           const newState = this.handlers[event.name](
             event,
@@ -174,11 +175,13 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
-  private async _fetchPoolStateSingleStep(
+  private async _fetchPoolState_v1_9SingleStep(
     blockNumber: number,
-  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_9]
+  > {
     const callData: MultiCallParams<
-      bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_9
     >[] = [
       {
         target: this.token0,
@@ -205,13 +208,13 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
             this.getBitmapRangeToRequest(),
           )
           .encodeABI(),
-        decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+        decodeFunction: decodeStateMultiCallResultWithRelativeBitmapsV1_9,
       },
     ];
 
     const [resBalance0, resBalance1, resState] =
       await this.dexHelper.multiWrapper.tryAggregate<
-        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+        bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_9
       >(
         false,
         callData,
@@ -226,16 +229,18 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       resBalance0.returnData,
       resBalance1.returnData,
       resState.returnData,
-    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_9];
 
     return [balance0, balance1, _state];
   }
 
-  private async _fetchPoolStateMultiStep(
+  private async _fetchPoolState_v1_9MultiStep(
     blockNumber: number,
-  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_9]
+  > {
     const balancesAndGlobalStateCalldata: MultiCallParams<
-      bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_9
     >[] = [
       {
         target: this.token0,
@@ -262,13 +267,13 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
             0,
           )
           .encodeABI(),
-        decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+        decodeFunction: decodeStateMultiCallResultWithRelativeBitmapsV1_9,
       },
     ];
 
     const [resBalance0, resBalance1, stateWithoutTicksAndTickBitmap] =
       await this.dexHelper.multiWrapper.tryAggregate<
-        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+        bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_9
       >(
         false,
         balancesAndGlobalStateCalldata,
@@ -283,7 +288,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       resBalance0.returnData,
       resBalance1.returnData,
       stateWithoutTicksAndTickBitmap.returnData,
-    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_9];
 
     const {
       globalState: { tick },
@@ -317,7 +322,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       }),
     );
 
-    const _state: DecodedStateMultiCallResultWithRelativeBitmaps = {
+    const _state: DecodedStateMultiCallResultWithRelativeBitmapsV1_9 = {
       ..._stateWithoutTicksAndTickBitmap,
       tickBitmap: ticksAndBitMaps.flatMap(v => v[0]),
       ticks: ticksAndBitMaps.flatMap(v => v[1]),
@@ -328,20 +333,22 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   async _fetchInitStateMultiStrategies(
     blockNumber: number,
-  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_9]
+  > {
     try {
-      return await this._fetchPoolStateSingleStep(blockNumber);
+      return await this._fetchPoolState_v1_9SingleStep(blockNumber);
     } catch (e) {
       if (e instanceof Error && e.message.includes('Pool does not exist'))
         throw e;
 
       if (this.dexHelper.config.data.network != Network.ZKEVM) throw e;
 
-      return this._fetchPoolStateMultiStep(blockNumber);
+      return this._fetchPoolState_v1_9MultiStep(blockNumber);
     }
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+  async generateState(blockNumber: number): Promise<Readonly<PoolState_v1_9>> {
     const [balance0, balance1, _state] =
       await this._fetchInitStateMultiStrategies(blockNumber);
 
@@ -350,10 +357,11 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
     _reduceTickBitmap(tickBitmap, _state.tickBitmap);
     _reduceTicks(ticks, _state.ticks);
-    const globalState: PoolState['globalState'] = {
+    const globalState: PoolState_v1_9['globalState'] = {
       communityFeeToken0: bigIntify(_state.globalState.communityFeeToken0),
       communityFeeToken1: bigIntify(_state.globalState.communityFeeToken1),
-      fee: bigIntify(_state.globalState.fee),
+      feeZto: bigIntify(_state.globalState.feeZto),
+      feeOtz: bigIntify(_state.globalState.feeOtz),
       price: bigIntify(_state.globalState.price),
       tick: bigIntify(_state.globalState.tick),
     };
@@ -380,7 +388,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleSwapEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolState_v1_9,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -447,7 +455,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   }
   handleMintEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolState_v1_9,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -473,7 +481,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleBurnEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolState_v1_9,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -496,13 +504,15 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleNewFee(
     event: any,
-    pool: PoolState,
+    pool: PoolState_v1_9,
     log: Log,
     blockHeader: BlockHeader,
   ) {
-    const fee = bigIntify(event.args.fee);
+    const feeZto = bigIntify(event.args.feeZto);
+    const feeOtz = bigIntify(event.args.feeOtz);
 
-    pool.globalState.fee = fee;
+    pool.globalState.feeZto = feeZto;
+    pool.globalState.feeOtz = feeOtz;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
@@ -510,7 +520,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleCollectEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolState_v1_9,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -525,7 +535,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleFlashEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolState_v1_9,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -540,7 +550,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleCommunityFee(
     event: any,
-    pool: PoolState,
+    pool: PoolState_v1_9,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -550,6 +560,20 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     pool.globalState.communityFeeToken0 = communityFeeToken0;
     pool.globalState.communityFeeToken1 = communityFeeToken1;
 
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleTickSpacing(
+    event: any,
+    pool: PoolState_v1_9,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const newTickSpacing = bigIntify(event.args.newTickSpacing);
+
+    pool.tickSpacing = newTickSpacing;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
