@@ -1,5 +1,5 @@
 import { DeepReadonly } from 'ts-essentials';
-import { PoolState } from '../types';
+import { PoolStateV1_1, PoolState_v1_9 } from '../types';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { OutputResult, TickInfo } from '../../uniswap-v3/types';
 import { Tick } from '../../uniswap-v3/contract-math/Tick';
@@ -48,9 +48,14 @@ interface PriceMovementCache {
   tickCount: number;
 }
 
+const isPoolV1_9 = (
+  poolState: PoolStateV1_1 | PoolState_v1_9,
+): poolState is PoolState_v1_9 =>
+  'feeZto' in poolState.globalState && 'feeOtz' in poolState.globalState;
+
 // % START OF COPY PASTA FROM UNISWAPV3 %
 function _priceComputationCycles(
-  poolState: DeepReadonly<PoolState>,
+  poolState: DeepReadonly<PoolStateV1_1 | PoolState_v1_9>,
   ticksCopy: Record<NumberAsString, TickInfo>,
   state: PriceComputationState,
   cache: PriceComputationCache,
@@ -145,7 +150,11 @@ function _priceComputationCycles(
         : step.sqrtPriceNextX96,
       state.liquidity,
       state.amountSpecifiedRemaining,
-      poolState.globalState.fee,
+      isPoolV1_9(poolState)
+        ? zeroForOne
+          ? poolState.globalState.feeZto
+          : poolState.globalState.feeOtz
+        : poolState.globalState.fee,
     );
 
     state.sqrtPriceX96 = swapStepResult.sqrtRatioNextX96;
@@ -220,7 +229,7 @@ function _priceComputationCycles(
 
 class AlgebraMathClass {
   queryOutputs(
-    poolState: DeepReadonly<PoolState>,
+    poolState: DeepReadonly<PoolStateV1_1 | PoolState_v1_9>,
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
@@ -406,7 +415,7 @@ class AlgebraMathClass {
   }
 
   _updatePositionTicksAndFees(
-    state: PoolState,
+    state: PoolStateV1_1 | PoolState_v1_9,
     bottomTick: bigint,
     topTick: bigint,
     liquidityDelta: bigint,
@@ -491,7 +500,7 @@ class AlgebraMathClass {
   }
 
   _calculateSwapAndLock(
-    poolState: PoolState,
+    poolState: PoolStateV1_1 | PoolState_v1_9,
     zeroToOne: boolean,
     newSqrtPriceX96: bigint,
     newTick: bigint,
@@ -513,7 +522,11 @@ class AlgebraMathClass {
     // load from one storage slot
     let currentPrice = globalState.price;
     let currentTick = globalState.tick;
-    cache.fee = globalState.fee;
+    cache.fee = isPoolV1_9(poolState)
+      ? zeroToOne
+        ? poolState.globalState.feeZto
+        : poolState.globalState.feeOtz
+      : poolState.globalState.fee;
     let _communityFeeToken0 = globalState.communityFeeToken0;
     let _communityFeeToken1 = globalState.communityFeeToken1;
 
@@ -539,8 +552,6 @@ class AlgebraMathClass {
     }
 
     cache.startTick = currentTick;
-
-    cache.fee = poolState.globalState.fee; // safe to take as updated just before// _getNewFee(blockTimestamp, currentTick, newTimepointIndex, currentLiquidity);
 
     const step: PriceMovementCache = {
       feeAmount: 0n,
@@ -644,11 +655,8 @@ class AlgebraMathClass {
 
     // validate that amount0 and amount 1 are same here
 
-    [globalState.price, globalState.tick, globalState.fee] = [
-      currentPrice,
-      currentTick,
-      cache.fee,
-    ];
+    // ignore fee update logic during trade simulation as won't impact pricing too much
+    [globalState.price, globalState.tick] = [currentPrice, currentTick];
 
     poolState.liquidity = currentLiquidity;
 
@@ -668,7 +676,7 @@ class AlgebraMathClass {
     ];
   }
 
-  _blockTimestamp(state: DeepReadonly<PoolState>) {
+  _blockTimestamp(state: Pick<PoolStateV1_1, 'blockTimestamp'>) {
     return uint32(state.blockTimestamp);
   }
 }
