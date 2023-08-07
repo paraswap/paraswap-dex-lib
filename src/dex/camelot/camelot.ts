@@ -50,6 +50,8 @@ const DefaultCamelotPoolGasCost = 90 * 1000;
 const camelotPairIface = new Interface(camelotPairABI);
 const coder = new AbiCoder();
 
+const CAMELOT_EFFICIENCY_FACTOR = 3;
+
 const LogCallTopics = [
   '0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1', // event Sync(uint112 reserve0, uint112 reserve1) // uni-V2 and most forks
   'a4877b8ecb5a00ba277e4bceeeb187a669e7113649774dfbea05c259ce27f17b', // event FeePercentUpdated(uint16 token0FeePercent, uint16 token1FeePercent)
@@ -683,7 +685,7 @@ export class Camelot
           decimals: parseInt(pool.token1.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
+      liquidityUSD: parseFloat(pool.reserveUSD) * CAMELOT_EFFICIENCY_FACTOR,
     }));
 
     const pools1 = _.map(data.pools1, pool => ({
@@ -696,7 +698,7 @@ export class Camelot
           decimals: parseInt(pool.token0.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
+      liquidityUSD: parseFloat(pool.reserveUSD) * CAMELOT_EFFICIENCY_FACTOR,
     }));
 
     return _.slice(
