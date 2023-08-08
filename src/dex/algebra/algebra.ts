@@ -495,6 +495,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const zeroForOne = token0 === _srcAddress ? true : false;
 
       if (state.liquidity <= 0n) {
+        if (state.liquidity < 0) {
+          this.logger.error(
+            `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+          );
+        }
         this.logger.trace(`pool have 0 liquidity`);
         return null;
       }
