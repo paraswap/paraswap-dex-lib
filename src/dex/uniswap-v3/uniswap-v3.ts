@@ -620,6 +620,11 @@ export class UniswapV3
           const state = states[i];
 
           if (state.liquidity <= 0n) {
+            if (state.liquidity < 0) {
+              this.logger.error(
+                `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+              );
+            }
             this.logger.trace(`pool have 0 liquidity`);
             return null;
           }
