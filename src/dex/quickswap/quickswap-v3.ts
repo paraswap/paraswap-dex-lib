@@ -7,7 +7,7 @@ import { IDexHelper } from '../../dex-helper';
 import _ from 'lodash';
 import { QuickSwapConfig } from './config';
 
-const config = _.pick(QuickSwapConfig, ['CamelotV3']).CamelotV3;
+const defaultConfig = _.pick(QuickSwapConfig, ['ThenaFusion']).ThenaFusion;
 
 export type QuickSwapV3Data = {
   // ExactInputSingleParams
@@ -28,7 +28,7 @@ export class QuickSwapV3
   constructor(
     dexHelper: IDexHelper,
     dexKey = 'quickswapv3',
-    router = config[dexHelper.config.data.network].router,
+    router = defaultConfig[dexHelper.config.data.network].router,
   ) {
     super(dexHelper, dexKey, router);
   }

@@ -17,6 +17,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap-v3',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x2d98e2fa9da15aa6dc9581ab097ced7af697cb92',
+      version: 'v1.1',
     },
     [Network.ZKEVM]: {
       factory: '0x4B9f4d2435Ef65559567e5DbFC1BbB37abC43B57',
@@ -30,7 +31,8 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/quickswap-v3-02/0.0.7',
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
-      deployer: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270', // validate
+      deployer: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
+      version: 'v1.1',
     },
   },
   ZyberSwapV3: {
@@ -47,6 +49,24 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x24e85f5f94c6017d2d87b434394e87df4e4d56e3',
+      version: 'v1.1',
+    },
+  },
+  CamelotV3: {
+    [Network.ARBITRUM]: {
+      factory: '0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B',
+      router: '0x1F721E2E82F6676FCE4eA07A5958cF098D339e18',
+      quoter: '0x0Fc73040b26E9bC8514fA028D998E73A254Fa76E',
+      initHash:
+        '0x6c1bebd370ba84753516bc1393c0d0a6c645856da55f5393ac8ab3d6dbc861d3',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      algebraStateMulticall: '0x541FeaEcB21a4cb0fBFCF90C5bae47BaDF747edE',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/camelotlabs/camelot-amm-v3',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      deployer: '0x6dd3fb9653b10e806650f107c3b5a0a6ff974f65',
+      version: 'v1.9',
     },
     [Network.OPTIMISM]: {
       factory: '0x0C8f7b0cb986b31c67D994fb5c224592A03A4AfD',
