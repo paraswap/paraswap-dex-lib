@@ -51,6 +51,21 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       deployer: '0x24e85f5f94c6017d2d87b434394e87df4e4d56e3',
       version: 'v1.1',
     },
+    [Network.OPTIMISM]: {
+      factory: '0x0C8f7b0cb986b31c67D994fb5c224592A03A4AfD',
+      router: '0xEDB4E3E3bB11255fF14C2762C6A6A28F1D3A36f2',
+      quoter: '0xf4211E7709D2294Cd10799E41623006dFB0D66aF',
+      initHash:
+        '0xbce37a54eab2fcd71913a0d40723e04238970e7fc1159bfd58ad5b79531697e7',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      algebraStateMulticall: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info-optimism-pp',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      deployer: '0xc0d4323426c709e8d04b5b130e7f059523464a91',
+      version: 'v1.1',
+    }
   },
   CamelotV3: {
     [Network.ARBITRUM]: {
@@ -83,5 +98,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 3 }],
     [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 2 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 3 }],
+    [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 2 }],
   },
 };
