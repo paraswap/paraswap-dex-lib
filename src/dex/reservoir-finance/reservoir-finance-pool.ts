@@ -77,7 +77,11 @@ export class ReservoirFinanceEventPool extends StatefulEventSubscriber<PoolState
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     // TODO: complete me!
-    return {};
+    return {
+      reserve0: 0n,
+      reserve1: 0n,
+      curveId: 0,
+    };
   }
 
   // Its just a dummy example

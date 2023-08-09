@@ -5,7 +5,8 @@ export type PoolState = {
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
-
+  reserve0: bigint;
+  reserve1: bigint;
   curveId: number;
 };
 
