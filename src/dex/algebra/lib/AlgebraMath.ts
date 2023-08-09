@@ -3,7 +3,6 @@ import { PoolStateV1_1, PoolState_v1_9 } from '../types';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { OutputResult, TickInfo } from '../../uniswap-v3/types';
 import { Tick } from '../../uniswap-v3/contract-math/Tick';
-import { TickBitMap } from '../../uniswap-v3/contract-math/TickBitMap';
 import { SqrtPriceMath } from '../../uniswap-v3/contract-math/SqrtPriceMath';
 import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
 import { LiquidityMath } from '../../uniswap-v3/contract-math/LiquidityMath';
@@ -21,6 +20,8 @@ import {
   MAX_PRICING_COMPUTATION_STEPS_ALLOWED,
   OUT_OF_RANGE_ERROR_POSTFIX,
 } from '../../uniswap-v3/constants';
+import { TickManager } from './TickManager';
+import { TickTable } from './TickTable';
 
 type UpdatePositionCache = {
   price: bigint;
@@ -112,10 +113,9 @@ function _priceComputationCycles(
 
     try {
       [step.tickNext, step.initialized] =
-        TickBitMap.nextInitializedTickWithinOneWord(
+        TickTable.nextInitializedTickWithinOneWord(
           poolState,
           state.tick,
-          poolState.tickSpacing,
           zeroForOne,
           true,
         );
@@ -378,9 +378,9 @@ class AlgebraMathClass {
     currentTick: bigint,
     currentPrice: bigint,
   ) {
-    let amount0;
-    let amount1;
-    let globalLiquidityDelta;
+    let amount0 = 0n;
+    let amount1 = 0n;
+    let globalLiquidityDelta = 0n;
     // If current tick is less than the provided bottom one then only the token0 has to be provided
     if (currentTick < bottomTick) {
       amount0 = SqrtPriceMath._getAmount0DeltaO(
@@ -434,7 +434,7 @@ class AlgebraMathClass {
       const time = this._blockTimestamp(state);
 
       if (
-        Tick.update(
+        TickManager.update(
           state,
           bottomTick,
           cache.tick,
@@ -447,10 +447,10 @@ class AlgebraMathClass {
         )
       ) {
         toggledBottom = true;
-        TickBitMap.flipTick(state, bottomTick, state.tickSpacing);
+        TickTable.toggleTick(state, bottomTick);
       }
       if (
-        Tick.update(
+        TickManager.update(
           state,
           topTick,
           cache.tick,
@@ -463,13 +463,13 @@ class AlgebraMathClass {
         )
       ) {
         toggledTop = true;
-        TickBitMap.flipTick(state, topTick, state.tickSpacing);
+        TickTable.toggleTick(state, topTick);
       }
     }
 
     // skip fee && position related stuffs
 
-    // same as UniwapV3Pool.sol line 327 ->   if (params.liquidityDelta != 0) {
+    // same as UniswapV3Pool.sol line 327 ->   if (params.liquidityDelta != 0) {
     if (liquidityDelta !== 0n) {
       // if liquidityDelta is negative and the tick was toggled, it means that it should not be initialized anymore, so we delete it
       if (liquidityDelta < 0) {
@@ -510,7 +510,7 @@ class AlgebraMathClass {
 
     let cache: SwapCalculationCache = {
       amountCalculated: 0n,
-      amountRequiredInitial: BI_MAX_INT, // similarly to waht we did for uniswap
+      amountRequiredInitial: BI_MAX_INT, // similarly to what we did for uniswap
       communityFee: 0n,
       exactInput: false,
       fee: 0n,
@@ -563,17 +563,15 @@ class AlgebraMathClass {
       stepSqrtPrice: 0n,
       tickCount: 0,
     };
-    let i = 0;
     // swap until there is remaining input or output tokens or we reach the price limit
     while (true) {
       step.stepSqrtPrice = currentPrice;
 
       //equivalent of tickTable.nextTickInTheSameRow(currentTick, zeroToOne);
       [step.nextTick, step.initialized] =
-        TickBitMap.nextInitializedTickWithinOneWord(
+        TickTable.nextInitializedTickWithinOneWord(
           poolState,
           currentTick,
-          poolState.tickSpacing,
           zeroToOne,
           false,
         );

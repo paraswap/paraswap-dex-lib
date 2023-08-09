@@ -71,6 +71,8 @@ export type DexParams = {
   version: 'v1.1' | 'v1.9';
 };
 
+export type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
+
 export type TickBitMapMappingsWithBigNumber = {
   index: number;
   value: BigNumber;

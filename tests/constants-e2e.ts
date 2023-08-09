@@ -705,7 +705,7 @@ export const Tokens: {
     HATCHY: {
       address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
       decimals: 18,
-    }
+    },
   },
   [Network.ARBITRUM]: {
     DAI: {
@@ -780,6 +780,14 @@ export const Tokens: {
     WBTC: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
+    },
+    USDCe: {
+      address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+      decimals: 6,
+    },
+    LEX: {
+      address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
+      decimals: 18,
     },
   },
   [Network.OPTIMISM]: {
