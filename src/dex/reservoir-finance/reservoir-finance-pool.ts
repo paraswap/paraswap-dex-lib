@@ -5,6 +5,7 @@ import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
+import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
 
 export class ReservoirFinanceEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -24,9 +25,7 @@ export class ReservoirFinanceEventPool extends StatefulEventSubscriber<PoolState
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected reservoirFinanceIface = new Interface(
-      '' /* TODO: Import and put here ReservoirFinance ABI */,
-    ), // TODO: add any additional params required for event subscriber
+    protected reservoirFinanceIface = new Interface(ReservoirRouterABI), // TODO: add any additional params required for event subscriber
   ) {
     // TODO: Add pool name
     super(parentName, 'POOL_NAME', dexHelper, logger);
@@ -81,6 +80,7 @@ export class ReservoirFinanceEventPool extends StatefulEventSubscriber<PoolState
       reserve0: 0n,
       reserve1: 0n,
       curveId: 0,
+      swapFee: 0n,
     };
   }
 
