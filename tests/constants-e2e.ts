@@ -698,6 +698,14 @@ export const Tokens: {
       address: '0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46',
       decimals: 18,
     },
+    BETS: {
+      address: '0x94025780a1ab58868d9b2dbbb775f44b32e8e6e5',
+      decimals: 18,
+    },
+    HATCHY: {
+      address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
+      decimals: 18,
+    }
   },
   [Network.ARBITRUM]: {
     DAI: {
@@ -965,6 +973,8 @@ export const Holders: {
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WAVAX: '0xbbff2a8ec8d702e61faaccf7cf705968bb6a5bab',
     sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
+    BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
+    HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
     USDC: '0xbf14db80d9275fb721383a77c00ae180fc40ae98',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',

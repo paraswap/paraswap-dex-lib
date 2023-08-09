@@ -3,16 +3,16 @@ import _ from 'lodash';
 import { QuickSwapConfig } from './config';
 import { QuickSwapV3 } from './quickswap-v3';
 
-const config = _.pick(QuickSwapConfig, ['ZyberSwapV3']).ZyberSwapV3;
+const config = _.pick(QuickSwapConfig, ['ThenaFusion']).ThenaFusion;
 
-export class ZyberSwapV3 extends QuickSwapV3 {
-  static dexKeys = ['zyberswapv3'];
+export class ThenaFusion extends QuickSwapV3 {
+  static dexKeys = ['thenafusion'];
 
   // public static dexKeysWithNetwork
   constructor(dexHelper: IDexHelper) {
     super(
       dexHelper,
-      'zyberswapv3',
+      'thenafusion',
       config[dexHelper.config.data.network].router,
     );
   }
