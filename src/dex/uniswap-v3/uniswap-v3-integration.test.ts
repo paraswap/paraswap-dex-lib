@@ -88,8 +88,18 @@ async function checkOnChainPricing(
     return false;
   }
 
+  // const readerCallData = getReaderCalldata(
+  //   exchangeAddress,
+  //   readerIface,
+  //   _amounts.slice(1),
+  //   funcName,
+  //   tokenIn,
+  //   tokenOut,
+  //   fee,
+  // );
+
   const readerCallData = getReaderCalldata(
-    exchangeAddress,
+    '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
     readerIface,
     _amounts.slice(1),
     funcName,
@@ -138,9 +148,22 @@ describe('UniswapV3', function () {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
     uniswapV3Mainnet = new UniswapV3(
-      Network.MAINNET,
+      Network.ARBITRUM,
       dexKey,
-      new DummyDexHelper(Network.MAINNET),
+      new DummyDexHelper(Network.ARBITRUM),
+    );
+  });
+
+
+  it('fgggg', async () => {
+    const readerCallData = getReaderCalldata(
+      '',
+      readerIface,
+      _amounts.slice(1),
+      funcName,
+      tokenIn,
+      tokenOut,
+      fee,
     );
   });
 

@@ -340,6 +340,7 @@ export async function testE2E(
     }
   }
 
+  console.log('DEX KEY: ', dexKey);
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = useAPI

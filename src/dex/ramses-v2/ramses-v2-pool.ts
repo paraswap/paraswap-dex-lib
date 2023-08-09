@@ -198,6 +198,12 @@ export class RamsesV2EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _getStateRequestCallData() {
     if (!this._stateRequestCallData) {
+      console.log('this.factoryAddress:', this.factoryAddress);
+      console.log('this.token0:', this.token0);
+      console.log('this.token1:', this.token1);
+      console.log('this.feeCode:', this.feeCode);
+      console.log('this.getBitmapRangeToRequest():', this.getBitmapRangeToRequest());
+
       const callData: MultiCallParams<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
       >[] = [
@@ -242,6 +248,8 @@ export class RamsesV2EventPool extends StatefulEventSubscriber<PoolState> {
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
+    console.log('CALL DATA: ', callData);
+
     const [resBalance0, resBalance1, resState] =
       await this.dexHelper.multiWrapper.tryAggregate<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
@@ -252,6 +260,10 @@ export class RamsesV2EventPool extends StatefulEventSubscriber<PoolState> {
         this.dexHelper.multiWrapper.defaultBatchSize,
         false,
       );
+
+    console.log('RES BALANCE 0: ', resBalance0);
+    console.log('RES BALANCE 0: ', resBalance1);
+    console.log('RES STATE: ', resState);
 
     // Quite ugly solution, but this is the one that fits to current flow.
     // I think UniswapV3 callbacks subscriptions are complexified for no reason.

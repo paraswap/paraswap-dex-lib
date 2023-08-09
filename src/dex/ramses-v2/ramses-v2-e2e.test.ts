@@ -14,7 +14,7 @@ import { generateConfig } from '../../config';
 describe('RamsesV2 E2E', () => {
   const dexKey = 'RamsesV2';
 
-  describe('UniswapV3 MAINNET', () => {
+  describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -23,45 +23,78 @@ describe('RamsesV2 E2E', () => {
       network,
     );
 
-    it('BUY USDT -> USDC', async () => {
-      await testE2E(
-        tokens['USDT'],
-        tokens['USDC'],
-        holders['DAI'],
-        '100000000000',
-        SwapSide.BUY,
-        dexKey,
-        ContractMethod.simpleBuy,
-        network,
-        provider,
-      );
-    });
-    it('SELL WETH -> RDNT', async () => {
-      await testE2E(
-        tokens['WETH'],
-        tokens['RDNT'],
-        holders['WETH'],
-        '1000000000000000000',
-        SwapSide.SELL,
-        dexKey,
-        ContractMethod.simpleSwap,
-        network,
-        provider,
-      );
-    });
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
+    const nativeTokenSymbol = NativeTokenSymbols[network];
 
-    it('directSwap SELL WETH -> USDC', async () => {
-      await testE2E(
-        tokens['WETH'],
-        tokens['USDC'],
-        holders['WETH'],
-        '1000000000000000000',
+    const tokenAAmount: string = '11000000';
+    const tokenBAmount: string = '21000000';
+    const nativeTokenAmount = '11000000000000000000';
+
+    const sideToContractMethods = new Map([
+      [
         SwapSide.SELL,
-        dexKey,
-        ContractMethod.directUniV3Swap,
-        network,
-        provider,
-      );
-    });
+        [
+          ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
+          // ContractMethod.directUniV3Swap,
+        ],
+      ],
+      // [
+      //   SwapSide.BUY,
+      //   [
+      //     ContractMethod.simpleBuy,
+      //     ContractMethod.buy,
+      //     ContractMethod.directUniV3Buy,
+      //   ],
+      // ],
+    ]);
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      contractMethods.forEach((contractMethod: ContractMethod) => {
+        describe(`${contractMethod}`, () => {
+          // it(`${network} ${side} ${contractMethod} ${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+          //   await testE2E(
+          //     tokens[nativeTokenSymbol],
+          //     tokens[tokenASymbol],
+          //     holders[nativeTokenSymbol],
+          //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+          //     side,
+          //     dexKey,
+          //     contractMethod,
+          //     network,
+          //     provider,
+          //   );
+          // });
+          // it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+          //   await testE2E(
+          //     tokens[tokenASymbol],
+          //     tokens[nativeTokenSymbol],
+          //     holders[tokenASymbol],
+          //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+          //     side,
+          //     dexKey,
+          //     contractMethod,
+          //     network,
+          //     provider,
+          //   );
+          // });
+          it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+        });
+      }),
+    );
   });
 });
