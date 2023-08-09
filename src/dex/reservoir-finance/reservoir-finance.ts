@@ -26,8 +26,8 @@ export class ReservoirFinance
   protected eventPools: ReservoirFinanceEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
 

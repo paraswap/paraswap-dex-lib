@@ -5,6 +5,8 @@ export type PoolState = {
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
+
+  curveId: number;
 };
 
 export type ReservoirFinanceData = {
@@ -19,4 +21,7 @@ export type DexParams = {
   // TODO: DexParams is set of parameters the can
   // be used to initiate a DEX fork.
   // Complete me!
+  subgraphURL?: string;
+  factory: Address;
+  router: Address;
 };
