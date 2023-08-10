@@ -623,7 +623,7 @@ export class PancakeswapV3
             balanceDestToken,
           );
 
-          if (!unitResult || !pricesResult) {
+          if (!pricesResult) {
             this.logger.debug('Prices or unit is not calculated');
             return null;
           }
@@ -644,7 +644,7 @@ export class PancakeswapV3
             }),
           ];
           return {
-            unit: unitResult.outputs[0],
+            unit: unitResult?.outputs[0] || 0n,
             prices,
             data: {
               path: [
