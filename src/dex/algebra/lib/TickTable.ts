@@ -99,10 +99,10 @@ export class TickTable {
       const _row = tickBitmapValue << (255n - bitNumber);
       if (_row != 0n) {
         tick -= BigInt.asIntN(24, 255n - TickTable.getMostSignificantBit(_row));
-        return [TickTable.boundTick(tick), true];
+        return [TickTable.boundTick(tick, tickSpacing), true];
       } else {
         tick -= BigInt.asIntN(24, bitNumber);
-        return [TickTable.boundTick(tick), false];
+        return [TickTable.boundTick(tick, tickSpacing), false];
       }
     } else {
       tick += 1n;
@@ -112,10 +112,10 @@ export class TickTable {
           24,
           TickTable.getSingleSignificantBit(-_row & _row),
         );
-        return [TickTable.boundTick(tick), true];
+        return [TickTable.boundTick(tick, tickSpacing), true];
       } else {
         tick += BigInt.asIntN(24, 255n - bitNumber);
-        return [TickTable.boundTick(tick), false];
+        return [TickTable.boundTick(tick, tickSpacing), false];
       }
     }
   }
@@ -196,8 +196,9 @@ export class TickTable {
     word = word || word >> 16n;
     word = word || word >> 32n;
     word = word || word >> 64n;
+    word = word || word >> 128n;
     word = word - (word >> 1n);
-    return TickTable.getSingleSignificantBit(word);
+    return TickTable.getSingleSignificantBit(BigInt.asUintN(256, word));
   }
 
   static boundTick(tick: bigint, tickSpacing?: bigint): bigint {
