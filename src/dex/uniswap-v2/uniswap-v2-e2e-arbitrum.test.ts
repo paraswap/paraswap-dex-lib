@@ -377,8 +377,8 @@ describe('UniswapV2 E2E Arbitrum', () => {
 
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
       [
-        { name: 'ETH', sellAmount: '7000000000000000', buyAmount: '7000000000000000000' },
-        { name: 'ARB', sellAmount: '7000000000000000000', buyAmount: '7000000000000000' },
+        { name: 'ETH', sellAmount: '505000000000000', buyAmount: '940617' },
+        { name: 'USDC', sellAmount: '940617', buyAmount: '505000000000000' },
       ],
     ];
 
