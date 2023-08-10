@@ -261,7 +261,7 @@ describe('PancakeswapV3 E2E', () => {
         {
           name: 'USDC',
           sellAmount: '5000000',
-          buyAmount: '2687649500000000',
+          buyAmount: '1000000000000000',
         },
       ],
     ];

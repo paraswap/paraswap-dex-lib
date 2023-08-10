@@ -44,7 +44,7 @@ export const PancakeswapV3Config: DexConfigMap<DexParams> = {
       quoter: '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
       router: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
       supportedFees: PANCAKE_SUPPORTED_FEES,
-      stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
+      stateMulticall: '0xF8498aCeD3aFa417653415B8e32BAE9d764FBFf5',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 30,
@@ -64,5 +64,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.BSC]: {
     [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 4 }],
     [SwapSide.BUY]: [{ name: 'BscBuyAdapter', index: 5 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 3 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 2 }],
   },
 };
