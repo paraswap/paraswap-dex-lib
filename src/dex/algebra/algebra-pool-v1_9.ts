@@ -26,13 +26,13 @@ import { uint256ToBigInt } from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { decodeStateMultiCallResultWithRelativeBitmapsV1_9 } from './utils';
 import { AlgebraMath } from './lib/AlgebraMath';
-import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
 import {
   _reduceTickBitmap,
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
 import { Constants } from './lib/Constants';
 import { Network } from '../../constants';
+import { TickTable } from './lib/TickTable';
 
 export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9> {
   handlers: {
@@ -366,9 +366,7 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
       tick: bigIntify(_state.globalState.tick),
     };
     const currentTick = globalState.tick;
-    const startTickBitmap = TickBitMap.position(
-      BigInt(currentTick) / Constants.TICK_SPACING,
-    )[0];
+    const startTickBitmap = TickTable.position(BigInt(currentTick))[0];
 
     return {
       pool: _state.pool,
