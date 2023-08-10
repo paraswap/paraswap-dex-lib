@@ -7,8 +7,7 @@ import {
   TICK_BITMAP_TO_USE,
 } from '../../uniswap-v3/constants';
 import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
-
-const iszero = (x: bigint) => (x === 0n ? 1n : 0n);
+import { Yul } from './yul-helper';
 
 function isWordPosOut(
   wordPos: bigint,
@@ -51,7 +50,11 @@ export class TickTable {
   static toggleTick(
     state: Pick<IAlgebraPoolState, 'startTickBitmap' | 'tickBitmap'>,
     tick: bigint,
+    tickSpacing?: bigint,
   ) {
+    if (tickSpacing !== undefined) {
+      tick /= tickSpacing;
+    }
     const [rowNumber, bitNumber] = TickTable.position(tick);
     const mask = 1n << bitNumber;
 
@@ -77,7 +80,17 @@ export class TickTable {
     tick: bigint,
     lte: boolean,
     isPriceQuery: boolean,
+    tickSpacing?: bigint,
   ): [bigint, boolean] {
+    if (tickSpacing !== undefined) {
+      tick = Yul.sub(
+        Yul.sdiv(tick, tickSpacing),
+        Yul.and(
+          Yul.slt(tick, 0n),
+          Yul.not(Yul.iszero(Yul.smod(tick, tickSpacing))),
+        ),
+      );
+    }
     const [rowNumber, bitNumber] = TickTable.position(tick);
     isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
     let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
@@ -109,7 +122,7 @@ export class TickTable {
 
   static getSingleSignificantBit(word: bigint): bigint {
     let singleBitPos = 0n;
-    singleBitPos = iszero(
+    singleBitPos = Yul.iszero(
       word &&
         BigInt(
           '0x5555555555555555555555555555555555555555555555555555555555555555',
@@ -117,7 +130,7 @@ export class TickTable {
     );
     singleBitPos =
       singleBitPos ||
-      iszero(
+      Yul.iszero(
         word &&
           BigInt(
             '0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff',
@@ -125,7 +138,7 @@ export class TickTable {
       ) << 7n;
     singleBitPos =
       singleBitPos ||
-      iszero(
+      Yul.iszero(
         word &&
           BigInt(
             '0x0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff',
@@ -133,7 +146,7 @@ export class TickTable {
       ) << 6n;
     singleBitPos =
       singleBitPos ||
-      iszero(
+      Yul.iszero(
         word &&
           BigInt(
             '0x00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff',
@@ -141,7 +154,7 @@ export class TickTable {
       ) << 5n;
     singleBitPos =
       singleBitPos ||
-      iszero(
+      Yul.iszero(
         word &&
           BigInt(
             '0x0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff',
@@ -149,7 +162,7 @@ export class TickTable {
       ) << 4n;
     singleBitPos =
       singleBitPos ||
-      iszero(
+      Yul.iszero(
         word &&
           BigInt(
             '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff',
@@ -157,7 +170,7 @@ export class TickTable {
       ) << 3n;
     singleBitPos =
       singleBitPos ||
-      iszero(
+      Yul.iszero(
         word &&
           BigInt(
             '0x0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f',
@@ -165,7 +178,7 @@ export class TickTable {
       ) << 2n;
     singleBitPos =
       singleBitPos ||
-      iszero(
+      Yul.iszero(
         word &&
           BigInt(
             '0x3333333333333333333333333333333333333333333333333333333333333333',
@@ -183,11 +196,14 @@ export class TickTable {
     word = word || word >> 16n;
     word = word || word >> 32n;
     word = word || word >> 64n;
-    word = (word - word) >> 1n;
+    word = word - (word >> 1n);
     return TickTable.getSingleSignificantBit(word);
   }
 
-  static boundTick(tick: bigint): bigint {
+  static boundTick(tick: bigint, tickSpacing?: bigint): bigint {
+    if (tickSpacing !== undefined) {
+      tick *= tickSpacing;
+    }
     let boundedTick = tick;
     if (boundedTick < TickMath.MIN_TICK) {
       boundedTick = TickMath.MIN_TICK;

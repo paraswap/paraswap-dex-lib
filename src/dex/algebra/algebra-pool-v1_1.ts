@@ -381,6 +381,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
       isValid: true,
       balance0,
       balance1,
+      areTicksCompressed: true,
     };
   }
 

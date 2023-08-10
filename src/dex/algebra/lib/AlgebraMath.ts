@@ -447,7 +447,11 @@ class AlgebraMathClass {
         )
       ) {
         toggledBottom = true;
-        TickTable.toggleTick(state, bottomTick);
+        TickTable.toggleTick(
+          state,
+          bottomTick,
+          state.areTicksCompressed ? state.tickSpacing : undefined,
+        );
       }
       if (
         TickManager.update(
@@ -463,7 +467,11 @@ class AlgebraMathClass {
         )
       ) {
         toggledTop = true;
-        TickTable.toggleTick(state, topTick);
+        TickTable.toggleTick(
+          state,
+          topTick,
+          state.areTicksCompressed ? state.tickSpacing : undefined,
+        );
       }
     }
 

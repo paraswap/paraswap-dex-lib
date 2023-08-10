@@ -23,6 +23,7 @@ export type PoolStateV1_1 = {
   startTickBitmap: bigint;
   balance0: bigint;
   balance1: bigint;
+  areTicksCompressed: boolean;
 };
 
 type GlobalState_v1_9 = {
@@ -47,6 +48,7 @@ export type PoolState_v1_9 = {
   startTickBitmap: bigint;
   balance0: bigint;
   balance1: bigint;
+  areTicksCompressed: boolean;
 };
 
 export type AlgebraData = {
