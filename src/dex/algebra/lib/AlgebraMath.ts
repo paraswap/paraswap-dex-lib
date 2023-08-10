@@ -118,6 +118,7 @@ function _priceComputationCycles(
           state.tick,
           zeroForOne,
           true,
+          poolState.areTicksCompressed ? poolState.tickSpacing : undefined,
         );
     } catch (e) {
       if (
@@ -582,6 +583,7 @@ class AlgebraMathClass {
           currentTick,
           zeroToOne,
           false,
+          poolState.areTicksCompressed ? poolState.tickSpacing : undefined,
         );
 
       step.nextTickPrice = TickMath.getSqrtRatioAtTick(step.nextTick);
