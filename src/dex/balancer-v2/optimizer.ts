@@ -56,6 +56,22 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
         lastExchangeSwap.poolAddresses!.push(currentSwap.poolAddresses![0]);
       } else {
         lastExchange = _.cloneDeep(s);
+        lastExchange.swapExchanges[0].data = {};
+        lastExchange.swapExchanges[0].data.exchangeProxy =
+          s.swapExchanges[0].data.exchangeProxy;
+        lastExchange.swapExchanges[0].data.gasUSD =
+          s.swapExchanges[0].data.gasUSD;
+        lastExchange.swapExchanges[0].data.swaps = [
+          {
+            poolId: s.swapExchanges[0].data.poolId,
+            amount:
+              side === SwapSide.SELL
+                ? s.swapExchanges[0].srcAmount
+                : s.swapExchanges[0].destAmount,
+            tokenIn: s.swapExchanges[0].data.tokenIn,
+            tokenOut: s.swapExchanges[0].data.tokenOut,
+          },
+        ];
         optimizedRate.push(lastExchange);
       }
     });
