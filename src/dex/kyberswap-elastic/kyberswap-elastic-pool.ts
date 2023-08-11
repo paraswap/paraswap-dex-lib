@@ -178,26 +178,15 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
         try {
           return this.handlers[event.name](event, _state, log, blockHeader);
         } catch (e) {
-          if (e instanceof Error) {
-            this.logger.warn(
-              `${this.parentName}: Pool ${this.poolAddress} on ${
-                this.dexHelper.config.data.network
-              } is out of TickBitmap requested range. Re-query the state. ${JSON.stringify(
-                event,
-              )}`,
-              e,
-            );
-          } else {
-            this.logger.error(
-              `${this.parentName}: Pool ${this.poolAddress}, ` +
-                `network=${this.dexHelper.config.data.network}: Unexpected ` +
-                `error while handling event on blockNumber=${blockHeader.number}, ` +
-                `blockHash=${blockHeader.hash} and parentHash=${
-                  blockHeader.parentHash
-                } for Kyberswap Elastic, ${JSON.stringify(event)}`,
-              e,
-            );
-          }
+          this.logger.error(
+            `${this.parentName}: Pool ${this.poolAddress}, ` +
+              `network=${this.dexHelper.config.data.network}: Unexpected ` +
+              `error while handling event on blockNumber=${blockHeader.number}, ` +
+              `blockHash=${blockHeader.hash} and parentHash=${
+                blockHeader.parentHash
+              } for Kyberswap Elastic, ${JSON.stringify(event)}`,
+            e,
+          );
           _state.isValid = false;
           return _state;
         }
@@ -574,11 +563,11 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
 
-    // ksElasticMath._modifyPosition(pool, {
-    //   tickLower,
-    //   tickUpper,
-    //   liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
-    // });
+    ksElasticMath.modifyPosition(pool, {
+      tickLower,
+      tickUpper,
+      liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
+    });
 
     return pool;
   }
@@ -593,11 +582,11 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
 
-    // ksElasticMath._modifyPosition(pool, {
-    //   tickLower,
-    //   tickUpper,
-    //   liquidityDelta: amount,
-    // });
+    ksElasticMath.modifyPosition(pool, {
+      tickLower,
+      tickUpper,
+      liquidityDelta: amount,
+    });
 
     return pool;
   }

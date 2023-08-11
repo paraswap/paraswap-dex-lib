@@ -10,11 +10,13 @@ import {
 } from '../types';
 import { TickMath } from './TickMath';
 import { bigIntify, _require } from '../../../utils';
-import { FEE_UNITS, MAX_TICK_DISTANCE, TWO_POW_96 } from '../constants';
+import { FEE_UNITS, MAX_TICK_DISTANCE, TWO_POW_96, ZERO } from '../constants';
 import { SwapMath } from './SwapMath';
 import { FullMath } from './FullMath';
 import { ReinvestmentMath } from './ReinvestmentMath';
 import { LiqDeltaMath } from './LiqDeltaMath';
+import { SqrtPriceMath } from './SqrtPriceMath';
+import { LiquidityMath } from './LiquidityMath';
 
 type SwapDataState = {
   specifiedAmount: bigint;
@@ -40,6 +42,12 @@ type SwapDataState = {
   blockTimestamp: bigint;
   isFirstCycleState: boolean;
   tickCount: bigint;
+};
+
+type ModifyPositionParams = {
+  tickLower: bigint;
+  tickUpper: bigint;
+  liquidityDelta: bigint;
 };
 
 function _updateStateObject<T extends SwapDataState>(toUpdate: T, updateBy: T) {
@@ -363,7 +371,177 @@ class KSElasticMath {
     };
   }
 
-  _getInitialSwapData(
+  // swapFromEvent(
+  //   poolState: PoolState,
+  //   amountSpecified: bigint,
+  //   newSqrtPriceX96: bigint,
+  //   newTick: bigint,
+  //   newLiquidity: bigint,
+  //   zeroForOne: boolean,
+  // ): bigint {
+  //   const cache = {
+  //     liquidityStart: poolState.poolData.baseL,
+  //     feeProtocol: 0n,
+  //     secondsPerLiquidityCumulativeX128: 0n,
+  //     tickCumulative: 0n,
+  //     computedLatestObservation: false,
+  //   };
+
+  //   const state = {
+  //     // Because I don't have the exact amount user used, set this number to MAX_NUMBER to proceed
+  //     // with calculations. I think it is not a problem since in loop I don't rely on this value
+  //     amountSpecifiedRemaining: amountSpecified,
+  //     amountCalculated: 0n,
+  //     sqrtPriceX96: poolState.poolData.sqrtP,
+  //     tick: poolState.currentTick,
+  //     protocolFee: 0n,
+  //     liquidity: cache.liquidityStart,
+  //     reinvestL: poolState.reinvestLiquidity,
+  //     fee: poolState.swapFeeUnits,
+  //     tickList: tickList,
+  //   };
+  //   const exactInput = amountSpecified >= ZERO;
+
+  //   // Because I didn't have all variables, adapted loop stop with state.tick !== newTick
+  //   // condition. This cycle need only to calculate Tick.cross() function values
+  //   // It means that we are interested in cycling only if state.tick !== newTick
+  //   // When they become equivalent, we proceed with state updating part as normal
+  //   // And if assumptions regarding this cycle are correct, we don't need to process
+  //   // the last cycle when state.tick === newTick
+  //   while (state.tick !== newTick && state.sqrtPriceX96 !== newSqrtPriceX96) {
+  //     const step = {
+  //       sqrtPriceStartX96: 0n,
+  //       tickNext: 0n,
+  //       initialized: false,
+  //       sqrtPriceNextX96: 0n,
+  //       amountIn: 0n,
+  //       amountOut: 0n,
+  //       feeAmount: 0n,
+  //       deltaL: 0n,
+  //     };
+
+  //     step.sqrtPriceStartX96 = state.sqrtPriceX96;
+
+  //     const result = TickList.nextInitializedTickWithinFixedDistance(
+  //       state.tickList,
+  //       Number(state.tick),
+  //       zeroForOne,
+  //       480,
+  //     );
+
+  //     step.tickNext = BigInt(result[0]);
+  //     step.initialized = result[1];
+
+  //     if (step.tickNext < TickMath.MIN_TICK) {
+  //       step.tickNext = TickMath.MIN_TICK;
+  //     } else if (step.tickNext > TickMath.MAX_TICK) {
+  //       step.tickNext = TickMath.MAX_TICK;
+  //     }
+
+  //     step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+
+  //     const stepRs = SwapMath.computeSwapStep(
+  //       state.sqrtPriceX96,
+  //       (
+  //         zeroForOne
+  //           ? step.sqrtPriceNextX96 < newSqrtPriceX96
+  //           : step.sqrtPriceNextX96 > newSqrtPriceX96
+  //       )
+  //         ? newSqrtPriceX96
+  //         : step.sqrtPriceNextX96,
+  //       state.liquidity + state.reinvestL,
+  //       state.amountSpecifiedRemaining,
+  //       poolState.swapFeeUnits,
+  //       exactInput,
+  //       zeroForOne,
+  //     );
+  //     step.amountIn = stepRs.usedAmount;
+  //     step.amountOut = stepRs.returnedAmount;
+  //     step.deltaL = stepRs.deltaL;
+  //     state.sqrtPriceX96 = stepRs.nextSqrtP;
+
+  //     state.amountSpecifiedRemaining =
+  //       state.amountSpecifiedRemaining - step.amountIn;
+  //     state.amountCalculated = state.amountCalculated + step.amountOut;
+  //     state.reinvestL = state.reinvestL + step.deltaL;
+  //     if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+  //       if (step.initialized) {
+  //         let liquidityNet = TickList.getTick(
+  //           state.tickList,
+  //           Number(step.tickNext),
+  //         ).liquidityNet;
+  //         if (zeroForOne) liquidityNet = -liquidityNet;
+  //         state.liquidity = LiquidityMath.addDelta(
+  //           state.liquidity,
+  //           liquidityNet,
+  //         );
+  //       }
+
+  //       state.tick = zeroForOne ? step.tickNext - 1n : step.tickNext;
+  //     } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
+  //       state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
+  //     }
+  //   }
+
+  //   if (poolState.currentTick !== newTick) {
+  //     [poolState.poolData.sqrtP, poolState.currentTick] = [
+  //       newSqrtPriceX96,
+  //       newTick,
+  //     ];
+  //   } else {
+  //     poolState.poolData.sqrtP = newSqrtPriceX96;
+  //   }
+
+  //   if (poolState.poolData.baseL !== newLiquidity)
+  //     poolState.poolData.baseL = newLiquidity;
+  //   return state.amountCalculated;
+  // }
+
+  modifyPosition(
+    state: PoolState,
+    params: ModifyPositionParams,
+  ): [bigint, bigint] {
+    this._checkTicks(params.tickLower, params.tickUpper);
+
+    let amount0 = 0n;
+    let amount1 = 0n;
+    if (params.liquidityDelta !== 0n) {
+      if (state.currentTick < params.tickLower) {
+        amount0 = SqrtPriceMath._getAmount0DeltaO(
+          TickMath.getSqrtRatioAtTick(params.tickLower),
+          TickMath.getSqrtRatioAtTick(params.tickUpper),
+          params.liquidityDelta,
+        );
+      } else if (state.currentTick < params.tickUpper) {
+        const liquidityBefore = state.poolData.baseL;
+
+        amount0 = SqrtPriceMath._getAmount0DeltaO(
+          state.poolData.sqrtP,
+          TickMath.getSqrtRatioAtTick(params.tickUpper),
+          params.liquidityDelta,
+        );
+        amount1 = SqrtPriceMath._getAmount1DeltaO(
+          TickMath.getSqrtRatioAtTick(params.tickLower),
+          state.poolData.sqrtP,
+          params.liquidityDelta,
+        );
+
+        state.poolData.baseL = LiquidityMath.addDelta(
+          liquidityBefore,
+          params.liquidityDelta,
+        );
+      } else {
+        amount1 = SqrtPriceMath._getAmount1DeltaO(
+          TickMath.getSqrtRatioAtTick(params.tickLower),
+          TickMath.getSqrtRatioAtTick(params.tickUpper),
+          params.liquidityDelta,
+        );
+      }
+    }
+    return [amount0, amount1];
+  }
+
+  private _getInitialSwapData(
     state: PoolState,
     poolData: PoolData,
     isToken0: boolean,
@@ -396,5 +574,27 @@ class KSElasticMath {
     };
     return initState;
   }
+
+  private _checkTicks(tickLower: bigint, tickUpper: bigint) {
+    _require(
+      tickLower < tickUpper,
+      'TLU',
+      { tickLower, tickUpper },
+      'tickLower < tickUpper',
+    );
+    _require(
+      tickLower >= TickMath.MIN_TICK,
+      'TLM',
+      { tickLower },
+      'tickLower >= TickMath.MIN_TICK',
+    );
+    _require(
+      tickUpper <= TickMath.MAX_TICK,
+      'TUM',
+      { tickUpper },
+      'tickUpper <= TickMath.MAX_TICK',
+    );
+  }
 }
+
 export const ksElasticMath = new KSElasticMath();

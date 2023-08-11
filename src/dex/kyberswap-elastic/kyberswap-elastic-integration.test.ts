@@ -144,13 +144,13 @@ async function checkOnChainPricing(
 
 describe('KyberswapElastic', function () {
   let blockNumber: number;
-  let uniswapV3: KyberswapElastic;
-  let uniswapV3Mainnet: KyberswapElastic;
+  let kyberswapElastic: KyberswapElastic;
+  let kyberswapElasticMainnet: KyberswapElastic;
 
   beforeEach(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    uniswapV3 = new KyberswapElastic(network, dexKey, dexHelper);
-    uniswapV3Mainnet = new KyberswapElastic(
+    kyberswapElastic = new KyberswapElastic(network, dexKey, dexHelper);
+    kyberswapElasticMainnet = new KyberswapElastic(
       Network.MAINNET,
       dexKey,
       new DummyDexHelper(Network.MAINNET),
@@ -158,7 +158,7 @@ describe('KyberswapElastic', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const pools = await uniswapV3.getPoolIdentifiers(
+    const pools = await kyberswapElastic.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
@@ -168,7 +168,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await uniswapV3.getPricesVolume(
+    const poolPrices = await kyberswapElastic.getPricesVolume(
       TokenA,
       TokenB,
       amounts,
@@ -185,9 +185,9 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          uniswapV3,
+          kyberswapElastic,
           KyberElasticFunctions.quoteExactInputSingle,
           blockNumber,
           price.prices,
@@ -204,7 +204,7 @@ describe('KyberswapElastic', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const pools = await uniswapV3.getPoolIdentifiers(
+    const pools = await kyberswapElastic.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.BUY,
@@ -214,7 +214,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await uniswapV3.getPricesVolume(
+    const poolPrices = await kyberswapElastic.getPricesVolume(
       TokenA,
       TokenB,
       amountsBuy,
@@ -232,9 +232,9 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          uniswapV3,
+          kyberswapElastic,
           KyberElasticFunctions.quoteExactOutputSingle,
           blockNumber,
           price.prices,
@@ -310,7 +310,7 @@ describe('KyberswapElastic', function () {
       300000000n,
     ];
 
-    const pools = await uniswapV3.getPoolIdentifiers(
+    const pools = await kyberswapElastic.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
@@ -320,7 +320,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await uniswapV3.getPricesVolume(
+    const poolPrices = await kyberswapElastic.getPricesVolume(
       TokenA,
       TokenB,
       amounts,
@@ -343,9 +343,9 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          uniswapV3,
+          kyberswapElastic,
           KyberElasticFunctions.quoteExactInputSingle,
           blockNumber,
           price.prices,
@@ -421,7 +421,7 @@ describe('KyberswapElastic', function () {
       300000000n,
     ];
 
-    const pools = await uniswapV3.getPoolIdentifiers(
+    const pools = await kyberswapElastic.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.BUY,
@@ -431,7 +431,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await uniswapV3.getPricesVolume(
+    const poolPrices = await kyberswapElastic.getPricesVolume(
       TokenA,
       TokenB,
       amountsBuy,
@@ -454,9 +454,9 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          uniswapV3,
+          kyberswapElastic,
           KyberElasticFunctions.quoteExactOutputSingle,
           blockNumber,
           price.prices,
@@ -472,13 +472,13 @@ describe('KyberswapElastic', function () {
   });
 
   it('getTopPoolsForToken', async function () {
-    const poolLiquidity = await uniswapV3Mainnet.getTopPoolsForToken(
+    const poolLiquidity = await kyberswapElasticMainnet.getTopPoolsForToken(
       Tokens[Network.MAINNET]['USDC'].address,
       10,
     );
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
-    if (!uniswapV3.hasConstantPriceLargeAmounts) {
+    if (!kyberswapElastic.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
     }
   });

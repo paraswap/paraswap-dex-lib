@@ -6,3 +6,7 @@ export const MAX_TICK_DISTANCE = 480n;
 export const FEE_UNITS = 100000n;
 export const TWO_FEE_UNITS = FEE_UNITS + FEE_UNITS;
 export const TWO_POW_96 = BigInt(2) ** BigInt(96);
+
+export const NEGATIVE_ONE = -1n;
+export const ZERO = 0n;
+export const ONE = 1n;
