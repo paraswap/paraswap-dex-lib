@@ -1,68 +1,67 @@
-import { UnoptimizedRate, OptimalSwapExchange } from '../../types';
-import { BalancerSwapV2 } from './types';
+import _ from 'lodash';
+import { UnoptimizedRate } from '../../types';
 import { SwapSide } from '../../constants';
 import { BalancerConfig } from './config';
+import { OptimalSwap } from '@paraswap/core';
 
 export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
-  const fixSwap = (
-    rawSwap: OptimalSwapExchange<any>[],
-    exchange: string,
-    side: SwapSide,
-  ): OptimalSwapExchange<any>[] => {
-    const exchangeLower = exchange.toLowerCase();
-    const newBalancer: OptimalSwapExchange<any> = {
-      exchange,
-      srcAmount: '0',
-      destAmount: '0',
-      percent: 0,
-      poolAddresses: [],
-      data: {
-        swaps: new Array<BalancerSwapV2>(),
-        gasUSD: '0',
-      },
-    };
-    let optimizedSwap = new Array<OptimalSwapExchange<any>>();
-    rawSwap.forEach((_s: OptimalSwapExchange<any>) => {
-      if (_s.exchange.toLowerCase() === exchangeLower) {
-        const s = _s;
-        newBalancer.srcAmount = (
-          BigInt(newBalancer.srcAmount) + BigInt(s.srcAmount)
+  const fixSwap = (rawRate: OptimalSwap[], side: SwapSide): OptimalSwap[] => {
+    let lastExchange: false | OptimalSwap = false;
+    let optimizedRate = new Array<OptimalSwap>();
+    rawRate.forEach((s: OptimalSwap) => {
+      if (
+        s.swapExchanges.length !== 1 ||
+        !Object.keys(BalancerConfig).includes(
+          s.swapExchanges[0].exchange.toLowerCase(),
+        )
+      ) {
+        lastExchange = false;
+        optimizedRate.push(s);
+      } else if (
+        lastExchange &&
+        lastExchange.swapExchanges[0].exchange.toLowerCase() ===
+          s.swapExchanges[0].exchange.toLowerCase() &&
+        _.last(
+          <any[]>lastExchange.swapExchanges[0].data.path,
+        )!.tokenOut.toLowerCase() ===
+          s.swapExchanges[0].data.path[0].tokenIn.toLowerCase()
+      ) {
+        const [lastExchangeSwap] = lastExchange.swapExchanges;
+        const [currentSwap] = s.swapExchanges;
+        lastExchangeSwap.srcAmount = (
+          BigInt(lastExchangeSwap.srcAmount) + BigInt(currentSwap.srcAmount)
         ).toString();
 
-        newBalancer.destAmount = (
-          BigInt(newBalancer.destAmount) + BigInt(s.destAmount)
+        lastExchangeSwap.destAmount = (
+          BigInt(lastExchangeSwap.destAmount) + BigInt(currentSwap.destAmount)
         ).toString();
 
-        newBalancer.percent += s.percent;
-        newBalancer.data.exchangeProxy = s.data.exchangeProxy;
-        newBalancer.data.gasUSD = (
-          parseFloat(newBalancer.data.gasUSD) + parseFloat(s.data.gasUSD)
+        lastExchangeSwap.percent += currentSwap.percent;
+        lastExchangeSwap.data.exchangeProxy = currentSwap.data.exchangeProxy;
+        lastExchangeSwap.data.gasUSD = (
+          parseFloat(lastExchangeSwap.data.gasUSD) +
+          parseFloat(currentSwap.data.gasUSD)
         ).toFixed(6);
 
-        newBalancer.data.swaps.push({
-          poolId: s.data.poolId,
-          amount: side === SwapSide.SELL ? s.srcAmount : s.destAmount,
+        lastExchangeSwap.data.swaps.push({
+          poolId: currentSwap.data.poolId,
+          amount:
+            side === SwapSide.SELL
+              ? currentSwap.srcAmount
+              : currentSwap.destAmount,
         });
-        newBalancer.poolAddresses!.push(s.poolAddresses![0]);
+        lastExchangeSwap.poolAddresses!.push(currentSwap.poolAddresses![0]);
       } else {
-        optimizedSwap.push(_s);
+        lastExchange = _.cloneDeep(s);
+        optimizedRate.push(lastExchange);
       }
     });
-    if (newBalancer.data!.swaps.length) optimizedSwap.push(newBalancer);
-    return optimizedSwap;
+    return optimizedRate;
   };
 
   or.bestRoute = or.bestRoute.map(r => ({
     ...r,
-    swaps: r.swaps.map(s => {
-      return {
-        ...s,
-        swapExchanges: Object.keys(BalancerConfig).reduce(
-          (acc, exchange) => fixSwap(acc, exchange, or.side),
-          s.swapExchanges,
-        ),
-      };
-    }),
+    swaps: fixSwap(r.swaps, or.side),
   }));
   return or;
 }
