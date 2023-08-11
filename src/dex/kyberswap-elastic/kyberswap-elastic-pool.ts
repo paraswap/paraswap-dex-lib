@@ -4,10 +4,11 @@ import { NumberAsString } from '@paraswap/core';
 import { BytesLike, ethers } from 'ethers';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
-import { DeepReadonly } from 'ts-essentials';
+import { assert, DeepReadonly } from 'ts-essentials';
 
 import { Log, Logger, Address, BlockHeader } from '../../types';
 import { bigIntify, catchParseLogError } from '../../utils';
+import { generateConfig } from '../../config';
 import { ERC20EventSubscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber';
 import {
   StatefulEventSubscriber,
@@ -23,7 +24,7 @@ import MultiCallABI from '../../abi/multi-v2.json';
 import PoolABI from '../../abi/kyberswap-elastic/IPool.json';
 import TicksFeesReaderABI from '../../abi/kyberswap-elastic/TicksFeesReader.json';
 
-import { KyberswapElasticConfig } from './config';
+import { KyberswapElasticConfig, TICK_DISTANCE } from './config';
 import {
   PoolState,
   TickInfo,
@@ -33,10 +34,21 @@ import {
   LiquidityStateResponse,
   FeeGrowthGlobalResponse,
   SecondsPerLiquidityResponse,
+  LinkedlistData,
+  InitializedTicksResponse,
+  TicksResponse,
 } from './types';
 import { TickMath } from './contract-math/TickMath';
 import { ksElasticMath } from './contract-math/kyberswap-elastic-math';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
+import {
+  decodeInitializedTicks,
+  decodeLiquidityState,
+  decodePoolState,
+  decodeSecondsPerLiquidity,
+  decodeTicks,
+} from './utils/decoders';
+import { ERR_POOL_DOES_NOT_EXIST } from './errors';
 
 export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -50,22 +62,24 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
+  public addressesSubscribed: string[];
+
   public poolContract: Contract;
 
-  private _poolAddress?: Address;
   readonly erc20Iface = new Interface(ERC20ABI);
   readonly kyberswapElasticIface = new Interface(PoolABI);
+
   readonly multicallContract: Contract;
   readonly ticksFeesReaderContract: Contract;
-  public token0sub: ERC20EventSubscriber;
-  public token1sub: ERC20EventSubscriber;
+
+  private _poolAddress?: Address;
+  private _stateRequestCallData?: MultiCallParams<KyberElasticStateResponses>[];
 
   constructor(
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
-    logger: Logger,
+    protected logger: Logger,
     protected config = KyberswapElasticConfig[parentName][network],
     readonly swapFeeUnits: bigint,
     readonly token0: Address,
@@ -73,12 +87,13 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
   ) {
     super(parentName, `${token0}_${token1}_${swapFeeUnits}`, dexHelper, logger);
 
-    this.token0 = token0.toLowerCase();
-    this.token1 = token1.toLowerCase();
-
     this.logDecoder = (log: Log) => this.kyberswapElasticIface.parseLog(log);
     this.addressesSubscribed = new Array<Address>(1);
 
+    this.token0 = token0.toLowerCase();
+    this.token1 = token1.toLowerCase();
+
+    // Initialize contract instances
     this.poolContract = new this.dexHelper.web3Provider.eth.Contract(
       PoolABI as AbiItem[],
       this.poolAddress,
@@ -88,22 +103,25 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       MultiCallABI as AbiItem[],
       this.dexHelper.config.data.multicallV2Address,
     );
+
     this.ticksFeesReaderContract = new this.dexHelper.web3Provider.eth.Contract(
       TicksFeesReaderABI as AbiItem[],
       config.ticksFeesReader,
     );
 
-    // Add handlers
-    this.token0sub = getERC20Subscriber(this.dexHelper, this.token0);
-    this.token1sub = getERC20Subscriber(this.dexHelper, this.token1);
-    this.handlers['Swap'] = this.handleSwapEvent.bind(this);
-    this.handlers['Burn'] = this.handleBurnEvent.bind(this);
-    this.handlers['Mint'] = this.handleMintEvent.bind(this);
+    // Event handlers
+    this.handlers['Swap'] = this._handleSwapEvent.bind(this);
+    this.handlers['Burn'] = this._handleBurnEvent.bind(this);
+    this.handlers['Mint'] = this._handleMintEvent.bind(this);
+  }
+
+  set poolAddress(address: Address) {
+    this._poolAddress = address.toLowerCase();
   }
 
   get poolAddress() {
     if (this._poolAddress === undefined) {
-      this._poolAddress = this._computePoolAddress(
+      this._poolAddress = this.computePoolAddress(
         this.token0,
         this.token1,
         this.swapFeeUnits,
@@ -112,8 +130,21 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     return this._poolAddress;
   }
 
-  set poolAddress(address: Address) {
-    this._poolAddress = address.toLowerCase();
+  computePoolAddress(token0: Address, token1: Address, fee: bigint): Address {
+    if (token0 > token1) [token0, token1] = [token1, token0];
+
+    const encodedKey = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ['address', 'address', 'uint24'],
+        [token0, token1, BigInt.asUintN(24, fee)],
+      ),
+    );
+
+    return ethers.utils.getCreate2Address(
+      this.config.factory,
+      encodedKey,
+      this.config.poolInitHash,
+    );
   }
 
   async initialize(
@@ -189,34 +220,87 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
   public async generateState(
     blockNumber: number,
   ): Promise<Readonly<PoolState>> {
-    const PoolDataRequests = [
-      this._getPoolState(blockNumber),
-      this._getLiquidityState(blockNumber),
-      this._getFeeGrowthGlobal(blockNumber),
-      this._getSecondsPerLiquidityData(blockNumber),
-      this._getRTokenSupply(blockNumber),
-    ];
+    this.addressesSubscribed[0] = this.poolAddress;
 
-    let _poolState,
-      _liquidityState,
-      _feeGrowthGlobal,
-      _secondsPerLiquidity,
-      _rTokenSupply: KyberElasticStateResponses;
+    const [_poolData, _balance0, _balance1, _blockTimestamp] =
+      await this._fetchPoolData(blockNumber);
 
-    [
+    const [_initializedTicks, _ticks] = await this._fetchTicks(blockNumber);
+
+    const _tickDistance = TICK_DISTANCE[this.swapFeeUnits.toString()];
+    const _maxTickLiquidity =
+      BI_MAX_UINT128 / TickMath.getMaxNumberTicks(_tickDistance);
+
+    return <PoolState>{
+      pool: this.poolAddress,
+      tickDistance: _tickDistance,
+      poolOracle: undefined,
+      poolObservation: undefined,
+      maxTickLiquidity: _maxTickLiquidity,
+      swapFeeUnits: this.swapFeeUnits,
+      poolData: _poolData,
+      ticks: _ticks,
+      initializedTicks: _initializedTicks,
+      reinvestLiquidity: _poolData.reinvestL,
+      currentTick: _poolData.currentTick,
+      balance0: _balance0,
+      balance1: _balance1,
+      isValid: !_poolData.locked,
+      blockTimestamp: _blockTimestamp,
+    };
+  }
+
+  /**
+   * Fetch Pool States
+   */
+  private async _fetchPoolData(
+    blockNumber: number,
+  ): Promise<[PoolData, bigint, bigint, bigint]> {
+    const _poolStateCalldata = this._constructPoolDataCalldata();
+
+    const _fetchedPoolStates = await this.dexHelper.multiWrapper.tryAggregate<
+      bigint | KyberElasticStateResponses
+    >(
+      false,
+      _poolStateCalldata,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
+    );
+
+    // Check the poolState call, if failed -> the pool doesn't exist
+    assert(_fetchedPoolStates[0].success, ERR_POOL_DOES_NOT_EXIST);
+
+    const [
       _poolState,
       _liquidityState,
       _feeGrowthGlobal,
       _secondsPerLiquidity,
       _rTokenSupply,
-    ] = await Promise.all(PoolDataRequests);
-    _poolState = _poolState as PoolStateResponse;
-    _liquidityState = _liquidityState as LiquidityStateResponse;
-    _feeGrowthGlobal = _feeGrowthGlobal as FeeGrowthGlobalResponse;
-    _secondsPerLiquidity = _secondsPerLiquidity as SecondsPerLiquidityResponse;
-    _rTokenSupply = _rTokenSupply as FeeGrowthGlobalResponse;
+      _blockTimestamp,
+      _balance0,
+      _balance1,
+    ] = [
+      _fetchedPoolStates[0].returnData,
+      _fetchedPoolStates[1].returnData,
+      _fetchedPoolStates[2].returnData,
+      _fetchedPoolStates[3].returnData,
+      _fetchedPoolStates[4].returnData,
+      _fetchedPoolStates[5].returnData,
+      _fetchedPoolStates[6].returnData,
+      _fetchedPoolStates[7].returnData,
+    ] as [
+      PoolStateResponse,
+      LiquidityStateResponse,
+      FeeGrowthGlobalResponse,
+      SecondsPerLiquidityResponse,
+      FeeGrowthGlobalResponse,
+      bigint,
+      bigint,
+      bigint,
+    ];
 
-    const poolData: PoolData = {
+    const _poolData: PoolData = {
       sqrtP: _poolState.sqrtP,
       nearestCurrentTick: _poolState.nearestCurrentTick,
       currentTick: _poolState.currentTick,
@@ -227,110 +311,116 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       secondsPerLiquidityGlobal: _secondsPerLiquidity.secondsPerLiquidityGlobal,
       secondsPerLiquidityUpdateTime: _secondsPerLiquidity.lastUpdateTime,
       rTokenSupply: _rTokenSupply,
+      locked: _poolState.locked,
     };
 
-    // Fetch ticks
-    const _ticks = await this._getAllTicks(this.poolAddress, blockNumber);
-    const ticks = {};
-    const newTicks = _.filter(_ticks, tick => tick != 0);
-    const tickInfosFromContract = await this._getTickInfoFromContract(newTicks);
-    this._setTicksMapping(ticks, newTicks, tickInfosFromContract);
+    return [_poolData, _balance0, _balance1, _blockTimestamp];
+  }
 
-    // Not really a good place to do it, but in order to save RPC requests,
-    // put it here
-    this.addressesSubscribed[0] = this.poolAddress;
-
-    const tickDistance = this.state?.tickDistance;
-    let isValid = false;
-    if (_poolState.locked == false || _poolState.locked == undefined) {
-      isValid = true;
+  private _constructPoolDataCalldata(): MultiCallParams<KyberElasticStateResponses>[] {
+    if (!this._stateRequestCallData) {
+      this._stateRequestCallData = [
+        {
+          target: this.poolAddress,
+          callData: this.poolContract.methods.getPoolState().encodeABI(),
+          decodeFunction: decodePoolState,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolContract.methods.getLiquidityState().encodeABI(),
+          decodeFunction: decodeLiquidityState,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolContract.methods.getFeeGrowthGlobal().encodeABI(),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolContract.methods
+            .getSecondsPerLiquidityData()
+            .encodeABI(),
+          decodeFunction: decodeSecondsPerLiquidity,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.poolContract.methods.totalSupply().encodeABI(),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: generateConfig(this.network).multicallV2Address,
+          callData: this.dexHelper.multiContract.methods
+            .getCurrentBlockTimestamp()
+            .encodeABI(),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.token0,
+          callData: this.erc20Iface.encodeFunctionData('balanceOf', [
+            this.poolAddress,
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.token1,
+          callData: this.erc20Iface.encodeFunctionData('balanceOf', [
+            this.poolAddress,
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+      ];
     }
 
-    return <PoolState>{
-      pool: this.poolAddress,
-      tickDistance: tickDistance,
-      poolOracle: undefined,
-      poolObservation: undefined,
-      maxTickLiquidity:
-        BI_MAX_UINT128 / TickMath.getMaxNumberTicks(tickDistance as bigint),
-      swapFeeUnits: this.swapFeeUnits,
-      poolData: poolData,
-      // sqrtPriceX96: bigIntify(_poolState.sqrtP),
-      // liquidity: bigIntify(_liquidityState.baseL),
-      // ticks: ticks,
-      // isValid: isValid,
-      // currentTick: bigIntify(currentTick),
-      // reinvestLiquidity: bigIntify(_liquidityState.reinvestL),
-    };
+    return this._stateRequestCallData;
   }
 
-  // Its just a dummy example
-  handleMyEvent(
-    event: any,
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    return null;
-  }
+  /**
+   * Fetch Ticks States
+   */
 
-  _computePoolAddress(token0: Address, token1: Address, fee: bigint): Address {
-    if (token0 > token1) [token0, token1] = [token1, token0];
-
-    const encodedKey = ethers.utils.keccak256(
-      ethers.utils.defaultAbiCoder.encode(
-        ['address', 'address', 'uint24'],
-        [token0, token1, BigInt.asUintN(24, fee)],
-      ),
-    );
-
-    return ethers.utils.getCreate2Address(
-      this.config.factory,
-      encodedKey,
-      this.config.poolInitHash,
-    );
-  }
-
-  _getPoolState(blockNumber: number): PoolStateResponse {
-    const callRequest = {
-      funcName: 'getPoolState',
-      params: [],
-    };
-    return this.poolContract.methods[callRequest.funcName](
-      ...callRequest.params,
-    ).call({}, blockNumber || 'latest');
-  }
-
-  _getLiquidityState(blockNumber: number): LiquidityStateResponse {
-    return this.poolContract.methods['getLiquidityState']().call(
-      {},
-      blockNumber || 'latest',
-    );
-  }
-
-  _getFeeGrowthGlobal(blockNumber: number): bigint {
-    return this.poolContract.methods['getFeeGrowthGlobal']().call(
-      {},
-      blockNumber || 'latest',
-    );
-  }
-
-  _getSecondsPerLiquidityData(
+  private async _fetchTicks(
     blockNumber: number,
-  ): SecondsPerLiquidityResponse {
-    return this.poolContract.methods['getSecondsPerLiquidityData']().call(
-      {},
-      blockNumber || 'latest',
+  ): Promise<
+    [Record<NumberAsString, LinkedlistData>, Record<NumberAsString, TickInfo>]
+  > {
+    let _initializedTicks: Record<NumberAsString, LinkedlistData> = {};
+    let _ticks: Record<NumberAsString, TickInfo> = {};
+
+    const _tickIndice = await this._fetchInitializedTickIndice(blockNumber);
+
+    const _tickCallata = this._constructTickCalldata(_tickIndice);
+    const _fetchedTickData = await this.dexHelper.multiWrapper.tryAggregate<
+      bigint | KyberElasticStateResponses
+    >(
+      false,
+      _tickCallata,
+      blockNumber,
+      this.dexHelper.multiWrapper.defaultBatchSize,
+      false,
     );
+
+    const _fetchedInitializedTicks = _fetchedTickData.filter(
+      (value, index) => index % 2 == 0,
+    );
+    const _fetchedTicks = _fetchedTickData.filter(
+      (value, index) => index % 2 == 1,
+    );
+
+    this._reduceInitializedTicks(
+      _tickIndice,
+      _initializedTicks,
+      _fetchedInitializedTicks.map(value => value.returnData),
+    );
+    this._reduceTicks(
+      _tickIndice,
+      _ticks,
+      _fetchedTicks.map(value => value.returnData),
+    );
+
+    return [_initializedTicks, _ticks];
   }
 
-  _getRTokenSupply(blockNumber: number): FeeGrowthGlobalResponse {
-    return this.poolContract.methods['totalSupply']().call(
-      {},
-      blockNumber || 'latest',
-    );
-  }
-
-  async _getTickInRange(
+  private async _fetchTickInRange(
     poolAddress: string,
     startTick: number,
     length: number,
@@ -345,42 +435,91 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     ).call({}, blockNumber || 'latest');
   }
 
-  async _getAllTicks(poolAddress: string, blockNumber: number) {
+  private async _fetchInitializedTickIndice(blockNumber: number) {
+    let allTickIndice: number[] = [];
     let startTick = -887272;
-    let length = 1000;
-    let shouldFinish = false;
-    let allTicks: number[] = [];
-    while (!shouldFinish) {
-      let ticks = await this._getTickInRange(
-        poolAddress,
+    let size = 2000; // The highest number of ticks in a pool (include ks elastic, uniswapv3 is about 1700 ticks)
+
+    let fetchedDone = false;
+    while (!fetchedDone) {
+      let tickInRage = await this._fetchTickInRange(
+        this.poolAddress,
         startTick,
-        length,
+        size,
         blockNumber,
       );
-      if (ticks.length < length || ticks[length - 1] == 0) {
-        shouldFinish = true;
+      if (tickInRage.length < size || tickInRage[size - 1] == 0) {
+        fetchedDone = true;
       }
-      allTicks = _.concat(allTicks, ticks);
+      allTickIndice = _.concat(allTickIndice, tickInRage);
     }
-    return _.filter(allTicks, tick => tick != 0);
+
+    let index = allTickIndice.length - 1;
+    while (allTickIndice[index] == 0) {
+      index--;
+    }
+
+    return allTickIndice.slice(0, index);
   }
 
-  _setTicksMapping(
-    ticks: Record<NumberAsString, TickInfo>,
-    tickArray: number[],
-    tickInfosFromContract: any[],
+  private _constructTickCalldata(
+    _tickIndice: Number[],
+  ): MultiCallParams<KyberElasticStateResponses>[] {
+    const _tickCallData: MultiCallParams<KyberElasticStateResponses>[] = [];
+
+    for (const tickIndex of _tickIndice) {
+      _tickCallData.push(
+        {
+          target: this.poolAddress,
+          callData: this.kyberswapElasticIface.encodeFunctionData(
+            'initializedTicks',
+            [tickIndex],
+          ),
+          decodeFunction: decodeInitializedTicks,
+        },
+        {
+          target: this.poolAddress,
+          callData: this.kyberswapElasticIface.encodeFunctionData('ticks', [
+            tickIndex,
+          ]),
+          decodeFunction: decodeTicks,
+        },
+      );
+    }
+
+    return _tickCallData;
+  }
+
+  private _reduceInitializedTicks(
+    tickIndice: number[],
+    initializedTicks: Record<NumberAsString, LinkedlistData>,
+    initializedTicksToReduce: KyberElasticStateResponses[],
   ) {
-    return tickInfosFromContract.reduce<Record<string, TickInfo>>(
-      (acc, element, index) => {
-        acc[tickArray[index]] = {
-          liquidityGross: bigIntify(element.liquidityGross),
-          liquidityNet: bigIntify(element.liquidityNet),
-          feeGrowthOutside: bigIntify(
-            element.liquidityNet * element.secondsPerLiquidityOutside,
-          ),
-          secondsPerLiquidityOutside: bigIntify(
-            element.secondsPerLiquidityOutside,
-          ),
+    return initializedTicksToReduce.reduce<
+      Record<NumberAsString, LinkedlistData>
+    >((acc, curr, index) => {
+      const value = curr as InitializedTicksResponse;
+      acc[tickIndice[index]] = <LinkedlistData>{
+        previous: value.previous,
+        next: value.next,
+      };
+      return acc;
+    }, initializedTicks);
+  }
+
+  private _reduceTicks(
+    tickIndice: number[],
+    ticks: Record<NumberAsString, TickInfo>,
+    ticksToReduce: KyberElasticStateResponses[],
+  ) {
+    return ticksToReduce.reduce<Record<NumberAsString, TickInfo>>(
+      (acc, curr, index) => {
+        const value = curr as TicksResponse;
+        acc[tickIndice[index]] = <TickInfo>{
+          liquidityGross: value.liquidityGross,
+          liquidityNet: value.liquidityNet,
+          feeGrowthOutside: value.feeGrowthOutside,
+          secondsPerLiquidityOutside: value.secondsPerLiquidityOutside,
         };
         return acc;
       },
@@ -388,81 +527,10 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     );
   }
 
-  _buildParamsForTicksCall(ticks: Number[]): {
-    target: string;
-    callData: string;
-  }[] {
-    return ticks.map(tickIndex => ({
-      target: this.poolAddress,
-      callData: this.kyberswapElasticIface.encodeFunctionData('ticks', [
-        tickIndex,
-      ]),
-    }));
-  }
-
-  decodeTicksCallResults(multiCallTickResult: []) {
-    const result = new Array(multiCallTickResult.length);
-    multiCallTickResult.forEach((element, index) => {
-      result[index] = this.kyberswapElasticIface.decodeFunctionResult(
-        'ticks',
-        element,
-      );
-    });
-    return result;
-  }
-
-  async _getTickInfoFromContract(ticks: number[]) {
-    const multiCallResult = (
-      await this.multicallContract.methods
-        .aggregate(this._buildParamsForTicksCall(ticks))
-        .call()
-    ).returnData;
-    return this.decodeTicksCallResults(multiCallResult);
-  }
-
-  // private _getStateRequestCallData() {
-  //   if (!this._stateRequestCallData) {
-  //     const callData: MultiCallParams<
-  //       bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-  //     >[] = [
-  //       {
-  //         target: this.token0,
-  //         callData: this.erc20Interface.encodeFunctionData('balanceOf', [
-  //           this.poolAddress,
-  //         ]),
-  //         decodeFunction: uint256ToBigInt,
-  //       },
-  //       {
-  //         target: this.token1,
-  //         callData: this.erc20Interface.encodeFunctionData('balanceOf', [
-  //           this.poolAddress,
-  //         ]),
-  //         decodeFunction: uint256ToBigInt,
-  //       },
-  //       {
-  //         target: this.stateMultiContract.options.address,
-  //         callData: this.stateMultiContract.methods
-  //           .getFullStateWithRelativeBitmaps(
-  //             this.factoryAddress,
-  //             this.token0,
-  //             this.token1,
-  //             this.feeCode,
-  //             this.getBitmapRangeToRequest(),
-  //             this.getBitmapRangeToRequest(),
-  //           )
-  //           .encodeABI(),
-  //         decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
-  //       },
-  //     ];
-  //     this._stateRequestCallData = callData;
-  //   }
-  //   return this._stateRequestCallData;
-  // }
-
   /**
    * Handle events
    */
-  handleSwapEvent(
+  private _handleSwapEvent(
     event: any,
     pool: PoolState,
     log: Log,
@@ -496,7 +564,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     }
   }
 
-  handleBurnEvent(
+  private _handleBurnEvent(
     event: any,
     pool: PoolState,
     log: Log,
@@ -515,7 +583,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     return pool;
   }
 
-  handleMintEvent(
+  private _handleMintEvent(
     event: any,
     pool: PoolState,
     log: Log,

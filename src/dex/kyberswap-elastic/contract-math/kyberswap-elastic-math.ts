@@ -32,7 +32,7 @@ type SwapDataState = {
   reinvestLLast: bigint;
   feeGrowthGlobal: bigint;
   secondsPerLiquidityGlobal: bigint;
-  secondsPerLiquidityUpdateTime: number;
+  secondsPerLiquidityUpdateTime: bigint;
   rTokenSupply: bigint;
   governmentFeeUnits: bigint;
   governmentFee: bigint;
@@ -105,11 +105,11 @@ function _simulateSwap(
     let deltaL = 0n;
 
     const swapStepResult = SwapMath.computeSwapStep(
-      swapData.baseL + swapData.reinvestL,
-      swapData.sqrtP,
-      targetSqrtP,
-      poolState.swapFeeUnits,
-      swapData.specifiedAmount,
+      BigInt(swapData.baseL + swapData.reinvestL),
+      BigInt(swapData.sqrtP),
+      BigInt(targetSqrtP),
+      BigInt(poolState.swapFeeUnits),
+      BigInt(swapData.specifiedAmount),
       swapData.isExactInput,
       swapData.isToken0,
     );
@@ -142,7 +142,7 @@ function _simulateSwap(
       bigIntify(swapData.secondsPerLiquidityUpdateTime);
 
     if (secondsElapsed > 0n) {
-      swapData.secondsPerLiquidityUpdateTime = Number(swapData.blockTimestamp);
+      swapData.secondsPerLiquidityUpdateTime = swapData.blockTimestamp;
       if (swapData.baseL > 0n) {
         swapData.secondsPerLiquidityGlobal += BigInt.asUintN(
           128,
@@ -378,7 +378,9 @@ class KSElasticMath {
       nearestCurrentTick: bigIntify(poolData.nearestCurrentTick),
       nextTick: !willTickUp
         ? bigIntify(poolData.nearestCurrentTick)
-        : bigIntify(state.initializedTicks[poolData.nearestCurrentTick].next),
+        : bigIntify(
+            state.initializedTicks[Number(poolData.nearestCurrentTick)].next,
+          ),
       specifiedAmount: 0n,
       returnedAmount: 0n,
       startSqrtP: poolData.sqrtP,

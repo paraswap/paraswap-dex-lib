@@ -49,30 +49,6 @@ describe('KyberswapElastic', function () {
 
     beforeAll(async () => {});
 
-    it('computePoolAddress', async function () {
-      const fee = 2000n;
-      const poollAddress: Address =
-        '0xc270E8bFddD1baeCB63f1F168cF16a5aF43F25F0';
-
-      const pool = new KyberswapElasticEventPool(
-        dexKey,
-        network,
-        dexHelper,
-        logger,
-        undefined,
-        fee,
-        tokens[srcTokenSymbol].address,
-        tokens[destTokenSymbol].address,
-      );
-
-      const poolAddress = pool._computePoolAddress(
-        tokens[srcTokenSymbol].address,
-        tokens[destTokenSymbol].address,
-        fee,
-      );
-      expect(poolAddress).toEqual(poollAddress);
-    });
-
     it('generateState', async function () {
       const fee = 2000n;
 
@@ -87,15 +63,8 @@ describe('KyberswapElastic', function () {
         tokens[destTokenSymbol].address,
       );
 
-      const poolAddress = pool._computePoolAddress(
-        tokens[srcTokenSymbol].address,
-        tokens[destTokenSymbol].address,
-        fee,
-      );
-
-      pool.poolAddress = poolAddress;
-
-      pool.generateState(45055522);
+      const poolState = await pool.generateState(45055522);
+      console.log('poolState :>> ', poolState);
     });
   });
 });
@@ -139,8 +108,8 @@ describe('KSElasticMath', function () {
     let initializedTicks: Record<NumberAsString, LinkedlistData> = {};
     for (const k of Object.keys(tickStates.initialized)) {
       initializedTicks[Number(k)] = {
-        next: Number(tickStates.initialized[k].next),
-        previous: Number(tickStates.initialized[k].previous),
+        next: tickStates.initialized[k].next,
+        previous: tickStates.initialized[k].previous,
       };
     }
 
@@ -148,14 +117,15 @@ describe('KSElasticMath', function () {
       poolData: {
         baseL: 2261342621265719n,
         sqrtP: 3454778945562389323500663n,
-        nearestCurrentTick: -205440,
-        currentTick: -200817,
+        nearestCurrentTick: -205440n,
+        currentTick: -200817n,
         reinvestL: 1394017088509n,
         reinvestLLast: 1390743530931n,
         feeGrowthGlobal: 40925750265702722835232144n,
         secondsPerLiquidityGlobal: 114027209703366548185n,
         rTokenSupply: 1389888297175n,
-        secondsPerLiquidityUpdateTime: 1689668195,
+        secondsPerLiquidityUpdateTime: 1689668195n,
+        locked: false,
       },
       balance0: 7670933715363360804n,
       balance1: 20455369261n,

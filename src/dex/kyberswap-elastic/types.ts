@@ -1,49 +1,11 @@
 import { Address } from '../../types';
 import { NumberAsString } from '../../types';
 
-export type TickInfo = {
-  liquidityGross: bigint;
-  liquidityNet: bigint;
-  feeGrowthOutside: bigint;
-  secondsPerLiquidityOutside: bigint;
-};
-
-export type PoolData = {
-  sqrtP: bigint;
-  nearestCurrentTick: number;
-  currentTick: number;
-  baseL: bigint;
-  reinvestL: bigint;
-  reinvestLLast: bigint;
-  feeGrowthGlobal: bigint;
-  secondsPerLiquidityGlobal: bigint;
-  secondsPerLiquidityUpdateTime: number;
-  rTokenSupply: bigint;
-};
-
-export type ObservationData = {
-  initialized: boolean;
-  index: number;
-  cardinality: number;
-  cardinalityNext: number;
-};
-
-export type OracleObservation = {
-  blockTimestamp: bigint;
-  tickCumulative: bigint;
-  initialized: boolean;
-};
-
-export type LinkedlistData = {
-  previous: number;
-  next: number;
-};
-
 export type PoolState = {
   pool: string;
   tickDistance: bigint;
   poolOracle?: ObservationData;
-  poolObservation?: Record<number, OracleObservation>;
+  poolObservation?: Record<NumberAsString, OracleObservation>;
   maxTickLiquidity: bigint;
   swapFeeUnits: bigint;
   poolData: PoolData;
@@ -55,6 +17,45 @@ export type PoolState = {
   balance1: bigint;
   isValid: boolean;
   blockTimestamp: bigint;
+};
+
+export type PoolData = {
+  sqrtP: bigint;
+  nearestCurrentTick: bigint;
+  currentTick: bigint;
+  baseL: bigint;
+  reinvestL: bigint;
+  reinvestLLast: bigint;
+  feeGrowthGlobal: bigint;
+  secondsPerLiquidityGlobal: bigint;
+  secondsPerLiquidityUpdateTime: bigint;
+  rTokenSupply: bigint;
+  locked: boolean;
+};
+
+export type TickInfo = {
+  liquidityGross: bigint;
+  liquidityNet: bigint;
+  feeGrowthOutside: bigint;
+  secondsPerLiquidityOutside: bigint;
+};
+
+export type LinkedlistData = {
+  previous: bigint;
+  next: bigint;
+};
+
+export type ObservationData = {
+  initialized: boolean;
+  index: bigint;
+  cardinality: bigint;
+  cardinalityNext: bigint;
+};
+
+export type OracleObservation = {
+  blockTimestamp: bigint;
+  tickCumulative: bigint;
+  initialized: boolean;
 };
 
 export type KyberswapElasticData = {
@@ -78,6 +79,7 @@ export type DexParams = {
   chunksCount: number;
   subgraphURL?: string;
 };
+
 export type KyberElasticSellParam = {
   path: string;
   recipient: Address;
@@ -97,14 +99,14 @@ export type KyberElasticBuyParam = {
 export type KyberElasticParam = KyberElasticSellParam | KyberElasticBuyParam;
 
 export enum KyberElasticFunctions {
-  exactInput = 'exactInput',
-  exactOutput = 'exactOutput',
+  quoteExactInputSingle = 'quoteExactInputSingle',
+  quoteExactOutputSingle = 'quoteExactOutputSingle',
 }
 
 export type PoolStateResponse = {
   sqrtP: bigint;
-  currentTick: number;
-  nearestCurrentTick: number;
+  currentTick: bigint;
+  nearestCurrentTick: bigint;
   locked: boolean;
 };
 
@@ -118,16 +120,31 @@ export type FeeGrowthGlobalResponse = bigint;
 
 export type SecondsPerLiquidityResponse = {
   secondsPerLiquidityGlobal: bigint;
-  lastUpdateTime: number;
+  lastUpdateTime: bigint;
 };
+
+export type InitializedTicksResponse = {
+  previous: bigint;
+  next: bigint;
+};
+
+export type TicksResponse = {
+  liquidityGross: bigint;
+  liquidityNet: bigint;
+  feeGrowthOutside: bigint;
+  secondsPerLiquidityOutside: bigint;
+};
+
+export type KyberElasticStateResponses =
+  | bigint
+  | PoolStateResponse
+  | LiquidityStateResponse
+  | FeeGrowthGlobalResponse
+  | SecondsPerLiquidityResponse
+  | InitializedTicksResponse
+  | TicksResponse;
 
 export type OutputResult = {
   outputs: bigint[];
   tickCounts: number[];
 };
-
-export type KyberElasticStateResponses =
-  | PoolStateResponse
-  | LiquidityStateResponse
-  | FeeGrowthGlobalResponse
-  | SecondsPerLiquidityResponse;

@@ -3,18 +3,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
+import { Address } from '@paraswap/core';
+
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { KyberswapElastic } from './kyberswap-elastic';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { Address } from '@paraswap/core';
-import QuoterABI from '../../abi/kyberswap-elastic/IQuoterV2.json';
+import QuoterV2ABI from '../../abi/kyberswap-elastic/IQuoterV2.json';
+import { KyberElasticFunctions } from './types';
 import { KyberswapElasticConfig } from './config';
 
 const network = Network.POLYGON;
@@ -36,7 +34,7 @@ const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'KyberswapElastic';
 
-const quoterIface = new Interface(QuoterABI);
+const quoterIface = new Interface(QuoterV2ABI);
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -50,11 +48,21 @@ function getReaderCalldata(
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      tokenIn,
-      tokenOut,
-      swapFeeUnits,
-      amount,
-      0n,
+      funcName == KyberElasticFunctions.quoteExactInputSingle
+        ? {
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            amountIn: amount,
+            feeUnits: swapFeeUnits,
+            limitSqrtP: 0n,
+          }
+        : {
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            amount: amount,
+            feeUnits: swapFeeUnits,
+            limitSqrtP: 0n,
+          },
     ]),
   }));
 }
@@ -66,7 +74,7 @@ function decodeReaderResult(
 ) {
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
+    return BigInt(parsed[0][1]._hex);
   });
 }
 
@@ -92,6 +100,7 @@ async function checkOnChainPricing(
     );
     return false;
   }
+
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
@@ -135,13 +144,13 @@ async function checkOnChainPricing(
 
 describe('KyberswapElastic', function () {
   let blockNumber: number;
-  let kyberswapElastic: KyberswapElastic;
-  let kyberswapElasticMainnet: KyberswapElastic;
+  let uniswapV3: KyberswapElastic;
+  let uniswapV3Mainnet: KyberswapElastic;
 
   beforeEach(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    kyberswapElastic = new KyberswapElastic(network, dexKey, dexHelper);
-    kyberswapElasticMainnet = new KyberswapElastic(
+    uniswapV3 = new KyberswapElastic(network, dexKey, dexHelper);
+    uniswapV3Mainnet = new KyberswapElastic(
       Network.MAINNET,
       dexKey,
       new DummyDexHelper(Network.MAINNET),
@@ -149,7 +158,7 @@ describe('KyberswapElastic', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const pools = await kyberswapElastic.getPoolIdentifiers(
+    const pools = await uniswapV3.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
@@ -159,7 +168,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await kyberswapElastic.getPricesVolume(
+    const poolPrices = await uniswapV3.getPricesVolume(
       TokenA,
       TokenB,
       amounts,
@@ -167,7 +176,7 @@ describe('KyberswapElastic', function () {
       blockNumber,
       pools,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    // console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
@@ -176,10 +185,10 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          kyberswapElastic,
-          'quoteExactInputSingle',
+          uniswapV3,
+          KyberElasticFunctions.quoteExactInputSingle,
           blockNumber,
           price.prices,
           TokenA.address,
@@ -195,7 +204,7 @@ describe('KyberswapElastic', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const pools = await kyberswapElastic.getPoolIdentifiers(
+    const pools = await uniswapV3.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.BUY,
@@ -205,7 +214,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await kyberswapElastic.getPricesVolume(
+    const poolPrices = await uniswapV3.getPricesVolume(
       TokenA,
       TokenB,
       amountsBuy,
@@ -223,10 +232,10 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          kyberswapElastic,
-          'quoteExactOutputSingle',
+          uniswapV3,
+          KyberElasticFunctions.quoteExactOutputSingle,
           blockNumber,
           price.prices,
           TokenA.address,
@@ -301,7 +310,7 @@ describe('KyberswapElastic', function () {
       300000000n,
     ];
 
-    const pools = await kyberswapElastic.getPoolIdentifiers(
+    const pools = await uniswapV3.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.SELL,
@@ -311,7 +320,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await kyberswapElastic.getPricesVolume(
+    const poolPrices = await uniswapV3.getPricesVolume(
       TokenA,
       TokenB,
       amounts,
@@ -334,10 +343,10 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          kyberswapElastic,
-          'quoteExactInputSingle',
+          uniswapV3,
+          KyberElasticFunctions.quoteExactInputSingle,
           blockNumber,
           price.prices,
           TokenA.address,
@@ -412,7 +421,7 @@ describe('KyberswapElastic', function () {
       300000000n,
     ];
 
-    const pools = await kyberswapElastic.getPoolIdentifiers(
+    const pools = await uniswapV3.getPoolIdentifiers(
       TokenA,
       TokenB,
       SwapSide.BUY,
@@ -422,7 +431,7 @@ describe('KyberswapElastic', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await kyberswapElastic.getPricesVolume(
+    const poolPrices = await uniswapV3.getPricesVolume(
       TokenA,
       TokenB,
       amountsBuy,
@@ -445,10 +454,10 @@ describe('KyberswapElastic', function () {
     await Promise.all(
       poolPrices!.map(async price => {
         const swapFeeUnits =
-          kyberswapElastic.eventPools[price.poolIdentifier!]!.swapFeeUnits;
+          uniswapV3.eventPools[price.poolIdentifier!]!.swapFeeUnits;
         const res = await checkOnChainPricing(
-          kyberswapElastic,
-          'quoteExactOutputSingle',
+          uniswapV3,
+          KyberElasticFunctions.quoteExactOutputSingle,
           blockNumber,
           price.prices,
           TokenA.address,
@@ -463,13 +472,13 @@ describe('KyberswapElastic', function () {
   });
 
   it('getTopPoolsForToken', async function () {
-    const poolLiquidity = await kyberswapElasticMainnet.getTopPoolsForToken(
+    const poolLiquidity = await uniswapV3Mainnet.getTopPoolsForToken(
       Tokens[Network.MAINNET]['USDC'].address,
       10,
     );
     console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
-    if (!kyberswapElastic.hasConstantPriceLargeAmounts) {
+    if (!uniswapV3.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
     }
   });

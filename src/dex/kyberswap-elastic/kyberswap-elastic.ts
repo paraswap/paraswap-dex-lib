@@ -3,6 +3,7 @@ import { pack } from '@ethersproject/solidity';
 import { AsyncOrSync, assert, DeepReadonly } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
+import _ from 'lodash';
 
 import {
   Token,
@@ -50,9 +51,13 @@ import {
   OutputResult,
 } from './types';
 import { KyberswapElasticConfig, Adapters } from './config';
-import { KS_ELASTIC_QUOTE_GASLIMIT } from './constants';
+import {
+  KS_ELASTIC_EFFICIENCY_FACTOR,
+  KS_ELASTIC_QUOTE_GASLIMIT,
+} from './constants';
 import { KyberswapElasticEventPool } from './kyberswap-elastic-pool';
 import { ksElasticMath } from './contract-math/kyberswap-elastic-math';
+import { ERR_DECODE, ERR_POOL_DOES_NOT_EXIST } from './errors';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -481,8 +486,8 @@ export class KyberswapElastic
   ): Promise<SimpleExchangeParam> {
     const swapFunction =
       side === SwapSide.SELL
-        ? KyberElasticFunctions.exactInput
-        : KyberElasticFunctions.exactOutput;
+        ? KyberElasticFunctions.quoteExactInputSingle
+        : KyberElasticFunctions.quoteExactOutputSingle;
 
     const path = this._encodePath(data.path, side);
     const swapFunctionParams: KyberElasticParam =
@@ -530,8 +535,99 @@ export class KyberswapElastic
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    const _tokenAddress = tokenAddress.toLowerCase();
+
+    const res = await this._querySubgraph(
+      `query ($token: Bytes!, $count: Int) {
+                pools0: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token0: $token}) {
+                id
+                token0 {
+                  id
+                  decimals
+                }
+                token1 {
+                  id
+                  decimals
+                }
+                totalValueLockedUSD
+              }
+              pools1: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token1: $token}) {
+                id
+                token0 {
+                  id
+                  decimals
+                }
+                token1 {
+                  id
+                  decimals
+                }
+                totalValueLockedUSD
+              }
+            }`,
+      {
+        token: _tokenAddress,
+        count: limit,
+      },
+    );
+
+    if (!(res && res.pools0 && res.pools1)) {
+      this.logger.error(
+        `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
+      );
+      return [];
+    }
+
+    const pools0 = _.map(res.pools0, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token1.id.toLowerCase(),
+          decimals: parseInt(pool.token1.decimals),
+        },
+      ],
+      liquidityUSD:
+        parseFloat(pool.totalValueLockedUSD) * KS_ELASTIC_EFFICIENCY_FACTOR,
+    }));
+
+    const pools1 = _.map(res.pools1, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token0.id.toLowerCase(),
+          decimals: parseInt(pool.token0.decimals),
+        },
+      ],
+      liquidityUSD:
+        parseFloat(pool.totalValueLockedUSD) * KS_ELASTIC_EFFICIENCY_FACTOR,
+    }));
+
+    const pools = _.slice(
+      _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
+      0,
+      limit,
+    );
+    return pools;
+  }
+
+  private async _querySubgraph(
+    query: string,
+    variables: Object,
+    timeout = 30000,
+  ) {
+    try {
+      const res = await this.dexHelper.httpRequest.post(
+        this.config.subgraphURL as string,
+        { query, variables },
+        undefined,
+        { timeout: timeout },
+      );
+      return res.data;
+    } catch (e) {
+      this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
+      return {};
+    }
   }
 
   releaseResources() {
@@ -607,7 +703,11 @@ export class KyberswapElastic
           },
         });
       } catch (e) {
-        if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+        if (
+          e instanceof Error &&
+          (e.message.endsWith(ERR_POOL_DOES_NOT_EXIST) ||
+            e.message.search(ERR_DECODE) != -1)
+        ) {
           // No need to await here, we push the pool into the notExistingPool set without blocking
           this.dexHelper.cache.zadd(
             this.notExistingPoolSetKey,
