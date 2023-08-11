@@ -23,6 +23,7 @@ export type PoolStateV1_1 = {
   startTickBitmap: bigint;
   balance0: bigint;
   balance1: bigint;
+  areTicksCompressed: boolean;
 };
 
 type GlobalState_v1_9 = {
@@ -47,6 +48,7 @@ export type PoolState_v1_9 = {
   startTickBitmap: bigint;
   balance0: bigint;
   balance1: bigint;
+  areTicksCompressed: boolean;
 };
 
 export type AlgebraData = {
@@ -70,6 +72,8 @@ export type DexParams = {
   initHash: string;
   version: 'v1.1' | 'v1.9';
 };
+
+export type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
 
 export type TickBitMapMappingsWithBigNumber = {
   index: number;

@@ -381,8 +381,16 @@ describe('UniswapV2 E2E Arbitrum', () => {
         { name: 'USDC', sellAmount: '940617', buyAmount: '505000000000000' },
       ],
       [
-        { name: 'ETH', sellAmount: '631955000000000', buyAmount: '1000000000000000000' },
-        { name: 'ARB', sellAmount: '1000000000000000000', buyAmount: '631955000000000' },
+        {
+          name: 'ETH',
+          sellAmount: '631955000000000',
+          buyAmount: '1000000000000000000',
+        },
+        {
+          name: 'ARB',
+          sellAmount: '1000000000000000000',
+          buyAmount: '631955000000000',
+        },
       ],
     ];
 

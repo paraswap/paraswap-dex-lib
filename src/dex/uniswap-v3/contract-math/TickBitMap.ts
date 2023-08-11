@@ -120,13 +120,4 @@ export class TickBitMap {
 
     return [next, initialized];
   }
-
-  static _putZeroIfUndefined(
-    state: PoolState,
-    tickBitmapValue: bigint | undefined,
-    wordPos: bigint,
-    isPriceQuery: boolean = false,
-  ): bigint {
-    return tickBitmapValue === undefined ? 0n : tickBitmapValue;
-  }
 }

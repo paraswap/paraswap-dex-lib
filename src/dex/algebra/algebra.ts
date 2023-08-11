@@ -18,7 +18,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AlgebraData, DexParams, PoolStateV1_1, PoolState_v1_9 } from './types';
+import { AlgebraData, DexParams, IAlgebraPoolState } from './types';
 import {
   SimpleExchange,
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -57,7 +57,6 @@ const MAX_STALE_STATE_BLOCK_AGE = {
 };
 
 type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
-type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   readonly isFeeOnTransferSupported: boolean = false;
