@@ -5,15 +5,16 @@ import { BalancerConfig } from './config';
 import { OptimalSwap } from '@paraswap/core';
 
 export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
+  const balancerForksList = Object.keys(BalancerConfig).map(b =>
+    b.toLowerCase(),
+  );
   const fixSwap = (rawRate: OptimalSwap[], side: SwapSide): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;
     let optimizedRate = new Array<OptimalSwap>();
     rawRate.forEach((s: OptimalSwap) => {
       if (
         s.swapExchanges.length !== 1 ||
-        !Object.keys(BalancerConfig).includes(
-          s.swapExchanges[0].exchange.toLowerCase(),
-        )
+        !balancerForksList.includes(s.swapExchanges[0].exchange.toLowerCase())
       ) {
         lastExchange = false;
         optimizedRate.push(s);
