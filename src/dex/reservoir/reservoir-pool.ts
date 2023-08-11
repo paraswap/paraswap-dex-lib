@@ -76,6 +76,7 @@ export class ReservoirEventPool extends StatefulEventSubscriber<PoolState> {
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     // TODO: complete me!
+
     return {
       reserve0: 0n,
       reserve1: 0n,

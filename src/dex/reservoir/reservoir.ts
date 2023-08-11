@@ -18,6 +18,10 @@ import { ReservoirData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, ReservoirConfig } from './config';
 import { ReservoirEventPool } from './reservoir-pool';
+import GenericFactoryABI from '../../abi/reservoir/GenericFactory.json';
+import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
+import { Contract } from '@ethersproject/contracts';
+import { Interface } from '@ethersproject/abi';
 
 enum ReservoirSwapFunctions {
   exactInput = 'swapExactForVariable',
@@ -38,11 +42,19 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
   logger: Logger;
 
+  factory: Contract;
+
+  reservoirRouterInterface: Interface;
+
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
+    readonly factoryAddress: Address = ReservoirConfig[dexKey][network].factory,
+    readonly subgraphURL: string | undefined = ReservoirConfig[dexKey][network]
+      .subgraphURL,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected router: Address = ReservoirConfig[dexKey][network].router,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -52,6 +64,8 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       dexHelper,
       this.logger,
     );
+    this.factory = new Contract(factoryAddress, GenericFactoryABI);
+    this.reservoirRouterInterface = new Interface(ReservoirRouterABI);
   }
 
   // Initialize pricing is called once in the start of
@@ -149,7 +163,18 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
         : ReservoirSwapFunctions.exactOutput;
 
     // Encode here the transaction arguments
-    const swapData = '';
+    const swapData = this.reservoirRouterInterface.encodeFunctionData(
+      swapFunction,
+      // doesn't consider the multi hop at the moment?
+      [
+        srcAmount,
+        destAmount,
+        srcToken,
+        destToken,
+        data.curveIds,
+        data.recipient,
+      ],
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
