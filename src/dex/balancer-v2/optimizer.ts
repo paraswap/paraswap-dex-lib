@@ -38,7 +38,6 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
         ).toString();
 
         lastExchangeSwap.percent += currentSwap.percent;
-        lastExchangeSwap.data.exchangeProxy = currentSwap.data.exchangeProxy;
         lastExchangeSwap.data.gasUSD = (
           parseFloat(lastExchangeSwap.data.gasUSD) +
           parseFloat(currentSwap.data.gasUSD)
@@ -57,8 +56,6 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
       } else {
         lastExchange = _.cloneDeep(s);
         lastExchange.swapExchanges[0].data = {};
-        lastExchange.swapExchanges[0].data.exchangeProxy =
-          s.swapExchanges[0].data.exchangeProxy;
         lastExchange.swapExchanges[0].data.gasUSD =
           s.swapExchanges[0].data.gasUSD;
         lastExchange.swapExchanges[0].data.swaps = [
