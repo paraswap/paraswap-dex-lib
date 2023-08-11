@@ -129,14 +129,11 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     data: ReservoirData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
-
     // Encode here the payload for adapter
     const payload = '';
 
     return {
-      targetExchange: exchange,
+      targetExchange: data.router,
       payload,
       networkFee: '0',
     };
@@ -154,9 +151,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     data: ReservoirData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
-
     const swapFunction =
       side == SwapSide.SELL
         ? ReservoirSwapFunctions.exactInput
@@ -166,6 +160,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     const swapData = this.reservoirRouterInterface.encodeFunctionData(
       swapFunction,
       // doesn't consider the multi hop at the moment?
+      // we don't calculate the slippage here ourselves?
       [
         srcAmount,
         destAmount,
@@ -182,7 +177,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       destToken,
       destAmount,
       swapData,
-      exchange,
+      data.router,
     );
   }
 

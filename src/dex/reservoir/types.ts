@@ -21,7 +21,7 @@ export type ReservoirData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
-  exchange: Address;
+  router: Address;
   // denominated in basis points, should be a positive number
   slippage: bigint;
   // do we need the router here instead
