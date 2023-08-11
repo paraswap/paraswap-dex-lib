@@ -23,9 +23,9 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
         lastExchange.swapExchanges[0].exchange.toLowerCase() ===
           s.swapExchanges[0].exchange.toLowerCase() &&
         _.last(
-          <any[]>lastExchange.swapExchanges[0].data.path,
+          <any[]>lastExchange.swapExchanges[0].data.swaps,
         )!.tokenOut.toLowerCase() ===
-          s.swapExchanges[0].data.path[0].tokenIn.toLowerCase()
+          s.swapExchanges[0].data.tokenIn.toLowerCase()
       ) {
         const [lastExchangeSwap] = lastExchange.swapExchanges;
         const [currentSwap] = s.swapExchanges;
@@ -50,6 +50,8 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
             side === SwapSide.SELL
               ? currentSwap.srcAmount
               : currentSwap.destAmount,
+          tokenIn: currentSwap.data.tokenIn,
+          tokenOut: currentSwap.data.tokenOut,
         });
         lastExchangeSwap.poolAddresses!.push(currentSwap.poolAddresses![0]);
       } else {
