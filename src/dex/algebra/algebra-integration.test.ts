@@ -166,8 +166,9 @@ describe('Algebra', function () {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'USDC';
-    const destTokenSymbol = 'WMATIC';
+    const srcTokenSymbol = 'WMATIC';
+    const destTokenSymbol = 'DAI';
+    // const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,

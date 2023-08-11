@@ -705,7 +705,7 @@ export const Tokens: {
     HATCHY: {
       address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
       decimals: 18,
-    }
+    },
   },
   [Network.ARBITRUM]: {
     DAI: {
@@ -723,8 +723,12 @@ export const Tokens: {
       addAllowance: _allowancesFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
-    USDC: {
+    USDCe: {
       address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+      decimals: 6,
+    },
+    USDC: {
+      address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
       decimals: 6,
     },
     OHM: {
@@ -780,6 +784,10 @@ export const Tokens: {
     WBTC: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
+    },
+    LEX: {
+      address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
+      decimals: 18,
     },
   },
   [Network.OPTIMISM]: {
@@ -1005,7 +1013,8 @@ export const Holders: {
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
-    USDC: '0xb874005cbea25c357b31c62145b3aef219d105cf',
+    USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDC: '0xa843392198862f98d17e3aa1421b08f2c2020cff',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
     USDT: '0x5ff47d4ab75bcaff6807c81f1367abb53439883c',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',

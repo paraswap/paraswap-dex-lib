@@ -65,7 +65,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0xc0d4323426c709e8d04b5b130e7f059523464a91',
       version: 'v1.1',
-    }
+    },
   },
   CamelotV3: {
     [Network.ARBITRUM]: {
@@ -76,7 +76,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
         '0x6c1bebd370ba84753516bc1393c0d0a6c645856da55f5393ac8ab3d6dbc861d3',
       chunksCount: 10,
       initRetryFrequency: 10,
-      algebraStateMulticall: '0x541FeaEcB21a4cb0fBFCF90C5bae47BaDF747edE',
+      algebraStateMulticall: '0x2A7A9478Aaff076f8A80c03e7d65BD7d8D01650d',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/camelotlabs/camelot-amm-v3',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
