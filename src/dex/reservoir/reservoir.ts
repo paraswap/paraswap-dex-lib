@@ -14,7 +14,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { ReservoirData } from './types';
+import { ReservoirData, ReservoirSwapFunctions } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, ReservoirConfig } from './config';
 import { ReservoirEventPool } from './reservoir-pool';
@@ -22,11 +22,6 @@ import GenericFactoryABI from '../../abi/reservoir/GenericFactory.json';
 import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
 import { Contract } from '@ethersproject/contracts';
 import { Interface } from '@ethersproject/abi';
-
-enum ReservoirSwapFunctions {
-  exactInput = 'swapExactForVariable',
-  exactOutput = 'swapVariableForExact',
-}
 
 export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
   protected eventPools: ReservoirEventPool;

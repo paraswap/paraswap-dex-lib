@@ -11,6 +11,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { ReservoirSwapFunctions } from './types';
 
 /*
   README
@@ -68,18 +69,10 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-      ],
-    ],
+    [SwapSide.SELL, [ReservoirSwapFunctions.exactInput]],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ReservoirSwapFunctions.exactOutput]],
   ]);
 
   describe(`${network}`, () => {
@@ -136,15 +129,14 @@ function testForNetwork(
 describe('Reservoir E2E', () => {
   const dexKey = 'ReservoirFinance';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('AVAX', () => {
+    const network = Network.AVALANCHE;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '92830129381';
+    const tokenBAmount: string = '39182731928';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

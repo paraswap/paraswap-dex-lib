@@ -5,6 +5,11 @@ export enum ReservoirPoolTypes {
   Stable,
 }
 
+export enum ReservoirSwapFunctions {
+  exactInput = 'swapExactForVariable',
+  exactOutput = 'swapVariableForExact',
+}
+
 export type PoolState = {
   // TODO: poolState is the state of event
   // subscriber. This should be the minimum
