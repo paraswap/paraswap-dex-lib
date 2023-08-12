@@ -71,14 +71,13 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ReservoirSwapFunctions.exactInput]],
-    // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ReservoirSwapFunctions.exactOutput]],
   ]);
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
+        contractMethods.forEach((contractMethod: ReservoirSwapFunctions) => {
           describe(`${contractMethod}`, () => {
             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(

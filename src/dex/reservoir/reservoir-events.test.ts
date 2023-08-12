@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { ReservoirFinanceEventPool } from './reservoir-pool';
+import { ReservoirEventPool } from './reservoir-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -45,7 +45,7 @@ import { PoolState } from './types';
 jest.setTimeout(50 * 1000);
 
 async function fetchPoolState(
-  reservoirFinancePools: ReservoirFinanceEventPool,
+  reservoirFinancePools: ReservoirEventPool,
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolState> {
@@ -61,7 +61,7 @@ describe('Reservoir EventPool Mainnet', function () {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let reservoirFinancePool: ReservoirFinanceEventPool;
+  let reservoirFinancePool: ReservoirEventPool;
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
@@ -69,7 +69,7 @@ describe('Reservoir EventPool Mainnet', function () {
   };
 
   beforeEach(async () => {
-    reservoirFinancePool = new ReservoirFinanceEventPool(
+    reservoirFinancePool = new ReservoirEventPool(
       dexKey,
       network,
       dexHelper,

@@ -197,7 +197,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
+  // releaseResources(): AsyncOrSync<void> {
+  //   // TODO: complete me!
+  // }
 }
