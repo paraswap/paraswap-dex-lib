@@ -526,13 +526,13 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     log: Log,
     blockHeader: BlockHeader,
   ) {
-    const newSqrtPriceX96 = bigIntify(event.args.sqrtPriceX96);
-    const amount0 = bigIntify(event.args.amount0);
-    const amount1 = bigIntify(event.args.amount1);
-    const newTick = bigIntify(event.args.tick);
+    const sqrtP = bigIntify(event.args.sqrtP);
+    const deltaQty0 = bigIntify(event.args.deltaQty0);
+    const deltaQty1 = bigIntify(event.args.deltaQty1);
+    const newCurrentTick = bigIntify(event.args.currentTick);
     const newLiquidity = bigIntify(event.args.liquidity);
 
-    if (amount0 <= 0n && amount1 <= 0n) {
+    if (deltaQty0 <= 0n && deltaQty1 <= 0n) {
       this.logger.error(
         `${this.parentName}: amount0 <= 0n && amount1 <= 0n for ` +
           `${this.poolAddress} and ${blockHeader.number}. Check why it happened`,
@@ -540,38 +540,38 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       pool.isValid = false;
       return pool;
     } else {
-      const zeroForOne = amount0 > 0n;
+      const isToken0 = deltaQty0 > 0n;
 
       // ksElasticMath.swapFromEvent(
       //   pool,
-      //   newSqrtPriceX96,
-      //   newTick,
+      //   sqrtP,
+      //   newCurrentTick,
       //   newLiquidity,
       //   zeroForOne,
       // );
 
-      if (zeroForOne) {
-        if (amount1 < 0n) {
-          pool.balance1 -= BigInt.asUintN(256, -amount1);
+      if (isToken0) {
+        if (deltaQty1 < 0n) {
+          pool.balance1 -= BigInt.asUintN(256, -deltaQty1);
         } else {
           this.logger.error(
-            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
+            `In swapEvent for pool ${pool.pool} received incorrect values ${isToken0} and ${deltaQty1}`,
           );
           pool.isValid = false;
         }
         // This is not correct fully, because pool may get more tokens then it needs, but
         // it is not accounted in internal state, it should be good enough
-        pool.balance0 += BigInt.asUintN(256, amount0);
+        pool.balance0 += BigInt.asUintN(256, deltaQty0);
       } else {
-        if (amount0 < 0n) {
-          pool.balance0 -= BigInt.asUintN(256, -amount0);
+        if (deltaQty0 < 0n) {
+          pool.balance0 -= BigInt.asUintN(256, -deltaQty0);
         } else {
           this.logger.error(
-            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
+            `In swapEvent for pool ${pool.pool} received incorrect values ${isToken0} and ${deltaQty0}`,
           );
           pool.isValid = false;
         }
-        pool.balance1 += BigInt.asUintN(256, amount1);
+        pool.balance1 += BigInt.asUintN(256, deltaQty1);
       }
 
       return pool;
