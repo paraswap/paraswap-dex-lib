@@ -70,14 +70,14 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [SwapSide.SELL, [ReservoirSwapFunctions.exactInput]],
-    [SwapSide.BUY, [ReservoirSwapFunctions.exactOutput]],
+    [SwapSide.SELL, [ContractMethod.simpleSwap]],
+    [SwapSide.BUY, [ContractMethod.simpleBuy]],
   ]);
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ReservoirSwapFunctions) => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(
