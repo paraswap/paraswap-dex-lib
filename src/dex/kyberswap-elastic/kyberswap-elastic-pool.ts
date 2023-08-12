@@ -547,7 +547,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       //   sqrtP,
       //   newCurrentTick,
       //   newLiquidity,
-      //   zeroForOne,
+      //   isToken0,
       // );
 
       if (isToken0) {
