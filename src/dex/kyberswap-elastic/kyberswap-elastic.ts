@@ -53,7 +53,10 @@ import {
 import { KyberswapElasticConfig, Adapters } from './config';
 import {
   KS_ELASTIC_EFFICIENCY_FACTOR,
+  KS_ELASTIC_POOL_SEARCH_OVERHEAD,
   KS_ELASTIC_QUOTE_GASLIMIT,
+  KS_ELASTIC_TICK_BASE_OVERHEAD,
+  KS_ELASTIC_TICK_GAS_COST,
 } from './constants';
 import { KyberswapElasticEventPool } from './kyberswap-elastic-pool';
 import { ksElasticMath } from './contract-math/kyberswap-elastic-math';
@@ -72,15 +75,17 @@ export class KyberswapElastic
   extends SimpleExchange
   implements IDex<KyberswapElasticData>
 {
-  readonly eventPools: Record<string, KyberswapElasticEventPool | null> = {};
-  readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = true;
-  readonly isFeeOnTransferSupported = false;
-
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(KyberswapElasticConfig);
 
   logger: Logger;
+
+  readonly eventPools: Record<string, KyberswapElasticEventPool | null> = {};
+  readonly hasConstantPriceLargeAmounts = false;
+  readonly needWrapNative = true;
+  readonly isFeeOnTransferSupported = false;
+  readonly routerIface = new Interface(RouterABI);
+  readonly quoterIface = new Interface(QuoterABI);
 
   private _intervalTask?: NodeJS.Timeout;
   private notExistingPoolSetKey: string;
@@ -92,8 +97,6 @@ export class KyberswapElastic
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     protected config = KyberswapElasticConfig[dexKey][network],
-    readonly routerIface = new Interface(RouterABI),
-    readonly quoterIface = new Interface(QuoterABI),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
@@ -194,8 +197,8 @@ export class KyberswapElastic
 
     const pools = (
       await Promise.all(
-        this.supportedFees.map(async fee =>
-          this._getPool(_srcAddress, _destAddress, fee, blockNumber),
+        this.supportedFees.map(async swapFeeUnits =>
+          this._getPool(_srcAddress, _destAddress, swapFeeUnits, blockNumber),
         ),
       )
     ).filter(pool => pool);
@@ -235,17 +238,21 @@ export class KyberswapElastic
       if (!limitPools) {
         selectedPools = (
           await Promise.all(
-            this.supportedFees.map(async fee => {
+            this.supportedFees.map(async swapFeeUnits => {
               const locallyFoundPool =
                 this.eventPools[
-                  this._getPoolIdentifier(_srcAddress, _destAddress, fee)
+                  this._getPoolIdentifier(
+                    _srcAddress,
+                    _destAddress,
+                    swapFeeUnits,
+                  )
                 ];
               if (locallyFoundPool) return locallyFoundPool;
 
               const newlyFetchedPool = await this._getPool(
                 _srcAddress,
                 _destAddress,
-                fee,
+                swapFeeUnits,
                 blockNumber,
               );
               return newlyFetchedPool;
@@ -257,7 +264,7 @@ export class KyberswapElastic
           _srcAddress,
           _destAddress,
           0n,
-          // Trim from 0 fee postfix, so it become comparable
+          // Trim from 0 swapFeeUnits postfix, so it become comparable
         ).slice(0, -1);
 
         const poolIdentifiers = limitPools.filter(identifier =>
@@ -270,11 +277,12 @@ export class KyberswapElastic
               let locallyFoundPool = this.eventPools[identifier];
               if (locallyFoundPool) return locallyFoundPool;
 
-              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const [, srcAddress, destAddress, swapFeeUnits] =
+                identifier.split('_');
               const newlyFetchedPool = await this._getPool(
                 srcAddress,
                 destAddress,
-                BigInt(fee),
+                BigInt(swapFeeUnits),
                 blockNumber,
               );
               return newlyFetchedPool;
@@ -324,7 +332,7 @@ export class KyberswapElastic
 
       const [token0] = this._sortTokens(_srcAddress, _destAddress);
 
-      const zeroForOne = token0 === _srcAddress ? true : false;
+      const isToken0 = token0 === _srcAddress ? true : false;
 
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
@@ -341,14 +349,14 @@ export class KyberswapElastic
           const unitResult = this._getOutputs(
             state,
             [unitAmount],
-            zeroForOne,
+            isToken0,
             side,
             balanceDestToken,
           );
           const pricesResult = this._getOutputs(
             state,
             _amounts,
-            zeroForOne,
+            isToken0,
             side,
             balanceDestToken,
           );
@@ -359,20 +367,20 @@ export class KyberswapElastic
           }
 
           const prices = [0n, ...pricesResult.outputs];
-          // const gasCost = [
-          //   0,
-          //   ...pricesResult.outputs.map((p, index) => {
-          //     if (p == 0n) {
-          //       return 0;
-          //     } else {
-          //       return (
-          //         POOL_SEARCH_OVERHEAD +
-          //         TICK_BASE_OVERHEAD +
-          //         pricesResult.tickCounts[index] * TICK_GAS_COST
-          //       );
-          //     }
-          //   }),
-          // ];
+          const gasCost = [
+            0,
+            ...pricesResult.outputs.map((p, index) => {
+              if (p == 0n) {
+                return 0;
+              } else {
+                return (
+                  KS_ELASTIC_POOL_SEARCH_OVERHEAD +
+                  KS_ELASTIC_TICK_BASE_OVERHEAD +
+                  pricesResult.tickCounts[index] * KS_ELASTIC_TICK_GAS_COST
+                );
+              }
+            }),
+          ];
           return {
             unit: unitResult.outputs[0],
             prices,
@@ -391,7 +399,7 @@ export class KyberswapElastic
               pool.swapFeeUnits,
             ),
             exchange: this.dexKey,
-            gasCost: KS_ELASTIC_QUOTE_GASLIMIT,
+            gasCost: gasCost,
             poolAddresses: [pool.poolAddress],
           };
         }),
@@ -433,9 +441,13 @@ export class KyberswapElastic
   // Returns a pool identifier that can be used
   // for a given swap. Use:
   // ${dexKey}_${poolAddress} as a poolIdentifier
-  _getPoolIdentifier(srcAddress: Address, destAddress: Address, fee: bigint) {
+  _getPoolIdentifier(
+    srcAddress: Address,
+    destAddress: Address,
+    swapFeeUnits: bigint,
+  ) {
     const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
-    return `${this.dexKey}_${tokenAddresses}_${fee}`;
+    return `${this.dexKey}_${tokenAddresses}_${swapFeeUnits.toString()}`;
   }
 
   // Encode params required by the exchange adapter
@@ -518,15 +530,6 @@ export class KyberswapElastic
       swapData,
       this.config.router,
     );
-  }
-
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -817,20 +820,30 @@ export class KyberswapElastic
         gasLimit: KS_ELASTIC_QUOTE_GASLIMIT,
         callData:
           side === SwapSide.SELL
-            ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
-                from.address,
-                to.address,
-                pool.swapFeeUnits.toString(),
-                _amount.toString(),
-                0, //sqrtPriceLimitX96
-              ])
-            : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
-                from.address,
-                to.address,
-                pool.swapFeeUnits.toString(),
-                _amount.toString(),
-                0, //sqrtPriceLimitX96
-              ]),
+            ? this.quoterIface.encodeFunctionData(
+                KyberElasticFunctions.quoteExactInputSingle,
+                [
+                  {
+                    tokenIn: from.address,
+                    tokenOut: to.address,
+                    amountIn: _amount,
+                    feeUnits: pool.swapFeeUnits,
+                    limitSqrtP: 0n,
+                  },
+                ],
+              )
+            : this.quoterIface.encodeFunctionData(
+                KyberElasticFunctions.quoteExactOutputSingle,
+                [
+                  {
+                    tokenIn: from.address,
+                    tokenOut: to.address,
+                    amount: _amount,
+                    feeUnits: pool.swapFeeUnits,
+                    limitSqrtP: 0n,
+                  },
+                ],
+              ),
       })),
     );
 
@@ -844,7 +857,7 @@ export class KyberswapElastic
         ['uint256'],
         data.returnData[j].returnData,
       );
-      return BigInt(decoded[0].toString());
+      return BigInt(decoded[0][1].toString());
     };
 
     let i = 0;
@@ -859,7 +872,7 @@ export class KyberswapElastic
         side,
       );
 
-      return {
+      return <PoolPrices<KyberswapElasticData>>{
         prices,
         unit,
         data: {
@@ -953,7 +966,7 @@ export class KyberswapElastic
   private _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
-    zeroForOne: boolean,
+    isToken0: boolean,
     side: SwapSide,
     destTokenBalance: bigint,
   ): OutputResult | null {
@@ -961,7 +974,7 @@ export class KyberswapElastic
       const outputsResult = ksElasticMath.queryOutputs(
         state,
         amounts,
-        zeroForOne,
+        isToken0,
         side,
       );
 
