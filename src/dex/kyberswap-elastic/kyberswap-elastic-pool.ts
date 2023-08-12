@@ -113,6 +113,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     this.handlers['Swap'] = this._handleSwapEvent.bind(this);
     this.handlers['Burn'] = this._handleBurnEvent.bind(this);
     this.handlers['Mint'] = this._handleMintEvent.bind(this);
+    this.handlers['BurnRTokens'] = this._handleBurnREvent.bind(this);
   }
 
   set poolAddress(address: Address) {
@@ -549,27 +550,32 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       //   zeroForOne,
       // );
 
+      if (zeroForOne) {
+        if (amount1 < 0n) {
+          pool.balance1 -= BigInt.asUintN(256, -amount1);
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
+          );
+          pool.isValid = false;
+        }
+        // This is not correct fully, because pool may get more tokens then it needs, but
+        // it is not accounted in internal state, it should be good enough
+        pool.balance0 += BigInt.asUintN(256, amount0);
+      } else {
+        if (amount0 < 0n) {
+          pool.balance0 -= BigInt.asUintN(256, -amount0);
+        } else {
+          this.logger.error(
+            `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
+          );
+          pool.isValid = false;
+        }
+        pool.balance1 += BigInt.asUintN(256, amount1);
+      }
+
       return pool;
     }
-  }
-
-  private _handleBurnEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const amount = bigIntify(event.args.amount);
-    const tickLower = bigIntify(event.args.tickLower);
-    const tickUpper = bigIntify(event.args.tickUpper);
-
-    ksElasticMath.modifyPosition(pool, {
-      tickLower,
-      tickUpper,
-      liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, amount)),
-    });
-
-    return pool;
   }
 
   private _handleMintEvent(
@@ -578,15 +584,58 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     log: Log,
     blockHeader: BlockHeader,
   ) {
-    const amount = bigIntify(event.args.amount);
+    const qty = bigIntify(event.args.qty);
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
+    const qty0 = bigIntify(event.args.qty0);
+    const qty1 = bigIntify(event.args.qty1);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     ksElasticMath.modifyPosition(pool, {
       tickLower,
       tickUpper,
-      liquidityDelta: amount,
+      liquidityDelta: qty,
     });
+
+    pool.balance0 += qty0;
+    pool.balance1 += qty1;
+
+    return pool;
+  }
+
+  private _handleBurnEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const qty = bigIntify(event.args.qty);
+    const tickLower = bigIntify(event.args.tickLower);
+    const tickUpper = bigIntify(event.args.tickUpper);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    ksElasticMath.modifyPosition(pool, {
+      tickLower,
+      tickUpper,
+      liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, qty)),
+    });
+
+    return pool;
+  }
+
+  private _handleBurnREvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const qty = bigIntify(event.args.qty);
+    const qty0 = bigIntify(event.args.qty0);
+    const qty1 = bigIntify(event.args.qty1);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    pool.balance0 -= qty0;
+    pool.balance1 -= qty1;
 
     return pool;
   }
