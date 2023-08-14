@@ -12,7 +12,8 @@ export const RamsesV2Config: DexConfigMap<DexParams> = {
       quoter: '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
       router: '0xAA23611badAFB62D37E7295A682D21960ac85A90',
       supportedFees: RAMSES_SUPPORTED_FEES,
-      stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
+      // stateMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
+      stateMulticall: '0x2A7A9478Aaff076f8A80c03e7d65BD7d8D01650d',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initHash:

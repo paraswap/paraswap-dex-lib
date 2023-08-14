@@ -23,7 +23,7 @@ describe('RamsesV2 E2E', () => {
       network,
     );
 
-    const tokenASymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDCe';
     const tokenBSymbol: string = 'USDT';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
