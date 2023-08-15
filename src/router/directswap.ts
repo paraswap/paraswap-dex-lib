@@ -29,7 +29,7 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -76,13 +76,9 @@ export class DirectSwap<DexDirectReturn> implements IRouter<DexDirectReturn> {
           encodePartnerAddressForFeeLogic({
             partnerAddress,
             partnerFeePercent,
-            positiveSlippageToUser,
+            takeSurplus,
           }),
-          encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            priceRoute.side,
-          ),
+          encodeFeePercent(partnerFeePercent, takeSurplus, priceRoute.side),
         ];
 
     return dex.getDirectParam!(

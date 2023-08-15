@@ -9,7 +9,7 @@ export interface IRouter<RouterParam> {
     referrerAddress: Address | undefined,
     partner: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,

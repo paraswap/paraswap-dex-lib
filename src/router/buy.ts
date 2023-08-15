@@ -42,7 +42,7 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -69,13 +69,9 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
           encodePartnerAddressForFeeLogic({
             partnerAddress,
             partnerFeePercent,
-            positiveSlippageToUser,
+            takeSurplus,
           }),
-          encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.BUY,
-          ),
+          encodeFeePercent(partnerFeePercent, takeSurplus, SwapSide.BUY),
         ];
 
     const buyData: ContractBuyData = {
