@@ -293,9 +293,7 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
     const {
       globalState: { tick },
     } = _stateWithoutTicksAndTickBitmap;
-    const currentBitmapIndex = int16(
-      (BigInt(tick) / Constants.TICK_SPACING) >> 8n,
-    );
+    const currentBitmapIndex = int16(BigInt(tick) >> 8n);
 
     const buffer = this.getBitmapRangeToRequest();
     const startBitMapIndex = currentBitmapIndex - buffer;
