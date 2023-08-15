@@ -56,16 +56,22 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
           int56 tickCumulative,
           uint160 secondsPerLiquidityCumulativeX128,
           bool initialized,
+          uint160 secondsPerBoostedLiquidityPeriodX128,
+          uint32 boostedInRange,
         ) observation,
         tuple(
           int16 index,
-          uint256 value,
+          uint256 value
         )[] tickBitmap,
         tuple(
           int24 index,
           tuple(
             uint128 liquidityGross,
             int128 liquidityNet,
+            uint128 cleanUnusedSlot,
+            uint128 cleanUnusedSlot2,
+            uint256 feeGrowthOutside0X128,
+            uint256 feeGrowthOutside1X128,
             int56 tickCumulativeOutside,
             uint160 secondsPerLiquidityOutsideX128,
             uint32 secondsOutside,
@@ -77,6 +83,7 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
     ],
     toDecode,
   )[0];
+
   // This conversion is not precise, because when we decode, we have more values
   // But I typed only the ones that are used later
   return decoded as DecodedStateMultiCallResultWithRelativeBitmaps;

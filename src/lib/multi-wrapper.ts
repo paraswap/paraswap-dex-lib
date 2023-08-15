@@ -66,7 +66,6 @@ export class MultiWrapper {
 
     const aggregatedResult = await Promise.all(
       allCalls.map(batch => {
-        console.log('BATCH: ', JSON.stringify(batch));
         return this.multi.methods
           .tryAggregate(mandatory, batch)
           .call(undefined, blockNumber);

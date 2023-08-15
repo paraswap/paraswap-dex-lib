@@ -45,7 +45,7 @@ import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
-import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
+import RamsesV2StateMulticallABI from '../../abi/RamsesV2StateMulticall.abi.json';
 import {
   DirectMethods,
   UNISWAPV3_EFFICIENCY_FACTOR,
@@ -115,7 +115,7 @@ export class RamsesV2
       this.config.uniswapMulticall,
     );
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3StateMulticallABI as AbiItem[],
+      RamsesV2StateMulticallABI as AbiItem[],
       this.config.stateMulticall,
     );
 
@@ -167,7 +167,6 @@ export class RamsesV2
     fee: bigint,
     blockNumber: number,
   ): Promise<RamsesV2EventPool | null> {
-    console.log('INITAL FEE: ', fee);
     let pool =
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
 
@@ -223,10 +222,6 @@ export class RamsesV2
           },
         });
       } catch (e) {
-        console.log('POOL FEE: ', fee);
-        console.log('SRC: ', srcAddress);
-        console.log('DEST: ', destAddress);
-        console.log('E: ', e);
         if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
           // no need to await we want the set to have the pool key but it's not blocking
           this.dexHelper.cache.zadd(
@@ -267,7 +262,6 @@ export class RamsesV2
       this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
         pool;
     }
-    console.log('RESULT POOL: ', pool);
     return pool;
   }
 
@@ -319,9 +313,6 @@ export class RamsesV2
         ),
       )
     ).filter(pool => pool);
-
-
-    console.log('GET POOL Identifiers POOLS: ', pools);
 
     if (pools.length === 0) return [];
 
@@ -479,7 +470,6 @@ export class RamsesV2
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<RamsesV2Data>> {
-    console.log('RAMSES get prices volume');
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
       const _destToken = this.dexHelper.config.wrapETH(destToken);
