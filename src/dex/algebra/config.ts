@@ -67,6 +67,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       version: 'v1.1',
     },
   },
+  /*
   CamelotV3: {
     [Network.ARBITRUM]: {
       factory: '0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B',
@@ -84,6 +85,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       version: 'v1.9',
     },
   },
+  */
 };
 
 export const Adapters: Record<number, AdapterMappings> = {

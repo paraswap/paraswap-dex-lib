@@ -70,6 +70,7 @@ import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { CamelotV3 } from './quickswap/camelot-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -93,6 +94,7 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
+  CamelotV3,
 ];
 
 const Dexes = [
