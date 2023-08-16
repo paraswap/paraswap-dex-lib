@@ -88,7 +88,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI), // same abi as uniswapV3
     readonly quoterIface = new Interface(AlgebraQuoterABI),
-    protected config = AlgebraConfig[dexKey][network],
+    readonly config = AlgebraConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
