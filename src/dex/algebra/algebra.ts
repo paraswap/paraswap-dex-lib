@@ -446,6 +446,18 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       if (!pool) return null;
 
+      if (this.config.forceRPC) {
+        const rpcPrice = await this.getPricingFromRpc(
+          _srcToken,
+          _destToken,
+          amounts,
+          side,
+          pool,
+        );
+
+        return rpcPrice;
+      }
+
       let state = pool.getState(blockNumber);
 
       if (state === null) {
@@ -773,6 +785,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
       version: this.config.version,
+      forceRPC: this.config.forceRPC,
     };
     return newConfig;
   }
