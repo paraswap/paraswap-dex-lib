@@ -826,6 +826,8 @@ export class BalancerV2
             prices: resOut.prices,
             data: {
               poolId: pool.id,
+              tokenIn: _from.address.toLowerCase(),
+              tokenOut: _to.address.toLowerCase(),
             },
             poolAddresses: [poolAddress],
             exchange: this.dexKey,

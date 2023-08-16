@@ -698,6 +698,14 @@ export const Tokens: {
       address: '0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46',
       decimals: 18,
     },
+    BETS: {
+      address: '0x94025780a1ab58868d9b2dbbb775f44b32e8e6e5',
+      decimals: 18,
+    },
+    HATCHY: {
+      address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
+      decimals: 18,
+    },
   },
   [Network.ARBITRUM]: {
     DAI: {
@@ -715,8 +723,12 @@ export const Tokens: {
       addAllowance: _allowancesFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
-    USDC: {
+    USDCe: {
       address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+      decimals: 6,
+    },
+    USDC: {
+      address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
       decimals: 6,
     },
     OHM: {
@@ -772,6 +784,14 @@ export const Tokens: {
     WBTC: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
+    },
+    USDCe: {
+      address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+      decimals: 6,
+    },
+    LEX: {
+      address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
+      decimals: 18,
     },
   },
   [Network.OPTIMISM]: {
@@ -965,6 +985,8 @@ export const Holders: {
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WAVAX: '0xbbff2a8ec8d702e61faaccf7cf705968bb6a5bab',
     sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
+    BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
+    HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
     USDC: '0xbf14db80d9275fb721383a77c00ae180fc40ae98',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
@@ -995,7 +1017,8 @@ export const Holders: {
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
-    USDC: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDC: '0xa843392198862f98d17e3aa1421b08f2c2020cff',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
     USDT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',

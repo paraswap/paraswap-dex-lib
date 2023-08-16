@@ -276,7 +276,7 @@ export class UniswapV3
           e,
         );
       } else {
-        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
           `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
@@ -620,6 +620,11 @@ export class UniswapV3
           const state = states[i];
 
           if (state.liquidity <= 0n) {
+            if (state.liquidity < 0) {
+              this.logger.error(
+                `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+              );
+            }
             this.logger.trace(`pool have 0 liquidity`);
             return null;
           }
