@@ -155,6 +155,108 @@ async function testPricingOnNetwork(
   );
 }
 
+describe('CamelotV3', function () {
+  const dexKey = 'CamelotV3';
+  let blockNumber: number;
+  let algebra: Algebra;
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'USDCe';
+    const destTokenSymbol = 'GRAIL';
+    // const destTokenSymbol = 'USDC';
+
+    const amountsForSell = [
+      0n,
+      10_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      20000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      30_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      40_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      50_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      60_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      70_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      80_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      90_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      100_000n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      algebra = new Algebra(network, dexKey, dexHelper);
+      if (algebra.initializePricing) {
+        await algebra.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        algebra,
+        network,
+        dexKey,
+        dexHelper,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'quoteExactInputSingle',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        algebra,
+        network,
+        dexKey,
+        dexHelper,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'quoteExactOutputSingle',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAlgebra = new Algebra(network, dexKey, dexHelper);
+      const poolLiquidity = await newAlgebra.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newAlgebra.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+});
+
 describe('Algebra', function () {
   const dexKey = 'QuickSwapV3';
   let blockNumber: number;

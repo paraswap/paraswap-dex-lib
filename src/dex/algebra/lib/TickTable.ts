@@ -91,11 +91,12 @@ export class TickTable {
         ),
       );
     }
-    const [rowNumber, bitNumber] = TickTable.position(tick);
-    isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
-    let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
-    tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
     if (lte) {
+      const [rowNumber, bitNumber] = TickTable.position(tick);
+      isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
+      let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
+      tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
+
       const _row = tickBitmapValue << (255n - bitNumber);
       if (_row != 0n) {
         tick -= BigInt.asIntN(24, 255n - TickTable.getMostSignificantBit(_row));
@@ -106,6 +107,12 @@ export class TickTable {
       }
     } else {
       tick += 1n;
+
+      const [rowNumber, bitNumber] = TickTable.position(tick);
+      isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
+      let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
+      tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
+
       const _row = tickBitmapValue >> bitNumber;
       if (_row !== 0n) {
         tick += BigInt.asIntN(
