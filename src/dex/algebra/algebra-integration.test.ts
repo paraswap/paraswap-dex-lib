@@ -153,7 +153,6 @@ describe('CamelotV3', function () {
 
     const srcTokenSymbol = 'USDCe';
     const destTokenSymbol = 'GRAIL';
-    // const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
