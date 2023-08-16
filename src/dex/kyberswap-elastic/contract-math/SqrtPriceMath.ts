@@ -22,7 +22,7 @@ export class SqrtPriceMath {
         if (denominator >= numerator1) {
           return BigInt.asUintN(
             160,
-            FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator),
+            FullMath.mulDivCeil(numerator1, sqrtPX96, denominator),
           );
         }
       }
@@ -40,7 +40,7 @@ export class SqrtPriceMath {
       const denominator = numerator1 - product;
       return BigInt.asUintN(
         160,
-        FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator),
+        FullMath.mulDivCeil(numerator1, sqrtPX96, denominator),
       );
     }
   }
@@ -64,7 +64,7 @@ export class SqrtPriceMath {
               amount << FixedPoint96.RESOLUTION,
               liquidity,
             )
-          : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity);
+          : FullMath.mulDivCeil(amount, FixedPoint96.Q96, liquidity);
 
       _require(
         sqrtPX96 > quotient,
@@ -142,7 +142,7 @@ export class SqrtPriceMath {
 
     return roundUp
       ? UnsafeMath.divRoundingUp(
-          FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBX96),
+          FullMath.mulDivCeil(numerator1, numerator2, sqrtRatioBX96),
           sqrtRatioAX96,
         )
       : FullMath.mulDiv(numerator1, numerator2, sqrtRatioBX96) / sqrtRatioAX96;
@@ -158,7 +158,7 @@ export class SqrtPriceMath {
       [sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96];
 
     return roundUp
-      ? FullMath.mulDivRoundingUp(
+      ? FullMath.mulDivCeil(
           liquidity,
           sqrtRatioBX96 - sqrtRatioAX96,
           FixedPoint96.Q96,

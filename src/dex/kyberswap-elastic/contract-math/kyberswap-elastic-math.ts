@@ -17,6 +17,7 @@ import { ReinvestmentMath } from './ReinvestmentMath';
 import { LiqDeltaMath } from './LiqDeltaMath';
 import { SqrtPriceMath } from './SqrtPriceMath';
 import { LiquidityMath } from './LiquidityMath';
+import { SafeCast } from './SafeCast';
 
 type SwapDataState = {
   specifiedAmount: bigint;
@@ -154,7 +155,7 @@ function _simulateSwap(
       if (swapData.baseL > 0n) {
         swapData.secondsPerLiquidityGlobal += BigInt.asUintN(
           128,
-          secondsElapsed << (96n / swapData.baseL),
+          (secondsElapsed << 96n) / swapData.baseL,
         );
       }
     }
@@ -258,7 +259,7 @@ function _updateLiquidityAndCrossTick(
     currentLiquidity,
     liquidityNet >= 0
       ? BigInt.asUintN(128, liquidityNet)
-      : BigInt.asUintN(128, liquidityNet * -1n),
+      : SafeCast.revToUint128(liquidityNet),
     liquidityNet >= 0,
   );
 

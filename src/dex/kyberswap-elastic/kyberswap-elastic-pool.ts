@@ -291,20 +291,29 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     ];
 
     const _poolData: PoolData = {
-      sqrtP: _poolState.sqrtP,
-      nearestCurrentTick: _poolState.nearestCurrentTick,
-      currentTick: _poolState.currentTick,
-      baseL: _liquidityState.baseL,
-      reinvestL: _liquidityState.reinvestL,
-      reinvestLLast: _liquidityState.reinvestLLast,
-      feeGrowthGlobal: _feeGrowthGlobal,
-      secondsPerLiquidityGlobal: _secondsPerLiquidity.secondsPerLiquidityGlobal,
-      secondsPerLiquidityUpdateTime: _secondsPerLiquidity.lastUpdateTime,
-      rTokenSupply: _rTokenSupply,
+      sqrtP: BigInt(_poolState.sqrtP),
+      nearestCurrentTick: BigInt(_poolState.nearestCurrentTick),
+      currentTick: BigInt(_poolState.currentTick),
+      baseL: BigInt(_liquidityState.baseL),
+      reinvestL: BigInt(_liquidityState.reinvestL),
+      reinvestLLast: BigInt(_liquidityState.reinvestLLast),
+      feeGrowthGlobal: BigInt(_feeGrowthGlobal),
+      secondsPerLiquidityGlobal: BigInt(
+        _secondsPerLiquidity.secondsPerLiquidityGlobal,
+      ),
+      secondsPerLiquidityUpdateTime: BigInt(
+        _secondsPerLiquidity.lastUpdateTime,
+      ),
+      rTokenSupply: BigInt(_rTokenSupply),
       locked: _poolState.locked,
     };
 
-    return [_poolData, _balance0, _balance1, _blockTimestamp];
+    return [
+      _poolData,
+      BigInt(_balance0),
+      BigInt(_balance1),
+      BigInt(_blockTimestamp),
+    ];
   }
 
   private _constructPoolDataCalldata(): MultiCallParams<KyberElasticStateResponses>[] {
@@ -490,8 +499,8 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     >((acc, curr, index) => {
       const value = curr as InitializedTicksResponse;
       acc[tickIndice[index]] = <LinkedlistData>{
-        previous: value.previous,
-        next: value.next,
+        previous: BigInt(value.previous),
+        next: BigInt(value.next),
       };
       return acc;
     }, initializedTicks);
@@ -506,10 +515,10 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       (acc, curr, index) => {
         const value = curr as TicksResponse;
         acc[tickIndice[index]] = <TickInfo>{
-          liquidityGross: value.liquidityGross,
-          liquidityNet: value.liquidityNet,
-          feeGrowthOutside: value.feeGrowthOutside,
-          secondsPerLiquidityOutside: value.secondsPerLiquidityOutside,
+          liquidityGross: BigInt(value.liquidityGross),
+          liquidityNet: BigInt(value.liquidityNet),
+          feeGrowthOutside: BigInt(value.feeGrowthOutside),
+          secondsPerLiquidityOutside: BigInt(value.secondsPerLiquidityOutside),
         };
         return acc;
       },
