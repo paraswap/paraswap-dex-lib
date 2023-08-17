@@ -71,6 +71,7 @@ export type DexParams = {
   subgraphURL: string;
   initHash: string;
   version: 'v1.1' | 'v1.9';
+  forceRPC?: boolean;
 };
 
 export type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
