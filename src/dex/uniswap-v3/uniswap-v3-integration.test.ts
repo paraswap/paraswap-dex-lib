@@ -76,7 +76,7 @@ async function checkOnChainPricing(
   _amounts: bigint[],
 ) {
   // Quoter address
-  const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+  // const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
   const readerIface = quoterIface;
 
   const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
@@ -99,7 +99,8 @@ async function checkOnChainPricing(
   // );
 
   const readerCallData = getReaderCalldata(
-    '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+    // '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+    '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
     readerIface,
     _amounts.slice(1),
     funcName,
@@ -116,6 +117,7 @@ async function checkOnChainPricing(
         .call({}, blockNumber)
     ).returnData;
   } catch (e) {
+    console.log('E: ', e);
     console.log(
       `Can not fetch on-chain pricing for fee ${fee}. It happens for low liquidity pools`,
       e,
@@ -151,19 +153,6 @@ describe('UniswapV3', function () {
       Network.ARBITRUM,
       dexKey,
       new DummyDexHelper(Network.ARBITRUM),
-    );
-  });
-
-
-  it('fgggg', async () => {
-    const readerCallData = getReaderCalldata(
-      '',
-      readerIface,
-      _amounts.slice(1),
-      funcName,
-      tokenIn,
-      tokenOut,
-      fee,
     );
   });
 
@@ -487,5 +476,88 @@ describe('UniswapV3', function () {
     if (!uniswapV3.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
     }
+  });
+});
+
+describe('RamsesV2', () => {
+  const dexKey = 'RamsesV2';
+  let blockNumber: number;
+  let uniswapV3: UniswapV3;
+  let uniswapV3Mainnet: UniswapV3;
+
+  const network = Network.ARBITRUM;
+  const dexHelper = new DummyDexHelper(network);
+  const TokenASymbol = 'USDCe';
+  const TokenA = Tokens[network][TokenASymbol];
+
+  const TokenBSymbol = 'USDC';
+  const TokenB = Tokens[network][TokenBSymbol];
+
+  beforeEach(async () => {
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
+    uniswapV3Mainnet = new UniswapV3(
+      Network.ARBITRUM,
+      dexKey,
+      dexHelper,
+    );
+  });
+
+
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+
+    const amounts = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+    ];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          uniswapV3,
+          'quoteExactInputSingle',
+          blockNumber,
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 });

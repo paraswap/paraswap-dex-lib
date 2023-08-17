@@ -43,6 +43,7 @@ import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
+import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
@@ -107,7 +108,7 @@ export class UniswapV3
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI),
-    readonly quoterIface = new Interface(UniswapV3QuoterABI),
+    readonly quoterIface = new Interface(UniswapV3QuoterV2ABI),
     protected config = UniswapV3Config[dexKey][network],
     protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
   ) {
@@ -369,6 +370,7 @@ export class UniswapV3
     side: SwapSide,
     pools: UniswapV3EventPool[],
   ): Promise<ExchangePrices<UniswapV3Data> | null> {
+    console.log('POOLS: ', pools);
     if (pools.length === 0) {
       return null;
     }
@@ -422,6 +424,7 @@ export class UniswapV3
       ),
     );
 
+    console.log('QUOTER: ', this.config.quoter);
     const calldata = pools.map(pool =>
       _amounts.map(_amount => ({
         target: this.config.quoter,
@@ -577,17 +580,18 @@ export class UniswapV3
 
       if (selectedPools.length === 0) return null;
 
+
       const poolsToUse = selectedPools.reduce(
         (acc, pool) => {
           let state = pool.getState(blockNumber);
-          if (state === null) {
+          // if (state === null || pool.poolAddress === '0x6059cf1c818979bccac5d1f015e1b322d154592f') {
             this.logger.trace(
               `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
             );
             acc.poolWithoutState.push(pool);
-          } else {
-            acc.poolWithState.push(pool);
-          }
+          // } else {
+          //   acc.poolWithState.push(pool);
+          // }
           return acc;
         },
         {
@@ -595,6 +599,7 @@ export class UniswapV3
           poolWithoutState: [] as UniswapV3EventPool[],
         },
       );
+
 
       const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
@@ -694,6 +699,9 @@ export class UniswapV3
         }),
       );
       const rpcResults = await rpcResultsPromise;
+
+
+      console.log('RPC RESULTS: ', rpcResults);
 
       const notNullResult = result.filter(
         res => res !== null,
