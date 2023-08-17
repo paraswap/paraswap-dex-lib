@@ -30,6 +30,7 @@ import {
 import { TickBitMap } from './contract-math/TickBitMap';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
+import { _reduceTickBitmap, _reduceTicks } from '../uniswap-v3/contract-math/utils';
 
 export class RamsesV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -267,8 +268,8 @@ export class RamsesV2EventPool extends StatefulEventSubscriber<PoolState> {
     const tickBitmap = {};
     const ticks = {};
 
-    this._reduceTickBitmap(tickBitmap, _state.tickBitmap);
-    this._reduceTicks(ticks, _state.ticks);
+    _reduceTickBitmap(tickBitmap, _state.tickBitmap);
+    _reduceTicks(ticks, _state.ticks);
 
     const observations = {
       [_state.slot0.observationIndex]: {
@@ -486,40 +487,6 @@ export class RamsesV2EventPool extends StatefulEventSubscriber<PoolState> {
     );
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
     return pool;
-  }
-
-  private _reduceTickBitmap(
-    tickBitmap: Record<NumberAsString, bigint>,
-    tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
-  ) {
-    return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
-      (acc, curr) => {
-        const { index, value } = curr;
-        acc[index] = bigIntify(value);
-        return acc;
-      },
-      tickBitmap,
-    );
-  }
-
-  private _reduceTicks(
-    ticks: Record<NumberAsString, TickInfo>,
-    ticksToReduce: TickInfoMappingsWithBigNumber[],
-  ) {
-    return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
-      const { index, value } = curr;
-      acc[index] = {
-        liquidityGross: bigIntify(value.liquidityGross),
-        liquidityNet: bigIntify(value.liquidityNet),
-        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
-        secondsPerLiquidityOutsideX128: bigIntify(
-          value.secondsPerLiquidityOutsideX128,
-        ),
-        secondsOutside: bigIntify(value.secondsOutside),
-        initialized: value.initialized,
-      };
-      return acc;
-    }, ticks);
   }
 
   private _computePoolAddress(

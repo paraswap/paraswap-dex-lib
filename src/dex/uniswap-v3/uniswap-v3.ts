@@ -91,7 +91,7 @@ export class UniswapV3
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1']),
+      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1', 'RamsesV2']),
     );
 
   logger: Logger;
@@ -117,8 +117,12 @@ export class UniswapV3
       UniswapV3MultiABI as AbiItem[],
       this.config.uniswapMulticall,
     );
+    console.log('DEX KEY: ', dexKey);
+    console.log('stateMultiCallAbi: ', this.config.stateMultiCallAbi);
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3StateMulticallABI as AbiItem[],
+      this.config.stateMultiCallAbi !== undefined
+        ? this.config.stateMultiCallAbi
+        : UniswapV3StateMulticallABI as AbiItem[],
       this.config.stateMulticall,
     );
 
@@ -233,12 +237,16 @@ export class UniswapV3
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
+    console.log('dex key: ', this.dexKey);
+    console.log('THIS CONFIG: ', this.config);
+    console.log('NEW POOL decode: ', this.config.decodeStateMultiCallResultWithRelativeBitmaps);
     pool =
       pool ||
       new UniswapV3EventPool(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
+        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
         this.erc20Interface,
         this.config.factory,
         fee,
@@ -1055,6 +1063,8 @@ export class UniswapV3
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
+      stateMultiCallAbi: this.config.stateMultiCallAbi,
+      decodeStateMultiCallResultWithRelativeBitmaps: this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };
     return newConfig;
   }

@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
-import { ethers } from 'ethers';
+import { BytesLike, ethers } from 'ethers';
 import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
@@ -11,12 +11,12 @@ import {
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
-  DecodedStateMultiCallResultWithRelativeBitmaps,
+  DecodedStateMultiCallResultWithRelativeBitmaps, DecodeStateMultiCallFunc,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
-import { MultiCallParams } from '../../lib/multi-wrapper';
+import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
@@ -60,6 +60,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     readonly dexHelper: IDexHelper,
     parentName: string,
     readonly stateMultiContract: Contract,
+    readonly decodeStateMultiCallResultWithRelativeBitmaps: DecodeStateMultiCallFunc | undefined,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
     public readonly feeCode: bigint,
@@ -226,9 +227,17 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
               this.getBitmapRangeToRequest(),
             )
             .encodeABI(),
-          decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+          decodeFunction:
+            this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined
+              ? this.decodeStateMultiCallResultWithRelativeBitmaps
+              : decodeStateMultiCallResultWithRelativeBitmaps,
         },
       ];
+
+      if(this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined) {
+        console.log('decodeStateMultiCallResultWithRelativeBitmaps: ', decodeStateMultiCallResultWithRelativeBitmaps);
+      }
+
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;
