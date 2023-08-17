@@ -1,110 +1,105 @@
-// /* eslint-disable no-console */
-// import dotenv from 'dotenv';
-// dotenv.config();
+/* eslint-disable no-console */
+import dotenv from 'dotenv';
+dotenv.config();
 
-// import { KyberswapElasticEventPool } from './kyberswap-elastic-pool';
-// import { Network } from '../../constants';
-// import { Address } from '../../types';
-// import { DummyDexHelper } from '../../dex-helper/index';
-// import { testEventSubscriber } from '../../../tests/utils-events';
-// import { PoolState } from './types';
+import { Interface } from '@ethersproject/abi';
+import _ from 'lodash';
+import { AbiItem } from 'web3-utils';
 
-// /*
-//   README
-//   ======
+import { Network } from '../../constants';
+import { DummyDexHelper } from '../../dex-helper/index';
+import { testEventSubscriber } from '../../../tests/utils-events';
 
-//   This test script adds unit tests for KyberswapElastic event based
-//   system. This is done by fetching the state on-chain before the
-//   event block, manually pushing the block logs to the event-subscriber,
-//   comparing the local state with on-chain state.
+import { KyberswapElasticEventPool } from './kyberswap-elastic-pool';
+import { KyberswapElasticConfig } from './config';
+import { PoolState } from './types';
 
-//   Most of the logic for testing is abstracted by `testEventSubscriber`.
-//   You need to do two things to make the tests work:
+jest.setTimeout(300 * 1000);
+const dexKey = 'KyberswapElastic';
+const network = Network.POLYGON;
+const config = KyberswapElasticConfig[dexKey][network];
 
-//   1. Fetch the block numbers where certain events were released. You
-//   can modify the `./scripts/fetch-event-blocknumber.ts` to get the
-//   block numbers for different events. Make sure to get sufficient
-//   number of blockNumbers to cover all possible cases for the event
-//   mutations.
+async function fetchPoolStateFromContract(
+  kyberElasticPool: KyberswapElasticEventPool,
+  blockNumber: number,
+  poolAddress: string,
+): Promise<PoolState> {
+  const message = `KyberswapElastic: ${poolAddress} blockNumber ${blockNumber}`;
+  console.log(`Fetching state ${message}`);
+  const state = kyberElasticPool.generateState(blockNumber);
+  console.log(`Done ${message}`);
+  return state;
+}
 
-//   2. Complete the implementation for fetchPoolState function. The
-//   function should fetch the on-chain state of the event subscriber
-//   using just the blocknumber.
+describe('KyberswapElastic Event', function () {
+  const poolAddress = '0xc270E8bFddD1baeCB63f1F168cF16a5aF43F25F0';
+  const swapFeeUnits = 2000n;
+  const token0 = '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619'; // WETH
+  const token1 = '0xc2132d05d31c914a87c6611c10748aeb04b58e8f'; // USDT
 
-//   The template tests only include the test for a single event
-//   subscriber. There can be cases where multiple event subscribers
-//   exist for a single DEX. In such cases additional tests should be
-//   added.
+  const blockNumbers: { [eventName: string]: number[] } = {
+    // topic0 - 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
+    // ['Swap']: [
+    //   46024527, 46368454, 46382161, 46389825, 46389828, 46389828, 46389905,
+    //   46395887, 46396458, 46396509, 46396512, 46396541, 46396541, 46396543,
+    //   46396547, 46396548, 46396549, 46396556, 46396557, 46396560, 46396563,
+    //   46396563, 46396564, 46396571, 46396580,
+    // ],
+    // topic0 - 0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c
+    ['Burn']: [
+      45260896, 45263948, 45290305, 45330254, 45341040, 45341949, 45425145,
+      45459592, 45464859, 45466043, 45692304, 45695126, 45762750, 45784950,
+      45798307, 45804486, 45842608, 45912593, 45912624, 45941338, 46051321,
+      46071378, 46072179, 46072190, 46389726,
+    ],
+    // topic0 - 0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde
+    ['Mint']: [
+      45174705, 45184373, 45199744, 45213105, 45229306, 45263615, 45264142,
+      45341174, 45406729, 45425546, 45459953, 45465078, 45467700, 45474462,
+      45775335, 45786522, 45793482, 45796144, 45826502, 45940379, 46028157,
+      46031255, 46034973, 46064396, 46075469,
+    ],
+  };
 
-//   You can run this individual test script by running:
-//   `npx jest src/dex/<dex-name>/<dex-name>-events.test.ts`
+  describe('KyberswapElasticEventPool', function () {
+    Object.keys(blockNumbers).forEach((event: string) => {
+      blockNumbers[event].forEach((blockNumber: number) => {
+        it(`${event}:${blockNumber} - should return correct state`, async function () {
+          const dexHelper = new DummyDexHelper(network);
+          // await dexHelper.init();
 
-//   (This comment should be removed from the final implementation)
-// */
+          const logger = dexHelper.getLogger(dexKey);
 
-// jest.setTimeout(50 * 1000);
+          const kyberElasticPool = new KyberswapElasticEventPool(
+            dexKey,
+            network,
+            dexHelper,
+            logger,
+            config,
+            swapFeeUnits,
+            token0,
+            token1,
+          );
 
-// async function fetchPoolState(
-//   kyberswapElasticPools: KyberswapElasticEventPool,
-//   blockNumber: number,
-//   poolAddress: string,
-// ): Promise<PoolState> {
-//   // TODO: complete me!
-//   return {};
-// }
+          // It is done in generateState. But here have to make it manually
+          kyberElasticPool.poolAddress = poolAddress.toLowerCase();
+          kyberElasticPool.addressesSubscribed[0] = poolAddress;
 
-// // eventName -> blockNumbers
-// type EventMappings = Record<string, number[]>;
-
-// describe('KyberswapElastic EventPool Mainnet', function () {
-//   const dexKey = 'KyberswapElastic';
-//   const network = Network.MAINNET;
-//   const dexHelper = new DummyDexHelper(network);
-//   const logger = dexHelper.getLogger(dexKey);
-//   let kyberswapElasticPool: KyberswapElasticEventPool;
-
-//   // poolAddress -> EventMappings
-//   const eventsToTest: Record<Address, EventMappings> = {
-//     // TODO: complete me!
-//   };
-
-//   beforeEach(async () => {
-//     kyberswapElasticPool = new KyberswapElasticEventPool(
-//       dexKey,
-//       network,
-//       dexHelper,
-//       logger,
-//       /* TODO: Put here additional constructor arguments if needed */
-//     );
-//   });
-
-//   Object.entries(eventsToTest).forEach(
-//     ([poolAddress, events]: [string, EventMappings]) => {
-//       describe(`Events for ${poolAddress}`, () => {
-//         Object.entries(events).forEach(
-//           ([eventName, blockNumbers]: [string, number[]]) => {
-//             describe(`${eventName}`, () => {
-//               blockNumbers.forEach((blockNumber: number) => {
-//                 it(`State after ${blockNumber}`, async function () {
-//                   await testEventSubscriber(
-//                     kyberswapElasticPool,
-//                     kyberswapElasticPool.addressesSubscribed,
-//                     (_blockNumber: number) =>
-//                       fetchPoolState(
-//                         kyberswapElasticPool,
-//                         _blockNumber,
-//                         poolAddress,
-//                       ),
-//                     blockNumber,
-//                     `${dexKey}_${poolAddress}`,
-//                     dexHelper.provider,
-//                   );
-//                 });
-//               });
-//             });
-//           },
-//         );
-//       });
-//     },
-//   );
-// });
+          await testEventSubscriber(
+            kyberElasticPool,
+            kyberElasticPool.addressesSubscribed,
+            (_blockNumber: number) =>
+              fetchPoolStateFromContract(
+                kyberElasticPool,
+                _blockNumber,
+                poolAddress,
+              ),
+            blockNumber,
+            `${dexKey}_${poolAddress}`,
+            dexHelper.provider,
+          );
+        });
+      });
+    });
+  });
+});

@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { NumberAsString } from '@paraswap/core';
-import { BytesLike, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import { assert, DeepReadonly } from 'ts-essentials';
@@ -9,15 +9,13 @@ import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, Address, BlockHeader } from '../../types';
 import { bigIntify, catchParseLogError } from '../../utils';
 import { generateConfig } from '../../config';
-import { ERC20EventSubscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber';
 import {
   StatefulEventSubscriber,
   InitializeStateOptions,
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { BI_MAX_UINT128 } from '../../bigint-constants';
-import { getERC20Subscriber } from '../../lib/generics-events-subscribers/erc20-event-subscriber-factory';
-import { generalDecoder, uint256ToBigInt } from '../../lib/decoders';
+import { uint256ToBigInt } from '../../lib/decoders';
 
 import ERC20ABI from '../../abi/erc20.json';
 import MultiCallABI from '../../abi/multi-v2.json';
