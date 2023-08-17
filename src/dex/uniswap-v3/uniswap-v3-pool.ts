@@ -234,10 +234,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         },
       ];
 
-      if(this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined) {
-        console.log('decodeStateMultiCallResultWithRelativeBitmaps: ', decodeStateMultiCallResultWithRelativeBitmaps);
-      }
-
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;

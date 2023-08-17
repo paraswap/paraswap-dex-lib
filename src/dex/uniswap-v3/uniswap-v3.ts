@@ -117,8 +117,6 @@ export class UniswapV3
       UniswapV3MultiABI as AbiItem[],
       this.config.uniswapMulticall,
     );
-    console.log('DEX KEY: ', dexKey);
-    console.log('stateMultiCallAbi: ', this.config.stateMultiCallAbi);
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
       this.config.stateMultiCallAbi !== undefined
         ? this.config.stateMultiCallAbi
@@ -237,9 +235,6 @@ export class UniswapV3
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
-    console.log('dex key: ', this.dexKey);
-    console.log('THIS CONFIG: ', this.config);
-    console.log('NEW POOL decode: ', this.config.decodeStateMultiCallResultWithRelativeBitmaps);
     pool =
       pool ||
       new UniswapV3EventPool(
