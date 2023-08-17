@@ -105,8 +105,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     this.config = this._toLowerForAllConfigAddresses();
     // External configuration has priority over internal
-    this.config.forceRPC =
-      dexHelper.config.data.forceRpcFallbackDexs.includes(dexKey);
+    this.config.forceRPC = dexHelper.config.data.forceRpcFallbackDexs.includes(
+      dexKey.toLowerCase(),
+    );
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
