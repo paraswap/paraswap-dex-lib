@@ -82,7 +82,6 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x6dd3fb9653b10e806650f107c3b5a0a6ff974f65',
       version: 'v1.9',
-      forceRPC: false,
     },
   },
 };

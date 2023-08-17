@@ -30,6 +30,7 @@ type BaseConfig = {
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   swaapV2AuthToken?: string;
+  forceRpcFallbackDexs: string[];
 };
 
 const baseConfigs: { [network: number]: BaseConfig } = {
@@ -115,6 +116,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
         },
       },
     },
+    forceRpcFallbackDexs: [],
   },
   [Network.ROPSTEN]: {
     network: Network.ROPSTEN,
@@ -142,6 +144,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
   },
   [Network.BSC]: {
     network: Network.BSC,
@@ -168,6 +171,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
     rfqConfigs: {},
+    forceRpcFallbackDexs: [],
   },
   [Network.POLYGON]: {
     network: Network.POLYGON,
@@ -197,6 +201,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
+    forceRpcFallbackDexs: [],
   },
   [Network.AVALANCHE]: {
     network: Network.AVALANCHE,
@@ -224,6 +229,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
+    forceRpcFallbackDexs: [],
   },
   [Network.FANTOM]: {
     network: Network.FANTOM,
@@ -251,6 +257,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
+    forceRpcFallbackDexs: [],
   },
   [Network.ARBITRUM]: {
     network: Network.ARBITRUM,
@@ -279,6 +286,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 4,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
   },
   [Network.OPTIMISM]: {
     network: Network.OPTIMISM,
@@ -307,6 +315,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
   },
 };
 
@@ -350,6 +359,7 @@ export function generateConfig(network: number): Config {
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
+    forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
   };
 }
 
@@ -359,7 +369,7 @@ export class ConfigHelper {
   constructor(
     public isSlave: boolean,
     public data: Config,
-    private masterCachePrefix: string,
+    masterCachePrefix: string,
   ) {
     this.masterBlockNumberCacheKey =
       `${masterCachePrefix}_${data.network}_bn`.toLowerCase();

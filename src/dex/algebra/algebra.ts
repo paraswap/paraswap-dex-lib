@@ -104,6 +104,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
     this.config = this._toLowerForAllConfigAddresses();
+    // External configuration has priority over internal
+    this.config.forceRPC =
+      dexHelper.config.data.forceRpcFallbackDexs.includes(dexKey);
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
