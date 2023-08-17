@@ -43,7 +43,7 @@ export class TickTable {
       // wordPos
       BigInt.asIntN(16, tick >> 8n),
       // bitPos
-      BigInt.asUintN(8, tick & BigInt(0xff)),
+      BigInt.asUintN(8, tick & 0xffn),
     ];
   }
 
@@ -56,7 +56,7 @@ export class TickTable {
       tick /= tickSpacing;
     }
     const [rowNumber, bitNumber] = TickTable.position(tick);
-    const mask = 1n << bitNumber;
+    const mask = BigInt.asUintN(256, 1n << bitNumber);
 
     // toggleTick is used only in _updatePosition which is always state changing event
     // Therefore it is never used in price query
@@ -83,11 +83,14 @@ export class TickTable {
     tickSpacing?: bigint,
   ): [bigint, boolean] {
     if (tickSpacing !== undefined) {
-      tick = Yul.sub(
-        Yul.sdiv(tick, tickSpacing),
-        Yul.and(
-          Yul.slt(tick, 0n),
-          Yul.not(Yul.iszero(Yul.smod(tick, tickSpacing))),
+      tick = BigInt.asIntN(
+        24,
+        Yul.sub(
+          Yul.sdiv(tick, tickSpacing),
+          Yul.and(
+            Yul.slt(tick, 0n),
+            Yul.not(Yul.iszero(Yul.smod(tick, tickSpacing))),
+          ),
         ),
       );
     }
@@ -97,7 +100,7 @@ export class TickTable {
       let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
       tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
 
-      const _row = tickBitmapValue << (255n - bitNumber);
+      const _row = BigInt.asUintN(256, tickBitmapValue << (255n - bitNumber));
       if (_row != 0n) {
         tick -= BigInt.asIntN(24, 255n - TickTable.getMostSignificantBit(_row));
         return [TickTable.boundTick(tick, tickSpacing), true];
@@ -113,7 +116,7 @@ export class TickTable {
       let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
       tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
 
-      const _row = tickBitmapValue >> bitNumber;
+      const _row = BigInt.asUintN(256, tickBitmapValue >> bitNumber);
       if (_row !== 0n) {
         tick += BigInt.asIntN(
           24,
