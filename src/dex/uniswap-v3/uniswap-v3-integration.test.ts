@@ -3,13 +3,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
-import { DummyDexHelper } from '../../dex-helper/index';
+import { DummyDexHelper, IDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { UniswapV3 } from './uniswap-v3';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
+import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import { Address } from '@paraswap/core';
 
 const network = Network.POLYGON;
@@ -28,10 +28,8 @@ const amounts = [
 
 const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 
-const dexHelper = new DummyDexHelper(network);
-const dexKey = 'UniswapV3';
 
-const quoterIface = new Interface(UniswapV3QuoterABI);
+const quoterIface = new Interface(UniswapV3QuoterV2ABI);
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -45,11 +43,13 @@ function getReaderCalldata(
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      tokenIn,
-      tokenOut,
-      fee,
-      amount,
-      0n,
+      [
+        tokenIn,
+        tokenOut,
+        amount.toString(),
+        fee.toString(),
+        0,
+      ]
     ]),
   }));
 }
@@ -66,9 +66,11 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
+  dexHelper: IDexHelper,
   uniswapV3: UniswapV3,
   funcName: string,
   blockNumber: number,
+  exchangeAddress: string,
   prices: bigint[],
   tokenIn: Address,
   tokenOut: Address,
@@ -99,8 +101,9 @@ async function checkOnChainPricing(
   // );
 
   const readerCallData = getReaderCalldata(
+    exchangeAddress,
     // '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-    '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
+    // '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
     readerIface,
     _amounts.slice(1),
     funcName,
@@ -117,7 +120,6 @@ async function checkOnChainPricing(
         .call({}, blockNumber)
     ).returnData;
   } catch (e) {
-    console.log('E: ', e);
     console.log(
       `Can not fetch on-chain pricing for fee ${fee}. It happens for low liquidity pools`,
       e,
@@ -128,6 +130,8 @@ async function checkOnChainPricing(
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
+
+  console.log('EXPECTED PRICES: ', expectedPrices);
 
   let firstZeroIndex = prices.slice(1).indexOf(0n);
 
@@ -142,6 +146,9 @@ async function checkOnChainPricing(
 }
 
 describe('UniswapV3', function () {
+  const dexHelper = new DummyDexHelper(network);
+  const dexKey = 'UniswapV3';
+
   let blockNumber: number;
   let uniswapV3: UniswapV3;
   let uniswapV3Mainnet: UniswapV3;
@@ -185,9 +192,11 @@ describe('UniswapV3', function () {
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
         const res = await checkOnChainPricing(
+          dexHelper,
           uniswapV3,
           'quoteExactInputSingle',
           blockNumber,
+          '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
           price.prices,
           TokenA.address,
           TokenB.address,
@@ -231,9 +240,11 @@ describe('UniswapV3', function () {
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
         const res = await checkOnChainPricing(
+          dexHelper,
           uniswapV3,
           'quoteExactOutputSingle',
           blockNumber,
+          '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
           price.prices,
           TokenA.address,
           TokenB.address,
@@ -341,9 +352,11 @@ describe('UniswapV3', function () {
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
         const res = await checkOnChainPricing(
+          dexHelper,
           uniswapV3,
           'quoteExactInputSingle',
           blockNumber,
+          '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
           price.prices,
           TokenA.address,
           TokenB.address,
@@ -451,9 +464,11 @@ describe('UniswapV3', function () {
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
         const res = await checkOnChainPricing(
+          dexHelper,
           uniswapV3,
           'quoteExactOutputSingle',
           blockNumber,
+          '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
           price.prices,
           TokenA.address,
           TokenB.address,
@@ -503,7 +518,6 @@ describe('RamsesV2', () => {
     );
   });
 
-
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
 
     const amounts = [
@@ -545,9 +559,70 @@ describe('RamsesV2', () => {
       poolPrices!.map(async price => {
         const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
         const res = await checkOnChainPricing(
+          dexHelper,
           uniswapV3,
           'quoteExactInputSingle',
           blockNumber,
+          '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+
+    const amounts = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+    ];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          dexHelper,
+          uniswapV3,
+          'quoteExactOutputSingle',
+          blockNumber,
+          '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
           price.prices,
           TokenA.address,
           TokenB.address,

@@ -1,6 +1,6 @@
 import { MultiResult } from '../../../../lib/multi-wrapper';
 import { BytesLike, ethers } from 'ethers';
-import { DecodedStateMultiCallResultWithRelativeBitmaps } from '../../../ramses-v2/types';
+import { DecodedStateMultiCallResultWithRelativeBitmaps } from '../../types';
 import { extractSuccessAndValue } from '../../../../lib/decoders';
 import { assert } from 'ts-essentials';
 
