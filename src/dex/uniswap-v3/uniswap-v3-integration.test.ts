@@ -90,20 +90,8 @@ async function checkOnChainPricing(
     return false;
   }
 
-  // const readerCallData = getReaderCalldata(
-  //   exchangeAddress,
-  //   readerIface,
-  //   _amounts.slice(1),
-  //   funcName,
-  //   tokenIn,
-  //   tokenOut,
-  //   fee,
-  // );
-
   const readerCallData = getReaderCalldata(
     exchangeAddress,
-    // '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-    // '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
     readerIface,
     _amounts.slice(1),
     funcName,
