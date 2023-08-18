@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
-import { BytesLike, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
 import {
@@ -16,7 +16,7 @@ import {
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
-import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
+import { MultiCallParams } from '../../lib/multi-wrapper';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
