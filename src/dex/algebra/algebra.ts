@@ -18,13 +18,12 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AlgebraData, DexParams, PoolState } from './types';
+import { AlgebraData, DexParams, IAlgebraPoolState } from './types';
 import {
   SimpleExchange,
   getLocalDeadlineAsFriendlyPlaceholder,
 } from '../simple-exchange';
 import { AlgebraConfig, Adapters } from './config';
-import { AlgebraEventPool } from './algebra-pool';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from 'ethers/lib/utils';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
@@ -37,6 +36,8 @@ import {
   UniswapV3SimpleSwapParams,
 } from '../uniswap-v3/types';
 import { AlgebraMath } from './lib/AlgebraMath';
+import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
+import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -55,9 +56,11 @@ const MAX_STALE_STATE_BLOCK_AGE = {
   [Network.ZKEVM]: 150, // approximately 3min
 };
 
+type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
+
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   readonly isFeeOnTransferSupported: boolean = false;
-  protected eventPools: Record<string, AlgebraEventPool | null> = {};
+  protected eventPools: Record<string, IAlgebraEventPool | null> = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -73,6 +76,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private stateMultiContract: Contract;
 
   private notExistingPoolSetKey: string;
+
+  private AlgebraPoolImplem:
+    | typeof AlgebraEventPoolV1_1
+    | typeof AlgebraEventPoolV1_9;
 
   constructor(
     protected network: Network,
@@ -100,6 +107,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
+
+    this.AlgebraPoolImplem =
+      config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -134,10 +144,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     srcAddress: Address,
     destAddress: Address,
     blockNumber: number,
-  ): Promise<AlgebraEventPool | null> {
+  ): Promise<IAlgebraEventPool | null> {
     let pool = this.eventPools[
       this.getPoolIdentifier(srcAddress, destAddress)
-    ] as AlgebraEventPool | null | undefined;
+    ] as IAlgebraEventPool | null | undefined;
 
     if (pool === null) return null;
 
@@ -200,7 +210,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     this.logger.trace(`starting to listen to new pool: ${key}`);
     pool =
       pool ||
-      new AlgebraEventPool(
+      new this.AlgebraPoolImplem(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
@@ -216,7 +226,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     try {
       await pool.initialize(blockNumber, {
-        initCallback: (state: DeepReadonly<PoolState>) => {
+        initCallback: state => {
           //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
           pool!.addressesSubscribed[0] = state.pool;
           pool!.poolAddress = state.pool;
@@ -317,7 +327,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     to: Token,
     amounts: bigint[],
     side: SwapSide,
-    pool: AlgebraEventPool,
+    pool: IAlgebraEventPool,
   ): Promise<ExchangePrices<AlgebraData> | null> {
     this.logger.warn(
       `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
@@ -436,6 +446,18 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       if (!pool) return null;
 
+      if (this.config.forceRPC) {
+        const rpcPrice = await this.getPricingFromRpc(
+          _srcToken,
+          _destToken,
+          amounts,
+          side,
+          pool,
+        );
+
+        return rpcPrice;
+      }
+
       let state = pool.getState(blockNumber);
 
       if (state === null) {
@@ -484,6 +506,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const zeroForOne = token0 === _srcAddress ? true : false;
 
       if (state.liquidity <= 0n) {
+        if (state.liquidity < 0) {
+          this.logger.error(
+            `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+          );
+        }
         this.logger.trace(`pool have 0 liquidity`);
         return null;
       }
@@ -757,12 +784,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
+      version: this.config.version,
+      forceRPC: this.config.forceRPC,
     };
     return newConfig;
   }
 
   private _getOutputs(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<IAlgebraPoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,

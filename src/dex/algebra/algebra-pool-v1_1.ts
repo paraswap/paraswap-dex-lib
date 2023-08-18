@@ -9,14 +9,14 @@ import {
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  PoolState,
+  PoolStateV1_1,
   TickBitMapMappingsWithBigNumber,
   TickInfoMappingsWithBigNumber,
 } from './types';
 import { ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
-import AlgebraABI from '../../abi/algebra/AlgebraPool.abi.json';
-import { DecodedStateMultiCallResultWithRelativeBitmaps } from './types';
+import AlgebraABI from '../../abi/algebra/AlgebraPool-v1_1.abi.json';
+import { DecodedStateMultiCallResultWithRelativeBitmapsV1_1 } from './types';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
@@ -24,24 +24,24 @@ import {
 } from '../uniswap-v3/constants';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
+import { decodeStateMultiCallResultWithRelativeBitmapsV1_1 } from './utils';
 import { AlgebraMath } from './lib/AlgebraMath';
-import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
 import {
   _reduceTickBitmap,
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
 import { Constants } from './lib/Constants';
 import { Network } from '../../constants';
+import { TickTable } from './lib/TickTable';
 
-export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
+export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1> {
   handlers: {
     [event: string]: (
       event: any,
-      state: DeepReadonly<PoolState>,
+      state: DeepReadonly<PoolStateV1_1>,
       log: Readonly<Log>,
       blockHeader: BlockHeader,
-    ) => DeepReadonly<PoolState> | null;
+    ) => DeepReadonly<PoolStateV1_1> | null;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -99,16 +99,16 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   async initialize(
     blockNumber: number,
-    options?: InitializeStateOptions<PoolState>,
+    options?: InitializeStateOptions<PoolStateV1_1>,
   ) {
     await super.initialize(blockNumber, options);
   }
 
   protected async processBlockLogs(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<PoolStateV1_1>,
     logs: Readonly<Log>[],
     blockHeader: Readonly<BlockHeader>,
-  ): Promise<DeepReadonly<PoolState> | null> {
+  ): Promise<DeepReadonly<PoolStateV1_1> | null> {
     const newState = await super.processBlockLogs(state, logs, blockHeader);
     if (newState && !newState.isValid) {
       return await this.generateState(blockHeader.number);
@@ -117,17 +117,17 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   protected processLog(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<PoolStateV1_1>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
-  ): DeepReadonly<PoolState> | null {
+  ): DeepReadonly<PoolStateV1_1> | null {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
         // Because we have observations in array which is mutable by nature, there is a
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
         // And there is no good workaround, so turn off the type checker for this line
-        const _state = _.cloneDeep(state) as PoolState;
+        const _state = _.cloneDeep(state) as PoolStateV1_1;
         try {
           const newState = this.handlers[event.name](
             event,
@@ -176,9 +176,11 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   private async _fetchPoolStateSingleStep(
     blockNumber: number,
-  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
+  > {
     const callData: MultiCallParams<
-      bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_1
     >[] = [
       {
         target: this.token0,
@@ -205,13 +207,13 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
             this.getBitmapRangeToRequest(),
           )
           .encodeABI(),
-        decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+        decodeFunction: decodeStateMultiCallResultWithRelativeBitmapsV1_1,
       },
     ];
 
     const [resBalance0, resBalance1, resState] =
       await this.dexHelper.multiWrapper.tryAggregate<
-        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+        bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_1
       >(
         false,
         callData,
@@ -226,16 +228,18 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       resBalance0.returnData,
       resBalance1.returnData,
       resState.returnData,
-    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1];
 
     return [balance0, balance1, _state];
   }
 
   private async _fetchPoolStateMultiStep(
     blockNumber: number,
-  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
+  > {
     const balancesAndGlobalStateCalldata: MultiCallParams<
-      bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_1
     >[] = [
       {
         target: this.token0,
@@ -262,13 +266,13 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
             0,
           )
           .encodeABI(),
-        decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+        decodeFunction: decodeStateMultiCallResultWithRelativeBitmapsV1_1,
       },
     ];
 
     const [resBalance0, resBalance1, stateWithoutTicksAndTickBitmap] =
       await this.dexHelper.multiWrapper.tryAggregate<
-        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+        bigint | DecodedStateMultiCallResultWithRelativeBitmapsV1_1
       >(
         false,
         balancesAndGlobalStateCalldata,
@@ -283,7 +287,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       resBalance0.returnData,
       resBalance1.returnData,
       stateWithoutTicksAndTickBitmap.returnData,
-    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
+    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1];
 
     const {
       globalState: { tick },
@@ -317,7 +321,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       }),
     );
 
-    const _state: DecodedStateMultiCallResultWithRelativeBitmaps = {
+    const _state: DecodedStateMultiCallResultWithRelativeBitmapsV1_1 = {
       ..._stateWithoutTicksAndTickBitmap,
       tickBitmap: ticksAndBitMaps.flatMap(v => v[0]),
       ticks: ticksAndBitMaps.flatMap(v => v[1]),
@@ -328,7 +332,9 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   async _fetchInitStateMultiStrategies(
     blockNumber: number,
-  ): Promise<[bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps]> {
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
+  > {
     try {
       return await this._fetchPoolStateSingleStep(blockNumber);
     } catch (e) {
@@ -341,7 +347,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+  async generateState(blockNumber: number): Promise<Readonly<PoolStateV1_1>> {
     const [balance0, balance1, _state] =
       await this._fetchInitStateMultiStrategies(blockNumber);
 
@@ -350,7 +356,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
     _reduceTickBitmap(tickBitmap, _state.tickBitmap);
     _reduceTicks(ticks, _state.ticks);
-    const globalState: PoolState['globalState'] = {
+    const globalState: PoolStateV1_1['globalState'] = {
       communityFeeToken0: bigIntify(_state.globalState.communityFeeToken0),
       communityFeeToken1: bigIntify(_state.globalState.communityFeeToken1),
       fee: bigIntify(_state.globalState.fee),
@@ -358,7 +364,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       tick: bigIntify(_state.globalState.tick),
     };
     const currentTick = globalState.tick;
-    const startTickBitmap = TickBitMap.position(
+    const startTickBitmap = TickTable.position(
       BigInt(currentTick) / Constants.TICK_SPACING,
     )[0];
 
@@ -375,12 +381,13 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
       isValid: true,
       balance0,
       balance1,
+      areTicksCompressed: true,
     };
   }
 
   handleSwapEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolStateV1_1,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -447,7 +454,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
   }
   handleMintEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolStateV1_1,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -473,7 +480,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleBurnEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolStateV1_1,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -496,7 +503,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleNewFee(
     event: any,
-    pool: PoolState,
+    pool: PoolStateV1_1,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -510,7 +517,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleCollectEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolStateV1_1,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -525,7 +532,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleFlashEvent(
     event: any,
-    pool: PoolState,
+    pool: PoolStateV1_1,
     log: Log,
     blockHeader: BlockHeader,
   ) {
@@ -540,7 +547,7 @@ export class AlgebraEventPool extends StatefulEventSubscriber<PoolState> {
 
   handleCommunityFee(
     event: any,
-    pool: PoolState,
+    pool: PoolStateV1_1,
     log: Log,
     blockHeader: BlockHeader,
   ) {

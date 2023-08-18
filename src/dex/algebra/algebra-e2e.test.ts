@@ -180,5 +180,49 @@ describe('Algebra', () => {
         nativeTokenAmount,
       );
     });
+
+    describe('Optimism', () => {
+      const network = Network.OPTIMISM;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '50000';
+      const nativeTokenAmount = '100000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      )
+    });
+  });
+
+  describe('CamelotV3', () => {
+    const dexKey = 'CamelotV3';
+
+    describe('Arbitrum', () => {
+      const network = Network.ARBITRUM;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
   });
 });

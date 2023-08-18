@@ -7,12 +7,13 @@ import { AlgebraConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolState } from './types';
+import { PoolStateV1_1, PoolState_v1_9 } from './types';
 import { Interface } from '@ethersproject/abi';
 import ERC20ABI from '../../abi/erc20.json';
 import StateMulticallABI from '../../abi/algebra/AlgebraStateMulticall.abi.json';
 import { AbiItem } from 'web3-utils';
-import { AlgebraEventPool } from './algebra-pool';
+import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
+import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 
 jest.setTimeout(300 * 1000);
 const dexKey = 'QuickSwapV3';
@@ -20,10 +21,10 @@ const network = Network.POLYGON;
 const config = AlgebraConfig[dexKey][network];
 
 async function fetchPoolStateFromContract(
-  algebraPool: AlgebraEventPool,
+  algebraPool: AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9,
   blockNumber: number,
   poolAddress: string,
-): Promise<PoolState> {
+): Promise<PoolStateV1_1 | PoolState_v1_9> {
   const message = `Algebra: ${poolAddress} blockNumber ${blockNumber}`;
   console.log(`Fetching state ${message}`);
   // Be careful to not request state prior to contract deployment
@@ -31,10 +32,75 @@ async function fetchPoolStateFromContract(
   // We had that mechanism, but removed it with this commit
   // You can restore it, but better just to find block after state multicall
   // deployment
-  const state = algebraPool.generateState(blockNumber);
+  const state = await algebraPool.generateState(blockNumber);
   console.log(`Done ${message}`);
   return state;
 }
+
+// To make this test to pass, you need to increase till 1500: TICK_BITMAP_BUFFER=1500
+describe('CamelotV3 Event Edge Case', function () {
+  const poolAddress = '0xaB72b23F347d41e8E993176ecb7CF3b842FBAC8C';
+  const token0 = '0x6bb7a17acc227fd1f6781d1eedeae01b42047ee0';
+  const token1 = '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8';
+  const dexKey = 'CamelotV3';
+  const network = Network.ARBITRUM;
+  const config = AlgebraConfig[dexKey][network];
+
+  const blockNumbers: { [eventName: string]: number[] } = {
+    // topic0 - 0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c
+    ['Burn']: [119409575],
+    // topic0 - 0xbdbdb71d7860376ba52b25a5028beea23581364a40522f6bcfb86bb1f2dca633
+    ['Collect']: [119409575],
+  };
+
+  describe('AlgebraEventPool', function () {
+    Object.keys(blockNumbers).forEach((event: string) => {
+      blockNumbers[event].forEach((blockNumber: number) => {
+        it(`${event}:${blockNumber} - should return correct state`, async function () {
+          const dexHelper = new DummyDexHelper(network);
+          // await dexHelper.init();
+
+          const logger = dexHelper.getLogger(dexKey);
+
+          const algebraPool = new AlgebraEventPoolV1_9(
+            dexHelper,
+            dexKey,
+            new dexHelper.web3Provider.eth.Contract(
+              StateMulticallABI as AbiItem[],
+              config.algebraStateMulticall,
+            ),
+            new Interface(ERC20ABI),
+            config.factory,
+            token0,
+            token1,
+            logger,
+            undefined,
+            config.initHash,
+            config.deployer,
+          );
+
+          // It is done in generateState. But here have to make it manually
+          algebraPool.poolAddress = poolAddress.toLowerCase();
+          algebraPool.addressesSubscribed[0] = poolAddress;
+
+          await testEventSubscriber(
+            algebraPool as any,
+            algebraPool.addressesSubscribed,
+            (_blockNumber: number) =>
+              fetchPoolStateFromContract(
+                algebraPool,
+                _blockNumber,
+                poolAddress,
+              ),
+            blockNumber,
+            `${dexKey}_${poolAddress}`,
+            dexHelper.provider,
+          );
+        });
+      });
+    });
+  });
+});
 
 describe('Algebra Event', function () {
   const poolAddress = '0x5b41eedcfc8e0ae47493d4945aa1ae4fe05430ff';
@@ -79,7 +145,7 @@ describe('Algebra Event', function () {
 
           const logger = dexHelper.getLogger(dexKey);
 
-          const algebraPool = new AlgebraEventPool(
+          const algebraPool = new AlgebraEventPoolV1_1(
             dexHelper,
             dexKey,
             new dexHelper.web3Provider.eth.Contract(
@@ -101,7 +167,7 @@ describe('Algebra Event', function () {
           algebraPool.addressesSubscribed[0] = poolAddress;
 
           await testEventSubscriber(
-            algebraPool,
+            algebraPool as any,
             algebraPool.addressesSubscribed,
             (_blockNumber: number) =>
               fetchPoolStateFromContract(
