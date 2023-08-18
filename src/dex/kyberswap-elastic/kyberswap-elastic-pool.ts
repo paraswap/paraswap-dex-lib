@@ -19,6 +19,7 @@ import { uint256ToBigInt } from '../../lib/decoders';
 
 import ERC20ABI from '../../abi/erc20.json';
 import MultiCallABI from '../../abi/multi-v2.json';
+import FactoryABI from '../../abi/kyberswap-elastic/IFactory.json';
 import PoolABI from '../../abi/kyberswap-elastic/IPool.json';
 import TicksFeesReaderABI from '../../abi/kyberswap-elastic/TicksFeesReader.json';
 
@@ -35,11 +36,13 @@ import {
   LinkedlistData,
   InitializedTicksResponse,
   TicksResponse,
+  FeeConfigurationResponse,
 } from './types';
 import { TickMath } from './contract-math/TickMath';
 import { ksElasticMath } from './contract-math/kyberswap-elastic-math';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import {
+  decodeFeeConfiguration,
   decodeInitializedTicks,
   decodeLiquidityState,
   decodePoolState,
@@ -68,6 +71,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
   readonly kyberswapElasticIface = new Interface(PoolABI);
 
   readonly multicallContract: Contract;
+  readonly factoryContract: Contract;
   readonly ticksFeesReaderContract: Contract;
 
   private _poolAddress?: Address;
@@ -100,6 +104,11 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     this.multicallContract = new this.dexHelper.web3Provider.eth.Contract(
       MultiCallABI as AbiItem[],
       this.dexHelper.config.data.multicallV2Address,
+    );
+
+    this.factoryContract = new this.dexHelper.web3Provider.eth.Contract(
+      FactoryABI as AbiItem[],
+      config.factory,
     );
 
     this.ticksFeesReaderContract = new this.dexHelper.web3Provider.eth.Contract(
@@ -210,8 +219,13 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
   ): Promise<Readonly<PoolState>> {
     this.addressesSubscribed[0] = this.poolAddress;
 
-    const [_poolData, _balance0, _balance1, _blockTimestamp] =
-      await this._fetchPoolData(blockNumber);
+    const [
+      _poolData,
+      _governmentFeeUnits,
+      _balance0,
+      _balance1,
+      _blockTimestamp,
+    ] = await this._fetchPoolData(blockNumber);
 
     const [_initializedTicks, _ticks] = await this._fetchTicks(blockNumber);
 
@@ -226,6 +240,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       poolObservation: undefined,
       maxTickLiquidity: _maxTickLiquidity,
       swapFeeUnits: this.swapFeeUnits,
+      governmentFeeUnits: _governmentFeeUnits,
       poolData: _poolData,
       ticks: _ticks,
       initializedTicks: _initializedTicks,
@@ -243,7 +258,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
    */
   private async _fetchPoolData(
     blockNumber: number,
-  ): Promise<[PoolData, bigint, bigint, bigint]> {
+  ): Promise<[PoolData, bigint, bigint, bigint, bigint]> {
     const _poolStateCalldata = this._constructPoolDataCalldata();
 
     const _fetchedPoolStates = await this.dexHelper.multiWrapper.tryAggregate<
@@ -265,6 +280,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       _feeGrowthGlobal,
       _secondsPerLiquidity,
       _rTokenSupply,
+      _governmentFeeUnits,
       _blockTimestamp,
       _balance0,
       _balance1,
@@ -277,12 +293,14 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       _fetchedPoolStates[5].returnData,
       _fetchedPoolStates[6].returnData,
       _fetchedPoolStates[7].returnData,
+      _fetchedPoolStates[8].returnData,
     ] as [
       PoolStateResponse,
       LiquidityStateResponse,
       FeeGrowthGlobalResponse,
       SecondsPerLiquidityResponse,
-      FeeGrowthGlobalResponse,
+      bigint,
+      FeeConfigurationResponse,
       bigint,
       bigint,
       bigint,
@@ -308,6 +326,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
     return [
       _poolData,
+      _governmentFeeUnits._governmentFeeUnits,
       BigInt(_balance0),
       BigInt(_balance1),
       BigInt(_blockTimestamp),
@@ -343,6 +362,11 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
           target: this.poolAddress,
           callData: this.poolContract.methods.totalSupply().encodeABI(),
           decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.config.factory,
+          callData: this.factoryContract.methods.feeConfiguration().encodeABI(),
+          decodeFunction: decodeFeeConfiguration,
         },
         {
           target: generateConfig(this.network).multicallV2Address,

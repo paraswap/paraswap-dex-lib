@@ -3,9 +3,11 @@ import { assert } from 'ts-essentials';
 
 import { extractSuccessAndValue } from '../../../lib/decoders';
 import { MultiResult } from '../../../lib/multi-wrapper';
+import FactoryABI from '../../../abi/kyberswap-elastic/IFactory.json';
 import PoolABI from '../../../abi/kyberswap-elastic/IPool.json';
 
 import {
+  FeeConfigurationResponse,
   InitializedTicksResponse,
   KyberElasticStateResponses,
   LiquidityStateResponse,
@@ -69,6 +71,23 @@ export function decodeSecondsPerLiquidity(
   return <SecondsPerLiquidityResponse>{
     secondsPerLiquidityGlobal: callResults.secondsPerLiquidityGlobal,
     lastUpdateTime: callResults.lastUpdateTime,
+  };
+}
+
+export function decodeFeeConfiguration(
+  result: MultiResult<BytesLike> | BytesLike,
+): KyberElasticStateResponses {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  assert(isSuccess && toDecode !== '0x', `${ERR_DECODE}: ${result}`);
+
+  const callResults = new ethers.utils.Interface(
+    FactoryABI,
+  ).decodeFunctionResult('feeConfiguration', toDecode);
+
+  return <FeeConfigurationResponse>{
+    _feeTo: callResults._feeTo,
+    _governmentFeeUnits: callResults._governmentFeeUnits,
   };
 }
 

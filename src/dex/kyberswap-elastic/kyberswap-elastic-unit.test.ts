@@ -138,6 +138,7 @@ describe('KSElasticMath', function () {
       pool: '0xf138462c76568cdfd77c6eb831e973d6963f2006',
       isValid: true,
       swapFeeUnits: 300n,
+      governmentFeeUnits: 16000n,
       tickDistance: 60n,
       maxTickLiquidity: 11506132647627593949529133949812950n,
       reinvestLiquidity: 1394017088509n,

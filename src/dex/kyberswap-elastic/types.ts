@@ -8,6 +8,7 @@ export type PoolState = {
   poolObservation?: Record<NumberAsString, OracleObservation>;
   maxTickLiquidity: bigint;
   swapFeeUnits: bigint;
+  governmentFeeUnits: bigint;
   poolData: PoolData;
   ticks: Record<NumberAsString, TickInfo>;
   initializedTicks: Record<NumberAsString, LinkedlistData>;
@@ -123,6 +124,11 @@ export type SecondsPerLiquidityResponse = {
   lastUpdateTime: bigint;
 };
 
+export type FeeConfigurationResponse = {
+  _feeTo: Address;
+  _governmentFeeUnits: bigint;
+};
+
 export type InitializedTicksResponse = {
   previous: bigint;
   next: bigint;
@@ -141,6 +147,7 @@ export type KyberElasticStateResponses =
   | LiquidityStateResponse
   | FeeGrowthGlobalResponse
   | SecondsPerLiquidityResponse
+  | FeeConfigurationResponse
   | InitializedTicksResponse
   | TicksResponse;
 
