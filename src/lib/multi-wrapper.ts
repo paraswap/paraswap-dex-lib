@@ -65,11 +65,11 @@ export class MultiWrapper {
     }
 
     const aggregatedResult = await Promise.all(
-      allCalls.map(batch => {
-        return this.multi.methods
+      allCalls.map(batch =>
+        this.multi.methods
           .tryAggregate(mandatory, batch)
-          .call(undefined, blockNumber);
-      })
+          .call(undefined, blockNumber),
+      ),
     );
 
     let globalInd = 0;
