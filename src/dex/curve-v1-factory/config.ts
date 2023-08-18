@@ -153,9 +153,9 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           name: ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED,
           address: '0xad4753d045d3aed5c1a6606dfb6a7d7ad67c1ad7',
         },
-        '0xb9f861B7755Ff09cFD65CfE262D19823607b1f24': {
+        '0x67fe41A94e779CcFa22cff02cc2957DC9C0e4286': {
           name: ImplementationNames.FACTORY_PLAIN_2_CRV_EMA,
-          address: '0xb9f861B7755Ff09cFD65CfE262D19823607b1f24',
+          address: '0x67fe41A94e779CcFa22cff02cc2957DC9C0e4286',
           liquidityApiSlug: '/factory-crvusd',
         },
       },
