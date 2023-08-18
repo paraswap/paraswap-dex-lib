@@ -68,7 +68,7 @@ describe('KyberswapElastic', function () {
         tokens[destTokenSymbol].address,
       );
 
-      const poolState = await pool.generateState(45055522);
+      const poolState = await pool.generateState(46450510);
       console.log('poolState :>> ', poolState);
     });
   });

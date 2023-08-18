@@ -326,7 +326,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
     return [
       _poolData,
-      _governmentFeeUnits._governmentFeeUnits,
+      BigInt(_governmentFeeUnits._governmentFeeUnits),
       BigInt(_balance0),
       BigInt(_balance1),
       BigInt(_blockTimestamp),
