@@ -88,7 +88,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI), // same abi as uniswapV3
     readonly quoterIface = new Interface(AlgebraQuoterABI),
-    protected config = AlgebraConfig[dexKey][network],
+    readonly config = AlgebraConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
@@ -104,6 +104,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
     this.config = this._toLowerForAllConfigAddresses();
+    // External configuration has priority over internal
+    this.config.forceRPC = dexHelper.config.data.forceRpcFallbackDexs.includes(
+      dexKey.toLowerCase(),
+    );
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
