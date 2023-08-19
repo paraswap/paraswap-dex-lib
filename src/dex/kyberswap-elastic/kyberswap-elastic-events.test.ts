@@ -66,6 +66,13 @@ describe('KyberswapElastic Event', function () {
       45174213, 45212995, 45244232, 45290305, 45459729, 45464859, 45692304,
       45695126, 45730161, 45842608, 46432250,
     ],
+    // topic0 - 0x27c6e84eef3760cd0e0fb6f8c672c4f5b750a54260aaf0d73c6f1a2e4146a113
+    ['SyncFeeGrowth ']: [
+      46447976, 46449816, 46451532, 46453700, 46457375, 46458259, 46459018,
+      46460856, 46460860, 46463344, 46464905, 46465361, 46466706, 46471840,
+      46472174, 46472967, 46475477, 46475784, 46476746, 46477650, 46478554,
+      46478560, 46478563, 46481063, 46485118,
+    ],
   };
 
   describe('KyberswapElasticEventPool', function () {
@@ -91,6 +98,7 @@ describe('KyberswapElastic Event', function () {
           // It is done in generateState. But here have to make it manually
           kyberElasticPool.poolAddress = poolAddress.toLowerCase();
           kyberElasticPool.addressesSubscribed[0] = poolAddress;
+          kyberElasticPool.addressesSubscribed[1] = config.positionManager;
 
           await testEventSubscriber(
             kyberElasticPool,

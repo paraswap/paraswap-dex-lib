@@ -22,6 +22,7 @@ import MultiCallABI from '../../abi/multi-v2.json';
 import FactoryABI from '../../abi/kyberswap-elastic/IFactory.json';
 import PoolABI from '../../abi/kyberswap-elastic/IPool.json';
 import TicksFeesReaderABI from '../../abi/kyberswap-elastic/TicksFeesReader.json';
+import AntiSnipAttackPositionManagerABI from '../../abi/kyberswap-elastic/IAntiSnipAttackPositionManager.json';
 
 import { KyberswapElasticConfig, TICK_DISTANCE } from './config';
 import {
@@ -61,7 +62,8 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     ) => PoolState;
   } = {};
 
-  logDecoder: (log: Log) => any;
+  poolLogDecoder: (log: Log) => any;
+  pmLogDecoder: (log: Log) => any;
 
   public addressesSubscribed: string[];
 
@@ -69,6 +71,9 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
   readonly erc20Iface = new Interface(ERC20ABI);
   readonly kyberswapElasticIface = new Interface(PoolABI);
+  readonly positionManagerIface = new Interface(
+    AntiSnipAttackPositionManagerABI,
+  );
 
   readonly multicallContract: Contract;
   readonly factoryContract: Contract;
@@ -89,8 +94,10 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
   ) {
     super(parentName, `${token0}_${token1}_${swapFeeUnits}`, dexHelper, logger);
 
-    this.logDecoder = (log: Log) => this.kyberswapElasticIface.parseLog(log);
-    this.addressesSubscribed = new Array<Address>(1);
+    this.poolLogDecoder = (log: Log) =>
+      this.kyberswapElasticIface.parseLog(log);
+    this.pmLogDecoder = (log: Log) => this.positionManagerIface.parseLog(log);
+    this.addressesSubscribed = new Array<Address>(2);
 
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
@@ -121,6 +128,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     this.handlers['Burn'] = this._handleBurnEvent.bind(this);
     this.handlers['Mint'] = this._handleMintEvent.bind(this);
     this.handlers['BurnRTokens'] = this._handleBurnREvent.bind(this);
+    this.handlers['SyncFeeGrowth'] = this._handleSyncFeeGrowth.bind(this);
   }
 
   set poolAddress(address: Address) {
@@ -177,7 +185,18 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<PoolState> | null {
     try {
-      const event = this.logDecoder(log);
+      let event;
+      switch (log.address) {
+        case this.addressesSubscribed[0]:
+          event = this.poolLogDecoder(log);
+          break;
+        case this.addressesSubscribed[1]:
+          event = this.pmLogDecoder(log);
+          break;
+        default:
+          break;
+      }
+
       if (event.name in this.handlers) {
         // Because we have observations in array which is mutable by nature, there is a
         // ts compile error: https://stackoverflow.com/questions/53412934/disable-allowing-assigning-readonly-types-to-non-readonly-types
@@ -218,6 +237,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     blockNumber: number,
   ): Promise<Readonly<PoolState>> {
     this.addressesSubscribed[0] = this.poolAddress;
+    this.addressesSubscribed[1] = this.config.positionManager;
 
     const [
       _poolData,
@@ -667,6 +687,19 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
     pool.balance0 -= qty0;
     pool.balance1 -= qty1;
+
+    return pool;
+  }
+
+  private _handleSyncFeeGrowth(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const tokenId = bigIntify(event.args.tokenId);
+    const additionalRTokenOwed = bigIntify(event.args.additionalRTokenOwed);
+    // TODO: handle SyncFeeGrowth event
 
     return pool;
   }
