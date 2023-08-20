@@ -789,6 +789,10 @@ export const Tokens: {
       address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
       decimals: 18,
     },
+    GRAIL: {
+      address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
