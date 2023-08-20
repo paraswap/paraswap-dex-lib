@@ -62,7 +62,7 @@ const constructCheckOnChainPricing =
       funcName,
       tokenIn,
     );
-    console.log('readerCallData', readerCallData);
+
     const readerResult = (
       await dexHelper.multiContract.methods
         .aggregate(readerCallData)
@@ -71,6 +71,8 @@ const constructCheckOnChainPricing =
     const expectedPrices = [0n].concat(
       decodeReaderResult(readerResult, readerIface, funcName),
     );
+
+    console.log('ON-CHAIN PRICES: ', expectedPrices);
 
     expect(prices.map(p => p.toString())).toEqual(
       expectedPrices.map(p => p.toString()),
@@ -776,12 +778,12 @@ describe('Solidly integration tests', () => {
       const ramses = new Ramses(network, dexKey, dexHelper);
 
       describe('UniswapV2 like pool', function () {
-        const TokenASymbol = 'USDC';
+        const TokenASymbol = 'USDCe';
         const tokenA = Tokens[network][TokenASymbol];
         const TokenBSymbol = 'WETH';
         const tokenB = Tokens[network][TokenBSymbol];
 
-        const amounts = amounts6;
+        const amounts = amounts18;
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
@@ -797,6 +799,8 @@ describe('Solidly integration tests', () => {
           );
 
           expect(pools.length).toBeGreaterThan(0);
+
+          console.log('AMOUNTS: ', amounts);
 
           const poolPrices = await ramses.getPricesVolume(
             tokenA,
@@ -843,7 +847,7 @@ describe('Solidly integration tests', () => {
       describe('Curve like stable pool', function () {
         const TokenASymbol = 'USDT';
         const tokenA = Tokens[network][TokenASymbol];
-        const TokenBSymbol = 'USDC';
+        const TokenBSymbol = 'USDCe';
         const tokenB = Tokens[network][TokenBSymbol];
 
         const amounts = amounts6;

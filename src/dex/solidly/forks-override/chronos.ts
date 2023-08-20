@@ -102,7 +102,6 @@ export class Chronos extends Solidly {
       }
     }`;
 
-    console.log('tokenAddress.toLowerCase(): ', tokenAddress.toLowerCase());
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       {
@@ -114,8 +113,6 @@ export class Chronos extends Solidly {
 
     if (!(data && data.pools0 && data.pools1))
       throw new Error("Couldn't fetch the pools from the subgraph");
-
-    console.log('DATA: ', data);
 
     const pools0 = await this.prepareSubgraphPools(data.pools0, (pool,{
       address1, decimals1, liquidityUSDToken0, liquidityUSDToken1,
@@ -177,7 +174,6 @@ export class Chronos extends Solidly {
         liquidityUSDToken1: number,
       }) => PoolLiquidity
   ): Promise<PoolLiquidity[]> {
-    console.log('POOLS: ', pools);
     return Promise.all(pools.map(async (
       pool: ChronosSubgraphPool,
     ) => {
