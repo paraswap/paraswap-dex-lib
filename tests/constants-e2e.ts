@@ -496,6 +496,14 @@ export const Tokens: {
       address: '0xe578C856933D8e1082740bf7661e379Aa2A30b26',
       decimals: 6,
     },
+    axlUSDC: {
+      address: '0x1B6382DBDEa11d97f24495C9A90b7c88469134a4',
+      decimals: 6,
+    },
+    lzUSDC: {
+      address: '0x28a92dde19D9989F39A49905d7C9C2FAc7799bDf',
+      decimals: 6,
+    },
   },
   [Network.BSC]: {
     POPS: {
@@ -964,6 +972,8 @@ export const Holders: {
     ETH: '0xf48883940b4056801de30f12b934dcea90133ee6',
     GUSDC: '0x894d774a293f8aa3d23d67815d4cadb5319c1094',
     GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
+    axlUSDC: '0xccf932cd565c21d2e516c8ff3a4f244eea27e09a',
+    lzUSDC: '	0xd30442beee8269bfb3829c401c62b38d2ea5bdb4',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
