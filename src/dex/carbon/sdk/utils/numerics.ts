@@ -32,7 +32,7 @@ export const mulDiv = (x: BigNumber, y: BigNumber, z: BigNumber) =>
   y.eq(z) ? x : x.mul(y).div(z);
 
 function trimDecimal(input: string, precision: number): string {
-  let decimalIdx = input.indexOf('.');
+  const decimalIdx = input.indexOf('.');
   if (decimalIdx !== -1) {
     return input.slice(0, decimalIdx + precision + 1);
   }

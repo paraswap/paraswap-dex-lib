@@ -1,6 +1,6 @@
 // External libraries
 import { PopulatedTransaction } from '@ethersproject/contracts';
-import { BigNumberish, PayableOverrides } from 'ethers';
+import { PayableOverrides } from 'ethers';
 import {
   BigNumber,
   Decimal,
@@ -42,7 +42,7 @@ import { getDepths, getMaxRate, getMinRate } from './stats';
 
 // Logger
 import { Logger } from '../common/logger';
-const logger = new Logger('index.ts');
+const logger = new Logger('Toolkit.ts');
 
 // Strategy utils
 import {
@@ -228,6 +228,56 @@ export class Toolkit {
   }
 
   /**
+   * Gets all the strategies that belong to the given pair
+   *
+   * If the cache is synced, it will return the strategies from the cache.
+   * Otherwise, it will fetch the strategies from the chain.
+   *
+   * @param {string} token0 - Address of one of the tokens in the pair - the order is not important.
+   * @param {string} token1 - Address of one of the tokens in the pair - the order is not important.
+   */
+  public async getStrategiesByPair(
+    token0: string,
+    token1: string,
+  ): Promise<Strategy[]> {
+    logger.debug('getStrategiesByPair called', arguments);
+
+    let encodedStrategies: EncodedStrategy[] | undefined;
+
+    if (this._cache) {
+      encodedStrategies = await this._cache.getStrategiesByPair(token0, token1);
+    }
+
+    if (encodedStrategies) {
+      logger.debug('getStrategiesByPair fetched from cache');
+    } else {
+      logger.debug('getStrategiesByPair fetching from chain');
+      encodedStrategies = await this._api.reader.strategiesByPair(
+        token0,
+        token1,
+      );
+    }
+
+    const decodedStrategies = encodedStrategies.map(decodeStrategy);
+
+    const strategies = await Promise.all(
+      decodedStrategies.map(async strategy => {
+        return await parseStrategy(strategy, this._decimals);
+      }),
+    );
+
+    logger.debug('getStrategiesByPair info:', {
+      token0,
+      token1,
+      encodedStrategies,
+      decodedStrategies,
+      strategies,
+    });
+
+    return strategies;
+  }
+
+  /**
    * Gets the strategies that are owned by the user.
    * It does so by reading the voucher token and
    * figuring out strategy IDs from them.
@@ -246,7 +296,7 @@ export class Toolkit {
     let encodedStrategies: EncodedStrategy[] = [];
     let uncachedIds: BigNumber[] = ids;
     if (this._cache) {
-      uncachedIds = ids.reduce((acc: BigNumber[], id: BigNumber) => {
+      uncachedIds = ids.reduce((acc, id) => {
         const strategy = this._cache.getStrategyById(id);
         if (!strategy) {
           acc.push(id);
@@ -377,7 +427,7 @@ export class Toolkit {
       tradeByTargetAmount,
     );
 
-    let actionsWei: MatchActionBNStr[] = Toolkit.getMatchActions(
+    const actionsWei: MatchActionBNStr[] = Toolkit.getMatchActions(
       amountWei,
       tradeByTargetAmount,
       orders,
@@ -417,10 +467,15 @@ export class Toolkit {
   }> {
     logger.debug('getTradeDataFromActions called', arguments);
 
-    const feePPM = this._cache.tradingFeePPM;
+    const feePPM = await this._cache.getTradingFeePPMByPair(
+      sourceToken,
+      targetToken,
+    );
 
-    // intentional == instead of ===
-    if (feePPM == undefined) throw new Error('tradingFeePPM is undefined');
+    if (feePPM === undefined)
+      throw new Error(
+        `tradingFeePPM is undefined for this pair: ${sourceToken}-${targetToken}`,
+      );
 
     const decimals = this._decimals;
     const sourceDecimals = await decimals.fetchDecimals(sourceToken);

@@ -123,6 +123,11 @@
     },
     {
       "inputs": [],
+      "name": "BalanceMismatch",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "DeadlineExpired",
       "type": "error"
     },
@@ -193,6 +198,11 @@
     },
     {
       "inputs": [],
+      "name": "OrderDisabled",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "OutDated",
       "type": "error"
     },
@@ -209,11 +219,6 @@
     {
       "inputs": [],
       "name": "PairDoesNotExist",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "StrategyDoesNotExist",
       "type": "error"
     },
     {
@@ -298,6 +303,37 @@
         }
       ],
       "name": "PairCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "Token",
+          "name": "token0",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "Token",
+          "name": "token1",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "prevFeePPM",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "newFeePPM",
+          "type": "uint32"
+        }
+      ],
+      "name": "PairTradingFeePPMUpdated",
       "type": "event"
     },
     {
@@ -1105,6 +1141,30 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "Token",
+          "name": "token0",
+          "type": "address"
+        },
+        {
+          "internalType": "Token",
+          "name": "token1",
+          "type": "address"
+        }
+      ],
+      "name": "pairTradingFeePPM",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "pairs",
       "outputs": [
@@ -1223,6 +1283,29 @@
         }
       ],
       "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "Token",
+          "name": "token0",
+          "type": "address"
+        },
+        {
+          "internalType": "Token",
+          "name": "token1",
+          "type": "address"
+        },
+        {
+          "internalType": "uint32",
+          "name": "newPairTradingFeePPM",
+          "type": "uint32"
+        }
+      ],
+      "name": "setPairTradingFeePPM",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

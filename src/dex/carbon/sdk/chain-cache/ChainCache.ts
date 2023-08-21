@@ -15,7 +15,7 @@ import {
   TokenPair,
   TradeData,
 } from '../common/types';
-import { BigNumberish } from '../utils/numerics';
+import { BigNumberish, BigNumber } from '../utils/numerics';
 import {
   encodedOrderBNToStr,
   encodedStrategyBNToStr,
@@ -25,7 +25,7 @@ import {
 import { Logger } from '../common/logger';
 const logger = new Logger('ChainCache.ts');
 
-const schemeVersion = 4; // bump this when the serialization format changes
+const schemeVersion = 6; // bump this when the serialization format changes
 
 type PairToStrategiesMap = { [key: string]: EncodedStrategy[] };
 type StrategyById = { [key: string]: EncodedStrategy };
@@ -36,6 +36,7 @@ type SerializableDump = {
   strategiesByPair: RetypeBigNumberToString<PairToStrategiesMap>;
   strategiesById: RetypeBigNumberToString<StrategyById>;
   ordersByDirectedPair: RetypeBigNumberToString<PairToDirectedOrdersMap>;
+  tradingFeePPMByPair: { [key: string]: number };
   latestBlockNumber: number;
   latestTradesByPair: { [key: string]: TradeData };
   latestTradesByDirectedPair: { [key: string]: TradeData };
@@ -51,6 +52,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
   private _latestTradesByPair: { [key: string]: TradeData } = {};
   private _latestTradesByDirectedPair: { [key: string]: TradeData } = {};
   private _blocksMetadata: BlockMetadata[] = [];
+  private _tradingFeePPMByPair: { [key: string]: number } = {};
 
   private _handleCacheMiss:
     | ((token0: string, token1: string) => Promise<void>)
@@ -111,6 +113,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
       return acc;
     }, {} as PairToDirectedOrdersMap);
 
+    this._tradingFeePPMByPair = parsedCache.tradingFeePPMByPair;
     this._latestBlockNumber = parsedCache.latestBlockNumber;
     this._latestTradesByPair = parsedCache.latestTradesByPair;
     this._latestTradesByDirectedPair = parsedCache.latestTradesByDirectedPair;
@@ -147,6 +150,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
         },
         {} as RetypeBigNumberToString<PairToDirectedOrdersMap>,
       ),
+      tradingFeePPMByPair: this._tradingFeePPMByPair,
       latestBlockNumber: this._latestBlockNumber,
       latestTradesByPair: this._latestTradesByPair,
       latestTradesByDirectedPair: this._latestTradesByDirectedPair,
@@ -183,9 +187,6 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
   }
 
   //#region public getters
-
-  // It's useful to use the cache to store the up to date trading fee
-  public tradingFeePPM: number | undefined;
 
   public async getStrategiesByPair(
     token0: string,
@@ -260,6 +261,15 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
     return this._latestBlockNumber;
   }
 
+  public async getTradingFeePPMByPair(
+    token0: string,
+    token1: string,
+  ): Promise<number | undefined> {
+    await this._checkAndHandleCacheMiss(token0, token1);
+    const key = toPairKey(token0, token1);
+    return this._tradingFeePPMByPair[key];
+  }
+
   public get blocksMetadata(): BlockMetadata[] {
     return this._blocksMetadata;
   }
@@ -288,7 +298,13 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
     strategies: EncodedStrategy[],
     noPairAddedEvent: boolean = false,
   ): void {
-    logger.debug('Adding pair to cache', token0, token1);
+    logger.debug(
+      'Adding pair with',
+      strategies.length,
+      ' strategies to cache',
+      token0,
+      token1,
+    );
     const key = toPairKey(token0, token1);
     if (this._strategiesByPair[key]) {
       throw new Error(`Pair ${key} already cached`);
@@ -302,6 +318,33 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
       logger.debug('Emitting onPairAddedToCache', token0, token1);
       this.emit('onPairAddedToCache', fromPairKey(key));
     }
+  }
+
+  /**
+   * This methods allows setting the trading fee of a pair.
+   * Note that fees can also be updated via `applyBatchedUpdates`.
+   * This specific method is useful when the fees were fetched from the chain
+   * as part of initialization or some other operation mode which doesn't
+   * rely on even processing
+   *
+   * @param {string} token0 - address of the first token of the pair
+   * @param {string} token1 - address of the second token of the pair
+   * @param tradingFeePPM - the pair's trading fee
+   */
+  public addPairFees(
+    token0: string,
+    token1: string,
+    tradingFeePPM: number,
+  ): void {
+    logger.debug(
+      'Adding trading fee to pair',
+      token0,
+      token1,
+      'fee',
+      tradingFeePPM,
+    );
+    const key = toPairKey(token0, token1);
+    this._tradingFeePPMByPair[key] = tradingFeePPM;
   }
 
   /**
@@ -323,6 +366,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
    */
   public applyBatchedUpdates(
     latestBlockNumber: number,
+    latestFeeUpdates: [string, string, number][],
     latestTrades: TradeData[],
     createdStrategies: EncodedStrategy[],
     updatedStrategies: EncodedStrategy[],
@@ -330,6 +374,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
   ): void {
     logger.debug('Applying batched updates to cache', {
       latestBlockNumber,
+      latestFeeUpdates,
       latestTrades,
       createdStrategies,
       updatedStrategies,
@@ -351,6 +396,9 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
     deletedStrategies.forEach(strategy => {
       this._deleteStrategy(strategy);
       affectedPairs.add(toPairKey(strategy.token0, strategy.token1));
+    });
+    latestFeeUpdates.forEach(([token0, token1, newFee]) => {
+      this._tradingFeePPMByPair[toPairKey(token0, token1)] = newFee;
     });
     this._setLatestBlockNumber(latestBlockNumber);
 
@@ -428,7 +476,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
       );
     }
     const key = toPairKey(strategy.token0, strategy.token1);
-    if (!!this._strategiesById[strategy.id.toString()]) {
+    if (this._strategiesById[strategy.id.toString()]) {
       logger.debug(
         `Strategy ${strategy.id} already cached, under the pair ${key} - skipping`,
       );
@@ -452,7 +500,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
     }
     const key = toPairKey(strategy.token0, strategy.token1);
     const strategies = (this._strategiesByPair[key] || []).filter(
-      s => s.id !== strategy.id,
+      s => !BigNumber.from(s.id).eq(strategy.id),
     );
     strategies.push(strategy);
     this._strategiesByPair[key] = strategies;
@@ -473,7 +521,7 @@ export class ChainCache extends (EventEmitter as new () => TypedEventEmitter<Cac
     const key = toPairKey(strategy.token0, strategy.token1);
     delete this._strategiesById[strategy.id.toString()];
     const strategies = (this._strategiesByPair[key] || []).filter(
-      s => s.id !== strategy.id,
+      s => !BigNumber.from(s.id).eq(strategy.id),
     );
     this._strategiesByPair[key] = strategies;
     this._removeStrategyOrders(strategy);

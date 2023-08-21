@@ -10,6 +10,7 @@ export interface MultiCall {
   contractAddress: string;
   interface: Interface;
   methodName: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   methodParameters: any[];
 }
 
@@ -38,7 +39,9 @@ export const multicall = async (
         call.returnData,
       );
     });
-  } catch (error) {}
+  } catch (error) {
+    /* empty */
+  }
 };
 
 export const isETHAddress = (address: string) => {

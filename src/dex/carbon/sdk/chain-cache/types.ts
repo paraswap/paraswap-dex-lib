@@ -1,6 +1,7 @@
 import { TokenPair } from '../common/types';
 
 export type EventMap = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: (...args: any[]) => void;
 };
 

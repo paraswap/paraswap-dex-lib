@@ -102,6 +102,7 @@ export interface CarbonControllerInterface extends utils.Interface {
     'hasRole(bytes32,address)': FunctionFragment;
     'initialize()': FunctionFragment;
     'pair(address,address)': FunctionFragment;
+    'pairTradingFeePPM(address,address)': FunctionFragment;
     'pairs()': FunctionFragment;
     'pause()': FunctionFragment;
     'paused()': FunctionFragment;
@@ -111,6 +112,7 @@ export interface CarbonControllerInterface extends utils.Interface {
     'roleAdmin()': FunctionFragment;
     'roleEmergencyStopper()': FunctionFragment;
     'roleFeesManager()': FunctionFragment;
+    'setPairTradingFeePPM(address,address,uint32)': FunctionFragment;
     'setTradingFeePPM(uint32)': FunctionFragment;
     'strategiesByPair(address,address,uint256,uint256)': FunctionFragment;
     'strategiesByPairCount(address,address)': FunctionFragment;
@@ -146,6 +148,7 @@ export interface CarbonControllerInterface extends utils.Interface {
       | 'hasRole'
       | 'initialize'
       | 'pair'
+      | 'pairTradingFeePPM'
       | 'pairs'
       | 'pause'
       | 'paused'
@@ -155,6 +158,7 @@ export interface CarbonControllerInterface extends utils.Interface {
       | 'roleAdmin'
       | 'roleEmergencyStopper'
       | 'roleFeesManager'
+      | 'setPairTradingFeePPM'
       | 'setTradingFeePPM'
       | 'strategiesByPair'
       | 'strategiesByPairCount'
@@ -254,6 +258,10 @@ export interface CarbonControllerInterface extends utils.Interface {
     functionFragment: 'pair',
     values: [PromiseOrValue<string>, PromiseOrValue<string>],
   ): string;
+  encodeFunctionData(
+    functionFragment: 'pairTradingFeePPM',
+    values: [PromiseOrValue<string>, PromiseOrValue<string>],
+  ): string;
   encodeFunctionData(functionFragment: 'pairs', values?: undefined): string;
   encodeFunctionData(functionFragment: 'pause', values?: undefined): string;
   encodeFunctionData(functionFragment: 'paused', values?: undefined): string;
@@ -277,6 +285,14 @@ export interface CarbonControllerInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: 'roleFeesManager',
     values?: undefined,
+  ): string;
+  encodeFunctionData(
+    functionFragment: 'setPairTradingFeePPM',
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>,
+    ],
   ): string;
   encodeFunctionData(
     functionFragment: 'setTradingFeePPM',
@@ -401,6 +417,10 @@ export interface CarbonControllerInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: 'hasRole', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'initialize', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'pair', data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: 'pairTradingFeePPM',
+    data: BytesLike,
+  ): Result;
   decodeFunctionResult(functionFragment: 'pairs', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'pause', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'paused', data: BytesLike): Result;
@@ -420,6 +440,10 @@ export interface CarbonControllerInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: 'roleFeesManager',
+    data: BytesLike,
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: 'setPairTradingFeePPM',
     data: BytesLike,
   ): Result;
   decodeFunctionResult(
@@ -469,6 +493,7 @@ export interface CarbonControllerInterface extends utils.Interface {
     'FeesWithdrawn(address,address,uint256,address)': EventFragment;
     'Initialized(uint8)': EventFragment;
     'PairCreated(uint128,address,address)': EventFragment;
+    'PairTradingFeePPMUpdated(address,address,uint32,uint32)': EventFragment;
     'Paused(address)': EventFragment;
     'RoleAdminChanged(bytes32,bytes32,bytes32)': EventFragment;
     'RoleGranted(bytes32,address,address)': EventFragment;
@@ -487,6 +512,7 @@ export interface CarbonControllerInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: 'FeesWithdrawn'): EventFragment;
   getEvent(nameOrSignatureOrTopic: 'Initialized'): EventFragment;
   getEvent(nameOrSignatureOrTopic: 'PairCreated'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: 'PairTradingFeePPMUpdated'): EventFragment;
   getEvent(nameOrSignatureOrTopic: 'Paused'): EventFragment;
   getEvent(nameOrSignatureOrTopic: 'RoleAdminChanged'): EventFragment;
   getEvent(nameOrSignatureOrTopic: 'RoleGranted'): EventFragment;
@@ -558,6 +584,20 @@ export type PairCreatedEvent = TypedEvent<
 >;
 
 export type PairCreatedEventFilter = TypedEventFilter<PairCreatedEvent>;
+
+export interface PairTradingFeePPMUpdatedEventObject {
+  token0: string;
+  token1: string;
+  prevFeePPM: number;
+  newFeePPM: number;
+}
+export type PairTradingFeePPMUpdatedEvent = TypedEvent<
+  [string, string, number, number],
+  PairTradingFeePPMUpdatedEventObject
+>;
+
+export type PairTradingFeePPMUpdatedEventFilter =
+  TypedEventFilter<PairTradingFeePPMUpdatedEvent>;
 
 export interface PausedEventObject {
   account: string;
@@ -808,6 +848,12 @@ export interface CarbonController extends BaseContract {
       overrides?: CallOverrides,
     ): Promise<[PairStructOutput]>;
 
+    pairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      overrides?: CallOverrides,
+    ): Promise<[number]>;
+
     pairs(overrides?: CallOverrides): Promise<[[string, string][]]>;
 
     pause(
@@ -838,6 +884,13 @@ export interface CarbonController extends BaseContract {
     roleEmergencyStopper(overrides?: CallOverrides): Promise<[string]>;
 
     roleFeesManager(overrides?: CallOverrides): Promise<[string]>;
+
+    setPairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      newPairTradingFeePPM: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
+    ): Promise<ContractTransaction>;
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,
@@ -1007,6 +1060,12 @@ export interface CarbonController extends BaseContract {
     overrides?: CallOverrides,
   ): Promise<PairStructOutput>;
 
+  pairTradingFeePPM(
+    token0: PromiseOrValue<string>,
+    token1: PromiseOrValue<string>,
+    overrides?: CallOverrides,
+  ): Promise<number>;
+
   pairs(overrides?: CallOverrides): Promise<[string, string][]>;
 
   pause(
@@ -1037,6 +1096,13 @@ export interface CarbonController extends BaseContract {
   roleEmergencyStopper(overrides?: CallOverrides): Promise<string>;
 
   roleFeesManager(overrides?: CallOverrides): Promise<string>;
+
+  setPairTradingFeePPM(
+    token0: PromiseOrValue<string>,
+    token1: PromiseOrValue<string>,
+    newPairTradingFeePPM: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> },
+  ): Promise<ContractTransaction>;
 
   setTradingFeePPM(
     newTradingFeePPM: PromiseOrValue<BigNumberish>,
@@ -1200,6 +1266,12 @@ export interface CarbonController extends BaseContract {
       overrides?: CallOverrides,
     ): Promise<PairStructOutput>;
 
+    pairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      overrides?: CallOverrides,
+    ): Promise<number>;
+
     pairs(overrides?: CallOverrides): Promise<[string, string][]>;
 
     pause(overrides?: CallOverrides): Promise<void>;
@@ -1228,6 +1300,13 @@ export interface CarbonController extends BaseContract {
     roleEmergencyStopper(overrides?: CallOverrides): Promise<string>;
 
     roleFeesManager(overrides?: CallOverrides): Promise<string>;
+
+    setPairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      newPairTradingFeePPM: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides,
+    ): Promise<void>;
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,
@@ -1347,6 +1426,19 @@ export interface CarbonController extends BaseContract {
       token0?: PromiseOrValue<string> | null,
       token1?: PromiseOrValue<string> | null,
     ): PairCreatedEventFilter;
+
+    'PairTradingFeePPMUpdated(address,address,uint32,uint32)'(
+      token0?: PromiseOrValue<string> | null,
+      token1?: PromiseOrValue<string> | null,
+      prevFeePPM?: null,
+      newFeePPM?: null,
+    ): PairTradingFeePPMUpdatedEventFilter;
+    PairTradingFeePPMUpdated(
+      token0?: PromiseOrValue<string> | null,
+      token1?: PromiseOrValue<string> | null,
+      prevFeePPM?: null,
+      newFeePPM?: null,
+    ): PairTradingFeePPMUpdatedEventFilter;
 
     'Paused(address)'(account?: null): PausedEventFilter;
     Paused(account?: null): PausedEventFilter;
@@ -1566,6 +1658,12 @@ export interface CarbonController extends BaseContract {
       overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
+    pairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      overrides?: CallOverrides,
+    ): Promise<BigNumber>;
+
     pairs(overrides?: CallOverrides): Promise<BigNumber>;
 
     pause(
@@ -1596,6 +1694,13 @@ export interface CarbonController extends BaseContract {
     roleEmergencyStopper(overrides?: CallOverrides): Promise<BigNumber>;
 
     roleFeesManager(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setPairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      newPairTradingFeePPM: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
+    ): Promise<BigNumber>;
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,
@@ -1768,6 +1873,12 @@ export interface CarbonController extends BaseContract {
       overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
+    pairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      overrides?: CallOverrides,
+    ): Promise<PopulatedTransaction>;
+
     pairs(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     pause(
@@ -1800,6 +1911,13 @@ export interface CarbonController extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     roleFeesManager(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    setPairTradingFeePPM(
+      token0: PromiseOrValue<string>,
+      token1: PromiseOrValue<string>,
+      newPairTradingFeePPM: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> },
+    ): Promise<PopulatedTransaction>;
 
     setTradingFeePPM(
       newTradingFeePPM: PromiseOrValue<BigNumberish>,

@@ -9,7 +9,7 @@ import {
   TradeData,
 } from '../common/types';
 
-const logger = new Logger('index.ts');
+const logger = new Logger('ChainSync.ts');
 
 const BLOCKS_TO_KEEP = 3;
 
@@ -38,26 +38,56 @@ export class ChainSync {
     if (this._chainCache.getLatestBlockNumber() === 0) {
       logger.debug('startDataSync - cache is new', arguments);
       // cache starts from scratch so we want to avoid getting events from the beginning of time
-      this._chainCache.applyBatchedUpdates(blockNumber, [], [], [], []);
+      this._chainCache.applyBatchedUpdates(blockNumber, [], [], [], [], []);
     }
 
+    // let's fetch all pairs from the chain and set them to the cache - to be used by the following syncs
+    await this._updatePairsFromChain();
+
+    // _populateFeesData() should run first, before _populatePairsData() gets to manipulate the pairs list
     await Promise.all([
-      this._trackFees(),
+      this._populateFeesData(this._pairs),
       this._populatePairsData(),
       this._syncEvents(),
     ]);
   }
 
-  private async _trackFees(): Promise<void> {
-    logger.debug('_trackFees called');
-    const tradingFeePPM = await this._fetcher.tradingFeePPM();
-    this._chainCache.tradingFeePPM = tradingFeePPM;
-    this._fetcher.onTradingFeePPMUpdated(
-      (prevFeePPM: number, newFeePPM: number) => {
-        logger.debug('tradingFeePPM updated from', prevFeePPM, 'to', newFeePPM);
-        this._chainCache.tradingFeePPM = newFeePPM;
-      },
-    );
+  // reads all pairs from chain and sets to private field
+  private async _updatePairsFromChain() {
+    logger.debug('_updatePairsFromChain fetches pairs');
+    this._pairs = [...(await this._fetcher.pairs())];
+    logger.debug('_updatePairsFromChain fetched pairs', this._pairs);
+    this._lastFetch = Date.now();
+    if (this._pairs.length === 0) {
+      logger.error(
+        '_updatePairsFromChain fetched no pairs - this indicates a problem',
+      );
+    }
+  }
+
+  private async _populateFeesData(
+    pairs: TokenPair[],
+    skipCache = false,
+  ): Promise<void> {
+    logger.debug('populateFeesData called');
+    if (pairs.length === 0) {
+      logger.error('populateFeesData called with no pairs - skipping');
+      return;
+    }
+    const uncachedPairs = skipCache
+      ? pairs
+      : pairs.filter(pair => !this._chainCache.hasCachedPair(pair[0], pair[1]));
+
+    if (uncachedPairs.length === 0) return;
+
+    const feeUpdates: [string, string, number][] =
+      await this._fetcher.pairsTradingFeePPM(uncachedPairs);
+
+    logger.debug('populateFeesData fetched fee updates', feeUpdates);
+
+    feeUpdates.forEach(feeUpdate => {
+      this._chainCache.addPairFees(feeUpdate[0], feeUpdate[1], feeUpdate[2]);
+    });
   }
 
   // `_populatePairsData` sets timeout and returns immediately. It does the following:
@@ -69,9 +99,6 @@ export class ChainSync {
   // 6. if there are no more pairs, it sets a timeout to call itself again
   private async _populatePairsData(): Promise<void> {
     logger.debug('_populatePairsData called');
-    this._pairs = [];
-    // keep the time stamp of last fetch
-    this._lastFetch = Date.now();
     // this indicates we want to poll for pairs only once a minute.
     // Set this to false when we have an indication that new pair was created - which we want to fetch now
     this._slowPollPairs = false;
@@ -85,10 +112,7 @@ export class ChainSync {
             setTimeout(processPairs, 1000);
             return;
           }
-          logger.debug('_populatePairsData fetches pairs');
-          this._pairs = [...(await this._fetcher.pairs())];
-          logger.debug('_populatePairsData fetched pairs', this._pairs);
-          this._lastFetch = Date.now();
+          await this._updatePairsFromChain();
         }
         // let's find the first pair that's not in the cache and clear it from the list along with all the items before it
         const nextPairToSync = findAndRemoveLeading<TokenPair>(
@@ -165,7 +189,14 @@ export class ChainSync {
           if (await this._detectReorg(currentBlock)) {
             logger.debug('_syncEvents detected reorg - resetting');
             this._chainCache.clear();
-            this._chainCache.applyBatchedUpdates(currentBlock, [], [], [], []);
+            this._chainCache.applyBatchedUpdates(
+              currentBlock,
+              [],
+              [],
+              [],
+              [],
+              [],
+            );
             this._resetPairsFetching();
             setTimeout(processEvents, 1);
             return;
@@ -173,7 +204,7 @@ export class ChainSync {
 
           const cachedPairs = new Set<string>(
             this._chainCache
-              .getCachedPairs()
+              .getCachedPairs(false)
               .map(pair => toPairKey(pair[0], pair[1])),
           );
 
@@ -193,6 +224,8 @@ export class ChainSync {
           const updatedStrategiesChunks: EncodedStrategy[][] = [];
           const deletedStrategiesChunks: EncodedStrategy[][] = [];
           const tradesChunks: TradeData[][] = [];
+          const feeUpdatesChunks: [string, string, number][][] = [];
+          const defaultFeeUpdatesChunks: number[][] = [];
 
           for (const blockChunk of blockChunks) {
             logger.debug('_syncEvents fetches events for chunk', blockChunk);
@@ -216,11 +249,23 @@ export class ChainSync {
                 blockChunk[0],
                 blockChunk[1],
               );
+            const feeUpdatesChunk: [string, string, number][] =
+              await this._fetcher.getLatestPairTradingFeeUpdates(
+                blockChunk[0],
+                blockChunk[1],
+              );
+            const defaultFeeUpdatesChunk: number[] =
+              await this._fetcher.getLatestTradingFeeUpdates(
+                blockChunk[0],
+                blockChunk[1],
+              );
 
             createdStrategiesChunks.push(createdStrategiesChunk);
             updatedStrategiesChunks.push(updatedStrategiesChunk);
             deletedStrategiesChunks.push(deletedStrategiesChunk);
             tradesChunks.push(tradesChunk);
+            feeUpdatesChunks.push(feeUpdatesChunk);
+            defaultFeeUpdatesChunks.push(defaultFeeUpdatesChunk);
             logger.debug(
               '_syncEvents fetched the following events for chunks',
               blockChunks,
@@ -229,6 +274,8 @@ export class ChainSync {
                 updatedStrategiesChunk,
                 deletedStrategiesChunk,
                 tradesChunk,
+                feeUpdatesChunk,
+                defaultFeeUpdatesChunk,
               },
             );
           }
@@ -237,6 +284,9 @@ export class ChainSync {
           const updatedStrategies = updatedStrategiesChunks.flat();
           const deletedStrategies = deletedStrategiesChunks.flat();
           const trades = tradesChunks.flat();
+          const feeUpdates = feeUpdatesChunks.flat();
+          const defaultFeeWasUpdated =
+            defaultFeeUpdatesChunks.flat().length > 0;
 
           logger.debug(
             '_syncEvents fetched events',
@@ -244,26 +294,24 @@ export class ChainSync {
             updatedStrategies,
             deletedStrategies,
             trades,
+            feeUpdates,
+            defaultFeeWasUpdated,
           );
 
           // let's check created strategies and see if we have a pair that's not cached yet,
           // which means we need to set slow poll mode to false so that it will be fetched quickly
+          const newlyCreatedPairs: TokenPair[] = [];
           for (const strategy of createdStrategies) {
             if (
               !this._chainCache.hasCachedPair(strategy.token0, strategy.token1)
             ) {
-              logger.debug(
-                '_syncEvents sets slow poll mode to false because of new pair',
-                strategy.token0,
-                strategy.token1,
-              );
-              this._slowPollPairs = false;
-              break;
+              newlyCreatedPairs.push([strategy.token0, strategy.token1]);
             }
           }
 
           this._chainCache.applyBatchedUpdates(
             currentBlock,
+            feeUpdates,
             trades.filter(trade =>
               cachedPairs.has(toPairKey(trade.sourceToken, trade.targetToken)),
             ),
@@ -277,6 +325,25 @@ export class ChainSync {
               cachedPairs.has(toPairKey(strategy.token0, strategy.token1)),
             ),
           );
+
+          // lastly - handle side effects such as new pair detected or default fee update
+          if (defaultFeeWasUpdated) {
+            logger.debug(
+              '_syncEvents noticed at least one default fee update - refetching pair fees for all pairs',
+            );
+            await this._populateFeesData(
+              [...(await this._fetcher.pairs())],
+              true,
+            );
+          }
+          if (newlyCreatedPairs.length > 0) {
+            logger.debug(
+              '_syncEvents noticed at least one new pair created - setting slow poll mode to false',
+            );
+            this._slowPollPairs = false;
+            logger.debug('_syncEvents fetching fees for the new pairs');
+            await this._populateFeesData(newlyCreatedPairs, true);
+          }
         }
       } catch (err) {
         logger.error('Error syncing events:', err);
@@ -296,7 +363,7 @@ export class ChainSync {
     logger.debug('_detectReorg called');
     const blocksMetadata: BlockMetadata[] = this._chainCache.blocksMetadata;
     const numberToBlockMetadata: { [key: number]: BlockMetadata } = {};
-    for (let blockMetadata of blocksMetadata) {
+    for (const blockMetadata of blocksMetadata) {
       const { number, hash } = blockMetadata;
       if (number > currentBlock) {
         logger.log(

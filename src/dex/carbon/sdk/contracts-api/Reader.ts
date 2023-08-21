@@ -5,6 +5,7 @@ import {
   StrategyCreatedEventObject,
   StrategyUpdatedEventObject,
   StrategyDeletedEventObject,
+  PairTradingFeePPMUpdatedEventObject,
 } from '../abis/types/CarbonController';
 import Contracts from './Contracts';
 import { isETHAddress, MultiCall, multicall } from './utils';
@@ -124,6 +125,49 @@ export default class Reader implements Fetcher {
     );
   }
 
+  public pairTradingFeePPM(token0: string, token1: string): Promise<number> {
+    return this._contracts.carbonController.pairTradingFeePPM(token0, token1);
+  }
+
+  public async pairsTradingFeePPM(
+    pairs: TokenPair[],
+  ): Promise<[string, string, number][]> {
+    const results = await this._multicall(
+      pairs.map(pair => ({
+        contractAddress: this._contracts.carbonController.address,
+        interface: this._contracts.carbonController.interface,
+        methodName: 'pairTradingFeePPM',
+        methodParameters: [pair[0], pair[1]],
+      })),
+    );
+    if (!results || results.length === 0) return [];
+    return results.map((res, i) => {
+      return [pairs[i][0], pairs[i][1], res[0]];
+    });
+  }
+
+  public onPairTradingFeePPMUpdated(
+    listener: (
+      token0: string,
+      token1: string,
+      prevFeePPM: number,
+      newFeePPM: number,
+    ) => void,
+  ) {
+    return this._contracts.carbonController.on(
+      'PairTradingFeePPMUpdated',
+      function (
+        token0: string,
+        token1: string,
+        prevFeePPM: number,
+        newFeePPM: number,
+      ) {
+        logger.debug('PairTradingFeePPMUpdated fired with', arguments);
+        listener(token0, token1, prevFeePPM, newFeePPM);
+      },
+    );
+  }
+
   public getDecimalsByAddress = async (address: string) => {
     if (isETHAddress(address)) {
       return 18 as number;
@@ -178,26 +222,26 @@ export default class Reader implements Fetcher {
     return strategies;
   };
 
-  public getLatestStrategyCreatedStrategies = async (
+  public async getLatestStrategyCreatedStrategies(
     fromBlock: number,
     toBlock: number,
-  ): Promise<EncodedStrategy[]> => {
+  ): Promise<EncodedStrategy[]> {
     return this._getFilteredStrategies('StrategyCreated', fromBlock, toBlock);
-  };
+  }
 
-  public getLatestStrategyUpdatedStrategies = async (
+  public async getLatestStrategyUpdatedStrategies(
     fromBlock: number,
     toBlock: number,
-  ): Promise<EncodedStrategy[]> => {
+  ): Promise<EncodedStrategy[]> {
     return this._getFilteredStrategies('StrategyUpdated', fromBlock, toBlock);
-  };
+  }
 
-  public getLatestStrategyDeletedStrategies = async (
+  public async getLatestStrategyDeletedStrategies(
     fromBlock: number,
     toBlock: number,
-  ): Promise<EncodedStrategy[]> => {
+  ): Promise<EncodedStrategy[]> {
     return this._getFilteredStrategies('StrategyDeleted', fromBlock, toBlock);
-  };
+  }
 
   public getLatestTokensTradedTrades = async (
     fromBlock: number,
@@ -233,6 +277,57 @@ export default class Reader implements Fetcher {
     });
     return trades;
   };
+
+  public async getLatestTradingFeeUpdates(
+    fromBlock: number,
+    toBlock: number,
+  ): Promise<number[]> {
+    const filter =
+      this._contracts.carbonController.filters.TradingFeePPMUpdated(null, null);
+
+    const logs = await this._contracts.carbonController.queryFilter(
+      filter,
+      fromBlock,
+      toBlock,
+    );
+
+    if (logs.length === 0) return [];
+
+    const updates: number[] = logs.map(log => {
+      const logArgs = log.args;
+      return logArgs.newFeePPM;
+    });
+
+    return updates;
+  }
+
+  public async getLatestPairTradingFeeUpdates(
+    fromBlock: number,
+    toBlock: number,
+  ): Promise<[string, string, number][]> {
+    const filter =
+      this._contracts.carbonController.filters.PairTradingFeePPMUpdated(
+        null,
+        null,
+        null,
+        null,
+      );
+
+    const logs = await this._contracts.carbonController.queryFilter(
+      filter,
+      fromBlock,
+      toBlock,
+    );
+
+    if (logs.length === 0) return [];
+
+    const updates: [string, string, number][] = logs.map(log => {
+      const logArgs: PairTradingFeePPMUpdatedEventObject = log.args;
+      return [logArgs.token0, logArgs.token1, logArgs.newFeePPM];
+    });
+
+    return updates;
+  }
 
   public getBlockNumber = async (): Promise<number> => {
     return this._contracts.provider.getBlockNumber();
