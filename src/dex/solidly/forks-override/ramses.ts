@@ -54,18 +54,6 @@ export class Ramses extends Solidly {
     );
   }
 
-  // private callDecoder(values: any[]) {
-  //   const fees = parseInt(
-  //     conePairIface
-  //       .decodeFunctionResult(swapFeeFunctionName, values)[0]
-  //       .toString(),
-  //   );
-  //   if (!fees) return 0;
-  //
-  //   const feeCode = Math.ceil(  this.feeFactor / fees);
-  //   return feeCode;
-  // }
-
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,

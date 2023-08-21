@@ -21,7 +21,7 @@ const ChronosFactoryABI = [
 
 const chronosFactoryIface = new Interface(ChronosFactoryABI);
 
-export type ChronosSubgraphPool = {
+type ChronosSubgraphPool = {
   id: string;
   isStable: boolean;
   token0: { id: string; decimals: string };
@@ -151,7 +151,7 @@ export class Chronos extends Solidly {
     );
   }
 
-  protected async prepareSubgraphPools(
+  private async prepareSubgraphPools(
     pools: ChronosSubgraphPool[],
     iterator: (
       pool: ChronosSubgraphPool, {
