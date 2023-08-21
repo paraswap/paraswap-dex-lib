@@ -10,7 +10,7 @@ import {
 import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import { uint256ToBigInt } from '../../../lib/decoders';
 import { _require } from '../../../utils';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 import { AbiItem } from 'web3-utils';
 import { NULL_ADDRESS } from '../../../constants';
 
@@ -100,9 +100,9 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly dexKey: string,
     network: number,
     cacheStateKey: string,
-    readonly implementationName: ImplementationNames,
-    readonly implementationAddress: Address,
-    readonly address: Address,
+    implementationName: ImplementationNames,
+    implementationAddress: Address,
+    address: Address,
     stateUpdatePeriodMs: number,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
@@ -114,6 +114,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly useLending?: boolean[],
     readonly isUsedForPricing: boolean = false,
     readonly contractABIs = ContractABIs,
+    customGasCost?: number,
   ) {
     // Current custom pools are always plain
     super(
@@ -131,6 +132,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       isLendingPool,
       undefined,
       CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
+      customGasCost,
     );
   }
 

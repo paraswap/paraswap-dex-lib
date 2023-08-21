@@ -53,6 +53,7 @@ const notExist: _xp = (self: IPoolContext, state: PoolState) => {
 const implementations: Record<ImplementationNames, _xp> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
@@ -99,6 +100,12 @@ const implementations: Record<ImplementationNames, _xp> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notExist,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: notExist,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
 };
 
 export default implementations;

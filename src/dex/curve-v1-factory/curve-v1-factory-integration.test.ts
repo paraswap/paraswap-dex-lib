@@ -12,7 +12,7 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 import StableSwap3PoolABI from '../../abi/curve-v1/StableSwap3Pool.json';
 
 function getReaderCalldata(

@@ -1,23 +1,40 @@
 import { Interface } from '@ethersproject/abi';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
+import { Contract } from 'web3-eth-contract';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { CACHE_PREFIX, ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 import ERC20ABI from '../abi/erc20.json';
+import augustusABI from '../abi/augustus.json';
 import { isETHAddress } from '../utils';
 import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
+import { AbiItem } from 'web3-utils';
+
+/*
+ * Context: Augustus routers have all a deadline protection logic implemented globally.
+ * But some integrations (router, pools,...) require passing a deadline generally as uint256.
+ * While this problem can be solved in adapters easily by passing block.timestamp (or block.timestamp +1 for some marginal cases),
+ * In the context of direct calls like simpleSwap we have to generate this value offchain.
+ * One can naively pick type(uint).max but that would impose a higher gas cost on the calldata.
+ * Here we decide to go with a high enough default so that the local deadline rarely supersedes the global router deadline.
+ */
+export const FRIENDLY_LOCAL_DEADLINE = 7 * 24 * 60 * 60;
+export const getLocalDeadlineAsFriendlyPlaceholder = () =>
+  String(Math.floor(new Date().getTime() / 1000) + FRIENDLY_LOCAL_DEADLINE);
 
 export class SimpleExchange {
   simpleSwapHelper: Interface;
   protected abiCoder: AbiCoder;
   erc20Interface: Interface;
+  erc20Contract: Contract;
 
   needWrapNative = false;
   isFeeOnTransferSupported = false;
 
   protected augustusAddress: Address;
+  protected augustusInterface: Interface;
   private provider: Web3;
 
   protected network: number;
@@ -28,10 +45,14 @@ export class SimpleExchange {
   constructor(dexHelper: IDexHelper, public dexKey: string) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
+    this.erc20Contract = new dexHelper.web3Provider.eth.Contract(
+      ERC20ABI as AbiItem[],
+    );
     this.abiCoder = Web3Abi as unknown as AbiCoder;
 
     this.network = dexHelper.config.data.network;
     this.augustusAddress = dexHelper.config.data.augustusAddress;
+    this.augustusInterface = new Interface(augustusABI);
     this.provider = dexHelper.web3Provider;
 
     this.dexmapKey =
@@ -118,9 +139,5 @@ export class SimpleExchange {
       values: [...approveParam.values, swapValue],
       networkFee,
     };
-  }
-
-  getDeadline() {
-    return Math.floor(new Date().getTime() / 1000) + 60 * 60;
   }
 }

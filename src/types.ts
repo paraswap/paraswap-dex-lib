@@ -270,9 +270,13 @@ export type Config = {
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
+  rpcPollingMaxAllowedStateDelayInBlocks: number;
+  rpcPollingBlocksBackToTriggerUpdate: number;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   uniswapV3EventLoggingSampleRate?: number;
+  swaapV2AuthToken?: string;
+  forceRpcFallbackDexs: string[];
 };
 
 export type BigIntAsString = string;
@@ -286,6 +290,7 @@ export type PreprocessTransactionOptions = {
   txOrigin: Address;
   hmac?: string;
   mockRfqAndLO?: boolean;
+  isDirectMethod?: boolean;
 };
 
 export type TransferFeeParams = {
@@ -294,3 +299,5 @@ export type TransferFeeParams = {
   srcDexFee: number;
   destDexFee: number;
 };
+
+export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';

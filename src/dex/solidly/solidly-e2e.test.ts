@@ -320,8 +320,8 @@ describe('Solidly E2E', () => {
       network,
     );
 
-    describe(`SolidlyEthereum`, () => {
-      const dexKey = 'SolidlyEthereum';
+    describe(`SolidlyV2`, () => {
+      const dexKey = 'SolidlyV2';
 
       describe(`simpleSwap`, () => {
         describe(`Volatile`, () => {
@@ -889,6 +889,295 @@ describe('Solidly E2E', () => {
           });
         });
       });
+    });
+
+    describe('Thena', () => {
+      const dexKey = 'Thena';
+
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+      ]);
+
+      const pairs: { name: string; sellAmount: string }[][] = [
+        [
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'USDT',
+            sellAmount: '10000000000000000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '10000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'ETH',
+            sellAmount: '5000000000000000000',
+          },
+          {
+            name: 'BNB',
+            sellAmount: '1000000000000000000',
+          },
+        ],
+      ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    pair[0].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    pair[1].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    describe('SoliSnek', () => {
+      const dexKey = 'SoliSnek';
+
+      describe('simpleSwap', () => {
+        it('NATIVE -> TOKEN', async () => {
+          await testE2E(
+            tokens.AVAX,
+            tokens.USDC,
+            holders.AVAX,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> NATIVE', async () => {
+          await testE2E(
+            tokens.USDC,
+            tokens.AVAX,
+            holders.USDC,
+            '9900000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> TOKEN', async () => {
+          await testE2E(
+            tokens.WAVAX,
+            tokens.USDC,
+            holders.WAVAX,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+
+            network,
+            provider,
+          );
+        });
+      });
+      describe('multiSwap', () => {
+        it('NATIVE -> TOKEN', async () => {
+          await testE2E(
+            tokens.AVAX,
+            tokens.USDC,
+            holders.AVAX,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> NATIVE', async () => {
+          await testE2E(
+            tokens.USDC,
+            tokens.AVAX,
+            holders.USDC,
+            '9900000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+        it('TOKEN -> TOKEN', async () => {
+          await testE2E(
+            tokens.WAVAX,
+            tokens.USDC,
+            holders.WAVAX,
+            '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+      });
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    describe(`Chronos`, () => {
+      const dexKey = 'Chronos';
+
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+      ]);
+
+      const pairs: { name: string; sellAmount: string }[][] = [
+        [
+          {
+            name: 'ETH',
+            sellAmount: '1000000000000000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '100000000',
+          },
+        ],
+        [
+          {
+            name: 'USDT',
+            sellAmount: '100000000',
+          },
+          {
+            name: 'USDC',
+            sellAmount: '100000000',
+          },
+        ],
+        [
+          {
+            name: 'USDC',
+            sellAmount: '100000000',
+          },
+          {
+            name: 'DAI',
+            sellAmount: '100000000000000000000',
+          },
+        ],
+        [
+          {
+            name: 'ARB',
+            sellAmount: '100000000',
+          },
+          {
+            name: 'ETH',
+            sellAmount: '100000000000000000000',
+          },
+        ],
+      ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    pair[0].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    pair[1].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
     });
   });
 });

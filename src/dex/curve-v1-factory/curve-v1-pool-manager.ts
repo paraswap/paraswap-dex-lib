@@ -16,6 +16,7 @@ import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
 import { CACHE_PREFIX, NULL_ADDRESS } from '../../constants';
 import { LiquidityInCache } from './types';
+import { assert } from 'ts-essentials';
 
 /*
  * The idea of FactoryPoolManager is to try to abstract both pool types: fully event based
@@ -123,6 +124,11 @@ export class CurveV1FactoryPoolManager {
   }
 
   getPriceHandler(implementationAddress: string): PriceHandler {
+    assert(
+      this.allPriceHandlers[implementationAddress],
+      `No price handler for ${implementationAddress}`,
+    );
+
     return this.allPriceHandlers[implementationAddress];
   }
 

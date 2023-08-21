@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import {
   Token,
   Address,
@@ -32,12 +31,14 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, HashflowConfig } from './config';
 import { HashflowApi } from '@hashflow/taker-js';
+import { RateFetcher } from './rate-fetcher';
 import routerAbi from '../../abi/hashflow/HashflowRouter.abi.json';
 import BigNumber from 'bignumber.js';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { Interface } from 'ethers/lib/utils';
 import { ChainId, ZERO_ADDRESS } from '@hashflow/sdk';
 import {
+  MarketMakersResponse,
   PriceLevelsResponse,
   RfqResponse,
 } from '@hashflow/taker-js/dist/types/rest';
@@ -45,19 +46,32 @@ import { assert } from 'ts-essentials';
 import {
   HASHFLOW_BLACKLIST_TTL_S,
   HASHFLOW_MM_RESTRICT_TTL_S,
-  PRICE_LEVELS_TTL_SECONDS,
+  HASHFLOW_API_CLIENT_NAME,
+  HASHFLOW_API_URL,
+  HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
+  HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
+  HASHFLOW_PRICES_CACHES_TTL_S,
+  HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
+  HASHFLOW_GAS_COST,
+  HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { TooStrictSlippageCheckError } from '../generic-rfq/types';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
+  readonly isStatePollingDex = true;
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
   private api: HashflowApi;
+  private rateFetcher: RateFetcher;
 
   private hashFlowAuthToken: string;
   private disabledMMs: Set<string>;
   private runtimeMMsRestrictHashMapKey: string;
+
+  private pricesCacheKey: string;
+  private marketMakersCacheKey: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(HashflowConfig);
@@ -80,11 +94,65 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       token !== undefined,
       'Hashflow auth token is not specified with env variable',
     );
+
     this.hashFlowAuthToken = token;
-    this.api = new HashflowApi('taker', 'paraswap', this.hashFlowAuthToken);
+    this.api = new HashflowApi(
+      'taker',
+      HASHFLOW_API_CLIENT_NAME,
+      this.hashFlowAuthToken,
+    );
+
+    this.pricesCacheKey = `${CACHE_PREFIX}_${this.dexHelper.config.data.network}_${this.dexKey}_prices`;
+    this.marketMakersCacheKey = `${CACHE_PREFIX}_${this.dexHelper.config.data.network}_${this.dexKey}_mms`;
+
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
     this.runtimeMMsRestrictHashMapKey =
       `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
+
+    this.rateFetcher = new RateFetcher(
+      this.dexHelper,
+      this.dexKey,
+      this.network,
+      this.logger,
+      {
+        rateConfig: {
+          pricesIntervalMs: HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
+          markerMakersIntervalMs:
+            HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
+          marketMakersReqParams: {
+            url: `${HASHFLOW_API_URL}/taker/v1/marketMakers`,
+            params: {
+              networkId: this.network,
+              source: HASHFLOW_API_CLIENT_NAME,
+            },
+            headers: { Authorization: this.hashFlowAuthToken },
+          },
+          pricesReqParams: {
+            url: `${HASHFLOW_API_URL}/taker/v2/price-levels`,
+            params: {
+              networkId: this.network,
+              source: HASHFLOW_API_CLIENT_NAME,
+              marketMakers: [],
+            },
+            headers: { Authorization: this.hashFlowAuthToken },
+          },
+          getCachedMarketMakers: this.getCachedMarketMakers.bind(this),
+          filterMarketMakers: this.getFilteredMarketMakers.bind(this),
+          pricesCacheKey: this.pricesCacheKey,
+          pricesCacheTTLSecs: HASHFLOW_PRICES_CACHES_TTL_S,
+          marketMakersCacheKey: this.marketMakersCacheKey,
+          marketMakersCacheTTLSecs: HASHFLOW_MARKET_MAKERS_CACHES_TTL_S,
+        },
+      },
+    );
+  }
+
+  async initializePricing(blockNumber: number): Promise<void> {
+    if (!this.dexHelper.config.isSlave) {
+      this.rateFetcher.start();
+    }
+
+    return;
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -121,7 +189,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return [];
     }
 
-    const levels = await this.getLevelsWithCache();
+    const levels = (await this.getCachedLevels()) || {};
     const makers = Object.keys(levels);
 
     return makers
@@ -142,11 +210,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       );
   }
 
-  private async getFilteredMarketMakers(chainId: ChainId): Promise<string[]> {
-    const [makers, cachedRestrictionUnparsed] = await Promise.all([
-      this.api.getMarketMakers(chainId),
-      this.dexHelper.cache.hgetAll(this.runtimeMMsRestrictHashMapKey),
-    ]);
+  private async getFilteredMarketMakers(makers: string[]): Promise<string[]> {
+    const cachedRestrictionUnparsed = await this.dexHelper.cache.hgetAll(
+      this.runtimeMMsRestrictHashMapKey,
+    );
 
     const runtimeRestrictedMMs = this.parseCacheRestrictionAndExpiryIfNeeded(
       cachedRestrictionUnparsed,
@@ -215,15 +282,14 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     destToken: Token,
     side: SwapSide,
   ): bigint[] {
-    if (levels.length > 0) {
-      const firstLevel = levels[0];
-      if (new BigNumber(firstLevel.level).gt(0)) {
-        // Add zero level for price computation
-        levels.unshift({ level: '0', price: firstLevel.price });
-      }
-    }
+    assert(levels.length > 0, 'Levels should not be empty');
 
     const outputs = new Array<BigNumber>(amounts.length).fill(BN_0);
+    // FIXME: There is still case when last amount is fillable, but in between
+    // we may have splits that are less than min. amount. I assume that case is very
+    // and not addressing in current fix. If someone will look into that case, just be aware
+    // that it is not addressed
+
     for (const [i, amount] of amounts.entries()) {
       if (amount.isZero()) {
         outputs[i] = BN_0;
@@ -310,31 +376,30 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return undefined;
   }
 
-  async getLevelsWithCache(): Promise<PriceLevelsResponse['levels']> {
-    const cachedLevels = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network as ChainId,
-      `levels`,
+  async getCachedMarketMakers(): Promise<
+    MarketMakersResponse['marketMakers'] | null
+  > {
+    const cachedMarketMakers = await this.dexHelper.cache.rawget(
+      this.marketMakersCacheKey,
     );
+
+    if (cachedMarketMakers) {
+      return JSON.parse(
+        cachedMarketMakers,
+      ) as MarketMakersResponse['marketMakers'];
+    }
+
+    return null;
+  }
+
+  async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
+    const cachedLevels = await this.dexHelper.cache.rawget(this.pricesCacheKey);
+
     if (cachedLevels) {
       return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
     }
 
-    const makers = await this.getFilteredMarketMakers(this.network as ChainId);
-    const levels = await this.api.getPriceLevels(
-      this.network as ChainId,
-      makers,
-    );
-
-    await this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network as ChainId,
-      `levels`,
-      PRICE_LEVELS_TTL_SECONDS,
-      JSON.stringify(levels),
-    );
-
-    return levels;
+    return null;
   }
 
   // Hashflow protocol for native token expects 0x00000... instead of 0xeeeee...
@@ -356,98 +421,124 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<HashflowData>> {
-    const normalizedSrcToken = this.normalizeToken(srcToken);
-    const normalizedDestToken = this.normalizeToken(destToken);
+    try {
+      const normalizedSrcToken = this.normalizeToken(srcToken);
+      const normalizedDestToken = this.normalizeToken(destToken);
 
-    if (normalizedSrcToken.address === normalizedDestToken.address) {
+      if (normalizedSrcToken.address === normalizedDestToken.address) {
+        return null;
+      }
+
+      const prefix = this.getIdentifierPrefix(
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      );
+
+      const pools =
+        limitPools ??
+        (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+
+      const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
+
+      const levelsMap = (await this.getCachedLevels()) || {};
+
+      Object.keys(levelsMap).forEach(mmKey => {
+        if (!marketMakersToUse.includes(mmKey)) {
+          delete levelsMap[mmKey];
+        }
+      });
+
+      const levelEntries: {
+        mm: string;
+        levels: PriceLevel[];
+      }[] = Object.keys(levelsMap)
+        .map(mm => {
+          const entry = levelsMap[mm]?.find(
+            e =>
+              `${e.pair.baseToken}_${e.pair.quoteToken}` ===
+              this.getPairName(
+                normalizedSrcToken.address,
+                normalizedDestToken.address,
+              ),
+          );
+          if (entry === undefined) {
+            return undefined;
+          } else {
+            return { mm, levels: entry.levels };
+          }
+        })
+        .filter(o => o !== undefined)
+        .map(o => o!);
+
+      const prices = levelEntries.map(lEntry => {
+        const { mm, levels } = lEntry;
+
+        if (levels.length === 0) {
+          return null;
+        }
+
+        const divider = getBigNumberPow(
+          side === SwapSide.SELL
+            ? normalizedSrcToken.decimals
+            : normalizedDestToken.decimals,
+        );
+
+        const amountsRaw = amounts.map(a =>
+          new BigNumber(a.toString()).dividedBy(divider),
+        );
+        const firstLevelRaw = levels[0];
+        const firstLevelAmountBN = new BigNumber(firstLevelRaw.level);
+
+        if (amountsRaw[amountsRaw.length - 1].lt(firstLevelAmountBN)) {
+          return null;
+        }
+
+        if (firstLevelAmountBN.gt(0)) {
+          // Add zero level for price computation
+          levels.unshift({ level: '0', price: firstLevelRaw.price });
+        }
+
+        const unitPrice = this.computePricesFromLevels(
+          [BN_1],
+          levels,
+          normalizedSrcToken,
+          normalizedDestToken,
+          side,
+        )[0];
+
+        const prices = this.computePricesFromLevels(
+          amountsRaw,
+          levels,
+          normalizedSrcToken,
+          normalizedDestToken,
+          side,
+        );
+
+        return {
+          gasCost: HASHFLOW_GAS_COST,
+          exchange: this.dexKey,
+          data: { mm },
+          prices,
+          unit: unitPrice,
+          poolIdentifier: this.getPoolIdentifier(
+            normalizedSrcToken.address,
+            normalizedDestToken.address,
+            mm,
+          ),
+          poolAddresses: [this.routerAddress],
+        } as PoolPrices<HashflowData>;
+      });
+
+      return prices.filter((p): p is PoolPrices<HashflowData> => !!p);
+    } catch (e: unknown) {
+      this.logger.error(
+        `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
+          destToken.symbol || destToken.address
+        }, ${side}:`,
+        e,
+      );
       return null;
     }
-
-    const prefix = this.getIdentifierPrefix(
-      normalizedSrcToken.address,
-      normalizedDestToken.address,
-    );
-
-    const pools =
-      limitPools ??
-      (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
-
-    const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
-
-    const levelsMap = await this.getLevelsWithCache();
-
-    Object.keys(levelsMap).forEach(mmKey => {
-      if (!marketMakersToUse.includes(mmKey)) {
-        delete levelsMap[mmKey];
-      }
-    });
-
-    const levelEntries: {
-      mm: string;
-      levels: PriceLevel[];
-    }[] = Object.keys(levelsMap)
-      .map(mm => {
-        const entry = levelsMap[mm]?.find(
-          e =>
-            `${e.pair.baseToken}_${e.pair.quoteToken}` ===
-            this.getPairName(
-              normalizedSrcToken.address,
-              normalizedDestToken.address,
-            ),
-        );
-        if (entry === undefined) {
-          return undefined;
-        } else {
-          return { mm, levels: entry.levels };
-        }
-      })
-      .filter(o => o !== undefined)
-      .map(o => o!);
-
-    const prices = levelEntries.map(lEntry => {
-      const { mm, levels } = lEntry;
-
-      const divider = getBigNumberPow(
-        side === SwapSide.SELL
-          ? normalizedSrcToken.decimals
-          : normalizedDestToken.decimals,
-      );
-
-      const amountsRaw = amounts.map(a =>
-        new BigNumber(a.toString()).dividedBy(divider),
-      );
-
-      const unitPrice = this.computePricesFromLevels(
-        [BN_1],
-        levels,
-        normalizedSrcToken,
-        normalizedDestToken,
-        side,
-      )[0];
-      const prices = this.computePricesFromLevels(
-        amountsRaw,
-        levels,
-        normalizedSrcToken,
-        normalizedDestToken,
-        side,
-      );
-
-      return {
-        gasCost: 100_000,
-        exchange: this.dexKey,
-        data: { mm },
-        prices,
-        unit: unitPrice,
-        poolIdentifier: this.getPoolIdentifier(
-          normalizedSrcToken.address,
-          normalizedDestToken.address,
-          mm,
-        ),
-        poolAddresses: [this.routerAddress],
-      } as PoolPrices<HashflowData>;
-    });
-
-    return prices;
   }
 
   async preProcessTransaction(
@@ -560,6 +651,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
       const slippageFactor = options.slippageFactor;
 
+      let isFailOnSlippage = false;
+      let slippageErrorMessage = '';
+
       if (side === SwapSide.SELL) {
         if (
           quoteTokenAmount <
@@ -569,28 +663,56 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
               .toFixed(0),
           )
         ) {
+          isFailOnSlippage = true;
           const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
+          slippageErrorMessage = message;
           this.logger.warn(message);
-          throw new SlippageCheckError(message);
         }
       } else {
         if (quoteTokenAmount < destAmount) {
+          isFailOnSlippage = true;
           // Won't receive enough assets
           const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
+          slippageErrorMessage = message;
           this.logger.warn(message);
-          throw new SlippageCheckError(message);
         } else {
           if (
             baseTokenAmount >
             BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
           ) {
+            isFailOnSlippage = true;
             const message = `${this.dexKey}-${
               this.network
             }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
+            slippageErrorMessage = message;
             this.logger.warn(message);
-            throw new SlippageCheckError(message);
           }
         }
+      }
+
+      let isTooStrictSlippage = false;
+      if (
+        isFailOnSlippage &&
+        side === SwapSide.SELL &&
+        new BigNumber(1)
+          .minus(slippageFactor)
+          .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      } else if (
+        isFailOnSlippage &&
+        side === SwapSide.BUY &&
+        slippageFactor
+          .minus(1)
+          .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      }
+
+      if (isFailOnSlippage && isTooStrictSlippage) {
+        throw new TooStrictSlippageCheckError(slippageErrorMessage);
+      } else if (isFailOnSlippage && !isTooStrictSlippage) {
+        throw new SlippageCheckError(slippageErrorMessage);
       }
 
       return [
@@ -615,7 +737,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
         await this.setBlacklist(options.txOrigin);
       } else {
-        await this.restrictMM(mm);
+        if(e instanceof TooStrictSlippageCheckError) {
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
+          );
+        } else {
+          await this.restrictMM(mm);
+        }
       }
 
       throw e;
@@ -805,16 +933,15 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   ): Promise<PoolLiquidity[]> {
     const _tokenAddress = tokenAddress.toLowerCase();
 
-    const chainId = this.network as ChainId;
-
-    const makers = await this.getFilteredMarketMakers(chainId);
-    const pLevels = await this.api.getPriceLevels(chainId, makers);
+    const makers = (await this.getCachedMarketMakers()) || [];
+    const filteredMakers = await this.getFilteredMarketMakers(makers);
+    const pLevels = (await this.getCachedLevels()) || {};
 
     let baseToken: Token | undefined = undefined;
     // TODO: Improve efficiency of this part. Quite inefficient way to determine
     // Token address and decimals. But since it is not called frequently, not worth
     // optimizing now
-    for (const maker of makers) {
+    for (const maker of filteredMakers) {
       const baseTokenEntry = pLevels[maker]?.find(
         entry => entry.pair.baseToken.toLowerCase() === _tokenAddress,
       );
@@ -861,5 +988,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return pools
       .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
       .slice(0, limit);
+  }
+
+  releaseResources(): void {
+    if (this.rateFetcher) {
+      this.rateFetcher.stop();
+    }
   }
 }

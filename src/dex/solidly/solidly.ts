@@ -68,7 +68,10 @@ export class Solidly extends UniswapV2 {
         'Velodrome',
         'SpiritSwapV2',
         'Cone',
-        'SolidlyEthereum',
+        'SolidlyV2',
+        'Thena',
+        'SoliSnek',
+        'Chronos',
       ]),
     );
 
@@ -429,7 +432,7 @@ export class Solidly extends UniswapV2 {
 
     if (this.dexKey.toLowerCase() === 'solidly') {
       stableFieldKey = 'stable';
-    } else if (this.dexKey.toLowerCase() !== 'solidlyethereum') {
+    } else if (this.dexKey.toLowerCase() !== 'solidlyv2') {
       stableFieldKey = 'isStable';
     }
 
