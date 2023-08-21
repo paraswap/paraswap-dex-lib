@@ -12,6 +12,9 @@ import { EncodedStrategy, EncodedOrder } from './sdk/';
 import { ChainCache } from './sdk/chain-cache';
 import { BigNumber } from './sdk/utils';
 import { Contract } from 'web3-eth-contract';
+import { toPairKey } from './sdk/chain-cache/utils';
+import { MultiCall, multicall } from './sdk/contracts-api/utils';
+import { Multicall__factory } from './sdk/abis/types';
 
 export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -59,6 +62,8 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['StrategyCreated'] = this.handleStrategyChanges.bind(this);
     this.handlers['StrategyUpdated'] = this.handleStrategyChanges.bind(this);
     this.handlers['StrategyDeleted'] = this.handleStrategyChanges.bind(this);
+    this.handlers['PairTradingFeePPMUpdated'] =
+      this.handlePairTradingFeePPMUpdated.bind(this);
   }
 
   /**
@@ -108,10 +113,11 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
       blockNumber = await this.dexHelper.provider.getBlockNumber();
     }
 
-    const strategiesForAllPairs = `
+    const getStrategiesQuery = `
     query ($block_number: Int) {
       pairs(block: {number: $block_number}, first: 1000, where: {orders_: {y_gt: 0}}) {
         id,
+        tradingFeePPM,
         token0 {
           id
         },
@@ -146,26 +152,27 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
     }
     `;
 
-    const allStrategiesPerPair = await this._querySubgraph(
-      strategiesForAllPairs,
+    const strategiesPerPair = await this._querySubgraph(
+      getStrategiesQuery,
       {
         block_number: blockNumber,
       },
       CarbonConfig[this.parentName][this.network].subgraphURL,
     );
 
-    if (!(allStrategiesPerPair && allStrategiesPerPair.pairs)) {
+    if (!(strategiesPerPair && strategiesPerPair.pairs)) {
       this.logger.error(
         `Error_${this.parentName}_Subgraph: couldn't fetch the pools from the subgraph.
-         Output: ${allStrategiesPerPair}`,
+         Output: ${strategiesPerPair}`,
       );
     }
 
-    const strategiesList = _.map(allStrategiesPerPair.pairs, pair => {
+    const strategiesList = _.map(strategiesPerPair.pairs, pair => {
       return {
         id: pair.id,
         token0: pair.token0.id.toLowerCase(),
         token1: pair.token1.id.toLowerCase(),
+        fee: pair.tradingFeePPM,
         strategies: _.map(pair.strategies, strategy => {
           return {
             id: strategy.id,
@@ -193,13 +200,10 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
 
     strategiesList.forEach(pair => {
       newCache.addPair(pair.token0, pair.token1, pair.strategies, true);
+      newCache.addPairFees(pair.token0, pair.token1, pair.fee);
     });
 
-    newCache.applyBatchedUpdates(blockNumber, [], [], [], []);
-
-    newCache.tradingFeePPM = await this.carbonController.methods
-      .tradingFeePPM()
-      .call();
+    newCache.applyBatchedUpdates(blockNumber, [], [], [], [], []);
 
     const newState: PoolState = {
       sdkCache: newCache,
@@ -256,6 +260,7 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
         state.sdkCache.applyBatchedUpdates(
           blockHeader.number,
           [],
+          [],
           [encodedStrategy],
           [],
           [],
@@ -264,6 +269,7 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
     } else if (event.name === 'StrategyUpdated') {
       state.sdkCache.applyBatchedUpdates(
         blockHeader.number,
+        [],
         [],
         [],
         [encodedStrategy],
@@ -275,9 +281,32 @@ export class CarbonEventPool extends StatefulEventSubscriber<PoolState> {
         [],
         [],
         [],
+        [],
         [encodedStrategy],
       );
     }
+
+    return { sdkCache: state.sdkCache };
+  }
+
+  handlePairTradingFeePPMUpdated(
+    event: any,
+    state: PoolState,
+    log: Readonly<Log>,
+    blockHeader: BlockHeader,
+  ): PoolState {
+    this.logger.info(
+      `Updating with event ${event.name} at block ${blockHeader.number}`,
+    );
+
+    state.sdkCache.applyBatchedUpdates(
+      blockHeader.number,
+      [],
+      [event.args.token0, event.args.token1, event.args.newFeePPM],
+      [],
+      [],
+      [],
+    );
 
     return { sdkCache: state.sdkCache };
   }
