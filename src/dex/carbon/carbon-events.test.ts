@@ -51,12 +51,11 @@ describe('Carbon EventPool Mainnet', function () {
       StrategyDeleted: [
         17415410, 17416581, 17441070, 17448138, 17449924, 17451375,
       ],
+      PairTradingFeePPMUpdated: [
+        17962694, 17962697, 17962700, 17962703, 17962706,
+      ],
     },
   };
-
-  beforeEach(async () => {
-    // carbonPool = new CarbonEventPool(dexKey, network, dexHelper, logger);
-  });
 
   Object.entries(eventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {

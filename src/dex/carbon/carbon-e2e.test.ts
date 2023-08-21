@@ -99,11 +99,11 @@ describe('Carbon E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'WBTC';
+    const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '10000'; // 0.0001 WBTC
-    const tokenBAmount: string = '12600000000'; // 126 USDC
+    const tokenAAmount: string = '15000000'; // 15 USDT
+    const tokenBAmount: string = '126000000'; // 126 USDC
     const nativeTokenAmount = '10000000000000000'; // 0.01 ETH
 
     testForNetwork(
