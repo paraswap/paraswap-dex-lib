@@ -1201,7 +1201,7 @@ describe('Solidly E2E', () => {
             sellAmount: '1000000000000000000',
           },
           {
-            name: 'USDC',
+            name: 'USDCe',
             sellAmount: '100000000',
           },
         ],
@@ -1211,7 +1211,7 @@ describe('Solidly E2E', () => {
             sellAmount: '1000000000000000000',
           },
           {
-            name: 'USDC',
+            name: 'USDCe',
             sellAmount: '100000000',
           },
         ],
@@ -1221,13 +1221,13 @@ describe('Solidly E2E', () => {
             sellAmount: '100000000',
           },
           {
-            name: 'USDC',
+            name: 'USDCe',
             sellAmount: '100000000',
           },
         ],
         [
           {
-            name: 'USDC',
+            name: 'USDCe',
             sellAmount: '100000000',
           },
           {
