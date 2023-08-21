@@ -107,6 +107,22 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/lynnshaoyu/uniswap-v3-avax',
     },
   },
+  ChronosV3: {
+    [Network.ARBITRUM]: {
+      factory: '0x4Db9D624F67E00dbF8ef7AE0e0e8eE54aF1dee49',
+      quoter: '0x6E7f0Ca45171a4440c0CDdF3A46A8dC5D4c2d4A0',
+      router: '0xE0aBdFD837D451640CF43cB1Ec4eE87976eFbb41',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x46b44eb4Cc3bEbB9f04C419f691aB85Ff885A4D6',
+      uniswapMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash:
+        '0x09c178be473df44d1de6970978a4fdedce1ce52a23b2b979754547f6b43a19a5',
+      subgraphURL:
+        'https://subgraph.chronos.exchange/subgraphs/name/chronos-v3',
+    },
+  },
   RamsesV2: {
     [Network.ARBITRUM]: {
       factory: '0xAA2cd7477c451E703f3B9Ba5663334914763edF8',
@@ -139,22 +155,6 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/uniswap-v3/version/latest',
-    },
-  },
-  Chronos: {
-    [Network.ARBITRUM]: {
-      factory: '0x4Db9D624F67E00dbF8ef7AE0e0e8eE54aF1dee49',
-      deployer: '0x0fFc5A81f38d5b6Ac15edACdd35A76578f59BbF2',
-      quoter: '0x6E7f0Ca45171a4440c0CDdF3A46A8dC5D4c2d4A0',
-      router: '0xE0aBdFD837D451640CF43cB1Ec4eE87976eFbb41',
-      supportedFees: SUPPORTED_FEES,
-      stateMulticall: '0x46b44eb4Cc3bEbB9f04C419f691aB85Ff885A4D6',
-      uniswapMulticall: '0xd703C06A1Dcd0A52A2f445Bfd21F7e6C73fB6662',
-      chunksCount: 10,
-      initHash:
-        '0x6ce8eb472fa82df5469c6ab6d485f17c3ad13c8cd7af59b3d4a8026c5ce0f7e2',
-      subgraphURL:
-        'https://subgraph.chronos.exchange/subgraphs/name/chronos-v3',
     },
   },
 };
