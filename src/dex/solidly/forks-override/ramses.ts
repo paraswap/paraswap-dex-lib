@@ -201,8 +201,8 @@ export class Ramses extends Solidly {
       const decimals0 = parseInt(tokens.find((t) => t.id === address0)!.decimals);
       const decimals1 = parseInt(tokens.find((t) => t.id === address1)!.decimals);
 
-      const reserve0 = BigInt(new BigNumber(pool.reserve0).multipliedBy(10 ** decimals0).toFixed());
-      const reserve1 = BigInt(new BigNumber(pool.reserve1).multipliedBy(10 ** decimals1).toFixed());
+      const reserve0 = BigInt(new BigNumber(pool.reserve0).toFixed());
+      const reserve1 = BigInt(new BigNumber(pool.reserve1).toFixed());
 
       const liquidityUSDToken0 = await this.dexHelper.getTokenUSDPrice({
         address: address0,
