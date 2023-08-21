@@ -1,3 +1,4 @@
+import { NumberAsString } from '@paraswap/core';
 import { Address } from '../../types';
 
 // These should match the Balancer Pool types available on Subgraph
@@ -81,16 +82,19 @@ export interface SubgraphPoolBase {
 export type BalancerSwapV2 = {
   poolId: string;
   amount: string;
+  tokenIn: string;
+  tokenOut: string;
 };
 
 export type OptimizedBalancerV2Data = {
   swaps: BalancerSwapV2[];
+  isApproved?: boolean;
 };
 
 export type BalancerFunds = {
   sender: string;
-  recipient: string;
   fromInternalBalance: boolean;
+  recipient: string;
   toInternalBalance: boolean;
 };
 
@@ -117,8 +121,28 @@ export type BalancerParam = [
   deadline: string,
 ];
 
+export type BalancerV2DirectParam = [
+  swaps: BalancerSwap[],
+  assets: Address[],
+  funds: BalancerFunds,
+  limits: NumberAsString[],
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  deadline: NumberAsString,
+  feePercent: NumberAsString,
+  vault: Address,
+  partner: Address,
+  isApproved: boolean,
+  beneficiary: Address,
+  permit: string,
+  uuid: string,
+];
+
 export type BalancerV2Data = {
   poolId: string;
+  tokenIn: string;
+  tokenOut: string;
 };
 
 export type DexParams = {

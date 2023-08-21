@@ -7,7 +7,7 @@ import { IDexHelper } from '../../dex-helper';
 import _ from 'lodash';
 import { QuickSwapConfig } from './config';
 
-const config = _.pick(QuickSwapConfig, ['QuickSwapV3']).QuickSwapV3;
+const defaultConfig = _.pick(QuickSwapConfig, ['ThenaFusion']).ThenaFusion;
 
 export type QuickSwapV3Data = {
   // ExactInputSingleParams
@@ -18,6 +18,7 @@ export type QuickSwapV3Data = {
   }[];
 };
 
+// Naming is deprecated, this is stands for AlgebraV1 (rpc)
 export class QuickSwapV3
   extends UniswapV3
   implements IDexTxBuilder<QuickSwapV3Data, UniswapV3Param>
@@ -27,7 +28,7 @@ export class QuickSwapV3
   constructor(
     dexHelper: IDexHelper,
     dexKey = 'quickswapv3',
-    router = config[dexHelper.config.data.network].router,
+    router = defaultConfig[dexHelper.config.data.network].router,
   ) {
     super(dexHelper, dexKey, router);
   }

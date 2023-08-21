@@ -3,7 +3,7 @@ import { ImplementationNames, PoolState } from '../../types';
 import { get_D_mem, IPoolContext } from '../types';
 import { requireConstant, throwNotExist, throwNotImplemented } from './utils';
 
-const factoryPlain2Basic = (
+const factoryPlain2Basic: get_D_mem = (
   self: IPoolContext,
   state: PoolState,
   _balances: bigint[],
@@ -13,7 +13,7 @@ const factoryPlain2Basic = (
   return self.get_D(self, self._xp_mem(self, rates, _balances), amp);
 };
 
-const customPlain3CoinThree = (
+const customPlain3CoinThree: get_D_mem = (
   self: IPoolContext,
   state: PoolState,
   _balances: bigint[],
@@ -23,7 +23,7 @@ const customPlain3CoinThree = (
   return self.get_D(self, self._xp_mem(self, [...RATES], _balances), amp);
 };
 
-const customPlain3CoinSbtc = (
+const customPlain3CoinSbtc: get_D_mem = (
   self: IPoolContext,
   state: PoolState,
   _balances: bigint[],
@@ -34,6 +34,36 @@ const customPlain3CoinSbtc = (
     self._xp_mem(self, self._rates(self, state), _balances),
     amp,
   );
+};
+
+const factoryMetaBtcSbtc2: get_D_mem = (
+  self: IPoolContext,
+  state: PoolState,
+  _balances: bigint[],
+  amp: bigint,
+): bigint => {
+  if (state.virtualPrice === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} factoryMetaBtcSbtc2: virtualPrice is not provided`,
+    );
+  }
+  const rates = [state.constants.rate_multipliers[0], state.virtualPrice];
+  return self.get_D(self, self._xp_mem(self, rates, _balances), amp);
+};
+
+const factoryPlain2EthEma2: get_D_mem = (
+  self: IPoolContext,
+  state: PoolState,
+  _balances: bigint[],
+  amp: bigint,
+) => {
+  if (state.storedRates === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} factoryPlain2EthEma2: storedRates is not provided`,
+    );
+  }
+  const rates = [...state.storedRates];
+  return self.get_D(self, self._xp_mem(self, rates, _balances), amp);
 };
 
 const notImplemented: get_D_mem = (
@@ -57,6 +87,7 @@ const notExist: get_D_mem = (
 export const implementations: Record<ImplementationNames, get_D_mem> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
@@ -103,6 +134,12 @@ export const implementations: Record<ImplementationNames, get_D_mem> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: factoryMetaBtcSbtc2,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: factoryMetaBtcSbtc2,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2EthEma2,
 };
 
 export default implementations;

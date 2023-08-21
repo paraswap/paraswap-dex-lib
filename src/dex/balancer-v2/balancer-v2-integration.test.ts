@@ -11,7 +11,7 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { BalancerV2Data } from './types';
 import { PoolPrices } from '../../types';
 
-const amounts = [ 0n, BI_POWS[18], 2000000000000000000n ];
+const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = 'BalancerV2';
 
@@ -23,42 +23,53 @@ async function getOnChainPricingForWeightedPool(
   srcTokenAddress: string,
   destTokenAddress: string,
   side: SwapSide,
-): Promise<BigInt[]>{
-  return Promise.all(poolPrice.prices.map(async (price, index) => {
-    if(amounts[index] === 0n) {
-      return 0n;
-    }
+): Promise<BigInt[]> {
+  return Promise.all(
+    poolPrice.prices.map(async (price, index) => {
+      if (amounts[index] === 0n) {
+        return 0n;
+      }
 
-    const params = balancerV2.getBalancerParam(
-      srcTokenAddress,
-      destTokenAddress,
-      '0',
-      '0',
-      {
-        swaps: [
-          { poolId: poolPrice.data.poolId, amount: amounts[index].toString() },
-        ]
-      },
-      side,
-    );
+      const params = balancerV2.getBalancerParam(
+        srcTokenAddress,
+        destTokenAddress,
+        '0',
+        '0',
+        {
+          swaps: [
+            {
+              poolId: poolPrice.data.poolId,
+              amount: amounts[index].toString(),
+            },
+          ],
+        },
+        side,
+      );
 
-    const calldata = [
-      {
-        target: balancerV2.vaultAddress,
-        callData: balancerV2.eventPools.vaultInterface.encodeFunctionData('queryBatchSwap', params.slice(0, 4)),
-      },
-    ];
+      const calldata = [
+        {
+          target: balancerV2.vaultAddress,
+          callData: balancerV2.eventPools.vaultInterface.encodeFunctionData(
+            'queryBatchSwap',
+            params.slice(0, 4),
+          ),
+        },
+      ];
 
-    const results = (
-      await balancerV2.dexHelper.multiContract.methods
-        .aggregate(calldata)
-        .call({}, blockNumber)
-    ).returnData;
+      const results = (
+        await balancerV2.dexHelper.multiContract.methods
+          .aggregate(calldata)
+          .call({}, blockNumber)
+      ).returnData;
 
-    const parsed = balancerV2.eventPools.vaultInterface.decodeFunctionResult('queryBatchSwap', results[0]);
-    const resultIndex = side === SwapSide.SELL ? parsed[0].length - 1 : 0;
-    return BigInt(parsed[0][resultIndex]._hex.replace('-', ''));
-  }));
+      const parsed = balancerV2.eventPools.vaultInterface.decodeFunctionResult(
+        'queryBatchSwap',
+        results[0],
+      );
+      const resultIndex = side === SwapSide.SELL ? parsed[0].length - 1 : 0;
+      return BigInt(parsed[0][resultIndex]._hex.replace('-', ''));
+    }),
+  );
 }
 
 describe('BalancerV2', function () {

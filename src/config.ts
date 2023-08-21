@@ -29,6 +29,8 @@ type BaseConfig = {
   rpcPollingBlocksBackToTriggerUpdate: number;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
+  swaapV2AuthToken?: string;
+  forceRpcFallbackDexs: string[];
 };
 
 const baseConfigs: { [network: number]: BaseConfig } = {
@@ -49,13 +51,14 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0x7c7f62e5ba00783f57b39df0530e32c195696a57',
-      Adapter04: '0x21ab8aeb35bfc0b3fd84ca810b0aa85938357be2',
-      BuyAdapter: '0xb2634b3cbc1e401ab3c2743db44d459c5c9aa662',
+      Adapter04: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
+      BuyAdapter: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
@@ -113,6 +116,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
         },
       },
     },
+    forceRpcFallbackDexs: [],
   },
   [Network.ROPSTEN]: {
     network: Network.ROPSTEN,
@@ -140,6 +144,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
   },
   [Network.BSC]: {
     network: Network.BSC,
@@ -166,6 +171,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
     rfqConfigs: {},
+    forceRpcFallbackDexs: [],
   },
   [Network.POLYGON]: {
     network: Network.POLYGON,
@@ -185,8 +191,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0xfb2a3de6c7B8c77b520E3da16021f3D8A4E93168',
-      PolygonBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
+      PolygonAdapter02: '0xa05d8C3F278fC7b20b39Ea7A3035E3aD8D808c78',
+      PolygonBuyAdapter: '0xB11bCA7B01b425afD0743A4D77B4f593883f94C0',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -194,6 +200,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
+    forceRpcFallbackDexs: [],
   },
   [Network.AVALANCHE]: {
     network: Network.AVALANCHE,
@@ -213,14 +221,15 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
-      AvalancheBuyAdapter: '0xfa072107a2CCfE5664794282EF36400735ABB70F',
+      AvalancheAdapter02: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      AvalancheBuyAdapter: '0x7ebbDBB57d2ab59079423cf8337cf8805e225bB1',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
+    forceRpcFallbackDexs: [],
   },
   [Network.FANTOM]: {
     network: Network.FANTOM,
@@ -248,6 +257,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
+    forceRpcFallbackDexs: [],
   },
   [Network.ARBITRUM]: {
     network: Network.ARBITRUM,
@@ -276,6 +286,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 4,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
   },
   [Network.OPTIMISM]: {
     network: Network.OPTIMISM,
@@ -304,6 +315,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
   },
 };
 
@@ -345,7 +357,9 @@ export function generateConfig(network: number): Config {
     rpcPollingBlocksBackToTriggerUpdate:
       baseConfig.rpcPollingBlocksBackToTriggerUpdate,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
+    swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
+    forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
   };
 }
 
@@ -355,7 +369,7 @@ export class ConfigHelper {
   constructor(
     public isSlave: boolean,
     public data: Config,
-    private masterCachePrefix: string,
+    masterCachePrefix: string,
   ) {
     this.masterBlockNumberCacheKey =
       `${masterCachePrefix}_${data.network}_bn`.toLowerCase();

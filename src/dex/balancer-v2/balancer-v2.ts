@@ -7,20 +7,36 @@ import {
   ExchangePrices,
   Log,
   Logger,
+  TxInfo,
+  PreprocessTransactionOptions,
+  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { ETHER_ADDRESS, MAX_INT, MAX_UINT, Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT, SwapSide, } from '../../constants';
+import {
+  ETHER_ADDRESS,
+  MAX_INT,
+  MAX_UINT,
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool } from './pools/stable/StablePool';
 import { WeightedPool } from './pools/weighted/WeightedPool';
 import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
 import { LinearPool } from './pools/linear/LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -33,13 +49,28 @@ import {
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
+  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
-import { Adapters, BalancerConfig } from './config';
-import { getAllPoolsUsedInPaths, isSameAddress, poolGetMainTokens, poolGetPathForTokenInOut, } from './utils';
-import { MIN_USD_LIQUIDITY_TO_FETCH, STABLE_GAS_COST, VARIABLE_GAS_COST_PER_CYCLE } from './constants';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
+import { BalancerConfig, Adapters } from './config';
+import {
+  getAllPoolsUsedInPaths,
+  isSameAddress,
+  poolGetMainTokens,
+  poolGetPathForTokenInOut,
+} from './utils';
+import {
+  DirectMethods,
+  MIN_USD_LIQUIDITY_TO_FETCH,
+  STABLE_GAS_COST,
+  VARIABLE_GAS_COST_PER_CYCLE,
+} from './constants';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -348,7 +379,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       return null;
     }
 
-    if(subgraphPool.poolType !== BalancerPoolTypes.Weighted && side === SwapSide.BUY) {
+    if (
+      subgraphPool.poolType !== BalancerPoolTypes.Weighted &&
+      side === SwapSide.BUY
+    ) {
       return null;
     }
 
@@ -473,12 +507,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements
+    IDex<BalancerV2Data, BalancerV2DirectParam, OptimizedBalancerV2Data>
 {
   public eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -495,8 +532,7 @@ export class BalancerV2
     protected network: Network,
     dexKey: string,
     public dexHelper: IDexHelper,
-    public vaultAddress: Address = BalancerConfig[dexKey][network]
-      .vaultAddress,
+    public vaultAddress: Address = BalancerConfig[dexKey][network].vaultAddress,
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
   ) {
@@ -596,23 +632,22 @@ export class BalancerV2
   }
 
   getPoolsWithTokenPair(from: Token, to: Token): SubgraphPoolBase[] {
-    const pools = this.eventPools.allPools
-      .filter(p => {
-        const fromMain = p.mainTokens.find(
-          token => token.address.toLowerCase() === from.address.toLowerCase(),
-        );
-        const toMain = p.mainTokens.find(
-          token => token.address.toLowerCase() === to.address.toLowerCase(),
-        );
+    const pools = this.eventPools.allPools.filter(p => {
+      const fromMain = p.mainTokens.find(
+        token => token.address.toLowerCase() === from.address.toLowerCase(),
+      );
+      const toMain = p.mainTokens.find(
+        token => token.address.toLowerCase() === to.address.toLowerCase(),
+      );
 
-        return (
-          fromMain &&
-          toMain &&
-          // filter instances similar to the following:
-          // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
-          !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
-        );
-      });
+      return (
+        fromMain &&
+        toMain &&
+        // filter instances similar to the following:
+        // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
+        !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
+      );
+    });
 
     return pools.slice(0, 10);
   }
@@ -791,6 +826,8 @@ export class BalancerV2
             prices: resOut.prices,
             data: {
               poolId: pool.id,
+              tokenIn: _from.address.toLowerCase(),
+              tokenOut: _to.address.toLowerCase(),
             },
             poolAddresses: [poolAddress],
             exchange: this.dexKey,
@@ -952,7 +989,7 @@ export class BalancerV2
         side,
       );
 
-      if(side === SwapSide.BUY) {
+      if (side === SwapSide.BUY) {
         path = path.reverse();
       }
 
@@ -960,7 +997,11 @@ export class BalancerV2
         poolId: hop.pool.id,
         assetInIndex: swapOffset + index,
         assetOutIndex: swapOffset + index + 1,
-        amount: (side === SwapSide.SELL && index === 0 || side === SwapSide.BUY && index === path.length - 1) ? swapData.amount  : '0',
+        amount:
+          (side === SwapSide.SELL && index === 0) ||
+          (side === SwapSide.BUY && index === path.length - 1)
+            ? swapData.amount
+            : '0',
         userData: '0x',
       }));
 
@@ -995,6 +1036,138 @@ export class BalancerV2
     ];
 
     return params;
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<OptimizedBalancerV2Data>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<OptimizedBalancerV2Data>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, this.vaultAddress)
+        .call(undefined, 'latest');
+      isApproved =
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<BalancerV2DirectParam> {
+    if (
+      contractMethod !== DirectMethods.directSell &&
+      contractMethod !== DirectMethods.directBuy
+    ) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    const swapParams: BalancerV2DirectParam = [
+      swaps,
+      assets,
+      funds,
+      limits,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      _deadline,
+      feePercent,
+      this.vaultAddress,
+      partner,
+      isApproved,
+      beneficiary,
+      permit,
+      uuidToBytes16(uuid),
+    ];
+
+    const encoder = (...params: BalancerV2DirectParam) => {
+      return this.directSwapIface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethods.directSell
+          : DirectMethods.directBuy,
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
   }
 
   async getSimpleParam(

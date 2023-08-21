@@ -86,6 +86,19 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0, // variable
     },
   },
+  Thena: {
+    [Network.BSC]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/thenaursa/thena-v1',
+      factoryAddress: '0xAFD89d21BdB66d00817d4153E055830B1c2B3970',
+      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
+      initCode:
+        '0x8d3d214c094a9889564f695c3e9fa516dd3b50bc3258207acd7f8b8e6b94fb65',
+      stableFee: 1, // 10000 / 10000 = 1 in BPS
+      volatileFee: 20, // 10000 / 500 = 20 in BPS
+      poolGasCost: 180 * 1000,
+      feeCode: 1,
+    },
+  },
   SoliSnek: {
     [Network.AVALANCHE]: {
       subgraphURL:
@@ -105,9 +118,21 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
     [Network.ARBITRUM]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/xliee/chronos',
       factoryAddress: '0xce9240869391928253ed9cc9bcb8cb98cb5b0722',
-      router: '0xE708aA9E887980750C040a6A2Cb901c37Aa34f3b',
+      router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
       initCode:
         '0x1840ae455256f509042de907fe0623f2e5e0ad44751ef974c4c37c1e516b7644',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
+  Ramses: {
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ramsesexchange/api-subgraph',
+      factoryAddress: '0xAAA20D08e59F6561f242b08513D36266C5A29415',
+      router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
+      initCode:
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       poolGasCost: 180 * 1000,
       feeCode: 0,
     },
@@ -125,7 +150,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
   },
   [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // cone
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // thena + cone
   },
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
@@ -134,6 +159,6 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek
   },
   [Network.ARBITRUM]: {
-    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 1 }], // chronos
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
   },
 };

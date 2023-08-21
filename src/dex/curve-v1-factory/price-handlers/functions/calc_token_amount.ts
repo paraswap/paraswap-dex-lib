@@ -35,6 +35,38 @@ const customPlain3CoinThree: calc_token_amount = (
   return (diff * token_amount) / D0;
 };
 
+const factoryPlain2Basic: calc_token_amount = (
+  self: IPoolContext,
+  state: PoolState,
+  amounts: bigint[],
+  is_deposit: boolean,
+) => {
+  const { N_COINS } = self.constants;
+  const amp = state.A;
+  const balances = [...state.balances];
+  const D0 = self.get_D(self, balances, amp);
+  for (const i of _.range(N_COINS)) {
+    if (is_deposit) balances[i] += amounts[i];
+    else balances[i] -= amounts[i];
+  }
+  const D1 = self.get_D(self, balances, amp);
+
+  if (state.totalSupply === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} customPlain3CoinThree: totalSupply is not provided`,
+    );
+  }
+
+  const token_amount = state.totalSupply;
+  let diff = 0n;
+  if (is_deposit) {
+    diff = D1 - D0;
+  } else {
+    diff = D0 - D1;
+  }
+  return (diff * token_amount) / D0;
+};
+
 const customAvalanche3CoinLending: calc_token_amount = (
   self: IPoolContext,
   state: PoolState,
@@ -76,6 +108,7 @@ const notImplemented: calc_token_amount = (
 const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
@@ -113,7 +146,7 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: notImplemented,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_2_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: notImplemented,
 
@@ -126,6 +159,12 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notImplemented,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain3CoinThree,
 };
 
 export default implementations;

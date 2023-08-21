@@ -96,3 +96,5 @@ export type RFQFirmRateResponse = {
 };
 
 export class SlippageCheckError extends Error {}
+
+export class TooStrictSlippageCheckError extends Error {}
