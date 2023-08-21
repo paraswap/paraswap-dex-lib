@@ -797,6 +797,10 @@ export const Tokens: {
       address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
       decimals: 18,
     },
+    GRAIL: {
+      address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1026,7 +1030,7 @@ export const Holders: {
     USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
     USDC: '0xa843392198862f98d17e3aa1421b08f2c2020cff',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
-    USDT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDT: '0x5ff47d4ab75bcaff6807c81f1367abb53439883c',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     FRAX: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',

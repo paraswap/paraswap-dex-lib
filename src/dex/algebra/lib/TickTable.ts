@@ -43,7 +43,7 @@ export class TickTable {
       // wordPos
       BigInt.asIntN(16, tick >> 8n),
       // bitPos
-      BigInt.asUintN(8, tick & BigInt(0xff)),
+      BigInt.asUintN(8, tick & 0xffn),
     ];
   }
 
@@ -56,7 +56,7 @@ export class TickTable {
       tick /= tickSpacing;
     }
     const [rowNumber, bitNumber] = TickTable.position(tick);
-    const mask = 1n << bitNumber;
+    const mask = BigInt.asUintN(256, 1n << bitNumber);
 
     // toggleTick is used only in _updatePosition which is always state changing event
     // Therefore it is never used in price query
@@ -83,20 +83,24 @@ export class TickTable {
     tickSpacing?: bigint,
   ): [bigint, boolean] {
     if (tickSpacing !== undefined) {
-      tick = Yul.sub(
-        Yul.sdiv(tick, tickSpacing),
-        Yul.and(
-          Yul.slt(tick, 0n),
-          Yul.not(Yul.iszero(Yul.smod(tick, tickSpacing))),
+      tick = BigInt.asIntN(
+        24,
+        Yul.sub(
+          Yul.sdiv(tick, tickSpacing),
+          Yul.and(
+            Yul.slt(tick, 0n),
+            Yul.not(Yul.iszero(Yul.smod(tick, tickSpacing))),
+          ),
         ),
       );
     }
-    const [rowNumber, bitNumber] = TickTable.position(tick);
-    isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
-    let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
-    tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
     if (lte) {
-      const _row = tickBitmapValue << (255n - bitNumber);
+      const [rowNumber, bitNumber] = TickTable.position(tick);
+      isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
+      let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
+      tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
+
+      const _row = BigInt.asUintN(256, tickBitmapValue << (255n - bitNumber));
       if (_row != 0n) {
         tick -= BigInt.asIntN(24, 255n - TickTable.getMostSignificantBit(_row));
         return [TickTable.boundTick(tick, tickSpacing), true];
@@ -106,7 +110,13 @@ export class TickTable {
       }
     } else {
       tick += 1n;
-      const _row = tickBitmapValue >> bitNumber;
+
+      const [rowNumber, bitNumber] = TickTable.position(tick);
+      isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
+      let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
+      tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
+
+      const _row = BigInt.asUintN(256, tickBitmapValue >> bitNumber);
       if (_row !== 0n) {
         tick += BigInt.asIntN(
           24,
@@ -123,80 +133,71 @@ export class TickTable {
   static getSingleSignificantBit(word: bigint): bigint {
     let singleBitPos = 0n;
     singleBitPos = Yul.iszero(
-      word &&
-        BigInt(
-          '0x5555555555555555555555555555555555555555555555555555555555555555',
-        ),
+      word &
+        0x5555555555555555555555555555555555555555555555555555555555555555n,
     );
     singleBitPos =
-      singleBitPos ||
-      Yul.iszero(
-        word &&
-          BigInt(
-            '0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff',
-          ),
-      ) << 7n;
+      singleBitPos |
+      (Yul.iszero(
+        word &
+          0x00000000000000000000000000000000ffffffffffffffffffffffffffffffffn,
+      ) <<
+        7n);
     singleBitPos =
-      singleBitPos ||
-      Yul.iszero(
-        word &&
-          BigInt(
-            '0x0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff',
-          ),
-      ) << 6n;
+      singleBitPos |
+      (Yul.iszero(
+        word &
+          0x0000000000000000ffffffffffffffff0000000000000000ffffffffffffffffn,
+      ) <<
+        6n);
     singleBitPos =
-      singleBitPos ||
-      Yul.iszero(
-        word &&
-          BigInt(
-            '0x00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff',
-          ),
-      ) << 5n;
+      singleBitPos |
+      (Yul.iszero(
+        word &
+          0x00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffffn,
+      ) <<
+        5n);
     singleBitPos =
-      singleBitPos ||
-      Yul.iszero(
-        word &&
-          BigInt(
-            '0x0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff',
-          ),
-      ) << 4n;
+      singleBitPos |
+      (Yul.iszero(
+        word &
+          0x0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffffn,
+      ) <<
+        4n);
     singleBitPos =
-      singleBitPos ||
-      Yul.iszero(
-        word &&
-          BigInt(
-            '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff',
-          ),
-      ) << 3n;
+      singleBitPos |
+      (Yul.iszero(
+        word &
+          0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ffn,
+      ) <<
+        3n);
     singleBitPos =
-      singleBitPos ||
-      Yul.iszero(
-        word &&
-          BigInt(
-            '0x0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f',
-          ),
-      ) << 2n;
+      singleBitPos |
+      (Yul.iszero(
+        word &
+          0x0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0fn,
+      ) <<
+        2n);
     singleBitPos =
-      singleBitPos ||
-      Yul.iszero(
-        word &&
-          BigInt(
-            '0x3333333333333333333333333333333333333333333333333333333333333333',
-          ),
-      ) << 1n;
+      singleBitPos |
+      (Yul.iszero(
+        word &
+          0x3333333333333333333333333333333333333333333333333333333333333333n,
+      ) <<
+        1n);
 
     return BigInt.asUintN(8, singleBitPos);
   }
 
   static getMostSignificantBit(word: bigint): bigint {
-    word = word || word >> 1n;
-    word = word || word >> 2n;
-    word = word || word >> 4n;
-    word = word || word >> 8n;
-    word = word || word >> 16n;
-    word = word || word >> 32n;
-    word = word || word >> 64n;
-    word = word || word >> 128n;
+    word = word | (word >> 1n);
+    word = word | (word >> 2n);
+    word = word | (word >> 4n);
+    word = word | (word >> 8n);
+    word = word | (word >> 16n);
+    word = word | (word >> 32n);
+    word = word | (word >> 64n);
+    word = word | (word >> 128n);
     word = word - (word >> 1n);
     return TickTable.getSingleSignificantBit(BigInt.asUintN(256, word));
   }
