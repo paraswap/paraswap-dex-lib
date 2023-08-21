@@ -519,7 +519,7 @@ describe('UniswapV3 E2E', () => {
 
       const tokenAAmount: string = '2000000';
       const tokenBAmount: string = '2000000';
-      const nativeTokenAmount = '110000000000000000';
+      const nativeTokenAmount = '100000000000000000';
 
       const sideToContractMethods = new Map([
         [
