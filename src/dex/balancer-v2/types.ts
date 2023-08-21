@@ -82,8 +82,6 @@ export interface SubgraphPoolBase {
 export type BalancerSwapV2 = {
   poolId: string;
   amount: string;
-  tokenIn: string;
-  tokenOut: string;
 };
 
 export type OptimizedBalancerV2Data = {
@@ -141,8 +139,6 @@ export type BalancerV2DirectParam = [
 
 export type BalancerV2Data = {
   poolId: string;
-  tokenIn: string;
-  tokenOut: string;
 };
 
 export type DexParams = {
