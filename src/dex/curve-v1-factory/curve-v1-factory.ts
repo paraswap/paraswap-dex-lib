@@ -181,6 +181,8 @@ export class CurveV1Factory
     // This is only to start timer, each pool is initialized with updated state
     this.poolManager.initializePollingPools();
     await this.fetchFactoryPools(blockNumber);
+    await this.poolManager.fetchLiquiditiesFromApi();
+    await this.poolManager.updatePollingPoolsInBatch();
     this.logger.info(`${this.dexKey}: successfully initialized`);
   }
 
@@ -340,7 +342,7 @@ export class CurveV1Factory
     // Variable initializeInitialState is only for poolTracker. We don't want to keep state updated with scheduler
     // We just want to initialize factory pools and send request to CurveAPI
     // Other values are not used
-    initializeInitialState: boolean = true,
+    initializeInitialState: boolean = false,
   ) {
     if (this.areFactoryPoolsFetched) {
       return;
@@ -770,57 +772,69 @@ export class CurveV1Factory
           )
         : amountsWithUnit;
 
-      const results = pools.map(
-        (pool): PoolPrices<CurveV1FactoryData> | null => {
-          const state = pool.getState();
+      const results = await Promise.all(
+        pools.map(
+          async (pool): Promise<PoolPrices<CurveV1FactoryData> | null> => {
+            let state = pool.getState();
+            if (!state) {
+              await this.poolManager.updateManuallyPollingPools(
+                pool.baseStatePoolPolling
+                  ? [pool.baseStatePoolPolling, pool]
+                  : [pool],
+              );
+              state = pool.getState();
+              if (!state) {
+                return null;
+              }
+            }
 
-          if (!state) {
-            return null;
-          }
+            if (state.balances.every(b => b === 0n)) {
+              this.logger.trace(
+                `${this.dexKey} on ${this.dexHelper.config.data.network}: State balances equal to 0 in pool ${pool.address}`,
+              );
+              return null;
+            }
 
-          if (state.balances.every(b => b === 0n)) {
-            this.logger.trace(
-              `${this.dexKey} on ${this.dexHelper.config.data.network}: State balances equal to 0 in pool ${pool.address}`,
-            );
-            return null;
-          }
-
-          const poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
-
-          if (poolData === null) {
-            this.logger.error(
-              `${pool.fullName}: one or both tokens can not be exchanged in pool ${pool.address}: ${srcTokenAddress} -> ${destTokenAddress}`,
-            );
-            return null;
-          }
-
-          let outputs: bigint[] = this.poolManager
-            .getPriceHandler(pool.implementationAddress)
-            .getOutputs(
-              state,
-              amountsWithUnitAndFee,
-              poolData.i,
-              poolData.j,
-              poolData.underlyingSwap,
+            const poolData = pool.getPoolData(
+              srcTokenAddress,
+              destTokenAddress,
             );
 
-          outputs = applyTransferFee(
-            outputs,
-            side,
-            transferFees.destDexFee,
-            this.DEST_TOKEN_DEX_TRANSFERS,
-          );
+            if (poolData === null) {
+              this.logger.error(
+                `${pool.fullName}: one or both tokens can not be exchanged in pool ${pool.address}: ${srcTokenAddress} -> ${destTokenAddress}`,
+              );
+              return null;
+            }
 
-          return {
-            prices: [0n, ...outputs.slice(1)],
-            unit: outputs[0],
-            data: poolData,
-            exchange: this.dexKey,
-            poolIdentifier: pool.poolIdentifier,
-            gasCost: POOL_EXCHANGE_GAS_COST,
-            poolAddresses: [pool.address],
-          };
-        },
+            let outputs: bigint[] = this.poolManager
+              .getPriceHandler(pool.implementationAddress)
+              .getOutputs(
+                state,
+                amountsWithUnitAndFee,
+                poolData.i,
+                poolData.j,
+                poolData.underlyingSwap,
+              );
+
+            outputs = applyTransferFee(
+              outputs,
+              side,
+              transferFees.destDexFee,
+              this.DEST_TOKEN_DEX_TRANSFERS,
+            );
+
+            return {
+              prices: [0n, ...outputs.slice(1)],
+              unit: outputs[0],
+              data: poolData,
+              exchange: this.dexKey,
+              poolIdentifier: pool.poolIdentifier,
+              gasCost: POOL_EXCHANGE_GAS_COST,
+              poolAddresses: [pool.address],
+            };
+          },
+        ),
       );
 
       return results.filter(
