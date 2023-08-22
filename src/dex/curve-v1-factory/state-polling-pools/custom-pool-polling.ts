@@ -262,7 +262,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
             `${this.poolIdentifier}: exchangeRateCurrent is undefined`,
           );
         }
-        const resultRate = exchangeRateResults[indexToFill];
+        const resultRate = exchangeRateResults[currentIndex];
         assert(resultRate, "resultRate can't be undefined");
         exchangeRateCurrent[indexToFill] = resultRate;
       });
