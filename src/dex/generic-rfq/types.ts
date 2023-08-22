@@ -72,6 +72,7 @@ export type RFQConfig = {
   blacklistConfig?: FetcherParams;
   maker: Address;
   pathToRemove?: string;
+  priceImprovements?: boolean;
 };
 
 export type TokenWithAmount = Token & {
@@ -84,6 +85,7 @@ export type RFQPayload = {
   makerAmount?: string;
   takerAmount?: string;
   userAddress: Address;
+  data?: string;
 };
 
 export type AugustusOrderWithStringAndSignature = AugustusOrderWithString & {

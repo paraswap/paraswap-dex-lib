@@ -193,6 +193,12 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
+    if (options.data && !this.config.priceImprovements) {
+      throw new Error(
+        `RFQ Price Improvements is not supported by ${this.dexKey}.`,
+      );
+    }
+
     const isSell = side === SwapSide.SELL;
 
     const order = await this.rateFetcher.getFirmRate(
@@ -203,6 +209,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
       options.txOrigin,
+      options.data,
     );
 
     const expiryAsBigInt = BigInt(order.order.expiry);
