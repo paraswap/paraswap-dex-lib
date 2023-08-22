@@ -13,6 +13,7 @@ import { _require } from '../../../utils';
 import { Address } from '@paraswap/core';
 import { AbiItem } from 'web3-utils';
 import { NULL_ADDRESS } from '../../../constants';
+import { assert } from 'ts-essentials';
 
 type FunctionToCall =
   | 'A'
@@ -255,9 +256,15 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
         },
         'indicesToFill.length === exchangeRateResults.length',
       );
-
       indicesToFill.forEach((indexToFill, currentIndex) => {
-        exchangeRateResults[indexToFill] = exchangeRateResults[currentIndex];
+        if (exchangeRateCurrent === undefined) {
+          throw new Error(
+            `${this.poolIdentifier}: exchangeRateCurrent is undefined`,
+          );
+        }
+        const resultRate = exchangeRateCurrent[indexToFill];
+        assert(resultRate, "resultRate can't be undefined");
+        exchangeRateCurrent[indexToFill] = exchangeRateResults[currentIndex];
       });
     }
 
