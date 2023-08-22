@@ -9,12 +9,11 @@ import { IDexHelper } from '../../../dex-helper';
 import { SolidlyPair } from '../types';
 import { Interface } from '@ethersproject/abi';
 
-
 const RamsesFactoryABI = [
   {
-    inputs: [{internalType: 'address', name: '', type: 'address'}],
+    inputs: [{ internalType: 'address', name: '', type: 'address' }],
     name: 'pairFee',
-    outputs: [{internalType: 'uint256', 'name': '', type: 'uint256'}],
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
   },
@@ -34,10 +33,9 @@ export type RamsesSubgraphPool = {
 export type RamsesSubgraphToken = {
   id: string;
   decimals: string;
-}
+};
 
 export class Ramses extends Solidly {
-
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(_.pick(SolidlyConfig, ['Ramses']));
 
@@ -57,7 +55,9 @@ export class Ramses extends Solidly {
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,
-      callData: ramsesFactoryIface.encodeFunctionData('pairFee', [pair.exchange]),
+      callData: ramsesFactoryIface.encodeFunctionData('pairFee', [
+        pair.exchange,
+      ]),
     };
     const callDecoder = (values: any[]) =>
       parseInt(
@@ -109,8 +109,11 @@ export class Ramses extends Solidly {
     if (!(data && data.pools0 && data.pools1))
       throw new Error("Couldn't fetch the pools from the subgraph");
 
-    const tokenIds = _.uniq([].concat(data.pools0, data.pools1).map(
-      (pool: RamsesSubgraphPool) => [ pool.token0, pool.token1]).flat(),
+    const tokenIds = _.uniq(
+      []
+        .concat(data.pools0, data.pools1)
+        .map((pool: RamsesSubgraphPool) => [pool.token0, pool.token1])
+        .flat(),
     );
 
     const tokensQuery = `
@@ -121,7 +124,6 @@ export class Ramses extends Solidly {
         }
       }`;
 
-
     const { data: tokensData } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       {
@@ -131,35 +133,45 @@ export class Ramses extends Solidly {
       SUBGRAPH_TIMEOUT,
     );
 
-    const pools0 = await this.prepareSubgraphPools(tokensData.tokens, data.pools0, (pool,{
-      address1, decimals1, liquidityUSDToken0, liquidityUSDToken1,
-    }) => ({
-      exchange: this.dexKey,
-      stable: pool.isStable,
-      address: pool.id.toLowerCase(),
-      connectorTokens: [
-        {
-          address: address1,
-          decimals: decimals1,
-        },
-      ],
-      liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
-    }));
+    const pools0 = await this.prepareSubgraphPools(
+      tokensData.tokens,
+      data.pools0,
+      (
+        pool,
+        { address1, decimals1, liquidityUSDToken0, liquidityUSDToken1 },
+      ) => ({
+        exchange: this.dexKey,
+        stable: pool.isStable,
+        address: pool.id.toLowerCase(),
+        connectorTokens: [
+          {
+            address: address1,
+            decimals: decimals1,
+          },
+        ],
+        liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
+      }),
+    );
 
-    const pools1 = await this.prepareSubgraphPools(tokensData.tokens, data.pools1, (pool,{
-      address0, decimals0, liquidityUSDToken0, liquidityUSDToken1,
-    }) => ({
-      exchange: this.dexKey,
-      stable: pool.isStable,
-      address: pool.id.toLowerCase(),
-      connectorTokens: [
-        {
-          address: address0,
-          decimals: decimals0,
-        },
-      ],
-      liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
-    }));
+    const pools1 = await this.prepareSubgraphPools(
+      tokensData.tokens,
+      data.pools1,
+      (
+        pool,
+        { address0, decimals0, liquidityUSDToken0, liquidityUSDToken1 },
+      ) => ({
+        exchange: this.dexKey,
+        stable: pool.isStable,
+        address: pool.id.toLowerCase(),
+        connectorTokens: [
+          {
+            address: address0,
+            decimals: decimals0,
+          },
+        ],
+        liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
+      }),
+    );
 
     return _.slice(
       _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
@@ -172,7 +184,8 @@ export class Ramses extends Solidly {
     tokens: RamsesSubgraphToken[],
     pools: RamsesSubgraphPool[],
     iterator: (
-      pool: RamsesSubgraphPool, {
+      pool: RamsesSubgraphPool,
+      {
         address0,
         address1,
         decimals0,
@@ -182,43 +195,59 @@ export class Ramses extends Solidly {
         liquidityUSDToken0,
         liquidityUSDToken1,
       }: {
-        address0: string,
-        address1: string,
-        decimals0: number,
-        decimals1: number,
-        reserve0: bigint,
-        reserve1: bigint,
-        liquidityUSDToken0: number,
-        liquidityUSDToken1: number,
-      }) => PoolLiquidity
+        address0: string;
+        address1: string;
+        decimals0: number;
+        decimals1: number;
+        reserve0: bigint;
+        reserve1: bigint;
+        liquidityUSDToken0: number;
+        liquidityUSDToken1: number;
+      },
+    ) => PoolLiquidity,
   ): Promise<PoolLiquidity[]> {
-    return Promise.all(pools.map(async (
-      pool: RamsesSubgraphPool,
-    ) => {
-      const address0 = pool.token0.toLowerCase();
-      const address1 = pool.token1.toLowerCase();
+    return Promise.all(
+      pools.map(async (pool: RamsesSubgraphPool) => {
+        const address0 = pool.token0.toLowerCase();
+        const address1 = pool.token1.toLowerCase();
 
-      const decimals0 = parseInt(tokens.find((t) => t.id === address0)!.decimals);
-      const decimals1 = parseInt(tokens.find((t) => t.id === address1)!.decimals);
+        const decimals0 = parseInt(
+          tokens.find(t => t.id === address0)!.decimals,
+        );
+        const decimals1 = parseInt(
+          tokens.find(t => t.id === address1)!.decimals,
+        );
 
-      const reserve0 = BigInt(new BigNumber(pool.reserve0).toFixed());
-      const reserve1 = BigInt(new BigNumber(pool.reserve1).toFixed());
+        const reserve0 = BigInt(new BigNumber(pool.reserve0).toFixed());
+        const reserve1 = BigInt(new BigNumber(pool.reserve1).toFixed());
 
-      const liquidityUSDToken0 = await this.dexHelper.getTokenUSDPrice({
-        address: address0,
-        decimals: decimals0,
-      }, reserve0);
+        const liquidityUSDToken0 = await this.dexHelper.getTokenUSDPrice(
+          {
+            address: address0,
+            decimals: decimals0,
+          },
+          reserve0,
+        );
 
-      const liquidityUSDToken1 = await this.dexHelper.getTokenUSDPrice({
-        address: address1,
-        decimals: decimals1,
-      }, reserve1);
+        const liquidityUSDToken1 = await this.dexHelper.getTokenUSDPrice(
+          {
+            address: address1,
+            decimals: decimals1,
+          },
+          reserve1,
+        );
 
-      return iterator(
-        pool, {
-          address0, address1, decimals0, decimals1, reserve0, reserve1, liquidityUSDToken0, liquidityUSDToken1,
-        },
-      );
-    }));
+        return iterator(pool, {
+          address0,
+          address1,
+          decimals0,
+          decimals1,
+          reserve0,
+          reserve1,
+          liquidityUSDToken0,
+          liquidityUSDToken1,
+        });
+      }),
+    );
   }
 }

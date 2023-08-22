@@ -127,7 +127,7 @@ export class CurveV1Factory
     private coinsTypeTemplate: AbiItem = DefaultCoinsABI,
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
+    this.logger = dexHelper.getLogger(`${this.dexKey}-${this.network}`);
     this.ifaces = {
       exchangeRouter: new Interface(CurveABI),
       factory: new Interface(FactoryCurveV1ABI as JsonFragment[]),
@@ -185,6 +185,7 @@ export class CurveV1Factory
   }
 
   async initializeCustomPollingPools(
+    factoryAddresses: string[],
     blockNumber?: number,
     // We don't want to initialize state for PoolTracker. It doesn't make any sense
     initializeInitialState: boolean = true,
@@ -193,131 +194,144 @@ export class CurveV1Factory
       return;
     }
 
-    const { factoryAddress } = this.config;
-    if (!factoryAddress) {
-      this.logger.warn(
-        `${this.dexKey}: No factory address specified for ${this.network}`,
-      );
-      return;
-    }
-
     await Promise.all(
-      Object.values(this.config.customPools).map(async customPool => {
-        const poolIdentifier = this.getPoolIdentifier(
-          customPool.address,
-          false,
-        );
+      factoryAddresses.map(async factoryAddress => {
+        try {
+          await Promise.all(
+            Object.values(this.config.customPools).map(async customPool => {
+              const poolIdentifier = this.getPoolIdentifier(
+                customPool.address,
+                false,
+              );
 
-        const poolContextConstants = ImplementationConstants[customPool.name];
-        const {
-          N_COINS: nCoins,
-          USE_LENDING: useLending,
-          isLending,
-        } = poolContextConstants;
+              const poolContextConstants =
+                ImplementationConstants[customPool.name];
+              const {
+                N_COINS: nCoins,
+                USE_LENDING: useLending,
+                isLending,
+              } = poolContextConstants;
 
-        const coinsAndImplementations =
-          await this.dexHelper.multiWrapper.aggregate(
-            _.range(0, nCoins)
-              .map(i => ({
-                target: customPool.address,
-                callData: this.abiCoder.encodeFunctionCall(
-                  this._getCoinsABI(customPool.coinsInputType),
-                  [i.toString()],
-                ),
-                decodeFunction: addressDecode,
-              }))
-              .concat([
-                {
-                  target: factoryAddress,
-                  callData: this.ifaces.factory.encodeFunctionData(
-                    'get_implementation_address',
-                    [customPool.address],
-                  ),
-                  decodeFunction: addressDecode,
-                },
-              ]),
+              const coinsAndImplementations =
+                await this.dexHelper.multiWrapper.aggregate(
+                  _.range(0, nCoins)
+                    .map(i => ({
+                      target: customPool.address,
+                      callData: this.abiCoder.encodeFunctionCall(
+                        this._getCoinsABI(customPool.coinsInputType),
+                        [i.toString()],
+                      ),
+                      decodeFunction: addressDecode,
+                    }))
+                    .concat([
+                      {
+                        target: factoryAddress,
+                        callData: this.ifaces.factory.encodeFunctionData(
+                          'get_implementation_address',
+                          [customPool.address],
+                        ),
+                        decodeFunction: addressDecode,
+                      },
+                    ]),
+                );
+              const COINS = coinsAndImplementations.slice(0, -1);
+              const implementationAddress =
+                coinsAndImplementations.slice(-1)[0];
+
+              const coins_decimals = (
+                await this.dexHelper.multiWrapper.tryAggregate(
+                  true,
+                  COINS.map(c => ({
+                    target: c,
+                    callData: this.ifaces.erc20.encodeFunctionData(
+                      'decimals',
+                      [],
+                    ),
+                    decodeFunction: uint8ToNumber,
+                  })),
+                )
+              ).map(r => r.returnData);
+
+              const poolConstants: PoolConstants = {
+                COINS,
+                coins_decimals,
+                rate_multipliers: this._calcRateMultipliers(coins_decimals),
+                lpTokenAddress: customPool.lpTokenAddress,
+              };
+
+              let newPool: PoolPollingBase;
+              if (
+                Object.values<ImplementationNames>(
+                  CustomImplementationNames,
+                ).includes(customPool.name)
+              ) {
+                // We don't want custom pools to be used for pricing, unless explicitly specified
+                newPool = new CustomBasePoolForFactory(
+                  this.logger,
+                  this.dexKey,
+                  this.dexHelper.config.data.network,
+                  this.cacheStateKey,
+                  customPool.name,
+                  implementationAddress,
+                  customPool.address,
+                  this.config.stateUpdatePeriodMs,
+                  poolIdentifier,
+                  poolConstants,
+                  poolContextConstants,
+                  customPool.liquidityApiSlug,
+                  customPool.lpTokenAddress,
+                  isLending,
+                  customPool.balancesInputType,
+                  useLending,
+                  customPool.useForPricing,
+                );
+              } else {
+                // Use for pricing pools from factory
+                newPool = new CustomBasePoolForFactory(
+                  this.logger,
+                  this.dexKey,
+                  this.dexHelper.config.data.network,
+                  this.cacheStateKey,
+                  customPool.name,
+                  implementationAddress,
+                  customPool.address,
+                  this.config.stateUpdatePeriodMs,
+                  poolIdentifier,
+                  poolConstants,
+                  poolContextConstants,
+                  customPool.liquidityApiSlug,
+                  customPool.lpTokenAddress,
+                  isLending,
+                  customPool.balancesInputType,
+                  useLending,
+                  true,
+                );
+              }
+
+              this.poolManager.initializeNewPoolForState(
+                poolIdentifier,
+                newPool,
+              );
+
+              if (initializeInitialState) {
+                await this.poolManager.initializeIndividualPollingPoolState(
+                  poolIdentifier,
+                  CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
+                  blockNumber,
+                );
+              }
+            }),
           );
-        const COINS = coinsAndImplementations.slice(0, -1);
-        const implementationAddress = coinsAndImplementations.slice(-1)[0];
-
-        const coins_decimals = (
-          await this.dexHelper.multiWrapper.tryAggregate(
-            true,
-            COINS.map(c => ({
-              target: c,
-              callData: this.ifaces.erc20.encodeFunctionData('decimals', []),
-              decodeFunction: uint8ToNumber,
-            })),
-          )
-        ).map(r => r.returnData);
-
-        const poolConstants: PoolConstants = {
-          COINS,
-          coins_decimals,
-          rate_multipliers: this._calcRateMultipliers(coins_decimals),
-          lpTokenAddress: customPool.lpTokenAddress,
-        };
-
-        let newPool: PoolPollingBase;
-        if (
-          Object.values<ImplementationNames>(
-            CustomImplementationNames,
-          ).includes(customPool.name)
-        ) {
-          // We don't want custom pools to be used for pricing, unless explicitly specified
-          newPool = new CustomBasePoolForFactory(
-            this.logger,
-            this.dexKey,
-            this.dexHelper.config.data.network,
-            this.cacheStateKey,
-            customPool.name,
-            implementationAddress,
-            customPool.address,
-            this.config.stateUpdatePeriodMs,
-            poolIdentifier,
-            poolConstants,
-            poolContextConstants,
-            customPool.liquidityApiSlug,
-            customPool.lpTokenAddress,
-            isLending,
-            customPool.balancesInputType,
-            useLending,
-            customPool.useForPricing,
+        } catch (e) {
+          this.logger.error(
+            `Error initializing custom polling pools for factory ${factoryAddress}: `,
+            e,
           );
-        } else {
-          // Use for pricing pools from factory
-          newPool = new CustomBasePoolForFactory(
-            this.logger,
-            this.dexKey,
-            this.dexHelper.config.data.network,
-            this.cacheStateKey,
-            customPool.name,
-            implementationAddress,
-            customPool.address,
-            this.config.stateUpdatePeriodMs,
-            poolIdentifier,
-            poolConstants,
-            poolContextConstants,
-            customPool.liquidityApiSlug,
-            customPool.lpTokenAddress,
-            isLending,
-            customPool.balancesInputType,
-            useLending,
-            true,
-          );
-        }
-
-        this.poolManager.initializeNewPoolForState(poolIdentifier, newPool);
-
-        if (initializeInitialState) {
-          await this.poolManager.initializeIndividualPollingPoolState(
-            poolIdentifier,
-            CustomBasePoolForFactory.IS_SRC_FEE_ON_TRANSFER_SUPPORTED,
-            blockNumber,
-          );
+          throw e;
         }
       }),
     );
+
     this.areCustomPoolsFetched = true;
   }
 
@@ -332,277 +346,311 @@ export class CurveV1Factory
       return;
     }
 
+    if (
+      !this.config.factoryAddresses ||
+      this.config.factoryAddresses.length == 0
+    ) {
+      this.logger.warn(`No factory address specified in configs`);
+      return;
+    }
+
     // There is no scenario when we need to call initialize custom pools without factory pools
     // So I put it here to not forget call, because custom pools must be initialised before factory pools
     // This function may be called multiple times, but will execute only once
     await this.initializeCustomPollingPools(
+      this.config.factoryAddresses,
       blockNumber,
       initializeInitialState,
     );
 
-    const { factoryAddress } = this.config;
-    if (!factoryAddress) {
-      this.logger.warn(
-        `${this.dexKey}: No factory address specified for ${this.network}`,
-      );
-      return;
-    }
+    await Promise.all(
+      this.config.factoryAddresses.map(async factoryAddress => {
+        try {
+          const poolCountResult =
+            await this.dexHelper.multiWrapper!.tryAggregate(true, [
+              {
+                target: factoryAddress,
+                callData: this.ifaces.factory.encodeFunctionData('pool_count'),
+                decodeFunction: uint256DecodeToNumber,
+              },
+              // This is used later to request all available implementations. In particular meta implementations
+              {
+                target: factoryAddress,
+                callData:
+                  this.ifaces.factory.encodeFunctionData('base_pool_count'),
+                decodeFunction: uint256DecodeToNumber,
+              },
+            ]);
 
-    const poolCountResult = await this.dexHelper.multiWrapper!.tryAggregate(
-      true,
-      [
-        {
-          target: factoryAddress,
-          callData: this.ifaces.factory.encodeFunctionData('pool_count'),
-          decodeFunction: uint256DecodeToNumber,
-        },
-        // This is used later to request all available implementations. In particular meta implementations
-        {
-          target: factoryAddress,
-          callData: this.ifaces.factory.encodeFunctionData('base_pool_count'),
-          decodeFunction: uint256DecodeToNumber,
-        },
-      ],
-    );
+          const poolCount = poolCountResult[0].returnData;
+          const basePoolCount = poolCountResult[1].returnData;
 
-    const poolCount = poolCountResult[0].returnData;
-    const basePoolCount = poolCountResult[1].returnData;
-
-    const calldataGetPoolAddresses = _.range(0, poolCount).map(i => ({
-      target: factoryAddress,
-      callData: this.ifaces.factory.encodeFunctionData('pool_list', [i]),
-      decodeFunction: addressDecode,
-    }));
-
-    const calldataGetBasePoolAddresses = _.range(0, basePoolCount).map(i => ({
-      target: factoryAddress,
-      callData: this.ifaces.factory.encodeFunctionData('base_pool_list', [i]),
-      decodeFunction: addressDecode,
-    }));
-
-    const allPoolAddresses = (
-      await this.dexHelper.multiWrapper.tryAggregate(
-        true,
-        calldataGetPoolAddresses.concat(calldataGetBasePoolAddresses),
-      )
-    ).map(e => e.returnData);
-
-    const poolAddresses = allPoolAddresses.slice(0, poolCount);
-    const basePoolAddresses = allPoolAddresses.slice(poolCount);
-
-    const customPoolAddresses = Object.values(this.config.customPools).map(
-      customPool => customPool.address,
-    );
-    basePoolAddresses.forEach(basePool => {
-      if (
-        !customPoolAddresses.includes(basePool) &&
-        !this.config.disabledPools.has(basePool)
-      ) {
-        this._reportForUnspecifiedCustomPool(basePool);
-      }
-    });
-
-    let callDataFromFactoryPools: MultiCallParams<
-      string[] | number[] | string
-    >[] = poolAddresses
-      .map(p => [
-        {
-          target: factoryAddress,
-          callData: this.ifaces.factory.encodeFunctionData(
-            'get_implementation_address',
-            [p],
-          ),
-          decodeFunction: addressDecode,
-        },
-        {
-          target: factoryAddress,
-          callData: this.ifaces.factory.encodeFunctionData('get_coins', [p]),
-          decodeFunction: (
-            result: MultiResult<BytesLike> | BytesLike,
-          ): string[] =>
-            generalDecoder<string[]>(
-              result,
-              ['address[4]'],
-              new Array(4).fill(NULL_ADDRESS),
-              parsed => parsed[0].map((p: string) => p.toLowerCase()),
-            ),
-        },
-        {
-          target: factoryAddress,
-          callData: this.ifaces.factory.encodeFunctionData('get_decimals', [p]),
-          decodeFunction: (
-            result: MultiResult<BytesLike> | BytesLike,
-          ): number[] =>
-            generalDecoder<number[]>(
-              result,
-              ['uint256[4]'],
-              [0, 0, 0, 0],
-              parsed => parsed[0].map((p: BigNumber) => Number(p.toString())),
-            ),
-        },
-      ])
-      .flat();
-
-    // This is divider between pools related results and implementations
-    const factoryResultsDivider = callDataFromFactoryPools.length;
-
-    // Implementations must be requested from factory, but it accepts as arg basePool address
-    // for metaPools
-    callDataFromFactoryPools = callDataFromFactoryPools.concat(
-      ...basePoolAddresses.map(basePoolAddress => ({
-        target: factoryAddress,
-        callData: this.ifaces.factory.encodeFunctionData(
-          'metapool_implementations',
-          [basePoolAddress],
-        ),
-        decodeFunction: (
-          result: MultiResult<BytesLike> | BytesLike,
-        ): string[] =>
-          generalDecoder<string[]>(
-            result,
-            ['address[10]'],
-            new Array(10).fill(NULL_ADDRESS),
-            parsed => parsed[0].map((p: string) => p.toLowerCase()),
-          ),
-      })),
-      // To receive plain pool implementation address, you have to call plain_implementations
-      // with two variables: N_COINS and implementations_index
-      // N_COINS is between 2-4. Currently more than 4 coins is not supported
-      // as for implementation index, there are only 0-9 indexes
-      ..._.flattenDeep(
-        _.range(2, FACTORY_MAX_PLAIN_COINS + 1).map(coinNumber =>
-          _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(implInd => ({
+          const calldataGetPoolAddresses = _.range(0, poolCount).map(i => ({
             target: factoryAddress,
-            callData: this.ifaces.factory.encodeFunctionData(
-              'plain_implementations',
-              [coinNumber, implInd],
-            ),
+            callData: this.ifaces.factory.encodeFunctionData('pool_list', [i]),
             decodeFunction: addressDecode,
-          })),
-        ),
-      ),
-    );
+          }));
 
-    const allResultsFromFactory = (
-      await this.dexHelper.multiWrapper.tryAggregate<
-        string[] | number[] | string
-      >(true, callDataFromFactoryPools)
-    ).map(r => r.returnData);
-
-    const resultsFromFactory = allResultsFromFactory.slice(
-      0,
-      factoryResultsDivider,
-    );
-
-    const allAvailableImplementations = _.flattenDeep(
-      allResultsFromFactory.slice(factoryResultsDivider) as string[],
-    ).filter(
-      implementation =>
-        implementation !== NULL_ADDRESS &&
-        !this.config.disabledImplementations.has(implementation),
-    );
-
-    allAvailableImplementations.forEach(implementation => {
-      const currentImplementation =
-        this.config.factoryPoolImplementations[implementation];
-      if (currentImplementation === undefined) {
-        this._reportForUnspecifiedImplementation(implementation);
-      }
-    });
-
-    const stateInitializePromises: Promise<void>[] = [];
-    _.chunk(resultsFromFactory, 3).forEach((result, i) => {
-      if (this.config.disabledPools.has(poolAddresses[i])) {
-        this.logger.trace(`Filtering disabled pool ${poolAddresses[i]}`);
-        return;
-      }
-
-      let [implementationAddress, coins, coins_decimals] = result as [
-        string,
-        string[],
-        number[],
-      ];
-
-      implementationAddress = implementationAddress.toLowerCase();
-      coins = coins.map(c => c.toLowerCase()).filter(c => c !== NULL_ADDRESS);
-      coins_decimals = coins_decimals.filter(cd => cd !== 0);
-
-      const factoryImplementationFromConfig =
-        this.config.factoryPoolImplementations[implementationAddress];
-
-      if (
-        factoryImplementationFromConfig === undefined &&
-        !this.config.disabledImplementations.has(implementationAddress)
-      ) {
-        this._reportForUnspecifiedImplementation(
-          implementationAddress,
-          poolAddresses[i],
-        );
-        return;
-      }
-
-      const factoryImplementationConstants =
-        ImplementationConstants[factoryImplementationFromConfig.name];
-
-      let isMeta: boolean = false;
-      let basePoolStateFetcher: PoolPollingBase | undefined;
-      if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
-        isMeta = true;
-        const basePoolIdentifier = this.getPoolIdentifier(
-          factoryImplementationFromConfig.basePoolAddress,
-          false,
-        );
-        const basePool = this.poolManager.getPool(basePoolIdentifier, false);
-        if (basePool === null) {
-          this.logger.error(
-            `${this.dexKey}_${this.dexHelper.config.data.network}: custom base pool ${basePoolIdentifier} was not initialized properly. ` +
-              `You must call initializeCustomPollingPools before fetching factory`,
+          const calldataGetBasePoolAddresses = _.range(0, basePoolCount).map(
+            i => ({
+              target: factoryAddress,
+              callData: this.ifaces.factory.encodeFunctionData(
+                'base_pool_list',
+                [i],
+              ),
+              decodeFunction: addressDecode,
+            }),
           );
-          return;
+
+          const allPoolAddresses = (
+            await this.dexHelper.multiWrapper.tryAggregate(
+              true,
+              calldataGetPoolAddresses.concat(calldataGetBasePoolAddresses),
+            )
+          ).map(e => e.returnData);
+
+          const poolAddresses = allPoolAddresses.slice(0, poolCount);
+          const basePoolAddresses = allPoolAddresses.slice(poolCount);
+
+          const customPoolAddresses = Object.values(
+            this.config.customPools,
+          ).map(customPool => customPool.address);
+          basePoolAddresses.forEach(basePool => {
+            if (
+              !customPoolAddresses.includes(basePool) &&
+              !this.config.disabledPools.has(basePool)
+            ) {
+              this._reportForUnspecifiedCustomPool(basePool);
+            }
+          });
+
+          let callDataFromFactoryPools: MultiCallParams<
+            string[] | number[] | string
+          >[] = poolAddresses
+            .map(p => [
+              {
+                target: factoryAddress,
+                callData: this.ifaces.factory.encodeFunctionData(
+                  'get_implementation_address',
+                  [p],
+                ),
+                decodeFunction: addressDecode,
+              },
+              {
+                target: factoryAddress,
+                callData: this.ifaces.factory.encodeFunctionData('get_coins', [
+                  p,
+                ]),
+                decodeFunction: (
+                  result: MultiResult<BytesLike> | BytesLike,
+                ): string[] =>
+                  generalDecoder<string[]>(
+                    result,
+                    ['address[4]'],
+                    new Array(4).fill(NULL_ADDRESS),
+                    parsed => parsed[0].map((p: string) => p.toLowerCase()),
+                  ),
+              },
+              {
+                target: factoryAddress,
+                callData: this.ifaces.factory.encodeFunctionData(
+                  'get_decimals',
+                  [p],
+                ),
+                decodeFunction: (
+                  result: MultiResult<BytesLike> | BytesLike,
+                ): number[] =>
+                  generalDecoder<number[]>(
+                    result,
+                    ['uint256[4]'],
+                    [0, 0, 0, 0],
+                    parsed =>
+                      parsed[0].map((p: BigNumber) => Number(p.toString())),
+                  ),
+              },
+            ])
+            .flat();
+
+          // This is divider between pools related results and implementations
+          const factoryResultsDivider = callDataFromFactoryPools.length;
+
+          // Implementations must be requested from factory, but it accepts as arg basePool address
+          // for metaPools
+          callDataFromFactoryPools = callDataFromFactoryPools.concat(
+            ...basePoolAddresses.map(basePoolAddress => ({
+              target: factoryAddress,
+              callData: this.ifaces.factory.encodeFunctionData(
+                'metapool_implementations',
+                [basePoolAddress],
+              ),
+              decodeFunction: (
+                result: MultiResult<BytesLike> | BytesLike,
+              ): string[] =>
+                generalDecoder<string[]>(
+                  result,
+                  ['address[10]'],
+                  new Array(10).fill(NULL_ADDRESS),
+                  parsed => parsed[0].map((p: string) => p.toLowerCase()),
+                ),
+            })),
+            // To receive plain pool implementation address, you have to call plain_implementations
+            // with two variables: N_COINS and implementations_index
+            // N_COINS is between 2-4. Currently more than 4 coins is not supported
+            // as for implementation index, there are only 0-9 indexes
+            ..._.flattenDeep(
+              _.range(2, FACTORY_MAX_PLAIN_COINS + 1).map(coinNumber =>
+                _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(
+                  implInd => ({
+                    target: factoryAddress,
+                    callData: this.ifaces.factory.encodeFunctionData(
+                      'plain_implementations',
+                      [coinNumber, implInd],
+                    ),
+                    decodeFunction: addressDecode,
+                  }),
+                ),
+              ),
+            ),
+          );
+
+          const allResultsFromFactory = (
+            await this.dexHelper.multiWrapper.tryAggregate<
+              string[] | number[] | string
+            >(true, callDataFromFactoryPools)
+          ).map(r => r.returnData);
+
+          const resultsFromFactory = allResultsFromFactory.slice(
+            0,
+            factoryResultsDivider,
+          );
+
+          const allAvailableImplementations = _.flattenDeep(
+            allResultsFromFactory.slice(factoryResultsDivider) as string[],
+          ).filter(
+            implementation =>
+              implementation !== NULL_ADDRESS &&
+              !this.config.disabledImplementations.has(implementation),
+          );
+
+          allAvailableImplementations.forEach(implementation => {
+            const currentImplementation =
+              this.config.factoryPoolImplementations[implementation];
+            if (currentImplementation === undefined) {
+              this._reportForUnspecifiedImplementation(implementation);
+            }
+          });
+
+          const stateInitializePromises: Promise<void>[] = [];
+          _.chunk(resultsFromFactory, 3).forEach((result, i) => {
+            if (this.config.disabledPools.has(poolAddresses[i])) {
+              this.logger.trace(`Filtering disabled pool ${poolAddresses[i]}`);
+              return;
+            }
+
+            let [implementationAddress, coins, coins_decimals] = result as [
+              string,
+              string[],
+              number[],
+            ];
+
+            implementationAddress = implementationAddress.toLowerCase();
+            coins = coins
+              .map(c => c.toLowerCase())
+              .filter(c => c !== NULL_ADDRESS);
+            coins_decimals = coins_decimals.filter(cd => cd !== 0);
+
+            const factoryImplementationFromConfig =
+              this.config.factoryPoolImplementations[implementationAddress];
+
+            if (
+              factoryImplementationFromConfig === undefined &&
+              !this.config.disabledImplementations.has(implementationAddress)
+            ) {
+              this._reportForUnspecifiedImplementation(
+                implementationAddress,
+                poolAddresses[i],
+              );
+              return;
+            }
+
+            const factoryImplementationConstants =
+              ImplementationConstants[factoryImplementationFromConfig.name];
+
+            let isMeta: boolean = false;
+            let basePoolStateFetcher: PoolPollingBase | undefined;
+            if (factoryImplementationFromConfig.basePoolAddress !== undefined) {
+              isMeta = true;
+              const basePoolIdentifier = this.getPoolIdentifier(
+                factoryImplementationFromConfig.basePoolAddress,
+                false,
+              );
+              const basePool = this.poolManager.getPool(
+                basePoolIdentifier,
+                false,
+              );
+              if (basePool === null) {
+                this.logger.error(
+                  `${this.dexKey}_${this.dexHelper.config.data.network}: custom base pool ${basePoolIdentifier} was not initialized properly. ` +
+                    `You must call initializeCustomPollingPools before fetching factory`,
+                );
+                return;
+              }
+              basePoolStateFetcher = basePool;
+            }
+
+            const poolConstants: PoolConstants = {
+              COINS: coins,
+              coins_decimals,
+              rate_multipliers: this._calcRateMultipliers(coins_decimals),
+            };
+
+            const poolIdentifier = this.getPoolIdentifier(
+              poolAddresses[i],
+              isMeta,
+            );
+
+            const newPool = new FactoryStateHandler(
+              this.logger,
+              this.dexKey,
+              this.dexHelper.config.data.network,
+              this.cacheStateKey,
+              factoryImplementationFromConfig.name,
+              implementationAddress.toLowerCase(),
+              poolAddresses[i],
+              this.config.stateUpdatePeriodMs,
+              factoryAddress,
+              poolIdentifier,
+              poolConstants,
+              factoryImplementationConstants,
+              factoryImplementationConstants.isFeeOnTransferSupported,
+              factoryImplementationFromConfig.liquidityApiSlug ?? '/factory',
+              basePoolStateFetcher,
+              factoryImplementationFromConfig.customGasCost,
+              factoryImplementationFromConfig.isStoreRateSupported,
+            );
+
+            this.poolManager.initializeNewPool(poolIdentifier, newPool);
+
+            if (initializeInitialState) {
+              stateInitializePromises.push(
+                this.poolManager.initializeIndividualPollingPoolState(
+                  poolIdentifier,
+                  factoryImplementationConstants.isFeeOnTransferSupported,
+                ),
+              );
+            }
+          });
+
+          await Promise.all(stateInitializePromises);
+        } catch (e) {
+          this.logger.error(
+            `Error fetching factory pools for ${factoryAddress}: `,
+            e,
+          );
+          throw e;
         }
-        basePoolStateFetcher = basePool;
-      }
-
-      const poolConstants: PoolConstants = {
-        COINS: coins,
-        coins_decimals,
-        rate_multipliers: this._calcRateMultipliers(coins_decimals),
-      };
-
-      const poolIdentifier = this.getPoolIdentifier(poolAddresses[i], isMeta);
-
-      const newPool = new FactoryStateHandler(
-        this.logger,
-        this.dexKey,
-        this.dexHelper.config.data.network,
-        this.cacheStateKey,
-        factoryImplementationFromConfig.name,
-        implementationAddress.toLowerCase(),
-        poolAddresses[i],
-        this.config.stateUpdatePeriodMs,
-        factoryAddress,
-        poolIdentifier,
-        poolConstants,
-        factoryImplementationConstants,
-        factoryImplementationConstants.isFeeOnTransferSupported,
-        basePoolStateFetcher,
-        factoryImplementationFromConfig.customGasCost,
-        factoryImplementationFromConfig.isStoreRateSupported,
-      );
-
-      this.poolManager.initializeNewPool(poolIdentifier, newPool);
-
-      if (initializeInitialState) {
-        stateInitializePromises.push(
-          this.poolManager.initializeIndividualPollingPoolState(
-            poolIdentifier,
-            factoryImplementationConstants.isFeeOnTransferSupported,
-          ),
-        );
-      }
-    });
-
-    await Promise.all(stateInitializePromises);
+      }),
+    );
 
     this.areFactoryPoolsFetched = true;
   }

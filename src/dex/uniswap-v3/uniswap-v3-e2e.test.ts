@@ -12,7 +12,6 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
 describe('UniswapV3 E2E', () => {
-
   describe('UniswapV3', () => {
     const dexKey = 'UniswapV3';
 
@@ -324,52 +323,57 @@ describe('UniswapV3 E2E', () => {
         [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
-      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
         [
-          {
-            name: 'AVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '500000',
-          },
-          {
-            name: 'USDT',
-            sellAmount: '1000000',
-            buyAmount: '10000000000000000000',
-          },
-        ],
-        [
-          {
-            name: 'AVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '500000',
-          },
-          {
-            name: 'USDC',
-            sellAmount: '1000000',
-            buyAmount: '1000000000000000000',
-          },
-        ],
-        [
-          {
-            name: 'WAVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '500000',
-          },
-          { name: 'USDC', sellAmount: '1000000', buyAmount: '20000000000000000' },
-        ],
-        [
-          {
-            name: 'WAVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '10000000',
-          },
-          { name: 'USDT', sellAmount: '1000000', buyAmount: '2000000000000' },
-        ],
-        [
-          { name: 'USDC', sellAmount: '1000000', buyAmount: '100000000' },
-          { name: 'USDT', sellAmount: '100000000', buyAmount: '100000000' },
-        ],
-      ];
+          [
+            {
+              name: 'AVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '500000',
+            },
+            {
+              name: 'USDT',
+              sellAmount: '1000000',
+              buyAmount: '10000000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'AVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '500000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '1000000',
+              buyAmount: '1000000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'WAVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '500000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '1000000',
+              buyAmount: '20000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'WAVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '10000000',
+            },
+            { name: 'USDT', sellAmount: '1000000', buyAmount: '2000000000000' },
+          ],
+          [
+            { name: 'USDC', sellAmount: '1000000', buyAmount: '100000000' },
+            { name: 'USDT', sellAmount: '100000000', buyAmount: '100000000' },
+          ],
+        ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
