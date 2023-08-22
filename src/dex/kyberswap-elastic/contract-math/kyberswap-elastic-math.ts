@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { partialRight } from 'lodash';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { DeepReadonly } from 'ts-essentials';
 import {
@@ -10,7 +10,13 @@ import {
 } from '../types';
 import { TickMath } from './TickMath';
 import { bigIntify, _require } from '../../../utils';
-import { FEE_UNITS, MAX_TICK_DISTANCE, TWO_POW_96, ZERO } from '../constants';
+import {
+  FEE_UNITS,
+  MAX_TICK_DISTANCE,
+  MAX_TICK_TRAVEL,
+  TWO_POW_96,
+  ZERO,
+} from '../constants';
 import { SwapMath } from './SwapMath';
 import { FullMath } from './FullMath';
 import { ReinvestmentMath } from './ReinvestmentMath';
@@ -18,6 +24,9 @@ import { LiqDeltaMath } from './LiqDeltaMath';
 import { SqrtPriceMath } from './SqrtPriceMath';
 import { LiquidityMath } from './LiquidityMath';
 import { SafeCast } from './SafeCast';
+import { BI_MAX_INT } from '../../../bigint-constants';
+import { LinkedList } from './TickLinkedList';
+import { QtyDeltaMath } from './QtyDeltaMath';
 
 type SwapDataState = {
   specifiedAmount: bigint;
@@ -45,10 +54,23 @@ type SwapDataState = {
   tickCount: bigint;
 };
 
+type UpdatePositionData = {
+  tickLower: bigint;
+  tickUpper: bigint;
+  tickLowerPrevious: bigint;
+  tickUpperPrevious: bigint;
+  liqDelta: bigint;
+};
+
 type ModifyPositionParams = {
   tickLower: bigint;
   tickUpper: bigint;
   liquidityDelta: bigint;
+};
+
+type BurnRTokenParams = {
+  qty: bigint;
+  isLogicalBurn: boolean;
 };
 
 function _updateStateObject<T extends SwapDataState>(toUpdate: T, updateBy: T) {
@@ -170,7 +192,7 @@ function _simulateSwap(
 
     if (rMintQty != 0n) {
       swapData.rTokenSupply += rMintQty;
-      let governmentFee = (rMintQty * swapData.governmentFeeUnits) / FEE_UNITS;
+      let governmentFee = (rMintQty * poolState.governmentFeeUnits) / FEE_UNITS;
       swapData.governmentFee += governmentFee;
 
       let lpFee = rMintQty - governmentFee;
@@ -372,131 +394,199 @@ class KSElasticMath {
     };
   }
 
-  // swapFromEvent(
-  //   poolState: PoolState,
-  //   amountSpecified: bigint,
-  //   newSqrtPriceX96: bigint,
-  //   newTick: bigint,
-  //   newLiquidity: bigint,
-  //   zeroForOne: boolean,
-  // ): bigint {
-  //   const cache = {
-  //     liquidityStart: poolState.poolData.baseL,
-  //     feeProtocol: 0n,
-  //     secondsPerLiquidityCumulativeX128: 0n,
-  //     tickCumulative: 0n,
-  //     computedLatestObservation: false,
-  //   };
+  swapFromEvent(
+    poolState: PoolState,
+    specifiedAmount: bigint,
+    returnedAmount: bigint,
+    newSqrtP: bigint,
+    newTick: bigint,
+    newLiquidity: bigint,
+    isToken0: boolean,
+  ): void {
+    let isExactInput = specifiedAmount > 0n;
+    let willTickUp: boolean = isExactInput != isToken0;
 
-  //   const state = {
-  //     // Because I don't have the exact amount user used, set this number to MAX_NUMBER to proceed
-  //     // with calculations. I think it is not a problem since in loop I don't rely on this value
-  //     amountSpecifiedRemaining: amountSpecified,
-  //     amountCalculated: 0n,
-  //     sqrtPriceX96: poolState.poolData.sqrtP,
-  //     tick: poolState.currentTick,
-  //     protocolFee: 0n,
-  //     liquidity: cache.liquidityStart,
-  //     reinvestL: poolState.reinvestLiquidity,
-  //     fee: poolState.swapFeeUnits,
-  //     tickList: tickList,
-  //   };
-  //   const exactInput = amountSpecified >= ZERO;
+    const swapData = {
+      baseL: poolState.poolData.baseL,
+      reinvestL: poolState.poolData.reinvestL,
+      sqrtP: poolState.poolData.sqrtP,
+      currentTick: poolState.poolData.currentTick,
+      nextTick: !willTickUp
+        ? poolState.poolData.nearestCurrentTick
+        : poolState.initializedTicks[
+            Number(poolState.poolData.nearestCurrentTick)
+          ].next,
+      specifiedAmount: specifiedAmount,
+      isToken0: isToken0,
+      isExactInput: isExactInput,
+      returnedAmount: 0n,
+      nextSqrtP: 0n,
+      startSqrtP: 0n,
+    };
+    let swapCache = {
+      rTotalSupply: 0n,
+      reinvestLLast: 0n,
+      feeGrowthGlobal: 0n,
+      secondsPerLiquidityGlobal: 0n,
+      governmentFeeUnits: 0n,
+      governmentFee: 0n,
+      lpFee: 0n,
+    };
+    while (swapData.specifiedAmount !== 0n && swapData.sqrtP !== newSqrtP) {
+      let tempNextTick = swapData.nextTick;
+      if (
+        willTickUp &&
+        tempNextTick > MAX_TICK_DISTANCE + swapData.currentTick
+      ) {
+        tempNextTick = swapData.currentTick + MAX_TICK_DISTANCE;
+      } else if (
+        !willTickUp &&
+        tempNextTick < swapData.currentTick - MAX_TICK_DISTANCE
+      ) {
+        tempNextTick = swapData.currentTick - MAX_TICK_DISTANCE;
+      }
 
-  //   // Because I didn't have all variables, adapted loop stop with state.tick !== newTick
-  //   // condition. This cycle need only to calculate Tick.cross() function values
-  //   // It means that we are interested in cycling only if state.tick !== newTick
-  //   // When they become equivalent, we proceed with state updating part as normal
-  //   // And if assumptions regarding this cycle are correct, we don't need to process
-  //   // the last cycle when state.tick === newTick
-  //   while (state.tick !== newTick && state.sqrtPriceX96 !== newSqrtPriceX96) {
-  //     const step = {
-  //       sqrtPriceStartX96: 0n,
-  //       tickNext: 0n,
-  //       initialized: false,
-  //       sqrtPriceNextX96: 0n,
-  //       amountIn: 0n,
-  //       amountOut: 0n,
-  //       feeAmount: 0n,
-  //       deltaL: 0n,
-  //     };
+      swapData.startSqrtP = swapData.sqrtP;
+      swapData.nextSqrtP = TickMath.getSqrtRatioAtTick(tempNextTick);
 
-  //     step.sqrtPriceStartX96 = state.sqrtPriceX96;
+      let targetSqrtP = swapData.nextSqrtP;
+      if (willTickUp == swapData.nextSqrtP > newSqrtP) {
+        targetSqrtP = newSqrtP;
+      }
 
-  //     const result = TickList.nextInitializedTickWithinFixedDistance(
-  //       state.tickList,
-  //       Number(state.tick),
-  //       zeroForOne,
-  //       480,
-  //     );
+      let computeSwapResult = SwapMath.computeSwapStep(
+        BigInt(swapData.baseL + swapData.reinvestL),
+        BigInt(swapData.sqrtP),
+        BigInt(targetSqrtP),
+        BigInt(poolState.swapFeeUnits),
+        BigInt(swapData.specifiedAmount),
+        swapData.isExactInput,
+        swapData.isToken0,
+      );
 
-  //     step.tickNext = BigInt(result[0]);
-  //     step.initialized = result[1];
+      swapData.specifiedAmount -= computeSwapResult.usedAmount;
+      swapData.returnedAmount += computeSwapResult.returnedAmount;
+      swapData.reinvestL += BigInt.asUintN(128, computeSwapResult.deltaL); // deltaL not match with onchain computation
+      swapData.sqrtP = computeSwapResult.nextSqrtP;
 
-  //     if (step.tickNext < TickMath.MIN_TICK) {
-  //       step.tickNext = TickMath.MIN_TICK;
-  //     } else if (step.tickNext > TickMath.MAX_TICK) {
-  //       step.tickNext = TickMath.MAX_TICK;
-  //     }
+      if (swapData.sqrtP != swapData.nextSqrtP) {
+        if (swapData.sqrtP != swapData.startSqrtP) {
+          swapData.currentTick = TickMath.getTickAtSqrtRatio(swapData.sqrtP);
+        }
+        break;
+      }
 
-  //     step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+      swapData.currentTick = willTickUp ? tempNextTick : tempNextTick - 1n;
 
-  //     const stepRs = SwapMath.computeSwapStep(
-  //       state.sqrtPriceX96,
-  //       (
-  //         zeroForOne
-  //           ? step.sqrtPriceNextX96 < newSqrtPriceX96
-  //           : step.sqrtPriceNextX96 > newSqrtPriceX96
-  //       )
-  //         ? newSqrtPriceX96
-  //         : step.sqrtPriceNextX96,
-  //       state.liquidity + state.reinvestL,
-  //       state.amountSpecifiedRemaining,
-  //       poolState.swapFeeUnits,
-  //       exactInput,
-  //       zeroForOne,
-  //     );
-  //     step.amountIn = stepRs.usedAmount;
-  //     step.amountOut = stepRs.returnedAmount;
-  //     step.deltaL = stepRs.deltaL;
-  //     state.sqrtPriceX96 = stepRs.nextSqrtP;
+      if (tempNextTick != swapData.nextTick) continue;
 
-  //     state.amountSpecifiedRemaining =
-  //       state.amountSpecifiedRemaining - step.amountIn;
-  //     state.amountCalculated = state.amountCalculated + step.amountOut;
-  //     state.reinvestL = state.reinvestL + step.deltaL;
-  //     if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
-  //       if (step.initialized) {
-  //         let liquidityNet = TickList.getTick(
-  //           state.tickList,
-  //           Number(step.tickNext),
-  //         ).liquidityNet;
-  //         if (zeroForOne) liquidityNet = -liquidityNet;
-  //         state.liquidity = LiquidityMath.addDelta(
-  //           state.liquidity,
-  //           liquidityNet,
-  //         );
-  //       }
+      if (swapCache.rTotalSupply == 0n) {
+        swapCache.rTotalSupply = poolState.poolData.rTokenSupply;
+        swapCache.reinvestLLast = poolState.poolData.reinvestLLast;
+        swapCache.feeGrowthGlobal = poolState.poolData.feeGrowthGlobal;
+        this._syncSecondsPerLiq(poolState);
+        swapCache.secondsPerLiquidityGlobal =
+          poolState.poolData.secondsPerLiquidityGlobal;
 
-  //       state.tick = zeroForOne ? step.tickNext - 1n : step.tickNext;
-  //     } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
-  //       state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
-  //     }
-  //   }
+        swapCache.governmentFeeUnits = poolState.governmentFeeUnits;
+      }
 
-  //   if (poolState.currentTick !== newTick) {
-  //     [poolState.poolData.sqrtP, poolState.currentTick] = [
-  //       newSqrtPriceX96,
-  //       newTick,
-  //     ];
-  //   } else {
-  //     poolState.poolData.sqrtP = newSqrtPriceX96;
-  //   }
+      let rMintQty = ReinvestmentMath.calcrMintQty(
+        swapData.reinvestL,
+        swapCache.reinvestLLast,
+        swapData.baseL,
+        swapCache.rTotalSupply,
+      );
 
-  //   if (poolState.poolData.baseL !== newLiquidity)
-  //     poolState.poolData.baseL = newLiquidity;
-  //   return state.amountCalculated;
-  // }
+      if (rMintQty != 0n) {
+        swapCache.rTotalSupply += rMintQty;
+
+        let governmentFee =
+          (rMintQty * swapCache.governmentFeeUnits) / FEE_UNITS;
+        swapCache.governmentFee += governmentFee;
+
+        let lpFee = rMintQty - governmentFee;
+        swapCache.lpFee += lpFee;
+
+        swapCache.feeGrowthGlobal += FullMath.mulDivFloor(
+          lpFee,
+          TWO_POW_96,
+          swapData.baseL,
+        );
+      }
+
+      swapCache.reinvestLLast = swapData.reinvestL;
+
+      let updateLiqRes = _updateLiquidityAndCrossTick(
+        poolState.ticks,
+        poolState.initializedTicks,
+        swapData.nextTick,
+        swapData.baseL,
+        swapCache.feeGrowthGlobal,
+        swapCache.secondsPerLiquidityGlobal,
+        willTickUp,
+      );
+
+      swapData.baseL = updateLiqRes.newLiquidity;
+      swapData.nextTick = updateLiqRes.newNextTick;
+    }
+
+    if (swapCache.rTotalSupply != 0n) {
+      poolState.poolData.rTokenSupply +=
+        swapCache.governmentFee + swapCache.lpFee;
+
+      poolState.poolData.reinvestLLast = swapCache.reinvestLLast;
+      poolState.poolData.feeGrowthGlobal = swapCache.feeGrowthGlobal;
+    }
+
+    poolState.poolData.baseL = swapData.baseL;
+    poolState.poolData.reinvestL = swapData.reinvestL;
+    poolState.poolData.sqrtP = swapData.sqrtP;
+    poolState.poolData.currentTick = swapData.currentTick;
+    poolState.poolData.nearestCurrentTick =
+      swapData.nextTick > swapData.currentTick
+        ? poolState.initializedTicks[Number(swapData.nextTick)].previous
+        : swapData.nextTick;
+    poolState.reinvestLiquidity = swapData.reinvestL;
+
+    // if (poolState.poolData.currentTick != newTick) {
+    //   [poolState.poolData.sqrtP, poolState.currentTick] = [newSqrtP, newTick];
+    // } else {
+    //   poolState.poolData.sqrtP = newSqrtP;
+    // }
+
+    [poolState.poolData.sqrtP, poolState.currentTick] = [newSqrtP, newTick];
+
+    if (poolState.poolData.baseL != newLiquidity)
+      poolState.poolData.baseL = newLiquidity;
+  }
+
+  burnRToken(state: PoolState, params: BurnRTokenParams): void {
+    if (params.isLogicalBurn) {
+      state.poolData.rTokenSupply -= params.qty;
+      return;
+    }
+
+    let reinvestL = state.poolData.reinvestL;
+    this._syncFeeGrowth(state, false);
+
+    let deltaL = FullMath.mulDivFloor(
+      params.qty,
+      reinvestL,
+      state.poolData.rTokenSupply,
+    );
+    reinvestL -= BigInt.asUintN(128, deltaL);
+    state.poolData.reinvestL = reinvestL;
+    state.poolData.reinvestLLast = reinvestL;
+    state.poolData.rTokenSupply -= params.qty;
+    state.reinvestLiquidity = reinvestL;
+  }
+
+  tweakPosZeroLiq(state: PoolState): void {
+    this._syncFeeGrowth(state, true);
+
+    this._syncSecondsPerLiq(state);
+  }
 
   modifyPosition(
     state: PoolState,
@@ -504,42 +594,233 @@ class KSElasticMath {
   ): [bigint, bigint] {
     this._checkTicks(params.tickLower, params.tickUpper);
 
+    const isBurn = params.liquidityDelta < 0n;
+
+    let initTicksSorted = Object.keys(state.initializedTicks)
+      .map(bigIntify)
+      .sort();
+
+    // sync fee growth
+    this._syncFeeGrowth(state, true);
+    // sync seconds per liq
+    this._syncSecondsPerLiq(state);
+
+    this._updatePosition(state, state.poolData.currentTick, {
+      liqDelta: params.liquidityDelta,
+      tickLower: params.tickLower,
+      tickUpper: params.tickUpper,
+      tickLowerPrevious: isBurn
+        ? 0n
+        : bigIntify(initTicksSorted.find(e => e <= params.tickLower)),
+      tickUpperPrevious: isBurn
+        ? 0n
+        : bigIntify(initTicksSorted.find(e => e <= params.tickUpper)),
+    });
+
     let amount0 = 0n;
     let amount1 = 0n;
     if (params.liquidityDelta !== 0n) {
       if (state.currentTick < params.tickLower) {
-        amount0 = SqrtPriceMath._getAmount0DeltaO(
+        amount0 = QtyDeltaMath.calcRequiredQty0(
           TickMath.getSqrtRatioAtTick(params.tickLower),
           TickMath.getSqrtRatioAtTick(params.tickUpper),
           params.liquidityDelta,
+          params.liquidityDelta > 0n,
         );
       } else if (state.currentTick < params.tickUpper) {
         const liquidityBefore = state.poolData.baseL;
 
-        amount0 = SqrtPriceMath._getAmount0DeltaO(
+        amount0 = QtyDeltaMath.calcRequiredQty0(
           state.poolData.sqrtP,
           TickMath.getSqrtRatioAtTick(params.tickUpper),
           params.liquidityDelta,
+          params.liquidityDelta > 0n,
         );
-        amount1 = SqrtPriceMath._getAmount1DeltaO(
+        amount1 = QtyDeltaMath.calcRequiredQty1(
           TickMath.getSqrtRatioAtTick(params.tickLower),
           state.poolData.sqrtP,
           params.liquidityDelta,
+          params.liquidityDelta > 0n,
         );
-
-        state.poolData.baseL = LiquidityMath.addDelta(
+        state.poolData.baseL = LiqDeltaMath.applyLiquidityDelta(
           liquidityBefore,
-          params.liquidityDelta,
+          params.liquidityDelta > 0n
+            ? params.liquidityDelta
+            : -params.liquidityDelta,
+          params.liquidityDelta > 0n,
         );
       } else {
-        amount1 = SqrtPriceMath._getAmount1DeltaO(
+        amount1 = QtyDeltaMath.calcRequiredQty1(
           TickMath.getSqrtRatioAtTick(params.tickLower),
           TickMath.getSqrtRatioAtTick(params.tickUpper),
           params.liquidityDelta,
+          params.liquidityDelta > 0n,
         );
       }
     }
     return [amount0, amount1];
+  }
+
+  private _syncFeeGrowth(state: PoolState, updateReinvestLLast: boolean) {
+    let rMintQty: bigint = ReinvestmentMath.calcrMintQty(
+      state.poolData.reinvestL,
+      state.poolData.reinvestLLast,
+      state.poolData.baseL,
+      state.poolData.rTokenSupply,
+    );
+
+    if (rMintQty != 0n) {
+      // rtoken minted
+
+      state.poolData.rTokenSupply += rMintQty;
+
+      const govtFee: bigint = (rMintQty * state.governmentFeeUnits) / FEE_UNITS;
+
+      rMintQty -= govtFee;
+
+      state.poolData.feeGrowthGlobal += FullMath.mulDivFloor(
+        rMintQty,
+        TWO_POW_96,
+        state.poolData.baseL,
+      );
+    }
+    if (updateReinvestLLast) {
+      state.poolData.reinvestLLast = state.poolData.reinvestL;
+    }
+  }
+
+  private _syncSecondsPerLiq(state: PoolState) {
+    let secondsElapsed: bigint =
+      state.blockTimestamp - state.poolData.secondsPerLiquidityUpdateTime;
+
+    if (secondsElapsed > 0n) {
+      state.poolData.secondsPerLiquidityUpdateTime = state.blockTimestamp;
+      if (state.poolData.baseL > 0n) {
+        state.poolData.secondsPerLiquidityGlobal += BigInt.asUintN(
+          128,
+          (secondsElapsed << 96n) / state.poolData.baseL,
+        );
+      }
+    }
+  }
+
+  private _updatePosition(
+    state: PoolState,
+    currentTick: bigint,
+    params: UpdatePositionData,
+  ) {
+    this._updateTick(
+      state,
+      params.tickLower,
+      currentTick,
+      params.tickLowerPrevious,
+      params.liqDelta,
+      true,
+    );
+
+    this._updateTick(
+      state,
+      params.tickUpper,
+      currentTick,
+      params.tickUpperPrevious,
+      params.liqDelta,
+      false,
+    );
+  }
+
+  private _updateTick(
+    state: PoolState,
+    tick: bigint,
+    tickCurrent: bigint,
+    tickPrevious: bigint,
+    liqDelta: bigint,
+    isLower: boolean,
+  ) {
+    if (liqDelta != 0n) {
+      if (!(Number(tick) in state.ticks)) {
+        state.ticks[Number(tick)] = {
+          feeGrowthOutside: 0n,
+          liquidityGross: 0n,
+          liquidityNet: 0n,
+          secondsPerLiquidityOutside: 0n,
+        };
+      }
+
+      let liqGrossBefore: bigint = state.ticks[Number(tick)].liquidityGross;
+
+      _require(liqGrossBefore != 0n || liqDelta != 0n, 'invalid liq');
+      let liqGrossAfter = LiqDeltaMath.applyLiquidityDelta(
+        liqGrossBefore,
+        liqDelta > 0n ? liqDelta : -liqDelta,
+        liqDelta > 0n,
+      );
+
+      let liqNetAfter = isLower
+        ? state.ticks[Number(tick)].liquidityNet + liqDelta
+        : state.ticks[Number(tick)].liquidityNet - liqDelta;
+
+      if (liqGrossBefore == 0n) {
+        if (tick <= tickCurrent) {
+          state.ticks[Number(tick)].feeGrowthOutside =
+            state.poolData.feeGrowthGlobal;
+          state.ticks[Number(tick)].secondsPerLiquidityOutside =
+            state.poolData.secondsPerLiquidityGlobal;
+        }
+      }
+
+      state.ticks[Number(tick)].liquidityGross = liqGrossAfter;
+      state.ticks[Number(tick)].liquidityNet = liqNetAfter;
+
+      if (liqGrossBefore > 0n && liqGrossAfter == 0n) {
+        // remove tick
+        if (Number(tick) in state.ticks) {
+          delete state.ticks[Number(tick)];
+        }
+      }
+
+      if (liqGrossBefore > 0n != liqGrossAfter > 0n) {
+        // update tick list
+        this._updateTickList(
+          state,
+          tick,
+          tickPrevious,
+          tickCurrent,
+          liqDelta > 0n,
+        );
+      }
+    }
+  }
+
+  private _updateTickList(
+    state: PoolState,
+    tick: bigint,
+    previousTick: bigint,
+    currentTick: bigint,
+    isAdd: boolean,
+  ) {
+    if (isAdd) {
+      if (tick == TickMath.MIN_TICK || tick == TickMath.MAX_TICK) return;
+      let nextTick = state.initializedTicks[Number(previousTick)].next;
+      let i = 0n;
+      while (nextTick <= tick && i < MAX_TICK_TRAVEL) {
+        previousTick = nextTick;
+        nextTick = state.initializedTicks[Number(previousTick)].next;
+        i++;
+      }
+      LinkedList.insert(state.initializedTicks, tick, previousTick, nextTick);
+      if (state.poolData.nearestCurrentTick < tick && tick <= currentTick) {
+        state.poolData.nearestCurrentTick = tick;
+      }
+    } else {
+      if (tick == state.poolData.nearestCurrentTick) {
+        state.poolData.nearestCurrentTick = LinkedList.remove(
+          state.initializedTicks,
+          tick,
+        );
+      } else {
+        LinkedList.remove(state.initializedTicks, tick);
+      }
+    }
   }
 
   private _getInitialSwapData(

@@ -508,6 +508,8 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
   ): MultiCallParams<KyberElasticStateResponses>[] {
     const _tickCallData: MultiCallParams<KyberElasticStateResponses>[] = [];
 
+    _tickIndice.push(Number(TickMath.MAX_TICK)); // since TicksFeesReader does not return index of MAX_TICK
+
     for (const tickIndex of _tickIndice) {
       _tickCallData.push(
         {
@@ -582,6 +584,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     const deltaQty1 = bigIntify(event.args.deltaQty1);
     const newCurrentTick = bigIntify(event.args.currentTick);
     const newLiquidity = bigIntify(event.args.liquidity);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     if (deltaQty0 <= 0n && deltaQty1 <= 0n) {
       this.logger.error(
@@ -593,13 +596,15 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     } else {
       const isToken0 = deltaQty0 > 0n;
 
-      // ksElasticMath.swapFromEvent(
-      //   pool,
-      //   sqrtP,
-      //   newCurrentTick,
-      //   newLiquidity,
-      //   isToken0,
-      // );
+      ksElasticMath.swapFromEvent(
+        pool,
+        isToken0 ? deltaQty0 : deltaQty1,
+        isToken0 ? deltaQty1 : deltaQty0,
+        sqrtP,
+        newCurrentTick,
+        newLiquidity,
+        isToken0,
+      );
 
       if (isToken0) {
         if (deltaQty1 < 0n) {
@@ -661,6 +666,8 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     blockHeader: BlockHeader,
   ) {
     const qty = bigIntify(event.args.qty);
+    const qty0 = bigIntify(event.args.qty0);
+    const qty1 = bigIntify(event.args.qty1);
     const tickLower = bigIntify(event.args.tickLower);
     const tickUpper = bigIntify(event.args.tickUpper);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
@@ -670,6 +677,9 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       tickUpper,
       liquidityDelta: -BigInt.asIntN(128, BigInt.asIntN(256, qty)),
     });
+
+    pool.balance0 -= qty0;
+    pool.balance1 -= qty1;
 
     return pool;
   }
@@ -684,6 +694,10 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     const qty0 = bigIntify(event.args.qty0);
     const qty1 = bigIntify(event.args.qty1);
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+    ksElasticMath.burnRToken(pool, {
+      qty: qty,
+      isLogicalBurn: qty0 == 0n && qty1 == 0n,
+    });
 
     pool.balance0 -= qty0;
     pool.balance1 -= qty1;
@@ -699,7 +713,9 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
   ) {
     const tokenId = bigIntify(event.args.tokenId);
     const additionalRTokenOwed = bigIntify(event.args.additionalRTokenOwed);
-    // TODO: handle SyncFeeGrowth event
+
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+    ksElasticMath.tweakPosZeroLiq(pool);
 
     return pool;
   }
