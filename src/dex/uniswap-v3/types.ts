@@ -1,6 +1,8 @@
-import { BigNumber } from 'ethers';
+import { BigNumber, BytesLike } from 'ethers';
 import { NumberAsString } from '../../types';
 import { Address } from '../../types';
+import { AbiItem } from 'web3-utils';
+import { MultiResult } from '../../lib/multi-wrapper';
 
 export type OracleObservation = {
   blockTimestamp: bigint;
@@ -60,6 +62,8 @@ export type UniswapV3Data = {
   isApproved?: boolean;
 };
 
+export type DecodeStateMultiCallFunc = (result: MultiResult<BytesLike> | BytesLike) => DecodedStateMultiCallResultWithRelativeBitmaps;
+
 export type DexParams = {
   router: Address;
   quoter: Address;
@@ -68,9 +72,12 @@ export type DexParams = {
   uniswapMulticall: Address;
   supportedFees: bigint[];
   chunksCount: number;
+  initRetryFrequency: number;
   deployer?: Address;
   subgraphURL: string;
   initHash: string;
+  stateMultiCallAbi?: AbiItem[];
+  decodeStateMultiCallResultWithRelativeBitmaps? : DecodeStateMultiCallFunc,
 };
 
 export type UniswapV3SimpleSwapSellParam = {
