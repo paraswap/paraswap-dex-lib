@@ -291,6 +291,7 @@ export type PreprocessTransactionOptions = {
   hmac?: string;
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
+  data?: string;
 };
 
 export type TransferFeeParams = {
