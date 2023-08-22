@@ -106,13 +106,13 @@ function testForNetwork(
 }
 
 describe('SushiswapV3 E2E', () => {
-  const dexKey = 'SushiswapV3';
+  const dexKey = 'SushiSwapV3';
 
   describe('MAINNET', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDT';
 
     const tokenAAmount: string = '111110000';
     const tokenBAmount: string = '110000000000000000';
