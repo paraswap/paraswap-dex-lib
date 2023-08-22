@@ -72,7 +72,7 @@ export class Solidly extends UniswapV2 {
         'Thena',
         'SoliSnek',
         'Chronos',
-        'Ramses'
+        'Ramses',
       ]),
     );
 

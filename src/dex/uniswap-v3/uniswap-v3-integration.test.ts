@@ -28,7 +28,6 @@ const amounts = [
 
 const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 
-
 const quoterIface = new Interface(UniswapV3QuoterV2ABI);
 
 function getReaderCalldata(
@@ -43,13 +42,7 @@ function getReaderCalldata(
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      [
-        tokenIn,
-        tokenOut,
-        amount.toString(),
-        fee.toString(),
-        0,
-      ]
+      [tokenIn, tokenOut, amount.toString(), fee.toString(), 0],
     ]),
   }));
 }
@@ -499,15 +492,10 @@ describe('RamsesV2', () => {
   beforeEach(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
-    uniswapV3Mainnet = new UniswapV3(
-      Network.ARBITRUM,
-      dexKey,
-      dexHelper,
-    );
+    uniswapV3Mainnet = new UniswapV3(Network.ARBITRUM, dexKey, dexHelper);
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-
     const amounts = [
       0n,
       6000000n,
@@ -566,7 +554,6 @@ describe('RamsesV2', () => {
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-
     const amounts = [
       0n,
       6000000n,

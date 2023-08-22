@@ -11,7 +11,8 @@ import {
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
-  DecodedStateMultiCallResultWithRelativeBitmaps, DecodeStateMultiCallFunc,
+  DecodedStateMultiCallResultWithRelativeBitmaps,
+  DecodeStateMultiCallFunc,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
@@ -60,7 +61,9 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     readonly dexHelper: IDexHelper,
     parentName: string,
     readonly stateMultiContract: Contract,
-    readonly decodeStateMultiCallResultWithRelativeBitmaps: DecodeStateMultiCallFunc | undefined,
+    readonly decodeStateMultiCallResultWithRelativeBitmaps:
+      | DecodeStateMultiCallFunc
+      | undefined,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
     public readonly feeCode: bigint,

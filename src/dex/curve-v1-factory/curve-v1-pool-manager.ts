@@ -42,7 +42,10 @@ export class CurveV1FactoryPoolManager {
   // It should bo considered for optimizing
   private coinAddressesToPoolIdentifiers: Record<string, string[]> = {};
 
-  private allCurveLiquidityApiSlugs: Set<string> = new Set(['/factory']);
+  private allCurveLiquidityApiSlugs: Set<string> = new Set([
+    '/factory',
+    '/factory-crvusd',
+  ]);
 
   private statePollingManager = StatePollingManager;
   private taskScheduler: TaskScheduler;
