@@ -35,38 +35,6 @@ const customPlain3CoinThree: calc_token_amount = (
   return (diff * token_amount) / D0;
 };
 
-const factoryPlain2Basic: calc_token_amount = (
-  self: IPoolContext,
-  state: PoolState,
-  amounts: bigint[],
-  is_deposit: boolean,
-) => {
-  const { N_COINS } = self.constants;
-  const amp = state.A;
-  const balances = [...state.balances];
-  const D0 = self.get_D(self, balances, amp);
-  for (const i of _.range(N_COINS)) {
-    if (is_deposit) balances[i] += amounts[i];
-    else balances[i] -= amounts[i];
-  }
-  const D1 = self.get_D(self, balances, amp);
-
-  if (state.totalSupply === undefined) {
-    throw new Error(
-      `${self.IMPLEMENTATION_NAME} customPlain3CoinThree: totalSupply is not provided`,
-    );
-  }
-
-  const token_amount = state.totalSupply;
-  let diff = 0n;
-  if (is_deposit) {
-    diff = D1 - D0;
-  } else {
-    diff = D0 - D1;
-  }
-  return (diff * token_amount) / D0;
-};
-
 const customAvalanche3CoinLending: calc_token_amount = (
   self: IPoolContext,
   state: PoolState,
@@ -203,7 +171,7 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_META_USD_BALANCES_FRAX_USDC]: notImplemented,
 
   [ImplementationNames.FACTORY_PLAIN_2_BALANCES]: notImplemented,
-  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2_ETH]: notImplemented,
   [ImplementationNames.FACTORY_PLAIN_2_OPTIMIZED]: notImplemented,
 

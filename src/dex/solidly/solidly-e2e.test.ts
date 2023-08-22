@@ -1179,5 +1179,100 @@ describe('Solidly E2E', () => {
         }),
       );
     });
+
+    describe('Ramses', () => {
+      const dexKey = 'Ramses';
+
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+      ]);
+
+      const pairs: { name: string; sellAmount: string }[][] = [
+        [
+          {
+            name: 'ETH',
+            sellAmount: '10000000000000',
+          },
+          {
+            name: 'USDCe',
+            sellAmount: '100000000',
+          },
+        ],
+        [
+          {
+            name: 'WETH',
+            sellAmount: '10000000000000',
+          },
+          {
+            name: 'USDCe',
+            sellAmount: '100000000',
+          },
+        ],
+        [
+          {
+            name: 'USDT',
+            sellAmount: '100000000',
+          },
+          {
+            name: 'USDCe',
+            sellAmount: '100000000',
+          },
+        ],
+        [
+          {
+            name: 'USDCe',
+            sellAmount: '500000',
+          },
+          {
+            name: 'DAI',
+            sellAmount: '1000000000000000000',
+          },
+        ],
+      ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    pair[0].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    pair[1].sellAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
   });
 });
