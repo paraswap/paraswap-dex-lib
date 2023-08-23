@@ -432,7 +432,7 @@ class KSElasticMath {
       governmentFee: 0n,
       lpFee: 0n,
     };
-    while (swapData.specifiedAmount !== 0n && swapData.sqrtP !== newSqrtP) {
+    while (swapData.specifiedAmount != 0n) {
       let tempNextTick = swapData.nextTick;
       if (
         willTickUp &&
@@ -462,11 +462,12 @@ class KSElasticMath {
         BigInt(swapData.specifiedAmount),
         swapData.isExactInput,
         swapData.isToken0,
+        true,
       );
 
       swapData.specifiedAmount -= computeSwapResult.usedAmount;
       swapData.returnedAmount += computeSwapResult.returnedAmount;
-      swapData.reinvestL += BigInt.asUintN(128, computeSwapResult.deltaL); // deltaL not match with onchain computation
+      swapData.reinvestL += BigInt.asUintN(128, computeSwapResult.deltaL);
       swapData.sqrtP = computeSwapResult.nextSqrtP;
 
       if (swapData.sqrtP != swapData.nextSqrtP) {
@@ -549,16 +550,11 @@ class KSElasticMath {
         : swapData.nextTick;
     poolState.reinvestLiquidity = swapData.reinvestL;
 
-    // if (poolState.poolData.currentTick != newTick) {
-    //   [poolState.poolData.sqrtP, poolState.currentTick] = [newSqrtP, newTick];
-    // } else {
-    //   poolState.poolData.sqrtP = newSqrtP;
-    // }
-
-    [poolState.poolData.sqrtP, poolState.currentTick] = [newSqrtP, newTick];
-
-    if (poolState.poolData.baseL != newLiquidity)
-      poolState.poolData.baseL = newLiquidity;
+    [
+      poolState.poolData.sqrtP,
+      poolState.currentTick,
+      poolState.poolData.baseL,
+    ] = [newSqrtP, newTick, newLiquidity];
   }
 
   burnRToken(state: PoolState, params: BurnRTokenParams): void {

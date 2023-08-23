@@ -12,6 +12,7 @@ export class SwapMath {
     specifiedAmount: bigint,
     isExactInput: boolean,
     isToken0: boolean,
+    roundUpDeltaL: boolean = false,
   ): {
     usedAmount: bigint;
     returnedAmount: bigint;
@@ -71,6 +72,9 @@ export class SwapMath {
         ),
       );
     } else {
+      // for handling swap event, specifiedAmount is retrieved from event values ==> specifiedAmount is LTE to actual swapQty used onchain
+      // in this else branch, nextSqrtP != 0 ==> specifiedAmount is not fully used ==> swapQty would not be used fully
+      // ==> we need to round up deltaL because (swapQty >= specifiedAmount)
       deltaL = this.calcIncrementalLiquidity(
         absDelta,
         liquidity,
@@ -78,6 +82,7 @@ export class SwapMath {
         nextSqrtP,
         isExactInput,
         isToken0,
+        roundUpDeltaL, // set True for handling swap event
       );
     }
     returnedAmount = this.calcReturnedAmount(
@@ -237,19 +242,25 @@ export class SwapMath {
     nextSqrtP: bigint,
     isExactInput: boolean,
     isToken0: boolean,
+    roundUpDeltaL: boolean = false,
   ): bigint {
     let deltaL = 0n;
 
+    let mulDiv = (a: bigint, b: bigint, c: bigint) => {
+      return roundUpDeltaL
+        ? FullMath.mulDivCeil(a, b, c)
+        : FullMath.mulDivFloor(a, b, c);
+    };
     if (isToken0) {
       let tmp1 = FullMath.mulDivFloor(liquidity, TWO_POW_96, currentSqrtP);
       let tmp2 = isExactInput ? tmp1 + absDelta : tmp1 - absDelta;
-      let tmp3 = FullMath.mulDivFloor(nextSqrtP, tmp2, TWO_POW_96);
+      let tmp3 = mulDiv(nextSqrtP, tmp2, TWO_POW_96);
 
       deltaL = tmp3 > liquidity ? tmp3 - liquidity : 0n;
     } else {
       let tmp1 = FullMath.mulDivFloor(liquidity, currentSqrtP, TWO_POW_96);
       let tmp2 = isExactInput ? tmp1 + absDelta : tmp1 - absDelta;
-      let tmp3 = FullMath.mulDivFloor(tmp2, TWO_POW_96, nextSqrtP);
+      let tmp3 = mulDiv(tmp2, TWO_POW_96, nextSqrtP);
 
       deltaL = tmp3 > liquidity ? tmp3 - liquidity : 0n;
     }

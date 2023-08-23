@@ -8,6 +8,7 @@ export type PoolState = {
   poolObservation?: Record<NumberAsString, OracleObservation>;
   maxTickLiquidity: bigint;
   swapFeeUnits: bigint;
+  governmentFeeTo: string;
   governmentFeeUnits: bigint;
   poolData: PoolData;
   ticks: Record<NumberAsString, TickInfo>;

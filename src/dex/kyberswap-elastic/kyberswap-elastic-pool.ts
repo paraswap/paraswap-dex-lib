@@ -51,6 +51,7 @@ import {
   decodeTicks,
 } from './utils/decoders';
 import { ERR_POOL_DOES_NOT_EXIST } from './errors';
+import { FEE_UNITS } from './constants';
 
 export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -128,6 +129,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     this.handlers['Burn'] = this._handleBurnEvent.bind(this);
     this.handlers['Mint'] = this._handleMintEvent.bind(this);
     this.handlers['BurnRTokens'] = this._handleBurnREvent.bind(this);
+    this.handlers['Flash'] = this._handleFlashEvent.bind(this);
     this.handlers['SyncFeeGrowth'] = this._handleSyncFeeGrowth.bind(this);
   }
 
@@ -241,6 +243,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
     const [
       _poolData,
+      _feeTo,
       _governmentFeeUnits,
       _balance0,
       _balance1,
@@ -260,6 +263,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
       poolObservation: undefined,
       maxTickLiquidity: _maxTickLiquidity,
       swapFeeUnits: this.swapFeeUnits,
+      governmentFeeTo: _feeTo,
       governmentFeeUnits: _governmentFeeUnits,
       poolData: _poolData,
       ticks: _ticks,
@@ -278,7 +282,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
    */
   private async _fetchPoolData(
     blockNumber: number,
-  ): Promise<[PoolData, bigint, bigint, bigint, bigint]> {
+  ): Promise<[PoolData, string, bigint, bigint, bigint, bigint]> {
     const _poolStateCalldata = this._constructPoolDataCalldata();
 
     const _fetchedPoolStates = await this.dexHelper.multiWrapper.tryAggregate<
@@ -346,6 +350,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
     return [
       _poolData,
+      _governmentFeeUnits._feeTo,
       BigInt(_governmentFeeUnits._governmentFeeUnits),
       BigInt(_balance0),
       BigInt(_balance1),
@@ -701,6 +706,28 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
     pool.balance0 -= qty0;
     pool.balance1 -= qty1;
+
+    return pool;
+  }
+
+  private _handleFlashEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader,
+  ) {
+    const qty0 = bigIntify(event.args.qty0);
+    const qty1 = bigIntify(event.args.qty1);
+    const paid0 = bigIntify(event.args.paid0);
+    const paid1 = bigIntify(event.args.paid1);
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+    if (
+      ethers.utils.getAddress(pool.governmentFeeTo) ==
+      ethers.constants.AddressZero
+    ) {
+      pool.balance0 += (qty0 * pool.swapFeeUnits) / FEE_UNITS;
+      pool.balance1 += (qty1 * pool.swapFeeUnits) / FEE_UNITS;
+    }
 
     return pool;
   }
