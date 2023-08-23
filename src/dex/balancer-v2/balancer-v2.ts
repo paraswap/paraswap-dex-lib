@@ -72,6 +72,26 @@ import {
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
+const enabledPoolTypes = [
+  // BalancerPoolTypes.MetaStable,
+  // BalancerPoolTypes.Stable,
+  BalancerPoolTypes.Weighted,
+  // BalancerPoolTypes.LiquidityBootstrapping,
+  // BalancerPoolTypes.Investment,
+  // BalancerPoolTypes.StablePhantom,
+  BalancerPoolTypes.AaveLinear,
+  BalancerPoolTypes.ERC4626Linear,
+  BalancerPoolTypes.Linear,
+  // BalancerPoolTypes.ComposableStable,
+  BalancerPoolTypes.BeefyLinear,
+  BalancerPoolTypes.GearboxLinear,
+  BalancerPoolTypes.MidasLinear,
+  BalancerPoolTypes.ReaperLinear,
+  BalancerPoolTypes.SiloLinear,
+  BalancerPoolTypes.TetuLinear,
+  BalancerPoolTypes.YearnLinear,
+];
+
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
     first: $count
@@ -93,9 +113,7 @@ const fetchAllPools = `query ($count: Int) {
       ],
       swapEnabled: true,
       poolType_in: [
-        "MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear",
-        "ERC4626Linear", "Linear", "ComposableStable", "BeefyLinear", "GearboxLinear", "MidasLinear",
-        "ReaperLinear", "SiloLinear", "TetuLinear", "YearnLinear"
+        ${enabledPoolTypes.join(', ')}
       ]
     }
   ) {
@@ -1223,6 +1241,9 @@ export class BalancerV2
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
            where: {id_in: $poolIds,
                    swapEnabled: true,
+                   poolType_in: [
+                     ${enabledPoolTypes.join(', ')}
+                   ],
                    totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
         address
         totalLiquidity
