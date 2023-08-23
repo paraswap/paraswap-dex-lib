@@ -72,6 +72,7 @@ import {
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
+// If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
   // BalancerPoolTypes.MetaStable,
   // BalancerPoolTypes.Stable,
