@@ -62,7 +62,9 @@ export type UniswapV3Data = {
   isApproved?: boolean;
 };
 
-export type DecodeStateMultiCallFunc = (result: MultiResult<BytesLike> | BytesLike) => DecodedStateMultiCallResultWithRelativeBitmaps;
+export type DecodeStateMultiCallFunc = (
+  result: MultiResult<BytesLike> | BytesLike,
+) => DecodedStateMultiCallResultWithRelativeBitmaps;
 
 export type DexParams = {
   router: Address;
@@ -77,7 +79,7 @@ export type DexParams = {
   subgraphURL: string;
   initHash: string;
   stateMultiCallAbi?: AbiItem[];
-  decodeStateMultiCallResultWithRelativeBitmaps? : DecodeStateMultiCallFunc,
+  decodeStateMultiCallResultWithRelativeBitmaps?: DecodeStateMultiCallFunc;
 };
 
 export type UniswapV3SimpleSwapSellParam = {

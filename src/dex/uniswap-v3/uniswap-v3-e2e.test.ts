@@ -2,8 +2,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Holders, NativeTokenSymbols, Tokens, } from '../../../tests/constants-e2e';
-import { ContractMethod, Network, SwapSide } from '../../constants';
+import {
+  Tokens,
+  Holders,
+  NativeTokenSymbols,
+} from '../../../tests/constants-e2e';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
@@ -414,52 +418,57 @@ describe('UniswapV3 E2E', () => {
         [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
-      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
         [
-          {
-            name: 'AVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '500000',
-          },
-          {
-            name: 'USDT',
-            sellAmount: '1000000',
-            buyAmount: '10000000000000000000',
-          },
-        ],
-        [
-          {
-            name: 'AVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '500000',
-          },
-          {
-            name: 'USDC',
-            sellAmount: '1000000',
-            buyAmount: '1000000000000000000',
-          },
-        ],
-        [
-          {
-            name: 'WAVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '500000',
-          },
-          { name: 'USDC', sellAmount: '1000000', buyAmount: '20000000000000000' },
-        ],
-        [
-          {
-            name: 'WAVAX',
-            sellAmount: '1000000000000000000',
-            buyAmount: '10000000',
-          },
-          { name: 'USDT', sellAmount: '1000000', buyAmount: '2000000000000' },
-        ],
-        [
-          { name: 'USDC', sellAmount: '1000000', buyAmount: '100000000' },
-          { name: 'USDT', sellAmount: '100000000', buyAmount: '100000000' },
-        ],
-      ];
+          [
+            {
+              name: 'AVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '500000',
+            },
+            {
+              name: 'USDT',
+              sellAmount: '1000000',
+              buyAmount: '10000000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'AVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '500000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '1000000',
+              buyAmount: '1000000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'WAVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '500000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '1000000',
+              buyAmount: '20000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'WAVAX',
+              sellAmount: '1000000000000000000',
+              buyAmount: '10000000',
+            },
+            { name: 'USDT', sellAmount: '1000000', buyAmount: '2000000000000' },
+          ],
+          [
+            { name: 'USDC', sellAmount: '1000000', buyAmount: '100000000' },
+            { name: 'USDT', sellAmount: '100000000', buyAmount: '100000000' },
+          ],
+        ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
@@ -523,6 +532,93 @@ describe('UniswapV3 E2E', () => {
       const tokenAAmount: string = '1100000';
       const tokenBAmount: string = '1000000';
       const nativeTokenAmount = '1100000000000';
+
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+            ContractMethod.directUniV3Swap,
+          ],
+        ],
+        [
+          SwapSide.BUY,
+          [
+            ContractMethod.simpleBuy,
+            ContractMethod.buy,
+            ContractMethod.directUniV3Buy,
+          ],
+        ],
+      ]);
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(`${network} ${side} ${contractMethod} ${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${network} ${side} ${contractMethod} ${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }),
+      );
+    });
+  });
+
+  describe('ChronosV3', () => {
+    const dexKey = 'ChronosV3';
+    describe('Arbitrum', () => {
+      const network = Network.ARBITRUM;
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+
+      const tokenASymbol: string = 'USDCe';
+      const tokenBSymbol: string = 'USDT';
+      const nativeTokenSymbol = NativeTokenSymbols[network];
+
+      const tokenAAmount: string = '2000000';
+      const tokenBAmount: string = '2000000';
+      const nativeTokenAmount = '100000000000000000';
 
       const sideToContractMethods = new Map([
         [
