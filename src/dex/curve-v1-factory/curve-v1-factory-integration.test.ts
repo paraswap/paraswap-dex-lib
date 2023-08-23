@@ -275,6 +275,63 @@ describe('CurveV1Factory', function () {
         }
       });
     });
+
+    describe(`renBTC-wibBTC`, () => {
+      const srcTokenSymbol = 'renBTC';
+      const destTokenSymbol = 'wibBTC';
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals - 1],
+      ];
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          curveV1Factory,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newCurveV1Factory = new CurveV1Factory(
+          network,
+          dexKey,
+          dexHelper,
+        );
+        if (newCurveV1Factory.updatePoolState) {
+          await newCurveV1Factory.updatePoolState();
+        }
+        const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
   });
   describe('Polygon', () => {
     const network = Network.POLYGON;
