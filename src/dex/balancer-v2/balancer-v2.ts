@@ -113,7 +113,7 @@ const fetchAllPools = `query ($count: Int) {
       ],
       swapEnabled: true,
       poolType_in: [
-        ${enabledPoolTypes.join(', ')}
+        ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
       ]
     }
   ) {
