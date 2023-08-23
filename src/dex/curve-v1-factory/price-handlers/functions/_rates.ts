@@ -36,7 +36,7 @@ const customPlain3CoinSbtc: _rates = (
     let rate = LENDING_PRECISION; // Used with no lending
     if (use_lending[i]) {
       const currentRate = state.exchangeRateCurrent[i];
-      if (currentRate === undefined) {
+      if (!currentRate) {
         throw new Error(
           `${self.IMPLEMENTATION_NAME}: exchangeRateCurrent contains undefined value that supposed to be used: ${state.exchangeRateCurrent}`,
         );
