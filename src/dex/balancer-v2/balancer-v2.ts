@@ -72,6 +72,27 @@ import {
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
+// If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
+const enabledPoolTypes = [
+  // BalancerPoolTypes.MetaStable,
+  // BalancerPoolTypes.Stable,
+  BalancerPoolTypes.Weighted,
+  // BalancerPoolTypes.LiquidityBootstrapping,
+  // BalancerPoolTypes.Investment,
+  // BalancerPoolTypes.StablePhantom,
+  BalancerPoolTypes.AaveLinear,
+  BalancerPoolTypes.ERC4626Linear,
+  BalancerPoolTypes.Linear,
+  // BalancerPoolTypes.ComposableStable,
+  BalancerPoolTypes.BeefyLinear,
+  BalancerPoolTypes.GearboxLinear,
+  BalancerPoolTypes.MidasLinear,
+  BalancerPoolTypes.ReaperLinear,
+  BalancerPoolTypes.SiloLinear,
+  BalancerPoolTypes.TetuLinear,
+  BalancerPoolTypes.YearnLinear,
+];
+
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
     first: $count
@@ -93,9 +114,7 @@ const fetchAllPools = `query ($count: Int) {
       ],
       swapEnabled: true,
       poolType_in: [
-        "MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear",
-        "ERC4626Linear", "Linear", "ComposableStable", "BeefyLinear", "GearboxLinear", "MidasLinear",
-        "ReaperLinear", "SiloLinear", "TetuLinear", "YearnLinear"
+        ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
       ]
     }
   ) {
