@@ -1241,9 +1241,6 @@ export class BalancerV2
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
            where: {id_in: $poolIds,
                    swapEnabled: true,
-                   poolType_in: [
-                     ${enabledPoolTypes.join(', ')}
-                   ],
                    totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
         address
         totalLiquidity
