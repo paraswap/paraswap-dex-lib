@@ -167,7 +167,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           /* reload state, on zkEVM this would most likely timeout during request life
            * but would allow to rely on staleState for couple of min for next requests
            */
-          await pool.initialize(blockNumber);
+          await pool.initialize(blockNumber, { forceRegenerate: true });
         }
 
         return pool;
