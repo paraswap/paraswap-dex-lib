@@ -27,7 +27,7 @@ type ChronosSubgraphPool = {
   token0: { id: string; decimals: string };
   reserve0: string;
   reserve1: string;
-  token1: { id: string; decimals: string };
+  token1: { id: string; decimals: string; };
 };
 
 export class Chronos extends Solidly {
@@ -114,43 +114,35 @@ export class Chronos extends Solidly {
     if (!(data && data.pools0 && data.pools1))
       throw new Error("Couldn't fetch the pools from the subgraph");
 
-    const pools0 = await this.prepareSubgraphPools(
-      data.pools0,
-      (
-        pool,
-        { address1, decimals1, liquidityUSDToken0, liquidityUSDToken1 },
-      ) => ({
-        exchange: this.dexKey,
-        stable: pool.isStable,
-        address: pool.id.toLowerCase(),
-        connectorTokens: [
-          {
-            address: address1,
-            decimals: decimals1,
-          },
-        ],
-        liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
-      }),
-    );
+    const pools0 = await this.prepareSubgraphPools(data.pools0, (pool,{
+      address1, decimals1, liquidityUSDToken0, liquidityUSDToken1,
+    }) => ({
+      exchange: this.dexKey,
+      stable: pool.isStable,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: address1,
+          decimals: decimals1,
+        },
+      ],
+      liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
+    }));
 
-    const pools1 = await this.prepareSubgraphPools(
-      data.pools1,
-      (
-        pool,
-        { address0, decimals0, liquidityUSDToken0, liquidityUSDToken1 },
-      ) => ({
-        exchange: this.dexKey,
-        stable: pool.isStable,
-        address: pool.id.toLowerCase(),
-        connectorTokens: [
-          {
-            address: address0,
-            decimals: decimals0,
-          },
-        ],
-        liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
-      }),
-    );
+    const pools1 = await this.prepareSubgraphPools(data.pools1, (pool,{
+      address0, decimals0, liquidityUSDToken0, liquidityUSDToken1,
+    }) => ({
+      exchange: this.dexKey,
+      stable: pool.isStable,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: address0,
+          decimals: decimals0,
+        },
+      ],
+      liquidityUSD: liquidityUSDToken0 + liquidityUSDToken1,
+    }));
 
     return _.slice(
       _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
@@ -162,8 +154,7 @@ export class Chronos extends Solidly {
   private async prepareSubgraphPools(
     pools: ChronosSubgraphPool[],
     iterator: (
-      pool: ChronosSubgraphPool,
-      {
+      pool: ChronosSubgraphPool, {
         address0,
         address1,
         decimals0,
@@ -173,59 +164,43 @@ export class Chronos extends Solidly {
         liquidityUSDToken0,
         liquidityUSDToken1,
       }: {
-        address0: string;
-        address1: string;
-        decimals0: number;
-        decimals1: number;
-        reserve0: bigint;
-        reserve1: bigint;
-        liquidityUSDToken0: number;
-        liquidityUSDToken1: number;
-      },
-    ) => PoolLiquidity,
+        address0: string,
+        address1: string,
+        decimals0: number,
+        decimals1: number,
+        reserve0: bigint,
+        reserve1: bigint,
+        liquidityUSDToken0: number,
+        liquidityUSDToken1: number,
+      }) => PoolLiquidity
   ): Promise<PoolLiquidity[]> {
-    return Promise.all(
-      pools.map(async (pool: ChronosSubgraphPool) => {
-        const address0 = pool.token0.id.toLowerCase();
-        const address1 = pool.token1.id.toLowerCase();
+    return Promise.all(pools.map(async (
+      pool: ChronosSubgraphPool,
+    ) => {
+      const address0 = pool.token0.id.toLowerCase();
+      const address1 = pool.token1.id.toLowerCase();
 
-        const decimals0 = parseInt(pool.token0.decimals);
-        const decimals1 = parseInt(pool.token1.decimals);
+      const decimals0 = parseInt(pool.token0.decimals);
+      const decimals1 = parseInt(pool.token1.decimals);
 
-        const reserve0 = BigInt(
-          new BigNumber(pool.reserve0).multipliedBy(10 ** decimals0).toFixed(),
-        );
-        const reserve1 = BigInt(
-          new BigNumber(pool.reserve1).multipliedBy(10 ** decimals1).toFixed(),
-        );
+      const reserve0 = BigInt(new BigNumber(pool.reserve0).multipliedBy(10 ** decimals0).toFixed());
+      const reserve1 = BigInt(new BigNumber(pool.reserve1).multipliedBy(10 ** decimals1).toFixed());
 
-        const liquidityUSDToken0 = await this.dexHelper.getTokenUSDPrice(
-          {
-            address: address0,
-            decimals: decimals0,
-          },
-          reserve0,
-        );
+      const liquidityUSDToken0 = await this.dexHelper.getTokenUSDPrice({
+        address: address0,
+        decimals: decimals0,
+      }, reserve0);
 
-        const liquidityUSDToken1 = await this.dexHelper.getTokenUSDPrice(
-          {
-            address: address1,
-            decimals: decimals1,
-          },
-          reserve1,
-        );
+      const liquidityUSDToken1 = await this.dexHelper.getTokenUSDPrice({
+        address: address1,
+        decimals: decimals1,
+      }, reserve1);
 
-        return iterator(pool, {
-          address0,
-          address1,
-          decimals0,
-          decimals1,
-          reserve0,
-          reserve1,
-          liquidityUSDToken0,
-          liquidityUSDToken1,
-        });
-      }),
-    );
+      return iterator(
+        pool, {
+          address0, address1, decimals0, decimals1, reserve0, reserve1, liquidityUSDToken0, liquidityUSDToken1,
+        },
+      );
+    }));
   }
 }

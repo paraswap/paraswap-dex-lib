@@ -737,7 +737,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
         await this.setBlacklist(options.txOrigin);
       } else {
-        if (e instanceof TooStrictSlippageCheckError) {
+        if(e instanceof TooStrictSlippageCheckError) {
           this.logger.warn(
             `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
           );
