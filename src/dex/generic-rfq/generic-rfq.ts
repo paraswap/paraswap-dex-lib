@@ -140,6 +140,10 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       _destToken.address,
     );
 
+    if (!limitPools?.includes(expectedIdentifier)) {
+      return null;
+    }
+
     const rates = await this.rateFetcher.getOrderPrice(
       _srcToken,
       _destToken,
