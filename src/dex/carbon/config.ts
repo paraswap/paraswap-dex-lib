@@ -6,7 +6,7 @@ export const CarbonConfig: DexConfigMap<DexParams> = {
   Carbon: {
     [Network.MAINNET]: {
       subgraphURL:
-        'https://api.studio.thegraph.com/proxy/4538/carbon/version/latest',
+        'https://api.thegraph.com/subgraphs/name/bancor-services/carbon',
       carbonController: '0xC537e898CD774e2dCBa3B14Ea6f34C93d5eA45e1',
       voucher: '0x3660F04B79751e31128f6378eAC70807e38f554E',
     },
