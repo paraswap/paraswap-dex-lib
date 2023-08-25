@@ -1,6 +1,6 @@
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { Network } from '../../constants';
 
 export const DexalotConfig: DexConfigMap<DexParams> = {
   Dexalot: {
@@ -11,8 +11,5 @@ export const DexalotConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  [Network.AVALANCHE]: {
-    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 1 }],
-    [SwapSide.BUY]: [{ name: 'AvalancheBuyAdapter', index: 3 }],
-  },
+  [Network.AVALANCHE]: {},
 };
