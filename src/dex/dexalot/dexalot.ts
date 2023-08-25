@@ -30,6 +30,7 @@ import {
   RfqError,
   RFQResponse,
   RFQResponseError,
+  SlippageCheckError,
   TokenAddrDataMap,
   TokenDataMap,
 } from './types';
@@ -54,6 +55,7 @@ import {
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { TooStrictSlippageCheckError } from '../generic-rfq/types';
 import { ethers } from 'ethers';
+import BigNumber from 'bignumber.js';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -508,37 +510,38 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
 
-      // if (side === SwapSide.SELL) {
-      //   const makerAmountLowerBounds: bigint =
-      //     (BigInt(optimalSwapExchange.destAmount.toString()) * BigInt(9900)) /
-      //     BigInt(10000);
-      //   const makerAmountUpperBounds: bigint =
-      //     (BigInt(optimalSwapExchange.destAmount.toString()) * BigInt(10100)) /
-      //     BigInt(10000);
-      //   assert(
-      //     BigInt(order.makerAmount) < makerAmountUpperBounds,
-      //     'Too much Slippage',
-      //   );
-      //   assert(
-      //     BigInt(order.makerAmount) > makerAmountLowerBounds,
-      //     'Too much Slippage',
-      //   );
-      // } else {
-      //   const takerAmountLowerBounds: bigint =
-      //     (BigInt(optimalSwapExchange.srcAmount.toString()) * BigInt(9900)) /
-      //     BigInt(10000);
-      //   const takerAmountUpperBounds: bigint =
-      //     (BigInt(optimalSwapExchange.srcAmount.toString()) * BigInt(10100)) /
-      //     BigInt(10000);
-      //   assert(
-      //     BigInt(order.takerAmount) < takerAmountUpperBounds,
-      //     'Too much Slippage',
-      //   );
-      //   assert(
-      //     BigInt(order.takerAmount) > takerAmountLowerBounds,
-      //     'Too much Slippage',
-      //   );
-      // }
+      const slippageFactor = options.slippageFactor;
+      if (side === SwapSide.SELL) {
+        if (
+          BigInt(order.makerAmount) <
+          BigInt(
+            new BigNumber(optimalSwapExchange.destAmount)
+              .times(slippageFactor)
+              .toFixed(0),
+          )
+        ) {
+          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${order.makerAmount} / destAmount ${optimalSwapExchange.destAmount} < ${slippageFactor}`;
+          throw new SlippageCheckError(message);
+        }
+      } else {
+        if (
+          BigInt(order.takerAmount) <
+          BigInt(
+            new BigNumber(optimalSwapExchange.srcAmount)
+              .times(slippageFactor)
+              .toFixed(0),
+          )
+        ) {
+          const message = `${this.dexKey}-${
+            this.network
+          }: too much slippage on quote ${side} baseTokenAmount ${
+            order.takerAmount
+          } / srcAmount ${
+            optimalSwapExchange.srcAmount
+          } > ${slippageFactor.toFixed()}`;
+          throw new SlippageCheckError(message);
+        }
+      }
 
       return [
         {
@@ -562,10 +565,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}: ${errorData.Reason}`,
           );
         }
-      } else if (e instanceof TooStrictSlippageCheckError) {
-        this.logger.warn(
-          `${this.dexKey}-${this.network}: Failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
-        );
+      } else if (e instanceof SlippageCheckError) {
+        this.logger.warn(e.message);
       } else {
         this.logger.error(
           `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}:`,
