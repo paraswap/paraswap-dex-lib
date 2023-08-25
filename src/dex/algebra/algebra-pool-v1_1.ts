@@ -2,29 +2,41 @@ import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly, assert } from 'ts-essentials';
 import { Address, BlockHeader, Log, Logger } from '../../types';
-import { bigIntify, catchParseLogError, int16 } from '../../utils';
+import { bigIntify, catchParseLogError, int16, uint128 } from '../../utils';
 import {
   InitializeStateOptions,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
+  DecodedGlobalStateV1_1,
   PoolStateV1_1,
   TickBitMapMappingsWithBigNumber,
   TickInfoMappingsWithBigNumber,
+  TickInfoWithBigNumber,
 } from './types';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import AlgebraABI from '../../abi/algebra/AlgebraPool-v1_1.abi.json';
+import FactoryABI from '../../abi/algebra/AlgebraFactory-v1_1.abi.json';
 import { DecodedStateMultiCallResultWithRelativeBitmapsV1_1 } from './types';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
 } from '../uniswap-v3/constants';
-import { uint256ToBigInt } from '../../lib/decoders';
+import {
+  addressDecode,
+  uint256ToBigInt,
+  uint128ToBigInt,
+  int24ToBigInt,
+} from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
-import { decodeStateMultiCallResultWithRelativeBitmapsV1_1 } from './utils';
+import {
+  decodeGlobalStateV1_1,
+  decodeStateMultiCallResultWithRelativeBitmapsV1_1,
+  decodeTicksV1_1,
+} from './utils';
 import { AlgebraMath } from './lib/AlgebraMath';
 import {
   _reduceTickBitmap,
@@ -53,6 +65,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
   readonly token1: Address;
 
   public readonly poolIface = new Interface(AlgebraABI);
+  public readonly factoryIface = new Interface(FactoryABI);
 
   public initFailed = false;
   public initRetryAttemptCount = 0;
@@ -69,6 +82,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     mapKey: string = '',
     readonly poolInitCodeHash: string,
     readonly poolDeployer: string,
+    private readonly forceManualStateGeneration: boolean = false,
   ) {
     super(parentName, `${token0}_${token1}`, dexHelper, logger, true, mapKey);
     this.token0 = token0.toLowerCase();
@@ -174,7 +188,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
-  private async _fetchPoolStateSingleStep(
+  async fetchPoolStateSingleStep(
     blockNumber: number,
   ): Promise<
     [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
@@ -330,13 +344,14 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     return [balance0, balance1, _state];
   }
 
+  // FIXME: Here happens double conversion in types, but for prototyping and to check if this approach helps, it is nor very important
   async _fetchInitStateMultiStrategies(
     blockNumber: number,
   ): Promise<
     [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
   > {
     try {
-      return await this._fetchPoolStateSingleStep(blockNumber);
+      return await this.fetchPoolStateSingleStep(blockNumber);
     } catch (e) {
       if (e instanceof Error && e.message.includes('Pool does not exist'))
         throw e;
@@ -347,9 +362,178 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     }
   }
 
+  async fetchStateManually(
+    blockNumber: number,
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
+  > {
+    // FIXME: If this approach works, need to add caching of multicalls
+    const [poolAddress] = await this.dexHelper.multiWrapper.aggregate([
+      {
+        target: this.factoryAddress,
+        callData: this.factoryIface.encodeFunctionData('poolByPair', [
+          this.token0,
+          this.token1,
+        ]),
+        decodeFunction: addressDecode,
+      },
+    ]);
+    assert(
+      poolAddress === this.poolAddress,
+      `Pool address mismatch: ${poolAddress} != ${this.poolAddress}`,
+    );
+
+    const [
+      balance0,
+      balance1,
+      liquidity,
+      tickSpacing,
+      maxLiquidityPerTick,
+      globalState,
+    ] = (await this.dexHelper.multiWrapper.aggregate<
+      bigint | number | DecodedGlobalStateV1_1
+    >([
+      {
+        target: this.token0,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.token1,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: poolAddress,
+        callData: this.poolIface.encodeFunctionData('liquidity', []),
+        decodeFunction: uint128ToBigInt,
+      },
+      {
+        target: poolAddress,
+        callData: this.poolIface.encodeFunctionData('tickSpacing', []),
+        decodeFunction: int24ToBigInt,
+      },
+      {
+        target: poolAddress,
+        callData: this.poolIface.encodeFunctionData('maxLiquidityPerTick', []),
+        decodeFunction: uint128ToBigInt,
+      },
+      {
+        target: poolAddress,
+        callData: this.poolIface.encodeFunctionData('globalState', []),
+        decodeFunction: decodeGlobalStateV1_1,
+      },
+    ])) as [bigint, bigint, bigint, bigint, bigint, DecodedGlobalStateV1_1];
+
+    const currentBitMapIndex = TickTable.position(
+      BigInt(BigInt(globalState.tick) / BigInt(tickSpacing)),
+    )[0];
+
+    const leftBitMapIndex = currentBitMapIndex - this.getBitmapRangeToRequest();
+    const rightBitMapIndex =
+      currentBitMapIndex + this.getBitmapRangeToRequest();
+
+    const allTickBitMaps = await this.dexHelper.multiWrapper.aggregate(
+      _.range(Number(leftBitMapIndex), Number(rightBitMapIndex + 1n)).map(
+        index => {
+          return {
+            target: poolAddress,
+            callData: this.poolIface.encodeFunctionData('tickTable', [
+              int16(BigInt(index)),
+            ]),
+            decodeFunction: uint256ToBigInt,
+          };
+        },
+      ),
+    );
+
+    const tickBitmap: TickBitMapMappingsWithBigNumber[] = [];
+
+    let globalIndex = 0;
+
+    for (let i = leftBitMapIndex; i <= rightBitMapIndex; i++) {
+      const index = int16(i);
+      const bitmap = allTickBitMaps[globalIndex];
+      globalIndex++;
+      if (bitmap == 0n) continue;
+      tickBitmap.push({ index: Number(index), value: BigNumber.from(bitmap) });
+    }
+
+    const tickIndexes: bigint[] = [];
+    const ticksValues = await this.dexHelper.multiWrapper.aggregate(
+      tickBitmap
+        .map(tb => {
+          const allBits: MultiCallParams<TickInfoWithBigNumber>[] = [];
+          if (tb.value === BigNumber.from(0)) return allBits;
+
+          _.range(0, 256).forEach(j => {
+            if ((tb.value.toBigInt() & (1n << BigInt(j))) > 0n) {
+              const populatedTick =
+                (BigInt.asIntN(16, BigInt(tb.index) << 8n) + BigInt(j)) *
+                tickSpacing;
+
+              tickIndexes.push(populatedTick);
+              allBits.push({
+                target: poolAddress,
+                callData: this.poolIface.encodeFunctionData('ticks', [
+                  populatedTick,
+                ]),
+                decodeFunction: decodeTicksV1_1,
+              });
+            }
+          });
+          return allBits;
+        })
+        .flat(),
+    );
+    assert(
+      tickIndexes.length === ticksValues.length,
+      `Tick indexes mismatch: ${tickIndexes.length} != ${ticksValues.length}`,
+    );
+
+    const ticks: TickInfoMappingsWithBigNumber[] = new Array(
+      tickIndexes.length,
+    );
+
+    tickIndexes.forEach((tickIndex, index) => {
+      ticks[index] = {
+        index: Number(tickIndex),
+        value: ticksValues[index],
+      };
+    });
+
+    return [
+      balance0,
+      balance1,
+      // FIXME: If we validate that this is working, remove redundant conversions
+      {
+        pool: poolAddress,
+        blockTimestamp: BigNumber.from(Date.now()),
+        globalState,
+        liquidity: BigNumber.from(liquidity),
+        tickSpacing: Number(tickSpacing),
+        maxLiquidityPerTick: BigNumber.from(maxLiquidityPerTick),
+        tickBitmap,
+        ticks,
+      },
+    ];
+  }
+
   async generateState(blockNumber: number): Promise<Readonly<PoolStateV1_1>> {
-    const [balance0, balance1, _state] =
-      await this._fetchInitStateMultiStrategies(blockNumber);
+    let balance0 = 0n;
+    let balance1 = 0n;
+    let _state: DecodedStateMultiCallResultWithRelativeBitmapsV1_1;
+    if (this.forceManualStateGeneration) {
+      [balance0, balance1, _state] = await this.fetchStateManually(blockNumber);
+    } else {
+      [balance0, balance1, _state] = await this._fetchInitStateMultiStrategies(
+        blockNumber,
+      );
+    }
 
     const tickBitmap = {};
     const ticks = {};

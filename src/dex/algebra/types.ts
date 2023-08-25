@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers';
 import { Address, NumberAsString } from '../../types';
 import { TickInfo } from '../uniswap-v3/types';
 
-type GlobalStateV1_1 = {
+export type GlobalStateV1_1 = {
   price: bigint; // The square root of the current price in Q64.96 format
   tick: bigint; // The current tick
   fee: bigint; // The current fee in hundredths of a bip, i.e. 1e-6
@@ -72,6 +72,7 @@ export type DexParams = {
   initHash: string;
   version: 'v1.1' | 'v1.9';
   forceRPC?: boolean;
+  forceManualStateGenerate?: boolean;
 };
 
 export type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
@@ -95,7 +96,7 @@ export type TickInfoMappingsWithBigNumber = {
   value: TickInfoWithBigNumber;
 };
 
-type DecodedGlobalStateV1_1 = {
+export type DecodedGlobalStateV1_1 = {
   price: BigNumber;
   tick: number;
   fee: number;

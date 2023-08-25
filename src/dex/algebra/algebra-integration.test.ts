@@ -14,6 +14,8 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { Address } from '@paraswap/core';
+import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
+import { DecodedStateMultiCallResultWithRelativeBitmapsV1_1 } from './types';
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -431,6 +433,78 @@ describe('Algebra', function () {
           dexKey,
         );
       }
+    });
+
+    it('both generate state result match', async function () {
+      const pool = (await algebra.getPool(
+        tokens[srcTokenSymbol].address,
+        tokens[destTokenSymbol].address,
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const [balance0, balance1, stateMulticallFull] =
+        await pool.fetchPoolStateSingleStep(blockNumber);
+
+      const stateMulticall = {
+        pool: stateMulticallFull.pool.toLowerCase(),
+        globalState: {
+          price: stateMulticallFull.globalState.price,
+          tick: stateMulticallFull.globalState.tick,
+          fee: stateMulticallFull.globalState.fee,
+          communityFeeToken0: stateMulticallFull.globalState.communityFeeToken0,
+          communityFeeToken1: stateMulticallFull.globalState.communityFeeToken1,
+        },
+        liquidity: stateMulticallFull.liquidity,
+        tickSpacing: stateMulticallFull.tickSpacing,
+        maxLiquidityPerTick: stateMulticallFull.maxLiquidityPerTick,
+        tickBitmap: stateMulticallFull.tickBitmap.map(t => ({
+          index: t.index,
+          value: t.value,
+        })),
+        ticks: stateMulticallFull.ticks.map(t => ({
+          index: t.index,
+          value: {
+            liquidityNet: t.value.liquidityNet,
+            liquidityGross: t.value.liquidityGross,
+            secondsOutside: t.value.secondsOutside,
+            secondsPerLiquidityOutsideX128:
+              t.value.secondsPerLiquidityOutsideX128,
+            tickCumulativeOutside: t.value.tickCumulativeOutside,
+            initialized: t.value.initialized,
+          },
+        })),
+      };
+
+      const stateMulticallWithBalance = [balance0, balance1, stateMulticall];
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // @ts-ignore
+      delete stateManually[2]['blockTimestamp'];
+      stateManually[2].pool = stateManually[2].pool.toLowerCase();
+
+      expect(stateMulticallWithBalance).toStrictEqual(stateManually);
+    });
+  });
+
+  describe('ZKEVM', () => {
+    const network = Network.ZKEVM;
+    const dexHelper = new DummyDexHelper(network);
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      algebra = new Algebra(network, dexKey, dexHelper);
+      if (algebra.initializePricing) {
+        await algebra.initializePricing(blockNumber);
+      }
+    });
+
+    it('both generate state result match', async function () {
+      const pool = (await algebra.getPool(
+        '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
+        '0xc5015b9d9161dca7e18e32f6f25c4ad850731fd4',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
     });
   });
 });
