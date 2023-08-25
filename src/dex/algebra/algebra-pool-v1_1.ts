@@ -464,32 +464,39 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     }
 
     const tickIndexes: bigint[] = [];
-    const ticksValues = await this.dexHelper.multiWrapper.aggregate(
-      tickBitmap
-        .map(tb => {
-          const allBits: MultiCallParams<TickInfoWithBigNumber>[] = [];
-          if (tb.value === BigNumber.from(0)) return allBits;
 
-          _.range(0, 256).forEach(j => {
-            if ((tb.value.toBigInt() & (1n << BigInt(j))) > 0n) {
-              const populatedTick =
-                (BigInt.asIntN(16, BigInt(tb.index) << 8n) + BigInt(j)) *
-                tickSpacing;
+    const tickRequests = tickBitmap
+      .map(tb => {
+        const allBits: MultiCallParams<TickInfoWithBigNumber>[] = [];
+        if (tb.value === BigNumber.from(0)) return allBits;
 
-              tickIndexes.push(populatedTick);
-              allBits.push({
-                target: poolAddress,
-                callData: this.poolIface.encodeFunctionData('ticks', [
-                  populatedTick,
-                ]),
-                decodeFunction: decodeTicksV1_1,
-              });
-            }
-          });
-          return allBits;
-        })
-        .flat(),
-    );
+        _.range(0, 256).forEach(j => {
+          if ((tb.value.toBigInt() & (1n << BigInt(j))) > 0n) {
+            const populatedTick =
+              (BigInt.asIntN(16, BigInt(tb.index) << 8n) + BigInt(j)) *
+              tickSpacing;
+
+            tickIndexes.push(populatedTick);
+            allBits.push({
+              target: poolAddress,
+              callData: this.poolIface.encodeFunctionData('ticks', [
+                populatedTick,
+              ]),
+              decodeFunction: decodeTicksV1_1,
+            });
+          }
+        });
+        return allBits;
+      })
+      .flat();
+
+    const ticksValues = (
+      await Promise.all(
+        _.chunk(tickRequests, 100).map(tickRequestChunk =>
+          this.dexHelper.multiWrapper.aggregate(tickRequestChunk),
+        ),
+      )
+    ).flat();
     assert(
       tickIndexes.length === ticksValues.length,
       `Tick indexes mismatch: ${tickIndexes.length} != ${ticksValues.length}`,
