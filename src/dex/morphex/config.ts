@@ -12,6 +12,14 @@ export const MorphexConfig: DexConfigMap<DexParams> = {
       fastPriceEvents: '0xDc7C389be5da32e326A261dC0126feCa7AE04d79',
       usdg: '0xe135c7BFfda932b5B862Da442cF4CbC4d43DC3Ad',
     },
+    [Network.BSC]: {
+      vault: '0x46940Dc651bFe3F2CC3E04cf9dC5579B50Cf0765',
+      reader: '0x49A97680938B4F1f73816d1B70C3Ab801FAd124B',
+      priceFeed: '0x0144b19D1B9338fC7C286d6767bd9b29F0347f27',
+      fastPriceFeed: '0x55e6e6A968e485abEC1e1d957f408586e45a4f99',
+      fastPriceEvents: '0x491Df61db853761d42C4F38BeD220E9D807143dE',
+      usdg: '0x548f93779fBC992010C07467cBaf329DD5F059B7',
+    },
   },
 };
 
@@ -24,7 +32,15 @@ export const Adapters: {
     [SwapSide.SELL]: [
       {
         name: 'FantomAdapter01',
-        index: 6, // TODO: it's for aavev3, but there is no Morphex adapter
+        index: 6, // TODO: there is no Morphex adapter
+      },
+    ],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BscAdapter01',
+        index: 6, // TODO: there is no Morphex adapter
       },
     ],
   },
