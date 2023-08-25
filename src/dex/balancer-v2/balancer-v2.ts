@@ -74,8 +74,8 @@ import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
-  // BalancerPoolTypes.MetaStable,
-  // BalancerPoolTypes.Stable,
+  // BalancerPoolTypes.MetaStable, // BOOSTED POOLS Disabled since vulnerability https://github.com/BalancerMaxis/multisig-ops/blob/main/BIPs/00notGov/2023-08-mitigation.md
+  BalancerPoolTypes.Stable,
   BalancerPoolTypes.Weighted,
   // BalancerPoolTypes.LiquidityBootstrapping,
   // BalancerPoolTypes.Investment,
@@ -83,7 +83,7 @@ const enabledPoolTypes = [
   BalancerPoolTypes.AaveLinear,
   BalancerPoolTypes.ERC4626Linear,
   BalancerPoolTypes.Linear,
-  // BalancerPoolTypes.ComposableStable,
+  BalancerPoolTypes.ComposableStable,
   BalancerPoolTypes.BeefyLinear,
   BalancerPoolTypes.GearboxLinear,
   BalancerPoolTypes.MidasLinear,
@@ -102,7 +102,18 @@ const fetchAllPools = `query ($count: Int) {
       totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
       totalShares_not_in: ["0", "0.000000000001"],
       id_not_in: [
-        "0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"
+        "0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6",
+        "0xbf2ef8bdc2fc0f3203b3a01778e3ec5009aeef3300000000000000000000058d",
+        "0x99c88ad7dc566616548adde8ed3effa730eb6c3400000000000000000000049a",
+        "0x60683b05e9a39e3509d8fdb9c959f23170f8a0fa000000000000000000000489",
+        "0xa13a9247ea42d743238089903570127dda72fe4400000000000000000000035d",
+        "0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe",
+        "0x25accb7943fd73dda5e23ba6329085a3c24bfb6a000200000000000000000387",
+        "0x50cf90b954958480b8df7958a9e965752f62712400000000000000000000046f",
+        "0x133d241f225750d2c92948e464a5a80111920331000000000000000000000476",
+        "0x8a6b25e33b12d1bb6929a8793961076bd1f9d3eb0002000000000000000003e8",
+        "0x959216bb492b2efa72b15b7aacea5b5c984c3cca000200000000000000000472",
+        "0x9b692f571b256140a39a34676bffa30634c586e100000000000000000000059d"
       ],
        address_not_in: [
         "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
