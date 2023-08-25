@@ -791,6 +791,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       subgraphURL: this.config.subgraphURL,
       version: this.config.version,
       forceRPC: this.config.forceRPC,
+      forceManualStateGenerate: this.config.forceManualStateGenerate,
     };
     return newConfig;
   }
