@@ -160,9 +160,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         if (this.network !== Network.ZKEVM) return pool;
 
         if (
-          pool.getState(blockNumber) === null &&
-          blockNumber - pool.getStateBlockNumber() >
-            MAX_STALE_STATE_BLOCK_AGE[this.network]
+          pool.getStaleState() === null ||
+          (pool.getState(blockNumber) === null &&
+            blockNumber - pool.getStateBlockNumber() >
+              MAX_STALE_STATE_BLOCK_AGE[this.network])
         ) {
           /* reload state, on zkEVM this would most likely timeout during request life
            * but would allow to rely on staleState for couple of min for next requests
