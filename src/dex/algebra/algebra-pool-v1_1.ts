@@ -380,7 +380,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     ]);
     assert(
       poolAddress === this.poolAddress,
-      `Pool address mismatch: ${poolAddress} != ${this.poolAddress}`,
+      `Pool address mismatch: ${poolAddress.toLowerCase()} != ${this.poolAddress.toLowerCase()}`,
     );
 
     const [
