@@ -321,6 +321,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           break;
         }
       }
+      if (amt > 0n) {
+        return result;
+      }
       const avgPrice = combinedPrice / totalVolume;
       if (side === ClobSide.BID) {
         result.push((amounts[i] * BigInt(10 ** baseToken.decimals)) / avgPrice);
