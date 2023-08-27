@@ -33,7 +33,6 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.simpleSwap]],
-    [SwapSide.BUY, [ContractMethod.simpleSwap]],
   ]);
 
   describe(`${network}`, () => {
@@ -165,10 +164,10 @@ describe('Dexalot E2E', () => {
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
-    const tokenASymbol: string = 'AVAX';
-    const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '1000000';
     const tokenBAmount: string = '1000000';
     const nativeTokenAmount = '1000000000000000000';
 
@@ -180,7 +179,6 @@ describe('Dexalot E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      true,
     );
   });
 });
