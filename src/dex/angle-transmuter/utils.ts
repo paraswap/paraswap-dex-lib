@@ -1,15 +1,78 @@
-import { BytesLike, ethers } from 'ethers';
-import { MultiResult } from '../../lib/multi-wrapper';
-import {
-  BASE_12,
-  BASE_9,
-  DecodedStateMultiCallResultPythOracle,
-  Fees,
-  MAX_BURN_FEE,
-  QuoteType,
-} from './types';
-import { extractSuccessAndValue } from '../../lib/decoders';
-import { assert } from 'ts-essentials';
+import { BASE_12, BASE_9, Fees, MAX_BURN_FEE, QuoteType } from './types';
+
+/// @notice Computes the `amountOut` of stablecoins to mint from `tokenIn` of a collateral with data `collatInfo`
+export function _quoteMintExactInput(
+  oracleValue: number,
+  amountIn: number,
+  fees: Fees,
+  stablecoinsIssued: number,
+  otherStablecoinSupply: number,
+): number {
+  const amountOut = oracleValue * amountIn;
+  return _quoteFees(
+    fees,
+    QuoteType.MintExactInput,
+    amountOut,
+    stablecoinsIssued,
+    otherStablecoinSupply,
+  );
+}
+
+/// @notice Computes the `amountIn` of collateral to get during a mint of `amountOut` of stablecoins
+export function _quoteMintExactOutput(
+  oracleValue: number,
+  amountOut: number,
+  fees: Fees,
+  stablecoinsIssued: number,
+  otherStablecoinSupply: number,
+): number {
+  const amountIn = _quoteFees(
+    fees,
+    QuoteType.MintExactOutput,
+    amountOut,
+    stablecoinsIssued,
+    otherStablecoinSupply,
+  );
+  return amountIn / oracleValue;
+}
+
+/// @notice Computes the `amountIn` of stablecoins to burn to release `amountOut` of `collateral`
+export function _quoteBurnExactOutput(
+  oracleValue: number,
+  ratio: number,
+  amountOut: number,
+  fees: Fees,
+  stablecoinsIssued: number,
+  otherStablecoinSupply: number,
+): number {
+  const amountIn = (amountOut * oracleValue) / ratio;
+  return _quoteFees(
+    fees,
+    QuoteType.BurnExactOutput,
+    amountIn,
+    stablecoinsIssued,
+    otherStablecoinSupply,
+  );
+}
+
+/// @notice Computes the `amountOut` of `collateral` to give during a burn operation of `amountIn` of stablecoins
+export function _quoteBurnExactInput(
+  oracleValue: number,
+  ratio: number,
+  amountIn: number,
+  fees: Fees,
+  stablecoinsIssued: number,
+  otherStablecoinSupply: number,
+): number {
+  const amountOut = _quoteFees(
+    fees,
+    QuoteType.BurnExactInput,
+    amountIn,
+    stablecoinsIssued,
+    otherStablecoinSupply,
+  );
+  return (amountOut * ratio) / oracleValue;
+}
 
 export function _quoteFees(
   fees: Fees,
@@ -280,33 +343,4 @@ function _computeFee(
   } else {
     return _invertFeeBurn(amount, fees);
   }
-}
-
-export function decodeStatePyth(
-  result: MultiResult<BytesLike> | BytesLike,
-): DecodedStateMultiCallResultPythOracle {
-  const [isSuccess, toDecode] = extractSuccessAndValue(result);
-
-  assert(
-    isSuccess && toDecode !== '0x',
-    `decodeStateMultiCallResultWithRelativeBitmaps failed to get decodable result: ${result}`,
-  );
-
-  const decoded = ethers.utils.defaultAbiCoder.decode(
-    [
-      // I don't want to pass here any interface, so I just use it in ethers format
-      `
-      tuple(
-        int64 price,
-        uint64 conf,
-        int32 expo,
-        uint256 publishTime
-      )
-    `,
-    ],
-    toDecode,
-  )[0];
-  // This conversion is not precise, because when we decode, we have more values
-  // But I typed only the ones that are used later
-  return decoded as DecodedStateMultiCallResultPythOracle;
 }

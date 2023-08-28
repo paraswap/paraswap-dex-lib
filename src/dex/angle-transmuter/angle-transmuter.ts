@@ -14,16 +14,27 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AngleTransmuterData } from './types';
+import { AngleTransmuterData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AngleTransmuterConfig, Adapters } from './config';
 import { AngleTransmuterEventPool } from './angle-transmuter-pool';
+import { Interface, formatUnits, parseUnits } from 'ethers/lib/utils';
+import { TransmuterSubscriber } from './transmuter';
+import ERC20ABI from '../../abi/erc20.json';
+
+const TransmuterGasCost = 0;
 
 export class AngleTransmuter
   extends SimpleExchange
   implements IDex<AngleTransmuterData>
 {
-  protected eventPools: AngleTransmuterEventPool;
+  protected eventPools: AngleTransmuterEventPool | null = null;
+  protected supportedTokensMap: { [address: string]: boolean } = {};
+  // supportedTokens is only used by the pooltracker
+  protected supportedTokens: Token[] = [];
+  transmuterUSDLiquidity: number = 0;
+
+  public static erc20Interface = new Interface(ERC20ABI);
 
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
@@ -41,17 +52,11 @@ export class AngleTransmuter
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected params: DexParams = AngleTransmuterConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new AngleTransmuterEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-      undefined,
-      AngleTransmuterConfig.AngleTransmuter[Network.MAINNET].transmuter,
-    );
+    this.supportedTokensMap[params.agEUR.address] = true;
   }
 
   // Initialize pricing is called once in the start of
@@ -60,6 +65,22 @@ export class AngleTransmuter
   // implement this function
   async initializePricing(blockNumber: number) {
     // TODO: complete me!
+    const config = await AngleTransmuterEventPool.getConfig(
+      this.params,
+      blockNumber,
+      this.dexHelper.multiContract,
+    );
+    config.collaterals.forEach(
+      (token: Address) => (this.supportedTokensMap[token] = true),
+    );
+    this.eventPools = new AngleTransmuterEventPool(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      this.logger,
+      config,
+    );
+    await this.eventPools.initialize(blockNumber);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -79,7 +100,9 @@ export class AngleTransmuter
     blockNumber: number,
   ): Promise<string[]> {
     // TODO: complete me!
-    return [];
+    if (this._knownAddress(srcToken, destToken))
+      return [`${this.dexKey}_${this.params.agEUR.address}`];
+    else return [];
   }
 
   // Returns pool prices for amounts.
@@ -95,7 +118,40 @@ export class AngleTransmuter
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AngleTransmuterData>> {
     // TODO: complete me!
-    return null;
+    const uniquePool = `${this.dexKey}_${this.params.agEUR.address}`;
+    if (
+      this._knownAddress(srcToken, destToken) ||
+      (limitPools && !limitPools.includes(uniquePool))
+    )
+      return null;
+
+    const unitVolume = 1;
+    const amountsFloat = amounts.map(amount =>
+      parseFloat(formatUnits(amount.toString(), srcToken.decimals)),
+    );
+    const prices = await this.eventPools!.getAmountOut(
+      srcToken.address,
+      destToken.address,
+      [unitVolume, ...amountsFloat],
+      blockNumber,
+    );
+
+    if (!prices) return null;
+
+    const pricesBigInt = prices.map(price =>
+      BigInt(parseUnits(price.toString(), destToken.decimals).toString()),
+    );
+
+    return [
+      {
+        prices: pricesBigInt.slice(1),
+        unit: pricesBigInt[0],
+        gasCost: TransmuterGasCost,
+        exchange: this.dexKey,
+        data: { exchange: this.params.transmuter },
+        poolAddresses: [this.params.transmuter],
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -146,7 +202,17 @@ export class AngleTransmuter
     const { exchange } = data;
 
     // Encode here the transaction arguments
-    const swapData = '';
+    const swapData = TransmuterSubscriber.interface.encodeFunctionData(
+      'swapExactInput',
+      [
+        srcAmount,
+        destAmount,
+        srcToken,
+        destToken,
+        this.augustusAddress,
+        0, // TODO no deadline?
+      ],
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -165,21 +231,118 @@ export class AngleTransmuter
   // to implement this
   async updatePoolState(): Promise<void> {
     // TODO: complete me!
+    if (!this.supportedTokens.length) {
+      const tokenAddresses = await AngleTransmuterEventPool.getCollateralsList(
+        this.params.transmuter,
+        'latest',
+        this.dexHelper.multiContract,
+      );
+      tokenAddresses.push(this.params.agEUR.address);
+
+      const decimalsCallData =
+        AngleTransmuter.erc20Interface.encodeFunctionData('decimals');
+      const tokenBalanceMultiCall = tokenAddresses.map(t => ({
+        target: t,
+        callData: decimalsCallData,
+      }));
+      const res = (
+        await this.dexHelper.multiContract.methods
+          .aggregate(tokenBalanceMultiCall)
+          .call()
+      ).returnData;
+
+      const tokenDecimals = res.map((r: any) =>
+        parseInt(
+          AngleTransmuter.erc20Interface
+            .decodeFunctionResult('decimals', r)[0]
+            .toString(),
+        ),
+      );
+
+      this.supportedTokens = tokenAddresses.map((t, i) => ({
+        address: t,
+        decimals: tokenDecimals[i],
+      }));
+    }
+
+    // Only work if there are no managers
+    const erc20BalanceCalldata =
+      AngleTransmuter.erc20Interface.encodeFunctionData('balanceOf', [
+        this.params.transmuter,
+      ]);
+    const tokenBalanceMultiCall = this.supportedTokens.map(t => ({
+      target: t.address,
+      callData: erc20BalanceCalldata,
+    }));
+    const res = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(tokenBalanceMultiCall)
+        .call()
+    ).returnData;
+    const tokenBalances = res.map((r: any) =>
+      BigInt(
+        AngleTransmuter.erc20Interface
+          .decodeFunctionResult('balanceOf', r)[0]
+          .toString(),
+      ),
+    );
+    const tokenBalancesUSD = await Promise.all(
+      this.supportedTokens.map((t, i) =>
+        this.dexHelper.getTokenUSDPrice(t, tokenBalances[i]),
+      ),
+    );
+    this.transmuterUSDLiquidity = tokenBalancesUSD.reduce(
+      (sum: number, curr: number) => sum + curr,
+    );
   }
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
-    tokenAddress: Address,
+    _tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
     //TODO: complete me!
-    return [];
+    const tokenAddress = _tokenAddress.toLowerCase();
+    if (!this.supportedTokens.some(t => t.address === tokenAddress)) return [];
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.params.transmuter,
+        connectorTokens: limit > 0 ? [this.params.agEUR] : [],
+        // liquidity is potentially infinite if swapping for agXXX, otherwise at most reserves value
+        liquidityUSD:
+          _tokenAddress == this.params.agEUR.address
+            ? this.transmuterUSDLiquidity
+            : 1e9,
+      },
+    ];
   }
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
+  }
+
+  _knownAddress(srcToken: Token, destToken: Token): boolean {
+    // TODO: complete me!
+    const srcAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
+    if (
+      srcAddress !== destAddress &&
+      this.supportedTokensMap[srcAddress] &&
+      this.supportedTokensMap[destAddress] &&
+      // check that at least one of the tokens is agEUR
+      (srcAddress == this.params.agEUR.address.toLowerCase() ||
+        destAddress == this.params.agEUR.address.toLowerCase())
+    ) {
+      return true;
+    }
+    return false;
   }
 }

@@ -10,6 +10,7 @@ export const AngleTransmuterConfig: DexConfigMap<DexParams> = {
         decimals: 18,
       },
       transmuter: '0x00253582b2a3FE112feEC532221d9708c64cEFAb',
+      pyth: '0x4305FB66699C3B2702D4d05CF36551390A4c69C6',
     },
   },
 };

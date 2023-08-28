@@ -1,303 +1,285 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Address, Log, Logger } from '../../types';
-import { catchParseLogError } from '../../utils';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
+import { lens } from '../../lens';
+import { Address, Logger, Token } from '../../types';
+import { ComposedEventSubscriber } from '../../composed-event-subscriber';
+import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  Chainlink,
-  DecodedOracleConfig,
-  OracleFeed,
+  ChainlinkConfig,
+  DexParams,
   OracleReadType,
+  PoolConfig,
   PoolState,
-  Pyth,
+  PythConfig,
+  TransmuterState,
 } from './types';
 import TransmuterABI from '../../abi/angle-transmuter/Transmuter.json';
-import { formatUnits } from 'ethers/lib/utils';
-import { BigNumber, ethers } from 'ethers';
 import { CBETH, RETH, SFRXETH, STETH } from './constants';
+import { Contract } from 'web3-eth-contract';
+import { TransmuterSubscriber } from './transmuter';
+import { PythSubscriber } from './pyth';
+import { _quoteBurnExactInput, _quoteMintExactInput } from './utils';
 
-export class AngleTransmuterEventPool extends StatefulEventSubscriber<PoolState> {
-  handlers: {
-    [event: string]: (
-      event: any,
-      state: PoolState,
-      log: Readonly<Log>,
-    ) => DeepReadonly<PoolState> | null;
-  } = {};
-
-  logDecoder: (log: Log) => any;
-
-  addressesSubscribed: string[];
+export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
+  public transmuter: Contract;
 
   constructor(
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
+    config: PoolConfig,
     protected angleTransmuterIface = new Interface(TransmuterABI),
-    readonly transmuter: Address, // TODO: add any additional params required for event subscriber
   ) {
-    // TODO: Add pool name
-    super(parentName, 'Transmuter', dexHelper, logger);
-
-    // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.angleTransmuterIface.parseLog(log);
-    this.addressesSubscribed = [transmuter];
-
-    // Add handlers
-    this.handlers['FeesSet'] = this.handleFeesSet.bind(this);
-    this.handlers['RedemptionCurveParamsSet'] =
-      this.handleRedemptionCurveSet.bind(this);
-    this.handlers['OracleSet'] = this.handleOracleSet.bind(this);
-    this.handlers['Swap'] = this.handleSwap.bind(this);
-    this.handlers['Redeemed'] = this.handleRedeem.bind(this);
-    // TODO need to add:
-    // - add/remove collaterals
-    // - pause/unpause collaterals
-    // - reserveAdjusted as it can change exposures
-  }
-
-  /**
-   * The function is called every time any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
-  protected processLog(
-    state: PoolState,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    try {
-      const event = this.logDecoder(log);
-      if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
-      }
-    } catch (e) {
-      catchParseLogError(e, this.logger);
-    }
-
-    return null;
-  }
-
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenerate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subscriber at blocknumber
-   */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // TODO: complete me!
-    return {} as PoolState;
-  }
-
-  /**
-   * Update Mint and Burn fees parameters
-   */
-  handleFeesSet(
-    event: any,
-    state: PoolState,
-    log: Readonly<Log>,
-  ): Readonly<PoolState> | null {
-    const isMint: boolean = event.args.mint;
-    const collateral: string = event.args.collateral;
-    const xFee: BigNumber[] = event.args.xFee;
-    const yFee: BigNumber[] = event.args.yFee;
-    if (isMint) {
-      state.collaterals[collateral].fees.xFeeMint = xFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
-      );
-      state.collaterals[collateral].fees.yFeeMint = yFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
-      );
-    } else {
-      state.collaterals[collateral].fees.xFeeBurn = xFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
-      );
-      state.collaterals[collateral].fees.yFeeBurn = yFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
-      );
-    }
-    return state;
-  }
-
-  /**
-   * Update redemption curve parameters
-   */
-  handleRedemptionCurveSet(
-    event: any,
-    state: PoolState,
-    log: Readonly<Log>,
-  ): Readonly<PoolState> | null {
-    const xFee: BigInt[] = event.args.xFee;
-    const yFee: BigInt[] = event.args.yFee;
-    state.xRedemptionCurve = xFee;
-    state.yRedemptionCurve = yFee;
-    return state;
-  }
-
-  /**
-   * Adapt collateral exposure after a swap event
-   */
-  handleSwap(
-    event: any,
-    state: PoolState,
-    log: Readonly<Log>,
-  ): Readonly<PoolState> | null {
-    const tokenIn: string = event.args.tokenIn;
-    const tokenOut: string = event.args.tokenOut;
-    // in case of a burn
-    if (tokenIn == state.stablecoin.address) {
-      const amount: number = parseFloat(formatUnits(event.args.amountIn, 18));
-      state.collaterals[tokenOut].stablecoinsIssued -= amount;
-      state.totalStablecoinIssued -= amount;
-    } else {
-      const amount: number = parseFloat(formatUnits(event.args.amountOut, 18));
-      state.collaterals[tokenIn].stablecoinsIssued += amount;
-      state.totalStablecoinIssued += amount;
-    }
-    return state;
-  }
-
-  /**
-   * Adapt collateral balances after a redeem event
-   */
-  handleRedeem(
-    event: any,
-    state: PoolState,
-    log: Readonly<Log>,
-  ): Readonly<PoolState> | null {
-    const amount: number = parseFloat(formatUnits(event.args.amount, 18));
-    const currentStablecoinEmission = state.totalStablecoinIssued;
-    for (const collat of Object.keys(state.collaterals)) {
-      state.collaterals[collat].stablecoinsIssued -=
-        (amount / currentStablecoinEmission) *
-        state.collaterals[collat].stablecoinsIssued;
-    }
-    state.totalStablecoinIssued -= amount;
-
-    return state;
-  }
-
-  /**
-   * Keep track of used oracles for each collaterals
-   */
-  handleOracleSet(
-    event: any,
-    state: PoolState,
-    log: Readonly<Log>,
-  ): Readonly<PoolState> | null {
-    const collateral: string = event.args.collateral;
-    const oracleConfig: string = event.args.oracleConfig;
-
-    const oracleConfigDecoded: DecodedOracleConfig =
-      ethers.utils.defaultAbiCoder.decode(
-        [
-          `
-        uint8 oracleType,
-        uint8 targetType,
-        bytes memory oracleData,
-        bytes memory targetData
-        `,
-        ],
-        oracleConfig,
-      )[0];
-
-    state.collaterals[collateral].oracles.config.oracleType =
-      oracleConfigDecoded.oracleType;
-    state.collaterals[collateral].oracles.config.targetType =
-      oracleConfigDecoded.targetType;
-    if (oracleConfigDecoded.oracleType == OracleReadType.EXTERNAL) {
-      const externalOracle: Address = ethers.utils.defaultAbiCoder.decode(
-        [
-          `
-          address externalOracle
-          `,
-        ],
-        oracleConfigDecoded.oracleData,
-      )[0];
-      state.collaterals[collateral].oracles.config.externalOracle =
-        externalOracle;
-      this.addressesSubscribed.push(externalOracle);
-    } else {
-      state.collaterals[collateral].oracles.config.oracleFeed =
-        this._decodeOracleFeed(
-          oracleConfigDecoded.oracleType,
-          oracleConfigDecoded.oracleData,
+    const chainlinkMap = Object.entries(config.oracles.chainlink).reduce(
+      (
+        acc: { [address: string]: ChainLinkSubscriber<PoolState> },
+        [key, value],
+      ) => {
+        acc[key] = new ChainLinkSubscriber<PoolState>(
+          value.proxy,
+          value.aggregator,
+          lens<DeepReadonly<PoolState>>().oracles.chainlink[key],
+          dexHelper.getLogger(`${key} ChainLink for ${parentName}-${network}`),
         );
-      state.collaterals[collateral].oracles.config.targetFeed =
-        this._decodeOracleFeed(
-          oracleConfigDecoded.targetType,
-          oracleConfigDecoded.targetData,
+        return acc;
+      },
+      {},
+    );
+
+    const pythListener = new PythSubscriber<PoolState>(
+      config.oracles.pyth.proxy,
+      config.oracles.pyth.ids,
+      lens<DeepReadonly<PoolState>>().oracles.pyth,
+      dexHelper.getLogger(`Pyth for ${parentName}-${network}`),
+    );
+
+    const transmuterListener = new TransmuterSubscriber(
+      config.agEUR.address,
+      config.transmuter,
+      config.collaterals,
+      lens<DeepReadonly<PoolState>>().transmuter,
+      dexHelper.getLogger(`${parentName}-${network} Transmuter`),
+    );
+
+    super(
+      parentName,
+      'Transmuter',
+      dexHelper.getLogger(`${parentName}-${network}`),
+      dexHelper,
+      [...Object.values(chainlinkMap), transmuterListener, pythListener],
+      {
+        // TODO: poolState is the state of event
+        // subscriber. This should be the minimum
+        // set of parameters required to compute
+        // pool prices. Complete me!
+        stablecoin: config.agEUR,
+        transmuter: {} as TransmuterState,
+        oracles: { chainlink: {}, pyth: {} },
+      },
+    );
+
+    this.transmuter = new this.dexHelper.web3Provider.eth.Contract(
+      TransmuterABI as any,
+      config.transmuter,
+    );
+  }
+
+  async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {
+    const evenState = this.getState(blockNumber);
+    if (evenState) return evenState as PoolState;
+    const onChainState = await this.generateState(blockNumber);
+    this.setState(onChainState, blockNumber);
+    return onChainState as PoolState;
+  }
+
+  // Reference to the original implementation
+  // https://github.com/AngleProtocol/angle-transmuter/blob/6e1f2eb1f961d6c3b1cdaefe068d967c33c41936/contracts/transmuter/facets/Swapper.sol#L177
+  async getAmountOut(
+    _tokenIn: Address,
+    _tokenOut: Address,
+    _amountsIn: number[],
+    blockNumber: number,
+  ): Promise<number[] | null> {
+    // TODO
+    const state = await this.getStateOrGenerate(blockNumber);
+
+    const isMint = _tokenOut == state.stablecoin.address;
+    let oracleValue: number;
+    let ratio: number;
+
+    if (isMint)
+      oracleValue = await this.getMintOraclePrice(_tokenIn, _tokenOut);
+    else
+      ({ oracleValue, ratio } = await this.getBurnOraclePrice(
+        _tokenIn,
+        _tokenOut,
+      ));
+
+    const collatStablecoinIssued =
+      state.transmuter.collaterals[_tokenIn].stablecoinsIssued;
+    const otherStablecoinIssued =
+      state.transmuter.totalStablecoinIssued - collatStablecoinIssued;
+    const fees = state.transmuter.collaterals[_tokenIn].fees;
+    return _amountsIn.map(_amountIn => {
+      if (isMint)
+        return _quoteMintExactInput(
+          oracleValue,
+          _amountIn,
+          fees,
+          collatStablecoinIssued,
+          otherStablecoinIssued,
         );
-      // subscribe
-    }
-
-    return state;
+      else
+        return _quoteBurnExactInput(
+          oracleValue,
+          ratio,
+          _amountIn,
+          fees,
+          collatStablecoinIssued,
+          otherStablecoinIssued,
+        );
+    });
   }
 
-  _decodeOracleFeed(readType: OracleReadType, oracleData: string): OracleFeed {
-    if (readType == OracleReadType.CHAINLINK_FEEDS)
+  // TODO
+  async getMintOraclePrice(
+    _tokenIn: Address,
+    _tokenOut: Address,
+  ): Promise<number> {
+    return 0;
+  }
+
+  async getBurnOraclePrice(
+    _tokenIn: Address,
+    _tokenOut: Address,
+  ): Promise<{ oracleValue: number; ratio: number }> {
+    return { oracleValue: 0, ratio: 0 };
+  }
+
+  static async getCollateralsList(
+    transmuterAddress: Address,
+    blockNumber: number | 'latest',
+    multiContract: Contract,
+  ) {
+    const tokensResult = (
+      await multiContract.methods
+        .aggregate([
+          {
+            target: transmuterAddress,
+            callData:
+              TransmuterSubscriber.interface.encodeFunctionData(
+                'getCollateralList',
+              ),
+          },
+        ])
+        .call({}, blockNumber)
+    ).returnData;
+    const tokens: Address[] = tokensResult.map((t: any) =>
+      TransmuterSubscriber.interface
+        .decodeFunctionResult('getCollateralList', tokensResult)[0]
+        .toLowerCase(),
+    );
+    return tokens;
+  }
+
+  static async getOraclesConfig(
+    transmuterAddress: Address,
+    pythAddress: Address,
+    collaterals: Address[],
+    blockNumber: number | 'latest',
+    multiContract: Contract,
+  ) {
+    const getOracleConfigData = collaterals.map(collat => {
       return {
-        isChainlink: true,
-        isPyth: false,
-        chainlink: this._decodeChainlinkOracle(oracleData),
+        callData: TransmuterSubscriber.interface.encodeFunctionData(
+          'getOracle',
+          [collat],
+        ),
+        target: transmuterAddress,
       };
-    else if (readType == OracleReadType.PYTH)
-      return {
-        isChainlink: false,
-        isPyth: true,
-        pyth: this._decodePythOracle(oracleData),
-      };
-    else if (readType == OracleReadType.WSTETH)
-      return { isChainlink: false, isPyth: false, otherContract: STETH };
-    else if (readType == OracleReadType.CBETH)
-      return { isChainlink: false, isPyth: false, otherContract: CBETH };
-    else if (readType == OracleReadType.RETH)
-      return { isChainlink: false, isPyth: false, otherContract: RETH };
-    else if (readType == OracleReadType.SFRXETH)
-      return { isChainlink: false, isPyth: false, otherContract: SFRXETH };
-    else return { isChainlink: false, isPyth: false };
+    });
+    const oracleConfigResult = (
+      await multiContract.methods
+        .aggregate(getOracleConfigData)
+        .call({}, blockNumber)
+    ).returnData;
+    const oracleConfigs: string[] = oracleConfigResult.map(
+      (p: any) =>
+        TransmuterSubscriber.interface.decodeFunctionResult('priceFeeds', p)[0],
+    );
+
+    const chainlinkMap: ChainlinkConfig = {} as ChainlinkConfig;
+    const pythIds: PythConfig = { proxy: pythAddress, ids: [] } as PythConfig;
+
+    await Promise.all(
+      oracleConfigs.map(async oracle => {
+        const oracleConfigDecoded =
+          TransmuterSubscriber._decodeOracleConfig(oracle);
+        if (oracleConfigDecoded.oracleType !== OracleReadType.EXTERNAL) {
+          // add all the feed oracles used to their respective channels
+          const oracleFeed = TransmuterSubscriber._decodeOracleFeed(
+            oracleConfigDecoded.oracleType,
+            oracleConfigDecoded.oracleData,
+          );
+          if (oracleFeed.isChainlink) {
+            await Promise.all(
+              oracleFeed.chainlink!.circuitChainlink.map(async feed => {
+                const proxyResult = (
+                  await multiContract.methods
+                    .aggregate([
+                      ChainLinkSubscriber.getReadAggregatorMultiCallInput(feed),
+                    ])
+                    .call({}, blockNumber)
+                ).returnData;
+                const aggreagator: Address = ChainLinkSubscriber.readAggregator(
+                  proxyResult[0],
+                );
+                chainlinkMap[feed] = {
+                  proxy: feed,
+                  aggregator: aggreagator,
+                };
+              }),
+            );
+          } else if (oracleFeed.isPyth) {
+            pythIds.ids = pythIds.ids.concat(oracleFeed.pyth!.feedIds);
+          } else {
+            // TODO fill the staked ETH feed
+            throw new Error('Unknown oracle feed');
+          }
+        }
+      }),
+    );
+
+    return { chainlink: chainlinkMap, pyth: pythIds };
   }
 
-  _decodeChainlinkOracle(oracleData: string): Chainlink {
-    const chainlinkOracleDecoded: Chainlink =
-      ethers.utils.defaultAbiCoder.decode(
-        [
-          `
-        address[] memory circuitChainlink,
-        uint32[] memory stalePeriods,
-        uint8[] memory circuitChainIsMultiplied,
-        uint8[] memory chainlinkDecimals,
-        uint8 quoteType
-        `,
-        ],
-        oracleData,
-      )[0];
+  static async getConfig(
+    dexParams: DexParams,
+    blockNumber: number | 'latest',
+    multiContract: Contract,
+  ): Promise<PoolConfig> {
+    const collaterals = await this.getCollateralsList(
+      dexParams.transmuter,
+      blockNumber,
+      multiContract,
+    );
 
-    return chainlinkOracleDecoded;
-  }
+    // get all oracles feed
+    const oracles = await this.getOraclesConfig(
+      dexParams.transmuter,
+      dexParams.pyth,
+      collaterals,
+      blockNumber,
+      multiContract,
+    );
 
-  _decodePythOracle(oracleData: string): Pyth {
-    const pythOracleDecoded: Pyth = ethers.utils.defaultAbiCoder.decode(
-      [
-        `
-        address pyth,
-        bytes32[] memory feedIds,
-        uint32[] memory stalePeriods,
-        uint8[] memory isMultiplied,
-        uint8 quoteType
-        `,
-      ],
-      oracleData,
-    )[0];
-
-    return pythOracleDecoded;
+    return {
+      agEUR: dexParams.agEUR,
+      transmuter: dexParams.transmuter,
+      collaterals: collaterals,
+      oracles: oracles,
+    };
   }
 }

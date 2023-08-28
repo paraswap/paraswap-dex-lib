@@ -1,5 +1,6 @@
 import { BigNumber } from 'ethers';
 import { Address, Token } from '../../types';
+import { ChainLinkState } from '../../lib/chainlink';
 
 export type PoolState = {
   // TODO: poolState is the state of event
@@ -7,20 +8,43 @@ export type PoolState = {
   // set of parameters required to compute
   // pool prices. Complete me!
   stablecoin: Token;
+  transmuter: TransmuterState;
+  oracles: {
+    chainlink: { [address: string]: ChainLinkState };
+    pyth: PythState;
+  };
+};
+
+export type TransmuterState = {
   collaterals: {
     [token: string]: {
       fees: Fees;
       stablecoinsIssued: number;
       oracles: {
-        collateralMintPrice: Number; // Mint oracle collat --> EUR
-        collateralBurnPrice: Number; // Burn oracle EUR --> collat
+        collateralMintPrice: number; // Mint oracle collat --> EUR
+        collateralBurnPrice: number; // Burn oracle EUR --> collat
         config: Oracle;
       };
     };
   };
-  xRedemptionCurve: BigInt[];
-  yRedemptionCurve: BigInt[];
+  xRedemptionCurve: number[];
+  yRedemptionCurve: number[];
   totalStablecoinIssued: number;
+};
+
+export type ChainlinkConfig = {
+  [address: string]: { proxy: Address; aggregator: Address };
+};
+export type PythConfig = { proxy: Address; ids: string[] };
+
+export type PoolConfig = {
+  agEUR: Token;
+  transmuter: Address;
+  collaterals: Address[];
+  oracles: {
+    chainlink: ChainlinkConfig;
+    pyth: PythConfig;
+  };
 };
 
 export type ChainlinkState = {
@@ -28,17 +52,16 @@ export type ChainlinkState = {
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // oracle prices. Complete me!
-  oracle: Address;
-  aggregator: Address;
-  value: number;
+  answer: number;
+  timestamp: number;
 };
 
 export type PythState = {
-  // TODO: PythState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // oracle prices. Complete me!
-  value: number;
+  [address: string]: {
+    answer: number;
+    expo: number;
+    timestamp: number;
+  };
 };
 
 export type AngleTransmuterData = {
@@ -55,6 +78,7 @@ export type DexParams = {
   // Complete me!
   agEUR: Token;
   transmuter: Address;
+  pyth: Address;
 };
 
 export enum QuoteType {
