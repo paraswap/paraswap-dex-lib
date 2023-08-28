@@ -70,6 +70,7 @@ import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
+import { SushiSwapV3 } from './sushiswap-v3/sushiswap-v3';
 import { Algebra } from './algebra/algebra';
 
 const LegacyDexes = [
@@ -106,6 +107,7 @@ const Dexes = [
   UniswapV3,
   Algebra,
   PancakeswapV3,
+  SushiSwapV3,
   BiSwap,
   MDEX,
   Dfyn,

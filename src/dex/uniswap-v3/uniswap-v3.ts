@@ -91,15 +91,15 @@ export class UniswapV3
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1', 'RamsesV2', 'ChronosV3', 'SushiSwapV3']),
+      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1', 'RamsesV2', 'ChronosV3']),
     );
 
   logger: Logger;
 
-  private uniswapMulti: Contract;
-  private stateMultiContract: Contract;
+  protected uniswapMulti: Contract;
+  protected stateMultiContract: Contract;
 
-  private notExistingPoolSetKey: string;
+  protected notExistingPoolSetKey: string;
 
   constructor(
     protected network: Network,
