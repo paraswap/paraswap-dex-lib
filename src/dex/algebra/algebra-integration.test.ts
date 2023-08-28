@@ -497,10 +497,22 @@ describe('Algebra', function () {
       }
     });
 
-    it('generate state is working for problematic pool', async function () {
+    it('WETH/DAI generate state is working for problematic pool', async function () {
       const pool = (await algebra.getPool(
         '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
         '0xc5015b9d9161dca7e18e32f6f25c4ad850731fd4',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
+    it('WETH/MATIC generate state is working for problematic pool', async function () {
+      const pool = (await algebra.getPool(
+        '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9',
+        '0xa2036f0538221a77a3937f1379699f44945018d0',
         blockNumber,
       )) as AlgebraEventPoolV1_1;
 

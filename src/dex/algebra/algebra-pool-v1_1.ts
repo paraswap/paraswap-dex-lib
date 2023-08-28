@@ -48,6 +48,7 @@ import { TickTable } from './lib/TickTable';
 
 const BN_ZERO = BigNumber.from(0);
 const MAX_BATCH_SIZE = 100;
+const MAX_NUMBER_OF_BATCH_REQUEST_HALVING = 3;
 
 export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1> {
   handlers: {
@@ -73,6 +74,8 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
   private readonly cachedStateMultiCalls: MultiCallParams<
     string | bigint | BigNumber | number | DecodedGlobalStateV1_1
   >[];
+
+  private optimalTickRequestBatchSize?: number;
 
   public initFailed = false;
   public initRetryAttemptCount = 0;
@@ -522,11 +525,38 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
       })
       .flat();
 
-    const ticksValues = await this.dexHelper.multiWrapper.aggregate(
-      tickRequests,
-      blockNumber,
-      MAX_BATCH_SIZE,
-    );
+    let ticksValues: TickInfoWithBigNumber[] = [];
+    if (this.optimalTickRequestBatchSize) {
+      ticksValues = await this.dexHelper.multiWrapper.aggregate(
+        tickRequests,
+        blockNumber,
+        this.optimalTickRequestBatchSize,
+      );
+      // If we don't know what is optimal number of requests for this pool, we want to try it experimentally and save it
+      // Maybe later to consider distant caching
+    } else {
+      for (const i of _.range(0, MAX_NUMBER_OF_BATCH_REQUEST_HALVING)) {
+        const currentBatchSize = MAX_BATCH_SIZE / (+i + 1);
+        try {
+          // Some of the pools fails with 100 batch size, for them we want to try additionally with reduced batch size
+          ticksValues = await this.dexHelper.multiWrapper.aggregate(
+            tickRequests,
+            blockNumber,
+            currentBatchSize,
+          );
+          this.optimalTickRequestBatchSize = currentBatchSize;
+          break;
+        } catch (e) {
+          if (+i + 1 === MAX_NUMBER_OF_BATCH_REQUEST_HALVING) {
+            this.logger.warn(
+              `Failed to fetch ticks for pool ${poolAddress} (${this.token0}_${this.token1}) with batch size ${currentBatchSize}`,
+              e,
+            );
+            throw e;
+          }
+        }
+      }
+    }
 
     assert(
       tickIndexes.length === ticksValues.length,
