@@ -61,7 +61,7 @@ export type UniswapV3Data = {
     fee: NumberAsString;
   }[];
   isApproved?: boolean;
-  rpParams?: RPParams;
+  routerParams?: RPParams;
 };
 
 export type DecodeStateMultiCallFunc = (

@@ -34,17 +34,15 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.directUniV3Swap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
     [
       SwapSide.BUY,
       [
         ContractMethod.simpleBuy,
-        // ContractMethod.buy,
-        // ContractMethod.directUniV3Buy,
+        ContractMethod.buy,
       ],
     ],
   ]);
@@ -133,18 +131,17 @@ describe('SushiSwapV3 E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      500, // 5%
     );
   });
 
   describe('ARBITRUM', () => {
     const network = Network.ARBITRUM;
 
-    const tokenASymbol: string = 'USDCe';
-    const tokenBSymbol: string = 'USDT';
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDCe';
 
-    const tokenAAmount: string = '11111000';
-    const tokenBAmount: string = '10000000';
+    const tokenAAmount: string = '11111000000';
+    const tokenBAmount: string = '10000000000';
     const nativeTokenAmount = '11000000000000000';
 
     testForNetwork(
@@ -155,7 +152,6 @@ describe('SushiSwapV3 E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      500, // 5%
     );
   });
 
@@ -177,7 +173,6 @@ describe('SushiSwapV3 E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      500, // 5%
     );
   });
 
@@ -297,7 +292,6 @@ describe('SushiSwapV3 E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      500, // 5%
     );
   });
 
@@ -413,7 +407,6 @@ describe('SushiSwapV3 E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      500, // 5%
     );
   });
 });

@@ -1,12 +1,12 @@
 import _ from 'lodash';
 import { createPublicClient, http } from 'viem';
-import { DataFetcher, LiquidityProviders, Router, RPParams } from '@sushiswap/router';
+import { DataFetcher, LiquidityProviders, Router, RPParams,  } from '@sushiswap/router';
 import { Token as SushiToken } from '@sushiswap/currency';
 import { SushiSwapV3Config, Adapters } from './config';
 import { UniswapV3 } from '../uniswap-v3/uniswap-v3';
 import { getViemChain } from './constants';
 import { Network, SwapSide } from '../../constants';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, Utils } from '../../utils';
 import SushiswapV3RouterABI from '../../abi/sushiswap-v3/RouterProcessor3.json';
 import SushiswapV3QuoterV2ABI from '../../abi/sushiswap-v3/QuoterV2.json';
 import { IDexHelper } from '../../dex-helper';
@@ -20,10 +20,9 @@ import {
 } from '../../types';
 import { generateConfig } from '../../config';
 import { BigNumber } from 'ethers';
-import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange } from '../simple-exchange';
+import { getLocalDeadlineAsFriendlyPlaceholder } from '../simple-exchange';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { assert } from 'ts-essentials';
-import { SushiSwapV3Data } from './types';
 import { UniswapV3Data} from '../uniswap-v3/types';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { uint256DecodeToNumber } from '../../lib/decoders';
@@ -62,65 +61,53 @@ export class SushiSwapV3 extends UniswapV3 {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<UniswapV3Data>, ExchangeTxInfo]> {
-    if (!options.isDirectMethod) {
-      return [
-        optimalSwapExchange,
-        {
-          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
-        },
-      ];
-    }
 
     assert(
       optimalSwapExchange.data !== undefined,
       `preProcessTransaction: data field is missing`,
     );
 
-    let isApproved: boolean | undefined;
+    if(options.isDirectMethod) {
+      let isApproved: boolean | undefined;
 
-    try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, this.config.router)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
-    } catch (e) {
-      this.logger.error(
-        `preProcessTransaction failed to retrieve allowance info: `,
-        e,
-      );
+      try {
+        this.erc20Contract.options.address =
+          this.dexHelper.config.wrapETH(srcToken).address;
+        const allowance = await this.erc20Contract.methods
+          .allowance(this.augustusAddress, this.config.router)
+          .call(undefined, 'latest');
+        isApproved =
+          BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      } catch (e) {
+        this.logger.error(
+          `preProcessTransaction failed to retrieve allowance info: `,
+          e,
+        );
+      }
+
+      return [
+        {
+          ...optimalSwapExchange,
+          data: {
+            ...optimalSwapExchange.data,
+            isApproved,
+          },
+        },
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
     }
 
-    const rpParams = await this.getSushiV3Params(
-      srcToken.address,
-      destToken.address,
-      optimalSwapExchange.srcAmount,
-    );
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
 
-    console.log('preprocess tx: ', rpParams);
+    console.log('DATA: ', options);
 
-    return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          ...optimalSwapExchange.data,
-          isApproved,
-          rpParams,
-        },
-      },
-      {
-        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
-      },
-    ];
-  }
+    console.log('_src token: ', _srcToken);
+    console.log('_dest token: ', _destToken);
+    console.log('side: ', side);
 
-  async getSushiV3Params(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-  ): Promise<RPParams> {
     const web3Client = createPublicClient({
       transport: http(generateConfig(this.network).privateHttpProvider),
       chain: getViemChain(this.network),
@@ -130,6 +117,139 @@ export class SushiSwapV3 extends UniswapV3 {
       this.network,
       web3Client,
     );
+
+    dataFetcher.startDataFetching([LiquidityProviders.SushiSwapV3]);
+
+    const callData: MultiCallParams<number>[] = [
+      {
+        target: _srcToken.address,
+        callData: this.erc20Interface.encodeFunctionData('decimals'),
+        decodeFunction: uint256DecodeToNumber,
+      },
+      {
+        target: _destToken.address,
+        callData: this.erc20Interface.encodeFunctionData('decimals'),
+        decodeFunction: uint256DecodeToNumber,
+      }
+    ];
+
+    const [decimals0, decimals1] =
+      await this.dexHelper.multiWrapper.tryAggregate<number>(
+        false,
+        callData,
+        undefined,
+        this.dexHelper.multiWrapper.defaultBatchSize,
+        false,
+      );
+
+    const fromToken = new SushiToken({
+      address: _srcToken.address,
+      decimals: decimals0.returnData,
+      chainId: this.network,
+    });
+
+    const toToken = new SushiToken({
+      address: _destToken.address,
+      decimals: decimals1.returnData,
+      chainId: this.network,
+    });
+
+    await dataFetcher.fetchPoolsForToken(fromToken, toToken);
+
+    const pcMap = dataFetcher.getCurrentPoolCodeMap(fromToken, toToken);
+
+    const route = Router.findBestRoute(
+      pcMap,
+      this.network,
+      fromToken,
+      BigNumber.from(optimalSwapExchange.srcAmount),
+      toToken,
+      50e9,
+      [LiquidityProviders.SushiSwapV3],
+    );
+
+    console.log('ROUTE: ', route);
+
+    const routerParams = Router.routeProcessor2Params(
+      pcMap,
+      route,
+      fromToken,
+      toToken,
+      this.augustusAddress,
+      this.config.router,
+    );
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          routerParams,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: UniswapV3Data,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+
+    console.log('DATA ROUTE PARAMS: ', data.routerParams);
+
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          tokenIn: 'address',
+          amountIn: 'uint256',
+          tokenOut: 'address',
+          amountOutMin: 'uint256',
+          to: 'address',
+          route: 'bytes',
+        },
+      },
+      {
+        tokenIn: data.routerParams!.tokenIn,
+        amountIn: data.routerParams!.amountIn,
+        tokenOut: data.routerParams!.tokenOut,
+        amountOutMin: data.routerParams!.amountOutMin,
+        to: data.routerParams!.to,
+        route: data.routerParams!.routeCode,
+      },
+    );
+
+    return {
+      targetExchange: this.config.router,
+      payload,
+      networkFee: '0',
+    };
+  }
+
+  async getSimpleParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: UniswapV3Data,
+  ): Promise<SimpleExchangeParam> {
+    const web3Client = createPublicClient({
+      transport: http(generateConfig(this.network).privateHttpProvider),
+      chain: getViemChain(this.network),
+    });
+
+    const dataFetcher = new DataFetcher(
+      this.network,
+      web3Client,
+    );
+
+    dataFetcher.startDataFetching([LiquidityProviders.SushiSwapV3]);
 
     const callData: MultiCallParams<number>[] = [
       {
@@ -152,8 +272,6 @@ export class SushiSwapV3 extends UniswapV3 {
         this.dexHelper.multiWrapper.defaultBatchSize,
         false,
       );
-
-    dataFetcher.startDataFetching([LiquidityProviders.SushiSwapV3]);
 
     const fromToken = new SushiToken({
       address: srcToken,
@@ -181,9 +299,7 @@ export class SushiSwapV3 extends UniswapV3 {
       [LiquidityProviders.SushiSwapV3],
     );
 
-    console.log('ROUTE: ', route);
-
-    const rpParams = Router.routeProcessor2Params(
+    const routerParams = Router.routeProcessor2Params(
       pcMap,
       route,
       fromToken,
@@ -191,61 +307,6 @@ export class SushiSwapV3 extends UniswapV3 {
       this.augustusAddress,
       this.config.router,
     );
-
-    dataFetcher.stopDataFetching();
-
-    return rpParams;
-  }
-
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: SushiSwapV3Data,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    console.log('getAdapterParam: ', data.rpParams);
-
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          tokenIn: 'address',
-          amountIn: 'uint256',
-          tokenOut: 'address',
-          amountOutMin: 'uint256',
-          to: 'address',
-          route: 'bytes',
-        },
-      },
-      {
-        tokenIn: data.rpParams!.tokenIn,
-        amountIn: data.rpParams!.amountIn,
-        tokenOut: data.rpParams!.tokenOut,
-        amountOutMin: data.rpParams!.amountOutMin,
-        to: data.rpParams!.to,
-        route: data.rpParams!.routeCode,
-      },
-    );
-
-    return {
-      targetExchange: this.config.router,
-      payload,
-      networkFee: '0',
-    };
-  }
-
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: SushiSwapV3Data,
-  ): Promise<SimpleExchangeParam> {
-
-    const routerParams = await this.getSushiV3Params(srcToken, destToken, destAmount);
-
-    console.log('getSimpleParam: ', routerParams);
 
     const swapData = this.routerIface.encodeFunctionData('processRoute', [
       routerParams.tokenIn,
@@ -255,6 +316,8 @@ export class SushiSwapV3 extends UniswapV3 {
       routerParams.to,
       routerParams.routeCode,
     ]);
+
+    dataFetcher.stopDataFetching();
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,

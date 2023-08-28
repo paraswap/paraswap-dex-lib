@@ -1,14 +1,17 @@
-import { UniswapV3 } from '../uniswap-v3/uniswap-v3';
+/* eslint-disable no-console */
+import dotenv from 'dotenv';
+dotenv.config();
+import { SushiSwapV3 } from '../sushiswap-v3/sushiswap-v3';
 import { Network, SwapSide } from '../../constants';
 import { DummyDexHelper, IDexHelper } from '../../dex-helper';
 import { Tokens } from '../../../tests/constants-e2e';
 import { BI_POWS } from '../../bigint-constants';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Interface, Result } from '@ethersproject/abi';
-import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
+import SushiswapV3QuoterV2ABI from '../../abi/sushiswap-v3/QuoterV2.json';
 import { Address } from '@paraswap/core';
 
-const quoterIface = new Interface(UniswapV3QuoterV2ABI);
+const quoterIface = new Interface(SushiswapV3QuoterV2ABI);
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -40,7 +43,7 @@ function decodeReaderResult(
 
 async function checkOnChainPricing(
   dexHelper: IDexHelper,
-  uniswapV3: UniswapV3,
+  sushiSwapV3: SushiSwapV3,
   funcName: string,
   blockNumber: number,
   exchangeAddress: string,
@@ -111,8 +114,8 @@ describe('SushiSwapV3', () => {
 
   describe('Mainnet', () => {
     let blockNumber: number;
-    let uniswapV3: UniswapV3;
-    let uniswapV3Mainnet: UniswapV3;
+    let sushiSwapV3: SushiSwapV3;
+    let sushiSwapV3Mainnet: SushiSwapV3;
 
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
@@ -124,14 +127,14 @@ describe('SushiSwapV3', () => {
 
     beforeEach(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
-      uniswapV3Mainnet = new UniswapV3(Network.MAINNET, dexKey, dexHelper);
+      sushiSwapV3 = new SushiSwapV3(network, dexKey, dexHelper);
+      sushiSwapV3Mainnet = new SushiSwapV3(Network.MAINNET, dexKey, dexHelper);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       const amounts = [0n, BI_POWS[6], 2000000n];
 
-      const pools = await uniswapV3.getPoolIdentifiers(
+      const pools = await sushiSwapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
         SwapSide.SELL,
@@ -144,7 +147,7 @@ describe('SushiSwapV3', () => {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await uniswapV3.getPricesVolume(
+      const poolPrices = await sushiSwapV3.getPricesVolume(
         TokenA,
         TokenB,
         amounts,
@@ -163,10 +166,10 @@ describe('SushiSwapV3', () => {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
           const res = await checkOnChainPricing(
             dexHelper,
-            uniswapV3,
+            sushiSwapV3,
             'quoteExactInputSingle',
             blockNumber,
             '0x64e8802FE490fa7cc61d3463958199161Bb608A7',
@@ -186,7 +189,7 @@ describe('SushiSwapV3', () => {
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       const amounts = [0n, BI_POWS[6], 2000000n];
 
-      const pools = await uniswapV3.getPoolIdentifiers(
+      const pools = await sushiSwapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
         SwapSide.BUY,
@@ -199,7 +202,7 @@ describe('SushiSwapV3', () => {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await uniswapV3.getPricesVolume(
+      const poolPrices = await sushiSwapV3.getPricesVolume(
         TokenA,
         TokenB,
         amounts,
@@ -218,10 +221,10 @@ describe('SushiSwapV3', () => {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
           const res = await checkOnChainPricing(
             dexHelper,
-            uniswapV3,
+            sushiSwapV3,
             'quoteExactOutputSingle',
             blockNumber,
             '0x64e8802FE490fa7cc61d3463958199161Bb608A7',
@@ -239,7 +242,7 @@ describe('SushiSwapV3', () => {
     });
 
     it('getTopPoolsForToken', async function () {
-      const poolLiquidity = await uniswapV3.getTopPoolsForToken(
+      const poolLiquidity = await sushiSwapV3.getTopPoolsForToken(
         TokenB.address,
         10,
       );
@@ -247,5 +250,82 @@ describe('SushiSwapV3', () => {
 
       checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
     });
+  });
+
+  describe('Arbitrum', () => {
+    let blockNumber: number;
+    let sushiSwapV3: SushiSwapV3;
+    let sushiSwapV3Mainnet: SushiSwapV3;
+
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+    const TokenASymbol = 'USDCe';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDT';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    beforeEach(async () => {
+      // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      blockNumber = 125789437;
+      sushiSwapV3 = new SushiSwapV3(network, dexKey, dexHelper);
+      sushiSwapV3Mainnet = new SushiSwapV3(Network.ARBITRUM, dexKey, dexHelper);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amounts = [0n, 100000000n, 200000000n];
+
+      const pools = await sushiSwapV3.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await sushiSwapV3.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            sushiSwapV3,
+            'quoteExactOutputSingle',
+            blockNumber,
+            '0x0524E833cCD057e4d7A296e3aaAb9f7675964Ce1',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
   });
 });
