@@ -497,7 +497,7 @@ describe('Algebra', function () {
       }
     });
 
-    it('both generate state result match', async function () {
+    it('generate state is working for problematic pool', async function () {
       const pool = (await algebra.getPool(
         '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
         '0xc5015b9d9161dca7e18e32f6f25c4ad850731fd4',
@@ -505,6 +505,18 @@ describe('Algebra', function () {
       )) as AlgebraEventPoolV1_1;
 
       const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
+    it('recognize pool does not exist error', async function () {
+      const pool = (await algebra.getPool(
+        '0x8aaebb46e1742f4623e6e1621f909f01846ca5e2',
+        '0xf9ed88937b2d82707d0eabd8c3d9aa4870b714d3',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      expect(pool).toBeNull();
     });
   });
 });
