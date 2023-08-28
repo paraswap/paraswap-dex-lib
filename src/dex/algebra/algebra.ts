@@ -257,7 +257,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           e,
         );
       } else {
-        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
           `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,

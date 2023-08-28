@@ -521,6 +521,30 @@ describe('Algebra', function () {
       expect(Array.isArray(stateManually)).toBeTruthy();
     });
 
+    it('stMATIC/WETH generate state is working for problematic pool', async function () {
+      const pool = (await algebra.getPool(
+        '0x83b874c1e09d316059d929da402dcb1a98e92082',
+        '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
+    it('WETH/USDC generate state is working for problematic pool', async function () {
+      const pool = (await algebra.getPool(
+        '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9',
+        '0xa8ce8aee21bc2a48a5ef670afcc9274c7bbbc035',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
     it('recognize pool does not exist error', async function () {
       const pool = (await algebra.getPool(
         '0x8aaebb46e1742f4623e6e1621f909f01846ca5e2',
