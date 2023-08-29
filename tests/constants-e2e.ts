@@ -299,6 +299,18 @@ export const Tokens: {
       address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
       decimals: 6,
     },
+    GHO: {
+      address: '0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f',
+      decimals: 18,
+    },
+    crvUSD: {
+      address: '0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E',
+      decimals: 18,
+    },
+    wibBTC: {
+      address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -698,6 +710,14 @@ export const Tokens: {
       address: '0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46',
       decimals: 18,
     },
+    BETS: {
+      address: '0x94025780a1ab58868d9b2dbbb775f44b32e8e6e5',
+      decimals: 18,
+    },
+    HATCHY: {
+      address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
+      decimals: 18,
+    },
   },
   [Network.ARBITRUM]: {
     DAI: {
@@ -715,8 +735,12 @@ export const Tokens: {
       addAllowance: _allowancesFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
-    USDC: {
+    USDCe: {
       address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+      decimals: 6,
+    },
+    USDC: {
+      address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
       decimals: 6,
     },
     OHM: {
@@ -772,6 +796,14 @@ export const Tokens: {
     WBTC: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
+    },
+    LEX: {
+      address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
+      decimals: 18,
+    },
+    GRAIL: {
+      address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
+      decimals: 18,
     },
   },
   [Network.OPTIMISM]: {
@@ -888,6 +920,9 @@ export const Holders: {
     aEthWETH: '0x645C4c0c95C1Aa6EF25d12f4a25038cA9b0C6Cc7',
     dUSDC: '0x2FC2F705110A7F46Ce85F701d7217EF1018f01A3',
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
+    crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
+    GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
+    wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -965,6 +1000,8 @@ export const Holders: {
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WAVAX: '0xbbff2a8ec8d702e61faaccf7cf705968bb6a5bab',
     sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
+    BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
+    HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
     USDC: '0xbf14db80d9275fb721383a77c00ae180fc40ae98',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
@@ -995,9 +1032,10 @@ export const Holders: {
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
-    USDC: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDC: '0xa843392198862f98d17e3aa1421b08f2c2020cff',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
-    USDT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDT: '0x5ff47d4ab75bcaff6807c81f1367abb53439883c',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     FRAX: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',

@@ -42,6 +42,7 @@ import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { Ramses } from './solidly/forks-override/ramses';
 import { Thena } from './solidly/forks-override/thena';
 import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
@@ -65,13 +66,12 @@ import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
-import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
-import { CamelotV3 } from './quickswap/camelot-v3';
 import { TraderJoeV2 } from './trader-joe-v2';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
+import { Algebra } from './algebra/algebra';
 
 const LegacyDexes = [
   CurveV2,
@@ -89,8 +89,6 @@ const LegacyDexes = [
   DodoV2,
   QuickSwapV3,
   ThenaFusion,
-  ZyberSwapV3,
-  CamelotV3,
   SpiritSwapV3,
   TraderJoeV2,
   TraderJoeV21,
@@ -107,6 +105,7 @@ const Dexes = [
   BalancerV2,
   UniswapV2,
   UniswapV3,
+  Algebra,
   PancakeswapV3,
   BiSwap,
   MDEX,
@@ -127,6 +126,7 @@ const Dexes = [
   Solidly,
   SolidlyEthereum,
   SpiritSwapV2,
+  Ramses,
   Thena,
   Chronos,
   Velodrome,

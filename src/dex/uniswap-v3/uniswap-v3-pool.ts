@@ -12,17 +12,13 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
   DecodedStateMultiCallResultWithRelativeBitmaps,
-  TickInfo,
-  TickBitMapMappingsWithBigNumber,
-  TickInfoMappingsWithBigNumber,
+  DecodeStateMultiCallFunc,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { MultiCallParams } from '../../lib/multi-wrapper';
-import { NumberAsString } from '@paraswap/core';
 import {
-  DEFAULT_POOL_INIT_CODE_HASH,
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
@@ -30,6 +26,7 @@ import {
 import { TickBitMap } from './contract-math/TickBitMap';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
+import { _reduceTickBitmap, _reduceTicks } from './contract-math/utils';
 
 export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -55,12 +52,18 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   public readonly poolIface = new Interface(UniswapV3PoolABI);
 
+  public initFailed = false;
+  public initRetryAttemptCount = 0;
+
   public readonly feeCodeAsString;
 
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
     readonly stateMultiContract: Contract,
+    readonly decodeStateMultiCallResultWithRelativeBitmaps:
+      | DecodeStateMultiCallFunc
+      | undefined,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
     public readonly feeCode: bigint,
@@ -227,9 +230,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
               this.getBitmapRangeToRequest(),
             )
             .encodeABI(),
-          decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+          decodeFunction:
+            this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined
+              ? this.decodeStateMultiCallResultWithRelativeBitmaps
+              : decodeStateMultiCallResultWithRelativeBitmaps,
         },
       ];
+
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;
@@ -267,8 +274,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const tickBitmap = {};
     const ticks = {};
 
-    this._reduceTickBitmap(tickBitmap, _state.tickBitmap);
-    this._reduceTicks(ticks, _state.ticks);
+    _reduceTickBitmap(tickBitmap, _state.tickBitmap);
+    _reduceTicks(ticks, _state.ticks);
 
     const observations = {
       [_state.slot0.observationIndex]: {
@@ -486,40 +493,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     );
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
     return pool;
-  }
-
-  private _reduceTickBitmap(
-    tickBitmap: Record<NumberAsString, bigint>,
-    tickBitmapToReduce: TickBitMapMappingsWithBigNumber[],
-  ) {
-    return tickBitmapToReduce.reduce<Record<NumberAsString, bigint>>(
-      (acc, curr) => {
-        const { index, value } = curr;
-        acc[index] = bigIntify(value);
-        return acc;
-      },
-      tickBitmap,
-    );
-  }
-
-  private _reduceTicks(
-    ticks: Record<NumberAsString, TickInfo>,
-    ticksToReduce: TickInfoMappingsWithBigNumber[],
-  ) {
-    return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
-      const { index, value } = curr;
-      acc[index] = {
-        liquidityGross: bigIntify(value.liquidityGross),
-        liquidityNet: bigIntify(value.liquidityNet),
-        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
-        secondsPerLiquidityOutsideX128: bigIntify(
-          value.secondsPerLiquidityOutsideX128,
-        ),
-        secondsOutside: bigIntify(value.secondsOutside),
-        initialized: value.initialized,
-      };
-      return acc;
-    }, ticks);
   }
 
   private _computePoolAddress(

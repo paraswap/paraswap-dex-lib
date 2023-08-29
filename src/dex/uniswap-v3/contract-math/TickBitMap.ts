@@ -42,7 +42,11 @@ export class TickBitMap {
     return [BigInt.asIntN(16, tick >> 8n), BigInt.asUintN(8, tick % 256n)];
   }
 
-  static flipTick(state: PoolState, tick: bigint, tickSpacing: bigint) {
+  static flipTick(
+    state: Pick<PoolState, 'startTickBitmap' | 'tickBitmap'>,
+    tick: bigint,
+    tickSpacing: bigint,
+  ) {
     _require(
       tick % tickSpacing === 0n,
       '',
@@ -65,7 +69,7 @@ export class TickBitMap {
   }
 
   static nextInitializedTickWithinOneWord(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<Pick<PoolState, 'startTickBitmap' | 'tickBitmap'>>,
     tick: bigint,
     tickSpacing: bigint,
     lte: boolean,
@@ -115,14 +119,5 @@ export class TickBitMap {
     }
 
     return [next, initialized];
-  }
-
-  static _putZeroIfUndefined(
-    state: PoolState,
-    tickBitmapValue: bigint | undefined,
-    wordPos: bigint,
-    isPriceQuery: boolean = false,
-  ): bigint {
-    return tickBitmapValue === undefined ? 0n : tickBitmapValue;
   }
 }
