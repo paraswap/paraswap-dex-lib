@@ -913,24 +913,24 @@ describe('UniswapV3 E2E', () => {
       const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
         [
           {
-            name: 'USDC',
-            sellAmount: '111110',
-            buyAmount: '111110',
+            name: 'FTM',
+            sellAmount: '100000000000000000',
+            buyAmount: '100000000',
           },
           {
-            name: 'FUSDT',
-            sellAmount: '111110',
-            buyAmount: '111110',
+            name: 'USDC',
+            sellAmount: '100000000',
+            buyAmount: '100000000000000000',
           },
         ],
-        // [
-        //   {
-        //     name: 'BNB',
-        //     sellAmount: '1000000000000000000',
-        //     buyAmount: '10000000000000000000',
-        //   },
-        //   { name: 'USDT', sellAmount: '1000000000000000000000', buyAmount: '20000000000000000' },
-        // ],
+        [
+          {
+            name: 'WFTM',
+            sellAmount: '100000000000000',
+            buyAmount: '1000000000000000',
+          },
+          { name: 'WETH', sellAmount: '1000000000000000', buyAmount: '100000000000000' },
+        ],
       ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
