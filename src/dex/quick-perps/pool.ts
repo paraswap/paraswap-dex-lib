@@ -10,7 +10,7 @@ import { VaultPriceFeed } from './vault-price-feed';
 import { Vault } from './vault';
 import { USDQ } from './usdq';
 import { Contract } from 'web3-eth-contract';
-import ReaderABI from '../../abi/quickPerps/reader.json';
+import ReaderABI from '../../abi/quick-perps/reader.json';
 
 const MAX_AMOUNT_IN_CACHE_TTL = 5 * 60;
 

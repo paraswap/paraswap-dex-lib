@@ -3,7 +3,7 @@ import { Interface } from '@ethersproject/abi';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { PartialEventSubscriber } from '../../composed-event-subscriber';
 import { Lens } from '../../lens';
-import VaultABI from '../../abi/quickPerps/vault.json';
+import VaultABI from '../../abi/quick-perps/vault.json';
 import { VaultUtils } from './vault-utils';
 import {
   VaultConfig,

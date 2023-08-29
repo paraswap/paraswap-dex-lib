@@ -1,11 +1,11 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { Interface } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { BI_POWS } from '../../bigint-constants';
-import { QuickPerps } from './quickPerps';
+import { QuickPerps } from './quick-perps';
 import { QuickPerpsConfig } from './config';
 import {
   checkPoolPrices,
@@ -13,28 +13,33 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import ReaderABI from '../../abi/quickPerps/reader.json';
+import ReaderABI from '../../abi/quick-perps/reader.json';
 
-const network = Network.AVALANCHE;
-const TokenASymbol = 'USDCe';
+const network = Network.ZKEVM;
+const TokenASymbol = 'WETH';
 const TokenA = Tokens[network][TokenASymbol];
 
-const TokenBSymbol = 'WAVAX';
+const TokenBSymbol = 'MATIC';
 const TokenB = Tokens[network][TokenBSymbol];
 
 const amounts = [
   0n,
-  1000000000n,
-  2000000000n,
-  3000000000n,
-  4000000000n,
-  5000000000n,
+  100000000000000000n,
+  200000000000000000n,
+  300000000000000000n,
+  400000000000000000n,
+  500000000000000000n,
+  600000000000000000n,
+  700000000000000000n,
+  800000000000000000n,
+  900000000000000000n,
+  1000000000000000000n,
 ];
 
 const dexKey = 'QuickPerps';
 const params = QuickPerpsConfig[dexKey][network];
 const readerInterface = new Interface(ReaderABI);
-const readerAddress = '0x67b789D48c926006F5132BFCe4e976F0A7A63d5D';
+const readerAddress = '0xf1CFB75854DE535475B88Bb6FBad317eea98c0F9';
 
 describe('QuickPerps', function () {
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {

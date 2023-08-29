@@ -2,7 +2,7 @@ import { Interface } from '@ethersproject/abi';
 import { Address, MultiCallInput, MultiCallOutput } from '../../types';
 import { PoolState, VaultPriceFeedConfig } from './types';
 import { FastPriceFeed } from './fast-price-feed';
-import VaultPriceFeedAbi from '../../abi/quickPerps/vault-price-feed.json';
+import VaultPriceFeedAbi from '../../abi/quick-perps/vault-price-feed.json';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { DeepReadonly } from 'ts-essentials';
 

@@ -11,8 +11,8 @@ import {
   BlockHeader,
 } from '../../types';
 import { FastPriceFeedConfig, FastPriceFeedState } from './types';
-import FastPriceFeedAbi from '../../abi/quickPerps/fast-price-feed.json';
-import FastPriceEventsAbi from '../../abi/quickPerps/fast-price-events.json';
+import FastPriceFeedAbi from '../../abi/quick-perps/fast-price-feed.json';
+import FastPriceEventsAbi from '../../abi/quick-perps/fast-price-events.json';
 import { Lens } from '../../lens';
 
 export class FastPriceFeed<State> extends PartialEventSubscriber<
