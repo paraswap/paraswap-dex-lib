@@ -31,7 +31,6 @@ import { SmartToken, StateOverrides } from './smart-tokens';
 import { GIFTER_ADDRESS } from './constants-e2e';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
-import * as util from 'util';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -369,7 +368,6 @@ export async function testE2E(
       poolIdentifiers,
       transferFees,
     );
-    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Calculate slippage. Default is 1%

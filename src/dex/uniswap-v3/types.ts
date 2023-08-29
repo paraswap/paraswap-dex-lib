@@ -3,7 +3,6 @@ import { NumberAsString } from '../../types';
 import { Address } from '../../types';
 import { AbiItem } from 'web3-utils';
 import { MultiResult } from '../../lib/multi-wrapper';
-import { RPParams } from '@sushiswap/router';
 
 export type OracleObservation = {
   blockTimestamp: bigint;
@@ -61,7 +60,6 @@ export type UniswapV3Data = {
     fee: NumberAsString;
   }[];
   isApproved?: boolean;
-  routerParams?: RPParams;
 };
 
 export type DecodeStateMultiCallFunc = (
