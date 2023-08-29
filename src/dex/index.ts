@@ -71,6 +71,7 @@ import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { Smardex } from './smardex/smardex';
 
 const LegacyDexes = [
   CurveV2,
@@ -139,6 +140,7 @@ const Dexes = [
   MaverickV1,
   Camelot,
   SwaapV2,
+  Smardex,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
