@@ -79,14 +79,14 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
     _state: DeepReadonly<State>,
     _token: Address,
     _refPrice: bigint,
-    _maximise: boolean,
+    _maximize: boolean,
   ) {
     const state = this.lens.get()(_state);
 
     const timestamp = Math.floor(Date.now() / 1000);
 
     if (timestamp > state.lastUpdatedAt + this.maxPriceUpdateDelay) {
-      if (_maximise) {
+      if (_maximize) {
         return (
           (_refPrice *
             (this.BASIS_POINTS_DIVISOR + this.spreadBasisPointsIfChainError)) /
@@ -102,7 +102,7 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
     }
 
     if (timestamp > state.lastUpdatedAt + this.priceDuration) {
-      if (_maximise) {
+      if (_maximize) {
         return (
           (_refPrice *
             (this.BASIS_POINTS_DIVISOR + this.spreadBasisPointsIfInactive)) /
@@ -132,7 +132,7 @@ export class FastPriceFeed<State> extends PartialEventSubscriber<
 
     if (hasSpread) {
       // return the higher of the two prices
-      if (_maximise) {
+      if (_maximize) {
         return _refPrice > fastPrice ? _refPrice : fastPrice;
       }
 

@@ -54,9 +54,6 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests.
   async initializePricing(blockNumber: number) {
     const config = await QuickPerpsEventPool.getConfig(
       this.params,

@@ -6,12 +6,14 @@ import { QuickPerpsConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolState } from './types';
+import { PoolConfig, PoolState } from './types';
 
 jest.setTimeout(50 * 1000);
 const dexKey = 'QuickPerps';
-const network = Network.AVALANCHE;
+const network = Network.ZKEVM;
 const params = QuickPerpsConfig[dexKey][network];
+const dexHelper = new DummyDexHelper(network);
+const logger = dexHelper.getLogger(dexKey);
 
 async function fetchPoolState(
   quickPerpsPool: QuickPerpsEventPool,
@@ -28,7 +30,6 @@ const stateWithoutTimestamp = (state: PoolState) => ({
   ...state,
   secondaryPrices: {
     prices: state.secondaryPrices.prices,
-    // timestamp (this is removed)
   },
 });
 
@@ -41,63 +42,48 @@ function compareState(state: PoolState, expectedState: PoolState) {
 describe('QuickPerps Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     IncreaseUsdqAmount: [
-      19403150, 19403175, 19403183, 19403215, 19403232, 19403246, 19403344,
-      19403484, 19403545, 19403553, 19403586, 19403662, 19403712, 19403721,
-      19403757, 19403775, 19403782, 19403800, 19403807, 19403808, 19403826,
-      19403844, 19403848, 19403852, 19403860, 19403863, 19403875, 19403877,
-      19403885, 19403900, 19403904, 19403938, 19403963, 19403970, 19403973,
-      19403978, 19403999, 19404000, 19404023, 19404026, 19404046, 19404056,
-      19404060, 19404078, 19404083, 19404097, 19404149, 19404164, 19404178,
-      19404182, 19404229, 19404243, 19404264, 19404272, 19404287, 19404347,
-      19404378, 19404379, 19404389, 19404408, 19404463, 19404491, 19404560,
-      19404625, 19404657, 19404687, 19404700, 19404714, 19404763, 19404889,
-      19404892, 19404893, 19404894, 19404897, 19404904, 19404916, 19404917,
-      19404927, 19404935, 19404946, 19404949, 19404951, 19404959, 19404973,
-      19405017, 19405027, 19405034,
+      4960808, 4961034, 4961037, 4961046, 4961052, 4961055, 4961062, 4961153,
+      4961167, 4961190, 4961194, 4961215, 4961220, 4961353, 4961472, 4961476,
+      4961521, 4961628, 4961629, 4961648, 4961664, 4961683, 4961710, 4961716,
+      4961848, 4961853, 4961863, 4961866, 4962156, 4962180, 4962200, 4962296,
     ],
     DecreaseUsdqAmount: [
-      19403150, 19403175, 19403183, 19403215, 19403232, 19403246, 19403344,
-      19403545, 19403553, 19403662, 19403712, 19403721, 19403757, 19403775,
-      19403782, 19403800, 19403807, 19403808, 19403826, 19403844, 19403848,
-      19403852, 19403860, 19403863, 19403875, 19403877, 19403885, 19403900,
-      19403904, 19403938, 19403963, 19403970, 19403973, 19403978, 19403999,
-      19404000, 19404023, 19404026, 19404046, 19404056, 19404060, 19404078,
-      19404083, 19404097, 19404149, 19404164, 19404178, 19404182, 19404229,
-      19404243, 19404264, 19404272, 19404287, 19404347, 19404378, 19404379,
-      19404389, 19404408, 19404463, 19404491, 19404560, 19404625, 19404657,
-      19404687, 19404700, 19404714, 19404763, 19404889, 19404892, 19404893,
-      19404894, 19404897, 19404904, 19404916, 19404917, 19404927, 19404935,
-      19404946, 19404949, 19404951, 19404959, 19404973, 19405017, 19405027,
-      19405034,
+      4960808, 4960808, 4961034, 4961037, 4961046, 4961052, 4961055, 4961062,
+      4961153, 4961167, 4961190, 4961194, 4961215, 4961220, 4961353, 4961472,
+      4961476, 4961521, 4961628, 4961629, 4961648, 4961664, 4961683, 4961710,
+      4961716, 4961848, 4961853, 4961863, 4961866, 4962156, 4962180, 4962200,
+      4962296,
     ],
-    Transfer: [19403484, 19403586, 19405046, 19405100, 19405154, 19405318],
+    Transfer: [4958541, 4959994, 4959998, 4960452, 4960452],
     PriceUpdate: [
-      19403134, 19403135, 19403140, 19403141, 19403144, 19403148, 19403151,
-      19403154, 19403163, 19403169, 19403170, 19403171, 19403178, 19403185,
-      19403186, 19403202,
+      4960534, 4960569, 4960584, 4960609, 4960637, 4960660, 4960694, 4960700,
     ],
   };
 
   describe('QuickPerpsEventPool', function () {
+    let config: PoolConfig;
+    let quickPerpsPool: QuickPerpsEventPool;
+    let blockNumber: number;
+    beforeAll(async function () {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+
+      config = await QuickPerpsEventPool.getConfig(
+        params,
+        blockNumber,
+        dexHelper.multiContract,
+      );
+
+      quickPerpsPool = new QuickPerpsEventPool(
+        dexKey,
+        network,
+        dexHelper,
+        logger,
+        config,
+      );
+    });
     Object.keys(blockNumbers).forEach((event: string) => {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
-          const dexHelper = new DummyDexHelper(network);
-          const logger = dexHelper.getLogger(dexKey);
-
-          const config = await QuickPerpsEventPool.getConfig(
-            params,
-            blockNumber,
-            dexHelper.multiContract,
-          );
-          const quickPerpsPool = new QuickPerpsEventPool(
-            dexKey,
-            network,
-            dexHelper,
-            logger,
-            config,
-          );
-
           await testEventSubscriber(
             quickPerpsPool,
             quickPerpsPool.addressesSubscribed,

@@ -1,10 +1,10 @@
 import { DeepReadonly } from 'ts-essentials';
-import { Lens, lens } from '../../lens';
-import { Address, Log, Logger, MultiCallInput } from '../../types';
+import { lens } from '../../lens';
+import { Address, Logger, MultiCallInput } from '../../types';
 import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, DexParams, PoolConfig } from './types';
-import { ChainLinkSubscriber } from '../../lib/chainlink';
+import { Api3FeedSubscriber } from '../../lib/api3-feed';
 import { FastPriceFeed } from './fast-price-feed';
 import { VaultPriceFeed } from './vault-price-feed';
 import { Vault } from './vault';
@@ -29,14 +29,14 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     logger: Logger,
     config: PoolConfig,
   ) {
-    const chainlinkMap = Object.entries(config.chainlink).reduce(
+    const api3ServerV1Map = Object.entries(config.api3ServerV1).reduce(
       (
-        acc: { [address: string]: ChainLinkSubscriber<PoolState> },
+        acc: { [address: string]: Api3FeedSubscriber<PoolState> },
         [key, value],
       ) => {
-        acc[key] = new ChainLinkSubscriber<PoolState>(
+        acc[key] = new Api3FeedSubscriber<PoolState>(
           value.proxy,
-          value.aggregator,
+          value.api3ServerV1,
           lens<DeepReadonly<PoolState>>().primaryPrices[key],
           dexHelper.getLogger(`${key} ChainLink for ${parentName}-${network}`),
         );
@@ -54,7 +54,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     );
     const vaultPriceFeed = new VaultPriceFeed(
       config.vaultPriceFeedConfig,
-      chainlinkMap,
+      api3ServerV1Map,
       fastPriceFeed,
     );
     const usdq = new USDQ(
@@ -76,7 +76,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
       'pool',
       dexHelper.getLogger(`${parentName}-${network}`),
       dexHelper,
-      [...Object.values(chainlinkMap), fastPriceFeed, usdq, vault],
+      [...Object.values(api3ServerV1Map), fastPriceFeed, usdq, vault],
       {
         primaryPrices: {},
         secondaryPrices: {
@@ -255,9 +255,10 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     // get price chainlink price feed
     const getPriceFeedCalldata = tokens.map(t => {
       return {
-        callData: VaultPriceFeed.interface.encodeFunctionData('priceFeeds', [
-          t,
-        ]),
+        callData: VaultPriceFeed.interface.encodeFunctionData(
+          'priceFeedProxies',
+          [t],
+        ),
         target: dexParams.priceFeed,
       };
     });
@@ -268,7 +269,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     ).returnData;
     const priceFeeds = priceFeedResult.map((p: any) =>
       VaultPriceFeed.interface
-        .decodeFunctionResult('priceFeeds', p)[0]
+        .decodeFunctionResult('priceFeedProxies', p)[0]
         .toString()
         .toLowerCase(),
     );
@@ -279,7 +280,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     let i = 0;
     for (let priceFeed of priceFeeds) {
       const chainlinkConfigCallData =
-        ChainLinkSubscriber.getReadAggregatorMultiCallInput(priceFeed);
+        Api3FeedSubscriber.getApi3ServerV1MultiCallInput(priceFeed);
       multiCallData.push(chainlinkConfigCallData);
       multicallSlices.push([i, i + 1]);
       i += 1;
@@ -311,16 +312,16 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
       await multiContract.methods.aggregate(multiCallData).call({}, blockNumber)
     ).returnData;
 
-    const chainlink: {
-      [address: string]: { proxy: Address; aggregator: Address };
+    const api3ServerV1: {
+      [address: string]: { proxy: Address; api3ServerV1: Address };
     } = {};
     for (let token of tokens) {
-      const aggregator = ChainLinkSubscriber.readAggregator(
+      const serverV1Address = Api3FeedSubscriber.decodeApi3ServerV1Result(
         configResults.slice(...multicallSlices.shift()!)[0],
       );
-      chainlink[token] = {
+      api3ServerV1[token] = {
         proxy: priceFeeds.shift(),
-        aggregator,
+        api3ServerV1: serverV1Address,
       };
     }
 
@@ -354,7 +355,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
       vaultConfig,
       vaultPriceFeedConfig,
       fastPriceFeedConfig,
-      chainlink,
+      api3ServerV1,
     };
   }
 }

@@ -26,12 +26,7 @@
         "name": "_fastPriceEvents",
         "type": "address"
       },
-      { "internalType": "address", "name": "_tokenManager", "type": "address" },
-      {
-        "internalType": "address",
-        "name": "_positionRouter",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_tokenManager", "type": "address" }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
@@ -368,13 +363,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "positionRouter",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "name": "priceData",
     "outputs": [
@@ -593,6 +581,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "address",
+        "name": "_positionRouter",
+        "type": "address"
+      },
       { "internalType": "uint256", "name": "_priceBits", "type": "uint256" },
       { "internalType": "uint256", "name": "_timestamp", "type": "uint256" },
       {

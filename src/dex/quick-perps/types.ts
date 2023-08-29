@@ -1,8 +1,8 @@
 import { Address } from '../../types';
-import { ChainLinkState } from '../../lib/chainlink';
+import { Api3FeedSubscriberState } from '../../lib/api3-feed';
 
 export type PoolState = {
-  primaryPrices: { [poolAddress: string]: ChainLinkState };
+  primaryPrices: { [poolAddress: string]: Api3FeedSubscriberState };
   secondaryPrices: FastPriceFeedState;
   vault: VaultState;
   usdq: USDQState;
@@ -53,7 +53,6 @@ export type FastPriceFeedConfig = {
 };
 
 export type VaultPriceFeedConfig = {
-  isAmmEnabled: boolean;
   isSecondaryPriceEnabled: boolean;
   strictStableTokens: { [address: string]: boolean };
   spreadBasisPoints: { [address: string]: bigint };
@@ -61,8 +60,6 @@ export type VaultPriceFeedConfig = {
   isAdjustmentAdditive: { [address: string]: boolean };
   priceDecimals: { [address: string]: number };
   maxStrictPriceDeviation: bigint;
-  useV2Pricing: boolean;
-  priceSampleSpace: number;
 };
 
 export type VaultConfig = {
@@ -90,5 +87,7 @@ export type PoolConfig = {
   vaultConfig: VaultConfig;
   vaultPriceFeedConfig: VaultPriceFeedConfig;
   fastPriceFeedConfig: FastPriceFeedConfig;
-  chainlink: { [address: string]: { proxy: Address; aggregator: Address } };
+  api3ServerV1: {
+    [address: string]: { proxy: Address; api3ServerV1: Address };
+  };
 };
