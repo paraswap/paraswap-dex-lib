@@ -96,6 +96,18 @@ describe('BalancerV2 E2E', () => {
               buyAmount: '10000000000',
             },
           ],
+          [
+            {
+              name: 'USDC',
+              sellAmount: '111000000',
+              buyAmount: '111000000',
+            },
+            {
+              name: 'wstETH',
+              sellAmount: '100000000000000000',
+              buyAmount: '100000000000000000',
+            },
+          ],
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
@@ -1054,7 +1066,7 @@ describe('BalancerV2 E2E', () => {
               sellAmount: '200000000',
               buyAmount: '2000000000',
             },
-          ]
+          ],
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
@@ -1137,7 +1149,7 @@ describe('BalancerV2 E2E', () => {
               sellAmount: '200000000',
               buyAmount: '2000000000000000',
             },
-          ]
+          ],
         ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
@@ -1181,7 +1193,6 @@ describe('BalancerV2 E2E', () => {
         }),
       );
     });
-
   });
 
   describe('BeetsFi OPTIMISM', () => {
@@ -1436,5 +1447,4 @@ describe('BalancerV2 E2E', () => {
       });
     });
   });
-
 });
