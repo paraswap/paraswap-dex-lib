@@ -332,8 +332,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x6cA478C852DfA8941FC819fDf248606eA04780B6',
     privateHttpProvider: process.env.HTTP_PROVIDER_1101,
     adapterAddresses: {
-      PolygonZkEvmAdapter01: '0x760870be538e7b4E2110e2890473CC17ADB1fdC1',
-      PolygonZkEvmBuyAdapter: '0x61bFA60A992472869F8d7b4705609A6E0BCf383f',
+      PolygonZkEvmAdapter01: '0xd63B7691dD98fa89A2ea5e1604700489c585aa7B',
+      PolygonZkEvmBuyAdapter: '0xe2137168CdA486a2555E16c597905854C84F9127',
     },
 
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
