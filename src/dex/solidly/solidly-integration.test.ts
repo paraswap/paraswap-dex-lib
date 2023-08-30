@@ -14,6 +14,7 @@ import { Cone } from './forks-override/cone';
 import { Chronos } from './forks-override/chronos';
 import { Ramses } from './forks-override/ramses';
 import * as util from 'util';
+import { VelodromeV2 } from './forks-override/velodromeV2';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
 const amounts6 = [0n, BI_POWS[6], 2000000n];
@@ -905,6 +906,126 @@ describe('Solidly integration tests', () => {
           console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
           checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+        });
+      });
+    });
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+    const dexHelper = new DummyDexHelper(network);
+    const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
+
+    describe('VelodromeV2', () => {
+      const dexKey = 'VelodromeV2';
+      const velodromeV2 = new VelodromeV2(network, dexKey, dexHelper);
+
+      describe('UniswapV2 like pool', function () {
+        const TokenASymbol = 'USDC';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'WETH';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts18;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await velodromeV2.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await velodromeV2.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              velodromeV2,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+      });
+
+      describe('Curve like stable pool', function () {
+        const TokenASymbol = 'USDT';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'USDC';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts6;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await velodromeV2.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await velodromeV2.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              velodromeV2,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
         });
       });
     });
