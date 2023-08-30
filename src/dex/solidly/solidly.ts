@@ -128,6 +128,8 @@ export class Solidly extends UniswapV2 {
       routerAddress !== undefined
         ? routerAddress
         : SolidlyConfig[dexKey][network].router || '';
+
+    this.feeFactor = SolidlyConfig[dexKey][network].feeFactor || this.feeFactor;
   }
 
   async findSolidlyPair(from: Token, to: Token, stable: boolean) {
@@ -429,8 +431,13 @@ export class Solidly extends UniswapV2 {
   ): Promise<PoolLiquidity[]> {
     if (!this.subgraphURL) return [];
 
-    const stableFieldKey =
-      this.dexKey.toLowerCase() === 'solidly' ? 'stable' : 'isStable';
+    let stableFieldKey = '';
+
+    if (this.dexKey.toLowerCase() === 'solidly') {
+      stableFieldKey = 'stable';
+    } else if (this.dexKey.toLowerCase() !== 'solidlyv2') {
+      stableFieldKey = 'isStable';
+    }
 
     const query = `query ($token: Bytes!, $count: Int) {
       pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
@@ -516,6 +523,7 @@ export class Solidly extends UniswapV2 {
     const pair = await this.findSolidlyPair(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
     const pairState = pair.pool.getState(blockNumber);
+
     if (!pairState) {
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
