@@ -928,7 +928,7 @@ describe('Solidly integration tests', () => {
 
         const amounts = amounts18;
 
-        it('getPoolIdentifiers and getPricesVolume', async function () {
+        it('getPoolIdentifiers and getPricesVolume SELL', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
           const pools = await velodromeV2.getPoolIdentifiers(
             tokenA,
@@ -983,7 +983,7 @@ describe('Solidly integration tests', () => {
 
         const amounts = amounts6;
 
-        it('getPoolIdentifiers and getPricesVolume', async function () {
+        it('getPoolIdentifiers and getPricesVolume SELL', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
           const pools = await velodromeV2.getPoolIdentifiers(
             tokenA,
