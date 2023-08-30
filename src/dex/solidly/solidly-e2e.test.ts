@@ -34,8 +34,6 @@ function testForNetwork(
         ContractMethod.megaSwap,
       ],
     ],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
