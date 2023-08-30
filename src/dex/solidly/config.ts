@@ -74,6 +74,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   VelodromeV2: {
     [Network.OPTIMISM]: {
+      // There is no subgraph for VelodromeV2
       factoryAddress: '0xF1046053aa5682b4F9a81b5481394DA16BE5FF5a',
       router: '0xa2f581b012E0f2dcCDe86fCbfb529f4aC5dD4983',
       initCode:

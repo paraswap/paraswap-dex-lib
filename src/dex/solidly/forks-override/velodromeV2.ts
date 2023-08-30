@@ -58,12 +58,4 @@ export class VelodromeV2 extends Solidly {
       callDecoder,
     };
   }
-
-  // there is no subgraph for VelodromeV2
-  async getTopPoolsForToken(
-    tokenAddress: Address,
-    count: number,
-  ): Promise<PoolLiquidity[]> {
-    return [];
-  }
 }
