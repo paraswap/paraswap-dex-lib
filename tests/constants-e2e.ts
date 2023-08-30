@@ -858,6 +858,10 @@ export const Tokens: {
     },
   },
   [Network.ZKEVM]: {
+    ETH: {
+      address: ETHER_ADDRESS,
+      decimals: 18,
+    },
     WETH: {
       address: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
       decimals: 18,
@@ -1079,6 +1083,7 @@ export const Holders: {
     WBTC: '0xb9c8f0d3254007ee4b98970b94544e473cd610ec',
   },
   [Network.ZKEVM]: {
+    ETH: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
     WETH: '0xc44ad482f24fd750caeba387d2726d8653f8c4bb',
     MATIC: '0x8f2a1450c040b3c19efe9676165d8f30d8280019',
   },

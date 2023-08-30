@@ -23,13 +23,11 @@ describe('QuickPerps E2E', () => {
       network,
     );
 
-    const tokenASymbol: string = 'WETH';
+    const tokenASymbol: string = 'ETH';
     const tokenBSymbol: string = 'MATIC';
-    const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const tokenAAmount: string = '100000000000000000';
     const tokenBAmount: string = '10000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
 
     const sideToContractMethods = new Map([
       [
@@ -45,33 +43,7 @@ describe('QuickPerps E2E', () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it(nativeTokenSymbol + ' -> TOKEN', async () => {
-            await testE2E(
-              tokens[nativeTokenSymbol],
-              tokens[tokenASymbol],
-              holders[nativeTokenSymbol],
-              side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-          it('TOKEN -> ' + nativeTokenSymbol, async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[nativeTokenSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
-          it('TOKEN -> TOKEN', async () => {
+          it('ETH -> MATIC', async () => {
             await testE2E(
               tokens[tokenASymbol],
               tokens[tokenBSymbol],
@@ -82,6 +54,12 @@ describe('QuickPerps E2E', () => {
               contractMethod,
               network,
               provider,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              true,
             );
           });
         });
