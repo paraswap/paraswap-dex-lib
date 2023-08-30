@@ -509,6 +509,17 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         order.takerAsset.toLowerCase() === takerToken.address,
         `QuoteData takerAsset=${order.takerAsset} is different from Paraswap takerAsset=${takerToken.address}`,
       );
+      if (side === SwapSide.SELL) {
+        assert(
+          order.takerAmount === optimalSwapExchange.srcAmount,
+          `QuoteData takerAmount=${order.takerAmount} is different from Paraswap srcAmount=${optimalSwapExchange.srcAmount}`,
+        );
+      } else {
+        assert(
+          order.makerAmount === optimalSwapExchange.destAmount,
+          `QuoteData makerAmount=${order.makerAmount} is different from Paraswap destAmount=${optimalSwapExchange.destAmount}`,
+        );
+      }
 
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
@@ -528,7 +539,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         }
       } else {
         if (
-          BigInt(order.takerAmount) <
+          BigInt(order.takerAmount) >
           BigInt(
             new BigNumber(optimalSwapExchange.srcAmount)
               .times(slippageFactor)
