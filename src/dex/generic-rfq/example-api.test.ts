@@ -157,7 +157,7 @@ export const startTestServer = (account: ethers.Wallet) => {
           new BigNumber(_prices.asks![0][0]),
         );
       } else {
-        const reversedPrices = _prices.bids!.map(price =>
+        const reversedPrices = _prices.asks!.map(price =>
           reversePrice([new BigNumber(price[0]), new BigNumber(price[1])]),
         );
         value = new BigNumber(payload.makerAmount).times(

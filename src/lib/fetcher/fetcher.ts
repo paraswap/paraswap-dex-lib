@@ -1,12 +1,20 @@
 import { IRequestWrapper } from '../../dex-helper';
 import { Logger } from 'log4js';
 import { RequestConfig, Response } from '../../dex-helper/irequest-wrapper';
+import { isFunction } from 'lodash';
 
 const FETCH_TIMEOUT_MS = 10 * 1000;
 const FETCH_FAIL_MAX_ATTEMPT = 5;
 const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 
+export class SkippingRequest {
+  constructor(public message = '') {}
+}
+
 export type RequestInfo<T> = {
+  requestFunc?: (
+    options: RequestConfig,
+  ) => Promise<Response<T> | SkippingRequest>;
   requestOptions: RequestConfig;
   caster: (data: unknown) => T;
   authenticate?: (options: RequestConfig) => RequestConfig;
@@ -18,7 +26,7 @@ export type RequestInfoWithHandler<T> = {
   handler: (data: T) => void;
 };
 
-export default class Fetcher<T> {
+export class Fetcher<T> {
   private requests: RequestInfoWithHandler<T>[];
   public lastFetchSucceeded: boolean = false;
   private failedCount = 0;
@@ -52,29 +60,61 @@ export default class Fetcher<T> {
       return;
     }
 
-    const promises = this.requests.map<Promise<Error | Response<T>>>(
-      async (reqInfo: RequestInfoWithHandler<T>) => {
-        const info = reqInfo.info;
-        let options = info.requestOptions;
-        if (info.authenticate) {
-          info.authenticate(options);
-        }
+    const promises = this.requests.map<
+      Promise<Error | Response<T> | SkippingRequest>
+    >(async (reqInfo: RequestInfoWithHandler<T>) => {
+      const info = reqInfo.info;
+      let options = info.requestOptions;
 
-        try {
-          const result = await this.requestWrapper.request({
+      if (info.authenticate) {
+        info.authenticate(options);
+      }
+
+      try {
+        let result;
+        if (isFunction(info.requestFunc)) {
+          result = await info.requestFunc({
             timeout: FETCH_TIMEOUT_MS,
             ...options,
           });
-          return result;
-        } catch (e) {
-          return e as Error;
+        } else {
+          result = await this.requestWrapper.request({
+            timeout: FETCH_TIMEOUT_MS,
+            ...options,
+          });
         }
-      },
-    );
+
+        return result;
+      } catch (e) {
+        return e as Error;
+      }
+    });
     const results = await Promise.all(promises);
     const failures = results
       .map((_, i) => i)
       .filter(i => results[i] instanceof Error);
+
+    const skipped = results
+      .map((_, i) => i)
+      .filter(i => results[i] instanceof SkippingRequest);
+
+    results.map(result => {
+      if (!(result instanceof Error || result instanceof SkippingRequest)) {
+        this.logger.info(
+          'Results Data:',
+          JSON.stringify((result as any).data)
+            .replace(/(?:\r\n|\r|\n)/g, ' ')
+            .substring(0, 1000),
+        );
+      }
+    });
+
+    skipped.forEach(i => {
+      const skippedRes = results[i] as SkippingRequest;
+      this.logger.warn(
+        `skipped request ${this.requests[i].info.requestOptions.url} ${skippedRes.message}`,
+      );
+    });
 
     failures.forEach(i => {
       this.logger.warn(
@@ -91,7 +131,12 @@ export default class Fetcher<T> {
 
     results
       .map((_, i) => i)
-      .filter(i => !(results[i] instanceof Error))
+      .filter(
+        i =>
+          !(
+            results[i] instanceof Error || results[i] instanceof SkippingRequest
+          ),
+      )
       .forEach(i => {
         const response = results[i] as Response<T>;
         const reqInfo = this.requests[i];
@@ -103,10 +148,10 @@ export default class Fetcher<T> {
           const parsedData = info.caster(response.data);
           reqInfo.handler(parsedData);
         } catch (e) {
-          this.logger.debug(
+          this.logger.info(
             `(${options.url}) received incorrect data ${JSON.stringify(
               response.data,
-            )}`,
+            ).replace(/(?:\r\n|\r|\n)/g, ' ')}`,
             e,
           );
           return;

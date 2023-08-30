@@ -64,7 +64,17 @@ export class Solidly extends UniswapV2 {
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone', 'Equalizer']),
+      _.omit(SolidlyConfig, [
+        'Velodrome',
+        'SpiritSwapV2',
+        'Cone',
+        'SolidlyV2',
+        'Thena',
+        'SoliSnek',
+        'Chronos',
+        'Ramses',
+        'Equalizer',
+      ]),
     );
 
   constructor(

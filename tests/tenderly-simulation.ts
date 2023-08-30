@@ -6,11 +6,13 @@ import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
 const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID;
 const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT;
+const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID;
+const TENDERLY_FORK_LAST_TX_ID = process.env.TENDERLY_FORK_LAST_TX_ID;
 
 export class TenderlySimulation {
   lastTx: string = '';
   forkId: string = '';
-  maxGasLimit = 8000000;
+  maxGasLimit = 80000000;
 
   constructor(private network: Number = 1) {}
 
@@ -20,6 +22,13 @@ export class TenderlySimulation {
       throw new Error(
         `TenderlySimulation_setup: TENDERLY_TOKEN not found in the env`,
       );
+
+    if (TENDERLY_FORK_ID) {
+      if (!TENDERLY_FORK_LAST_TX_ID) throw new Error('Always set last tx id');
+      this.forkId = TENDERLY_FORK_ID;
+      this.lastTx = TENDERLY_FORK_LAST_TX_ID;
+      return;
+    }
 
     try {
       let res = await axios.post(

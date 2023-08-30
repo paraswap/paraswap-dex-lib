@@ -17,6 +17,7 @@ import { DexAdapterService } from '../dex';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 
 type SimpleSwapParam = [ConstractSimpleData];
@@ -285,6 +286,21 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
       minMaxAmount,
     );
 
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(this.side)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            this.side,
+          ),
+        ];
+
     const sellData: ConstractSimpleData = {
       ...partialContractSimpleData,
       fromToken: priceRoute.srcToken,
@@ -298,14 +314,8 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
           ? priceRoute.destAmount
           : priceRoute.srcAmount,
       beneficiary,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(this.side)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            this.side,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

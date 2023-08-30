@@ -135,6 +135,7 @@ const customPlain2CoinFrax = (
 const implementations: Record<ImplementationNames, get_y> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinThree,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinThree,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
@@ -182,6 +183,13 @@ const implementations: Record<ImplementationNames, get_y> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: customPlain2CoinFrax,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain2CoinFrax,
 };
 
 export default implementations;

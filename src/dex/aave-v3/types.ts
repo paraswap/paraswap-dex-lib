@@ -37,3 +37,10 @@ export type DexParam = {
   poolAddress: Address;
   wethGatewayAddress: Address;
 };
+
+export type AaveToken = {
+  aSymbol: string;
+  aAddress: string;
+  address: string;
+  decimals: number;
+};

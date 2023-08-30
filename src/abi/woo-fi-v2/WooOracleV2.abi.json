@@ -1,0 +1,358 @@
+[
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "bound",
+    "outputs": [{ "internalType": "uint64", "name": "", "type": "uint64" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "clOracles",
+    "outputs": [
+      { "internalType": "address", "name": "oracle", "type": "address" },
+      { "internalType": "uint8", "name": "decimal", "type": "uint8" },
+      { "internalType": "bool", "name": "cloPreferred", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "cloAddress",
+    "outputs": [
+      { "internalType": "address", "name": "clo", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "cloPrice",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" },
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "decimals",
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "infos",
+    "outputs": [
+      { "internalType": "uint128", "name": "price", "type": "uint128" },
+      { "internalType": "uint64", "name": "coeff", "type": "uint64" },
+      { "internalType": "uint64", "name": "spread", "type": "uint64" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "isAdmin",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "isWoFeasible",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" },
+      { "internalType": "uint128", "name": "newPrice", "type": "uint128" }
+    ],
+    "name": "postPrice",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address[]", "name": "bases", "type": "address[]" },
+      { "internalType": "uint128[]", "name": "newPrices", "type": "uint128[]" }
+    ],
+    "name": "postPriceList",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" },
+      { "internalType": "uint64", "name": "newSpread", "type": "uint64" }
+    ],
+    "name": "postSpread",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address[]", "name": "bases", "type": "address[]" },
+      { "internalType": "uint64[]", "name": "newSpreads", "type": "uint64[]" }
+    ],
+    "name": "postSpreadList",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" },
+      { "internalType": "uint128", "name": "newPrice", "type": "uint128" },
+      { "internalType": "uint64", "name": "newSpread", "type": "uint64" },
+      { "internalType": "uint64", "name": "newCoeff", "type": "uint64" }
+    ],
+    "name": "postState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address[]", "name": "bases", "type": "address[]" },
+      { "internalType": "uint128[]", "name": "newPrices", "type": "uint128[]" },
+      { "internalType": "uint64[]", "name": "newSpreads", "type": "uint64[]" },
+      { "internalType": "uint64[]", "name": "newCoeffs", "type": "uint64[]" }
+    ],
+    "name": "postStateList",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "price",
+    "outputs": [
+      { "internalType": "uint256", "name": "priceOut", "type": "uint256" },
+      { "internalType": "bool", "name": "feasible", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "quoteToken",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "addr", "type": "address" },
+      { "internalType": "bool", "name": "flag", "type": "bool" }
+    ],
+    "name": "setAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint64", "name": "_bound", "type": "uint64" }
+    ],
+    "name": "setBound",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "address", "name": "_oracle", "type": "address" },
+      { "internalType": "bool", "name": "_cloPreferred", "type": "bool" }
+    ],
+    "name": "setCLOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "bool", "name": "_cloPreferred", "type": "bool" }
+    ],
+    "name": "setCloPreferred",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_quote", "type": "address" },
+      { "internalType": "address", "name": "_oracle", "type": "address" }
+    ],
+    "name": "setQuoteToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newStaleDuration",
+        "type": "uint256"
+      }
+    ],
+    "name": "setStaleDuration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "staleDuration",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "state",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint128", "name": "price", "type": "uint128" },
+          { "internalType": "uint64", "name": "spread", "type": "uint64" },
+          { "internalType": "uint64", "name": "coeff", "type": "uint64" },
+          { "internalType": "bool", "name": "woFeasible", "type": "bool" }
+        ],
+        "internalType": "struct IWooracleV2.State",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "timestamp",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "woCoeff",
+    "outputs": [{ "internalType": "uint64", "name": "", "type": "uint64" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "woPrice",
+    "outputs": [
+      { "internalType": "uint128", "name": "priceOut", "type": "uint128" },
+      {
+        "internalType": "uint256",
+        "name": "priceTimestampOut",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "woSpread",
+    "outputs": [{ "internalType": "uint64", "name": "", "type": "uint64" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "base", "type": "address" }
+    ],
+    "name": "woState",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint128", "name": "price", "type": "uint128" },
+          { "internalType": "uint64", "name": "spread", "type": "uint64" },
+          { "internalType": "uint64", "name": "coeff", "type": "uint64" },
+          { "internalType": "bool", "name": "woFeasible", "type": "bool" }
+        ],
+        "internalType": "struct IWooracleV2.State",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

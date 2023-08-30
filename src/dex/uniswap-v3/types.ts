@@ -1,5 +1,8 @@
+import { BigNumber, BytesLike } from 'ethers';
 import { NumberAsString } from '../../types';
 import { Address } from '../../types';
+import { AbiItem } from 'web3-utils';
+import { MultiResult } from '../../lib/multi-wrapper';
 
 export type OracleObservation = {
   blockTimestamp: bigint;
@@ -46,6 +49,8 @@ export type PoolState = {
   startTickBitmap: bigint;
   lowestKnownTick: bigint;
   highestKnownTick: bigint;
+  balance0: bigint;
+  balance1: bigint;
 };
 
 export type UniswapV3Data = {
@@ -54,7 +59,12 @@ export type UniswapV3Data = {
     tokenOut: Address;
     fee: NumberAsString;
   }[];
+  isApproved?: boolean;
 };
+
+export type DecodeStateMultiCallFunc = (
+  result: MultiResult<BytesLike> | BytesLike,
+) => DecodedStateMultiCallResultWithRelativeBitmaps;
 
 export type DexParams = {
   router: Address;
@@ -64,25 +74,50 @@ export type DexParams = {
   uniswapMulticall: Address;
   supportedFees: bigint[];
   chunksCount: number;
+  initRetryFrequency: number;
+  deployer?: Address;
+  subgraphURL: string;
+  initHash: string;
+  stateMultiCallAbi?: AbiItem[];
+  decodeStateMultiCallResultWithRelativeBitmaps?: DecodeStateMultiCallFunc;
 };
 
-export type UniswapV3SellParam = {
+export type UniswapV3SimpleSwapSellParam = {
   path: string;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountIn: NumberAsString;
   amountOutMinimum: NumberAsString;
 };
 
-export type UniswapV3BuyParam = {
+export type UniswapV3SimpleSwapBuyParam = {
   path: string;
   recipient: Address;
-  deadline: number;
+  deadline: string;
   amountOut: NumberAsString;
   amountInMaximum: NumberAsString;
 };
 
-export type UniswapV3Param = UniswapV3SellParam | UniswapV3BuyParam;
+export type UniswapV3SimpleSwapParams =
+  | UniswapV3SimpleSwapSellParam
+  | UniswapV3SimpleSwapBuyParam;
+
+export type UniswapV3Param = [
+  fromToken: Address,
+  toToken: Address,
+  exchange: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  feePercent: NumberAsString,
+  deadline: NumberAsString,
+  partner: Address,
+  isApproved: boolean,
+  beneficiary: Address,
+  path: string,
+  permit: string,
+  uuid: string,
+];
 
 export enum UniswapV3Functions {
   exactInput = 'exactInput',
@@ -102,4 +137,50 @@ export type TickBitMapMappings = {
 export type OutputResult = {
   outputs: bigint[];
   tickCounts: number[];
+};
+
+// Just rewrote every type with BigNumber basically
+
+export type TickBitMapMappingsWithBigNumber = {
+  index: number;
+  value: BigNumber;
+};
+
+export type TickInfoWithBigNumber = {
+  initialized: boolean;
+  liquidityGross: BigNumber;
+  liquidityNet: BigNumber;
+  secondsOutside: number;
+  secondsPerLiquidityOutsideX128: BigNumber;
+  tickCumulativeOutside: BigNumber;
+};
+
+export type TickInfoMappingsWithBigNumber = {
+  index: number;
+  value: TickInfoWithBigNumber;
+};
+
+export type DecodedStateMultiCallResultWithRelativeBitmaps = {
+  pool: Address;
+  blockTimestamp: BigNumber;
+  slot0: {
+    feeProtocol: number;
+    observationCardinality: number;
+    observationCardinalityNext: number;
+    observationIndex: number;
+    sqrtPriceX96: BigNumber;
+    tick: number;
+    unlocked: boolean;
+  };
+  liquidity: BigNumber;
+  tickSpacing: number;
+  maxLiquidityPerTick: BigNumber;
+  observation: {
+    blockTimestamp: number;
+    initialized: boolean;
+    secondsPerLiquidityCumulativeX128: BigNumber;
+    tickCumulative: BigNumber;
+  };
+  tickBitmap: TickBitMapMappingsWithBigNumber[];
+  ticks: TickInfoMappingsWithBigNumber[];
 };

@@ -4,18 +4,6 @@ import * as ethers from 'ethers';
 
 const tokensType = ['ERC20'];
 
-export class ValidationError extends Error {
-  readonly rawMessage: string;
-
-  readonly key?: string;
-
-  constructor(message: string, key?: string) {
-    super(key !== undefined ? `'${key}': ${message}` : message);
-    this.rawMessage = message;
-    this.key = key;
-  }
-}
-
 export const tokenValidator = joi.object({
   symbol: joi.string().min(1).required(),
   name: joi.string().min(1).required(),
@@ -56,7 +44,7 @@ const stringNumberValidator = (
   return value;
 };
 
-const pricesValidatorWithoutSorting = joi
+const pricesValidator = joi
   .array()
   .items(
     joi
@@ -66,69 +54,59 @@ const pricesValidatorWithoutSorting = joi
   );
 
 const ext: joi.Extension = {
-  type: 'sortedArray',
-  base: pricesValidatorWithoutSorting,
+  type: 'validatedPrices',
+  base: joi.object({
+    bids: pricesValidator,
+    asks: pricesValidator,
+  }),
   rules: {
-    asc: {
-      validate: (values: string[], helpers: CustomHelpers) => {
-        const prices = values.map(numbers => new BigNumber(numbers[0]));
-        const isAscOrder = prices.every(
-          (x, i) => i === 0 || x.gte(prices[i - 1]),
-        );
-        return isAscOrder
+    bidsLowerThanAsks: {
+      validate: (
+        values: { bids: string[]; asks: string[] },
+        helpers: CustomHelpers,
+      ) => {
+        if (
+          !values.bids ||
+          !values.asks ||
+          values.bids.length === 0 ||
+          values.asks.length === 0
+        ) {
+          return values;
+        }
+        const maxBid = values.bids
+          .map(numbers => new BigNumber(numbers[0]))
+          .reduce(
+            (previousValue, currentValue) =>
+              currentValue.gte(previousValue) ? currentValue : previousValue,
+            new BigNumber(0),
+          );
+        const minAsk = values.asks
+          .map(numbers => new BigNumber(numbers[0]))
+          .reduce(
+            (previousValue, currentValue) =>
+              currentValue.lte(previousValue) ? currentValue : previousValue,
+            new BigNumber('123456789012345678901234567890'),
+          );
+        return maxBid < minAsk
           ? values
           : helpers.message({
-              custom: `array is not asc sorted ${JSON.stringify(values)}`,
-            });
-      },
-    },
-    desc: {
-      validate: (values: string[][], helpers: CustomHelpers) => {
-        const prices = values.map(numbers => new BigNumber(numbers[0]));
-        const isAscOrder = prices.every(
-          (x, i) => i === 0 || x.lte(prices[i - 1]),
-        );
-        return isAscOrder
-          ? values
-          : helpers.message({
-              custom: `array is not desc sorted ${JSON.stringify(values)}`,
+              custom: 'the maximum bid is higher than minimum ask',
             });
       },
     },
   },
 };
 
-const pricesArrayValidator = joi.extend(ext);
-
-export const priceValidator = joi.object({
-  bids: pricesArrayValidator.sortedArray().desc(),
-  asks: pricesArrayValidator.sortedArray().asc(),
-});
+export const priceValidator = joi.extend(ext);
 
 export const pricesResponse = joi.object({
-  prices: joi.object().pattern(joi.string().min(1), priceValidator),
+  prices: joi
+    .object()
+    .pattern(
+      joi.string().min(1),
+      priceValidator.validatedPrices().bidsLowerThanAsks(),
+    ),
 });
-
-export const validateAndCast = <T>(
-  value: unknown,
-  schema: joi.Schema,
-  name?: string,
-): T => {
-  const { error, value: parsed } = schema.validate(value);
-
-  if (error !== undefined) {
-    let message;
-    if (name) {
-      message = `"${name}" ${error.message.slice(
-        error.message.indexOf('must'),
-      )}`;
-    } else {
-      message = error.message;
-    }
-    throw new ValidationError(message);
-  }
-  return parsed as T;
-};
 
 export const addressSchema = joi.string().custom((value, helpers) => {
   if (ethers.utils.isAddress(value)) {
@@ -171,26 +149,44 @@ const stringStartWithHex0x = (
   return value;
 };
 
-export const orderWithSignatureValidator = joi.object({
-  nonceAndMeta: joi.string().custom(stringPositiveBigIntValidator),
-  expiry: joi.number().min(0),
-  maker: addressSchema.required(),
-  taker: addressSchema.required(),
-  makerAsset: addressSchema.required(),
-  takerAsset: addressSchema.required(),
-  makerAmount: joi
-    .string()
-    .min(1)
-    .custom(stringPositiveBigIntValidator)
-    .required(),
-  takerAmount: joi
-    .string()
-    .min(1)
-    .custom(stringPositiveBigIntValidator)
-    .required(),
-  signature: joi.string().custom(stringStartWithHex0x),
-});
+const mustBeAugustusSwapper = (
+  value: string,
+  helpers: CustomHelpers,
+): string | ErrorReport => {
+  const allowedTakers = [
+    '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57'.toLowerCase(),
+  ];
+  return allowedTakers.includes(value.toLowerCase())
+    ? value
+    : helpers.message({
+        custom: `"order.taker" must be any of ${JSON.stringify(allowedTakers)}`,
+      });
+};
 
-export const firmRateResponseValidator = joi.object({
-  order: orderWithSignatureValidator.required(),
-});
+export const orderWithSignatureValidator = joi
+  .object({
+    nonceAndMeta: joi.string().custom(stringPositiveBigIntValidator),
+    expiry: joi.number().min(0),
+    maker: addressSchema.required(),
+    taker: addressSchema.required().custom(mustBeAugustusSwapper),
+    makerAsset: addressSchema.required(),
+    takerAsset: addressSchema.required(),
+    makerAmount: joi
+      .string()
+      .min(1)
+      .custom(stringPositiveBigIntValidator)
+      .required(),
+    takerAmount: joi
+      .string()
+      .min(1)
+      .custom(stringPositiveBigIntValidator)
+      .required(),
+    signature: joi.string().custom(stringStartWithHex0x),
+  })
+  .unknown(true);
+
+export const firmRateResponseValidator = joi
+  .object({
+    order: orderWithSignatureValidator.required(),
+  })
+  .unknown(true);

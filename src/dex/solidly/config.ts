@@ -16,6 +16,20 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000,
     },
   },
+  SolidlyV2: {
+    [Network.MAINNET]: {
+      factoryAddress: '0x777de5Fe8117cAAA7B44f396E93a401Cf5c9D4d6',
+      router: '0x5b39e7A1C706464F5B3956b21CD22a43F0dB0eAC',
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/0xc30/solidly',
+      initCode:
+        '0x413d36e4ab9e83cf39b8064a3b5c98253a9e46a6cf02c8efd185314c866d656b',
+      stableFee: 200, // This is not fixed
+      volatileFee: 2000,
+      feeCode: 0,
+      poolGasCost: 220 * 1000, // https://dashboard.tenderly.co/paraswap/paraswap/tx/mainnet/0x80f01d841ac01cfaedc93ceaadc88fc799ee1539841c2ac19cfccfdcfb605d70/gas-usage
+      feeFactor: 1e6,
+    },
+  },
   Dystopia: {
     [Network.POLYGON]: {
       subgraphURL:
@@ -72,6 +86,57 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0, // variable
     },
   },
+  Thena: {
+    [Network.BSC]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/thenaursa/thena-v1',
+      factoryAddress: '0xAFD89d21BdB66d00817d4153E055830B1c2B3970',
+      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
+      initCode:
+        '0x8d3d214c094a9889564f695c3e9fa516dd3b50bc3258207acd7f8b8e6b94fb65',
+      stableFee: 1, // 10000 / 10000 = 1 in BPS
+      volatileFee: 20, // 10000 / 500 = 20 in BPS
+      poolGasCost: 180 * 1000,
+      feeCode: 1,
+    },
+  },
+  SoliSnek: {
+    [Network.AVALANCHE]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/solisnek-finance/solisnek-avalanche',
+      factoryAddress: '0xeeee1F1c93836B2CAf8B9E929cb978c35d46657E',
+      router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
+      initCode:
+        '0x79cda3bba5402e92f13ed1967c06033e6b7a1bc8d2e1d013b29fa0c4d0a4aa0f',
+      // updatable fees on the factory without event
+      stableFee: 2,
+      volatileFee: 20,
+      poolGasCost: 180 * 1000,
+      feeCode: 2,
+    },
+  },
+  Chronos: {
+    [Network.ARBITRUM]: {
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/xliee/chronos',
+      factoryAddress: '0xce9240869391928253ed9cc9bcb8cb98cb5b0722',
+      router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
+      initCode:
+        '0x1840ae455256f509042de907fe0623f2e5e0ad44751ef974c4c37c1e516b7644',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
+  Ramses: {
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ramsesexchange/api-subgraph',
+      factoryAddress: '0xAAA20D08e59F6561f242b08513D36266C5A29415',
+      router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
+      initCode:
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
   Equalizer: {
     [Network.FANTOM]: {
       subgraphURL: '',//'https://api.thegraph.com/subgraphs/name/ftm1337/equalizer-subgraph-1',//inactive
@@ -100,6 +165,15 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
   },
   [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // cone
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // thena + cone
+  },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
   },
 };

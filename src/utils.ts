@@ -5,6 +5,14 @@ import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger, TransferFeeParams } from './types';
 import _ from 'lodash';
+import { MultiResult } from './lib/multi-wrapper';
+import { Contract } from 'web3-eth-contract';
+import Web3 from 'web3';
+import { AxiosError } from 'axios';
+
+export const isAxiosError = (e: any): e is AxiosError => {
+  return e.isAxiosError === true;
+};
 
 export const isETHAddress = (address: string) =>
   address.toLowerCase() === ETHER_ADDRESS.toLowerCase();
@@ -201,6 +209,11 @@ export const catchParseLogError = (e: any, logger: Logger) => {
   }
 };
 
+export const isSampled = (sampleRate?: number) => {
+  if (!sampleRate) return false;
+  return Math.random() < sampleRate;
+};
+
 const PREFIX_BIG_INT = 'bi@';
 const PREFIX_BIG_NUMBER = 'bn@';
 
@@ -343,3 +356,55 @@ export const isDestTokenTransferFeeToBeExchanged = (
 
 export const isTruthy = <T>(x: T | undefined | null | '' | false | 0): x is T =>
   !!x;
+
+type MultiCallParams = {
+  target: any;
+  callData: any;
+};
+
+type BlockAndTryAggregateResult = {
+  blockNumber: number;
+  results: MultiResult<any>[];
+};
+
+export const blockAndTryAggregate = async (
+  mandatory: boolean,
+  multi: Contract,
+  calls: MultiCallParams[],
+  blockNumber: number | 'latest',
+): Promise<BlockAndTryAggregateResult> => {
+  const results = await multi.methods
+    .tryBlockAndAggregate(mandatory, calls)
+    .call(undefined, blockNumber);
+
+  return {
+    blockNumber: Number(results.blockNumber),
+    results: results.returnData.map((res: any) => ({
+      returnData: res.returnData,
+      success: res.success,
+    })),
+  };
+};
+
+export const isContractAddress = async (web3: Web3, addr: string) => {
+  const contractCode = await web3.eth.getCode(addr);
+
+  return contractCode !== '0x';
+};
+
+const toUintN = (n: number) => (x: bigint) => BigInt.asUintN(n, x);
+const toIntN = (n: number) => (x: bigint) => BigInt.asIntN(n, x);
+
+// INT
+export const int16 = toIntN(16);
+export const int32 = toIntN(32);
+export const int64 = toIntN(64);
+export const int128 = toIntN(128);
+export const int256 = toIntN(256);
+
+// UINT
+export const uint16 = toUintN(16);
+export const uint32 = toUintN(32);
+export const uint64 = toUintN(64);
+export const uint128 = toUintN(128);
+export const uint256 = toUintN(256);

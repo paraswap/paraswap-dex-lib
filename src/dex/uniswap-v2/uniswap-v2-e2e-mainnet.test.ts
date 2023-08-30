@@ -879,6 +879,136 @@ describe('UniswapV2 E2E Mainnet', () => {
     });
   });
 
+  describe('Verse', () => {
+    const dexKey = 'Verse';
+
+    describe('Simpleswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '2000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.USDT,
+          holders.WETH,
+          '100000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multiswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '50000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Megaswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '50000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
   describe('ShibaSwap', () => {
     const dexKey = 'ShibaSwap';
 
@@ -1221,5 +1351,240 @@ describe('UniswapV2 E2E Mainnet', () => {
         );
       });
     });
+  });
+
+  describe('PancakeSwapV2', () => {
+    const dexKey = 'PancakeSwapV2';
+
+    describe('Simpleswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '500000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '50000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('SimpleBuy', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '2000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '100000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multiswap', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '500000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '1000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+    describe('MegaPath', () => {
+      it('TOKEN -> ETH', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.ETH,
+          holders.USDT,
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> TOKEN', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDT,
+          holders.ETH,
+          '500000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+      it('TOKEN -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.STG,
+          holders.USDC,
+          '1000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
+  describe(`Swapsicle`, () => {
+    const dexKey = 'Swapsicle';
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    ]);
+
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [
+        { name: 'USDC', sellAmount: '7000', buyAmount: '10000' },
+        { name: 'WETH', sellAmount: '1000000000000000000', buyAmount: '4000' },
+      ],
+    ];
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach(pair => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
   });
 });

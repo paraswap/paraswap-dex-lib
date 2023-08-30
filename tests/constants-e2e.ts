@@ -5,6 +5,8 @@ import {
   SmartToken,
   balancesFn,
   allowedFn,
+  _balancesFn,
+  _allowancesFn,
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
@@ -31,11 +33,19 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
+    CUSDC: {
+      address: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
+      decimals: 8,
+    },
     WBTC: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
       decimals: 8,
       addBalance: balancesFn,
       addAllowance: allowedFn,
+    },
+    sBTC: {
+      address: '0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6',
+      decimals: 18,
     },
     BADGER: {
       address: '0x3472A5A71965499acd81997a54BBA8D852C6E53d',
@@ -44,6 +54,8 @@ export const Tokens: {
     USDT: {
       address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimals: 6,
+      addBalance: balancesFn,
+      addAllowance: allowedFn,
     },
     STETH: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -58,6 +70,10 @@ export const Tokens: {
       decimals: 18,
       addBalance: balanceOfFn,
       addAllowance: allowanceFn,
+    },
+    PSP: {
+      address: '0xcafe001067cdef266afb7eb5a286dcfd277f3de5',
+      decimals: 18,
     },
     SETH: {
       address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
@@ -90,7 +106,7 @@ export const Tokens: {
       decimals: 18,
     },
     aUSDT: {
-      address: '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
+      address: '0x3Ed3B47Dd13ECAURA9a98b44e6204A523E766B225811',
       decimals: 6,
     },
     waUSDT: {
@@ -105,6 +121,14 @@ export const Tokens: {
       address: '0xba100000625a3754423978a60c9317c58a424e3D',
       decimals: 18,
     },
+    OHM: {
+      address: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
+      decimals: 9,
+    },
+    AURA: {
+      address: '0xc0c293ce456ff0ed870add98a0828dd4d2903dbf',
+      decimals: 18,
+    },
     WISE: {
       address: '0x66a0f676479cee1d7373f3dc2e2952778bff5bd6',
       decimals: 18,
@@ -115,6 +139,10 @@ export const Tokens: {
     },
     DODO: {
       address: '0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd',
+      decimals: 18,
+    },
+    STG: {
+      address: '0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6',
       decimals: 18,
     },
     ADAI: {
@@ -247,10 +275,6 @@ export const Tokens: {
       address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
       decimals: 18,
     },
-    sBTC: {
-      address: '0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6',
-      decimals: 18,
-    },
     sETH: {
       address: '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
       decimals: 18,
@@ -265,6 +289,26 @@ export const Tokens: {
     },
     alETH: {
       address: '0x0100546f2cd4c9d97f798ffc9755e47865ff7ee6',
+      decimals: 18,
+    },
+    SHIBA: {
+      address: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
+      decimals: 18,
+    },
+    dUSDC: {
+      address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
+      decimals: 6,
+    },
+    GHO: {
+      address: '0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f',
+      decimals: 18,
+    },
+    crvUSD: {
+      address: '0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E',
+      decimals: 18,
+    },
+    wibBTC: {
+      address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
       decimals: 18,
     },
   },
@@ -291,6 +335,12 @@ export const Tokens: {
     USDC: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       decimals: 6,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
+    },
+    POPS: {
+      address: '0xa92A1576D11dB45c53be71d59245ac97ce0d8147',
+      decimals: 18,
     },
     WETH: {
       address: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
@@ -299,6 +349,8 @@ export const Tokens: {
     WMATIC: {
       address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
       decimals: 18,
+      addBalance: balanceOfFn,
+      addAllowance: allowanceFn,
     },
     AMWMATIC: {
       address: '0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4',
@@ -396,6 +448,10 @@ export const Tokens: {
       address: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
       decimals: 18,
     },
+    DAI: {
+      address: '0x8d11ec38a3eb5e956b052f67da8bdc9bef8abf3e',
+      decimals: 18,
+    },
     USDC: {
       address: '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75',
       decimals: 6,
@@ -403,6 +459,14 @@ export const Tokens: {
     FUSDT: {
       address: '0x049d68029688eabf473097a2fc38ef61633a3c7a',
       decimals: 6,
+    },
+    POPS: {
+      address: '0x9dE4b40bDcE50Ec6a1A668bF85997BbBD324069a',
+      decimals: 18,
+    },
+    MIM: {
+      address: '0x82f0b8b456c1a451378467398982d4834b6829c1',
+      decimals: 18,
     },
     FRAX: {
       address: '0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355',
@@ -428,8 +492,28 @@ export const Tokens: {
       address: '0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e',
       decimals: 18,
     },
+    BOO: {
+      address: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
+      decimals: 18,
+    },
+    ETH: {
+      address: '0x74b23882a30290451A17c44f4F05243b6b58C76d',
+      decimals: 18,
+    },
+    GDAI: {
+      address: '0x07E6332dD090D287d3489245038daF987955DCFB',
+      decimals: 18,
+    },
+    GUSDC: {
+      address: '0xe578C856933D8e1082740bf7661e379Aa2A30b26',
+      decimals: 6,
+    },
   },
   [Network.BSC]: {
+    POPS: {
+      address: '0xa1051433EC7b5cc249c75Fdd5b96BF423f2f4A32',
+      decimals: 18,
+    },
     DAI: {
       address: '0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3',
       decimals: 18,
@@ -498,16 +582,20 @@ export const Tokens: {
       decimals: 6,
     },
     USDT: {
-      address: '0xde3A24028580884448a5397872046a019649b084',
-      decimals: 6,
-    },
-    USDt: {
       address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
       decimals: 6,
+      addAllowance: _allowancesFn,
+      addBalance: balanceOfFn,
+    },
+    POPS: {
+      address: '0x240248628B7B6850352764C5dFa50D1592A033A8',
+      decimals: 18,
     },
     WAVAX: {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
+      addAllowance: allowanceFn,
+      addBalance: balanceOfFn,
     },
     sAVAX: {
       address: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
@@ -622,20 +710,52 @@ export const Tokens: {
       address: '0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46',
       decimals: 18,
     },
+    BETS: {
+      address: '0x94025780a1ab58868d9b2dbbb775f44b32e8e6e5',
+      decimals: 18,
+    },
+    HATCHY: {
+      address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
+      decimals: 18,
+    },
   },
   [Network.ARBITRUM]: {
     DAI: {
       address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
       decimals: 18,
     },
+    ARB: {
+      address: '0x912ce59144191c1204e64559fe8253a0e49e6548',
+      decimals: 18,
+    },
     WETH: {
       address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
       decimals: 18,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
-    USDC: {
+    USDCe: {
       address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
       decimals: 6,
+    },
+    USDC: {
+      address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+      decimals: 6,
+    },
+    OHM: {
+      address: '0xf0cb2dc0db5e6c66b9a70ac27b06b878da017028',
+      decimals: 9,
+    },
+    RDNT: {
+      address: '0x3082cc23568ea640225c2467653db90e9250aaa0',
+      decimals: 18,
+    },
+    USDT: {
+      address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+      decimals: 6,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
     },
     FRAX: {
       address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
@@ -665,6 +785,26 @@ export const Tokens: {
       address: '0x64343594ab9b56e99087bfa6f2335db24c2d1f17',
       decimals: 18,
     },
+    POPS: {
+      address: '0xa0b20DecBc557E3f68E140eD5a0c69bc865F865A',
+      decimals: 18,
+    },
+    ZYB: {
+      address: '0x3B475F6f2f41853706afc9Fa6a6b8C5dF1a2724c',
+      decimals: 18,
+    },
+    WBTC: {
+      address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
+      decimals: 8,
+    },
+    LEX: {
+      address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
+      decimals: 18,
+    },
+    GRAIL: {
+      address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -684,12 +824,12 @@ export const Tokens: {
       address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
       decimals: 6,
     },
-    OP: {
-      address: '0x4200000000000000000000000000000000000042',
+    POPS: {
+      address: '0x3D51a9fB5dCc87F7B237B04975559b920a9a56Ff',
       decimals: 18,
     },
-    sBTC: {
-      address: '0x298B9B95708152ff6968aafd889c6586e9169f1D',
+    OP: {
+      address: '0x4200000000000000000000000000000000000042',
       decimals: 18,
     },
     sETH: {
@@ -700,6 +840,22 @@ export const Tokens: {
       address: '0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9',
       decimals: 18,
     },
+    wstETH: {
+      address: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
+      decimals: 18,
+    },
+    rETH: {
+      address: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
+      decimals: 18,
+    },
+    MAI: {
+      address: '0xdfa46478f9e5ea86d57387849598dbfb2e964b02',
+      decimals: 18,
+    },
+    WBTC: {
+      address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
+      decimals: 8,
+    },
   },
 };
 
@@ -708,28 +864,31 @@ export const Holders: {
 } = {
   [Network.MAINNET]: {
     ETH: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
-    USDC: '0x99F5F9d77D802adB49f0C35C3139d16043735c9c',
-    WBTC: '0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922',
+    USDC: '0x79E2Ba942B0e8fDB6ff3d406e930289d10B49ADe',
+    WBTC: '0x1cb17a66dc606a52785f69f08f4256526abd4943',
+    sBTC: '0xA2e3475D13776C6E42ff37B47286827d959B2195',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
     wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',
-    WETH: '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8',
-    USDT: '0x5754284f345afc66a98fbb0a0afe71e0f007b949',
+    WETH: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
+    USDT: '0x8A446971dbB112f3be15bc38C14D44B94D9E94b9',
     XAUT: '0xc4e161e8d8a4bc4ac762ab33a28bbac5474203d7',
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
     AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
-    DAI: '0x4943b0c9959dcf58871a799dfb71bece0d97c9f4',
+    DAI: '0x60FaAe176336dAb62e284Fe19B885B095d29fB7F',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
-    BAL: '0x7514f531ef3721b8d2ff8d3a841d7c05011eecca',
+    BAL: '0x740a4AEEfb44484853AA96aB12545FC0290805F3',
+    OHM: '0x3D7FEAB5cfab1c7De8ab2b7D5B260E76fD88BC78',
+    AURA: '0xBB19053E031D9B2B364351B21a8ed3568b21399b',
     WISE: '0x25c315e0758beeab30ee048a4e2080e7084b64b3',
     DDIM: '0x229cbd1955fee93ab6e7876c1b17f6d0b859e953',
     DODO: '0x3e19d726ed435afd3a42967551426b3a47c0f5b7',
     ADAI: '0x826c3064d4f5b9507152f5cb440ca9326e1ec8fa',
     AWETH: '0xa433105e7396070a5e1fdd7e2b2338f1bfa0de68',
-    BUSD: '0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503',
+    BUSD: '0xf977814e90da44bfa03b6295a0616a897441acec',
     INCH: '0x4ee7c0f5480eb1edd8902a5e8b991ed52992d5f5',
     mUSD: '0x3aD1D5CFCF9169Da73C23D85d5f2Bf53bC9d39dF',
     mBTC: '0x15A295e9BCFcF93a8721DCb9A19330fc59771271',
@@ -741,6 +900,7 @@ export const Holders: {
     ADAIv1: '0x3021026e4ff227571a5a563ad19ea657c7027e59',
     CETH: '0x712d0f306956a6a4b4f9319ad9b9de48c5345996',
     CDAI: '0xab4ce310054a11328685ece1043211b68ba5d082',
+    CUSDC: '0xC2F61a6eEEC48d686901D325CDE9233b81c793F3',
     EURS: '0xC1056Adeb61a01964Ea265cA95EffB7016f9Ed78',
     EURT: '0x6914FC70fAC4caB20a8922E900C4BA57fEECf8E1',
     CRV: '0x7a16fF8270133F063aAb6C9977183D9e72835428',
@@ -751,11 +911,18 @@ export const Holders: {
     aWETH: '0x3ddfa8ec3052539b6c9549f12cea2c295cff5296',
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x4361b7425cff39b1be9bf12cee2ef32f89656cda',
-    sBTC: '0xc8c2b727d864cc75199f5118f0943d2087fb543b',
     sETH: '0x5fe009d78afabc1b04abd2d4361f8e95cd402648',
     sUSD: '0xcfb87039a1eda5428e2c8386d31ccf121835ecdb',
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     alETH: '0x500a4f1280a0b63f47862d658b6c335cc939aaed',
+    SHIBA: '0x73af3bcf944a6559933396c1577b257e2054d935',
+    aEthUSDC: '0x3178490d60B5cceaA5a79FD4D9050C7405Bab80c',
+    aEthWETH: '0x645C4c0c95C1Aa6EF25d12f4a25038cA9b0C6Cc7',
+    dUSDC: '0x2FC2F705110A7F46Ce85F701d7217EF1018f01A3',
+    PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
+    crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
+    GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
+    wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -766,10 +933,11 @@ export const Holders: {
   [Network.POLYGON]: {
     MATIC: '0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245',
     DAI: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
-    WETH: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
-    WMATIC: '0xFffbCD322cEace527C8ec6Da8de2461C6D9d4e6e',
+    WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
+    WMATIC: '0x016ba20db4b681f83e5fbbe0c433c96268ab5815',
     AMWMATIC: '0x8832924854e3Cedb0a6Abf372e6CCFF9F7654332',
-    USDC: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
+    USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
+    POPS: '0x2693b57ee51f4e2a26dfb339a911fa8731061f49',
     MUST: '0x9f2a409848fb9b7bd058b24a23e8dbf1e166a109',
     AMDAI: '0xFA0DCe8280FCDf369a4cbFc1830d3302789307a6',
     mUSD: '0x5084f622cbDf1E22E473d66d97916524745B9b6e',
@@ -780,39 +948,47 @@ export const Holders: {
     jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
     aUSDT: '0x027ffd3c119567e85998f4e6b9c3d83d5702660c',
     aPolUSDT: '0x941da3d6759147736456cee36647213183079337',
-    aPolWMATIC: '0x7d96a6f41fd31c7624f7069415be58b5e3576d34',
+    aPolWMATIC: '0xC948eB5205bDE3e18CAc4969d6ad3a56ba7B2347',
     RADIO: '0x60531b9c3645546d864604ee0fc5b7d6adc81cc2',
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
-    stMATIC: '0x3b39669766fe815aa91834b3bd258dea3edbb6d5',
-    axlUSDC: '0x42875ae5766dfd4d70772a3a956842e4b708d59a',
+    stMATIC: '0x6725b8cd3cdbc82a6044689a8bbc64a915d200e7',
+    axlUSDC: '0xe743a49f04f2f77eb2d3b753ae3ad599de8cea84',
     deUSDC: '0x94d5ead1f80cf0b4d3480ab59dff16d47c93e9fe',
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
   },
   [Network.FANTOM]: {
-    FTM: '0xEBf4FBB9C81b84dd5CF89BC75588E5d0018501b3',
-    WFTM: '0x4901C740607E415685b4d09E4Aa960329cd183Ca',
-    USDC: '0xd1e4a32679216f4a4dd38e45dab9bc4b8a45e592',
-    FUSDT: '0xca436e14855323927d6e6264470ded36455fc8bd',
-    aFanUSDT: '0xb0c9c5b5211de3a75b61bb798887b76accd64193',
-    aFanWFTM: '0x639ade8805c0081ea5da9495bb50751003e827cc',
+    DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
+    FTM: '0x431e81E5dfB5A24541b5Ff8762bDEF3f32F96354',
+    WFTM: '0x3e923747ca2675e096d812c3b24846ac39aed645',
+    USDC: '0xf53feaeb035361c046e5669745695e450ebb4028',
+    FUSDT: '0x9ade1c17d25246c405604344f89E8F23F8c1c632',
+    POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
+    aFanUSDT: '0x8EBc96fF91A30059E447bFC7C0a7394f8A5793E6',
+    aFanWFTM: '0x935AD0fBea9572bB24138F23A69e314f0BDbdDbE',
+    MIM: '0xbcab7d083cf6a01e0dda9ed7f8a02b47d125e682',
     FRAX: '0x4423ac71f53ca92e2f2be5917a9c2468e7412f4a',
     nETH: '0x16b658270ac50c0063940ed287c401b3df7ccf70',
-    WETH: '0x2400bb4d7221ba530daee061d5afe219e9223eae',
+    WETH: '0x7b7b957c284c2c227c980d6e2f804311947b84d0',
     SPIRIT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
     wBOMB: '0x28aa4f9ffe21365473b64c161b566c3cdead0108',
     TOR: '0x70de4b5ed310fd93da3c0bae824fb99cb4d44dd8',
+    BOO: '0xf778f4d7a14a8cb73d5261f9c61970ef4e7d7842',
+    ETH: '0xf48883940b4056801de30f12b934dcea90133ee6',
+    GUSDC: '0x894d774a293f8aa3d23d67815d4cadb5319c1094',
+    GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
     WBNB: '0x59d779bed4db1e734d3fda3172d45bc3063ecd69',
     BUSD: '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe',
+    POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     BNB: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
     USDT: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
-    USDC: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
+    USDC: '0x554b52bf57b387fd09d6644368c5a8aacaaf5ae0',
     RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
     bBTC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',
@@ -822,13 +998,15 @@ export const Holders: {
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
-    WAVAX: '0xAc1F5F1eDBcAE771be00d0eC044deC5BEdbFd816',
+    WAVAX: '0xbbff2a8ec8d702e61faaccf7cf705968bb6a5bab',
     sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
-    USDCe: '0xCe2CC46682E9C6D5f174aF598fb4931a9c0bE68e',
-    USDC: '0x4aefa39caeadd662ae31ab0ce7c8c2c9c0a013e8',
+    BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
+    HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
+    USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
+    USDC: '0xbf14db80d9275fb721383a77c00ae180fc40ae98',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
-    USDT: '0x715f3c533Cf264215Ba8BE00838a053284351086',
     WETHe: '0xD291B51f7a1a1F4917D085F2a7731A447E4aF82D',
+    POPS: '0x5268c2331658cb0b2858cfa9db27d8f22f5434bc',
     ETH: '0x9852e84b5AA485683d8AeE7B0332e42442763b75',
     DAIE: '0xED2a7edd7413021d440b09D654f3b87712abAB66',
     TUSD: '0x5Db946411F08f15300f23D9bde4A407B07D56C03',
@@ -837,12 +1015,12 @@ export const Holders: {
     wBTC: '0xbB2BD754A45f400A01158A8b3C89DE085D58ABF1',
     renBTC: '0xb8D1D22609D10078Db36915fc4610F8674b44319',
     ADAI: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
-    MIM: '0x652aD82d4CcbA3b162094b7bee69436d36754317',
+    MIM: '0x64cb3f5aada07d831b8db6c6d9c715c53c251ef3',
     TSD: '0x691A89db352B72dDb249bFe16503494eC0D920A4',
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
-    aAvaUSDT: '0x4cf82fe8e0072d546729d005b08faeeab8528cb7',
-    USDt: '0x876eabf441b2ee5b5b0554fd502a8e0600950cfa',
-    aAvaWAVAX: '0xd3117031ed778fe1cf2b153b7573173c7565f33a',
+    aAvaUSDT: '0x50B1Ba98Cf117c9682048D56628B294ebbAA4ec2',
+    USDT: '0x4aeFa39caEAdD662aE31ab0CE7c8C2c9c0a013E8',
+    aAvaWAVAX: '0x1B18Df70863636AEe4BfBAb6F7C70ceBCA9bA404',
     oldFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     newFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     nETH: '0xcf2ef00e75558512ae735679ea5df62ad2056786',
@@ -850,30 +1028,45 @@ export const Holders: {
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
   },
   [Network.ARBITRUM]: {
+    ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
-    DAI: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
-    WETH: '0xc2707568D31F3fB1Fc55B2F8b2ae5682eAa72041',
-    USDC: '0x1714400FF23dB4aF24F9fd64e7039e6597f18C2b',
+    DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
+    WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
+    USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    USDC: '0xa843392198862f98d17e3aa1421b08f2c2020cff',
+    OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
+    USDT: '0x5ff47d4ab75bcaff6807c81f1367abb53439883c',
+    POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     FRAX: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',
     nETH: '0xa067668661c84476afcdc6fa5d758c4c01c34352',
-    AAVE: '0x7185fbff199928cbae71990ecb3cc4a7be2ff00a',
-    EURS: '0x4449dd09067dcaa55c15f40b465a5173778f8100',
+    AAVE: '0x8D2876aD4D2A994C529F19D846CA541015dc3f05',
+    aArbAAVE: '0x439901eCaB06F75B14bC25fD60d53bB3A3b9e277',
+    EURS: '0x251aeE4A9eB1d8251485D1A9b3bE68975B39EC33',
+    aArbEURS: '0xD2BC982A2035dB0E1Be7c2C1a9f87E31794C653e',
     MIM: '0xf46bb6dda9709c49efb918201d97f6474eac5aea',
     VST: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
+    aArbUSDC: '0x048BF2F5908e95976CeAD0E47D805b3803E286e2',
+    ZYB: '0x3ec0eddcd1e25025077327886a78133589082fb2',
+    WBTC: '0xd9d611c6943585bc0e18e51034af8fa28778f7da',
+    RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
-    DAI: '0x19537BADE509ea6C4BCc8101dC44c72042116Dda',
-    WETH: '0x68526A4295236D2f18cEda8A200CdDD5Aab9e2cC',
+    DAI: '0x1337bedc9d22ecbe766df105c9623922a27963ec',
+    WETH: '0x68F5C0A2DE713a54991E01858Fd27a3832401849',
+    POPS: '0x3cbd9044aaabef08ce93a68448e093cff405ad76',
     USDC: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     USDT: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     OP: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
-    aOptWETH: '0x9CBF099ff424979439dFBa03F00B5961784c06ce',
-    aOptUSDC: '0x70144e5b5bbf464cFf98d689254dc7C7223E01Ab',
+    aOptWETH: '0x7B7D80C40415F744864f051B806b466e2fbB8E68',
+    aOptUSDC: '0x8c0Fcf914E90fF5d7f2D02c1576BF4245FaD2B7F',
     sBTC: '0xbbb33d2e7bd7ddc722e53da9ca8ee97df41cfabf',
     sETH: '0xce3850927d0e631b6082f9d45a6391a3794c51eb',
     sUSD: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
+    wstETH: '0xf7626459234e9249808a06aa08dc6b67c8e0a2fc',
+    rETH: '0x4c2e69e58b14de9afedfb94319519ce34e087283',
+    WBTC: '0xb9c8f0d3254007ee4b98970b94544e473cd610ec',
   },
 };
 

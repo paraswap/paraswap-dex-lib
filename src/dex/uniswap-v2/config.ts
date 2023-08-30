@@ -379,6 +379,22 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       poolGasCost: 90 * 1000,
       feeCode: 25,
     },
+    [Network.MAINNET]: {
+      factoryAddress: '0x1097053Fd2ea711dad45caCcc45EfF7548fCB362',
+      initCode:
+        '0x57224589c67f3f30a6b0d7a1b54cf3153ab84563bc609ef41dfb34f8b2974d2d',
+      poolGasCost: 90 * 1000,
+      feeCode: 25,
+    },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/45376/exchange-v2-arbitrum/version/latest',
+      factoryAddress: '0x02a84c1b3BBD7401a5f7fa98a384EBC70bB5749E',
+      initCode:
+        '0x57224589c67f3f30a6b0d7a1b54cf3153ab84563bc609ef41dfb34f8b2974d2d',
+      poolGasCost: 90 * 1000,
+      feeCode: 25,
+    },
   },
   PaintSwap: {
     [Network.FANTOM]: {
@@ -441,18 +457,78 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  Zyberswap: {
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/zyberswap-arbitrum/zyber-amm',
+      factoryAddress: '0xaC2ee06A14c52570Ef3B9812Ed240BCe359772e7',
+      initCode:
+        '0xfa2ad44b9e39d38a7d396bb44a41ea957ac7b622c5c6afdc285728c300b3382a',
+      feeCode: 25,
+    },
+  },
   Swapsicle: {
     [Network.AVALANCHE]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/billy93/exchange',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-avalanche',
       factoryAddress: '0x9C60C867cE07a3c403E2598388673C10259EC768',
       initCode:
         '0x9e43ee37212e3296c7f6087d3e0a37b48a4e4e413538dac0fd18cfe2f80666c1',
       feeCode: 30,
     },
+    [Network.POLYGON]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-polygon',
+      factoryAddress: '0x735ab9808d792B5c8B54e31196c011c26C08b4ce',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.BSC]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-bnb',
+      factoryAddress: '0xEe673452BD981966d4799c865a96e0b92A8d0E45',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.FANTOM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-fantom',
+      factoryAddress: '0x98F23162E3a7FE610aC89C88E4217a599A15858F',
+      initCode:
+        '0xcb64282d14f9033fbb6a3a827bd515fff027bb6994a0d33ac0424e7e3037dad3',
+      feeCode: 30,
+    },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-arbitrum',
+      factoryAddress: '0x2f0c7c98462651bb2102f6cd05acdad333e031b0',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.MAINNET]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-ethereum',
+      factoryAddress: '0x2F0C7C98462651BB2102F6Cd05acDAd333E031b0',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
+    [Network.OPTIMISM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-optimism',
+      factoryAddress: '0x2f0c7c98462651bb2102f6cd05acdad333e031b0',
+      initCode:
+        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
+      feeCode: 30,
+    },
   },
   QuickSwap: {
     [Network.POLYGON]: {
-      subgraphURL: 'https://api.fura.org/subgraphs/name/quickswap',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap06',
       factoryAddress: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       initCode:
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
@@ -598,6 +674,16 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xc6b4cc64699496d0514c783d6aca5142c3b61e327524db01cabfa4248e430e49',
       poolGasCost: 120 * 1000,
       feeCode: 10,
+    },
+  },
+  Verse: {
+    [Network.MAINNET]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/arnkthr/ethv1/graphql',
+      factoryAddress: '0xee3E9E46E34a27dC755a63e2849C9913Ee1A06E2',
+      initCode:
+        '0x34768b85d02b77066b16acc7f0875ed59566bb3c32ba4fb0438750e872fddf9e',
+      feeCode: 30,
     },
   },
   ZipSwap: {
