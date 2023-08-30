@@ -42,10 +42,11 @@ function compareState(state: PoolState, expectedState: PoolState) {
 describe('QuickPerps Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     IncreaseUsdqAmount: [
-      4960808, 4961034, 4961037, 4961046, 4961052, 4961055, 4961062, 4961153,
-      4961167, 4961190, 4961194, 4961215, 4961220, 4961353, 4961472, 4961476,
-      4961521, 4961628, 4961629, 4961648, 4961664, 4961683, 4961710, 4961716,
-      4961848, 4961853, 4961863, 4961866, 4962156, 4962180, 4962200, 4962296,
+      4960808, 4960808, 4961034, 4961037, 4961046, 4961052, 4961055, 4961062,
+      4961153, 4961167, 4961190, 4961194, 4961215, 4961220, 4961353, 4961472,
+      4961476, 4961521, 4961628, 4961629, 4961648, 4961664, 4961683, 4961710,
+      4961716, 4961848, 4961853, 4961863, 4961866, 4962156, 4962180, 4962200,
+      4962296,
     ],
     DecreaseUsdqAmount: [
       4960808, 4960808, 4961034, 4961037, 4961046, 4961052, 4961055, 4961062,
@@ -72,18 +73,17 @@ describe('QuickPerps Event', function () {
         blockNumber,
         dexHelper.multiContract,
       );
-
-      quickPerpsPool = new QuickPerpsEventPool(
-        dexKey,
-        network,
-        dexHelper,
-        logger,
-        config,
-      );
     });
     Object.keys(blockNumbers).forEach((event: string) => {
       blockNumbers[event].forEach((blockNumber: number) => {
         it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
+          quickPerpsPool = new QuickPerpsEventPool(
+            dexKey,
+            network,
+            dexHelper,
+            logger,
+            config,
+          );
           await testEventSubscriber(
             quickPerpsPool,
             quickPerpsPool.addressesSubscribed,
