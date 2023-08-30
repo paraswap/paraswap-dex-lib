@@ -1,0 +1,176 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_router",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "approveRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "factory",
+    "outputs": [
+      {
+        "internalType": "contract IFactory",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllOrderBooks",
+    "outputs": [
+      {
+        "internalType": "uint8[]",
+        "name": "orderBookIds",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "orderBookAddresses",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "token0s",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "token1s",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint128[]",
+        "name": "sizeTicks",
+        "type": "uint128[]"
+      },
+      {
+        "internalType": "uint128[]",
+        "name": "priceTicks",
+        "type": "uint128[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountIn",
+        "type": "uint256"
+      }
+    ],
+    "name": "quoteExactInput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "router",
+    "outputs": [
+      {
+        "internalType": "contract Router",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minAmountOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "swapExactInput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
