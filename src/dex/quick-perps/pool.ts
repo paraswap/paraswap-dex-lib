@@ -280,11 +280,13 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     let multiCallData: MultiCallInput[] = [];
     let i = 0;
     for (let priceFeed of priceFeeds) {
-      const chainlinkConfigCallData =
+      const api3ServerAddressCallData =
         Api3FeedSubscriber.getApi3ServerV1MultiCallInput(priceFeed);
-      multiCallData.push(chainlinkConfigCallData);
-      multicallSlices.push([i, i + 1]);
-      i += 1;
+      const dapiNameHashCallData =
+        Api3FeedSubscriber.getApi3ServerV1MultiCallInput(priceFeed);
+      multiCallData.push(...[api3ServerAddressCallData, dapiNameHashCallData]);
+      multicallSlices.push([i, i + 2]);
+      i += 2;
     }
 
     const fastPriceFeedConfigCallData = FastPriceFeed.getConfigMulticallInputs(
@@ -314,15 +316,24 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     ).returnData;
 
     const api3ServerV1: {
-      [address: string]: { proxy: Address; api3ServerV1: Address };
+      [address: string]: {
+        proxy: Address;
+        api3ServerV1: Address;
+        dapiNameHash: string;
+      };
     } = {};
     for (let token of tokens) {
-      const serverV1Address = Api3FeedSubscriber.decodeApi3ServerV1Result(
-        configResults.slice(...multicallSlices.shift()!)[0],
+      const [api3ServerAddressRes, dapiHashNameRes] = configResults.slice(
+        ...multicallSlices.shift()!,
       );
+      const serverV1Address =
+        Api3FeedSubscriber.decodeApi3ServerV1Result(api3ServerAddressRes);
+      const dapiNameHash =
+        Api3FeedSubscriber.decodeApi3ServerV1Result(dapiHashNameRes);
       api3ServerV1[token] = {
         proxy: priceFeeds.shift(),
         api3ServerV1: serverV1Address,
+        dapiNameHash,
       };
     }
 
@@ -344,6 +355,8 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
 
     const vaultConfigResults = configResults.slice(...multicallSlices.shift()!);
     const vaultConfig = Vault.getConfig(vaultConfigResults, tokens);
+
+    const beeconIdMulticall = 
 
     return {
       vaultAddress: dexParams.vault,

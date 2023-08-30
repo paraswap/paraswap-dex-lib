@@ -32,6 +32,7 @@ export class Api3FeedSubscriber<State> extends PartialEventSubscriber<
   constructor(
     private proxy: Address,
     api3Server: Address,
+    private beaconId: string,
     lens: Lens<DeepReadonly<State>, DeepReadonly<Api3FeedSubscriberState>>,
     logger: Logger,
   ) {
@@ -46,9 +47,40 @@ export class Api3FeedSubscriber<State> extends PartialEventSubscriber<
     };
   }
 
+  static getDapiNameHash(proxy: Address): MultiCallInput {
+    return {
+      target: proxy,
+      callData:
+        Api3FeedSubscriber.proxyInterface.encodeFunctionData('dapiNameHash'),
+    };
+  }
+
+  static getFeedIdFromDapiNameHash(api3Server: string, dapiNameHash: string) {
+    return {
+      target: api3Server,
+      callData: Api3FeedSubscriber.api3ServerV1Iface.encodeFunctionData(
+        'dapiNameHashToDataFeedId',
+      ),
+    };
+  }
+
+  static decodeFeedIdFromDapiNameHash(multicallOutput: MultiCallOutput) {
+    return Api3FeedSubscriber.proxyInterface.decodeFunctionResult(
+      'dapiNameHashToDataFeedId',
+      multicallOutput,
+    )[0];
+  }
+
   static decodeApi3ServerV1Result(multicallOutput: MultiCallOutput): Address {
     return Api3FeedSubscriber.proxyInterface.decodeFunctionResult(
       'api3ServerV1',
+      multicallOutput,
+    )[0];
+  }
+
+  static decodeDapiNameHash(multicallOutput: MultiCallOutput): Address {
+    return Api3FeedSubscriber.proxyInterface.decodeFunctionResult(
+      'dapiNameHash',
       multicallOutput,
     )[0];
   }

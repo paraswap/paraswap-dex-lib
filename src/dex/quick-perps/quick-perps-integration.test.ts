@@ -16,32 +16,19 @@ import { Tokens } from '../../../tests/constants-e2e';
 import ReaderABI from '../../abi/quick-perps/reader.json';
 
 const network = Network.ZKEVM;
-const TokenASymbol = 'WETH';
-const TokenA = Tokens[network][TokenASymbol];
-
-const TokenBSymbol = 'MATIC';
-const TokenB = Tokens[network][TokenBSymbol];
-
-const amounts = [
-  0n,
-  100000000000000000n,
-  200000000000000000n,
-  300000000000000000n,
-  400000000000000000n,
-  500000000000000000n,
-  600000000000000000n,
-  700000000000000000n,
-  800000000000000000n,
-  900000000000000000n,
-  1000000000000000000n,
-];
-
 const dexKey = 'QuickPerps';
 const params = QuickPerpsConfig[dexKey][network];
 const readerInterface = new Interface(ReaderABI);
 const readerAddress = '0xf1CFB75854DE535475B88Bb6FBad317eea98c0F9';
 
-describe('QuickPerps', function () {
+function testsForCase(
+  tokenASymbol: string,
+  tokenBSymbol: string,
+  amounts: bigint[],
+) {
+  const TokenA = Tokens[network][tokenASymbol];
+  const TokenB = Tokens[network][tokenBSymbol];
+
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
     const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
@@ -55,7 +42,7 @@ describe('QuickPerps', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    console.log(`${tokenASymbol} <> ${tokenBSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -67,7 +54,7 @@ describe('QuickPerps', function () {
       blocknumber,
       pools,
     );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+    console.log(`${tokenASymbol} <> ${tokenBSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     if (quickPerps.hasConstantPriceLargeAmounts) {
@@ -111,12 +98,56 @@ describe('QuickPerps', function () {
       10,
     );
     console.log(
-      `${TokenASymbol} Top Pools:`,
+      `${tokenASymbol} Top Pools:`,
       JSON.stringify(poolLiquidity, null, 2),
     );
 
     if (!quickPerps.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
     }
+  });
+}
+
+describe('QuickPerps', function () {
+  describe('WETH -> MATIC', function () {
+    const TokenASymbol = 'WETH';
+    const TokenBSymbol = 'MATIC';
+
+    const amounts = [
+      0n,
+      100000000000000000n,
+      200000000000000000n,
+      300000000000000000n,
+      400000000000000000n,
+      500000000000000000n,
+      600000000000000000n,
+      700000000000000000n,
+      800000000000000000n,
+      900000000000000000n,
+      1000000000000000000n,
+    ];
+
+    testsForCase(TokenASymbol, TokenBSymbol, amounts);
+  });
+
+  describe('WBTC -> USDC', function () {
+    const TokenASymbol = 'WBTC';
+    const TokenBSymbol = 'USDC';
+
+    const amounts = [
+      0n,
+      100000000n,
+      200000000n,
+      300000000n,
+      400000000n,
+      500000000n,
+      600000000n,
+      700000000n,
+      800000000n,
+      900000000n,
+      1000000000n,
+    ];
+
+    testsForCase(TokenASymbol, TokenBSymbol, amounts);
   });
 });

@@ -88,6 +88,10 @@ export type PoolConfig = {
   vaultPriceFeedConfig: VaultPriceFeedConfig;
   fastPriceFeedConfig: FastPriceFeedConfig;
   api3ServerV1: {
-    [address: string]: { proxy: Address; api3ServerV1: Address };
+    [address: string]: {
+      proxy: Address;
+      api3ServerV1: Address;
+      beaconId: string;
+    };
   };
 };
