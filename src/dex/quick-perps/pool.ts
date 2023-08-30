@@ -26,7 +26,6 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
-    logger: Logger,
     config: PoolConfig,
   ) {
     const api3ServerV1Map = Object.entries(config.api3ServerV1).reduce(
@@ -38,7 +37,9 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
           value.proxy,
           value.api3ServerV1,
           lens<DeepReadonly<PoolState>>().primaryPrices[key],
-          dexHelper.getLogger(`${key} ChainLink for ${parentName}-${network}`),
+          dexHelper.getLogger(
+            `${key} Api3FeedSubscriber for ${parentName}-${network}`,
+          ),
         );
         return acc;
       },

@@ -67,7 +67,6 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
       this.dexKey,
       this.network,
       this.dexHelper,
-      this.logger,
       config,
     );
     await this.pool.initialize(blockNumber);
