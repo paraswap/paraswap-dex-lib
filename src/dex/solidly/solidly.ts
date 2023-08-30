@@ -66,6 +66,7 @@ export class Solidly extends UniswapV2 {
     getDexKeysWithNetwork(
       _.omit(SolidlyConfig, [
         'Velodrome',
+        'VelodromeV2',
         'SpiritSwapV2',
         'Cone',
         'SolidlyV2',
