@@ -46,6 +46,7 @@ import { Ramses } from './solidly/forks-override/ramses';
 import { Thena } from './solidly/forks-override/thena';
 import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
+import { VelodromeV2 } from './solidly/forks-override/velodromeV2';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
@@ -130,6 +131,7 @@ const Dexes = [
   Thena,
   Chronos,
   Velodrome,
+  VelodromeV2,
   Cone,
   SoliSnek,
   Equalizer,
