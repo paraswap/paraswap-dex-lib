@@ -15,6 +15,7 @@ import { Chronos } from './forks-override/chronos';
 import { Ramses } from './forks-override/ramses';
 import * as util from 'util';
 import { VelodromeV2 } from './forks-override/velodromeV2';
+import { Equalizer } from './forks-override/equalizer';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
 const amounts6 = [0n, BI_POWS[6], 2000000n];
@@ -350,6 +351,120 @@ describe('Solidly integration tests', () => {
           console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
           checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+        });
+      });
+    });
+
+    describe('Equalizer', () => {
+      const dexKey = 'Equalizer';
+      const equalizer = new Equalizer(network, dexKey, dexHelper);
+
+      describe('UniswapV2 like pool', function () {
+        const TokenASymbol = 'WFTM';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'FUSDT';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts18;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await equalizer.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await equalizer.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              equalizer,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+      });
+
+      describe('Curve like stable pool', function () {
+        const TokenASymbol = 'FUSDT';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'USDC';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts6; // amounts6;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await equalizer.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await equalizer.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              equalizer,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
         });
       });
     });

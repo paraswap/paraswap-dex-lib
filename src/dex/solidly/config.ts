@@ -150,16 +150,11 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Equalizer: {
     [Network.FANTOM]: {
-      subgraphURL: '',//'https://api.thegraph.com/subgraphs/name/ftm1337/equalizer-subgraph-1',//inactive
       factoryAddress: '0xc6366EFD0AF1d09171fe0EBF32c7943BB310832a',
-      router: '0x1A05EB736873485655F29a37DEf8a0AA87F5a447',
+      router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
       initCode:
         '0x02ada2a0163cd4f7e0f0c9805f5230716a95b174140e4c84c14883de216cc6a3',
-      // updatable fees on the factory without event
-      //stableFee: 2,
-      //volatileFee: 20,
-      //feeCode: 2,
-      feeCode: 0, // variable
+      feeCode: 0,
       poolGasCost: 180 * 1000,
     },
   },
