@@ -88,6 +88,7 @@ export type RFQPayload = {
   data?: {
     from: string;
     to: string;
+    value: string;
     calldata: string;
   };
 };

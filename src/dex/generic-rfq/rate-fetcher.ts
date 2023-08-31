@@ -379,6 +379,7 @@ export class RateFetcher {
     data?: {
       from: string;
       to: string;
+      value: string;
       calldata: string;
     },
   ): Promise<OrderInfo> {

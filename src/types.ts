@@ -294,6 +294,7 @@ export type PreprocessTransactionOptions = {
   data?: {
     from: string;
     to: string;
+    value: string;
     calldata: string;
   };
 };
