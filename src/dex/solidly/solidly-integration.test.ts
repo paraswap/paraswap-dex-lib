@@ -467,6 +467,62 @@ describe('Solidly integration tests', () => {
           }
         });
       });
+
+      describe('FTM -> EQUAL', () => {
+        const TokenASymbol = 'WFTM';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'EQUAL';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = [0n, 10000000n];
+
+        console.log('AMOUNTS: ', amounts);
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          // const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const blocknumber = 67666611;
+          const pools = await equalizer.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await equalizer.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+          for (const i in poolPrices || []) {
+            await checkOnChainPricing(
+              equalizer,
+              'getAmountOut',
+              blocknumber,
+              poolPrices![i].prices,
+              poolPrices![i].poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+      });
     });
   });
 
