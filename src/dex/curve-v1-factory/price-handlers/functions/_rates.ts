@@ -36,7 +36,7 @@ const customPlain3CoinSbtc: _rates = (
     let rate = LENDING_PRECISION; // Used with no lending
     if (use_lending[i]) {
       const currentRate = state.exchangeRateCurrent[i];
-      if (currentRate === undefined) {
+      if (!currentRate) {
         throw new Error(
           `${self.IMPLEMENTATION_NAME}: exchangeRateCurrent contains undefined value that supposed to be used: ${state.exchangeRateCurrent}`,
         );
@@ -55,6 +55,7 @@ const notExist: _rates = (self: IPoolContext, state: PoolState) => {
 const implementations: Record<ImplementationNames, _rates> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinSbtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinSbtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 
@@ -101,6 +102,13 @@ const implementations: Record<ImplementationNames, _rates> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notExist,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: notExist,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: notExist,
 };
 
 export default implementations;

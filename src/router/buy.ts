@@ -3,6 +3,7 @@ import {
   PayloadEncoder,
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 import {
   Address,
@@ -61,6 +62,22 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       minMaxAmount,
       priceRoute.srcAmount,
     );
+
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(SwapSide.BUY)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.BUY,
+          ),
+        ];
+
     const buyData: ContractBuyData = {
       adapter,
       fromToken: priceRoute.srcToken,
@@ -70,14 +87,8 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       expectedAmount: priceRoute.srcAmount,
       beneficiary,
       route,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(SwapSide.BUY)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.BUY,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

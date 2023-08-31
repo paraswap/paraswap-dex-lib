@@ -3,6 +3,7 @@ import {
   PayloadEncoder,
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 import {
   Address,
@@ -58,6 +59,22 @@ export class MultiSwap
     const { paths, networkFee } = this.getContractPathsWithNetworkFee(
       priceRoute.bestRoute[0].swaps,
     );
+
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(SwapSide.SELL)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            positiveSlippageToUser,
+          }),
+          encodeFeePercent(
+            partnerFeePercent,
+            positiveSlippageToUser,
+            SwapSide.SELL,
+          ),
+        ];
+
     const sellData: ContractSellData = {
       fromToken: priceRoute.srcToken,
       fromAmount: priceRoute.srcAmount,
@@ -65,14 +82,8 @@ export class MultiSwap
       expectedAmount: priceRoute.destAmount,
       beneficiary,
       path: paths,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(SwapSide.SELL)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.SELL,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

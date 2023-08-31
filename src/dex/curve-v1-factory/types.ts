@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import { NumberAsString } from '@paraswap/core';
 import { Address } from '../../types';
 
 // The difference between PoolContextConstants and PoolConstants lies in the fact
@@ -56,6 +57,7 @@ export type PoolState = {
   exchangeRateCurrent?: (bigint | undefined)[]; // from cToken -> exchangeRateCurrent()
   offpeg_fee_multiplier?: bigint; // from pool
   basePoolState?: PoolState;
+  storedRates?: bigint[]; // from pool, but only for oracle ones
 };
 
 export type PoolStateWithUpdateInfo<T> = {
@@ -69,6 +71,7 @@ export type CurveV1FactoryData = {
   i: number;
   j: number;
   underlyingSwap: boolean;
+  isApproved?: boolean;
 };
 
 export enum FactoryImplementationNames {
@@ -82,6 +85,9 @@ export enum FactoryImplementationNames {
   FACTORY_META_BTC = 'factory_meta_btc',
   FACTORY_META_BTC_BALANCES = 'factory_meta_btc_balances',
 
+  FACTORY_META_BTC_SBTC2 = 'factory_meta_btc_sbtc2',
+  FACTORY_META_BTC_BALANCES_SBTC2 = 'factory_meta_btc_balances_sbtc2',
+
   FACTORY_META_BTC_REN = 'factory_meta_btc_ren',
   FACTORY_META_BTC_BALANCES_REN = 'factory_meta_btc_balances_ren',
 
@@ -93,8 +99,12 @@ export enum FactoryImplementationNames {
 
   FACTORY_PLAIN_2_BALANCES = 'factory_plain_2_balances',
   FACTORY_PLAIN_2_BASIC = 'factory_plain_2_basic',
+  FACTORY_PLAIN_2_BASIC_EMA = 'factory_plain_2_basic_ema',
   FACTORY_PLAIN_2_ETH = 'factory_plain_2_eth',
+  FACTORY_PLAIN_2_ETH_EMA = 'factory_plain_2_eth_ema',
+  FACTORY_PLAIN_2_ETH_EMA2 = 'factory_plain_2_eth_ema2',
   FACTORY_PLAIN_2_OPTIMIZED = 'factory_plain_2_optimized',
+  FACTORY_PLAIN_2_CRV_EMA = 'factory_plain_2_crv_ema',
 
   FACTORY_PLAIN_3_BALANCES = 'factory_plain_3_balances',
   FACTORY_PLAIN_3_BASIC = 'factory_plain_3_basic',
@@ -112,6 +122,7 @@ export enum CustomImplementationNames {
   CUSTOM_PLAIN_2COIN_RENBTC = 'custom_plain_2coin_renbtc',
   CUSTOM_PLAIN_3COIN_SBTC = 'custom_plain_3coin_sbtc',
   CUSTOM_PLAIN_3COIN_THREE = 'custom_plain_3coin_three',
+  CUSTOM_PLAIN_2COIN_WBTC = 'custom_plain_2coin_wbtc',
 
   CUSTOM_ARBITRUM_2COIN_USD = 'custom_arbitrum_2coin_usd',
   CUSTOM_ARBITRUM_2COIN_BTC = 'custom_arbitrum_2coin_btc',
@@ -142,6 +153,9 @@ export type FactoryPoolImplementations = {
   name: FactoryImplementationNames;
   address: Address;
   basePoolAddress?: Address;
+  customGasCost?: number;
+  isStoreRateSupported?: boolean;
+  liquidityApiSlug?: string;
 };
 
 export type CustomPoolConfig = {
@@ -155,10 +169,14 @@ export type CustomPoolConfig = {
   // You must specify what typ must be encoded/decoded for coins request
   coinsInputType: string;
   balancesInputType: string;
+  // Because we have legacy event based implementation and new one, we don't want to use all
+  // pools for pricing. Only the ones that are explicitly specified. After legacy is fully moved to this implementation
+  // we can remove this flag
+  useForPricing: boolean;
 };
 
 export type DexParams = {
-  factoryAddress: string | null;
+  factoryAddresses: string[] | null;
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;
@@ -181,3 +199,27 @@ export type CurveV1FactoryIfaces = {
 };
 
 export type LiquidityInCache = Record<string, number>;
+
+export enum CurveV1SwapType {
+  EXCHANGE,
+  EXCHANGE_UNDERLYING,
+}
+
+export type DirectCurveV1Param = [
+  fromToken: Address,
+  toToken: Address,
+  exchange: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  feePercent: NumberAsString,
+  i: NumberAsString,
+  j: NumberAsString,
+  partner: Address,
+  isApproved: boolean,
+  swapType: CurveV1SwapType,
+  beneficiary: Address,
+  needWrapNative: boolean,
+  permit: string,
+  uuid: string,
+];

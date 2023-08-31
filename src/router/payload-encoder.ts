@@ -9,32 +9,74 @@ import {
   Address,
   Adapters,
 } from '../types';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 import { DexAdapterService } from '../dex';
 import { convertToBasisPoints } from '../utils';
+import { assert } from 'ts-essentials';
 
 const OneShift14 = 1n << 14n;
 const OneShift15 = 1n << 15n;
 const OneShift16 = 1n << 16n;
+const OneShift17 = 1n << 17n;
 const OneShift248 = 1n << 248n;
 
-// Referrer gets 50% of what ParaSwap takes i.e. 25% of positive slippage
+// Referrer gets 25% of positive slippage
 // Set 16th bit to indicate referral program
-const REFERRER_FEE = 5000n | OneShift14 | OneShift16 | OneShift248;
+const REFERRER_FEE = 2500n | OneShift14 | OneShift16 | OneShift248;
+
+const HALF_SPLIT = '5000';
+
+export function encodePartnerAddressForFeeLogic({
+  partnerAddress,
+  partnerFeePercent,
+  positiveSlippageToUser,
+}: {
+  partnerAddress: string;
+  partnerFeePercent: string;
+  positiveSlippageToUser: boolean;
+}): string {
+  const isPartnerTakeNoFeeNoPos =
+    +partnerFeePercent === 0 && positiveSlippageToUser == true;
+
+  // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
+  const partner = isPartnerTakeNoFeeNoPos ? NULL_ADDRESS : partnerAddress;
+
+  // invariant checks
+  if (+partnerFeePercent > 0 && partner !== partnerAddress) {
+    throw new Error('logic error: should return partner address if fee is set');
+  }
+
+  return partner;
+}
 
 export function encodeFeePercent(
   partnerFeePercent: string,
   positiveSlippageToUser: boolean,
   side: SwapSide,
 ) {
-  let fee = BigInt(partnerFeePercent);
+  const isNoFeeAndPositiveSlippageToPartner =
+    positiveSlippageToUser === false && BigInt(partnerFeePercent) === 0n;
+
+  let fee = isNoFeeAndPositiveSlippageToPartner
+    ? BigInt(HALF_SPLIT)
+    : BigInt(partnerFeePercent);
+
   if (fee > 10000) throw new Error('fee bps should be less than 10000');
 
+  // Set 16th bit as referrer to split positive slippage for partner and protocol
+  // Set 17th bit to flag on Subgraph that this is a special case
+  if (isNoFeeAndPositiveSlippageToPartner) {
+    fee |= OneShift16;
+    fee |= OneShift17;
+  }
+
   // Set 14th bit if positiveSlippageToUser is true
+  // Upd: not used onchain anymore but better to keep to prevent collisions and ensure continuity of analytics
   if (positiveSlippageToUser) fee |= OneShift14;
 
   // Set 15th bit to take fee from srcToken
-  if (side === SwapSide.BUY) fee |= OneShift15;
+  if (side === SwapSide.BUY && !isNoFeeAndPositiveSlippageToPartner)
+    fee |= OneShift15;
 
   // Bits 248 - 255 is used for version;
   // Set version = 1;
@@ -47,7 +89,7 @@ export function encodeFeePercentForReferrer(side: SwapSide) {
   let fee = REFERRER_FEE;
 
   // Set 15th bit to take fee from srcToken
-  if (side === SwapSide.BUY) fee |= OneShift15;
+  // if (side === SwapSide.BUY) fee |= OneShift15; // stop setting this flag to take right circuit
 
   return fee.toString();
 }

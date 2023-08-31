@@ -106,6 +106,8 @@ describe('UniswapV3 Event', function () {
             token0,
             token1,
             logger,
+            undefined,
+            config.initHash,
           );
 
           // It is done in generateState. But here have to make it manually
@@ -159,6 +161,8 @@ describe('UniswapV3 Event', function () {
       _token0,
       _token1,
       logger,
+      undefined,
+      config.initHash,
     );
 
     // It is done in generateState. But here have to make it manually

@@ -64,7 +64,17 @@ export class Solidly extends UniswapV2 {
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.omit(SolidlyConfig, ['Velodrome', 'SpiritSwapV2', 'Cone', 'SolidlyV2']),
+      _.omit(SolidlyConfig, [
+        'Velodrome',
+        'VelodromeV2',
+        'SpiritSwapV2',
+        'Cone',
+        'SolidlyV2',
+        'Thena',
+        'SoliSnek',
+        'Chronos',
+        'Ramses',
+      ]),
     );
 
   constructor(
@@ -512,6 +522,7 @@ export class Solidly extends UniswapV2 {
     const pair = await this.findSolidlyPair(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
     const pairState = pair.pool.getState(blockNumber);
+
     if (!pairState) {
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${

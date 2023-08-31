@@ -51,6 +51,7 @@ const makeFuncCacheable = (func: get_D_precisions): get_D_precisions => {
 const implementations: Record<ImplementationNames, get_D_precisions> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: notExist,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: notExist,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: notExist,
 
@@ -105,6 +106,13 @@ const implementations: Record<ImplementationNames, get_D_precisions> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: notExist,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: notExist,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: notExist,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: notExist,
 };
 
 export default implementations;

@@ -42,10 +42,15 @@ import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { Ramses } from './solidly/forks-override/ramses';
+import { Thena } from './solidly/forks-override/thena';
+import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
+import { VelodromeV2 } from './solidly/forks-override/velodromeV2';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
+import { SoliSnek } from './solidly/forks-override/solisnek';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -60,8 +65,13 @@ import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
-import { ZyberSwapV3 } from './quickswap/zyberswap-v3';
+import { ThenaFusion } from './quickswap/thena-fusion';
 import { TraderJoeV2 } from './trader-joe-v2';
+import { SwaapV2 } from './swaap-v2/swaap-v2';
+import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
+import { TraderJoeV21 } from './trader-joe-v2.1';
+import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
+import { Algebra } from './algebra/algebra';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 
 const LegacyDexes = [
@@ -79,8 +89,10 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   QuickSwapV3,
-  ZyberSwapV3,
+  ThenaFusion,
+  SpiritSwapV3,
   TraderJoeV2,
+  TraderJoeV21,
   Jarvis,
   Lido,
   AugustusRFQOrder,
@@ -94,6 +106,8 @@ const Dexes = [
   BalancerV2,
   UniswapV2,
   UniswapV3,
+  Algebra,
+  PancakeswapV3,
   BiSwap,
   MDEX,
   Dfyn,
@@ -113,8 +127,13 @@ const Dexes = [
   Solidly,
   SolidlyEthereum,
   SpiritSwapV2,
+  Ramses,
+  Thena,
+  Chronos,
   Velodrome,
+  VelodromeV2,
   Cone,
+  SoliSnek,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
@@ -122,6 +141,7 @@ const Dexes = [
   Hashflow,
   MaverickV1,
   Camelot,
+  SwaapV2,
   NomiswapV2,
 ];
 

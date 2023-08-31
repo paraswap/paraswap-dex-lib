@@ -2,48 +2,61 @@ import { Interface } from '@ethersproject/abi';
 import { assert, DeepReadonly } from 'ts-essentials';
 import _, { keyBy } from 'lodash';
 import {
-  Token,
+  AdapterExchangeParam,
   Address,
   ExchangePrices,
-  PoolPrices,
   Log,
-  AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
+  TxInfo,
+  PreprocessTransactionOptions,
+  ExchangeTxInfo,
+  PoolLiquidity,
+  PoolPrices,
+  SimpleExchangeParam,
+  Token,
 } from '../../types';
 import {
-  SwapSide,
   ETHER_ADDRESS,
-  NULL_ADDRESS,
   MAX_INT,
   MAX_UINT,
   Network,
+  NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
+  SwapSide,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { StablePool, WeightedPool } from './balancer-v2-pool';
-import { PhantomStablePool } from './PhantomStablePool';
-import { LinearPool } from './LinearPool';
+import { StablePool } from './pools/stable/StablePool';
+import { WeightedPool } from './pools/weighted/WeightedPool';
+import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
+import { LinearPool } from './pools/linear/LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
-  PoolState,
-  SubgraphPoolBase,
-  BalancerV2Data,
   BalancerParam,
-  BalancerSwap,
-  OptimizedBalancerV2Data,
-  SwapTypes,
-  PoolStateMap,
-  PoolStateCache,
   BalancerPoolTypes,
+  BalancerSwap,
+  BalancerV2Data,
+  OptimizedBalancerV2Data,
+  PoolState,
+  PoolStateCache,
+  PoolStateMap,
   SubgraphPoolAddressDictionary,
+  BalancerV2DirectParam,
+  SubgraphPoolBase,
+  SwapTypes,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { BalancerConfig, Adapters } from './config';
 import {
   getAllPoolsUsedInPaths,
@@ -52,10 +65,97 @@ import {
   poolGetPathForTokenInOut,
 } from './utils';
 import {
+  DirectMethods,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+
+// If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
+const enabledPoolTypes = [
+  // BalancerPoolTypes.MetaStable, // BOOSTED POOLS Disabled since vulnerability https://github.com/BalancerMaxis/multisig-ops/blob/main/BIPs/00notGov/2023-08-mitigation.md
+  BalancerPoolTypes.Stable,
+  BalancerPoolTypes.Weighted,
+  BalancerPoolTypes.LiquidityBootstrapping,
+  BalancerPoolTypes.Investment,
+  BalancerPoolTypes.StablePhantom,
+  BalancerPoolTypes.AaveLinear,
+  BalancerPoolTypes.ERC4626Linear,
+  BalancerPoolTypes.Linear,
+  BalancerPoolTypes.ComposableStable,
+  BalancerPoolTypes.BeefyLinear,
+  BalancerPoolTypes.GearboxLinear,
+  BalancerPoolTypes.MidasLinear,
+  BalancerPoolTypes.ReaperLinear,
+  BalancerPoolTypes.SiloLinear,
+  BalancerPoolTypes.TetuLinear,
+  BalancerPoolTypes.YearnLinear,
+];
+
+const disabledPoolIds = [
+  // broken ?
+  '0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6',
+
+  /* DISABLED POOLS SINCE VULNERABILITY https://github.com/BalancerMaxis/multisig-ops/blob/main/BIPs/00notGov/2023-08-mitigation.md*/
+  /* START:2023-08-mitigation */
+  //mainnet
+  '0xbf2ef8bdc2fc0f3203b3a01778e3ec5009aeef3300000000000000000000058d',
+  '0x99c88ad7dc566616548adde8ed3effa730eb6c3400000000000000000000049a',
+  '0x60683b05e9a39e3509d8fdb9c959f23170f8a0fa000000000000000000000489',
+  '0xa13a9247ea42d743238089903570127dda72fe4400000000000000000000035d',
+  '0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe',
+  '0x25accb7943fd73dda5e23ba6329085a3c24bfb6a000200000000000000000387',
+  '0x50cf90b954958480b8df7958a9e965752f62712400000000000000000000046f',
+  '0x133d241f225750d2c92948e464a5a80111920331000000000000000000000476',
+  '0x8a6b25e33b12d1bb6929a8793961076bd1f9d3eb0002000000000000000003e8',
+  '0x959216bb492b2efa72b15b7aacea5b5c984c3cca000200000000000000000472',
+  '0x9b692f571b256140a39a34676bffa30634c586e100000000000000000000059d',
+
+  // polygon
+  '0xb3d658d5b95bf04e2932370dd1ff976fe18dd66a000000000000000000000ace',
+  '0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b',
+  '0xb54b2125b711cd183edd3dd09433439d5396165200000000000000000000075e',
+
+  // arbitrum
+  '0xa8af146d79ac0bb981e4e0d8b788ec5711b1d5d000000000000000000000047b',
+  '0x077794c30afeccdf5ad2abc0588e8cee7197b71a000000000000000000000352',
+  '0x519cce718fcd11ac09194cff4517f12d263be067000000000000000000000382',
+
+  // optimism
+  '0x23ca0306b21ea71552b148cf3c4db4fc85ae19290000000000000000000000ac',
+  '0x62cf35db540152e94936de63efc90d880d4e241b0000000000000000000000ef',
+  '0x098f32d98d0d64dba199fc1923d3bf4192e787190001000000000000000000d2',
+  '0x43da214fab3315aa6c02e0b8f2bfb7ef2e3c60a50000000000000000000000ae',
+  '0xb1c9ac57594e9b1ec0f3787d9f6744ef4cb0a02400000000000000000000006e',
+  '0xde45f101250f2ca1c0f8adfc172576d10c12072d00000000000000000000003f',
+  '0x05e7732bf9ae5592e6aa05afe8cd80f7ab0a7bea00020000000000000000005a',
+  '0x981fb05b738e981ac532a99e77170ecb4bc27aef00010000000000000000004b',
+  '0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd000000000000000000000046',
+  '0x3c74c4ed512050eb843d89fb9dcd5ebb4668eb6d0002000000000000000000cc',
+
+  // fantom
+  '0xc0064b291bd3d4ba0e44ccfc81bf8e7f7a579cd200000000000000000000042c',
+  '0x6e6dc948ce85c62125ff7a1e543d761a88f0a4cb000000000000000000000743',
+  '0x78ab08bf98f90f29a09c9b1d85b3b549369b03a3000100000000000000000354',
+  '0x302b8b64795b064cadc32f74993a6372498608070001000000000000000003e0',
+  '0x5ddb92a5340fd0ead3987d3661afcd6104c3b757000000000000000000000187',
+  '0xdfc65c1f15ad3507754ef0fd4ba67060c108db7e000000000000000000000406',
+  '0x6da14f5acd58dd5c8e486cfa1dc1c550f5c61c1c0000000000000000000003cf',
+  '0x592fa9f9d58065096f2b7838709c116957d7b5cf00020000000000000000043c',
+  '0xf47f4d59c863c02cbfa3eefe6771b9c9fbe7b97800000000000000000000072b',
+  '0xff2753aaba51c9f84689b9bd0a21b3cf380a1cff00000000000000000000072e',
+  '0x10441785a928040b456a179691141c48356eb3a50001000000000000000002fa',
+  '0x64b301e21d640f9bef90458b0987d81fb4cf1b9e00020000000000000000022e',
+  '0xba0e9aea8a7fa1daab4edf244191f2387a4e472b000100000000000000000737',
+  '0x1e2576344d49779bdbb71b1b76193d27e6f996b700020000000000000000032d',
+  '0xa10285f445bcb521f1d623300dc4998b02f11c8f00000000000000000000043b',
+
+  // zkevm
+  '0x6f34a44fce1506352a171232163e7716dd073ade000200000000000000000015',
+  '0xe274c9deb6ed34cfe4130f8d0a8a948dea5bb28600000000000000000000000d',
+  /* END:2023-08-mitigation */
+];
 
 const fetchAllPools = `query ($count: Int) {
   pools: pools(
@@ -66,7 +166,7 @@ const fetchAllPools = `query ($count: Int) {
       totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
       totalShares_not_in: ["0", "0.000000000001"],
       id_not_in: [
-        "0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6"
+        ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
       ],
        address_not_in: [
         "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
@@ -78,9 +178,7 @@ const fetchAllPools = `query ($count: Int) {
       ],
       swapEnabled: true,
       poolType_in: [
-        "MetaStable", "Stable", "Weighted", "LiquidityBootstrapping", "Investment", "StablePhantom", "AaveLinear",
-        "ERC4626Linear", "Linear", "ComposableStable", "BeefyLinear", "GearboxLinear", "MidasLinear",
-        "ReaperLinear", "SiloLinear", "TetuLinear", "YearnLinear"
+        ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
       ]
     }
   ) {
@@ -160,7 +258,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   constructor(
     parentName: string,
     protected network: number,
-    protected vaultAddress: Address,
+    public vaultAddress: Address,
     protected subgraphURL: string,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -308,6 +406,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   async generateState(blockNumber: number): Promise<Readonly<PoolStateMap>> {
     const allPools = await this.fetchAllSubgraphPools();
     this.allPools = allPools;
+
     const eventSupportedPools = allPools.filter(
       pool =>
         this.eventSupportedPoolTypes.includes(pool.poolType) &&
@@ -317,6 +416,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       eventSupportedPools,
       blockNumber,
     );
+
     return allPoolsLatestState;
   }
 
@@ -359,6 +459,13 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   ): { unit: bigint; prices: bigint[] } | null {
     if (!this.isSupportedPool(subgraphPool.poolType)) {
       this.logger.error(`Unsupported Pool Type: ${subgraphPool.poolType}`);
+      return null;
+    }
+
+    if (
+      subgraphPool.poolType !== BalancerPoolTypes.Weighted &&
+      side === SwapSide.BUY
+    ) {
       return null;
     }
 
@@ -407,13 +514,22 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const unitResult =
       checkedUnitVolume === 0n
         ? 0n
-        : pool.onSell([checkedUnitVolume], poolPairData as any)[0];
+        : side === SwapSide.SELL
+        ? pool.onSell([checkedUnitVolume], poolPairData as any)[0]
+        : pool.onBuy([checkedUnitVolume], poolPairData as any)[0];
 
     const prices: bigint[] = new Array(amounts.length).fill(0n);
-    const outputs = pool.onSell(
-      amountWithoutZero.slice(0, nonZeroAmountIndex),
-      poolPairData as any,
-    );
+
+    const outputs =
+      side === SwapSide.SELL
+        ? pool.onSell(
+            amountWithoutZero.slice(0, nonZeroAmountIndex),
+            poolPairData as any,
+          )
+        : pool.onBuy(
+            amountWithoutZero.slice(0, nonZeroAmountIndex),
+            poolPairData as any,
+          );
 
     assert(
       outputs.length <= prices.length,
@@ -474,12 +590,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
 export class BalancerV2
   extends SimpleExchange
-  implements IDex<BalancerV2Data, BalancerParam, OptimizedBalancerV2Data>
+  implements
+    IDex<BalancerV2Data, BalancerV2DirectParam, OptimizedBalancerV2Data>
 {
-  protected eventPools: BalancerV2EventPool;
+  public eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
+
+  readonly directSwapIface = new Interface(DirectSwapABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -495,9 +614,8 @@ export class BalancerV2
   constructor(
     protected network: Network,
     dexKey: string,
-    protected dexHelper: IDexHelper,
-    protected vaultAddress: Address = BalancerConfig[dexKey][network]
-      .vaultAddress,
+    public dexHelper: IDexHelper,
+    public vaultAddress: Address = BalancerConfig[dexKey][network].vaultAddress,
     protected subgraphURL: string = BalancerConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network],
   ) {
@@ -597,29 +715,28 @@ export class BalancerV2
   }
 
   getPoolsWithTokenPair(from: Token, to: Token): SubgraphPoolBase[] {
-    return this.eventPools.allPools
-      .filter(p => {
-        const fromMain = p.mainTokens.find(
-          token => token.address.toLowerCase() === from.address.toLowerCase(),
-        );
-        const toMain = p.mainTokens.find(
-          token => token.address.toLowerCase() === to.address.toLowerCase(),
-        );
+    const pools = this.eventPools.allPools.filter(p => {
+      const fromMain = p.mainTokens.find(
+        token => token.address.toLowerCase() === from.address.toLowerCase(),
+      );
+      const toMain = p.mainTokens.find(
+        token => token.address.toLowerCase() === to.address.toLowerCase(),
+      );
 
-        return (
-          fromMain &&
-          toMain &&
-          // filter instances similar to the following:
-          // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
-          !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
-        );
-      })
-      .slice(0, 10);
+      return (
+        fromMain &&
+        toMain &&
+        // filter instances similar to the following:
+        // USDC -> DAI in a pool where bbaUSD is nested (ie: MAI / bbaUSD)
+        !(fromMain.isDeeplyNested && toMain.isDeeplyNested)
+      );
+    });
+
+    return pools.slice(0, 10);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    if (side === SwapSide.BUY) return null;
-    return this.adapters;
+    return this.adapters[side] ? this.adapters[side] : null;
   }
 
   async getPoolIdentifiers(
@@ -628,7 +745,6 @@ export class BalancerV2
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
     const _from = this.dexHelper.config.wrapETH(from);
     const _to = this.dexHelper.config.wrapETH(to);
 
@@ -676,7 +792,6 @@ export class BalancerV2
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
-    if (side === SwapSide.BUY) return null;
     try {
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
@@ -710,6 +825,7 @@ export class BalancerV2
         _to.address,
         allowedPools,
         this.poolAddressMap,
+        side,
       );
 
       // Missing pools are pools that don't already exist in event or non-event
@@ -743,6 +859,7 @@ export class BalancerV2
             _to.address,
             pool,
             this.poolAddressMap,
+            side,
           );
 
           let pathAmounts = amounts;
@@ -918,7 +1035,7 @@ export class BalancerV2
     };
   }
 
-  private getBalancerParam(
+  public getBalancerParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
@@ -945,18 +1062,27 @@ export class BalancerV2
         decimals: 18,
       }).address;
 
-      const path = poolGetPathForTokenInOut(
+      let path = poolGetPathForTokenInOut(
         _srcToken,
         _destToken,
         pool,
         this.poolAddressMap,
+        side,
       );
+
+      if (side === SwapSide.BUY) {
+        path = path.reverse();
+      }
 
       const _swaps = path.map((hop, index) => ({
         poolId: hop.pool.id,
         assetInIndex: swapOffset + index,
         assetOutIndex: swapOffset + index + 1,
-        amount: index === 0 ? swapData.amount : '0',
+        amount:
+          (side === SwapSide.SELL && index === 0) ||
+          (side === SwapSide.BUY && index === path.length - 1)
+            ? swapData.amount
+            : '0',
         userData: '0x',
       }));
 
@@ -983,7 +1109,7 @@ export class BalancerV2
 
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
-      swaps,
+      side === SwapSide.SELL ? swaps : swaps.reverse(),
       assets,
       funds,
       limits,
@@ -991,6 +1117,138 @@ export class BalancerV2
     ];
 
     return params;
+  }
+
+  static getDirectFunctionName(): string[] {
+    return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<OptimizedBalancerV2Data>,
+    srcToken: Token,
+    _0: Token,
+    _1: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<OptimizedBalancerV2Data>, ExchangeTxInfo]> {
+    if (!options.isDirectMethod) {
+      return [
+        optimalSwapExchange,
+        {
+          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+        },
+      ];
+    }
+
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    let isApproved: boolean | undefined;
+
+    try {
+      this.erc20Contract.options.address =
+        this.dexHelper.config.wrapETH(srcToken).address;
+      const allowance = await this.erc20Contract.methods
+        .allowance(this.augustusAddress, this.vaultAddress)
+        .call(undefined, 'latest');
+      isApproved =
+        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+    } catch (e) {
+      this.logger.error(
+        `preProcessTransaction failed to retrieve allowance info: `,
+        e,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          isApproved,
+        },
+      },
+      {
+        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
+      },
+    ];
+  }
+
+  getDirectParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<BalancerV2DirectParam> {
+    if (
+      contractMethod !== DirectMethods.directSell &&
+      contractMethod !== DirectMethods.directBuy
+    ) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    const swapParams: BalancerV2DirectParam = [
+      swaps,
+      assets,
+      funds,
+      limits,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      _deadline,
+      feePercent,
+      this.vaultAddress,
+      partner,
+      isApproved,
+      beneficiary,
+      permit,
+      uuidToBytes16(uuid),
+    ];
+
+    const encoder = (...params: BalancerV2DirectParam) => {
+      return this.directSwapIface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethods.directSell
+          : DirectMethods.directBuy,
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
   }
 
   async getSimpleParam(

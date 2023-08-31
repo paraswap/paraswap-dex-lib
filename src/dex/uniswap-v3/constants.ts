@@ -1,5 +1,6 @@
-export const UNISWAPV3_FUNCTION_CALL_GAS_COST = 21_000; // Ceiled
 export const UNISWAPV3_TICK_GAS_COST = 24_000; // Ceiled
+export const UNISWAPV3_TICK_BASE_OVERHEAD = 75_000;
+export const UNISWAPV3_POOL_SEARCH_OVERHEAD = 10_000;
 
 // This is used for price calculation. If out of scope, return 0n
 export const TICK_BITMAP_TO_USE = 4n;
@@ -33,3 +34,8 @@ export const ZERO_ORACLE_OBSERVATION = {
 export const OUT_OF_RANGE_ERROR_POSTFIX = `INVALID_TICK_BIT_MAP_RANGES`;
 
 export const DEFAULT_POOL_INIT_CODE_HASH = `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`;
+
+export enum DirectMethods {
+  directSell = 'directUniV3Swap',
+  directBuy = 'directUniV3Buy',
+}

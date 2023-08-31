@@ -21,7 +21,10 @@ import {
   MaverickV1Param,
   SubgraphPoolBase,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import {
   MaverickV1Config,
   Adapters,
@@ -320,7 +323,7 @@ export class MaverickV1
     data: MaverickV1Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { deadline, pool } = data;
+    const { pool } = data;
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -330,7 +333,7 @@ export class MaverickV1
       },
       {
         pool,
-        deadline: deadline || this.getDeadline(),
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
       },
     );
 
@@ -358,7 +361,7 @@ export class MaverickV1
       side === SwapSide.SELL
         ? {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             tokenIn: srcToken,
@@ -368,7 +371,7 @@ export class MaverickV1
           }
         : {
             recipient: this.augustusAddress,
-            deadline: this.getDeadline(),
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
             tokenIn: srcToken,

@@ -84,6 +84,7 @@ export type RFQPayload = {
   makerAmount?: string;
   takerAmount?: string;
   userAddress: Address;
+  partner?: string;
 };
 
 export type AugustusOrderWithStringAndSignature = AugustusOrderWithString & {
@@ -96,3 +97,5 @@ export type RFQFirmRateResponse = {
 };
 
 export class SlippageCheckError extends Error {}
+
+export class TooStrictSlippageCheckError extends Error {}
