@@ -508,6 +508,18 @@ export const Tokens: {
       address: '0xe578C856933D8e1082740bf7661e379Aa2A30b26',
       decimals: 6,
     },
+    axlUSDC: {
+      address: '0x1B6382DBDEa11d97f24495C9A90b7c88469134a4',
+      decimals: 6,
+    },
+    lzUSDC: {
+      address: '0x28a92dde19D9989F39A49905d7C9C2FAc7799bDf',
+      decimals: 6,
+    },
+    FVM: {
+      address: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
+      decimals: 18,
+    },
   },
   [Network.BSC]: {
     POPS: {

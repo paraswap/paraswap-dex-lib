@@ -58,6 +58,17 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 4,
     },
   },
+  Fvm: {
+    [Network.FANTOM]: {
+      factoryAddress: '0x472f3C3c9608fe0aE8d702f3f8A2d12c410C881A',
+      router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
+      initCode:
+        '0xac4013aa7118234c1dd1f9cc4cdd3933d5a426224bc691c1bde3d8930a7e6151', // PairFactory.pairCodeHash
+      feeCode: 0, // dynamic fees
+      poolGasCost: 180 * 1000, // just same as other forks
+      // no subgraph
+    },
+  },
   Velodrome: {
     [Network.OPTIMISM]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/dmihal/velodrome',
