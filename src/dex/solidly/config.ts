@@ -83,6 +83,17 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 2,
     },
   },
+  VelodromeV2: {
+    [Network.OPTIMISM]: {
+      // There is no subgraph for VelodromeV2
+      factoryAddress: '0xF1046053aa5682b4F9a81b5481394DA16BE5FF5a',
+      router: '0xa2f581b012E0f2dcCDe86fCbfb529f4aC5dD4983',
+      initCode:
+        '0x1a8f01f7eab324003d9388f229ea17991eee9c9d14586f429799f3656790eba0',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
   Cone: {
     [Network.BSC]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/cone-exchange/cone',
