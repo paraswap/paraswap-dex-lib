@@ -28,11 +28,15 @@ export class Api3FeedSubscriber<State> extends PartialEventSubscriber<
     Api3FeedSubscriber.api3ServerV1Iface.getEventTopic(
       'UpdatedBeaconWithSignedData',
     );
+  static readonly ANSWER_UPDATED_BEACON_SET_DATA =
+    Api3FeedSubscriber.api3ServerV1Iface.getEventTopic(
+      'UpdatedBeaconSetWithBeacons',
+    );
 
   constructor(
     private proxy: Address,
     api3Server: Address,
-    private beaconId: string,
+    private dataFeedId: string,
     lens: Lens<DeepReadonly<State>, DeepReadonly<Api3FeedSubscriberState>>,
     logger: Logger,
   ) {
@@ -47,26 +51,17 @@ export class Api3FeedSubscriber<State> extends PartialEventSubscriber<
     };
   }
 
-  static getDapiNameHash(proxy: Address): MultiCallInput {
+  static getDataFeedId(proxy: Address): MultiCallInput {
     return {
       target: proxy,
       callData:
-        Api3FeedSubscriber.proxyInterface.encodeFunctionData('dapiNameHash'),
+        Api3FeedSubscriber.proxyInterface.encodeFunctionData('dataFeedId'),
     };
   }
 
-  static getFeedIdFromDapiNameHash(api3Server: string, dapiNameHash: string) {
-    return {
-      target: api3Server,
-      callData: Api3FeedSubscriber.api3ServerV1Iface.encodeFunctionData(
-        'dapiNameHashToDataFeedId',
-      ),
-    };
-  }
-
-  static decodeFeedIdFromDapiNameHash(multicallOutput: MultiCallOutput) {
+  static decodeDataFeedId(multicallOutput: MultiCallOutput) {
     return Api3FeedSubscriber.proxyInterface.decodeFunctionResult(
-      'dapiNameHashToDataFeedId',
+      'dataFeedId',
       multicallOutput,
     )[0];
   }
@@ -78,29 +73,42 @@ export class Api3FeedSubscriber<State> extends PartialEventSubscriber<
     )[0];
   }
 
-  static decodeDapiNameHash(multicallOutput: MultiCallOutput): Address {
-    return Api3FeedSubscriber.proxyInterface.decodeFunctionResult(
-      'dapiNameHash',
-      multicallOutput,
-    )[0];
-  }
-
   public processLog(
     state: DeepReadonly<Api3FeedSubscriberState>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<Api3FeedSubscriberState> | null {
-    if (log.topics[0] !== Api3FeedSubscriber.ANSWER_UPDATED_SIGNED_DATA)
-      return null; // Ignore other events
-    const decoded = Api3FeedSubscriber.api3ServerV1Iface.decodeEventLog(
-      'UpdatedBeaconWithSignedData',
-      log.data,
-      log.topics,
-    );
-    return {
-      value: BigInt(decoded.value.toString()),
-      timestamp: BigInt(decoded.timestamp.toString()),
-    };
+    if (log.topics[0] === Api3FeedSubscriber.ANSWER_UPDATED_SIGNED_DATA) {
+      const decoded = Api3FeedSubscriber.api3ServerV1Iface.decodeEventLog(
+        'UpdatedBeaconWithSignedData',
+        log.data,
+        log.topics,
+      );
+
+      if (decoded.beaconId !== this.dataFeedId) return null;
+
+      return {
+        value: BigInt(decoded.value.toString()),
+        timestamp: BigInt(decoded.timestamp.toString()),
+      };
+    } else if (
+      log.topics[0] === Api3FeedSubscriber.ANSWER_UPDATED_BEACON_SET_DATA
+    ) {
+      const decoded = Api3FeedSubscriber.api3ServerV1Iface.decodeEventLog(
+        'UpdatedBeaconSetWithBeacons',
+        log.data,
+        log.topics,
+      );
+
+      if (decoded.beaconSetId !== this.dataFeedId) return null;
+
+      return {
+        value: BigInt(decoded.value.toString()),
+        timestamp: BigInt(decoded.timestamp.toString()),
+      };
+    } else {
+      return null;
+    }
   }
 
   public getGenerateStateMultiCallInputs(): MultiCallInput[] {

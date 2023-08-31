@@ -14,7 +14,7 @@
   },
   {
     "inputs": [],
-    "name": "dapiNameHash",
+    "name": "dataFeedId",
     "outputs": [
       {
         "internalType": "bytes32",

@@ -36,6 +36,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
         acc[key] = new Api3FeedSubscriber<PoolState>(
           value.proxy,
           value.api3ServerV1,
+          value.dataFeedId,
           lens<DeepReadonly<PoolState>>().primaryPrices[key],
           dexHelper.getLogger(
             `${key} Api3FeedSubscriber for ${parentName}-${network}`,
@@ -282,9 +283,8 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     for (let priceFeed of priceFeeds) {
       const api3ServerAddressCallData =
         Api3FeedSubscriber.getApi3ServerV1MultiCallInput(priceFeed);
-      const dapiNameHashCallData =
-        Api3FeedSubscriber.getApi3ServerV1MultiCallInput(priceFeed);
-      multiCallData.push(...[api3ServerAddressCallData, dapiNameHashCallData]);
+      const dataFeedIdCallData = Api3FeedSubscriber.getDataFeedId(priceFeed);
+      multiCallData.push(...[api3ServerAddressCallData, dataFeedIdCallData]);
       multicallSlices.push([i, i + 2]);
       i += 2;
     }
@@ -319,21 +319,20 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
       [address: string]: {
         proxy: Address;
         api3ServerV1: Address;
-        dapiNameHash: string;
+        dataFeedId: string;
       };
     } = {};
     for (let token of tokens) {
-      const [api3ServerAddressRes, dapiHashNameRes] = configResults.slice(
+      const [api3ServerAddressRes, dataFeedIdRes] = configResults.slice(
         ...multicallSlices.shift()!,
       );
       const serverV1Address =
         Api3FeedSubscriber.decodeApi3ServerV1Result(api3ServerAddressRes);
-      const dapiNameHash =
-        Api3FeedSubscriber.decodeApi3ServerV1Result(dapiHashNameRes);
+      const dataFeedId = Api3FeedSubscriber.decodeDataFeedId(dataFeedIdRes);
       api3ServerV1[token] = {
         proxy: priceFeeds.shift(),
         api3ServerV1: serverV1Address,
-        dapiNameHash,
+        dataFeedId,
       };
     }
 
@@ -355,8 +354,6 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
 
     const vaultConfigResults = configResults.slice(...multicallSlices.shift()!);
     const vaultConfig = Vault.getConfig(vaultConfigResults, tokens);
-
-    const beeconIdMulticall = 
 
     return {
       vaultAddress: dexParams.vault,

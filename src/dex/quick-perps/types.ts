@@ -91,7 +91,7 @@ export type PoolConfig = {
     [address: string]: {
       proxy: Address;
       api3ServerV1: Address;
-      beaconId: string;
+      dataFeedId: string;
     };
   };
 };
