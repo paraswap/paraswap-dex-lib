@@ -376,7 +376,11 @@ export class RateFetcher {
     srcAmount: string,
     side: SwapSide,
     userAddress: Address,
-    data?: string,
+    data?: {
+      from: string;
+      to: string;
+      calldata: string;
+    },
   ): Promise<OrderInfo> {
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
     const destToken = this.dexHelper.config.wrapETH(_destToken);

@@ -85,7 +85,11 @@ export type RFQPayload = {
   makerAmount?: string;
   takerAmount?: string;
   userAddress: Address;
-  data?: string;
+  data?: {
+    from: string;
+    to: string;
+    calldata: string;
+  };
 };
 
 export type AugustusOrderWithStringAndSignature = AugustusOrderWithString & {
